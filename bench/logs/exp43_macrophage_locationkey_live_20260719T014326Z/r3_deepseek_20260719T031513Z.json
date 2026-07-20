@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260719T031513Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1547,
+  "response": "FINDING_ID: D_F001\nSEVERITY: 0.80\nFIND: The guard `median_t > 0.1` suppresses spike detection for fast pipelines, allowing large relative spikes to go unreported.\nFALSIFIER:\n```python\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n\ntimings = {'stage_a': 0.02, 'stage_b': 0.03, 'stage_c': 5.0}\nverdicts = [type('v', (), {'verdict': 'CONFIRMED'})() for _ in range(3)]\n\nsummary = cell.observe(verdicts, triaged=None, timings=timings)\nspikes = [obs for obs in summary.observations if obs.category == \"timing_spike\"]\nif not spikes:\n    print(\"FALSIFIED: no spike detected despite 166× median\")\n    raise AssertionError(\"Timing spike should have been detected\")\n```\n\nFINDING_ID: D_F002\nSEVERITY: 0.45\nFIND: `_check_provenance()` only enforces three of the six provenance fields declared in the `observe()` docstring, allowing incomplete provenance without anomaly.\nFALSIFIER:\n```python\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n\nverdict = type('v', (), {\n    'verdict': 'CONFIRMED',\n    'provenance': {\n        'origin_type': 'arxiv',\n        'source_ref': 'ref',\n        'source_hash': 'abc'\n    }\n})()\n\nsummary = cell.observe([verdict], triaged=None, timings=None)\nanomalies = [obs for obs in summary.observations if obs.category == \"provenance_incomplete\"]\nif not anomalies:\n    print(\"FALSIFIED: missing provenance fields not flagged\")\n    raise AssertionError(\"provenance_incomplete anomaly expected\")\n```",
+  "metadata": {
+    "round": 3,
+    "elapsed": 502.8,
+    "chars": 1547,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

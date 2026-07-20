@@ -1,0 +1,793 @@
+[22:28:43] ============================================================
+[22:28:43] EXPERIMENT: exp43_macrophage_locationkey_live
+[22:28:43]   Topology: star/blackboard
+[22:28:43]   Pattern: four_layer
+[22:28:43]   Max rounds: 16 (extension to 16)
+[22:28:43]   Convergence: state-based, earliest R3
+[22:28:43]   Target: bench/macrophage_cell.py
+[22:28:43]   Context: []
+[22:28:43]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[22:28:43]   Domain: software
+[22:28:43]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z
+[22:28:43] ============================================================
+[22:28:43]   Target: 22,057 chars
+[22:28:43]   Context: 0 files
+[22:28:43]   Total: 22,134 chars with headers
+[22:28:43]   [location-key] 15 target symbols extracted; location_keyed_convergence=True
+[22:28:43]   in-round re-ask ENABLED (min_markers=2)
+[22:28:43]   G7 merge-arbitration ENABLED (min_defer=2, max/round=3, tiebreaker_γ<0.05)
+[22:28:43]   S_k pipeline: capturing baseline gate scores...
+[22:28:45]   S_k baseline: ruff=4, bandit={'high': 0, 'medium': 0}
+[22:28:45] 
+------------------------------------------------------------
+[22:28:45] Round 0/15 (blind)
+[22:28:45] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[22:28:46] Dispatching to DeepSeek (deepseek-v4-pro) via deepseek...
+[22:28:46] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[22:28:46] Dispatching to CC2 (opus) via claude_cli...
+[22:28:46] Dispatching to Codex (openai/gpt-5.5) via openrouter...
+[22:28:46] Dispatching to ChatGPT (openai/gpt-5.5) via openrouter...
+[22:30:33]   [openrouter:openai/gpt-5.5] done (tools, 106.9s, 12895 chars)
+[22:30:34]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r0_codex_20260718T213034Z.json
+[22:30:47]   [openrouter:openai/gpt-5.5] done (tools, 120.3s, 9261 chars)
+[22:30:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r0_chatgpt_20260718T213047Z.json
+[22:31:10]   [claude-cli:opus] done (144.6s, 11406 chars)
+[22:31:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r0_cc2_20260718T213110Z.json
+[22:31:29]   [deepseek:deepseek-v4-pro] done (162.6s, 11342 chars content, 26569 chars reasoning)
+[22:31:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r0_deepseek_20260718T213129Z.json
+[22:32:27]   [openrouter:google/gemini-3.1-pro-preview] done (tools, 220.3s, 10249 chars)
+[22:32:27]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r0_gemini_20260718T213227Z.json
+[22:32:27]   R_k FAIL: Codex_F001 — model=0.289, recomputed=1.000, delta=0.711
+[22:32:27]   R_k FAIL: Codex_F002 — model=0.382, recomputed=1.000, delta=0.619
+[22:32:27]   R_k FAIL: ChatGPT_F001 — model=0.426, recomputed=1.000, delta=0.574
+[22:32:27]   R_k FAIL: DeepSeek_MACRO_001 — model=0.387, recomputed=1.000, delta=0.613
+[22:32:27]   R_k FAIL: DeepSeek_MACRO_002 — model=0.310, recomputed=1.000, delta=0.690
+[22:32:27]   R_k FAIL: Gemini_F001 — model=0.230, recomputed=0.326, delta=0.096
+[22:32:27]   R_k FAIL: Gemini_F002 — model=0.230, recomputed=0.326, delta=0.096
+[22:32:27]   R_k validation [Codex]: FAIL=2
+[22:32:27]   R_k validation [ChatGPT]: FAIL=1
+[22:32:27]   R_k validation [CC2]: SKIP=2
+[22:32:27]   R_k validation [DeepSeek]: FAIL=2
+[22:32:27]   R_k validation [Gemini]: FAIL=2
+[22:32:27]   Registry: 9 novel / 9 raw, 9 total, rho=1.000, rho_avg=1.000
+[22:32:27]   falsifier gate (tools decide): 6 CONFIRMED, 0 REFUTED, 1 -> HIL
+[22:32:28] Dispatching to Codex (openai/gpt-5.5) via openrouter...
+[22:33:25]   [openrouter:openai/gpt-5.5] done (tools, 57.0s, 2779 chars)
+[22:33:25]   routing: 1 resolved by strong writer, 0 dedup'd, 0 -> HIL
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_MACRO_002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 (v2): 3/9 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 14.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 15.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_MACRO_001 — regex=mathematical → llm=code_behavioral (conf=0.88, llm-primary [software]: threshold N/A, 13.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 10.6s)
+INFO:immune.pipeline:LLM classifier: 5/9 agree with regex (55.6%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 2 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Codex_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+INFO:immune.pipeline:  Gemini_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+INFO:immune.pipeline:NK v2 (v2): 7 verdicts (7 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 174.9s — none
+INFO:immune.pipeline:B-Cell specialist (LIVE, domain=software): 2 verdicts
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 9 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 7 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.53, v2=0.53, max=0.53 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.57, v2=0.57, max=0.57 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_MACRO_002 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_MACRO_001 — both pipelines REJECTED (v1=0.59, v2=0.59, max=0.59 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.51, v2=0.51, max=0.51 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.65, v2=0.65, max=0.65 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 7 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, Codex_F002, DeepSeek_MACRO_001, DeepSeek_MACRO_002, Gemini_F002
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 7/9 (77.8%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): depletion — 77.8% removal rate (all duplicates)
+INFO:immune.pipeline:Fix NOT verified: Codex_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.pipeline:Fix NOT verified: Gemini_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+[22:38:41]   [feedback] round 0 → round 1: 5 model(s) flagged
+[22:40:44]   S_k [C0001]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:42:46]   S_k [C0002]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:44:47]   S_k [C0003]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:46:50]   S_k [C0004]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+[22:48:52]   S_k [C0005]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:50:54]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:52:56]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:54:58]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:57:00]   S_k [C0009]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[22:57:00]   S_k pipeline: 9 evaluated, 9 ADMISSIBLE, 0 REJECTED, 0 ESCALATE
+[22:57:00]   [GATE] location-keyed novel-crit this round=4 (ID-proxy crit=5; series tail=[4]; FEEDS γ-alt convergence)
+[22:57:00]   gamma_all: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[22:57:00]   gamma_critical: 0.000 (continuous decay-curve diagnostic; the 3-round zero-new-critical count is its threshold-free convergence endpoint — same diminishing-returns principle, ~1.0 at clean critical convergence)
+[22:57:00]   Round 0: 9 findings, 280.2s
+[22:57:00]   Convergence: Too early (round 0 < 3)
+[22:57:00]   γ-alt: critical-quiescence too early (round 0 < 3)
+[22:57:00] 
+------------------------------------------------------------
+[22:57:00] Round 1/15 (adaptive)
+[22:57:00] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[22:57:00]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 1 chunks, ~22,134 chars [tools-on synthesis]
+[22:57:00]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[22:57:00]   Decomposed dispatch: claude_cli/opus, 1 chunks, ~22,134 chars [tools-on synthesis]
+[22:57:00]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[22:57:00]   [claude-cli] multi-turn dispatch: 1 chunks + final, session=034a1903..., ~56,294 chars total
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[22:57:00]   [claude-cli] delivering chunk 1/2 (22,134 chars, target_0)
+[22:57:00]   Decomposed dispatch: deepseek/deepseek-v4-pro, 1 chunks, ~22,134 chars [tools-on synthesis]
+[22:57:03]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/1 (22,134 chars, target_0)
+[22:57:03]   [deepseek:deepseek-v4-pro] independent session 1/1 (22,134 chars, target_0)
+[22:57:03]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[22:57:03]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[22:57:07]   [claude-cli] delivering final instruction (chunk 2/2) [tools-on]
+[22:58:38]   [openrouter:openai/gpt-5.5] section 1 analysis complete (18,220 chars)
+[22:58:38]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[22:59:19]   [openrouter:openai/gpt-5.5] section 1 analysis complete (24,553 chars)
+[22:59:19]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[22:59:30]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (20,340 chars)
+[22:59:30]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 2/2) [tools-on]
+[22:59:46]   [deepseek:deepseek-v4-pro] section 1 analysis complete (16,773 chars)
+[22:59:46]   [deepseek:deepseek-v4-pro] delivering synthesis instruction (chunk 2/2) [tools-on]
+[23:00:38]   [openrouter:openai/gpt-5.5] synthesis complete (215.8s, 21,276 chars)
+[23:00:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round1_codex_20260718T220038Z.json
+[23:00:39]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r1_codex_20260718T220039Z.json
+[23:01:13]   [openrouter:openai/gpt-5.5] synthesis complete (249.9s, 10,789 chars)
+[23:01:13]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round1_chatgpt_20260718T220113Z.json
+[23:01:13]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r1_chatgpt_20260718T220113Z.json
+[23:03:00]   [claude-cli] synthesis complete (359.4s, 7,049 chars)
+[23:03:00]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round1_cc2_20260718T220300Z.json
+[23:03:00]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r1_cc2_20260718T220300Z.json
+[23:03:19]   [deepseek-v4-pro] falsifier format-repair applied (14,590 -> 2,147 chars)
+[23:03:19]   [deepseek:deepseek-v4-pro] synthesis complete (376.2s, 2,147 chars)
+[23:03:19]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round1_deepseek_20260718T220319Z.json
+[23:03:19]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r1_deepseek_20260718T220319Z.json
+[23:03:29]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (386.0s, 16,548 chars)
+[23:03:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round1_gemini_20260718T220329Z.json
+[23:03:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r1_gemini_20260718T220329Z.json
+[23:03:29]   R_k validation [Codex]: SKIP=3
+[23:03:29]   R_k validation [ChatGPT]: SKIP=1
+[23:03:29]   R_k validation [CC2]: SKIP=1
+[23:03:29]   R_k validation [DeepSeek]: SKIP=2
+[23:03:29]   R_k validation [Gemini]: PASS=3
+[23:03:29]   Registry: 8 novel / 10 raw, 17 total, rho=0.800, rho_avg=0.900
+[23:03:29]   CLOSED C0001: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0002: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0003: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0006: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0007: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0008: verified fix, no unresolved challenges
+[23:03:29]   CLOSED C0009: verified fix, no unresolved challenges
+[23:03:29]   falsifier gate (tools decide): 6 CONFIRMED, 0 REFUTED, 1 -> HIL
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F005 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 (v2): 3/10 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F002 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 15.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F003 — regex=code_behavioral → llm=code_structural (conf=0.85, llm-primary [software]: threshold N/A, 14.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F002 — regex=mathematical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 16.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F101 — regex=code_behavioral → llm=code_structural (conf=0.87, llm-primary [software]: threshold N/A, 11.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F004 — regex=mathematical → llm=logical (conf=0.80, llm-primary [software]: threshold N/A, 17.0s)
+INFO:immune.pipeline:LLM classifier: 5/10 agree with regex (50.0%), 5 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Gemini_F004: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+INFO:immune.pipeline:NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 290.0s — none
+INFO:immune.pipeline:B-Cell specialist (LIVE, domain=software): 4 verdicts
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F101 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F102 — both pipelines REJECTED (v1=0.58, v2=0.58, max=0.58 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F010 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 10 finding(s): CC2_F010, ChatGPT_F002, Codex_F001, Codex_F002, Codex_F003, DeepSeek_F101, DeepSeek_F102, Gemini_F003, Gemini_F004, Gemini_F005
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 10/10 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2: Codex at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2: Gemini at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+[23:10:57]   [feedback] round 1 → round 2: 5 model(s) flagged
+[23:13:00]   S_k [C0004]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+[23:15:01]   S_k [C0005]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:17:04]   S_k [C0010]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:19:06]   S_k [C0011]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:21:07]   S_k [C0012]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:23:09]   S_k [C0015]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:25:12]   S_k [C0016]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:27:15]   S_k [C0017]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:27:15]   S_k pipeline: 8 evaluated, 8 ADMISSIBLE, 0 REJECTED, 0 ESCALATE
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/decay_analysis.py:54: OptimizeWarning: Covariance of the parameters could not be estimated
+  popt, _ = curve_fit(_geometric, x, y, p0=[max(y.max(), 1), 0.5],
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/decay_analysis.py:86: OptimizeWarning: Covariance of the parameters could not be estimated
+  popt, _ = curve_fit(_duane_cumulative, x, cumulative,
+[23:27:15]   ITC [Codex]: DEGRADATION suppressed — rho_avg=0.667 >= 0.25 (normal depletion)
+[23:27:15]   [GATE] location-keyed novel-crit this round=1 (ID-proxy crit=1; series tail=[4, 1]; FEEDS γ-alt convergence)
+[23:27:15]   gamma_all: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[23:27:15]   gamma_critical: 0.000 (continuous decay-curve diagnostic; the 3-round zero-new-critical count is its threshold-free convergence endpoint — same diminishing-returns principle, ~1.0 at clean critical convergence)
+[23:27:15]   Round 1: 10 findings, 389.2s
+[23:27:15]   Convergence: Too early (round 1 < 3)
+[23:27:15]   γ-alt: critical-quiescence too early (round 1 < 3)
+[23:27:15] 
+------------------------------------------------------------
+[23:27:15] Round 2/15 (adaptive)
+[23:27:15] ------------------------------------------------------------
+[23:27:15]   Decomposed dispatch: claude_cli/opus, 1 chunks, ~22,134 chars [tools-on synthesis]
+[23:27:15]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[23:27:15]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 1 chunks, ~22,134 chars [tools-on synthesis]
+[23:27:15]   [claude-cli] multi-turn dispatch: 1 chunks + final, session=e44fb886..., ~57,189 chars total
+[23:27:15]   [claude-cli] delivering chunk 1/2 (22,134 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[23:27:15]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[23:27:15]   Decomposed dispatch: deepseek/deepseek-v4-pro, 1 chunks, ~22,134 chars [tools-on synthesis]
+[23:27:15]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[23:27:15]   [deepseek:deepseek-v4-pro] independent session 1/1 (22,134 chars, target_0)
+[23:27:15]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[23:27:15]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/1 (22,134 chars, target_0)
+[23:27:23]   [claude-cli] delivering final instruction (chunk 2/2) [tools-on]
+[23:28:51]   [openrouter:openai/gpt-5.5] section 1 analysis complete (20,389 chars)
+[23:28:51]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[23:29:20]   [openrouter:openai/gpt-5.5] section 1 analysis complete (30,112 chars)
+[23:29:20]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[23:29:45]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (20,340 chars)
+[23:29:45]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 2/2) [tools-on]
+[23:30:09]   [deepseek:deepseek-v4-pro] section 1 analysis complete (16,795 chars)
+[23:30:09]   [deepseek:deepseek-v4-pro] delivering synthesis instruction (chunk 2/2) [tools-on]
+[23:31:06]   [openrouter:openai/gpt-5.5] synthesis complete (230.6s, 12,193 chars)
+[23:31:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round2_chatgpt_20260718T223106Z.json
+[23:31:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r2_chatgpt_20260718T223106Z.json
+[23:31:42]   [openrouter:openai/gpt-5.5] synthesis complete (266.8s, 18,851 chars)
+[23:31:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round2_codex_20260718T223142Z.json
+[23:31:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r2_codex_20260718T223142Z.json
+[23:32:05]   [claude-cli] synthesis complete (289.9s, 8,711 chars)
+[23:32:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round2_cc2_20260718T223205Z.json
+[23:32:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r2_cc2_20260718T223205Z.json
+[23:32:28]   [deepseek:deepseek-v4-pro] synthesis complete (313.0s, 14,362 chars)
+[23:32:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round2_deepseek_20260718T223228Z.json
+[23:32:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r2_deepseek_20260718T223228Z.json
+[23:32:37]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (321.9s, 18,139 chars)
+[23:32:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round2_gemini_20260718T223237Z.json
+[23:32:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r2_gemini_20260718T223237Z.json
+[23:32:37]   R_k validation [ChatGPT]: SKIP=1
+[23:32:37]   R_k validation [Codex]: SKIP=2
+[23:32:37]   R_k validation [CC2]: SKIP=1
+[23:32:37]   R_k validation [DeepSeek]: PASS=3
+[23:32:37]   R_k validation [Gemini]: PASS=4, SKIP=1
+[23:32:37]   Registry: 8 novel / 12 raw, 25 total, rho=0.667, rho_avg=0.822
+[23:34:39]   BUGZILLA close-the-loop failed for C0005: verification failed: ruff: F401 [*] `hashlib` imported but unused
+  --> /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_9h52d5tg_macrophage_ce
+[23:34:39]   CLOSED C0010: verified fix, no unresolved challenges
+[23:34:39]   CLOSED C0012: verified fix, no unresolved challenges
+[23:34:39]   CLOSED C0014: verified fix, no unresolved challenges
+[23:34:39]   CLOSED C0015: verified fix, no unresolved challenges
+[23:34:39]   CLOSED C0016: verified fix, no unresolved challenges
+[23:34:39]   CLOSED C0017: verified fix, no unresolved challenges
+[23:34:40]   falsifier gate (tools decide): 8 CONFIRMED, 0 REFUTED, 1 -> HIL
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 12 passed, 0 failed out of 12 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F005 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F008 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 3/12 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 12 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F004 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 15.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F011 — regex=statistical → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 12.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F201 — regex=statistical → llm=logical (conf=0.75, llm-primary [software]: threshold N/A, 14.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F203 — regex=statistical → llm=logical (conf=0.75, llm-primary [software]: threshold N/A, 15.6s)
+INFO:immune.pipeline:LLM classifier: 8/12 agree with regex (66.7%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 2 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  DeepSeek_F201: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+INFO:immune.pipeline:  DeepSeek_F203: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+INFO:immune.pipeline:NK v2 (v2): 12 verdicts (0 intra-round dups, 4 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 240.8s — none
+INFO:immune.pipeline:B-Cell specialist (LIVE, domain=software): 3 verdicts
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 12 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 12 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F008 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F202 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F011 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F203 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F201 — both pipelines REJECTED (v1=0.65, v2=0.65, max=0.65 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 12 finding(s): CC2_F011, ChatGPT_F004, Codex_F004, Codex_F005, DeepSeek_F201, DeepSeek_F202, DeepSeek_F203, Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F008
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 12/12 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2: DeepSeek at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2: Gemini at 5/5 (100% removed) — windowing (round 2/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+[23:41:51]   [feedback] round 2 → round 3: 5 model(s) flagged
+[23:43:53]   S_k [C0004]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+[23:45:56]   S_k [C0005]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:47:58]   S_k [C0011]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:50:01]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:52:04]   S_k [C0019]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+[23:54:06]   S_k [C0020]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:56:13]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[23:58:15]   S_k [C0022]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:00:18]   S_k [C0023]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:02:21]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:04:23]   S_k [C0025]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:04:23]   S_k pipeline: 11 evaluated, 11 ADMISSIBLE, 0 REJECTED, 0 ESCALATE
+[00:04:23]   [GATE] location-keyed novel-crit this round=2 (ID-proxy crit=2; series tail=[4, 1, 2]; FEEDS γ-alt convergence)
+[00:04:23]   gamma_all: 0.071 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[00:04:23]   gamma_critical: 0.590 (continuous decay-curve diagnostic; the 3-round zero-new-critical count is its threshold-free convergence endpoint — same diminishing-returns principle, ~1.0 at clean critical convergence)
+[00:04:23]   Round 2: 12 findings, 444.6s
+[00:04:23]   Convergence: Too early (round 2 < 3)
+[00:04:23]   γ-alt: critical-quiescence too early (round 2 < 3)
+[00:04:23] 
+------------------------------------------------------------
+[00:04:23] Round 3/15 (adaptive)
+[00:04:23] ------------------------------------------------------------
+[00:04:23]   Decomposed dispatch: claude_cli/opus, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:04:23]   [claude-cli] multi-turn dispatch: 1 chunks + final, session=3b0fe083..., ~58,407 chars total
+[00:04:23]   [claude-cli] delivering chunk 1/2 (22,134 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[00:04:23]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:04:23]   Decomposed dispatch: deepseek/deepseek-v4-pro, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:04:23]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:04:23]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:04:24]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[00:04:24]   [deepseek:deepseek-v4-pro] independent session 1/1 (22,134 chars, target_0)
+[00:04:24]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[00:04:24]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/1 (22,134 chars, target_0)
+[00:04:31]   [claude-cli] delivering final instruction (chunk 2/2) [tools-on]
+[00:05:48]   [openrouter:openai/gpt-5.5] section 1 analysis complete (17,961 chars)
+[00:05:48]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[00:06:05]   [openrouter:openai/gpt-5.5] section 1 analysis complete (22,776 chars)
+[00:06:05]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[00:06:30]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (13,217 chars)
+[00:06:30]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 2/2) [tools-on]
+[00:06:40]   [deepseek:deepseek-v4-pro] section 1 analysis complete (16,761 chars)
+[00:06:40]   [deepseek:deepseek-v4-pro] delivering synthesis instruction (chunk 2/2) [tools-on]
+[00:07:22]   [claude-cli] synthesis complete (178.6s, 7,442 chars)
+[00:07:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round3_cc2_20260718T230722Z.json
+[00:07:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r3_cc2_20260718T230722Z.json
+[00:07:48]   [openrouter:openai/gpt-5.5] synthesis complete (204.8s, 14,476 chars)
+[00:07:48]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round3_codex_20260718T230748Z.json
+[00:07:48]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r3_codex_20260718T230748Z.json
+[00:08:28]   [openrouter:openai/gpt-5.5] synthesis complete (244.1s, 25,635 chars)
+[00:08:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round3_chatgpt_20260718T230828Z.json
+[00:08:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r3_chatgpt_20260718T230828Z.json
+[00:09:40]   [deepseek-v4-pro] falsifier format-repair applied (12,518 -> 1,489 chars)
+[00:09:40]   [deepseek:deepseek-v4-pro] synthesis complete (316.8s, 1,489 chars)
+[00:09:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round3_deepseek_20260718T230940Z.json
+[00:09:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r3_deepseek_20260718T230940Z.json
+[00:13:51]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (567.4s, 12,928 chars)
+[00:13:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round3_gemini_20260718T231351Z.json
+[00:13:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r3_gemini_20260718T231351Z.json
+[00:13:51]   R_k FAIL: Codex_F003 — model=0.360, recomputed=1.000, delta=0.640
+[00:13:51]   R_k FAIL: ChatGPT_F005 — model=0.061, recomputed=1.000, delta=0.939
+[00:13:51]   R_k FAIL: ChatGPT_F006 — model=0.038, recomputed=1.000, delta=0.962
+[00:13:51]   R_k FAIL: ChatGPT_F007 — model=0.052, recomputed=1.000, delta=0.948
+[00:13:51]   R_k FAIL: ChatGPT_F008 — model=0.057, recomputed=1.000, delta=0.943
+[00:13:51]   R_k FAIL: Gemini_F301 — model=0.235, recomputed=1.000, delta=0.765
+[00:13:51]   R_k FAIL: Gemini_F302 — model=0.351, recomputed=1.000, delta=0.649
+[00:13:51]   R_k validation [CC2]: SKIP=1
+[00:13:51]   R_k validation [Codex]: FAIL=1
+[00:13:51]   R_k validation [ChatGPT]: FAIL=4
+[00:13:51]   R_k validation [DeepSeek]: SKIP=2
+[00:13:51]   R_k validation [Gemini]: FAIL=2
+[00:13:51]   Registry: 9 novel / 10 raw, 34 total, rho=0.900, rho_avg=0.789
+[00:15:53]   BUGZILLA close-the-loop failed for C0004: verification failed: ruff: F401 [*] `hashlib` imported but unused
+  --> /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_znm0xwkm_macrophage_ce
+[00:17:53]   BUGZILLA close-the-loop failed for C0011: verification failed: ruff: F401 [*] `hashlib` imported but unused
+  --> /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_5fgbnyww_macrophage_ce
+[00:17:54]   CLOSED C0018: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0019: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0020: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0021: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0022: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0023: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0024: verified fix, no unresolved challenges
+[00:17:54]   CLOSED C0025: verified fix, no unresolved challenges
+[00:17:55]   falsifier gate (tools decide): 8 CONFIRMED, 0 REFUTED, 1 -> HIL
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_F012 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F006 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F008 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F301 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 6/10 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F012 — regex=code_behavioral → llm=code_structural (conf=0.70, llm-primary [software]: threshold N/A, 19.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F007 — regex=statistical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 13.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F301 — regex=mathematical → llm=code_behavioral (conf=0.88, llm-primary [software]: threshold N/A, 10.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F302 — regex=mathematical → llm=code_behavioral (conf=0.78, llm-primary [software]: threshold N/A, 19.3s)
+INFO:immune.pipeline:LLM classifier: Gemini_F301 — regex=code_behavioral llm=logical (conf=0.78, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 13.2s)
+INFO:immune.pipeline:LLM classifier: Gemini_F302 — regex=code_behavioral llm=logical (conf=0.78, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 16.5s)
+INFO:immune.pipeline:LLM classifier: 4/10 agree with regex (40.0%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 165.6s — none
+INFO:immune.pipeline:B-Cell specialist (LIVE, domain=software): 1 verdicts
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F301 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F012 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F302 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F302 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F008 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F301 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 10 finding(s): CC2_F012, ChatGPT_F005, ChatGPT_F006, ChatGPT_F007, ChatGPT_F008, Codex_F003, DeepSeek_F301, DeepSeek_F302, Gemini_F301, Gemini_F302
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 10/10 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2: ChatGPT at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+[00:23:16]   [feedback] round 3 → round 4: 5 model(s) flagged
+[00:25:20]   S_k [C0004]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+[00:27:22]   S_k [C0005]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:29:25]   S_k [C0011]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:31:27]   S_k [C0026]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:33:29]   S_k [C0027]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(29648) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(29649) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:35:31]   S_k [C0028]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(29651) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30092) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30093) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:37:33]   S_k [C0029]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(30095) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30399) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30400) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:39:36]   S_k [C0030]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[00:39:36]   S_k: SEARCH block not found in source (first 60 chars: 'total_passed = gate_stats.get("total_passed", 0)\ntotal_faile')
+[00:39:36]   S_k [C0033]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[00:39:36]   S_k: SEARCH block not found in source (first 60 chars: 'if len(sources_used) == 1 and len(verdicts) > 5:\nsource_name')
+[00:39:36]   S_k [C0034]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[00:39:36]   S_k pipeline: 10 evaluated, 8 ADMISSIBLE, 2 REJECTED, 0 ESCALATE
+[00:39:36]   ITC [Gemini]: parse yield 1.00 (2+0/2 markers, baseline=1.31, threshold=1.06) — DEGRADATION
+[00:39:36]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.733 >= 0.25 (normal depletion)
+[00:39:36]   [GATE] location-keyed novel-crit this round=0 (ID-proxy crit=3; series tail=[1, 2, 0]; FEEDS γ-alt convergence)
+[00:39:36]   gamma_all: 0.070 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[00:39:36]   gamma_critical: 0.455 (continuous decay-curve diagnostic; the 3-round zero-new-critical count is its threshold-free convergence endpoint — same diminishing-returns principle, ~1.0 at clean critical convergence)
+[00:39:36]   Round 3: 10 findings, 811.7s
+[00:39:36]   Convergence: Gate failed: novel=9, contested=1
+[00:39:36]   γ-alt: critical-quiescence blocked: contested=1 at round 3 (novel_crit_recent=[1, 2, 0])
+[00:39:36] 
+------------------------------------------------------------
+[00:39:36] Round 4/15 (adaptive)
+[00:39:36] ------------------------------------------------------------
+[00:39:36]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[00:39:36]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:39:36]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[00:39:36]   Decomposed dispatch: claude_cli/opus, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:39:36]   Decomposed dispatch: deepseek/deepseek-v4-pro, 1 chunks, ~22,134 chars [tools-on synthesis]
+[00:39:36]   [claude-cli] multi-turn dispatch: 1 chunks + final, session=5bbf9366..., ~59,415 chars total
+[00:39:36]   [claude-cli] delivering chunk 1/2 (22,134 chars, target_0)
+Python(30401) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:39:36]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[00:39:36]   [deepseek:deepseek-v4-pro] independent session 1/1 (22,134 chars, target_0)
+[00:39:36]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[00:39:36]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/1 (22,134 chars, target_0)
+[00:39:41]   [claude-cli] delivering final instruction (chunk 2/2) [tools-on]
+Python(30424) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:41:23]   [openrouter:openai/gpt-5.5] section 1 analysis complete (15,287 chars)
+[00:41:23]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(30586) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30610) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:41:39]   [openrouter:openai/gpt-5.5] section 1 analysis complete (27,075 chars)
+[00:41:39]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[00:41:43]   [deepseek:deepseek-v4-pro] section 1 analysis complete (6,320 chars)
+[00:41:43]   [deepseek:deepseek-v4-pro] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(30612) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30613) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30614) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:41:49]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (15,851 chars)
+[00:41:49]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(30658) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30659) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30660) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30664) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30675) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30677) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30683) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30684) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:43:08]   [claude-cli] synthesis complete (212.2s, 7,798 chars)
+[00:43:08]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round4_cc2_20260718T234308Z.json
+[00:43:08]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r4_cc2_20260718T234308Z.json
+Python(30696) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30698) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30703) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30716) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30721) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30728) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30758) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:44:05]   [openrouter:openai/gpt-5.5] synthesis complete (268.8s, 10,724 chars)
+[00:44:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round4_chatgpt_20260718T234405Z.json
+[00:44:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r4_chatgpt_20260718T234405Z.json
+[00:45:36]   [openrouter:openai/gpt-5.5] synthesis complete (359.6s, 29,016 chars)
+[00:45:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round4_codex_20260718T234536Z.json
+[00:45:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r4_codex_20260718T234536Z.json
+[00:45:58]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (381.8s, 18,700 chars)
+[00:45:58]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round4_gemini_20260718T234558Z.json
+[00:45:58]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r4_gemini_20260718T234558Z.json
+[00:46:36]   [deepseek-v4-pro] falsifier format-repair applied (11,366 -> 1,656 chars)
+[00:46:36]   [deepseek:deepseek-v4-pro] synthesis complete (419.5s, 1,656 chars)
+[00:46:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round4_deepseek_20260718T234636Z.json
+[00:46:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r4_deepseek_20260718T234636Z.json
+[00:46:36]   R_k FAIL: Codex_F004 — model=0.366, recomputed=1.000, delta=0.634
+[00:46:36]   R_k FAIL: Codex_F006 — model=0.379, recomputed=1.000, delta=0.621
+[00:46:36]   R_k FAIL: Gemini_F401 — model=0.180, recomputed=0.287, delta=0.107
+[00:46:36]   R_k FAIL: Gemini_F402 — model=0.180, recomputed=0.299, delta=0.119
+[00:46:36]   R_k FAIL: Gemini_F403 — model=0.180, recomputed=0.287, delta=0.107
+[00:46:36]   R_k FAIL: Gemini_F404 — model=0.180, recomputed=0.287, delta=0.107
+[00:46:36]   R_k validation [CC2]: SKIP=1
+[00:46:36]   R_k validation [ChatGPT]: SKIP=1
+[00:46:36]   R_k validation [Codex]: FAIL=2, SKIP=1
+[00:46:36]   R_k validation [Gemini]: FAIL=4
+[00:46:36]   R_k validation [DeepSeek]: SKIP=2
+[00:46:36]   Registry: 9 novel / 11 raw, 43 total, rho=0.818, rho_avg=0.795
+[00:46:36]   CLOSED C0027: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0028: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0029: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0030: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0031: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0032: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0033: verified fix, no unresolved challenges
+[00:46:36]   CLOSED C0034: verified fix, no unresolved challenges
+Python(30858) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30859) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30860) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30861) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30862) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30863) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30865) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30868) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30871) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:46:37]   falsifier gate (tools decide): 7 CONFIRMED, 0 REFUTED, 2 -> HIL
+Python(30878) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30912) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30913) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30914) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 11 passed, 0 failed out of 11 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_F401 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F009 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F006 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F402 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F404 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 8/11 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 11 findings to classify.
+Python(30915) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F401 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 13.5s)
+Python(30945) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30970) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(30996) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F005 — regex=statistical → llm=mathematical (conf=0.75, llm-primary [software]: threshold N/A, 44.2s)
+Python(31074) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier: Codex_F006 — regex=code_behavioral llm=logical (conf=0.68, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 22.9s)
+Python(31101) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31125) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31153) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F403 — regex=statistical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 12.3s)
+Python(31189) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31228) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31253) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier: 7/11 agree with regex (63.6%), 3 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Codex_F005: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+Python(31284) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31287) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31288) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31310) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31311) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31313) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31314) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:NK v2 (v2): 11 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+Python(31319) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31320) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31321) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31323) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31401) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 65.4s — none
+INFO:immune.pipeline:B-Cell specialist (LIVE, domain=software): 2 verdicts
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 11 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 11 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F006 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F402 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F404 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F401 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F401 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F403 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F009 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 11 finding(s): CC2_F401, ChatGPT_F009, Codex_F004, Codex_F005, Codex_F006, DeepSeek_F001, DeepSeek_F002, Gemini_F401, Gemini_F402, Gemini_F403, Gemini_F404
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 11/11 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2: Codex at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2: Gemini at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+INFO:immune.pipeline:RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+[00:50:48]   [feedback] round 4 → round 5: 5 model(s) flagged
+Python(31474) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31762) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(31763) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:52:50]   S_k [C0004]: ADMISSIBLE sk=0.967 (S*=0.000) R: 0.500 -> 0.376
+Python(31764) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32011) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32016) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:54:52]   S_k [C0005]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(32020) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32414) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32415) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:56:54]   S_k [C0011]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(32417) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32674) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32675) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[00:58:56]   S_k [C0026]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(32676) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32969) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(32971) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:00:58]   S_k [C0035]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(32972) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33296) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33297) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:03:00]   S_k [C0036]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+Python(33298) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33658) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33660) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:05:03]   S_k [C0037]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[01:05:03]   S_k: SEARCH block not found in source (first 60 chars: 'sources_used: Dict[str, int] = {}\nfor v in verdicts:\n       ')
+[01:05:03]   S_k [C0038]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[01:05:03]   S_k: SEARCH block not found in source (first 60 chars: '# Missing provenance fields\nrequired_fields = {"origin_type"')
+[01:05:03]   S_k [C0039]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[01:05:03]   S_k: SEARCH block not found in source (first 60 chars: '# 2. Severity distribution: is severity concentrated?\nseveri')
+[01:05:03]   S_k [C0040]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[01:05:03]   S_k: SEARCH block not found in source (first 60 chars: 'total_passed = gate_stats.get("total_passed", 0)\ntotal_faile')
+[01:05:03]   S_k [C0041]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[01:05:03]   S_k pipeline: 11 evaluated, 7 ADMISSIBLE, 4 REJECTED, 0 ESCALATE
+[01:05:03]   [GATE] location-keyed novel-crit this round=0 (ID-proxy crit=1; series tail=[2, 0, 0]; FEEDS γ-alt convergence)
+[01:05:03]   gamma_all: 0.042 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[01:05:03]   gamma_critical: 0.426 (continuous decay-curve diagnostic; the 3-round zero-new-critical count is its threshold-free convergence endpoint — same diminishing-returns principle, ~1.0 at clean critical convergence)
+[01:05:03]   Round 4: 11 findings, 421.0s
+[01:05:03]   Convergence: Gate failed: novel=9, contested=1
+[01:05:03]   γ-alt: critical-quiescence blocked: contested=1 at round 4 (novel_crit_recent=[2, 0, 0])
+[01:05:03] 
+------------------------------------------------------------
+[01:05:03] Round 5/15 (adaptive)
+[01:05:03] ------------------------------------------------------------
+[01:05:03]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 1 chunks, ~22,134 chars [tools-on synthesis]
+[01:05:03]   Decomposed dispatch: claude_cli/opus, 1 chunks, ~22,134 chars [tools-on synthesis]
+[01:05:03]   [claude-cli] multi-turn dispatch: 1 chunks + final, session=26a7288e..., ~60,438 chars total
+[01:05:03]   [claude-cli] delivering chunk 1/2 (22,134 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[01:05:03]   Decomposed dispatch: deepseek/deepseek-v4-pro, 1 chunks, ~22,134 chars [tools-on synthesis]
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2795: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[01:05:03]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+Python(33662) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:05:03]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars [tools-on synthesis]
+[01:05:04]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[01:05:04]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[01:05:04]   [deepseek:deepseek-v4-pro] independent session 1/1 (22,134 chars, target_0)
+[01:05:04]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/1 (22,134 chars, target_0)
+[01:05:12]   [claude-cli] delivering final instruction (chunk 2/2) [tools-on]
+Python(33687) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:07:08]   [openrouter:openai/gpt-5.5] section 1 analysis complete (33,005 chars)
+[01:07:08]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+[01:07:17]   [openrouter:openai/gpt-5.5] section 1 analysis complete (28,881 chars)
+[01:07:17]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(33862) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:07:21]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (20,340 chars)
+[01:07:21]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(33868) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33882) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33886) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33888) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33890) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33920) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33921) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33923) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33924) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33925) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:08:23]   [deepseek:deepseek-v4-pro] section 1 analysis complete (12,000 chars)
+[01:08:23]   [deepseek:deepseek-v4-pro] delivering synthesis instruction (chunk 2/2) [tools-on]
+Python(33938) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:08:38]   [claude-cli] synthesis complete (214.2s, 7,811 chars)
+[01:08:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round5_cc2_20260719T000838Z.json
+[01:08:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r5_cc2_20260719T000838Z.json
+Python(33943) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(33948) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:08:49]   ChatGPT: multi-turn FAILED — APIStatusError: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 26651. To increase, visit https://openrouter.ai/settings/credits and add more credits', 'code': 402, 'metadata': {'provider_name': None, 'previous_errors': [{'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 26651. To increase, visit https://openrouter.ai/settings/credits and add more credits'}]}}, 'user_id': 'user_3BaGVzzIEJRAbaHBVwQPYtVxMYE'}
+Python(33949) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:08:49] Dispatching to ChatGPT (openai/gpt-5.5) via openrouter...
+[01:08:51]   [openrouter:openai/gpt-5.5] attempt 1 failed (0.9s): Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32
+Python(33952) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:08:54]   [openrouter:openai/gpt-5.5] retry 2/3
+[01:08:54]   [openrouter:openai/gpt-5.5] attempt 2 failed (0.4s): Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32
+[01:09:00]   [openrouter:openai/gpt-5.5] retry 3/3
+[01:09:01]   [openrouter:openai/gpt-5.5] attempt 3 failed (0.7s): Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32
+[01:09:01]   ChatGPT: RuntimeError — OpenRouter call failed after 3 attempts for openai/gpt-5.5. Last error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 19572. To increase, visit https://openrouter.ai/settings/credits and add more credits', 'code': 402, 'metadata': {'provider_name': None, 'previous_errors': [{'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 19572. To increase, visit https://openrouter.ai/settings/credits and add more credits'}]}}, 'user_id': 'user_3BaGVzzIEJRAbaHBVwQPYtVxMYE'}
+[01:09:01]   Decomposed dispatch: openrouter/openai/gpt-5.5, 1 chunks, ~22,134 chars
+[01:09:01]   [openrouter:openai/gpt-5.5] independent session 1/1 (22,134 chars, target_0)
+[01:09:05]   [openrouter:openai/gpt-5.5] synthesis complete (241.4s, 14,551 chars)
+[01:09:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round5_codex_20260719T000905Z.json
+[01:09:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r5_codex_20260719T000905Z.json
+Python(33961) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:09:22]   [openrouter:google/gemini-3.1-pro-preview] WARN: synthesis returned 0 chars (propagating empty — runner ITC will classify as TRANSIENT_FAILURE and adapt next round)
+[01:09:22]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (258.0s, 0 chars)
+[01:09:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round5_gemini_20260719T000922Z.json
+[01:09:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r5_gemini_20260719T000922Z.json
+[01:10:36]   [openrouter:openai/gpt-5.5] section 1 analysis complete (18,317 chars)
+[01:10:36]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 2/2)
+[01:10:37]   ChatGPT: multi-turn FAILED — APIStatusError: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 8877. To increase, visit https://openrouter.ai/settings/credits and add more credits', 'code': 402, 'metadata': {'provider_name': None, 'previous_errors': [{'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 32768 tokens, but can only afford 8877. To increase, visit https://openrouter.ai/settings/credits and add more credits'}]}}, 'user_id': 'user_3BaGVzzIEJRAbaHBVwQPYtVxMYE'}
+[01:10:37]   ChatGPT: SECONDARY ROUTE — primary openrouter/openai/gpt-5.5 failed/empty; trying codex_exec/gpt-5.5
+Python(34029) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:10:37] Dispatching to ChatGPT (gpt-5.5) via codex_exec...
+[01:10:37]   [codex] attempt 1 failed (0.1s): codex exec returned -9: 
+[01:10:37]   [codex] retry 2/3
+[01:10:37]   [codex] attempt 2 failed (0.0s): codex exec returned -9: 
+[01:10:37]   [codex] retry 3/3
+[01:10:37]   [codex] attempt 3 failed (0.0s): codex exec returned -9: 
+[01:10:37]   ChatGPT: SECONDARY ROUTE failed — RuntimeError: Codex call failed after 3 attempts. Last error: codex exec returned -9: 
+[01:11:37]   [deepseek-v4-pro] falsifier format-repair applied (9,610 -> 610 chars)
+[01:11:37]   [deepseek:deepseek-v4-pro] synthesis complete (393.1s, 610 chars)
+[01:11:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/round5_deepseek_20260719T001137Z.json
+[01:11:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/r5_deepseek_20260719T001137Z.json
+[01:11:37]   R_k FAIL: Codex_F007 — model=0.554, recomputed=1.000, delta=0.446
+[01:11:37]   R_k validation [CC2]: SKIP=1
+[01:11:37]   R_k validation [Codex]: FAIL=1
+[01:11:37]   R_k validation [DeepSeek]: SKIP=1
+[01:11:37]   Registry: 3 novel / 3 raw, 46 total, rho=1.000, rho_avg=0.906
+[01:11:37]   CLOSED C0036: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0037: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0038: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0039: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0040: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0042: verified fix, no unresolved challenges
+[01:11:37]   CLOSED C0043: verified fix, no unresolved challenges
+Python(34078) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34079) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34080) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[01:11:37]   falsifier gate (tools decide): 0 CONFIRMED, 0 REFUTED, 3 -> HIL
+Python(34081) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34104) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34105) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34106) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 3 passed, 0 failed out of 3 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_F501 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 1/3 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 3 findings to classify.
+Python(34107) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(34162) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F007 — regex=statistical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 12.8s)
+Python(34214) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
