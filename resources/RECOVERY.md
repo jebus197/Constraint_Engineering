@@ -1,11 +1,24 @@
 # Recovery Protocol
 
-Last updated: 20 July 2026 11:48 BST
+Last updated: 22 July 2026 00:26 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
-## ★ CURRENT STATE (20 July 2026) — Exp 43 DONE (generalisation demonstrated; formal convergence confounded by ONE mechanical artifact, diagnosed + fix sy/z3-verified). Fixes designed, NOT yet implemented. Reorder recommended. AWAITING founder confirmation to implement + run Exp 45.
+## ★ CURRENT STATE (22 July 2026, 00:22 BST) — Post-restart provenance session; NO code changed, NO experiment run. `dm/_memory.py` provenance question RESOLVED; the Exp 44 target choice is now the open founder decision. Otherwise unchanged from the 20-July block below.
+
+**21–22 July session (dm/_memory.py provenance + plain-English explanation):**
+- Founder queried the provenance of `dm/_memory.py` (ImmuneMemory: Beta-Binomial per-flaw-class priors, CUSUM drift, blended prior) — no recollection of it, and challenged whether an LLM could build a 10K-char module unprompted. **RESOLVED from git:** it is **Phase 4 of an agreed 8-phase batch (Phases 0–8) executed the evening of 12 April 2026** (commits `ad53693`→`e59dedd`, all under the founder's account), following that afternoon's **AIS literature assessment + Gemini/Codex confer** (`56a3e6e`); a same-evening commit records "execution order agreed" (`996ec52`). NOT a rogue build — the *granular* mechanics were model-chosen inside an agreed plan; non-recollection explained by it being 1 of 8 shadow phases pushed in ~2.5h.
+- **It IS a documented maths-model component** (appendix §1.5 "Persistent Memory and Blended Prior", feeding the prior of R_k(0)) — the founder's "meaningful bearing / derived from the maths model" recollection is CORRECT; the earlier "marginal bolt-on" framing was undersold and is corrected. Boundary: *documented in the model ≠ wired into the live gate* (γ_critical + zero-new-critical count + falsifier decide convergence; the blended prior connects to none of it).
+- **DORMANT:** grep confirms ZERO live importers (only its own test `test_dynamic_management.py`). Advisory-only (nudges the starting prior; can NEVER override a tool-decided verdict). Sound/standard/low-risk code (317 lines).
+- **Assessment:** useful only at SCALE (dozens of experiments, stable flaw taxonomy = BR2/production). Over the remaining 8-experiment arc it would do ~nothing (starts empty; thin per-target history; drift alarm has no repeated stream; orthogonal to convergence — could NOT have fixed Exp 43). Full plain-English explanation: `experimental_notes/Persistent_Immune_Memory_Explained_2026-07-22.md` (+ Desktop TTS).
+- **OPEN FOUNDER DECISION (gates Exp 44), to make after restart:** keep `dm/_memory.py` as the shake-out target (review ≠ use — a review commits to nothing) OR swap to a live target. Standing offer: enumerate which candidate targets are wired-live vs dormant so the choice is on full information.
+- Housekeeping: fixed a stale numbering table in the operational tracker (matrix still showed pre-20-July numbers) — Desktop canonical + repo mirror synced.
+- NEXT ON RESTART unchanged: implement FIX 1–5 (FFAFP + convergence regression suite, trace each myself) → build the chosen Exp 44 config → run under cy. Founder directive stands: finish efficiently, take the financial hit.
+
+---
+
+## ★ (SUPERSEDED) CURRENT STATE (20 July 2026) — Exp 43 DONE (generalisation demonstrated; formal convergence confounded by ONE mechanical artifact, diagnosed + fix sy/z3-verified). Fixes designed, NOT yet implemented. Reorder recommended. AWAITING founder confirmation to implement + run Exp 45.
 
 **FIRST READ on recovery:** this block, then the operational tracker (`experimental_notes/CDSFL_Agent_Operational_Plan.md` or Desktop copy). Full analysis + fix design in Desktop TTS notes `Exp43_Overnight_and_Contested_Analysis_2026-07-19` and `Exp44_Fix_Design_and_Forward_Plan_2026-07-19`.
 

@@ -1,31 +1,21 @@
 # CDSFL Current State
 
-Generated: 20 July 2026 11:48 BST (2026-07-20T11:48:40+01:00)
+Generated: 22 July 2026 00:26 BST (2026-07-22T00:26:22+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `3ab3404` A1 panel: complete to 5/5 — add CC2 (Opus 4.8) verdict (post CLI re-auth)
-- **Committed:** 2026-07-18 20:56:07 +0100
-- **Remote:** ahead by 184
+- **Last commit:** `a7c69e7` Lock in the confirmed remaining-experiment plan (20 July)
+- **Committed:** 2026-07-21 21:19:14 +0100
+- **Remote:** ahead by 186
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Gemini.json`
-- `M bench/logs/immune_pipeline.log`
 - `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
 - `M resources/RECOVERY.md`
-- `?? bench/logs/exp43_macrophage_locationkey_live_20260718T212843Z/`
-- `?? bench/logs/exp43_macrophage_locationkey_live_20260719T014326Z/`
-- `?? bench/logs/exp43_rerun_stdout.log`
-- `?? bench/logs/exp43_stdout.log`
-- `?? experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`
+- `?? experimental_notes/Persistent_Immune_Memory_Explained_2026-07-22.md`
 
 ---
 
@@ -57,6 +47,8 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `a7c69e7 Lock in the confirmed remaining-experiment plan (20 July)`
+- `a3d01a7 sv: Exp 43 DONE — location-keyed two-sided gate GENERALISED to macrophage_cell.py (over-production solved: crit [0,0,0] R6-11, gamma ~0.57, gate passed R4+R11); formal convergence blocked by ONE mechanical artifact (sub-critical UNCONFIRMED findings, falsifier-error/absent, mis-counted as contested — NOT model disagreement). Fix designed + sy/z3-verified (FIX 1 -> converges R6), not yet coded. Arc reorder recommended (no re-run; next Exp 45 shake-out; defer 44/49; keep 54). Notes: Desktop TTS Exp43_Overnight + Exp44_Fix_Design; resources/RECOVERY.md 20-July block. Founder: finish efficiently.`
 - `3ab3404 A1 panel: complete to 5/5 — add CC2 (Opus 4.8) verdict (post CLI re-auth)`
 - `ec99b84 sv: Phase 1 (A1-A4) executed overnight + adversarial-pass fixes; Exp 43 READY + PAUSED for founder review + CLI re-login. Report experimental_notes/CDSFL_Overnight_Phase1_2026-07-12.md (+ Plain_English + Desktop TTS); resources/RECOVERY.md + experimental_notes/CDSFL_Agent_Operational_Plan.md resume pointers advanced to 12 July. Adversarial pass caught+fixed the RunnerConfig.from_dict routing-alias gap.`
 - `b656549 Fix 5 findings from the A2/A3 adversarial verification pass`
@@ -65,5 +57,3 @@ Uncommitted files:
 - `df18201 A2: ouroboros shadow real-work loop — fetch+parse+read+brief real OA papers`
 - `dfc475d sv: discussion phase closed + agreed action list; founder rulings (retire compelled-convergence §10, rename routing now, calculator-analogy goal); pre-Exp-43 verification 250 tests green; .env locked. Phase 1 = pruning panel + ouroboros shadow build (parallel) + rename + §10 retire -> Exp 43`
 - `f15bfe4 Close discussion phase: founder corrections + agreed action list (Phase 1/2/3)`
-- `5b7a76f Ouroboros + self-improvement assessment (founder-ordered, pre-Exp-43)`
-- `cc71be5 ★ RETRACTION: the API keys were NEVER lost — the checker itself was the bug`

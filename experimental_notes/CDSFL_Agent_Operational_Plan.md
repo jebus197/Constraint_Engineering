@@ -113,6 +113,8 @@ Do **not** re-read the consolidated plan before this file; the consolidated plan
 
 ## Per-experiment target-article matrix (nailed down)
 
+> **★ NUMBERING SUPERSEDED (20 July 2026) — this table uses the ORIGINAL Exp 40–54 scheme.** The arc was RENUMBERED + LOCKED on 20 July: the two composition/interface tests (old 44 + old 49) were DROPPED (redundant — every run already exercises the whole integrated system), and the numbering closed up. **Authoritative current sequence: the 20-July CURRENT STATE block in `resources/RECOVERY.md` and the header of this file.** Map (new# = [old matrix#]): NEW 44 = `dm/_memory.py` [old 45, the shake-out] · NEW 45 = `evidence.py` [old 48] · NEW 46 = `dm/_shadow_stage6.py` [old 50] · NEW 47 = `dm/_divergence.py` [old 46] · NEW 48–51 = biology/physics/chemistry/engineering synth modules, TO DRAFT [old 47/51/52/53] · NEW 52 = 2×2 factorial [old 54]. The rows below are retained for their file-location / size / routing detail only; read the numbers via this map.
+
 Status legend: FIXED (specific, stable, ready) | PROVISIONAL (specified, scope TBC) | UNDECIDED (no target yet).
 
 | Exp | Target article / module | File location | Status | Notes |
