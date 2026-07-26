@@ -1,0 +1,79 @@
+{
+  "_comment": "Exp 44 (NEW numbering, founder 20 July + roadmap approval 26 July) — EVIDENCE LAYER review + SHAKE-OUT of the Exp 43 contested-convergence fixes. Target bench/evidence.py (641 lines, ~23K chars, 31 AST symbols): the semantic query/provenance layer over the VerificationChain (cryptographic accountability memory). PURPOSE: (1) the discriminating post-fix convergence test — evidence.py is size-matched to the 22K class where the contested artifact actually blocked Exp 43, so a clean two-sided-gate convergence here attributes to FIX 1-5, not target ease; (2) a genuine review of a meaningful dormant module destined for the accountability UX. INSTRUMENT IDENTICAL to the Exp 42/43 landmarks (single fixed runner, CONFIRM-only falsifier gate, capability-aware routing, code-location novelty key, two-sided gamma gate, domain=software) EXCEPT the four DECLARED deltas: (a) FIX 1 — contested_count excludes un-demonstrated sub-critical findings (C0013/C0040 class), surfaced in a non-gating residual queue; (b) FIX 2 — falsifier-ERROR findings of any severity are routed ONCE to a stronger writer; (c) FIX 3 — parser fallback no longer registers registry-referential prose (review summaries) as findings; (d) FIX 4 — max_contested_rounds 5 -> 3. FIX 5 (residual-clearing panel duty) rides the gated falsifier directive. domain stays 'software' deliberately: one variable at a time — the fixes are this run's change; the statistics-specialist domain switch is Exp 45's declared change. gamma is LOAD-BEARING (standing directive 2026-06-10): converged iff gamma_critical >= 0.30 AND 3 consecutive zero-new-critical rounds (location-keyed, settled series), plus A4 fail-safe, not-contested, not-churning, irreducible queue within bound.",
+  "test_article": "bench/evidence.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 16,
+  "extension_cap": 16,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp44_evidence_locationkey_live",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds set above the gamma ceiling (1.0) so the stall detector can never fire via gamma — convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/43.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "max_contested_rounds": 3,
+  "_max_contested_rounds_note": "FIX 4 (declared delta, 2026-07-22): lowered from the code default 5. Five rounds of paid compute to age out a churning residual was both wasteful and, against within-grace churn, ineffective (Exp 43). With FIX 1 in place sub-criticals no longer block, so this threshold now governs only genuinely contested items.",
+  "test_cmd": "python3 -m pytest bench/tests/test_evidence.py -q --tb=line",
+  "_test_cmd_note": "Evidence-layer regression guard (sandbox, informational — apply_fixes_back_enabled=false, static review).",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled/verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested — where, per FIX 1, un-demonstrated sub-critical findings are a logged NON-GATING residual queue; AND (5) not churning; AND (6) irreducible queue within bound.",
+    "pass_condition": "gamma_critical >= 0.30 AND 3 consecutive zero-NEW-genuine-critical rounds AND no unverified critical pending AND not contested (FIX-1 semantics) AND not churning AND irreducible queue within bound.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds; OR non-convergence (then assume MECHANICAL, diagnose under cy — do not demote gamma)."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": false,
+    "_section_10_note": "A4 (12 July 2026): section 10 was established INERT — the flag never reaches RunnerConfig and no compelled-convergence text reaches dispatch. Recorded false here for documentation accuracy; behaviourally identical to Exp 42/43, whose configs carried a stale 'true'."
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  },
+  "_pre_registration": "Frozen 2026-07-22 before the run. Exp 44 = the post-fix shake-out on bench/evidence.py under the instrument-identical two-sided gate, with exactly five declared deltas (FIX 1, 2, 3 in code; FIX 4 in this config; FIX 5 in the gated directive). PREDICTION: the run converges cleanly within the round budget (sy replay of Exp 43 data says the FIX-1 gate closes at the first 3-zero streak, ~R6-R8 expected here), with zero sub-critical contested blocking, the residual queue explicitly logged, and low/zero residual HIL. FAILURE MODES to report honestly: (a) does not converge -> assume MECHANICAL, diagnose under cy, do NOT demote gamma; (b) converges but the post-run HIL materiality review finds a genuine defect parked in the residual queue that should have gated -> FIX 1's severity boundary or falsifier-verdict test is mis-drawn, revisit before Exp 45; (c) contested still blocks -> FIX 1 mis-implemented or a new contested pathway exists. No tuning after results. z3 invariant carried: FIX 1 can never pass a critical-contested finding.",
+  "_plan_ref": "NEW Exp 44 (roadmap approved by founder 26 July 2026: forensic roadmap, 6-experiment compressed arc). Runner: reference_runner_v2.py with the 2026-07-22 fix tranche. Next: Exp 45 = dm/_memory.py with domain=statistics (declared specialist variable).",
+  "take_up_slack_enabled": true,
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "location_keyed_convergence=true keys the per-round NEW-critical count by which evidence.py symbol each critical names (AST-extracted, 31 target symbols), not by model-chosen finding-id — the instrument proven on Exp 42 (converged R6) and generalised on Exp 43."
+}

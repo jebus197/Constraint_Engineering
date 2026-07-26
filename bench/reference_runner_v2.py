@@ -244,7 +244,14 @@ _RUNNABLE_FALSIFIER_S2 = (
     "otherwise). Run it with the execute_python tool first. The runner RE-RUNS this "
     "exact python block and ITS result -- not your prose -- decides CONFIRMED or "
     "REFUTED. A prose-only or missing FALSIFIER cannot be confirmed and is sent to "
-    "a human."
+    "a human. "
+    # FIX 5 (Exp 43, 2026-07-22): residual-clearing is an explicit panel duty.
+    "RESIDUAL CLEARING: at the end of each round, review the registry's "
+    "UNCONFIRMED findings. For each one you originated (any severity): either "
+    "supply a corrected RUNNABLE falsifier for it, or explicitly declare it "
+    "unfalsifiable and issue CHALLENGE with your reason so it can be closed. Do "
+    "not leave your own findings parked as UNCONFIRMED round after round: an "
+    "unfalsified claim earns zero corroboration and will not block convergence."
 )
 _S2_PROSE_RE = re.compile(
     r"FALSIFICATION: This section is mandatory\. It must contain:.*?Did you test it\?",
@@ -677,7 +684,8 @@ class FindingRegistry:
             and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
         )
 
-    def contested_count(self, current_round: int, grace_period: int = 2) -> int:
+    def contested_count(self, current_round: int, grace_period: int = 2,
+                        subcritical_exclusion: bool = False) -> int:
         """Count actively contested non-terminal findings.
 
         Pure reader — no state mutation. UNCONFIRMED reopens are handled
@@ -693,6 +701,31 @@ class FindingRegistry:
                 continue
             # UNCONFIRMED: grace period read-only check
             if e["status"] == "UNCONFIRMED":
+                # FIX 1 (Exp 43, 2026-07-22): an UN-DEMONSTRATED SUB-CRITICAL
+                # must not gate convergence. The falsifier gate + routing are
+                # critical-only, so a sub-critical whose falsifier errored or
+                # is absent can never be tool-resolved; counting it as
+                # "contested" hands an unfalsified claim veto power over the
+                # gate — contra "unfalsified earns zero corroboration". It is
+                # excluded here and surfaced via undemonstrated_subcritical_ids()
+                # as a residual review queue instead. Criticals keep full
+                # protection (grace count here + open_crit_high_count).
+                # z3-verified: this never lets a critical-contested finding pass.
+                # Adversarial-pass repairs (2026-07-27): (FM-2) exclusion is
+                # OPT-IN via subcritical_exclusion (threaded from
+                # cfg.falsifier_gate_enabled) — default-off keeps legacy/gate-off
+                # runs byte-identical; (FM-1) an entry carrying an UNRESOLVED
+                # CHALLENGE is genuine model disagreement and is NEVER excluded,
+                # whatever its severity or falsifier state.
+                sev = float(e.get("severity") or 0.0)
+                if (subcritical_exclusion
+                        and sev < CRITICAL_SEVERITY_THRESHOLD
+                        and e.get("falsifier_verdict") != "CONFIRMED"):
+                    _ch = [v for v in e["verdicts"] if v["verdict"] == "CHALLENGE"]
+                    _cf = max((v["round"] for v in e["verdicts"]
+                               if v["verdict"] == "CONFIRM"), default=-1)
+                    if not any(v["round"] >= _cf for v in _ch):
+                        continue
                 rounds_in_status = current_round - e.get("last_status_change_round", 0)
                 if rounds_in_status < grace_period:
                     count += 1
@@ -710,6 +743,18 @@ class FindingRegistry:
                 if current_round - oldest >= grace_period:
                     count += 1
         return count
+
+    def undemonstrated_subcritical_ids(self) -> List[str]:
+        """FIX 1 residual queue: UNCONFIRMED sub-criticals with no CONFIRMED
+        demonstration (falsifier errored/absent). Excluded from
+        contested_count(); surfaced here for logging + human review."""
+        out = []
+        for cid, e in self.entries.items():
+            if (e["status"] == "UNCONFIRMED"
+                    and float(e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD
+                    and e.get("falsifier_verdict") != "CONFIRMED"):
+                out.append(cid)
+        return out
 
     # Cap full-detail active entries to bound context growth.
     # Overflow entries get compact one-line treatment.
@@ -1539,6 +1584,8 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         if e.get("falsifier_verdict") == "CONFIRMED"
     ]
 
+    _routing_attempts: list = []
+
     def resolve_fn(model_label, finding):
         mc = cfg_by_label.get(model_label)
         if mc is None:
@@ -1550,6 +1597,7 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             )
         except Exception:  # noqa: BLE001 — a failed rung just advances the ladder
             return ""
+        _routing_attempts.append(model_label)  # a model was genuinely reached
         return _extract_routing_falsifier(resp)
 
     tally = {"resolved": 0, "dup": 0, "hil": 0}
@@ -1557,17 +1605,36 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         if not e.get("escalated"):
             continue
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
-            continue
+            # FIX 2 (Exp 43, 2026-07-22): a finding whose falsifier ERRORED is
+            # un-demonstrated through no fault of the claim (broken test code,
+            # C0013 class). Route it ONCE to a stronger writer regardless of
+            # severity, then confirm or leave it in the residual queue — no
+            # indefinite limbo. One attempt only (error_routed flag) so
+            # sub-criticals cannot consume the ladder round after round.
+            if e.get("falsifier_verdict") != "ERROR" or e.get("error_routed"):
+                continue
+            # Adversarial-pass repair (2026-07-27): consume the one attempt only
+            # if a rung actually REACHED a model (transport-dead rounds — the
+            # 402-cascade class — must not burn the attempt nor mint a false
+            # "ladder exhausted" record). _routing_attempts is appended by
+            # resolve_fn on any successful dispatch return.
+            e["_error_route_pending"] = True
         if e.get("falsifier_verdict") == "CONFIRMED":
             continue
         finding = {
             "id": cid, "description": e.get("description", ""),
             "source_model": e.get("source_model"), "severity": e.get("severity"),
         }
+        _n0 = len(_routing_attempts)
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
             _routing_similarity,
         )
+        if e.pop("_error_route_pending", None):
+            if len(_routing_attempts) > _n0:
+                e["error_routed"] = True
+            elif not result.resolved and result.verdict != "DUPLICATE":
+                continue  # transport-dead: no model reached; retry a later round
         if result.verdict == "DUPLICATE":
             e["routing_duplicate_of"] = result.duplicate_of
             e["escalated"] = False
@@ -1639,9 +1706,20 @@ def _evaluate_gate_conditions(
             )
     if novel_this_round > cfg.max_novel_findings:
         failures.append(f"novel={novel_this_round}")
-    contested = registry.contested_count(round_idx)
+    contested = registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False)))
     if contested > 0:
         failures.append(f"contested={contested}")
+    # FIX 1 residual queue visibility: excluded un-demonstrated sub-criticals
+    # are logged (never gate) so the review queue is explicit, not silent.
+    residuals = registry.undemonstrated_subcritical_ids()
+    if residuals:
+        if len(residuals) > 6:
+            _log(f"  WARNING: residual queue size {len(residuals)} > 6 — "
+                 f"a LARGE un-demonstrated queue signals a mechanical fault "
+                 f"(intake/falsifier), not genuine residue. Review before trusting convergence.")
+        _log(f"  residual queue (un-demonstrated sub-criticals, non-gating): "
+             f"{len(residuals)} -> {', '.join(residuals[:8])}"
+             f"{'...' if len(residuals) > 8 else ''}")
     gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
     if not gamma_passed:
         failures.append(f"gamma={gamma:.3f} ({gate_level})")
@@ -2108,7 +2186,7 @@ def _check_stall_convergence(
     consecutive_churn_rounds: int = 0,
 ) -> Dict[str, Any]:
     open_ch = registry.open_crit_high_count()
-    contested = registry.contested_count(round_idx)
+    contested = registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False)))
     stall_history.append({"open_ch": open_ch, "contested": contested})
     result: Dict[str, Any] = {
         "round": round_idx, "open_ch": open_ch, "contested": contested,
@@ -2189,8 +2267,8 @@ def _check_budget_extension(
     reasons = []
     if registry.open_crit_high_count() > 0:
         reasons.append(f"open CRIT/HIGH: {registry.open_crit_high_count()}")
-    if registry.contested_count(round_idx) > 0:
-        reasons.append(f"contested: {registry.contested_count(round_idx)}")
+    if registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False))) > 0:
+        reasons.append(f"contested: {registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False)))}")
     if 0.25 <= gamma <= 0.35 and gamma > gamma_prev:
         reasons.append(f"gamma trending up in caution zone: {gamma:.3f}")
     if reasons:
@@ -5251,6 +5329,37 @@ def run_experiment(
 
     if cfg.resume and brain.load_checkpoint():
         start_round = brain.state.current_round + 1
+        # Partial-round contamination guard (Exp 43 lesson, 2026-07-22): the
+        # 18 July OpenRouter-402 cascade left a checkpoint whose last "completed"
+        # round held responses from only 2 of 5 models; a naive resume would have
+        # built the next round on a broken panel round. The per-round response
+        # files r{N}_{model}_*.json are the ground truth of who actually
+        # responded — verify the last completed round has one per configured
+        # model, and REFUSE the resume (fail loud, founder decides) otherwise.
+        try:
+            _last = brain.state.current_round
+            _expected = {m.lower() for m in
+                         (cfg.models if isinstance(cfg.models[0], str)
+                          else [getattr(m, "label", str(m)) for m in cfg.models])}
+            _expected |= {str(m).lower() for m in
+                          getattr(brain.state, "active_models", []) or []}
+            _seen = set()
+            for _p in brain.logs_dir.glob(f"r{_last}_*_*.json"):
+                _parts = _p.name.split("_")
+                if len(_parts) >= 3:
+                    _seen.add(_parts[1].lower())
+            _missing = _expected - _seen
+            if _missing:
+                raise RuntimeError(
+                    f"checkpoint round {_last} is PARTIAL — no response file for: "
+                    f"{sorted(_missing)}. Refusing to resume on a contaminated "
+                    f"round; re-run from scratch or repair the checkpoint."
+                )
+        except RuntimeError:
+            raise
+        except Exception as _grd_exc:  # noqa: BLE001 — guard must not break legacy resumes
+            _log(f"  WARNING: partial-round guard inconclusive ({_grd_exc}); "
+                 f"verify round {brain.state.current_round} coverage manually")
         _log(f"  RESUMED from round {start_round}")
         runner_ckpt = brain.logs_dir / "runner_state.json"
         if runner_ckpt.exists():
@@ -6119,7 +6228,7 @@ def run_experiment(
                 _check_gamma_alt_convergence(
                     round_idx, gamma, novel_critical_history, cfg,
                     unresolved_critical=_unresolved_crit,
-                    contested=registry.contested_count(round_idx),
+                    contested=registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False))),
                     rho_churn=rho_churn,
                     irreducible_queue=_irreducible_q,
                     gamma_critical=gamma_critical,  # TWO-SIDED gate: gamma is an ACTIVE condition

@@ -221,6 +221,13 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         kwargs["location_shadow_enabled"] = exp_cfg["location_shadow_enabled"]
     if "location_keyed_convergence" in exp_cfg:
         kwargs["location_keyed_convergence"] = exp_cfg["location_keyed_convergence"]
+    # Contested-handling fields (Exp 43 fix tranche, 2026-07-22). FIX 4 lowers
+    # max_contested_rounds per-config; without this passthrough the launcher
+    # path silently ran the code default (5) while the runner's own --config
+    # path honoured the JSON — the same silent-divergence class as the 12 July
+    # routing-alias gap. Caught by the Exp 44 both-paths pre-flight trace.
+    if "max_contested_rounds" in exp_cfg:
+        kwargs["max_contested_rounds"] = exp_cfg["max_contested_rounds"]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}

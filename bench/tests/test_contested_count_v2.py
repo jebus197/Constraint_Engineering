@@ -148,7 +148,7 @@ class TestSignatureStability:
     def test_signature_takes_current_round_and_grace_period(self):
         sig = inspect.signature(FindingRegistry.contested_count)
         params = list(sig.parameters.keys())
-        assert params == ["self", "current_round", "grace_period"], (
+        assert params == ["self", "current_round", "grace_period", "subcritical_exclusion"], (
             f"Signature drift: params={params}; expected "
             f"[self, current_round, grace_period]"
         )

@@ -866,7 +866,32 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
         r'^\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE)\s+C\d{4}',
         response, re.MULTILINE,
     ))
-    if not findings and not _has_verdicts and len(response.strip()) > 50:
+    # FIX 3 (Exp 43 C0040, 2026-07-22): also suppress fallback for
+    # registry-referential prose — a round-review/summary that cites
+    # canonical registry IDs (C0040-class leak: DeepSeek's "Round 8
+    # Review" cross-referencing C0019/C0020/... registered as a finding
+    # at sev 0.3 with no falsifier, then blocked the gate as "contested").
+    # A genuine unstructured NEW finding describes a defect; it does not
+    # cite canonical C-ids (models use local F-ids) and is not headed
+    # "Round N Review"/"Review Summary". Findings with the proper schema
+    # are unaffected — this touches only the last-resort fallback.
+    # Adversarial-pass repair (2026-07-27): scan for C-ids only OUTSIDE fenced
+    # code — a genuine unstructured finding may quote patch code containing
+    # C-id comments (proven historical case: exp36 r43 Codex evidence-tampering
+    # finding, later CONFIRMED as C0211, carries C-ids only inside ``` fences).
+    # (fences may already be unwrapped by earlier normalisation, leaving the
+    # quoted patch code inline — so also drop comment-style lines, where quoted
+    # C-id references live in the historical case.)
+    _prose_only = "\n".join(
+        _l for _l in re.sub(r'```.*?```', '', response, flags=re.S).splitlines()
+        if not _l.lstrip().startswith(('#', '//')))
+    _is_registry_prose = bool(
+        re.search(r'\bC\d{4}\b', _prose_only)
+        or re.search(r'^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?Review(?:\s+Summary)?\b',
+                     response.strip()[:80], re.IGNORECASE)
+    )
+    if (not findings and not _has_verdicts and not _is_registry_prose
+            and len(response.strip()) > 50):
         findings.append(Finding(
             finding_id=f"{model_id}_UNSTRUCTURED",
             model_id=model_id,
