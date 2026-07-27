@@ -29,4 +29,13 @@ Cosmetic defect noted for cleanup: the launcher prints "Experiment 42 reached a 
 
 ---
 
+
+## Correction and reframe (10:45–11:15 BST, post-run investigation)
+
+**The "6 irreducible HIL items awaiting review" line above was WRONG — a stale-flag counting artifact, corrected as follows.** Registry provenance shows all six were RESOLVED BY THE PANEL ITSELF via later-round routing (`resolved_by_routing`: Codex ×3, CC2 ×2, ChatGPT ×1) — each ended CLOSED with a CONFIRMED runnable falsifier and verified fix. Genuinely-open irreducible items: **ZERO**. The stale `irreducible_escalation`/`hil_escalated` stamps (set when an early-round ladder failed, never cleared on later success) and the unfiltered `irreducible_queue_count()` produced the false "6". Both defects fixed + test-pinned (commit `84a372b`); on the gamma-alt path the stale count could have FALSELY refused a genuine convergence — a latent false-blocker now removed.
+
+**The corrected headline is therefore stronger:** 82 of 82 findings decided by tools and panel; zero left to the human; zero genuinely irreducible; the only human-review items are two REOPEN attempts (audit-trail review, not pending work). By all reasonable measures this is the project's cleanest convergence: no compelled convergence, no hacks, no compromises — the two-sided gate closed because the mathematics and the experiment genuinely agreed.
+
+**Gemini C0007–C0009 empty descriptions RESOLVED:** Gemini's round-0 response was 12,197 chars of well-formed JSON — not empty. The parser's JSON path mapped only `DESCRIPTION` and dropped Gemini's FFF key `FIND`; content was present, harvest incomplete (the recurring Gemini parse-loss class). Fixed + test-pinned in `84a372b`.
+
 *Written under CDSFL note standard v1.2 (14 May 2026).*
