@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T225958Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1508,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-supplied `expected_hash` does not invalidate memory, allowing stale data to be loaded.\nFALSIFIER:\n```python\nimport tempfile, json, os\nfrom pathlib import Path\nfrom bench.dm._memory import ImmuneMemory\n\nmem = ImmuneMemory()\nmem.record_experiment(\"exp_test\", {1: (5, 2)})\ntmp = tempfile.mktemp(suffix=\".json\")\ntry:\n    mem.save(tmp)\n    with open(tmp) as f:\n        data = json.load(f)\n    data.pop(\"source_hash\", None)\n    with open(tmp, \"w\") as f:\n        json.dump(data, f)\n    loaded = ImmuneMemory.load(tmp, expected_hash=\"abcd1234\")\n    assert loaded._experiment_count == 0, \"FALSIFIED: memory not invalidated when stored_hash is missing\"\nfinally:\n    Path(tmp).unlink(missing_ok=True)\n```\n\nFINDING_ID: F002\nSEVERITY: 0.50\nFIND: CUSUM drift detection in `update_drift` lacks a slack parameter, so small persistent offsets accumulate and generate false drift alarms.\nFALSIFIER:\n```python\nfrom bench.dm._memory import ImmuneMemory\n\nclass FakeRecord:\n    def __init__(self):\n        self.total = 15\n        self.confirmed = 10\n        self.rejected = 5\n\nmem = ImmuneMemory()\nmem._records[1] = FakeRecord()\nmem.pi_mem = lambda fc: 0.6667   # fixed expected rate\n\nfor _ in range(201):\n    mem.update_drift(1, 0.6767)   # offset = +0.01 every call\n\nif mem._drift[1].cusum_pos > mem.drift_threshold:\n    raise AssertionError(\"FALSIFIED: false drift alarm triggered by missing slack\")\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 197.5,
+    "chars": 1508,
+    "findings_count": 2,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}
