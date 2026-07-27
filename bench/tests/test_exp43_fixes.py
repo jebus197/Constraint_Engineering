@@ -246,3 +246,57 @@ class TestFix3FallbackHardening:
                 "VERIFIED: FALSE\n")
         out = _parse_findings_core("CC2", 1, text)
         assert len(out) == 1 and out[0].severity == pytest.approx(0.8)
+
+
+# ── Exp 44 post-run fixes: stale irreducible flags (2026-07-27) ──────────────
+
+class TestExp44StaleFlagFixes:
+    def test_terminal_entries_leave_the_irreducible_queue(self):
+        """The 6-stale-flags episode: a CLOSED, routing-resolved entry must not
+        count in the irreducible queue (was 6 where truth was 0)."""
+        reg = FindingRegistry()
+        cid = _register(reg, "F020", 0.9, "CLOSED", "CONFIRMED")
+        reg.entries[cid]["irreducible_escalation"] = True  # stale stamp
+        assert reg.irreducible_queue_count() == 0
+
+    def test_open_irreducible_still_counts(self):
+        reg = FindingRegistry()
+        cid = _register(reg, "F021", 0.9, "UNCONFIRMED", "UNTOOLABLE")
+        reg.entries[cid]["irreducible_escalation"] = True
+        assert reg.irreducible_queue_count() == 1
+
+    def test_routing_resolution_clears_stale_stamps(self, monkeypatch):
+        resolved = SimpleNamespace(verdict="CONFIRMED", resolved=True,
+                                   duplicate_of=None, falsifier_code="assert 1",
+                                   model_used="CC2")
+        calls = []
+        def fake_route(finding, models, confirmed, resolve_fn, reverify, sim):
+            calls.append(finding["id"]); return resolved
+        import bench.routing as routing_mod
+        monkeypatch.setattr(routing_mod, "route", fake_route)
+        reg = FindingRegistry()
+        cid = _register(reg, "F022", 0.9, "UNCONFIRMED", "ERROR")
+        e = reg.entries[cid]
+        e["escalated"] = True
+        e["irreducible_escalation"] = True   # from an earlier exhausted round
+        e["hil_escalated"] = True
+        e["hil_reason"] = "routing ladder exhausted"
+        _apply_routing(reg, 9, SimpleNamespace(models=[SimpleNamespace(label="CC2")]),
+                       cfg=RunnerConfig(routing_enabled=True))
+        assert e["status"] == "CONFIRMED"
+        assert e["irreducible_escalation"] is False
+        assert e["hil_escalated"] is False and "hil_reason" not in e
+        assert reg.irreducible_queue_count() == 0
+
+
+class TestGeminiJsonFindKey:
+    def test_json_find_key_maps_to_description(self):
+        """Exp 44 C0007-9: Gemini JSON findings carry FIND, not DESCRIPTION —
+        the description must be harvested, not silently dropped."""
+        text = ('```json\n[{"FINDING_ID": "F001", "SEVERITY": 1.0, "FLAW_CLASS": 1,'
+                ' "ABSTRACTION_INDEX": 0.2,'
+                ' "FIND": "verify_bundle skips the chain_hash mismatch check",'
+                ' "FOLLOW": "attacker can modify records", "VERIFIED": false}]\n```')
+        out = _parse_findings_core("Gemini", 0, text)
+        assert len(out) == 1
+        assert "chain_hash" in out[0].description

@@ -678,9 +678,16 @@ class FindingRegistry:
         falsifier). They are excluded from the A4 'unverified pending' blocker so the
         loop can close around them — BUT a LARGE such queue is a mechanical-failure
         alarm (routing/dedup), not genuine irreducibility, and refuses convergence."""
+        # Exp 44 post-run fix (2026-07-27, founder-approved): exclude terminal
+        # statuses — a later-round routing success CLOSES the entry, and a
+        # resolved item must not keep occupying the queue (6 stale flags read
+        # as "6 irreducible" where the truth was 0, and on the gamma-alt path
+        # the stale count would have FALSELY refused a genuine convergence).
+        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
         return sum(
             1 for e in self.entries.values()
             if e.get("irreducible_escalation")
+            and e.get("status") not in _TERMINAL
             and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
         )
 
@@ -1646,6 +1653,12 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["verified"] = True
             e["escalated"] = False
             e["resolved_by_routing"] = result.model_used
+            # Exp 44 post-run fix (2026-07-27): a later-round success must clear
+            # the stale irreducible/HIL stamps from an earlier exhausted ladder,
+            # so queue counts and reports read truth (the 6-stale-flags episode).
+            e["irreducible_escalation"] = False
+            e["hil_escalated"] = False
+            e.pop("hil_reason", None)
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
         else:

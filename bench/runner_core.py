@@ -498,7 +498,14 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                         flaw_class = max(1, min(8, int(flaw_raw)))
                     abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
                     abstraction = max(0.0, min(1.0, abstraction))
-                    description = str(norm.get("DESCRIPTION", ""))
+                    description = str(norm.get("DESCRIPTION")
+                                  or norm.get("FIND")
+                                  or norm.get("FINDING")
+                                  or norm.get("DESC") or "")
+                # Exp 44 C0007-9 fix (2026-07-27): Gemini's JSON findings use
+                # the FFF key FIND, not DESCRIPTION — the old mapping silently
+                # registered empty descriptions (content was present, harvest
+                # incomplete — the recurring Gemini parse-loss class).
                     proposed_fix = str(norm.get("PROPOSED_FIX", ""))
                     target_file = _infer_target_file(
                         description, proposed_fix,
@@ -584,7 +591,14 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                     flaw_class = max(1, min(8, int(flaw_raw)))
                 abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
                 abstraction = max(0.0, min(1.0, abstraction))
-                description = str(norm.get("DESCRIPTION", ""))
+                description = str(norm.get("DESCRIPTION")
+                                  or norm.get("FIND")
+                                  or norm.get("FINDING")
+                                  or norm.get("DESC") or "")
+                # Exp 44 C0007-9 fix (2026-07-27): Gemini's JSON findings use
+                # the FFF key FIND, not DESCRIPTION — the old mapping silently
+                # registered empty descriptions (content was present, harvest
+                # incomplete — the recurring Gemini parse-loss class).
                 proposed_fix = str(norm.get("PROPOSED_FIX", ""))
                 target_file = _infer_target_file(
                     description, proposed_fix,
