@@ -171,7 +171,24 @@ def reverify_falsifier(
     # raw uncaught exception) means the falsifier is BROKEN, not that the defect
     # is real, and must NEVER auto-confirm; return ERROR so the runner can
     # re-ask the model or escalate.
-    if "FALSIFIED" in stdout or "AssertionError" in stderr:
+    # Exp 44 post-run fix (2026-07-27, C0025/C0034/C0009): the old substring
+    # test ("FALSIFIED" in stdout) matched "NOT FALSIFIED" — an honest negative
+    # report — and stamped it CONFIRMED, letting a demonstrated-ABSENT defect
+    # close as real (C0025, sev 0.90). Likewise a setup-guard AssertionError
+    # ("test setup failed: ...") is instrument breakage, not a demonstration
+    # (C0009). Verdict reading is now negation- and setup-aware:
+    #   1. An explicit negative report wins: NOT FALSIFIED -> REFUTED.
+    #   2. A setup/guard AssertionError -> ERROR (broken instrument, re-ask).
+    #   3. CONFIRMED requires the FALSIFIED token NOT preceded by NOT, or a
+    #      genuine (non-setup) AssertionError.
+    import re as _re
+    if _re.search(r"\bNOT[\s_-]?FALSIFIED\b", stdout, _re.IGNORECASE):
+        return "REFUTED"
+    _assert_err = "AssertionError" in stderr
+    if _assert_err and _re.search(r"AssertionError[^\n]*\b(setup|precondition|guard)\b",
+                                  stderr, _re.IGNORECASE):
+        return "ERROR"
+    if _re.search(r"(?<![A-Z_])FALSIFIED\b", stdout) or _assert_err:
         return "CONFIRMED"
     if r.returncode == 0:
         return "REFUTED"

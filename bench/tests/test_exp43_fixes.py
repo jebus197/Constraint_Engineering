@@ -300,3 +300,35 @@ class TestGeminiJsonFindKey:
         out = _parse_findings_core("Gemini", 0, text)
         assert len(out) == 1
         assert "chain_hash" in out[0].description
+
+
+# ── Exp 44 post-run: verdict-reader hygiene (C0025/C0034/C0009) ──────────────
+
+class TestVerdictReaderHygiene:
+    def _fake_run(self, monkeypatch, stdout="", stderr="", rc=0):
+        import subprocess as sp
+        class R: pass
+        r = R(); r.stdout = stdout; r.stderr = stderr; r.returncode = rc
+        monkeypatch.setattr(sp, "run", lambda *a, **k: r)
+
+    def test_not_falsified_is_refuted(self, monkeypatch):
+        """C0025/C0034: an honest negative report must never CONFIRM."""
+        from bench.falsifier_verify import reverify_falsifier
+        self._fake_run(monkeypatch, stdout="NOT FALSIFIED: defect absent", rc=0)
+        assert reverify_falsifier("print('x')") == "REFUTED"
+
+    def test_setup_guard_assertion_is_error(self, monkeypatch):
+        """C0009: a setup-guard AssertionError is instrument breakage."""
+        from bench.falsifier_verify import reverify_falsifier
+        self._fake_run(monkeypatch, stderr="AssertionError: test setup failed: policy was not mutated", rc=1)
+        assert reverify_falsifier("print('x')") == "ERROR"
+
+    def test_genuine_falsified_still_confirms(self, monkeypatch):
+        from bench.falsifier_verify import reverify_falsifier
+        self._fake_run(monkeypatch, stdout="FALSIFIED: guard skipped on empty hash", rc=0)
+        assert reverify_falsifier("print('x')") == "CONFIRMED"
+
+    def test_genuine_assertion_still_confirms(self, monkeypatch):
+        from bench.falsifier_verify import reverify_falsifier
+        self._fake_run(monkeypatch, stderr="AssertionError: accepted tampered record", rc=1)
+        assert reverify_falsifier("print('x')") == "CONFIRMED"
