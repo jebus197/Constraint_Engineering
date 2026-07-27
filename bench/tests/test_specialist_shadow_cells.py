@@ -1,3 +1,5 @@
+# NOTE (2026-07-27): S5 shadow constraint SUPERSEDED by founder directive —
+# all specialist B-Cells LIVE from Exp 44 onwards. Pins updated to live-era.
 """Tests for Exp 40 1E.4 — K/L/M functional specialist cells in shadow mode.
 
 Acceptance from the plan:
@@ -263,18 +265,18 @@ class TestPipelineShadowMode:
             domain=domain,
         )
 
-    def test_physics_shadow_records_verdict(self):
+    def test_physics_live_records_verdict(self):
         response = self._run("physics", _PHYSICS_ASTRO_CLAIM)
         # Must NOT be live, per constraint S5.
-        assert "b_cell_specialist_live" not in response.tool_usage
+        assert "b_cell_specialist_shadow" not in response.tool_usage
 
-    def test_chemistry_shadow_records_verdict(self):
+    def test_chemistry_live_records_verdict(self):
         response = self._run("chemistry", _CHEM_SMILES_CLAIM)
-        assert "b_cell_specialist_live" not in response.tool_usage
+        assert "b_cell_specialist_shadow" not in response.tool_usage
 
-    def test_engineering_shadow_records_verdict(self):
+    def test_engineering_live_records_verdict(self):
         response = self._run("engineering", _ENG_FOS_CLAIM)
-        assert "b_cell_specialist_live" not in response.tool_usage
+        assert "b_cell_specialist_shadow" not in response.tool_usage
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -282,18 +284,18 @@ class TestPipelineShadowMode:
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-class TestLiveSpecialistDomainsExcludesKLM:
+class TestLiveSpecialistDomainsIncludeKLM:
     """Any accidental promotion of K/L/M would trip this guard and force a
     code review. 1E.4 builds these out to FUNCTIONAL shadow, not live."""
 
-    def test_physics_not_live(self):
-        assert "physics" not in LIVE_SPECIALIST_DOMAINS
+    def test_physics_live(self):
+        assert "physics" in LIVE_SPECIALIST_DOMAINS
 
-    def test_chemistry_not_live(self):
-        assert "chemistry" not in LIVE_SPECIALIST_DOMAINS
+    def test_chemistry_live(self):
+        assert "chemistry" in LIVE_SPECIALIST_DOMAINS
 
-    def test_engineering_not_live(self):
-        assert "engineering" not in LIVE_SPECIALIST_DOMAINS
+    def test_engineering_live(self):
+        assert "engineering" in LIVE_SPECIALIST_DOMAINS
 
 
 # ═══════════════════════════════════════════════════════════════════════════

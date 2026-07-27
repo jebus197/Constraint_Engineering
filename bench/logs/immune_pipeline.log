@@ -48451,3 +48451,233 @@
 2026-07-27T11:20:44 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.80, v2=0.70, max=0.80 >= 0.5)
 2026-07-27T11:20:44 INFO Reconciliation UNSCORED: f1 — both pipelines REJECTED but low confidence (v1=0.35, v2=0.40, max=0.40 < 0.5) — absence of evidence, not evidence of absence
 2026-07-27T11:20:44 INFO Reconciliation UNSCORED: f1 — both pipelines REJECTED but low confidence (v1=0.36, v2=0.33, max=0.36 < 0.5) — absence of evidence, not evidence of absence
+2026-07-27T23:51:06 INFO Formalisation agent: f1 — REJECTED with 2 preconditions (potential false rejection, counter-verdict issued). Preconditions: ['x > 0', 'x > 0']
+2026-07-27T23:51:06 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 1 potential false rejections, 1 counter-verdicts
+2026-07-27T23:51:06 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:51:06 INFO LLM classifier: DISABLED (claude CLI not available). 1 findings skipped.
+2026-07-27T23:51:31 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:51:31 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:51:31 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:51:37 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:51:37 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:51:37 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:51:37 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:51:39 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:51:39 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:51:39 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:51:39 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:51:49 INFO Domain config loaded: physics (1 sections)
+2026-07-27T23:51:49 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:51:49 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:51:49 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:51:49 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:51:57 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.95, threshold=0.70 cleared, 8.4s)
+2026-07-27T23:51:57 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:51:57 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:51:57 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:51:57 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:51:59 INFO B-Cell specialist (LIVE, domain=physics): 1 verdicts
+2026-07-27T23:51:59 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:51:59 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 1 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:51:59 INFO Reconciliation LOCKED: sf1 — both pipelines REJECTED (v1=0.85, v2=0.59, max=0.85 >= 0.5)
+2026-07-27T23:51:59 INFO Reconciliation locked 1 finding(s): sf1
+2026-07-27T23:51:59 INFO Domain config loaded: chemistry (1 sections)
+2026-07-27T23:51:59 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:51:59 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:51:59 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:52:14 INFO LLM classifier: sf1 — regex=mathematical llm=code_behavioral (conf=0.85, BLOCKED by MATHEMATICAL guard, 14.6s)
+2026-07-27T23:52:14 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-07-27T23:52:14 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:52:14 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:52:14 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:52:16 INFO B-Cell specialist (LIVE, domain=chemistry): 1 verdicts
+2026-07-27T23:52:16 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:52:16 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:52:16 INFO Domain config loaded: engineering (1 sections)
+2026-07-27T23:52:16 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:52:16 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:52:16 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:52:16 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:52:24 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.95, threshold=0.70 cleared, 8.2s)
+2026-07-27T23:52:24 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:52:24 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:52:24 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:52:24 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:52:26 INFO B-Cell specialist (LIVE, domain=engineering): 1 verdicts
+2026-07-27T23:52:26 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:52:26 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:52:34 INFO Formalisation agent: f1 — REJECTED with 2 preconditions (potential false rejection, counter-verdict issued). Preconditions: ['x > 0', 'x > 0']
+2026-07-27T23:52:34 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 1 potential false rejections, 1 counter-verdicts
+2026-07-27T23:52:34 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:52:34 INFO LLM classifier: DISABLED (claude CLI not available). 1 findings skipped.
+2026-07-27T23:52:51 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:52:51 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:52:51 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:53:00 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:53:00 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:53:00 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:53:00 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:53:01 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:53:01 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:53:01 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:53:01 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:53:10 INFO Domain config loaded: physics (1 sections)
+2026-07-27T23:53:10 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:53:10 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:53:10 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:53:10 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:53:20 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.95, threshold=0.70 cleared, 9.8s)
+2026-07-27T23:53:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:53:20 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:53:20 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:53:20 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:53:22 INFO B-Cell specialist (LIVE, domain=physics): 1 verdicts
+2026-07-27T23:53:22 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:53:22 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 1 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:53:22 INFO Reconciliation LOCKED: sf1 — both pipelines REJECTED (v1=0.85, v2=0.59, max=0.85 >= 0.5)
+2026-07-27T23:53:22 INFO Reconciliation locked 1 finding(s): sf1
+2026-07-27T23:53:22 INFO Domain config loaded: chemistry (1 sections)
+2026-07-27T23:53:22 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:53:22 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:53:22 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:53:35 INFO LLM classifier: sf1 — regex=mathematical llm=code_behavioral (conf=0.80, BLOCKED by MATHEMATICAL guard, 13.6s)
+2026-07-27T23:53:35 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-07-27T23:53:35 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:53:35 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:53:35 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:53:37 INFO B-Cell specialist (LIVE, domain=chemistry): 1 verdicts
+2026-07-27T23:53:37 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:53:37 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:53:37 INFO Domain config loaded: engineering (1 sections)
+2026-07-27T23:53:37 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:53:37 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:53:37 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:53:37 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:53:44 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.95, threshold=0.70 cleared, 7.0s)
+2026-07-27T23:53:44 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:53:44 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:53:44 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:53:44 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:53:46 INFO B-Cell specialist (LIVE, domain=engineering): 1 verdicts
+2026-07-27T23:53:46 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:53:46 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:54:05 INFO Formalisation agent: f1 — REJECTED with 2 preconditions (potential false rejection, counter-verdict issued). Preconditions: ['x > 0', 'x > 0']
+2026-07-27T23:54:05 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 1 potential false rejections, 1 counter-verdicts
+2026-07-27T23:54:05 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:54:05 INFO LLM classifier: DISABLED (claude CLI not available). 1 findings skipped.
+2026-07-27T23:54:30 INFO Domain config loaded: mathematics (1 sections)
+2026-07-27T23:54:30 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:54:30 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:54:30 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:54:38 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:54:38 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:54:38 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:54:38 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:54:40 INFO B-Cell specialist (LIVE, domain=mathematics): 1 verdicts
+2026-07-27T23:54:40 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:54:40 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:54:40 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:54:40 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:54:40 INFO Domain config loaded: physics (1 sections)
+2026-07-27T23:54:40 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:54:40 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:54:40 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:54:48 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:54:48 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:54:48 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:54:48 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:54:51 INFO B-Cell specialist (LIVE, domain=physics): 1 verdicts
+2026-07-27T23:54:51 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:54:51 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:54:51 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:54:51 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:54:51 INFO Domain config loaded: chemistry (1 sections)
+2026-07-27T23:54:51 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:54:51 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:54:51 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:54:58 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:54:58 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:54:58 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:54:58 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:55:02 INFO B-Cell specialist (LIVE, domain=chemistry): 1 verdicts
+2026-07-27T23:55:02 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:55:02 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:55:02 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:55:02 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:55:02 INFO Domain config loaded: engineering (1 sections)
+2026-07-27T23:55:02 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:55:02 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:55:02 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:55:09 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:55:09 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:55:09 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:55:09 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:55:12 INFO B-Cell specialist (LIVE, domain=engineering): 1 verdicts
+2026-07-27T23:55:12 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:55:12 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:55:12 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:55:12 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:55:12 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:55:12 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:55:12 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:55:24 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:55:24 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:55:24 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:55:24 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:55:26 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:55:26 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:55:26 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:55:26 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:55:26 INFO Domain config loaded: mathematics (1 sections)
+2026-07-27T23:55:26 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:55:26 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:55:26 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:55:35 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T23:55:35 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:55:35 INFO   mf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:55:35 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:55:36 INFO B-Cell specialist (LIVE, domain=mathematics): 1 verdicts
+2026-07-27T23:55:36 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:55:36 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:55:36 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-07-27T23:55:36 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T23:55:45 INFO Domain config loaded: physics (1 sections)
+2026-07-27T23:55:45 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:55:45 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:55:45 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:55:45 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:55:56 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.85, threshold=0.70 cleared, 10.8s)
+2026-07-27T23:55:56 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:55:56 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:55:56 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:55:56 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:55:57 INFO B-Cell specialist (LIVE, domain=physics): 1 verdicts
+2026-07-27T23:55:57 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:55:57 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 1 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:55:57 INFO Reconciliation LOCKED: sf1 — both pipelines REJECTED (v1=0.85, v2=0.59, max=0.85 >= 0.5)
+2026-07-27T23:55:57 INFO Reconciliation locked 1 finding(s): sf1
+2026-07-27T23:55:57 INFO Domain config loaded: chemistry (1 sections)
+2026-07-27T23:55:57 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:55:57 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T23:55:57 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:56:08 INFO LLM classifier: sf1 — regex=mathematical llm=code_behavioral (conf=0.92, BLOCKED by MATHEMATICAL guard, 10.3s)
+2026-07-27T23:56:08 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-07-27T23:56:08 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:56:08 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:56:08 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:56:10 INFO B-Cell specialist (LIVE, domain=chemistry): 1 verdicts
+2026-07-27T23:56:10 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:56:10 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T23:56:10 INFO Domain config loaded: engineering (1 sections)
+2026-07-27T23:56:10 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T23:56:10 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-07-27T23:56:10 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T23:56:10 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T23:56:17 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.95, threshold=0.70 cleared, 7.4s)
+2026-07-27T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T23:56:17 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T23:56:17 INFO   sf1: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T23:56:17 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T23:56:19 INFO B-Cell specialist (LIVE, domain=engineering): 1 verdicts
+2026-07-27T23:56:19 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T23:56:19 INFO Helper T v2 (v2): 1 findings — 1 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE

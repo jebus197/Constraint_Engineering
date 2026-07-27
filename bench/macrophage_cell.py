@@ -286,7 +286,11 @@ class MacrophageCell:
             if values:
                 median_t = sorted(values)[len(values) // 2]
                 for stage, t in timings.items():
-                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:
+                    if t > median_t * self.TIMING_SPIKE_FACTOR and t > 0.5:
+                        # Shadow-audit repair (2026-07-27): the old `median_t > 0.1`
+                        # guard masked ALL spikes whenever the median stage was fast
+                        # (structurally blind in every Exp 44 round). Gate on the
+                        # spiking stage itself being non-trivial instead.
                         obs = MacrophageObservation(
                             observation_id=self._next_id(),
                             mode=self.mode,

@@ -511,15 +511,19 @@ class ShadowStage6Calibrator:
         """Track per-tool pass/fail rates."""
         cell_verdicts = getattr(immune_response, "cell_verdicts", {})
 
-        for cell_name, verdicts in cell_verdicts.items():
-            if cell_name not in self._cumulative_tool_fpr:
-                self._cumulative_tool_fpr[cell_name] = PerToolFPRLog(
-                    tool_name=cell_name,
-                )
-
-            tracker = self._cumulative_tool_fpr[cell_name]
-
+        # Shadow-audit repair (2026-07-27): cell_verdicts is keyed by
+        # FINDING ID (immune_agents.ImmuneResponse), so the old loop minted
+        # one 'tool' tracker per finding — hundreds of single-shot rows, no
+        # usable per-tool rates. Key by the verdict's tool_used/cell_type.
+        for _fid, verdicts in cell_verdicts.items():
             for verdict in verdicts:
+                tool = (getattr(verdict, "tool_used", "") or
+                        str(getattr(verdict, "cell_type", "unknown")))
+                if tool not in self._cumulative_tool_fpr:
+                    self._cumulative_tool_fpr[tool] = PerToolFPRLog(
+                        tool_name=tool,
+                    )
+                tracker = self._cumulative_tool_fpr[tool]
                 v = verdict if isinstance(verdict, str) else getattr(
                     verdict, "verdict", "UNCERTAIN"
                 )

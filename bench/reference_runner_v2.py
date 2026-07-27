@@ -3737,7 +3737,11 @@ def _run_shadow_cells(
             final_v = getattr(immune_result, "final_verdicts", None)
             if final_v:
                 passed = sum(1 for v in final_v.values() if v in ("CONFIRMED", "UNCERTAIN", "UNSCORED"))
-                failed = sum(1 for v in final_v.values() if v in ("REJECTED", "DUPLICATE"))
+                failed = sum(1 for v in final_v.values() if v == "REJECTED")
+                # Shadow-audit repair (2026-07-27): DUPLICATE = redundancy, not an
+                # invalid finding — counting it as a gate failure masked the
+                # macrophage's immune-deficiency check. Tracked separately:
+                duplicates = sum(1 for v in final_v.values() if v == "DUPLICATE")
                 by_origin: Dict[str, Dict[str, int]] = {}
                 for f in findings:
                     ot = getattr(f, "origin_type", "model") or "model"
