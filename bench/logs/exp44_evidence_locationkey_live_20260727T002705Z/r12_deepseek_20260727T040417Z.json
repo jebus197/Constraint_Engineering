@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T040417Z",
+  "phase": "r12",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2091,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.2\nFIND: `_describe_event` does not handle `event_type == \"verdict\"`, falling back to a generic default string instead of a verdict-specific description.\nFALSIFIER:\n```python\nfrom bench.evidence import _describe_event\n\nclass DummyEvent:\n    pass\n\nrec = DummyEvent()\nrec.event_type = \"verdict\"\nrec.artifact_type = \"model_chat_log\"\nrec.model = \"test\"\nrec.round_idx = 1\n\ndesc = _describe_event(rec, \"C0042\")\nif \"Verdict\" not in desc:\n    raise AssertionError(\"FALSIFIED: missing verdict branch\")\n```\n\nFINDING_ID: F002\nSEVERITY: 0.3\nFIND: `_classify_event` only inspects `dict` payloads; string payloads containing verdict keywords are not recognised, causing the event to default to `\"submitted\"`.\nFALSIFIER:\n```python\nfrom bench.evidence import _classify_event, EvidenceRecord\n\nrec = EvidenceRecord(\n    index=0,\n    artifact_type=\"model_chat_log\",\n    recorded_by=\"test\",\n    timestamp_utc=\"2025-01-01T00:00:00Z\",\n    storage_mode=\"full_payload\",\n    payload_hash=\"dummy\",\n    metadata={},\n    chain_hash=\"dummy\",\n    payload=\"CONFIRM C0042\",\n    experiment=\"test\",\n    model=\"test\",\n    round_idx=1,\n    finding_ids=[\"C0042\"],\n)\nresult = _classify_event(rec, \"C0042\")\nif result != \"confirmed\":\n    raise AssertionError(\"FALSIFIED: string payload not classified as confirmed\")\n```\n\nFINDING_ID: F003\nSEVERITY: 0.4\nFIND: `_classify_event` uses case‑sensitive substring matching for verdict keywords, so lowercase verdicts (e.g. `\"confirm C0042\"`) are misclassified as `\"submitted\"`.\nFALSIFIER:\n```python\nfrom bench.evidence import _classify_event, EvidenceRecord\n\nrec = EvidenceRecord(\n    index=0,\n    artifact_type=\"model_chat_log\",\n    recorded_by=\"test\",\n    timestamp_utc=\"2025-01-01T00:00:00Z\",\n    storage_mode=\"full_payload\",\n    payload_hash=\"dummy\",\n    metadata={},\n    chain_hash=\"dummy\",\n    payload={\"text\": \"confirm C0042\"},\n    experiment=\"test\",\n    model=\"test\",\n    round_idx=1,\n    finding_ids=[\"C0042\"],\n)\nresult = _classify_event(rec, \"C0042\")\nif result != \"confirmed\":\n    raise AssertionError(\"FALSIFIED: lowercase verdict misclassified\")\n```",
+  "metadata": {
+    "round": 12,
+    "elapsed": 451.3,
+    "chars": 2091,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

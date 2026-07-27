@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T034034Z",
+  "phase": "r10",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1651,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.15\nFIND: bench/evidence.py imports `os` but never uses it.\nFALSIFIER:\n```python\nimport ast, importlib, inspect, sys\n\n# Locate the source of bench.evidence\nmod = importlib.import_module('bench.evidence')\nsrc_file = inspect.getsourcefile(mod)\nif src_file is None:\n    sys.exit(0)                     # cannot check – exit cleanly\n\nwith open(src_file) as f:\n    source = f.read()\ntree = ast.parse(source)\n\n# Is there an 'import os' statement?\nimported_os = any(\n    isinstance(node, ast.Import) and any(alias.name == 'os' for alias in node.names)\n    for node in ast.walk(tree)\n)\n\nif imported_os:\n    all_names = [node.id for node in ast.walk(tree) if isinstance(node, ast.Name)]\n    if 'os' not in all_names:\n        raise AssertionError(\"Dead import: 'os' is imported but never used in bench/evidence.py\")\n# If we reach here without raising, the import is either absent or used – clean exit.\n```\n\nFINDING_ID: F002\nSEVERITY: 0.20\nFIND: Policy event description does not include the finding_id, unlike every other event type.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord, _classify_event, _describe_event\n\nrec = EvidenceRecord(\n    index=0,\n    artifact_type=\"policy_snapshot\",\n    recorded_by=\"falsifier\",\n    timestamp_utc=\"2025-01-01T00:00:00Z\",\n    storage_mode=\"full\",\n    payload_hash=\"abc\",\n    metadata={},\n    chain_hash=\"abc\",\n    payload=None,\n    experiment=\"exp\",\n    model=\"mod\",\n    round_idx=3,\n    finding_ids=[\"C0042\"]\n)\nevent_type = _classify_event(rec, \"C0042\")\ndetail = _describe_event(rec, \"C0042\")\nassert \"C0042\" in detail, f\"Policy event description missing finding ID: {detail}\"\n```",
+  "metadata": {
+    "round": 10,
+    "elapsed": 553.2,
+    "chars": 1651,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

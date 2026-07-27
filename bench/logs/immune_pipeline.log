@@ -47992,3 +47992,457 @@
 2026-07-27T01:19:47 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
 2026-07-27T01:19:47 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
 2026-07-27T01:19:47 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T01:20:16 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-07-27T01:20:16 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-07-27T01:20:16 INFO DC v2 (v2): 1/2 findings reclassified
+2026-07-27T01:20:16 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-07-27T01:20:41 INFO LLM classifier: f2 — regex=uncategorised llm=logical (conf=0.65, below threshold 0.70, 13.6s)
+2026-07-27T01:20:41 INFO LLM classifier: 1/2 agree with regex (50.0%), 0 overrides applied
+2026-07-27T01:20:41 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:20:51 INFO Layer 2 reclassification: f2 — UNCATEGORISED → code_behavioral (conf=0.80)
+2026-07-27T01:20:51 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T01:20:51 INFO   f1: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-07-27T01:20:52 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T01:20:53 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-07-27T01:20:53 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T01:20:53 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-07-27T01:20:53 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-07-27T01:20:53 INFO Reconciliation locked 1 finding(s): f2
+2026-07-27T01:20:53 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-07-27T01:20:53 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-07-27T01:20:53 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T01:20:53 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-07-27T01:20:53 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T01:20:53 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T01:21:03 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 9.9s)
+2026-07-27T01:21:03 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-07-27T01:21:03 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T01:21:03 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T01:21:03 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T01:21:03 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-07-27T01:21:03 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-07-27T01:21:03 INFO Reconciliation locked 1 finding(s): f1
+2026-07-27T01:21:03 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-07-27T01:21:03 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-07-27T01:21:03 INFO DC v2 (v2): 1/1 findings reclassified
+2026-07-27T01:21:03 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-07-27T01:21:14 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-07-27T01:21:14 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:21:29 WARNING Active LLM classifier timeout/error for f1: Command '['/opt/homebrew/bin/claude', '-p', 'You are a claim type classifier for a code verification pipeline.\nClassify the following finding description into exactly ONE category.\n\nRespond with EXACTLY two lines:\nLine 1: the category name (one of the options below)\nLine 2: your confidence as a decimal between 0.0 and 1.0\n\nCategories:\n- MATHEMATICAL: equations, inequalities, bounds, numeric relationships verifiable symbolically.\n- LOGICAL: if/then claims, invariant assertions, reachability arguments about code paths.\n- STATISTICAL: distributions, p-values, confidence intervals, statistical significance.\n- CODE_STRUCTURAL: missing or incorrect code structure (decorators, class hierarchy, absent method).\n- CODE_BEHAVIORAL: runtime behaviour bugs, wrong return values, incorrect state transitions.\n- UNCATEGORISED: does not clearly fit any of the above.\n\nFinding description:\nBug in parser', '--model', 'haiku', '--output-format', 'text', '--max-turns', '1']' timed out after 15 seconds
+2026-07-27T01:21:29 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T01:21:29 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T01:21:29 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T01:21:29 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-07-27T01:21:29 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-07-27T01:21:29 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-07-27T01:21:29 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-07-27T01:21:29 INFO DC v2 (v2): 0/10 findings reclassified
+2026-07-27T01:21:29 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-07-27T01:23:08 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-07-27T01:23:08 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T01:23:08 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T01:23:08 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T01:23:08 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-07-27T01:23:08 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-07-27T01:23:08 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-07-27T01:23:08 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-07-27T01:23:08 INFO DC v2 (v2): 0/1 findings reclassified
+2026-07-27T01:23:08 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:23:08 INFO Layer 2 reclassification: f1 — UNCATEGORISED → logical (conf=0.75)
+2026-07-27T01:23:08 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:23:08 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM logical conf=0.30, below threshold 0.55)
+2026-07-27T01:23:08 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:23:08 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
+2026-07-27T01:23:08 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-07-27T01:41:19 INFO Domain config loaded: software (1 sections)
+2026-07-27T01:41:19 INFO Skin barrier (v2): 11 passed, 0 failed out of 11 findings
+2026-07-27T01:41:19 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T01:41:19 INFO DC v2 reclassification: DeepSeek_F012 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T01:41:19 INFO DC v2 reclassification: DeepSeek_F014 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T01:41:19 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T01:41:19 INFO DC v2 (v2): 4/11 findings reclassified
+2026-07-27T01:41:19 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 11 findings to classify.
+2026-07-27T01:41:42 INFO LLM classifier OVERRIDE: Codex_F002 — regex=code_structural → llm=code_behavioral (conf=0.92, llm-primary [software]: threshold N/A, 10.6s)
+2026-07-27T01:41:54 INFO LLM classifier OVERRIDE: ChatGPT_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 11.9s)
+2026-07-27T01:42:36 INFO LLM classifier: Gemini_F001 — regex=code_behavioral llm=uncategorised (conf=0.50, llm=uncategorised: no valid reclass target, 6.9s)
+2026-07-27T01:42:45 INFO LLM classifier: Gemini_F002 — regex=code_behavioral llm=uncategorised (conf=0.50, llm=uncategorised: no valid reclass target, 8.7s)
+2026-07-27T01:42:51 INFO LLM classifier: Gemini_F003 — regex=code_behavioral llm=uncategorised (conf=0.50, llm=uncategorised: no valid reclass target, 5.8s)
+2026-07-27T01:43:20 INFO LLM classifier OVERRIDE: CC2_F002 — regex=mathematical → llm=logical (conf=0.82, llm-primary [software]: threshold N/A, 18.0s)
+2026-07-27T01:43:20 INFO LLM classifier: 5/11 agree with regex (45.5%), 3 overrides applied
+2026-07-27T01:43:20 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T01:43:20 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T01:43:30 INFO NK v2 (v2): 8 verdicts (8 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T01:45:37 INFO CT v2 (v2): 0 verdicts in 137.0s — none
+2026-07-27T01:45:37 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-07-27T01:45:37 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T01:45:37 INFO Helper T v2 (v2): 11 findings — 0 CONFIRMED, 0 REJECTED, 3 UNCERTAIN, 8 DUPLICATE
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: DeepSeek_F013 — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation LOCKED: DeepSeek_F012 — both pipelines REJECTED (v1=0.53, v2=0.53, max=0.53 >= 0.5)
+2026-07-27T01:45:37 INFO Reconciliation locked 8 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, Codex_F002, DeepSeek_F012, DeepSeek_F013, Gemini_F002, Gemini_F003
+2026-07-27T01:45:37 INFO RT v2: depletion (not autoimmune) — removal rate 8/11 (72.7%), all duplicates, rejected=0
+2026-07-27T01:45:37 INFO RT v2 (v2): depletion — 72.7% removal rate (all duplicates)
+2026-07-27T01:45:37 INFO Fix NOT verified: Codex_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-07-27T01:57:17 INFO Domain config loaded: software (1 sections)
+2026-07-27T01:57:17 INFO Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+2026-07-27T01:57:17 INFO DC v2 reclassification: CC2_F101 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T01:57:17 INFO DC v2 (v2): 1/9 findings reclassified
+2026-07-27T01:57:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+2026-07-27T01:57:27 INFO LLM classifier OVERRIDE: Codex_F004 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 9.6s)
+2026-07-27T01:58:14 INFO LLM classifier OVERRIDE: Gemini_F006 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 10.5s)
+2026-07-27T01:58:52 INFO LLM classifier: CC2_F101 — regex=code_behavioral llm=logical (conf=0.68, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 15.5s)
+2026-07-27T01:59:06 INFO LLM classifier: CC2_F102 — regex=code_behavioral llm=uncategorised (conf=0.78, llm=uncategorised: no valid reclass target, 13.8s)
+2026-07-27T01:59:06 INFO LLM classifier: 5/9 agree with regex (55.6%), 2 overrides applied
+2026-07-27T01:59:06 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T01:59:08 INFO NK v2 (v2): 9 verdicts (0 intra-round dups, 1 bugs closed, 0 escalated to HIL)
+2026-07-27T02:02:51 INFO CT v2 (v2): 0 verdicts in 225.0s — none
+2026-07-27T02:02:51 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-07-27T02:02:51 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T02:02:51 INFO Helper T v2 (v2): 9 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 9 DUPLICATE
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: CC2_F102 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation LOCKED: CC2_F101 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T02:02:51 INFO Reconciliation locked 9 finding(s): CC2_F101, CC2_F102, ChatGPT_F004, Codex_F004, DeepSeek_F001, Gemini_F004, Gemini_F005, Gemini_F006, Gemini_F007
+2026-07-27T02:02:51 INFO RT v2: depletion (not autoimmune) — removal rate 9/9 (100.0%), all duplicates, rejected=0
+2026-07-27T02:02:51 INFO RT v2: Gemini at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-07-27T02:02:51 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T02:23:50 INFO Domain config loaded: software (1 sections)
+2026-07-27T02:23:50 INFO Skin barrier (v2): 13 passed, 0 failed out of 13 findings
+2026-07-27T02:23:50 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T02:23:50 INFO DC v2 reclassification: CC2_F103 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T02:23:50 INFO DC v2 reclassification: CC2_F104 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T02:23:50 INFO DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T02:23:50 INFO DC v2 reclassification: Gemini_C0012 — v1=code_behavioral → v2=mathematical (conf=0.55)
+2026-07-27T02:23:50 INFO DC v2 (v2): 5/13 findings reclassified
+2026-07-27T02:23:50 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 13 findings to classify.
+2026-07-27T02:24:14 INFO LLM classifier OVERRIDE: CC2_F103 — regex=code_behavioral → llm=code_structural (conf=0.77, llm-primary [software]: threshold N/A, 12.6s)
+2026-07-27T02:24:26 INFO LLM classifier OVERRIDE: CC2_F104 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 11.3s)
+2026-07-27T02:24:50 INFO LLM classifier OVERRIDE: DeepSeek_F002 — regex=mathematical → llm=logical (conf=0.85, llm-primary [software]: threshold N/A, 13.6s)
+2026-07-27T02:25:04 INFO LLM classifier OVERRIDE: Gemini_C0012 — regex=mathematical → llm=code_behavioral (conf=0.87, llm-primary [software]: threshold N/A, 13.5s)
+2026-07-27T02:25:43 INFO LLM classifier OVERRIDE: Gemini_C0016 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 9.5s)
+2026-07-27T02:26:19 INFO LLM classifier OVERRIDE: Gemini_F001 — regex=mathematical → llm=code_behavioral (conf=0.88, llm-primary [software]: threshold N/A, 12.1s)
+2026-07-27T02:26:29 INFO LLM classifier OVERRIDE: Gemini_F002 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 9.7s)
+2026-07-27T02:26:29 INFO LLM classifier: 6/13 agree with regex (46.2%), 7 overrides applied
+2026-07-27T02:26:29 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T02:26:29 INFO   DeepSeek_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T02:26:31 INFO NK v2 (v2): 13 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T02:30:45 INFO CT v2 (v2): 0 verdicts in 256.7s — none
+2026-07-27T02:30:45 INFO B-Cell specialist (LIVE, domain=software): 5 verdicts
+2026-07-27T02:30:45 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T02:30:45 INFO Helper T v2 (v2): 13 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 13 DUPLICATE
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0012 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0014 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: CC2_F104 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0015 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0018 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.65, v2=0.65, max=0.65 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.65, v2=0.65, max=0.65 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0016 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Gemini_C0017 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: CC2_F103 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T02:30:45 INFO Reconciliation locked 13 finding(s): CC2_F103, CC2_F104, ChatGPT_F005, Codex_F005, DeepSeek_F002, Gemini_C0012, Gemini_C0014, Gemini_C0015, Gemini_C0016, Gemini_C0017, Gemini_C0018, Gemini_F001, Gemini_F002
+2026-07-27T02:30:45 INFO RT v2: depletion (not autoimmune) — removal rate 13/13 (100.0%), all duplicates, rejected=0
+2026-07-27T02:30:45 INFO RT v2: Gemini at 8/8 (100% removed) — windowing (round 2/3 before AUTOIMMUNE)
+2026-07-27T02:30:45 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T02:48:32 INFO Domain config loaded: software (1 sections)
+2026-07-27T02:48:32 INFO Skin barrier (v2): 16 passed, 1 failed out of 17 findings
+2026-07-27T02:48:32 INFO   BLOCKED: CC2_F201 — Cited file not found: (evidence.py
+2026-07-27T02:48:32 INFO DC v2 reclassification: DeepSeek_F301 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T02:48:32 INFO DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T02:48:32 INFO DC v2 (v2): 2/16 findings reclassified
+2026-07-27T02:48:32 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 16 findings to classify.
+2026-07-27T02:48:50 INFO LLM classifier OVERRIDE: ChatGPT_C0028 — regex=mathematical → llm=logical (conf=0.85, llm-primary [software]: threshold N/A, 18.1s)
+2026-07-27T02:49:18 INFO LLM classifier OVERRIDE: DeepSeek_F301 — regex=code_behavioral → llm=code_structural (conf=0.68, llm-primary [software]: threshold N/A, 14.0s)
+2026-07-27T02:49:51 INFO LLM classifier: Gemini_C0028 — regex=code_behavioral llm=logical (conf=0.85, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 12.8s)
+2026-07-27T02:51:35 INFO LLM classifier OVERRIDE: Gemini_F006 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 8.5s)
+2026-07-27T02:51:45 INFO LLM classifier OVERRIDE: Gemini_C0029 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 10.4s)
+2026-07-27T02:51:45 INFO LLM classifier: 11/16 agree with regex (68.8%), 4 overrides applied
+2026-07-27T02:51:45 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T02:51:45 INFO   ChatGPT_C0028: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T02:51:47 INFO NK v2 (v2): 16 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T02:54:18 INFO CT v2 (v2): 0 verdicts in 152.9s — none
+2026-07-27T02:54:18 INFO B-Cell specialist (LIVE, domain=software): 4 verdicts
+2026-07-27T02:54:18 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T02:54:18 INFO Helper T v2 (v2): 16 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 16 DUPLICATE
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0029 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: DeepSeek_F301 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0021 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: DeepSeek_F302 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: ChatGPT_C0028 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0027 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: ChatGPT_C0024 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0030 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0028 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation LOCKED: Gemini_C0031 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+2026-07-27T02:54:18 INFO Reconciliation locked 16 finding(s): ChatGPT_C0024, ChatGPT_C0028, DeepSeek_F301, DeepSeek_F302, Gemini_C0021, Gemini_C0027, Gemini_C0028, Gemini_C0029, Gemini_C0030, Gemini_C0031, Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F005, Gemini_F006
+2026-07-27T02:54:18 INFO RT v2: depletion (not autoimmune) — removal rate 16/16 (100.0%), all duplicates, rejected=0
+2026-07-27T02:54:18 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 12/12 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias
+2026-07-27T02:54:18 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 12/12 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias)
+2026-07-27T02:54:18 INFO Autoimmune override: resurrected 0 findings, kept 16 locked rejections
+2026-07-27T03:06:17 INFO Domain config loaded: software (1 sections)
+2026-07-27T03:06:17 INFO Skin barrier (v2): 4 passed, 0 failed out of 4 findings
+2026-07-27T03:06:17 INFO DC v2 reclassification: CC2_F401 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T03:06:17 INFO DC v2 reclassification: Gemini_F007 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:06:17 INFO DC v2 (v2): 2/4 findings reclassified
+2026-07-27T03:06:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 4 findings to classify.
+2026-07-27T03:06:32 INFO LLM classifier: CC2_F401 — regex=code_behavioral llm=logical (conf=0.70, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 14.8s)
+2026-07-27T03:06:43 INFO LLM classifier OVERRIDE: ChatGPT_F401 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 10.8s)
+2026-07-27T03:06:59 INFO LLM classifier OVERRIDE: Gemini_F006 — regex=mathematical → llm=code_behavioral (conf=0.88, llm-primary [software]: threshold N/A, 16.4s)
+2026-07-27T03:07:10 INFO LLM classifier: 1/4 agree with regex (25.0%), 2 overrides applied
+2026-07-27T03:07:10 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T03:07:12 INFO NK v2 (v2): 4 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T03:10:08 INFO CT v2 (v2): 0 verdicts in 177.4s — none
+2026-07-27T03:10:08 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-07-27T03:10:08 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T03:10:08 INFO Helper T v2 (v2): 4 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 4 DUPLICATE
+2026-07-27T03:10:08 INFO Reconciliation LOCKED: CC2_F401 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T03:10:08 INFO Reconciliation LOCKED: ChatGPT_F401 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-07-27T03:10:08 INFO Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+2026-07-27T03:10:08 INFO Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T03:10:08 INFO Reconciliation locked 4 finding(s): CC2_F401, ChatGPT_F401, Gemini_F006, Gemini_F007
+2026-07-27T03:23:38 INFO Domain config loaded: software (1 sections)
+2026-07-27T03:23:38 INFO Skin barrier (v2): 6 passed, 0 failed out of 6 findings
+2026-07-27T03:23:38 INFO DC v2 reclassification: ChatGPT_F501 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T03:23:38 INFO DC v2 reclassification: ChatGPT_C0001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:23:38 INFO DC v2 reclassification: CC2_F501 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:23:38 INFO DC v2 reclassification: Gemini_F008 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:23:38 INFO DC v2 reclassification: DeepSeek_F501 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:23:38 INFO DC v2 (v2): 5/6 findings reclassified
+2026-07-27T03:23:38 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 6 findings to classify.
+2026-07-27T03:24:16 INFO LLM classifier OVERRIDE: CC2_F501 — regex=code_behavioral → llm=code_structural (conf=0.78, llm-primary [software]: threshold N/A, 14.3s)
+2026-07-27T03:24:46 INFO LLM classifier OVERRIDE: Gemini_F009 — regex=mathematical → llm=code_behavioral (conf=0.92, llm-primary [software]: threshold N/A, 11.7s)
+2026-07-27T03:25:08 INFO LLM classifier: DeepSeek_F501 — regex=code_behavioral llm=logical (conf=0.75, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 21.1s)
+2026-07-27T03:25:08 INFO LLM classifier: 3/6 agree with regex (50.0%), 2 overrides applied
+2026-07-27T03:25:08 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T03:25:09 INFO NK v2 (v2): 6 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T03:27:19 INFO CT v2 (v2): 0 verdicts in 131.5s — none
+2026-07-27T03:27:19 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-07-27T03:27:19 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T03:27:19 INFO Helper T v2 (v2): 6 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 6 DUPLICATE
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: ChatGPT_F501 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: DeepSeek_F501 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: CC2_F501 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: Gemini_F009 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: ChatGPT_C0001 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation LOCKED: Gemini_F008 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+2026-07-27T03:27:19 INFO Reconciliation locked 6 finding(s): CC2_F501, ChatGPT_C0001, ChatGPT_F501, DeepSeek_F501, Gemini_F008, Gemini_F009
+2026-07-27T03:27:19 INFO RT v2: depletion (not autoimmune) — removal rate 6/6 (100.0%), all duplicates, rejected=0
+2026-07-27T03:27:19 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T03:39:40 INFO Domain config loaded: software (1 sections)
+2026-07-27T03:39:40 INFO Skin barrier (v2): 6 passed, 1 failed out of 7 findings
+2026-07-27T03:39:40 INFO   BLOCKED: CC2_F602 — Cited file not found: (evidence.py
+2026-07-27T03:39:40 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T03:39:40 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T03:39:40 INFO DC v2 reclassification: CC2_F601 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:39:40 INFO DC v2 reclassification: DeepSeek_F601 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:39:40 INFO DC v2 (v2): 4/6 findings reclassified
+2026-07-27T03:39:40 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 6 findings to classify.
+2026-07-27T03:40:40 INFO LLM classifier OVERRIDE: Gemini_F004 — regex=mathematical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 14.6s)
+2026-07-27T03:40:50 INFO LLM classifier OVERRIDE: Gemini_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 10.0s)
+2026-07-27T03:41:04 INFO LLM classifier: 4/6 agree with regex (66.7%), 2 overrides applied
+2026-07-27T03:41:04 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T03:41:05 INFO NK v2 (v2): 6 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T03:43:07 INFO CT v2 (v2): 0 verdicts in 123.3s — none
+2026-07-27T03:43:07 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-07-27T03:43:07 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T03:43:07 INFO Helper T v2 (v2): 6 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 6 DUPLICATE
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: CC2_F601 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation LOCKED: DeepSeek_F601 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T03:43:07 INFO Reconciliation locked 6 finding(s): CC2_F601, ChatGPT_F003, Codex_F003, DeepSeek_F601, Gemini_F001, Gemini_F004
+2026-07-27T03:43:07 INFO RT v2: depletion (not autoimmune) — removal rate 6/6 (100.0%), all duplicates, rejected=0
+2026-07-27T03:43:07 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T03:55:48 INFO Domain config loaded: software (1 sections)
+2026-07-27T03:55:48 INFO Skin barrier (v2): 6 passed, 0 failed out of 6 findings
+2026-07-27T03:55:48 INFO DC v2 reclassification: ChatGPT_VERDICT_C0045_MERGE — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T03:55:48 INFO DC v2 reclassification: CC2_F701 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T03:55:48 INFO DC v2 reclassification: CC2_F702 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T03:55:48 INFO DC v2 reclassification: DeepSeek_F701 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T03:55:48 INFO DC v2 (v2): 4/6 findings reclassified
+2026-07-27T03:55:48 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 6 findings to classify.
+2026-07-27T03:56:03 INFO LLM classifier: ChatGPT_VERDICT_C0045_MERGE — regex=code_behavioral llm=uncategorised (conf=0.80, llm=uncategorised: no valid reclass target, 15.0s)
+2026-07-27T03:56:13 INFO LLM classifier OVERRIDE: CC2_F701 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 10.6s)
+2026-07-27T03:56:25 INFO LLM classifier OVERRIDE: CC2_F702 — regex=code_behavioral → llm=code_structural (conf=0.78, llm-primary [software]: threshold N/A, 11.8s)
+2026-07-27T03:56:45 INFO LLM classifier: Gemini_F001 — regex=code_behavioral llm=uncategorised (conf=0.78, llm=uncategorised: no valid reclass target, 11.2s)
+2026-07-27T03:56:55 INFO LLM classifier: Gemini_F004 — regex=code_behavioral llm=uncategorised (conf=0.98, llm=uncategorised: no valid reclass target, 10.0s)
+2026-07-27T03:56:55 INFO LLM classifier: 1/6 agree with regex (16.7%), 2 overrides applied
+2026-07-27T03:56:55 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T03:56:57 INFO NK v2 (v2): 6 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T03:58:29 INFO CT v2 (v2): 0 verdicts in 93.3s — none
+2026-07-27T03:59:25 INFO B-Cell specialist (LIVE, domain=software): 2 verdicts
+2026-07-27T03:59:25 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T03:59:25 INFO Helper T v2 (v2): 6 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 6 DUPLICATE
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: ChatGPT_VERDICT_C0045_MERGE — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: DeepSeek_F701 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: CC2_F701 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation LOCKED: CC2_F702 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T03:59:25 INFO Reconciliation locked 6 finding(s): CC2_F701, CC2_F702, ChatGPT_VERDICT_C0045_MERGE, DeepSeek_F701, Gemini_F001, Gemini_F004
+2026-07-27T03:59:25 INFO RT v2: depletion (not autoimmune) — removal rate 6/6 (100.0%), all duplicates, rejected=0
+2026-07-27T03:59:25 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T04:12:26 INFO Domain config loaded: software (1 sections)
+2026-07-27T04:12:26 INFO Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+2026-07-27T04:12:26 INFO DC v2 reclassification: Codex_VERDICT_C0058_CONFIRM — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T04:12:26 INFO DC v2 reclassification: Gemini_VERDICT_C0050_CONFIRM — v1=code_behavioral → v2=mathematical (conf=0.55)
+2026-07-27T04:12:26 INFO DC v2 reclassification: DeepSeek_C0058 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T04:12:26 INFO DC v2 reclassification: CC2_F501 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T04:12:26 INFO DC v2 (v2): 4/9 findings reclassified
+2026-07-27T04:12:26 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+2026-07-27T04:13:23 INFO LLM classifier OVERRIDE: Gemini_VERDICT_C0050_CONFIRM — regex=mathematical → llm=logical (conf=0.75, llm-primary [software]: threshold N/A, 18.4s)
+2026-07-27T04:14:22 INFO LLM classifier: 8/9 agree with regex (88.9%), 1 overrides applied
+2026-07-27T04:14:22 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-07-27T04:14:22 INFO   Gemini_VERDICT_C0050_CONFIRM: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-07-27T04:14:24 INFO NK v2 (v2): 9 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T04:16:25 INFO CT v2 (v2): 0 verdicts in 122.6s — none
+2026-07-27T04:16:25 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-07-27T04:16:25 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T04:16:25 INFO Helper T v2 (v2): 9 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 9 DUPLICATE
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: DeepSeek_F801 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: DeepSeek_C0059 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: Gemini_VERDICT_C0050_CONFIRM — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: CC2_F501 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: DeepSeek_C0056 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: Gemini_VERDICT_C0058_CONFIRM — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: DeepSeek_C0058 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: Codex_VERDICT_C0058_CONFIRM — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation LOCKED: Gemini_VERDICT_C0056_CONFIRM — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-07-27T04:16:25 INFO Reconciliation locked 9 finding(s): CC2_F501, Codex_VERDICT_C0058_CONFIRM, DeepSeek_C0056, DeepSeek_C0058, DeepSeek_C0059, DeepSeek_F801, Gemini_VERDICT_C0050_CONFIRM, Gemini_VERDICT_C0056_CONFIRM, Gemini_VERDICT_C0058_CONFIRM
+2026-07-27T04:16:25 INFO RT v2: depletion (not autoimmune) — removal rate 9/9 (100.0%), all duplicates, rejected=0
+2026-07-27T04:16:25 INFO RT v2: Gemini at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-07-27T04:16:25 INFO RT v2: DeepSeek at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-07-27T04:16:25 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T04:26:07 INFO Domain config loaded: software (1 sections)
+2026-07-27T04:26:07 INFO Skin barrier (v2): 5 passed, 0 failed out of 5 findings
+2026-07-27T04:26:07 INFO DC v2 (v2): 0/5 findings reclassified
+2026-07-27T04:26:07 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 5 findings to classify.
+2026-07-27T04:26:26 INFO LLM classifier OVERRIDE: Gemini_C0050 — regex=mathematical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 18.8s)
+2026-07-27T04:26:35 INFO LLM classifier OVERRIDE: Gemini_C0060 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 9.8s)
+2026-07-27T04:27:05 INFO LLM classifier OVERRIDE: Gemini_C0057 — regex=mathematical → llm=code_structural (conf=0.85, llm-primary [software]: threshold N/A, 17.9s)
+2026-07-27T04:27:20 INFO LLM classifier OVERRIDE: Gemini_F901 — regex=code_behavioral → llm=code_structural (conf=0.87, llm-primary [software]: threshold N/A, 15.3s)
+2026-07-27T04:27:20 INFO LLM classifier: 1/5 agree with regex (20.0%), 4 overrides applied
+2026-07-27T04:27:20 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T04:27:22 INFO NK v2 (v2): 5 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T04:29:58 INFO CT v2 (v2): 0 verdicts in 157.3s — none
+2026-07-27T04:29:58 INFO B-Cell specialist (LIVE, domain=software): 2 verdicts
+2026-07-27T04:29:58 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T04:29:58 INFO Helper T v2 (v2): 5 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 5 DUPLICATE
+2026-07-27T04:29:58 INFO Reconciliation LOCKED: Gemini_C0066 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T04:29:58 INFO Reconciliation LOCKED: Gemini_F901 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T04:29:58 INFO Reconciliation LOCKED: Gemini_C0060 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T04:29:58 INFO Reconciliation LOCKED: Gemini_C0050 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+2026-07-27T04:29:58 INFO Reconciliation LOCKED: Gemini_C0057 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T04:29:58 INFO Reconciliation locked 5 finding(s): Gemini_C0050, Gemini_C0057, Gemini_C0060, Gemini_C0066, Gemini_F901
+2026-07-27T04:29:58 INFO RT v2: depletion (not autoimmune) — removal rate 5/5 (100.0%), all duplicates, rejected=0
+2026-07-27T04:29:58 INFO RT v2: Gemini at 5/5 (100% removed) — windowing (round 2/3 before AUTOIMMUNE)
+2026-07-27T04:29:58 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-07-27T04:43:47 INFO Domain config loaded: software (1 sections)
+2026-07-27T04:43:47 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-07-27T04:43:47 INFO DC v2 reclassification: CC2_CC1_F901 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T04:43:47 INFO DC v2 reclassification: CC2_CC1_F902 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T04:43:47 INFO DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T04:43:47 INFO DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T04:43:47 INFO DC v2 (v2): 4/10 findings reclassified
+2026-07-27T04:43:47 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-07-27T04:43:58 INFO LLM classifier: Gemini_VERDICT_Gemini_C0050_WITHDRAW — regex=code_behavioral llm=uncategorised (conf=0.95, llm=uncategorised: no valid reclass target, 10.9s)
+2026-07-27T04:44:09 INFO LLM classifier: Gemini_VERDICT_Gemini_F901_WITHDRAW — regex=code_behavioral llm=uncategorised (conf=0.95, llm=uncategorised: no valid reclass target, 10.6s)
+2026-07-27T04:44:19 INFO LLM classifier: Gemini_VERDICT_Gemini_C0060_WITHDRAW — regex=code_behavioral llm=uncategorised (conf=0.95, llm=uncategorised: no valid reclass target, 10.7s)
+2026-07-27T04:44:30 INFO LLM classifier: Gemini_VERDICT_Gemini_C0066_WITHDRAW — regex=code_behavioral llm=uncategorised (conf=0.95, llm=uncategorised: no valid reclass target, 10.7s)
+2026-07-27T04:44:42 INFO LLM classifier: Gemini_VERDICT_Gemini_C0057_WITHDRAW — regex=code_behavioral llm=uncategorised (conf=0.85, llm=uncategorised: no valid reclass target, 12.0s)
+2026-07-27T04:45:22 INFO LLM classifier OVERRIDE: CC2_CC1_F902 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 10.7s)
+2026-07-27T04:45:32 INFO LLM classifier OVERRIDE: DeepSeek_F001 — regex=code_behavioral → llm=code_structural (conf=0.95, llm-primary [software]: threshold N/A, 10.1s)
+2026-07-27T04:45:45 INFO LLM classifier OVERRIDE: DeepSeek_F002 — regex=code_behavioral → llm=code_structural (conf=0.85, llm-primary [software]: threshold N/A, 13.0s)
+2026-07-27T04:45:45 INFO LLM classifier: 2/10 agree with regex (20.0%), 3 overrides applied
+2026-07-27T04:45:45 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T04:45:46 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T04:47:03 INFO CT v2 (v2): 0 verdicts in 77.4s — none
+2026-07-27T04:47:03 INFO B-Cell specialist (LIVE, domain=software): 3 verdicts
+2026-07-27T04:47:03 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T04:47:03 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: CC2_CC1_F901 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: CC2_CC1_F902 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_VERDICT_Gemini_C0066_WITHDRAW — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_VERDICT_Gemini_F901_WITHDRAW — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_VERDICT_Gemini_C0050_WITHDRAW — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_VERDICT_Gemini_C0057_WITHDRAW — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation LOCKED: Gemini_VERDICT_Gemini_C0060_WITHDRAW — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-07-27T04:47:03 INFO Reconciliation locked 10 finding(s): CC2_CC1_F901, CC2_CC1_F902, DeepSeek_F001, DeepSeek_F002, Gemini_F001, Gemini_VERDICT_Gemini_C0050_WITHDRAW, Gemini_VERDICT_Gemini_C0057_WITHDRAW, Gemini_VERDICT_Gemini_C0060_WITHDRAW, Gemini_VERDICT_Gemini_C0066_WITHDRAW, Gemini_VERDICT_Gemini_F901_WITHDRAW
+2026-07-27T04:47:03 INFO RT v2: depletion (not autoimmune) — removal rate 10/10 (100.0%), all duplicates, rejected=0
+2026-07-27T04:47:03 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 6/6 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias
+2026-07-27T04:47:03 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 6/6 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias)
+2026-07-27T04:47:03 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-07-27T04:53:17 INFO Domain config loaded: software (1 sections)
+2026-07-27T04:53:17 INFO Skin barrier (v2): 3 passed, 0 failed out of 3 findings
+2026-07-27T04:53:17 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T04:53:17 INFO DC v2 reclassification: Gemini_F006 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-07-27T04:53:17 INFO DC v2 (v2): 2/3 findings reclassified
+2026-07-27T04:53:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 3 findings to classify.
+2026-07-27T04:53:30 INFO LLM classifier: ChatGPT_F001 — regex=code_behavioral llm=logical (conf=0.88, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 12.9s)
+2026-07-27T04:53:45 INFO LLM classifier OVERRIDE: ChatGPT_F002 — regex=mathematical → llm=code_behavioral (conf=0.78, llm-primary [software]: threshold N/A, 14.9s)
+2026-07-27T04:53:57 INFO LLM classifier: 1/3 agree with regex (33.3%), 1 overrides applied
+2026-07-27T04:53:57 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T04:53:58 INFO NK v2 (v2): 3 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T04:55:49 INFO CT v2 (v2): 0 verdicts in 111.7s — none
+2026-07-27T04:56:32 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-07-27T04:56:32 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T04:56:32 INFO Helper T v2 (v2): 3 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 3 DUPLICATE
+2026-07-27T04:56:32 INFO Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-07-27T04:56:32 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+2026-07-27T04:56:32 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+2026-07-27T04:56:32 INFO Reconciliation locked 3 finding(s): ChatGPT_F001, ChatGPT_F002, Gemini_F006
+2026-07-27T05:04:18 INFO Domain config loaded: software (1 sections)
+2026-07-27T05:04:18 INFO Skin barrier (v2): 4 passed, 0 failed out of 4 findings
+2026-07-27T05:04:18 INFO DC v2 reclassification: CC2_CC1_F1201 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-07-27T05:04:18 INFO DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T05:04:18 INFO DC v2 reclassification: DeepSeek_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-07-27T05:04:18 INFO DC v2 (v2): 3/4 findings reclassified
+2026-07-27T05:04:18 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 4 findings to classify.
+2026-07-27T05:04:47 INFO LLM classifier OVERRIDE: DeepSeek_F001 — regex=mathematical → llm=code_structural (conf=0.85, llm-primary [software]: threshold N/A, 16.2s)
+2026-07-27T05:05:08 INFO LLM classifier: 3/4 agree with regex (75.0%), 1 overrides applied
+2026-07-27T05:05:08 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-07-27T05:05:09 INFO NK v2 (v2): 4 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-07-27T05:07:57 INFO CT v2 (v2): 0 verdicts in 168.3s — none
+2026-07-27T05:07:57 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-07-27T05:07:57 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-07-27T05:07:57 INFO Helper T v2 (v2): 4 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 4 DUPLICATE
+2026-07-27T05:07:57 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T05:07:57 INFO Reconciliation LOCKED: DeepSeek_F003 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-07-27T05:07:57 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T05:07:57 INFO Reconciliation LOCKED: CC2_CC1_F1201 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-07-27T05:07:57 INFO Reconciliation locked 4 finding(s): CC2_CC1_F1201, DeepSeek_F001, DeepSeek_F002, DeepSeek_F003

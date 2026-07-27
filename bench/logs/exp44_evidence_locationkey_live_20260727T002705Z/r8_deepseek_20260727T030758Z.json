@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T030758Z",
+  "phase": "r8",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2788,
+  "response": "FINDING_ID: C0058\nSEVERITY: 0.60\nFIND: Model-chat payload stored as a string is not inspected and falls through to “submitted” classification.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord, _classify_event\n\n# A string payload that, if it were a dict, would match a model-chat pattern\nrec = EvidenceRecord(\n    index=0,\n    artifact_type=\"chat_log\",\n    recorded_by=\"test\",\n    timestamp_utc=\"2024-01-01T00:00:00Z\",\n    storage_mode=\"full\",\n    payload_hash=\"0\" * 64,\n    metadata={},\n    chain_hash=\"x\",\n    payload='{\"type\": \"model_chat_log\", \"content\": \"hello\"}',\n)\n\ncat = _classify_event(rec)\nif cat == \"submitted\":\n    raise AssertionError(\"FALSIFIED: string payload incorrectly classified as submitted due to missing string-payload branch\")\n```\n\nFINDING_ID: C0056\nSEVERITY: 0.50\nFIND: Merge events are classified as “submitted” on the source side instead of “merged”.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord, _classify_event\n\n# Simulate a merge event (metadata marks action as MERGE)\nrec = EvidenceRecord(\n    index=0,\n    artifact_type=\"evidence\",\n    recorded_by=\"test\",\n    timestamp_utc=\"2024-01-01T00:00:00Z\",\n    storage_mode=\"full\",\n    payload_hash=\"0\" * 64,\n    metadata={\"action\": \"MERGE\"},\n    chain_hash=\"x\",\n    payload=None,\n)\n\ncat = _classify_event(rec)\nif cat != \"merged\":\n    raise AssertionError(f\"FALSIFIED: merge event classified as '{cat}' instead of 'merged'\")\n```\n\nFINDING_ID: C0059\nSEVERITY: 0.65\nFIND: EvidenceRecord.from_chain_record raises KeyError when the raw record dict is missing the “chain_hash” key.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord\n\n# Construct a record dict lacking \"chain_hash\"\nrecord = {\n    \"sealed_body\": {\n        \"artifact_type\": \"t\",\n        \"recorded_by\": \"x\",\n        \"timestamp_utc\": \"2025-01-01T00:00:00Z\",\n        \"storage_mode\": \"full\",\n        \"payload_hash\": \"0\" * 64,\n        \"metadata\": {},\n        \"payload\": None,\n    }\n}\n\ntry:\n    EvidenceRecord.from_chain_record(0, record)\nexcept KeyError as e:\n    raise AssertionError(\"FALSIFIED: missing chain_hash key causes KeyError\") from e\n```\n\nFINDING_ID: F801\nSEVERITY: 0.65\nFIND: EvidenceRecord.from_chain_record crashes on missing “chain_hash” key due to direct key access.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord\n\n# Construct a record dict lacking \"chain_hash\"\nrecord = {\n    \"sealed_body\": {\n        \"artifact_type\": \"t\",\n        \"recorded_by\": \"x\",\n        \"timestamp_utc\": \"2025-01-01T00:00:00Z\",\n        \"storage_mode\": \"full\",\n        \"payload_hash\": \"0\" * 64,\n        \"metadata\": {},\n        \"payload\": None,\n    }\n}\n\ntry:\n    EvidenceRecord.from_chain_record(0, record)\nexcept KeyError as e:\n    raise AssertionError(\"FALSIFIED: missing chain_hash key causes KeyError\") from e\n```",
+  "metadata": {
+    "round": 8,
+    "elapsed": 472.2,
+    "chars": 2788,
+    "findings_count": 4,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

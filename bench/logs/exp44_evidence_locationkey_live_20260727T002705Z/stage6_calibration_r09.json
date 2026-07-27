@@ -1,0 +1,731 @@
+{
+  "round_idx": 9,
+  "findings": [
+    {
+      "finding_id": "Gemini_C0050",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.632,
+      "flaw_class": 6,
+      "encounter_count": 13,
+      "description_snippet": "`EvidenceStore.verify_bundle()` bypasses the `chain_hash` mismatch check if either the record or the proof is missing th"
+    },
+    {
+      "finding_id": "Gemini_C0060",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6354,
+      "flaw_class": 6,
+      "encounter_count": 14,
+      "description_snippet": "`_classify_event` only scans `model_chat_log` payloads when `rec.payload` is a truthy `dict`. It fails to inspect string"
+    },
+    {
+      "finding_id": "Gemini_C0066",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6386,
+      "flaw_class": 6,
+      "encounter_count": 15,
+      "description_snippet": "`EvidenceRecord.from_chain_record` raises `KeyError` when the raw record dict is missing the `chain_hash` key due to dir"
+    },
+    {
+      "finding_id": "Gemini_C0057",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6282,
+      "flaw_class": 4,
+      "encounter_count": 12,
+      "description_snippet": "`_describe_event()` lacks a dispatch branch for `event_type == \"verdict\"`."
+    },
+    {
+      "finding_id": "Gemini_F901",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.632,
+      "flaw_class": 4,
+      "encounter_count": 13,
+      "description_snippet": "`EvidenceStore.export_bundle()` omits `artifact_type` from its filter parameters, preventing direct export of bundles by"
+    }
+  ],
+  "tool_fpr": {
+    "Codex_F001": {
+      "tool_name": "Codex_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F002": {
+      "tool_name": "Codex_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F001": {
+      "tool_name": "ChatGPT_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F012": {
+      "tool_name": "DeepSeek_F012",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F013": {
+      "tool_name": "DeepSeek_F013",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F014": {
+      "tool_name": "DeepSeek_F014",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F001": {
+      "tool_name": "Gemini_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 9,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F002": {
+      "tool_name": "Gemini_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F003": {
+      "tool_name": "Gemini_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F001": {
+      "tool_name": "CC2_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F002": {
+      "tool_name": "CC2_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F004": {
+      "tool_name": "Codex_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F004": {
+      "tool_name": "ChatGPT_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F004": {
+      "tool_name": "Gemini_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F005": {
+      "tool_name": "Gemini_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F006": {
+      "tool_name": "Gemini_F006",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F007": {
+      "tool_name": "Gemini_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F001": {
+      "tool_name": "DeepSeek_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F101": {
+      "tool_name": "CC2_F101",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F102": {
+      "tool_name": "CC2_F102",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F005": {
+      "tool_name": "Codex_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F103": {
+      "tool_name": "CC2_F103",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F104": {
+      "tool_name": "CC2_F104",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F005": {
+      "tool_name": "ChatGPT_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0012": {
+      "tool_name": "Gemini_C0012",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0014": {
+      "tool_name": "Gemini_C0014",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0015": {
+      "tool_name": "Gemini_C0015",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0016": {
+      "tool_name": "Gemini_C0016",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0017": {
+      "tool_name": "Gemini_C0017",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0018": {
+      "tool_name": "Gemini_C0018",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F002": {
+      "tool_name": "DeepSeek_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_C0024": {
+      "tool_name": "ChatGPT_C0024",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F301": {
+      "tool_name": "DeepSeek_F301",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F302": {
+      "tool_name": "DeepSeek_F302",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0028": {
+      "tool_name": "Gemini_C0028",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0031": {
+      "tool_name": "Gemini_C0031",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0027": {
+      "tool_name": "Gemini_C0027",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0021": {
+      "tool_name": "Gemini_C0021",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0030": {
+      "tool_name": "Gemini_C0030",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0029": {
+      "tool_name": "Gemini_C0029",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_C0028": {
+      "tool_name": "ChatGPT_C0028",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F401": {
+      "tool_name": "CC2_F401",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F401": {
+      "tool_name": "ChatGPT_F401",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F501": {
+      "tool_name": "ChatGPT_F501",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_C0001": {
+      "tool_name": "ChatGPT_C0001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F501": {
+      "tool_name": "CC2_F501",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F008": {
+      "tool_name": "Gemini_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F009": {
+      "tool_name": "Gemini_F009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F501": {
+      "tool_name": "DeepSeek_F501",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F003": {
+      "tool_name": "ChatGPT_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F003": {
+      "tool_name": "Codex_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F601": {
+      "tool_name": "CC2_F601",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F601": {
+      "tool_name": "DeepSeek_F601",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_VERDICT_C0045_MERGE": {
+      "tool_name": "ChatGPT_VERDICT_C0045_MERGE",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F701": {
+      "tool_name": "CC2_F701",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F702": {
+      "tool_name": "CC2_F702",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F701": {
+      "tool_name": "DeepSeek_F701",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_VERDICT_C0058_CONFIRM": {
+      "tool_name": "Codex_VERDICT_C0058_CONFIRM",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0058_CONFIRM": {
+      "tool_name": "Gemini_VERDICT_C0058_CONFIRM",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0056_CONFIRM": {
+      "tool_name": "Gemini_VERDICT_C0056_CONFIRM",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_C0058": {
+      "tool_name": "DeepSeek_C0058",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_C0056": {
+      "tool_name": "DeepSeek_C0056",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_C0059": {
+      "tool_name": "DeepSeek_C0059",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F801": {
+      "tool_name": "DeepSeek_F801",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0050_CONFIRM": {
+      "tool_name": "Gemini_VERDICT_C0050_CONFIRM",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0050": {
+      "tool_name": "Gemini_C0050",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0060": {
+      "tool_name": "Gemini_C0060",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0066": {
+      "tool_name": "Gemini_C0066",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0057": {
+      "tool_name": "Gemini_C0057",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F901": {
+      "tool_name": "Gemini_F901",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.5,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785122998.2026649
+}

@@ -1,11 +1,17 @@
 # Recovery Protocol
 
-Last updated: 22 July 2026 00:26 BST
+Last updated: 27 July 2026 05:11 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
-## ★ CURRENT STATE (22 July 2026, 00:22 BST) — Post-restart provenance session; NO code changed, NO experiment run. `dm/_memory.py` provenance question RESOLVED; the Exp 44 target choice is now the open founder decision. Otherwise unchanged from the 20-July block below.
+## ★ CURRENT STATE (27 July 2026, 05:15 BST) — ★★ EXP 44 CONVERGED CLEANLY AT R12: the blue-water result. ZERO residue (82 findings: 63 CLOSED / 13 CONFIRMED / 1 MERGED / 5 REFUTED; no OPEN/UNCONFIRMED/CONTESTED; FIX-1 residual queue EMPTY; 6 guarded irreducible HIL items). γ_critical 0.453 ≥ 0.30 + location-keyed crit tail [0,0,0,0,0]; 3 consecutive full passes R10–12; ~3.7 h; launcher exit 0. First formal-endpoint convergence with zero non-terminal residue in project history.
+
+**26–27 July session:** founder approved the forensic roadmap ("roll with it as you suggest"; funding decision after 44). FIX 1–5 folded into the runner + **adversarially verified (4 skeptics found 4 real defects in the first implementation — all repaired + test-pinned**: launcher dropped max_contested_rounds [12-July class]; FIX-1 could silence vote-contested items + wasn't gate-scoped; FIX-2 burned attempts on transport-dead rounds; FIX-3 discarded fence-quoted C-id findings). Commits `1cec60d` (tranche) + `db29e76` (**ALL specialist B-Cells promoted LIVE per repeated founder directive — 8 domains; S5 superseded; live physics dispatch demonstrated**). Specialist-wiring CORRECTION: the forensic note's "specialists unwired" claim was WRONG — wiring runs runner→insect_brain→immune_agents via cfg.domain; 5 domains were already live; K/L/M now too. `_memory.py` provenance FULLY closed: founder's 30-March-approved roadmap item 2 "immune layer persistence" + item 4 "accumulated immune memory" = the founder-originated WHAT; April AIS panel = the HOW. Exp 44 config: `bench/exp44_configs/44_evidence_locationkey_live.json` (both ingestion paths traced). Notes: `Exp44_Clean_Convergence_2026-07-27.md` (+Plain_English +Desktop TTS) + `Exp44_Launch_and_Fix_Tranche_2026-07-27` TTS.
+
+**NEXT:** (1) founder materiality review — 6 irreducible HIL items + 2 REOPEN attempts (C0001×2, C0002); (2) committed post-44 SHADOW AUDIT (ouroboros/macrophage/stage6-calibrator/severity-calib/load-balancer); (3) founder FUNDING DECISION on the remaining arc (~5 experiments; Exp 44 cost ≈$20–30 est., dashboard authoritative); (4) on go: Exp 45 = `dm/_memory.py`, `domain=statistics` (declared specialist variable), ImmuneMemory-enable decision at its post-mortem. Cosmetic: launcher prints "Experiment 42" label (stale string) — fix in passing.
+
+## ★ (SUPERSEDED) CURRENT STATE (22 July 2026, 00:22 BST) — Post-restart provenance session; NO code changed, NO experiment run. `dm/_memory.py` provenance question RESOLVED; the Exp 44 target choice is now the open founder decision. Otherwise unchanged from the 20-July block below.
 
 **21–22 July session (dm/_memory.py provenance + plain-English explanation):**
 - Founder queried the provenance of `dm/_memory.py` (ImmuneMemory: Beta-Binomial per-flaw-class priors, CUSUM drift, blended prior) — no recollection of it, and challenged whether an LLM could build a 10K-char module unprompted. **RESOLVED from git:** it is **Phase 4 of an agreed 8-phase batch (Phases 0–8) executed the evening of 12 April 2026** (commits `ad53693`→`e59dedd`, all under the founder's account), following that afternoon's **AIS literature assessment + Gemini/Codex confer** (`56a3e6e`); a same-evening commit records "execution order agreed" (`996ec52`). NOT a rogue build — the *granular* mechanics were model-chosen inside an agreed plan; non-recollection explained by it being 1 of 8 shadow phases pushed in ~2.5h.
