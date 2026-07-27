@@ -340,12 +340,22 @@ _DOMAIN_ALIAS = {
 # behaviour is examined from the full post-run results, not pre-emptively
 # hedged. The shadow-promotion-now non-distortion check is performed
 # empirically on the completed run.
+# 2026-07-27 (founder-directed, repeated standing instruction): ALL specialist
+# B-Cell types are LIVE from Exp 44 onwards — physics/chemistry/engineering
+# (K/L/M) promoted from shadow. The remaining shadow delay "increasingly makes
+# less sense as we continue [and] will make no sense at all during Bench Run 2."
+# Supersedes constraint S5 of the Exp 40 plan. Inert for any run whose config
+# does not select these domains (Exp 44 runs domain=software); engages when a
+# synth STEM module or BR2 task selects physics/chemistry/engineering.
 LIVE_SPECIALIST_DOMAINS: frozenset = frozenset({
     "mathematics",
     "statistics",
     "biology",
     "information_science",
     "software",
+    "physics",
+    "chemistry",
+    "engineering",
 })
 
 

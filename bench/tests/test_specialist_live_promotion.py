@@ -58,17 +58,16 @@ class TestLiveSpecialistDomainsConstant:
     def test_information_science_is_live(self):
         assert "information_science" in LIVE_SPECIALIST_DOMAINS
 
-    def test_physics_remains_shadow(self):
-        # Constraint S5: K cell (physics) stays shadow in Exp 40 baseline.
-        assert "physics" not in LIVE_SPECIALIST_DOMAINS
+    def test_physics_live(self):
+        # Founder directive 2026-07-27: ALL specialists live from Exp 44 on
+        # (supersedes S5 shadow constraint).
+        assert "physics" in LIVE_SPECIALIST_DOMAINS
 
-    def test_chemistry_remains_shadow(self):
-        # Constraint S5: L cell (chemistry) stays shadow in Exp 40 baseline.
-        assert "chemistry" not in LIVE_SPECIALIST_DOMAINS
+    def test_chemistry_live(self):
+        assert "chemistry" in LIVE_SPECIALIST_DOMAINS
 
-    def test_engineering_remains_shadow(self):
-        # Constraint S5: M cell (engineering) stays shadow in Exp 40 baseline.
-        assert "engineering" not in LIVE_SPECIALIST_DOMAINS
+    def test_engineering_live(self):
+        assert "engineering" in LIVE_SPECIALIST_DOMAINS
 
     def test_code_remains_shadow(self):
         # Code has its own B-Cell v2 (AST) path, specialist not promoted.
@@ -84,10 +83,10 @@ class TestLiveSpecialistDomainsConstant:
         assert "software" in LIVE_SPECIALIST_DOMAINS
 
     def test_set_size_matches_spec(self):
-        # Five domains: math/stats/bio/info-sci (Exp 40 1E.3) + software
-        # (exp41b promotion, 2026-05-22). physics/chemistry/engineering/code/
-        # cross_domain remain shadow.
-        assert len(LIVE_SPECIALIST_DOMAINS) == 5
+        # Eight domains: math/stats/bio/info-sci (1E.3) + software (exp41b) +
+        # physics/chemistry/engineering (founder directive 2026-07-27 —
+        # all specialists live from Exp 44 on). code/cross_domain aliases excluded.
+        assert len(LIVE_SPECIALIST_DOMAINS) == 8
 
     def test_is_immutable(self):
         # frozenset prevents accidental mutation from test or runtime code.
@@ -169,19 +168,19 @@ class TestPipelineIntegration:
             "math domain must NOT be recorded as shadow"
         )
 
-    def test_physics_domain_specialist_stays_shadow(self):
+    def test_physics_domain_specialist_live_2026_07_27(self):
         """Acceptance: synthetic physics claim → specialist stays shadow."""
         response = self._run_pipeline(domain="physics")
-        # Shadow mode is the default for physics (constraint S5).
-        assert "b_cell_specialist_shadow" in response.tool_usage, (
-            f"expected b_cell_specialist_shadow in tool_usage, "
+        # Live from Exp 44 on (founder directive 2026-07-27; supersedes S5).
+        assert "b_cell_specialist_live" in response.tool_usage, (
+            f"expected b_cell_specialist_live in tool_usage, "
             f"got keys={list(response.tool_usage.keys())}"
         )
-        assert "b_cell_specialist_live" not in response.tool_usage, (
+        assert "b_cell_specialist_shadow" not in response.tool_usage, (
             "physics domain must NOT be recorded as live"
         )
 
-    def test_chemistry_domain_specialist_stays_shadow(self):
+    def test_chemistry_domain_specialist_live_2026_07_27(self):
         """Constraint S5: chemistry specialist stays shadow in Exp 40 baseline."""
         response = self._run_pipeline(domain="chemistry")
         if "b_cell_specialist_shadow" not in response.tool_usage and \
@@ -189,14 +188,15 @@ class TestPipelineIntegration:
             # No specialist dispatched (chemistry TOML may not route to this
             # claim type) — still OK, just means nothing to audit.
             return
-        assert "b_cell_specialist_live" not in response.tool_usage
+        assert "b_cell_specialist_shadow" not in response.tool_usage
 
-    def test_engineering_domain_specialist_stays_shadow(self):
+    def test_engineering_domain_specialist_live(self):
+        # Founder directive 2026-07-27: all specialists live from Exp 44 on.
         response = self._run_pipeline(domain="engineering")
         if "b_cell_specialist_shadow" not in response.tool_usage and \
            "b_cell_specialist_live" not in response.tool_usage:
             return
-        assert "b_cell_specialist_live" not in response.tool_usage
+        assert "b_cell_specialist_shadow" not in response.tool_usage
 
     def test_empty_domain_stays_shadow(self):
         """Fallback: no domain → specialist not even dispatched, pipeline safe."""
