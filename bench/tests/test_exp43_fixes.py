@@ -406,3 +406,43 @@ class TestPostConvergenceSweep:
              "post_convergence_sweep_rounds": 2},
             SimpleNamespace(resume=False))
         assert rc.post_convergence_sweep_rounds == 2
+
+
+# ── ImmuneMemory staged wiring (founder-approved 2026-07-28) ─────────────────
+
+class TestImmuneMemoryWiring:
+    def test_launcher_passthrough(self):
+        from bench.launcher_core import build_runner_config_from_dict
+        rc = build_runner_config_from_dict(
+            {"experiment_name": "t", "models": ["CC2"], "test_article": "x.py",
+             "immune_memory_enabled": True,
+             "immune_memory_path": "bench/state/test_mem.json"},
+            SimpleNamespace(resume=False))
+        assert rc.immune_memory_enabled is True
+        assert rc.immune_memory_path == "bench/state/test_mem.json"
+
+    def test_recording_tallies_from_registry(self, tmp_path):
+        """The run-end hook's tally logic: CONFIRMED/CLOSED count as confirmed,
+        REFUTED as rejected, per flaw class — verified through ImmuneMemory."""
+        from bench.dm._memory import ImmuneMemory
+        reg = FindingRegistry()
+        a = _register(reg, "F040", 0.8, "CLOSED", "CONFIRMED")
+        b = _register(reg, "F041", 0.4, "CONFIRMED", "CONFIRMED")
+        c = _register(reg, "F042", 0.4, "REFUTED", "REFUTED")
+        reg.entries[a]["flaw_class"] = 1
+        reg.entries[b]["flaw_class"] = 1
+        reg.entries[c]["flaw_class"] = 2
+        counts = {}
+        for e in reg.entries.values():
+            cell = counts.setdefault(int(e.get("flaw_class") or 0), [0, 0])
+            if e["status"] in ("CONFIRMED", "CLOSED"):
+                cell[0] += 1
+            elif e["status"] == "REFUTED":
+                cell[1] += 1
+        mem = ImmuneMemory()
+        mem.record_experiment("test", {k: (v[0], v[1]) for k, v in counts.items()})
+        p = tmp_path / "mem.json"
+        mem.save(str(p))
+        back = ImmuneMemory.load(str(p))
+        assert back.pi_mem(1) > 0.6, "2 confirmed, 0 rejected -> high prior"
+        assert back.pi_mem(2) < 0.4, "0 confirmed, 1 rejected -> low prior"

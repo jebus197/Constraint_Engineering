@@ -453,6 +453,15 @@ class RunnerConfig:
     # rounds whose ONLY duty is clearing residual non-terminal findings
     # (runnable falsifier or reasoned withdrawal). 0 = off (byte-identical).
     post_convergence_sweep_rounds: int = 0
+    # IMMUNE MEMORY (founder-approved 2026-07-28, staged): when enabled the
+    # cross-experiment ImmuneMemory (bench/dm/_memory.py, appendix §1.5) is
+    # LOADED at run start, its blended prior LOGGED per flaw class (advisory
+    # visibility), and the run's per-flaw-class confirmed/rejected tallies
+    # RECORDED + SAVED at run end. The blended prior does NOT yet feed
+    # R_k(0) — that consumption switch is a later declared delta once real
+    # cross-experiment history exists. Default off = byte-identical.
+    immune_memory_enabled: bool = False
+    immune_memory_path: str = "bench/state/immune_memory.json"
     # Static-queue closure (2026-06-09): the automated loop may converge while handing a
     # SMALL queue of ladder-exhausted irreducible criticals to the human. A queue larger
     # than this is treated as a mechanical-failure ALARM (routing/dedup), not genuine
@@ -6827,6 +6836,37 @@ def run_experiment(
         except Exception as _sw_exc:  # noqa: BLE001 — sweep must never kill the report
             _log(f"  WARNING: post-convergence sweep failed ({_sw_exc})")
             result["post_convergence_sweep"] = {"error": str(_sw_exc)}
+
+    # IMMUNE MEMORY recording (2026-07-28, staged wiring): learn this run's
+    # per-flaw-class confirmed/rejected outcome. Advisory-only, never touches
+    # verdicts or the gate; failure never kills the report.
+    if getattr(cfg, "immune_memory_enabled", False):
+        try:
+            from bench.dm._memory import ImmuneMemory
+            _mem_path = str(Path(REPO_ROOT) / cfg.immune_memory_path)
+            _mem = ImmuneMemory.load(_mem_path)
+            _flaw_counts: Dict[int, list] = {}
+            _CONF = {"CONFIRMED", "CLOSED"}
+            for _e in registry.entries.values():
+                _fc = int(_e.get("flaw_class") or 0)
+                _cell = _flaw_counts.setdefault(_fc, [0, 0])
+                if _e["status"] in _CONF:
+                    _cell[0] += 1
+                elif _e["status"] == "REFUTED":
+                    _cell[1] += 1
+            _mem.record_experiment(
+                exp_id=cfg.experiment_name,
+                flaw_counts={k: (v[0], v[1]) for k, v in _flaw_counts.items()},
+            )
+            _mem.save(_mem_path)
+            _pi = {k: round(_mem.pi_mem(k), 3) for k in sorted(_flaw_counts)}
+            _log(f"  immune memory: recorded {sum(v[0] for v in _flaw_counts.values())}"
+                 f" confirmed / {sum(v[1] for v in _flaw_counts.values())} rejected"
+                 f" across {len(_flaw_counts)} flaw classes; pi_mem now {_pi}")
+            result["immune_memory"] = {"recorded": True, "pi_mem": _pi}
+        except Exception as _im_exc:  # noqa: BLE001
+            _log(f"  WARNING: immune memory recording failed ({_im_exc})")
+            result["immune_memory"] = {"recorded": False, "error": str(_im_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

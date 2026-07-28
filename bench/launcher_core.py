@@ -230,6 +230,9 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         kwargs["max_contested_rounds"] = exp_cfg["max_contested_rounds"]
     if "post_convergence_sweep_rounds" in exp_cfg:
         kwargs["post_convergence_sweep_rounds"] = exp_cfg["post_convergence_sweep_rounds"]
+    for imf in ("immune_memory_enabled", "immune_memory_path"):
+        if imf in exp_cfg:
+            kwargs[imf] = exp_cfg[imf]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}
