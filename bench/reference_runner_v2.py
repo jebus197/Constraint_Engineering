@@ -1786,12 +1786,18 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                     e["resolved_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                     registry.resolve(cid, "CONFIRMED", round_idx)
                     stats["cleared"] += 1
+                    stats.setdefault("items", {})[cid] = {
+                        "disposition": "cleared",
+                        "by": e.get("resolved_by_sweep")}
                 elif (verdict == "REFUTED"
                         and float(e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD):
                     e["falsifier_verdict"] = "REFUTED"
                     e["withdrawn_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                     registry.resolve(cid, "REFUTED", round_idx)
                     stats["withdrawn"] += 1
+                    stats.setdefault("items", {})[cid] = {
+                        "disposition": "refuted_by_falsifier",
+                        "by": e.get("withdrawn_by_sweep")}
                 # ERROR / critical-REFUTED: leave for the residual report.
             # (b) reasoned withdrawal — SUB-CRITICAL ONLY
             for m in _re.finditer(r"WITHDRAW\s+(C\d{4})\s*:\s*(.{3,300})",
@@ -1805,6 +1811,10 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                 e["withdraw_reason"] = reason[:200]
                 registry.resolve(cid, "REFUTED", round_idx)
                 stats["withdrawn"] += 1
+                stats.setdefault("items", {})[cid] = {
+                    "disposition": "withdrawn",
+                    "by": e.get("withdrawn_by_sweep"),
+                    "reason": reason[:200]}
     _TERMINAL2 = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
     stats["remaining"] = sum(1 for e in registry.entries.values()
                              if e["status"] not in _TERMINAL2)
@@ -6836,6 +6846,19 @@ def run_experiment(
         except Exception as _sw_exc:  # noqa: BLE001 — sweep must never kill the report
             _log(f"  WARNING: post-convergence sweep failed ({_sw_exc})")
             result["post_convergence_sweep"] = {"error": str(_sw_exc)}
+        else:
+            # Exp 46 lesson (2026-07-28): the last round checkpoint predates
+            # the sweep — persist the post-sweep registry so the saved state
+            # matches the report and the per-item audit trail survives exit.
+            try:
+                _rs_path = logs_dir / "runner_state.json"
+                _rs = json.loads(_rs_path.read_text(encoding="utf-8")) if _rs_path.exists() else {}
+                _rs["registry"] = registry.to_dict()
+                _rs["post_convergence_sweep"] = result["post_convergence_sweep"]
+                _rs_path.write_text(json.dumps(_rs, indent=2, default=str), encoding="utf-8")
+                _log("  post-sweep registry persisted to runner_state.json")
+            except Exception as _ps_exc:  # noqa: BLE001
+                _log(f"  WARNING: post-sweep persistence failed ({_ps_exc})")
 
     # IMMUNE MEMORY recording (2026-07-28, staged wiring): learn this run's
     # per-flaw-class confirmed/rejected outcome. Advisory-only, never touches

@@ -599,8 +599,16 @@ class ShadowStage6Calibrator:
             if tool_has_fail:
                 e_combined *= 0.0
                 has_any_evidence = True
-            elif tool_has_pass and e_pass is not None:
-                e_combined *= e_pass  # Contribute once per tool
+            elif tool_has_pass:
+                # Documented mapping: PASS -> e = 1/fail_fraction if
+                # available, else e = 1. A PASS is genuine evidence that a
+                # tool ran and passed, even when fail_fraction is not yet
+                # computable (<5 determinate outcomes). Record it so the
+                # round yields shadow_e_combined (inconclusive e=1) rather
+                # than silently dropping to None. (F003 fix, 2026-07-28.)
+                if e_pass is not None:
+                    e_combined *= e_pass  # Contribute once per tool
+                # else: e = 1, no multiplicative effect, but evidence exists
                 has_any_evidence = True
             # else: all inconclusive/duplicate — e=1, no effect
 

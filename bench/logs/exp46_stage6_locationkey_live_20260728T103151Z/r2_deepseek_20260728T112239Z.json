@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T112239Z",
+  "phase": "r2",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1309,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: After C0010 fix, `_compute_shadow_e_values` still uses finding ID to lookup `_cumulative_tool_fpr` (now keyed by tool name), so shadow E-value pipeline remains dead.\nFALSIFIER:\n```python\nimport sys\nfrom bench.dm._shadow_stage6 import ShadowStage6Calibrator\n\nclass DummyVerdict:\n    def __init__(self, tool_used, verdict):\n        self.tool_used = tool_used\n        self.verdict = verdict\n\nclass DummyImmuneResponse:\n    def __init__(self):\n        self.cell_verdicts = {\n            \"finding_x\": [DummyVerdict(\"ruff\", \"PASS\")],\n            \"finding_y\": [DummyVerdict(\"mypy\", \"CONFIRMED\")],\n        }\n\ncal = ShadowStage6Calibrator()\n# Pre‑populate tool trackers as if previous rounds had built them\ncal._cumulative_tool_fpr[\"ruff\"] = cal._cumulative_tool_fpr.__class__(\n    tool_name=\"ruff\", passes=10, fails=2, inconclusive=1\n)\ncal._cumulative_tool_fpr[\"mypy\"] = cal._cumulative_tool_fpr.__class__(\n    tool_name=\"mypy\", passes=8, fails=3, inconclusive=2\n)\n\nresp = DummyImmuneResponse()\nrlog = cal.observe_round(1, [], immune_response=resp, ouroboros_data={})\n\nif rlog.shadow_e_combined is not None:\n    print(\"BUG ABSENT — shadow_e_combined is populated\")\n    sys.exit(0)\nelse:\n    print(\"FALSIFIED: shadow_e_combined is None (C0010 fix incomplete)\")\n    sys.exit(1)\n```",
+  "metadata": {
+    "round": 2,
+    "elapsed": 456.0,
+    "chars": 1309,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}
