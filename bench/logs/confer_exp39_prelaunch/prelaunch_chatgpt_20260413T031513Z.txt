@@ -1,0 +1,147 @@
+Premises:
+1. Hard launch criterion: 39-0 is safe to launch only if the recent changes do not introduce a confirmed blocker in the gate path.
+2. Review scope is bounded to supplied diffs/full files. I cannot verify unstated code paths beyond these files, so claims about runtime enforcement outside visible code are limited to dependency traces.
+3. For 39-0 specifically, the active config is `bench/exp39_configs/39_0_gate.json`, with `burst_mode: "off"` and `domain: "software"`.
+
+Concrete execution traces used:
+- HIL path: `launch_exp39.py` → `reference_runner.py main()` → `RunnerConfig.hil_review` → `run_experiment()` exits 42 → `launch_exp39.py` interprets result.
+- Domain path: `39_0_gate.json domain="software"` → registry `load_effective_policy(domain)` alias mapping → immune domain config lookup if separately implemented.
+- Sequencer path: dependency sort via `resolve_execution_order()`, then gate handling via `run_sequence()`.
+
+Formal conclusion:
+- I found two confirmed blockers affecting the requested focus areas A/B/C for the actual 39-0 launch path.
+- Therefore launch safety criterion is not met.
+
+Findings:
+
+1. FIND
+Issue: `launch_exp39.py` has no CLI support to pass HIL flags or resume through to `reference_runner.py`, so the claimed HIL workflow in focus area A does not work from the experiment sequencer.
+Location:
+- `bench/launch_exp39.py:153-170` builds subprocess command with only `run --config ...`
+- `bench/launch_exp39.py:344-356` parser lacks `--resume` and `--hil-review`
+Evidence:
+- `run_sub_experiment()` constructs:
+  ```python
+  cmd = [
+      sys.executable,
+      str(RUNNER_PATH),
+      "run",
+      "--config", str(config_path),
+  ]
+  ```
+  No conditional append of `--hil-review` or `--resume`.
+- `main()` only parses `--config`, `--only`, `--skip`, `--dry-run`, `--preflight`.
+- Yet `reference_runner.py` added `--hil-review` support (`bench/reference_runner.py:3558-3616` in diff context), and the review focus explicitly asks whether exit 42 propagates through `launch_exp39.py` and whether `--resume` restores cleanly.
+FOLLOW
+- If operator launches the sequencer with intended HIL review, there is no accepted CLI flag, so HIL mode cannot be enabled through the orchestrator.
+- Even if a subexperiment is manually resumed with `reference_runner.py --resume`, the sequencer itself cannot participate in the documented workflow “resume with --resume”.
+- The added handling of exit 42 in `RunResult.hil_paused` and `run_sequence()` is therefore only partial plumbing; it reacts to 42 if somehow produced, but cannot initiate or resume that mode.
+- This directly affects infrastructure gate 39-0 because pre-launch review focus A requires sequencer propagation correctness.
+ANALYSE: CONFIRMED
+FIX
+- Add `--hil-review` and `--resume` to `bench/launch_exp39.py` CLI.
+- Thread those flags into `run_sequence()` / `run_sub_experiment()`.
+- Append them to the subprocess command when set.
+- Define sequencer exit semantics: if a child pauses with 42, the sequencer should exit 42 rather than printing “All required sub-experiments passed.”
+P-PASS
+- Could this be non-blocking because 39-0 has `burst_mode: off` and HIL is optional? No. The session change list explicitly adds HIL review gate as a recent change under review, and focus area A asks correctness through the sequencer. The sequencer currently cannot exercise that path as specified. This is a launch blocker for the reviewed change set.
+
+2. FIND
+Issue: Unknown/new domain strings are not mapped in the registry, and 39-0 uses `domain: "software"` while new specialist domain additions use `cs_software`; meanwhile new domains `biology` and `information_science` also lack alias mapping. This breaks or degrades the domain plumbing/fallback story in focus area B.
+Location:
+- `bench/exp39_configs/39_0_gate.json:16` sets `"domain": "software"`
+- `bench/cdsfl_registry/registry.py:62-75` `DOMAIN_MAP`
+- New files:
+  - `bench/cdsfl_registry/domains/cs_software.toml`
+  - `bench/cdsfl_registry/domains/biology.toml`
+  - `bench/cdsfl_registry/domains/information_science.toml`
+Evidence:
+- `DOMAIN_MAP` maps `"software": "code"`, not `"cs_software"`.
+- `DOMAIN_MAP` contains no entries for `"biology"` or `"information_science"`.
+- Therefore:
+  - `load_effective_policy("software")` ignores new `domains/cs_software.toml` and loads `domains/code.toml` instead.
+  - `load_effective_policy("biology")` and `load_effective_policy("information_science")` hit the warning path:
+    ```python
+    warnings.warn(
+        f"Unknown domain '{domain}' — no Layer 2 policy applied. "
+    )
+    ```
+- The change list claims “Domain plumbing: `domain` field added … propagated … to immune pipeline” and “6 new domain TOMLs”. But the visible registry layer does not recognize 3 of those new domain names, and for software it routes to the legacy alias rather than the new specialist config.
+FOLLOW
+- For 39-0 specifically, `domain="software"` will not activate the stricter `cs_software.toml` Layer 2 verification policy. Any runtime expectations based on those stricter settings are false for this launch.
+- For the broader Exp 39 sequence, biology and information-science tasks would silently lose Layer 2 policy application and fall back to universal-only policy, weakening domain-specific verification.
+- This is materially relevant to “unknown domains / fallback behaviour” in focus area B: fallback exists, but it is silent degradation via warning, not fail-closed enforcement.
+ANALYSE: CONFIRMED
+FIX
+- Update `DOMAIN_MAP` to include:
+  - `"biology": "biology"`
+  - `"information_science": "information_science"`
+  - likely `"cs_software": "cs_software"`
+- Decide intended mapping for `"software"`:
+  - either remap `"software": "cs_software"` if that is the new desired specialist policy,
+  - or keep `"software": "code"` and change 39-0 config to `"domain": "cs_software"` explicitly.
+- Prefer fail-closed for unknown domains in experiment launch paths if domain-specific enforcement is required.
+P-PASS
+- Could this be harmless because focus B concerns immune pipeline, not policy registry? No. The review request explicitly asks “Does `cfg.domain` reach immune pipeline cells? What happens with unknown domains? Fallback behaviour?” The visible domain-resolution layer is part of that dependency chain. For 39-0, the chosen domain does not select the newly added specialist software policy. That is a real misconfiguration/blocker against the claimed change intent.
+
+3. FIND
+Issue: The new HARD constraints `constraints.ffafp_required` and `constraints.structured_reasoning_required` are added to schema/universal/registry monotonicity lists, but there is no visible runtime enforcement in the supplied code. They are policy values, not enforced behavior in shown execution paths.
+Location:
+- Added declarations:
+  - `bench/cdsfl_registry/schema.toml:57-70`
+  - `bench/cdsfl_registry/universal.toml:9-12`
+  - `bench/cdsfl_registry/registry.py:49-52`
+- Prompt text only:
+  - `bench/cdsfl_registry/composer.py:777-801` in diff
+Evidence:
+- In visible code, these constraints are:
+  1. Defined in schema.
+  2. Set in universal policy.
+  3. Protected from lower-layer weakening by `HARD_CONSTRAINTS`.
+- But I see no visible validator/check in supplied files that rejects a model output lacking FFAFP fields or structured reasoning fields.
+- The composer prompt text says models should apply them, but a prompt instruction is not equivalent to runtime enforcement.
+FOLLOW
+- Monotonicity property at policy merge level is maintained: lower layers cannot set them false.
+- But runtime enforcement property is unproven in supplied code. A lower layer cannot override to false in policy, yet the system may still accept outputs that ignore them.
+- This matters because focus area C asks runtime enforcement and whether lower layers can override to False. First half appears not demonstrated; second half (policy override) is prevented in registry.
+ANALYSE: UNCERTAIN
+FIX
+- Add explicit output-schema validation or post-parse checks that require:
+  - explicit premises/derivation/conclusion for structured reasoning,
+  - per-finding FFAFP fields including P-pass.
+- Reject or downgrade outputs lacking those required structures.
+P-PASS
+- Could there be enforcement elsewhere outside supplied files? Yes. Because the relevant parsing/validation paths are not shown, I cannot confirm a blocker from current evidence. Therefore this remains UNCERTAIN, not a launch blocker on its own.
+
+4. FIND
+Issue: On HIL pause, the sequencer will break out of the run loop but still exit 0 if no required failures are recorded, incorrectly reporting overall success.
+Location:
+- `bench/launch_exp39.py:294-298` break on `r.hil_paused`
+- `bench/launch_exp39.py:390-399` final exit code logic checks only required failures
+Evidence:
+- If first sub-experiment exits 42:
+  - result is appended
+  - loop breaks
+  - `required_failures` only includes runs where `not r.passed and not r.skipped`
+  - paused run qualifies, so actually it would be counted as failure in `required_failures`.
+  - However the summary line and overall messaging are inconsistent with pause semantics; it writes “SEQUENCE COMPLETE” and may also produce a sequence report classifying the paused run under failed, not paused.
+FOLLOW
+- This is a semantic/reporting flaw. Depending on outer automation, exit 1 instead of 42 may impede clean pause/resume orchestration and can cause a paused review gate to be treated as a failed experiment.
+ANALYSE: CONFIRMED
+FIX
+- Preserve sequence-level paused state and `sys.exit(42)` when any run pauses for HIL review.
+- Record paused status in report explicitly.
+P-PASS
+- Is this duplicative of Finding 1? Related, but distinct. Finding 1 says sequencer cannot initiate/resume HIL mode. This finding says even if 42 occurs, sequence-level handling terminates with failure semantics rather than pause semantics. Independent consequence, same subsystem. Since either one breaks focus area A, this remains confirmed.
+
+Global P-pass:
+- No contradiction between findings 1 and 4: one is missing ingress/resume plumbing, the other is incorrect pause egress semantics.
+- Finding 2 does not conflict with 39-0’s immediate operability; 39-0 can still run under legacy `code` policy, but that contradicts the claimed domain-plumbing/specialist-domain change intent and weakens review guarantees. As a pre-launch review for changed infrastructure, that is blocker-grade.
+- Finding 3 remains uncertain because missing files may contain runtime validation. I am not elevating it to blocker.
+
+Blockers to fix before launch:
+1. `bench/launch_exp39.py:153-170, 344-356` — sequencer lacks `--hil-review` / `--resume` plumbing to `reference_runner.py`.
+2. `bench/launch_exp39.py:294-298, 390-399` — HIL pause is not surfaced as a proper sequence-level paused exit/report state.
+3. `bench/cdsfl_registry/registry.py:62-75` plus `bench/exp39_configs/39_0_gate.json:16` — domain mapping is inconsistent with new domain files; `software` does not select `cs_software`, and `biology` / `information_science` are unmapped.
+
+VERDICT: NO-GO — list specific blockers that must be fixed first

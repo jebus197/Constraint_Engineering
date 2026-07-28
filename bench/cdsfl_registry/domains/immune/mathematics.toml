@@ -34,7 +34,11 @@ statistical = [
 [immune.verification_tools]
 
 mathematical = ["sympy", "z3"]
-logical = ["z3", "sympy"]
+# Exp 40 1E.12 (2026-04-17): DeepSeek R1 specialist appended AFTER z3/sympy.
+# The dispatch walks the list left-to-right and the first definitive verdict
+# wins, so DeepSeek is only invoked when the cheaper mechanical tools both
+# return UNCERTAIN — keeping API cost bounded.
+logical = ["z3", "sympy", "deepseek_formal"]
 statistical = ["statsmodels", "scipy"]
 
 [immune.ct_prompt_template]

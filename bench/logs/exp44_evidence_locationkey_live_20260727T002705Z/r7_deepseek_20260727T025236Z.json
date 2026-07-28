@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T025236Z",
+  "phase": "r7",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 582,
+  "response": "FINDING_ID: F701\nSEVERITY: 0.70\nFIND: EvidenceRecord.from_chain_record crashes with KeyError on missing required keys.\nFALSIFIER:\n```python\nfrom bench.evidence import EvidenceRecord\n\nrecord = {\n    \"sealed_body\": {\n        \"recorded_by\": \"X\",\n        \"timestamp_utc\": \"2025-01-01T00:00:00Z\",\n        \"storage_mode\": \"full_payload\",\n        \"payload_hash\": \"\",\n        \"metadata\": {}\n    },\n    \"chain_hash\": \"sha256:\" + 64*\"00\"\n}\n\ntry:\n    EvidenceRecord.from_chain_record(0, record)\n    exit(0)\nexcept KeyError:\n    print(\"FALSIFIED\")\n    exit(1)\nexcept ValueError:\n    exit(0)\n```",
+  "metadata": {
+    "round": 7,
+    "elapsed": 420.4,
+    "chars": 582,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,701 @@
+{
+  "round_idx": 10,
+  "findings": [
+    {
+      "finding_id": "ChatGPT_F001",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6386,
+      "flaw_class": 5,
+      "encounter_count": 15,
+      "description_snippet": "VERDICT: CHALLENGE C0042\n\nC0042 claims a critical surface lexical/syntax bug around the cluster grouping line in `bench/"
+    },
+    {
+      "finding_id": "ChatGPT_F002",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.7013,
+      "flaw_class": 1,
+      "encounter_count": 55,
+      "description_snippet": "VERDICT: MERGE C0002 <- F002\n\nMy prior independent finding that `kappa_rate()` counts raw per-round equivalence classes "
+    },
+    {
+      "finding_id": "Codex_F010",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 4,
+      "encounter_count": 1,
+      "description_snippet": "`bench/dm/_convergence.py`, `ConvergenceDetector.validate_no_findings()` validates only `kappa_set(2) == 1.0`, while its"
+    },
+    {
+      "finding_id": "DeepSeek_CHALLENGE_C0042",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.7022,
+      "flaw_class": 1,
+      "encounter_count": 56,
+      "description_snippet": "C0042 claims a surface lexical bug at line `clusters.setdefault(root, []).append(i)`. The actual code uses Python\u2019s buil"
+    },
+    {
+      "finding_id": "DeepSeek_CHALLENGE_C0031",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.703,
+      "flaw_class": 1,
+      "encounter_count": 57,
+      "description_snippet": "C0031 claims `kappa_set` can return negative values. The current implementation (as of this round) computes numerator as"
+    },
+    {
+      "finding_id": "DeepSeek_CONFIRM_C0037",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 2,
+      "encounter_count": 6,
+      "description_snippet": "`get_cumulative_classes(round_idx)` iterates `range(round_idx + 1)`, assuming contiguous zero\u2011based indices. If rounds a"
+    },
+    {
+      "finding_id": "DeepSeek_CHALLENGE_C0029",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.7039,
+      "flaw_class": 1,
+      "encounter_count": 58,
+      "description_snippet": "C0029 claims `_weighted_novel_severity` incorrectly uses `max(member weights)` for class weight; it should use `min`. Th"
+    },
+    {
+      "finding_id": "DeepSeek_CONFIRM_C0044",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 4,
+      "encounter_count": 2,
+      "description_snippet": "`_veto()` uses `_novel_classes()` to check severity. Because `_novel_classes` (per C0014) declares an entire class non\u2011n"
+    }
+  ],
+  "tool_fpr": {
+    "Codex_F001": {
+      "tool_name": "Codex_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F001": {
+      "tool_name": "Gemini_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F002": {
+      "tool_name": "CC2_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F001": {
+      "tool_name": "ChatGPT_F001",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F001": {
+      "tool_name": "DeepSeek_F001",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_UNSTRUCTURED": {
+      "tool_name": "Codex_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F101": {
+      "tool_name": "DeepSeek_F101",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F002": {
+      "tool_name": "Gemini_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F002": {
+      "tool_name": "Codex_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F004": {
+      "tool_name": "Gemini_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F005": {
+      "tool_name": "Gemini_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F004": {
+      "tool_name": "CC2_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F201": {
+      "tool_name": "DeepSeek_F201",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F003": {
+      "tool_name": "Codex_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F006": {
+      "tool_name": "Gemini_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F007": {
+      "tool_name": "Gemini_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F008": {
+      "tool_name": "Gemini_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F301": {
+      "tool_name": "DeepSeek_F301",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0010": {
+      "tool_name": "Gemini_C0010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0019": {
+      "tool_name": "Gemini_C0019",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0009": {
+      "tool_name": "Gemini_C0009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0017": {
+      "tool_name": "Gemini_C0017",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0005": {
+      "tool_name": "Gemini_C0005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0013": {
+      "tool_name": "Gemini_C0013",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F302": {
+      "tool_name": "DeepSeek_F302",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0004": {
+      "tool_name": "Gemini_C0004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F006": {
+      "tool_name": "CC2_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F010": {
+      "tool_name": "Gemini_F010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F002": {
+      "tool_name": "ChatGPT_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F007": {
+      "tool_name": "CC2_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_UNSTRUCTURED": {
+      "tool_name": "DeepSeek_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F009": {
+      "tool_name": "Gemini_F009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F003": {
+      "tool_name": "ChatGPT_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0006": {
+      "tool_name": "Gemini_C0006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F009": {
+      "tool_name": "CC2_F009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_DS_F006": {
+      "tool_name": "DeepSeek_DS_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F008": {
+      "tool_name": "CC2_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_UNSTRUCTURED": {
+      "tool_name": "ChatGPT_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F003": {
+      "tool_name": "Gemini_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_DS_R7_001": {
+      "tool_name": "DeepSeek_DS_R7_001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F010": {
+      "tool_name": "CC2_F010",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F011": {
+      "tool_name": "CC2_F011",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_ChatGPT_R8_V001": {
+      "tool_name": "Codex_ChatGPT_R8_V001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_R9_V001": {
+      "tool_name": "ChatGPT_R9_V001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_R9_V003": {
+      "tool_name": "ChatGPT_R9_V003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0045": {
+      "tool_name": "Gemini_C0045",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0042": {
+      "tool_name": "Gemini_VERDICT_C0042",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0012": {
+      "tool_name": "Gemini_VERDICT_C0012",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0037": {
+      "tool_name": "Gemini_VERDICT_C0037",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0029": {
+      "tool_name": "Gemini_VERDICT_C0029",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0044": {
+      "tool_name": "Gemini_VERDICT_C0044",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0039": {
+      "tool_name": "Gemini_VERDICT_C0039",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0026": {
+      "tool_name": "Gemini_VERDICT_C0026",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_R9_V002": {
+      "tool_name": "ChatGPT_R9_V002",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_VERDICT_C0031": {
+      "tool_name": "Gemini_VERDICT_C0031",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F010": {
+      "tool_name": "Codex_F010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_CHALLENGE_C0042": {
+      "tool_name": "DeepSeek_CHALLENGE_C0042",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_CHALLENGE_C0031": {
+      "tool_name": "DeepSeek_CHALLENGE_C0031",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_CONFIRM_C0037": {
+      "tool_name": "DeepSeek_CONFIRM_C0037",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_CHALLENGE_C0029": {
+      "tool_name": "DeepSeek_CHALLENGE_C0029",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_CONFIRM_C0044": {
+      "tool_name": "DeepSeek_CONFIRM_C0044",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.5,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1779429623.135979
+}

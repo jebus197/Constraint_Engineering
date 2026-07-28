@@ -1,12 +1,14 @@
 # Experiment 38 Confer Synthesis — 9 April 2026
 
-Two confers dispatched to **Codex GPT-5.4** and **Gemini 3.1 Pro** under full CDSFL 4-layer schema.
+Two confers (cross-model adversarial review sessions) were dispatched to **Codex GPT-5.4** (OpenAI via OpenRouter) and **Gemini 3.1 Pro** (Google) under the full CDSFL (Constraint-Driven Synthesis and Falsification) 4-layer schema.
 
 ## Overall Verdict
 
 Both models confirm the Exp 38 plan is **conceptually sound**. The runner implementation contains **critical bugs** that must be fixed before the experiment can produce trustworthy results.
 
 ## Converged Findings (Both Models)
+
+S* is the break-even threshold for fix quality below which a fix does net harm; nu_b is baseline re-injection rate; nu_f is fix-induced re-injection rate; q is effective detection rate; R is residual risk.
 
 | # | Finding | Classification | Status |
 |---|---------|---------------|--------|

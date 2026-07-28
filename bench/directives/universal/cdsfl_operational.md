@@ -79,7 +79,25 @@ state R_old, your estimates for η, d, p, S_k, ν_b, ν_f, and the resulting R_k
 If R_k > 0.5, your claim needs more falsification or a more diverse
 approach. Qualitative assessment alone is not acceptable.
 
+ADMISSIBILITY: Every finding MUST include the admissibility block defined
+in §15 (FFAFP). A finding that passes FALSIFICATION but fails ADMISSIBILITY
+is rejected at the gate and does not enter the registry.
+
+NOVELTY: Every finding MUST include the novelty triple (ν_k, c_ext,
+H/H_max) as defined in §16 (Stage 6 Literature-Calibrated Extension).
+Report the three dimensions separately. Do not collapse them into a single
+score. When no external search was performed, set c_ext = 0 and state so
+— Stage 6 gracefully reduces to Stage 5 in that case.
+
 A finding without a FALSIFICATION section will be rejected by the parser.
+A finding without an ADMISSIBILITY section will be flagged by the FFAFP
+gate (§15) — the fix cannot be admitted and the finding carries residual
+falsification debt until ADMISSIBILITY is supplied.
+A finding without a NOVELTY section defaults to (ν_k = 0, c_ext = 0),
+which reduces Stage 6 to Stage 5 — your finding gets no literature-novelty
+credit. If you did perform an external search, omitting NOVELTY costs you
+that credit; if you did not search, report (0, 0) explicitly so the
+quadrant is documented (see §16).
 "VERIFIED: TRUE" without a described falsification attempt is self-certification,
 not verification, and will be rejected.
 
@@ -278,6 +296,49 @@ It does not contribute to S_k.
 If the SEARCH content does not match the current file exactly, the block is
 REJECTED before any gate evaluation occurs (pre-gate failure).
 
+### 7.1. Finding Lifecycle (Bugzilla Paradigm)
+
+Findings progress through an explicit finite-state machine. Treat findings
+as bug tickets:
+
+  OPEN — newly discovered, awaiting verification
+  OPEN -> CONFIRMED — at least two independent verifications agree
+  CONFIRMED + verified fix -> CLOSED — terminal, challenge-resistant
+  CONFIRMED + late challenge -> CONTESTED -> CONFIRMED (if resolved)
+  CLOSED -> REOPENED — only via explicit REOPEN verdict with new evidence
+  DUPLICATE -> MERGED into the canonical entry
+
+When you submit a CONFIRMED finding with a parseable SEARCH/REPLACE block
+in its proposed_fix, the runner applies the fix to a sandbox copy of the
+target file and runs ruff + mypy + bandit + the experiment's test suite.
+If verification passes cleanly, the finding transitions to CLOSED and
+leaves the active discovery pool.
+
+This is the loop closure that makes the panel actually saturate. Without
+verified fixes transitioning to CLOSED, the panel rediscovers the same
+findings indefinitely. With them, the active pool drains as each
+finding is verified and closed.
+
+Operational consequence for you, the model:
+
+1. Findings already shown as CONFIRMED, CLOSED, or MERGED in the round
+   registry are SETTLED. Do not re-describe them. Do not CHALLENGE them
+   without specific new evidence not already in the record.
+
+2. Findings shown as CLOSED have been programmatically verified — their
+   fix has been applied to the target file in a sandbox and the
+   verification pipeline has confirmed correctness. To REOPEN a CLOSED
+   finding you must produce evidence beyond what the verification
+   pipeline checks.
+
+3. Findings shown as MERGED have been folded into a canonical entry.
+   That canonical entry is the live target for any additional verdicts.
+
+4. The clearest path to convergence is producing well-formed
+   SEARCH/REPLACE fixes for CONFIRMED findings so they can close. A
+   correct fix takes a finding out of circulation; a description without
+   a fix leaves it in the active pool forever.
+
 ---
 
 ## 8. Discovery Efficiency and Depletion
@@ -363,12 +424,19 @@ capabilities across the panel. It is not an intelligence generator. If no
 model in the panel has the capability to detect a specific flaw class, infinite
 iteration yields a strictly positive residual risk limit:
 
-  lim_{n→∞} R_{n,k} ≥ ν_k
+  lim_{n→∞} R_{n,k} ≥ ν_eff,k
 
 When successive passes produce ΔR_n ≈ 0, the panel has hit the substrate
 ceiling for that flaw class. The effective re-injection rate ν_eff is the
 absolute floor — no amount of further cycling can push risk below it. This
 is a hard exit condition, not a sign to try harder.
+
+**Notation note.** The symbol ν_eff,k above denotes the re-injection floor
+for flaw class k (Stage 5). The symbol ν_k appearing in §16 (Stage 6
+literature novelty) is a different quantity — same subscript because both
+are indexed by flaw class, but the two quantities measure different things
+(re-injection probability vs. literature novelty) and are reported
+separately. Do not conflate them.
 
 ---
 
@@ -446,3 +514,419 @@ The cross-cutting pass examines what modular passes cannot: emergent
 contradictions between components, assumptions that are individually sound
 but collectively incoherent, and interface behaviours that only manifest
 when components interact.
+
+---
+
+## 15. FFAFP Admissibility Constraint Set
+
+Sections 1 through 14 define the self-assessment equation and its working
+protocol. Section 15 defines the admissibility test that any finding or
+parameter update must pass *before* it is allowed to enter R_k(i). The
+equation is only as trustworthy as its inputs. FFAFP — Find, Follow,
+Analyse, Fix, P-pass — is the calibration procedure that enforces input
+quality.
+
+Empirical evidence from Experiments 12–37: without structural enforcement,
+0–13% of submitted findings survived independent falsification. Under
+FFAFP enforcement the rate rose to 60–85%. The difference is not model
+capability improving — it is the constraint set preventing inadmissible
+inputs from entering the update in the first place.
+
+A finding or parameter update is admissible if and only if it satisfies
+all five constraints below simultaneously. Failure on any one rejects the
+finding at the gate — it does not enter the registry, it does not
+contribute to q, it does not update R_k.
+
+**C_FFAFP = { S_min, G-completeness, d_tool, σ_measured, q_retest }**
+
+**S_min — minimum evidence standard.**
+A finding must include a specific location (file, function, line), a
+description of the flaw mechanism, and either a proof-of-concept or a
+formal falsification argument. General warnings ("this may have race
+conditions") without specific evidence are inadmissible. Formally: the
+finding f must contain (location, mechanism, evidence) where evidence ∈
+{proof-of-concept, formal argument, tool output}. Evidence = ∅ → rejected.
+
+**G-completeness — independently verifiable.**
+An independent verifier V, given only the finding text f, must be able to
+reproduce the investigation and produce a verdict v ∈ {CONFIRMED,
+REJECTED, INCONCLUSIVE} without requesting additional information from
+the finder. If verification requires information not present in f, f is
+incomplete and inadmissible.
+
+**d_tool — detection probability grounded in tool output.**
+The detection probability d entering q = η · d · p must come from actual
+tool execution (static analysis, test runner, SymPy verification, AST
+parse), not from self-assessed confidence. A claim of d = 0.9 based on
+"I am certain" is not admissible. d = 0.9 derived from "9 of 10 relevant
+tests caught the flaw class" is admissible. Formally: d_i = f(T_i) where
+T_i is the result of executing a defined verification tool.
+
+**σ_measured — fix efficacy measured, not assumed.**
+When the three-phase extension uses fix efficacy σ (equivalently, the
+S_k score), this must come from *re-running* the verification tools after
+the fix is applied. Declaring σ = 1.0 without post-fix measurement is not
+admissible. Formally: σ is admissible iff post-fix verification V_post
+was executed and σ = g(V_pre, V_post) for a defined mapping g.
+
+**q_retest — q decomposes into independently verifiable factors.**
+The effective detection probability q used in the Bayesian update must be
+decomposable as q = η · d · p where each factor has its own evidence
+trail. A q given as a single opaque number cannot be audited and is
+inadmissible. η comes from similarity computation against prior findings
+(not self-assessment). d comes from tool output (see d_tool). p comes
+from domain configuration or persistent memory.
+
+**What FFAFP is NOT.**
+FFAFP is not a separate mathematical model. It adds no equations to
+R_k(i). It is the operational guarantee that the inputs are valid. FFAFP
+is not `sth` (synthesise) — sth is a metacognitive command that
+consolidates findings after admission. The two are independent.
+
+**Mandatory reporting.**
+Every finding must include, alongside its FALSIFICATION and CORROBORATION
+sections, an admissibility statement of the form:
+
+  ADMISSIBILITY:
+    S_min: <PASS | FAIL — reason>
+    G-completeness: <PASS | FAIL — reason>
+    d_tool: <PASS | FAIL — tool used>
+    σ_measured: <PASS | FAIL | N/A — pre/post measurement pair>
+    q_retest: <PASS | FAIL — factor trail>
+
+A finding that omits ADMISSIBILITY is rejected at parse time, same as
+one missing FALSIFICATION.
+
+---
+
+## 16. Stage 6 Literature-Calibrated Extension
+
+Sections 3 and 15 cover Stage-5 R_k(i) and FFAFP admissibility. Section
+16 extends these with literature-calibrated novelty. Stage 5 treats η as
+a single scalar capturing novelty within the current session. This
+conflates two distinct claims: "new within this conversation" and "new
+against published work". Hossenfelder (2026) showed that OpenAI's claimed
+Erdős-problem solutions were algorithmically novel (the model had not
+seen them before) but were rediscoveries of known results. A pipeline
+that cannot detect rediscovery overweights known findings and produces
+artificially optimistic risk.
+
+Stage 6 decomposes η into internal novelty, literature novelty, and
+search corroboration — three independent dimensions that are never
+collapsed into a single score.
+
+**η decomposition:**
+
+  η_combined = η_int · (1 − c_ext · (1 − ν_k))
+
+where:
+- η_int ∈ [0, 1]: internal novelty — new within the current session?
+  (Existing similarity computation, unchanged from Stage 5.)
+- ν_k ∈ [0, 1]: literature novelty — new against published work? Computed
+  by external search (arXiv, Semantic Scholar, the immune system's O1
+  cell when running live). This ν_k is the *literature* ν, distinct from
+  the substrate-ceiling floor ν_eff,k in §9.
+- c_ext ∈ [0, 1]: search corroboration — how thoroughly did the search
+  cover the relevant space? A corroboration product across multiple
+  independent sources: c_ext = 1 − Π_s (1 − c_s).
+
+**Reduction property.** When c_ext = 0 (no literature search performed) or
+ν_k = 1 (finding is fully novel), η_combined = η_int. Stage 6 reduces
+exactly to Stage 5 in these cases — Stage 5 is a special case, not an
+alternative.
+
+**Two-dimensional reporting — never collapse.**
+ν_k and c_ext are maintained as independent reporting dimensions. A
+finding can be highly novel but poorly corroborated (high ν_k, low
+c_ext), or well-known but thoroughly verified (low ν_k, high c_ext).
+Both are meaningful and must be preserved. The η_combined formula
+projects them into a scalar for the R_k(i) update, but the full
+(ν_k, c_ext, H/H_max) triple is retained for interpretation.
+
+| ν_k  | c_ext | Quadrant          | Interpretation                       |
+|------|-------|-------------------|--------------------------------------|
+| High | High  | Verified novel    | Genuinely new, well-evidenced        |
+| High | Low   | Unverified novel  | Appears new, search was weak         |
+| Low  | High  | Verified known    | Confirmed rediscovery                |
+| Low  | Low   | Weakly assessed   | Appears known, search was weak       |
+
+H/H_max is the abstraction level (§7.2 of the Mathematical Appendix). It
+is reported alongside as *context*, not as evidence — it explains *why*
+c_ext might be low (abstract findings have fewer searchable matches) but
+does not inflate either score. Abstraction is not corroboration.
+
+**Per-finding novelty report (mandatory for Stage-6 enabled runs).**
+Every finding must include a NOVELTY block of the form:
+
+  NOVELTY:
+    ν_k: <0.00–1.00> — rationale (what did you search, what did you find)
+    c_ext: <0.00–1.00> — sources searched and their independent coverage
+    H/H_max: <0.00–1.00> — abstraction level (see §7.2)
+    Citations: <DOI / arXiv ID / URL list, or "none — genuinely novel">
+
+This triple parallels the system-level (F_n, R_n, A) reporting format.
+Do not collapse the three into a single "novelty score".
+
+**Orthogonality with R_k.**
+ν_k measures novelty. c_ext measures search quality. R_k measures
+validity. These are independent dimensions. A finding can be novel but
+wrong, or known but correct. High ν_k does not bypass the FFAFP
+admissibility gate (§15). The full constraint set applies regardless of
+novelty score — novelty is recognised, not exempted.
+
+**E-value gate (proposed, shadow-mode in Exp 39).**
+The S_k verification gate may be strengthened by e-value sequential
+testing (Stanford POPPER framework, Vos et al. 2025, arXiv:2502.09858)
+replacing binary pass/fail with continuously accumulating evidence:
+
+  e_i = 1/FPR_tool on Pass, 0 on Fail, 1 on Inconclusive
+  E_combined = Π_i e_i
+
+Contingent on validated per-tool FPR mappings. In Exp 39 the e-value
+computation runs in shadow mode — logged, not yet gating admission.
+Findings that would be rejected by the binary gate are still rejected;
+e-values only provide additional evidence weight for findings that pass
+the binary gate.
+
+**Directive hierarchy.** When this section conflicts with §3 or §15, the
+more specific constraint wins. §15 admissibility gates fire *before*
+§16 novelty assessment — an inadmissible finding never reaches the
+novelty stage. §3 Bayesian update uses η_combined from §16 only if the
+finding is admissible per §15.
+
+(Stage 6 derived 14 April 2026. Full mathematical derivation, boundary
+conditions, monotonicity analysis, and integration tests in
+`docs/MATHEMATICAL_APPENDIX.md` §1.1 Literature-Calibrated Extension,
+§1.2 FFAFP Calibration Protocol, §1.6 ν_k literature novelty, §1.7 c_ext
+source diversity, §1.8 E-value gate.)
+
+---
+
+## 17. Feedback Channel — Corrective Loop (Load-Bearing)
+
+At the end of each round K, the schema computes a rich per-finding signal:
+specialist verdicts from §15 tool gates, FFAFP admissibility pass/fail,
+near-duplicate similarity to prior findings, and R_k consistency between
+your self-report and the aggregate. Prior to this directive that signal
+was logged and discarded — models never saw it and could re-submit the
+same refuted claim in the next round. That wastes the entire point of the
+framework.
+
+From round K onwards you will receive a **SCHEMA FEEDBACK** section at the
+top of your round K+1 prompt listing every finding the schema flagged.
+This section is prescriptive, not advisory. You MUST address each flagged
+item before resubmitting.
+
+**Action precedence.**
+
+1. **REFUTED by tool.** If a specialist tool (sympy, z3, crosshair, rdkit,
+   statsmodels, etc.) returned a REJECTED verdict on your claim, the tool
+   believes you are wrong. You must do one of:
+   * Run your own tools on the same claim. If your output agrees with the
+     schema's, withdraw or correct the finding and document the correction.
+   * Produce counter-receipts — tool output of your own that shows the
+     schema's tool was wrong (wrong version, input-boundary bug, domain
+     misapplication). State the tool, the invocation, and the output.
+   Self-reported confidence is not accepted. Assertions that "my
+   reasoning is sound" without tool receipts are inadmissible under this
+   directive.
+
+2. **ADMISSIBILITY FAIL.** If one or more §15 gates (S_min, G-completeness,
+   d_tool, σ_measured, q_retest) failed on a finding, either supply the
+   missing block in full or withdraw the finding. Partial completion does
+   not clear the gate.
+
+3. **NEAR-DUPLICATE.** If a finding was flagged as similar (cosine ≥
+   τ_sim_embed) to a prior-round finding, you must either demonstrate
+   that the findings are distinct (different mechanism, different file,
+   different flaw class, not merely different wording) or withdraw. The
+   schema's similarity model is permissive — high cosine with a rejected
+   prior is a strong signal you are restating a dead claim.
+
+4. **R_k INCONSISTENT.** If your self-reported R_k deviates from the
+   aggregate by more than the validator's threshold, recompute using
+   §3 and the Bayesian update, or explain what about your evidence
+   justifies the deviation (novel flaw class weighting, per-tool
+   detection asymmetry, etc.).
+
+**Resubmission rule.** Do not resubmit a flagged finding unchanged. A
+repeated identical claim with no schema-acknowledged response to the
+feedback is inadmissible and will be dropped by the feedback channel
+downstream — it will not count towards R_k reduction, will not feature
+in registry novelty, and will count as parse waste for the ITC.
+
+**Feedback is per-model.** You will see only the feedback on findings you
+produced. Other models receive feedback on theirs. If a cross-model
+disagreement matters to a claim you filed, you will see it as a REFUTED
+or NEAR-DUPLICATE line with the other model's finding ID cited.
+
+**Refutation of schema tool output is permitted.** The schema's tools are
+not infallible. If you have genuine tool-backed counter-evidence — a
+SymPy output, a z3 model, a test run — that contradicts the schema's
+verdict on your claim, state it plainly with receipts. This is the normal
+scientific process. What is not permitted is unreceipted disagreement.
+
+**Rendering boundary.** The feedback section is capped at the top K
+flagged items per model (ranked by priority: REFUTED > ADMISSIBILITY
+FAIL > NEAR-DUPLICATE > R_k delta, with severity as tiebreaker). If you
+have more than K flags in one round, the remainder are surfaced as an
+aggregate count and logged to the round file. Address the top items
+first; if fewer than K in the subsequent round, earlier overflow items
+will surface.
+
+**Disablement.** The channel is gated by `feedback_channel_enabled` in
+`bench/cdsfl_registry/universal.toml` (default `true`). Disabling is
+a controlled-ablation tool for research, not a user convenience. If the
+channel is disabled, you will see no feedback section and are expected
+to operate under §3 Bayesian update alone — accuracy will measurably
+degrade.
+
+(Feedback channel implemented 15 April 2026. Implementation:
+`bench/dm/_feedback.py`; wiring in `bench/reference_runner.py`
+`_dispatch_round_star()` and main loop. The channel closes the
+measurement-to-correction loop: the schema stops being a passive
+observer and starts being a corrective force, which is the entire
+point of CDSFL.)
+
+---
+
+## §18 Divergence Directive
+
+Popper's method has two arms: **bold conjectures** and **severe tests**.
+CDSFL's severe-tests arm is highly developed — the falsification pipeline,
+the admissibility gates, cross-model corroboration, and the §17 feedback
+channel all serve it. The bold-conjectures arm has until now been
+implicit, inherited from whatever the models happen to produce unprompted.
+That asymmetry is arbitrary. This section closes it.
+
+**Per every non-trivial finding, you must supply one of the following two
+structures:**
+
+**Structure A — Primary solution plus ≥1 alternative.** The alternative
+must differ from the primary on at least one of these named dimensions,
+the dimension must be declared explicitly in the alternative block, and
+the alternative must carry a **contrast statement** naming how it
+departs from the primary on that dimension (see Contrast requirement
+below):
+
+1. **Mechanism** — a different physical, mathematical, or algorithmic
+   pathway to the same outcome.
+2. **Assumption** — a different premise, axiom, or modelling choice,
+   named and contrasted with the primary's.
+3. **Scope** — a different range of applicability (broader, narrower,
+   different regime, different boundary).
+4. **Timescale** — a different temporal horizon, rate, or ordering
+   (asymptotic vs transient, fast vs slow, causal vs synchronic).
+5. **Tradeoff** — a different balance of cost, risk, precision,
+   generality, or other resource — named and quantified where possible.
+
+**Structure B — Primary solution plus scoped null-alternative
+justification.** If you have genuinely searched the alternative space
+and cannot identify a distinct alternative that passes the lexical
+near-duplicate heuristic, you must state so explicitly and supply a
+justification that names *the search space you considered, the
+candidates you rejected, and the reason each rejected candidate
+collapsed to the primary*. This is analogous to the anti-deference
+`null_find_requires_scoped_justification` protocol. Bare declarations
+("no alternative exists") are inadmissible.
+
+**Contrast requirement.** Every alternative must include a contrast
+statement of the form *"Differs from primary: …"* (or equivalent:
+*"In contrast to primary: …"*, *"vs. primary: …"*). The statement
+names, in natural language, how the alternative departs from the
+primary on the declared dimension. Minimum length is governed by
+`min_contrast_chars` (default 20). An alternative that omits the
+contrast statement, or supplies one shorter than the minimum, is
+inadmissible regardless of its primary-vs-alternative similarity score.
+
+**Cosmetic rewordings are rejected.** The R_k validator applies a
+lexical near-duplicate heuristic (Jaccard over normalised token sets)
+to the alternative text. If the alternative differs from the primary
+only in surface wording — same mechanism, same assumptions, same scope,
+same trade — it is treated as having supplied no alternative. A
+near-duplicate alternative does not earn novelty credit and counts as a
+null-alternative submission without the required justification (double
+penalty). Note: the Jaccard heuristic is a **lexical near-duplicate
+filter**, not a semantic-equivalence test; an embedding backend is the
+planned follow-up.
+
+**Near-copy severe tier.** The severe η_int modulation tier (0.60)
+fires in three cases: (a) any alternative at or above
+`near_copy_threshold` (default 0.98 Jaccard); (b) recidivism (same
+rejected alternative re-submitted across rounds); or (c) **all**
+alternatives are cosmetically isomorphic (every alternative at or
+above `isomorphism_threshold`, default 0.85). Case (c) is the original
+§18 double-penalty: submitting nothing but compliance theatre is
+treated as null-alternative-without-justification and carries the
+severe modulator. A single inadmissible alternative among others that
+pass does not trigger the severe tier — that is the 0.85 soft-penalty
+case.
+
+**Sibling alt-vs-alt isomorphism is a ship-blocker.** When a finding
+carries multiple alternatives, each subsequent alternative is compared
+against every earlier-indexed sibling. If any sibling-vs-sibling
+Jaccard reaches `sibling_isomorphism_threshold` (default 0.85) the
+later-occurring alternative is flipped inadmissible — the first
+alternative stands, the later duplicate is dropped. A finding cannot
+earn credit for the same alternative twice by re-phrasing it.
+
+**Dimension of difference is non-optional.** An alternative without a
+declared dimension is parsed as cosmetic. Tag the dimension in the
+alternative block header.
+
+**Rendering boundary.** Alternatives are capped at
+`max_chars_per_alternative` (default 2000) per alternative, and at
+`min_alternatives` (default 1) per finding. The model may supply more
+than the minimum; additional alternatives are welcomed and count toward
+`η_int` (internal novelty channel) provided each passes the primary
+near-duplicate check, the sibling near-duplicate check, and the
+contrast-statement check. Alternatives **do not** count toward `ν_k`,
+which is the literature-grounded novelty channel and is maintained by
+the external-evidence pipeline, not by prompt-level divergence. The
+two channels are assignment-orthogonal by design — see the Stage 6
+channel assignment below.
+
+**Channel assignment (Stage 6 invariant).** The R_k / ν_k / c_ext
+channels are orthogonal in the **assignment** sense. The divergence
+modulator multiplies `η_int` (internal novelty). Its effect reaches
+R_k exclusively through the decomposition
+`η_combined = η_int · (1 − c_ext · (1 − ν_k))` feeding `q = η_combined
+· d · p` and then the R_k recurrence. The modulator is forbidden from
+acting as an independent pre-factor on R_k; it is forbidden from
+entering q as a free factor outside η_int; it is forbidden from
+crediting ν_k. Implementation enforces these invariants in
+`bench/dm/_divergence.py` (see the module-level Orthogonality
+Contract). The round-2 model review ratified this assignment 5/5
+unanimous.
+
+**Interaction with HARD constraints.** The divergence directive operates
+exclusively inside SOFT-constraint space. HARD constraints (physics,
+mathematics, law, safety) remain inviolable for the primary *and* every
+alternative. An alternative that violates HARD constraints is rejected
+at admissibility, not at isomorphism.
+
+**Interaction with §17 feedback.** If a prior-round alternative was
+refuted by the schema and resurfaces unchanged in the current round, it
+is treated as a resubmitted flagged finding per §17 — inadmissible,
+dropped, no credit, and (in repeat cases) routed to the near-copy
+severe tier as recidivism. You may refine a refuted alternative and
+resubmit the refined version; the refinement must address the prior
+refutation and carry a contrast statement naming what changed.
+
+**Disablement.** The directive is gated by `divergence_enabled` in
+`bench/cdsfl_registry/universal.toml` (default `true`). Disabling is
+a controlled-ablation tool for research, not a user convenience. If the
+directive is disabled, you will see no mandate for alternatives and are
+expected to operate under §3 Bayesian update alone — internal novelty
+`η_int` will measurably decline and the framework reverts to pure
+error-correction mode.
+
+(Divergence directive added 15 April 2026. Round-2 unanimous model
+review 16 April 2026 ratified: contrast statement requirement,
+sibling alt-vs-alt ship-blocker, near-copy 0.98 severe tier, and the
+channel-assignment invariant locating the modulator on η_int rather
+than R_k. Implementation: `bench/dm/_divergence.py`; validator
+extension in `bench/reference_runner.py` R_k pipeline. The directive
+closes the generation-side gap: the schema stops being a pure critic
+and starts being an invention engine. This is the missing symmetry in
+Popper's arms and the reason CDSFL was built.)

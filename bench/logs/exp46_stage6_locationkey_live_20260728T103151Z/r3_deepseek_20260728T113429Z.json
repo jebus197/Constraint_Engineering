@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T113429Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 608,
+  "response": "FINDING_ID: F004\nSEVERITY: 0.78\nFIND: Finding with description=None crashes _assess_finding due to missing None guard.\nFALSIFIER:\n```python\nimport sys\nfrom bench.dm._shadow_stage6 import ShadowStage6Calibrator\n\nclass NoneDescriptionFinding:\n    finding_id = \"F-CRASH\"\n    description = None\n    flaw_class = \"edge-case\"\n    novelty = 0.9\n    detection_confidence = 0.7\n\ncal = ShadowStage6Calibrator()\ntry:\n    cal._assess_finding(NoneDescriptionFinding(), [])\nexcept TypeError:\n    print(\"FALSIFIED\")\n    sys.exit(0)\n# If the defect is absent, the script exits cleanly with code 0 and no FALSIFIED output\n```",
+  "metadata": {
+    "round": 3,
+    "elapsed": 336.4,
+    "chars": 608,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

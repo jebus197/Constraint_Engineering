@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260411T115716Z",
+  "phase": "r17",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1265,
+  "response": "CONFIRM C0101 | FIND: `RunnerConfig.__post_init__()` unconditionally rewrites caller-supplied `rho_earliest_round` to `earliest_stop_round`. The code `if self.rho_earliest_round != self.earliest_stop_round: self.rho_earliest_round = self.earliest_stop_round` destroys explicit configuration.\n\nCONFIRM C0082 | FIND: `FindingRegistry.contested_count()` accepts `grace_period` but hardcodes `if current_round - oldest > 1:` for unresolved challenges. This ignores the parameter for contested findings while using it for `UNCONFIRMED`.\n\nCONFIRM C0086 | FIND: `FindingRegistry.open_crit_high_count()` defines `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")` while `build_summary()` treats `\"REOPENED\"` as active. Reopened critical/high findings are therefore omitted from the convergence gate count.\n\nCONFIRM C0090 | FIND: `_compute_rho()` computes `round_idx = len(raw_counts) - 1` and compares it to `cfg.rho_earliest_round`, but round counters elsewhere are 1-based. This delays churn activation by one round.\n\nCONFIRM C0116 | FIND: `_compute_rho()` returns immediately on `if not raw_counts or raw_counts[-1] == 0: return 0.0, 0.0, False`, which suppresses rolling-average rho and churn detection even when prior rounds in the configured window show sustained low efficiency.",
+  "metadata": {
+    "round": 17,
+    "elapsed": 7.7,
+    "chars": 1265,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1374,4 +1374,271 @@ Subsequent analysis (4 April 2026) demonstrated that the 7+ interaction patterns
 
 ---
 
+### Experiment 29: Three-Layer Schema Integration Test (early April 2026)
+
+**Dates:** 5–7 April 2026
+**Models:** CC2 (Opus 4.6), ChatGPT (GPT-5.4), Codex (GPT-5.4), Gemini (3.1 Pro), DeepSeek (V3.2)
+**Purpose:** Integration test of the three-layer schema validated in C5, with the 5-model panel operating under a shared orchestration layer. Path to Bench Run 2.
+
+#### Design
+
+The three-layer schema (Meta structured prompting → CDSFL constraints → conversational default with ITC fallback) was instantiated as the default operating mode for all five models. A composer assembled per-model prompts from shared directives and model-specific dispatch configurations. The integration test focused on whether the schema held across models without leakage, not on finding-count metrics.
+
+#### Results
+
+The schema held across models. Each model produced outputs conformant to the structured format (verdict / evidence / proposed change / self-criticism). Inter-model disagreement occurred on substantive points rather than on format compliance, which was the intended outcome — the schema is a format constraint, not a content constraint.
+
+Two confer patterns were observed that became load-bearing in later experiments. First, the **framing confound**: when the orchestrator pre-announces a model's role (adversarial vs. supportive), outputs anchor to that framing rather than to the object of review. Fix: neutral framing with role emerging from the constraint set rather than from explicit instruction. Second, the **long-session degradation**: models operating in sessions beyond approximately 18 hours of continuous dispatch began conflating earlier and later definitions of the same term. Fix: ITC restarts with fresh context plus fingerprint-informed scope, never benching.
+
+**Raw data:** `bench/logs/experiment_29_*`
+**Analysis:** `experimental_notes/Exp29_Implementation_Complete_2026-04-04.md`, `experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md`
+
+---
+
+### Mathematical Model Audit (8 April 2026)
+
+**Date:** 8 April 2026
+**Artefact:** `docs/MATHEMATICAL_APPENDIX.md` (audit extension)
+**Tools:** SymPy, z3
+**Purpose:** Internal consistency check of the mathematical framework, with the goal of identifying gaps, disputed claims, and areas requiring calibration.
+
+#### Method
+
+The appendix was subjected to a structured audit with five model passes. Each pass checked a specified subset of claims against SymPy derivation and z3 constraint satisfaction. Claims that could be mechanically verified were marked VERIFIED. Claims that required empirical calibration were marked CALIBRATION-REQUIRED. Claims that failed mechanical verification were marked DISPUTED.
+
+#### Results
+
+Internal consistency across 25 of 25 claims checked. All 5 previously noted gaps confirmed as real gaps requiring additional work. Two claims disputed:
+
+1. The reported R² of 0.985 for the coverage model fit was not reproducible from the recorded data.
+2. The z = 3.63 significance claim for the diversity effect could not be verified from the raw data referenced.
+
+The ρ threshold (similarity calibration for near-duplicate detection) was flagged as requiring empirical calibration rather than being derivable from first principles.
+
+#### Unified Recursive State Equation
+
+The most consequential output of the audit was the derivation of the unified recursive state equation:
+
+```
+R_k(i) = R_det · (1 − ν_k) + ν_k
+R_det  = R_k(i−1) · (1 − q_ik) / (1 − q_ik · R_k(i−1))
+```
+
+with critical re-injection rate `ν* = q · R`. This equation replaced the earlier `C(n)` notation as the canonical claim-state representation. The derivation is recorded in the mathematical appendix.
+
+**Analysis:** `experimental_notes/Mathematical_Model_Audit_2026-04-08.md`
+
+---
+
+### Semantic Novelty Fix (9 April 2026)
+
+**Date:** 9 April 2026
+**Artefact:** `bench/immune_agents.py` (`_finding_similarity` function)
+**Purpose:** Replace ID-proxy novelty detection with content-based similarity.
+
+Before this fix, γ (novelty rate) and ρ (similarity) were computed against finding IDs, which meant a model could rename a finding and have it counted as novel. The fix replaced the ID proxy with `_finding_similarity()`, which compares finding content (verdict, evidence, proposed change) rather than ID. γ and ρ are now content-grounded.
+
+**Impact:** Immediate — churn rate dropped on the same task packet from 84.5% (Run 9) to ~65% post-fix on identical re-runs.
+
+---
+
+### Immune Cell Type Architecture (9 April 2026)
+
+**Date:** 9 April 2026
+**Artefact:** `bench/immune_agents.py`, `bench/dm/` (cell-specific modules)
+**Purpose:** Formalise the immune pipeline as a set of specialist cells with defined envelopes, verdict grammars, and calibration bars.
+
+Seven cell types were formalised: Dendritic (intake and dispatch), Cytotoxic T (challenge), Natural Killer (edge stress-test), Regulatory T (admissibility enforcement), B-Cell Complex (specialist domain dispatch), Macrophage (cleanup and forensic trace), and Ouroboros O1 (self-reference). Each cell was given a uniform composition law:
+
+```
+S_k = A · E
+A   = Π g_j             (product of gate values)
+E   = Σ w_m · e_m       (weighted evidence)
+```
+
+Live cells contribute to R_k updates. Shadow cells collect telemetry but do not contribute to verdicts until they pass their calibration bar.
+
+---
+
+### Tranches A, B, C — B-Cell Tool Integration (13–14 April 2026)
+
+**Dates:** 13–14 April 2026
+**Artefacts:** `bench/cdsfl_registry/tool_manifest.toml`, B-Cell specialist dispatch modules
+**Purpose:** Wire specialist STEM tools into the B-Cell Complex as active domains.
+
+#### Tranche A (13 April 2026)
+
+Wired: SymPy, z3, NumPy, SciPy, pint, uncertainties, astropy, mpmath, AST, pytest, ruff, mypy, bandit, PuLP, statsmodels, CrossHair. Total: 16 live domains.
+
+#### Tranche B (14 April 2026)
+
+Added: RDKit (SMILES parsing, chemical structure), Biopython (sequence analysis), scikit-learn (ML metrics), NetworkX (graph theory). Total active after Tranche B: 20 domains, with 2 held in shadow for calibration (matplotlib plotting, additional ML variants).
+
+#### Tranche C (shadow — not yet active)
+
+Domains identified for future calibration: additional specialist libraries for domains not yet encountered at calibration volume. Held in shadow to avoid destabilising live specialists.
+
+**Final active count at commit 6580737:** 18 active + 2 delegated.
+
+**Analysis:** `experimental_notes/Domain_Tool_Wiring_2026-04-14.md`
+
+---
+
+### Experiment 36: CC2 Agent Performance Evaluation (8–12 April 2026)
+
+**Dates:** 8–12 April 2026
+**Ground truth reference:** `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` (Section XI — canonical execution plan)
+**Models:** 5 CC2 sub-agents dispatched via `claude -p` CLI under the full CDSFL directive set.
+**Purpose:** Evaluate CC2 sub-agent performance under structured dispatch, identify routing patterns, and prepare the benchmark runner architecture for Bench Run 2.
+
+#### 4-Phase Plan
+
+| Phase | Focus | Status at closure |
+|-------|-------|-------------------|
+| A | Exp 36 resume (5 fixes) | Completed |
+| B | Reference runner + CC2 architecture | Completed |
+| C | Bench Run 2 (27 STEM tasks) | Scaffolded |
+| D | Docs / outreach | In progress |
+
+#### Agent Performance Findings
+
+| Agent | Status | Note |
+|-------|--------|------|
+| Agent 1 | Broken | Schema non-conformance |
+| Agent 2 | Under-routing | Not escalating marginal cases |
+| Agent 3 | Under-routing | Same pattern |
+| Agent 4 | Under-routing | Same pattern |
+| Agent 5 | Over-relied-upon | Receiving escalations that should have been handled by agents 2–4 |
+
+Under-routing was the dominant failure mode: 3 of 4 non-broken agents were not escalating marginal cases to the orchestrator, causing Agent 5 to receive a disproportionate escalation load. Fix priorities identified for Experiment 37.
+
+**Analysis:** `experimental_notes/Exp36_Results_Summary_2026-04-08.md`, `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md`
+
+---
+
+### Stage 6 Literature-Calibrated Extension (14 April 2026)
+
+**Date:** 14 April 2026
+**Artefact:** `docs/MATHEMATICAL_APPENDIX.md` (Stage 6 extension, lines added to bring appendix to 1991 lines total)
+**Purpose:** Integrate external calibration into the novelty and efficacy terms.
+
+#### Two-Dimensional Novelty
+
+Pre-Stage 6, novelty was a single scalar ν_k (internal novelty). Stage 6 adds a second dimension `c_ext` (external calibration — how much of the claim has been checked against independent literature or empirical data outside the panel):
+
+```
+η_combined = η_int · (1 − c_ext · (1 − ν_k))
+```
+
+The interpretation: a claim with high internal novelty but high external calibration has a modest efficacy penalty; a claim with low internal novelty and low external calibration has a larger penalty; a claim with both high ν_k and low c_ext (highly novel and unchecked externally) has the largest penalty, which is the intended behaviour — untested novelty is less efficacious than tested novelty.
+
+#### ν_k Metric Design
+
+The ν_k design iterated over 2 confer rounds, producing 12 corrections. The shadow calibrator was hooked into the live metric via the composition law. ν_k is now a live input to R_k updates, with the shadow calibrator producing the c_ext estimate from external reference retrieval.
+
+**Analysis:** `experimental_notes/Stage6_R2_Confer_Synthesis_2026-04-14.md`, `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
+
+---
+
+### §17 Feedback Channel Implementation (15 April 2026)
+
+**Date:** 15 April 2026
+**Artefact:** `bench/dm/_feedback.py` (533 lines)
+**Purpose:** Close the measurement-to-correction loop of the severe-testing arm.
+
+#### Action Precedence
+
+```
+REFUTED  >  ADMISSIBILITY FAIL  >  NEAR-DUPLICATE  >  R_k INCONSISTENT
+```
+
+For any finding, only the first matching action is rendered in the following round's feedback slot. Feedback is scoped per originating model (not broadcast across the panel) and bounded by `top_k` and `max_chars` parameters.
+
+#### Rendering
+
+```
+F(f, r) = (flags, verdict, refutations, admissibility_fails,
+           near_dup_ids, r_k_discrepancy)
+feedback_section(m, r+1) = render(
+    { F(f, r) : f.origin = m ∧ F(f, r).flags ≠ ∅ },
+    top_k, max_chars
+)
+```
+
+**Tests at merge:** All feedback-specific tests passing as part of the cumulative 1250-test suite.
+
+---
+
+### §18 Divergence Directive Implementation (15–16 April 2026)
+
+**Dates:** 15–16 April 2026
+**Artefact:** `bench/dm/_divergence.py` (443 lines)
+**Purpose:** Operationalise the bold-conjecture arm with a divergence audit and channel-reassignment mechanism.
+
+#### Five Divergence Dimensions
+
+Mechanism, assumption, scope, timescale, tradeoff. Conjectures must register their divergence against prior siblings along at least one dimension.
+
+#### Isomorphism Threshold
+
+Jaccard similarity ≥ 0.85 against sibling conjectures triggers Isomorphic-only classification.
+
+#### Channel Reassignment Table
+
+| Channel             | eta_int_modulator |
+|---------------------|-------------------|
+| Compliant           | 1.00              |
+| Engaged but failed  | 0.85              |
+| No engagement       | 0.70              |
+| Isomorphic-only     | 0.60              |
+
+#### Design Iteration
+
+Earlier drafts applied the modulator to R_k itself. That design was discarded because it conflated the severity of a test with the boldness of a claim. The accepted design applies the modulator to η_int (internal efficacy), preserving independence between the severe-testing and bold-conjecture arms.
+
+**Tests at merge:** All divergence-specific tests passing as part of the cumulative 1250-test suite.
+
+---
+
+### Experiment 40 Stage 3 Closure (17–18 April 2026)
+
+**Dates:** 17–18 April 2026
+**Commits:** Phase A `8b8682d`, Phase B `bdfc93a`, documentation synchronisation `6580737`
+**Purpose:** Integrate §17 and §18 with the B-Cell Complex, close the Stage 3 integration test, and bring the test suite to a green state with the new machinery live.
+
+#### Results
+
+**Tests passing:** 1250 / 1250.
+
+**Residual items (gated / deferred):**
+1. Test `1E.3` — value-flip assertion gated behind a specific feature flag; flipping the flag was out of scope for Stage 3 closure.
+2. Test `1E.10` — runtime assertion deferred to Experiment 54 (integration experiment).
+
+Stage 3 closure establishes that the formal documents, the mathematics, and the code describe the same object without drift. It does not establish empirical validation of the framework's underlying hypotheses about §17 and §18; that validation is scheduled for the 2×2 factorial in Experiments 41–54.
+
+**Raw data:** `bench/logs/experiment_40_*`
+**Analysis:** `experimental_notes/Exp40_1E8_1E11_1E12_Completion_2026-04-17.md`, `experimental_notes/CDSFL_Stage_Three_Closure_Explained_2026-04-17.md`
+
+---
+
+### Documentation Sync and Architecture Refresh (18–19 April 2026)
+
+**Dates:** 18–19 April 2026
+**Commits:** Documentation synchronisation at `6580737` (initial), follow-on doc sweep covering FOUNDERS_NOTES, SHORTCUTS, ARCHITECTURE, cdsfl_topology_formal, EXTENDED_RATIONALE, EXPERIMENTAL_RESULTS, PAPER.
+**Purpose:** Bring all narrative, formal, and general-audience documents into alignment with the system state at commit `6580737`.
+
+Scope of the sweep:
+
+1. `docs/FOUNDERS_NOTES.md` — 12 new dated entries covering 5–19 April 2026.
+2. `resources/SHORTCUTS.md` — full MC table alignment (new entries: `rg`, `ag`, `sth`, `cc2`, `cx`, `ge`, `cgpt`, `ds`, `f`, `ext`; deprecated `rr` removed).
+3. `docs/ARCHITECTURE.md` — dual Popperian arms framing, extended substrate agnosticism, B-Cell Complex section, §17 and §18 sections, Ouroboros and Macrophage cell sections, data flow update.
+4. `bench/directives/universal/cdsfl_topology_formal.md` — formal clauses T9 (Feedback Channel Interaction) and T10 (Divergence Directive Interaction) added; classification summary table extended.
+5. `docs/EXTENDED_RATIONALE.md` — five new general-audience sections covering the April 2026 developments.
+6. `docs/EXPERIMENTAL_RESULTS.md` — this section and the preceding Experiment 29–40 entries.
+7. `PAPER.md` — update pass for §17, §18, Stage 6, Exp 40 results, B-Cell Complex, Tranche refactor.
+
+**TTS and experimental_notes mirrors:** Each substantive batch produced a `.txt` mirror at `~/Desktop/CDSFL_tts/` and a `.md` mirror at `experimental_notes/`, per the unification directive that TTS notes are the same artefact as experimental notes in two formats.
+
+---
+
 *Raw data for all experiments is stored in `bench/results/` and `bench/logs/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*

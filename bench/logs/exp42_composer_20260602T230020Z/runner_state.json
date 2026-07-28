@@ -1,0 +1,860 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.85,
+        "description": "`_prune_for_coherence()` (line ~approx 530) prunes directive *text* to reduce coherence density, but density = `constraint_count / token_estimate` where `constraint_count` is derived from the TOML policy (`_count_constraints(policy)`) and `token_estimate` is derived from directive text length (`total_chars // 4`). Removing directive text reduces `token_estimate` (denominator) while `constraint_count` (numerator) is unchanged. This *increases* density \u2014 the opposite of the intended effect. The pr",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints_from_policy(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged TOML policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _count_constraints(packets: list[DirectivePacket]) -> int:\n    \"\"\"Count directive blocks across all packets (used for coherence density).\"\"\"\n    return sum(\n        len(_split_packet_directives(p.text)) for p in packets\n    )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.7,
+        "description": "`compose()` mutates the caller-supplied `situation` parameter in-place at the line:\nsituation.text = _apply_phenotype_transform(situation.text, transform)\n`DirectivePacket` is a mutable dataclass (not `frozen=True`). This assignment modifies the caller's object. The docstring claims the function is \"Pure: no side effects, no state mutation.\" The claim is false.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation = replace(situation, text=_apply_phenotype_transform(situation.text, transform))\n        packets.append(situation)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.82,
+        "description": "`_prune_for_coherence()` can remove or transform HARD directive blocks that are embedded inside packets whose packet-level `constraint_class` is `\"SOFT\"`.\n\nLocation:\n- `bench/cdsfl_registry/composer.py::_load_domain_directive`\n- `bench/cdsfl_registry/composer.py::_block_is_hard`\n- `bench/cdsfl_registry/composer.py::_prune_for_coherence`\n- `bench/cdsfl_registry/composer.py::compose`, domain phenotype transform loop\n\nEvidence:\nreturn DirectivePacket(\n    layer=\"domain\",\n    name=path.stem,\n    tex",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _block_is_hard(block: str) -> bool:\n    \"\"\"Determine if a directive block contains HARD constraint content.\"\"\"\n    upper = f\" {block.upper()} \"\n    return any(m in upper for m in _HARD_BLOCK_MARKERS)\n==== REPLACE\ndef _block_is_hard(block: str) -> bool:\n    \"\"\"Determine if a directive block contains HARD constraint content.\"\"\"\n    upper = block.upper()\n    if re.search(\n        r\"(^|[^A-Z0-9])\"\n        r\"(HARD|MUST|NEVER|REQUIRED|NON-NEGOTIABLE|FORBIDDEN|ALWAYS)\"\n        r\"([^A-Z0-9]|$)\",\n        upper,\n    ):\n        return True\n    if re.search(r\"(^|[^A-Z0-9])(DO NOT|MUST NOT)([^A-Z0-9]|$)\", upper):\n        return True\n    return False\n\n\ndef _packet_contains_hard_blocks(packet: DirectivePacket) -> bool:\n    \"\"\"Return True when a packet must not be transformed or removed wholesale.\"\"\"\n    if packet.constraint_class == \"HARD\":\n        return True\n    return any(_block_is_hard(block) for block in _split_packet_directives(packet.text))\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.86,
+        "description": "`compose()` applies a raw final character slice to `rendered` after packet composition and conflict resolution, causing `rendered_text`, `packets`, `cid`, and `manifest` to describe different artifacts.\n\nLocation:\n- `bench/cdsfl_registry/composer.py::compose`, final global phenotype length cap\n\nEvidence:\n# Apply global phenotype length cap\nif len(rendered) > transform.max_directive_chars:\n    rendered = (\n        rendered[: transform.max_directive_chars]\n        + \"\\n[... truncated for model cap",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\n==== REPLACE\n# Fail loud rather than silently slicing directives after provenance is fixed.\n    # Raw truncation can remove HARD content and makes packets/CID/manifest\n    # describe content that is not actually present in rendered_text.\n    if len(rendered) > transform.max_directive_chars:\n        raise PolicyViolationError(\n            f\"Composed directive exceeds {model} capacity after structured pruning: \"\n            f\"{len(rendered)} > {transform.max_directive_chars}. \"\n            \"Reduce SOFT situation content or provide a smaller interaction pattern.\"\n        )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "6 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.78,
+        "description": "`compose()` applies phenotype transforms to HARD situation packets, including mandatory interaction patterns, even though `_apply_phenotype_transform()` can strip examples, strip rationale, simplify mandatory wording, compress tables, and truncate text.\n\nLocation:\n- `bench/cdsfl_registry/composer.py::build_interaction_pattern`\n- `bench/cdsfl_registry/composer.py::compose`\n- `bench/cdsfl_registry/composer.py::_apply_phenotype_transform`\n\nEvidence:\n\nHard interaction presets are possible:\nINTERACTI",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation_has_hard_blocks = (\n            situation.constraint_class == \"HARD\"\n            or any(\n                _block_is_hard(block)\n                for block in _split_packet_directives(situation.text)\n            )\n        )\n        if not situation_has_hard_blocks:\n            situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.8,
+        "description": "`_compute_cid()` does not hash directive content. It hashes only packet layer, name, text length, and model, so different rendered directive sets can receive the same CID when packet names and lengths match.\n\nLocation:\n- `bench/cdsfl_registry/composer.py::_compute_cid`\n\nEvidence:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n   ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash over packet content.\"\"\"\n    payload = {\n        \"model\": model,\n        \"packets\": [\n            {\n                \"layer\": p.layer,\n                \"name\": p.name,\n                \"text\": p.text,\n                \"constraint_class\": p.constraint_class,\n                \"domain\": p.domain,\n                \"packet_model\": p.model,\n                \"tags\": sorted(p.tags),\n            }\n            for p in packets\n        ],\n    }\n    raw = json.dumps(\n        payload,\n        ensure_ascii=False,\n        sort_keys=True,\n        separators=(\",\", \":\"),\n    )\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0001"
+        ],
+        "severity": 0.85,
+        "description": "Mathematical Contradiction in Coherence Pruning (Density Inversion). The `_prune_for_coherence` function attempts to reduce constraint density by pruning SOFT directive packets. However, because `constraint_count` is calculated exclusively from the TOML policy (which is never pruned), pruning text strictly decreases the denominator (`token_estimate`) while the numerator remains constant. This mathematically forces the density to increase.",
+        "proposed_fix": "<<<< SEARCH def _count_constraints(policy: dict[str, Any]) -> int:\n\"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any], packets: list[DirectivePacket] | None = None) -> int:\n    \"\"\"Count active constraints in a merged policy and packets.\"\"\"\n    count = 0\n    if packets:\n        for p in packets:\n            count += len(_split_packet_directives(p.text))\n    constraints = policy.get(\"constraints\", {})\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no_blocks_for_target"
+          }
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0002"
+        ],
+        "severity": 0.75,
+        "description": "State-mutation bug in `compose` phenotype transform. The function directly mutates `packet.text` on the `domain` and `situation` packets passed to it.",
+        "proposed_fix": "<<<< SEARCH # Apply phenotype transform to domain packet text (NOT to universal \u2014 HARD).\nfor packet in packets:\n        if packet.layer == \"domain\":\n            packet.text = _apply_phenotype_transform(packet.text, transform)\n\n    # --- Layer 4: Situation (per-dispatch) ---\n    if situation is None and review_target:\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n    if situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\n# Apply phenotype transform to domain packet text (NOT to universal \u2014 HARD).\n    for i, packet in enumerate(packets):\n        if packet.layer == \"domain\":\n            packets[i] = replace(packet, text=_apply_phenotype_transform(packet.text, transform))\n\n    # --- Layer 4: Situation (per-dispatch) ---\n    if situation is None and review_target:\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n    if situation:\n        transformed_situation = replace(situation, text=_apply_phenotype_transform(situation.text, transform))\n        packets.append(transformed_situation)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no_blocks_for_target"
+          }
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0003"
+        ],
+        "severity": 0.8,
+        "description": "FINDING_ID: C0003\nSEVERITY: 0.80\nFLAW_CLASS: 6\nABSTRACTION_INDEX",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.87,
+        "description": "Domain directives containing non-negotiable HARD content are loaded as `SOFT` and then phenotype-transformed as if their constraints were mutable.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_load_domain_directive()` and the domain-transform loop in `compose()`.\n\nEvidence:\nreturn DirectivePacket(\n    layer=\"domain\",\n    name=path.stem,\n    text=path.read_text(encoding=\"utf-8\"),\n    constraint_class=\"SOFT\",\n    domain=domain,\n    tags={domain},\n)\nand later:\nfor packet in packets:\n    if packe",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif not path.exists():\n        return None\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n==== REPLACE\nif not path.exists():\n        return None\n\n    text = path.read_text(encoding=\"utf-8\")\n    constraint_class = (\n        \"HARD\"\n        if re.search(\n            r\"(?im)(^\\s*\\[?\\s*HARD\\b|NON-NEGOTIABLE|\\b(MUST|NEVER|FORBIDDEN|REQUIRED)\\b)\",\n            text,\n        )\n        else \"SOFT\"\n    )\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=text,\n        constraint_class=constraint_class,\n        domain=domain,\n        tags={domain},\n    )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.9,
+        "description": "The final global rendered-text truncation can silently remove HARD directives and makes `rendered_text` inconsistent with `packets`, `cid`, and `manifest`.\n\nLocation: `compose()`, final global phenotype length cap:\nif len(rendered) > transform.max_directive_chars:\n    rendered = (\n        rendered[: transform.max_directive_chars]\n        + \"\\n[... truncated for model capacity]\"\n    )\nAlso related: HARD situation packets are phenotype-transformed before rendering:\nif situation:\n    situation.text",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        if situation.constraint_class != \"HARD\":\n            situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.78,
+        "description": "`_compute_cid()` is not a content identity hash. Same-length edited directives collide.\n\nLocation: `_compute_cid()`.\n\nCurrent implementation:\ncomponents = [\n    f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n]\ncomponents.append(f\"model:{model}\")\nraw = \"|\".join(components)\nreturn hashlib.sha256(raw.encode()).hexdigest()[:16]\nPremises:\n\n1. The module docstring says every composed directive set has a deterministic `CID` for provenance and attribution.\n2. A composition identity must change whe",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    payload = {\n        \"model\": model,\n        \"packets\": [\n            {\n                \"layer\": p.layer,\n                \"name\": p.name,\n                \"constraint_class\": p.constraint_class,\n                \"domain\": p.domain,\n                \"model\": p.model,\n                \"tags\": sorted(p.tags),\n                \"text\": p.text,\n            }\n            for p in packets\n        ],\n    }\n    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"))\n    return hashlib.sha256(raw.encode(\"utf-8\")).hexdigest()[:16]\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.72,
+        "description": "Coherence pruning uses a fixed policy constraint count while removing text, so pruning usually increases the measured density instead of reducing it. Conflict resolution can also leave `constraint_count` stale after directives are removed.\n\nLocation: `_prune_for_coherence()` and `compose()` metric calculation.\n\nCurrent pruning logic:\ntotal_chars = sum(len(p.text) for p in packets)\ntoken_estimate = max(total_chars // 4, 1)\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count /",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _count_packet_constraints(packets: list[DirectivePacket]) -> int:\n    \"\"\"Count constraint-like directive blocks in the rendered packet set.\n\n    Coherence pruning operates on packet text, so its numerator must be\n    derived from the same packet text. Otherwise pruning text while keeping a\n    fixed policy count makes density worse by construction.\n    \"\"\"\n    count = 0\n    for packet in packets:\n        blocks = _split_packet_directives(packet.text)\n        if blocks:\n            count += len(blocks)\n        elif packet.text.strip():\n            count += 1\n    return count\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.95,
+        "description": "FINDING_ID: F001  \nSEVERITY: 0.95 (CRITICAL \u2013 silently breaks the coherence guarantee)  \nFLAW_CLASS: 1 (logic)  \nABSTRACTION_INDEX: 0.75 (architectural: the density-management invariant is inverted, a",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _prune_for_coherence(\n    packets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT content if constraint density exceeds budget.\n\n    Two-pass strategy:\n    1. Intra-packet pruning: remove individual SOFT directives within packets\n    2. Whole-packet pruning: remove entire SOFT packets if still over budget\n\n    HARD packets are NEVER pruned. Universal is NEVER pruned.\n    \"\"\"\n    total_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\n\n    if density <= budget:\n        return packets, []\n\n    pruned_names: list[str] = []\n    mutable_packets = list(packets)\n\n    prunable = [\n        (i, p) for i, p in enumerate(mutable_packets)\n        if p.constraint_class == \"SOFT\" and p.layer != \"universal\"\n    ]\n    prune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}\n    prunable.sort(key=lambda x: prune_order.get(x[1].layer, 3))\n\n    # Pass 1: intra-packet pruning \u2014 trim SOFT directives within each packet\n    for idx, packet in prunable:\n        target_chars = max(int(len(packet.text) * 0.7), 1)\n        new_packet = _prune_packet_directives(packet, target_chars)\n        if len(new_packet.text) < len(packet.text):\n            mutable_packets[idx] = new_packet\n            pruned_names.append(f\"{packet.name}::intra\")\n\n        remaining_chars = sum(len(p.text) for p in mutable_packets)\n        remaining_tokens = max(remaining_chars // 4, 1)\n        density = constraint_count / remaining_tokens\n        if density <= budget:\n            return mutable_packets, pruned_names\n\n    # Pass 2: whole-packet pruning if still over budget\n    keep_indices = set(range(len(mutable_packets)))\n    for idx, packet in prunable:\n        keep_indices.discard(idx)\n        pruned_names.append(packet.name)\n\n        remaining = [mutable_packets[i] for i in sorted(keep_indices)]\n        remaining_chars = sum(len(p.text) for p in remaining)\n        remaining_tokens = max(remaining_chars // 4, 1)\n        density = constraint_count / remaining_tokens\n        if density <= budget:\n            return remaining, pruned_names\n\n    return [mutable_packets[i] for i in sorted(keep_indices)], pruned_names\n==== REPLACE\ndef _prune_for_coherence(\n    packets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT policy constraints (not text) to meet density budget.\n\n    Density = constraint_count / token_estimate.  Reducing text increases\n    density (makes the problem worse).  The only safe way to lower density\n    is to reduce constraint_count by disabling SOFT policy entries.\n\n    HARD constraints (keys in HARD_CONSTRAINTS) are NEVER pruned.\n    The packet list is returned unchanged \u2014 text pruning is removed.\n    \"\"\"\n    total_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\n\n    if density <= budget:\n        return packets, []\n\n    # Collect all SOFT entries (booleans that are True, or strings) from the\n    # policy sections, excluding those in HARD_CONSTRAINTS.\n    soft_entries: list[tuple[str, str, Any]] = []   # (section, key, value)\n    for section in (\"constraints\", \"verification\", \"protocol\"):\n        section_dict = policy.get(section, {})\n        if not isinstance(section_dict, dict):\n            continue\n        for key, value in sorted(section_dict.items()):\n            full_key = f\"{section}.{key}\"\n            if full_key in HARD_CONSTRAINTS:\n                continue\n            # Keep only \"active\" SOFT constraints\n            if isinstance(value, bool) and value:\n                soft_entries.append((section, key, value))\n            elif isinstance(value, str):\n                soft_entries.append((section, key, value))\n\n    # Prune in deterministic order (alphabetical by section+key) until budget\n    # is satisfied or no SOFT entries remain.\n    pruned_keys: list[str] = []\n\n    for section, key, _original in soft_entries:\n        if constraint_count / token_estimate <= budget:\n            break\n        # Disable this SOFT entry\n        if isinstance(policy[section][key], bool):\n            policy[section][key] = False\n        else:\n            # For string constraints, setting to empty string disables them\n            policy[section][key] = \"\"\n        constraint_count = _count_constraints(policy)\n        pruned_keys.append(f\"{section}.{key}\")\n\n    # Packets are untouched \u2014 we changed only the policy.\n    return packets, pruned_keys\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "6 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      }
+    },
+    "next_id": 15,
+    "alias_map": {
+      "CC2:CC2_F001": "C0001",
+      "CC2:CC2_F002": "C0002",
+      "ChatGPT:ChatGPT_F001": "C0003",
+      "ChatGPT:ChatGPT_F002": "C0004",
+      "ChatGPT:ChatGPT_F003": "C0005",
+      "ChatGPT:ChatGPT_F004": "C0006",
+      "Gemini:Gemini_C0001": "C0007",
+      "Gemini:Gemini_C0002": "C0008",
+      "Gemini:Gemini_C0003": "C0009",
+      "Codex:Codex_F001": "C0010",
+      "Codex:Codex_F002": "C0011",
+      "Codex:Codex_F003": "C0012",
+      "Codex:Codex_F004": "C0013",
+      "DeepSeek:DeepSeek_F001": "C0014"
+    }
+  },
+  "novelty_counts": [
+    14
+  ],
+  "raw_counts": [
+    14
+  ],
+  "novelty_counts_per_model": {
+    "CC2": [
+      2
+    ],
+    "ChatGPT": [
+      4
+    ],
+    "Gemini": [
+      3
+    ],
+    "Codex": [
+      4
+    ],
+    "DeepSeek": [
+      1
+    ]
+  },
+  "raw_counts_per_model": {
+    "CC2": [
+      2
+    ],
+    "ChatGPT": [
+      4
+    ],
+    "Gemini": [
+      3
+    ],
+    "Codex": [
+      4
+    ],
+    "DeepSeek": [
+      1
+    ]
+  },
+  "rho_history": [
+    1.0
+  ],
+  "gamma_history": [
+    0.0
+  ],
+  "gate_history": [
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 14,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    14
+  ],
+  "cumulative_context_chars": 104071,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "CC2": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "ChatGPT": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Gemini": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

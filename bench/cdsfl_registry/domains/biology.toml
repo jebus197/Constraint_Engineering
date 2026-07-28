@@ -1,0 +1,16 @@
+# CDSFL Registry — Layer 2: Biology Domain
+# Applied when task domain is "biology".
+
+[verification]
+physical_bounds_check = true        # mechanism plausibility — concentrations >= 0, physiological ranges
+hypothesis_test_required = true     # biological claims must include statistical test
+effect_size_required = true         # must report effect size, not just p-values
+distribution_check = true           # verify distributional assumptions for biological data
+
+[constraints]
+sample_size_stated = true           # must state N for all experimental claims
+alpha_level_stated = true           # must state significance threshold
+dimensional_analysis = true         # dimensional consistency (mol/L, mg/kg, etc.)
+edge_case_coverage = true           # boundary conditions (model organism vs target species)
+
+# Immune pipeline parameterisation lives in domains/immune/biology.toml

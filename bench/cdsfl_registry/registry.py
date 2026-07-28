@@ -49,6 +49,8 @@ HARD_CONSTRAINTS: dict[str, bool] = {
     "constraints.fail_closed_unassessed": True,
     "constraints.json_schema_required": True,
     "constraints.sympy_auto_verify": True,
+    "constraints.ffafp_required": True,
+    "constraints.structured_reasoning_required": True,
     "convergence.hard_veto": True,
     "anti_deference.null_find_requires_scoped_justification": True,
     "anti_deference.agreement_requires_evidence": True,
@@ -82,9 +84,14 @@ DOMAIN_MAP: dict[str, str] = {
     "cross-domain": "cross_domain",
     "cross_domain": "cross_domain",
     "physics": "physics",
-    "chemistry": "physics",
+    "chemistry": "chemistry",
     "biomedical": "physics",       # closest fit; can be split later
     "logistics": "cross_domain",   # multi-constraint; closest fit
+    # Exp 39 domains (13 April 2026) — TOMLs exist in domains/
+    "biology": "biology",
+    "information_science": "information_science",
+    "cs_software": "cs_software",
+    "statistics": "statistics",
 }
 
 

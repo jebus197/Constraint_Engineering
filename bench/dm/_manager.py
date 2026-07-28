@@ -53,99 +53,8 @@ from bench.dm._events import ManagerEventStream
 # Similarity helpers (used by DynamicManager.update_fingerprints)
 # ---------------------------------------------------------------------------
 
-_STOPWORDS = frozenset({
-    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "shall",
-    "should", "may", "might", "must", "can", "could", "and", "but", "or",
-    "nor", "not", "no", "so", "if", "then", "than", "that", "this", "these",
-    "those", "it", "its", "of", "in", "on", "at", "to", "for", "with",
-    "by", "from", "as", "into", "through", "during", "before", "after",
-    "above", "below", "between", "out", "up", "down", "about", "each",
-    "all", "any", "both", "such", "when", "where", "which", "who", "whom",
-    "what", "how", "there", "here", "very", "just", "also", "only", "more",
-    "most", "other", "some", "over", "under", "again", "further", "once",
-})
-
-
-def _tokenize_for_similarity(text: str) -> list[str]:
-    """Tokenize text for similarity comparison: lowercase, strip stopwords."""
-    words = text.lower().split()
-    return [w for w in words if w not in _STOPWORDS and len(w) > 2]
-
-
-def _bigrams(tokens: list[str]) -> set[tuple[str, str]]:
-    """Generate bigram set from token list."""
-    return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
-
-
-def _finding_similarity(f1: Finding, f2: Finding) -> float:
-    """Compute similarity between two findings.
-
-    Uses flaw-class match + combined unigram/bigram Jaccard on description
-    words (stopwords removed). Bigrams capture phrase-level semantic overlap
-    that raw word sets miss — "race condition" and "condition race" are
-    different bigrams, but "race condition" and "race condition" match.
-
-    The combined score weights unigrams 0.6 and bigrams 0.4. This provides
-    a middle ground between the original raw Jaccard (too strict for
-    semantic duplicates) and embedding-based similarity (too complex for
-    the current infrastructure).
-
-    When flaw classes differ, the combined Jaccard alone determines the score
-    (no class bonus). This prevents models that assign different integer
-    labels to the same concept from appearing maximally novel.
-
-    Self-healing note: if this function fails to detect convergence (kappa
-    stuck at 0.0 for consecutive rounds), the DetectorHealthMonitor will
-    flag the pathology. See §immune_response below.
-
-    Args:
-        f1, f2: Findings to compare.
-
-    Returns:
-        Similarity in [0, 1].
-    """
-    class_match = f1.flaw_class == f2.flaw_class
-
-    # Tokenize with stopword removal
-    tokens1 = _tokenize_for_similarity(f1.description)
-    tokens2 = _tokenize_for_similarity(f2.description)
-
-    # Handle empty descriptions
-    if not tokens1 and not tokens2:
-        return 0.8 if class_match else 0.2
-    if not tokens1 or not tokens2:
-        return 0.3 if class_match else 0.1
-
-    # Unigram Jaccard (on content words only)
-    words1 = set(tokens1)
-    words2 = set(tokens2)
-    uni_inter = len(words1 & words2)
-    uni_union = len(words1 | words2)
-    uni_jaccard = uni_inter / uni_union if uni_union else 0.0
-
-    # Bigram Jaccard (phrase-level overlap)
-    bg1 = _bigrams(tokens1)
-    bg2 = _bigrams(tokens2)
-    if bg1 or bg2:
-        bg_inter = len(bg1 & bg2)
-        bg_union = len(bg1 | bg2)
-        bg_jaccard = bg_inter / bg_union if bg_union else 0.0
-    else:
-        bg_jaccard = uni_jaccard  # single-word descriptions: fall back to unigram
-
-    # Combined similarity: 60% unigram + 40% bigram
-    combined = 0.6 * uni_jaccard + 0.4 * bg_jaccard
-
-    if class_match:
-        # 0.3 base from class match + 0.7 from combined Jaccard
-        return 0.3 + 0.7 * combined
-    else:
-        # No class match bonus — combined Jaccard only.
-        # Confer consensus: raw Jaccard at tau_sim=0.8 was too strict.
-        # Stopword removal + bigrams increase similarity for genuine
-        # duplicates while maintaining discrimination.
-        return combined
+from bench.dm._similarity import finding_similarity as _finding_similarity
+from bench.dm._similarity import effective_tau_sim as _effective_tau_sim
 
 
 class DynamicManager:
@@ -779,9 +688,22 @@ class DynamicManager:
                 # coincidental label reuse, not actual content duplication).
                 if prior_findings:
                     duplicates = 0
+                    # Backend-aware threshold (confer fix 2026-05-22): this
+                    # uses the default _finding_similarity, so under the
+                    # embedding backend the merge floor (~0.48) requires
+                    # tau_sim_embed (0.55), not the lexical tau_sim (0.33),
+                    # else unrelated findings are miscounted as duplicates and
+                    # the D_decay fingerprint is biased. NOTE: the adaptive
+                    # remediation transforms (_apply_transform) mutate
+                    # config.tau_sim; effective_tau_sim reads tau_sim_embed in
+                    # embedding mode, so those transforms have no effect on
+                    # this metric while embedding is active — acceptable for a
+                    # load-balancing metric, but revisit if remediation is
+                    # exercised under embedding mode.
+                    _tau = _effective_tau_sim(self.config)
                     for f in model_findings:
                         for pf in prior_findings:
-                            if _finding_similarity(f, pf) >= self.config.tau_sim:
+                            if _finding_similarity(f, pf) >= _tau:
                                 duplicates += 1
                                 break
                     obs_d = duplicates / len(model_findings)

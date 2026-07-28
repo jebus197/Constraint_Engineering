@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T005216Z",
+  "phase": "r1",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1838,
+  "response": "FINDING_ID: DeepSeek_F001\nSEVERITY: 0.85\nFIND: EvidenceStore.trace_finding() sorts events by raw ISO 8601 UTC string timestamp lexicographically instead of chronologically, causing reverse order for mixed fractional second precision.\nFALSIFIER:\n```python\n\"\"\"\nFalsifies DeepSeek_F001 — demonstrates that trace_finding() can return events\nin reverse chronological order when timestamps differ only in fractional seconds.\n\"\"\"\nfrom bench.verification_chain import VerificationChain\nfrom bench.evidence import EvidenceStore\n\nts_whole = \"2026-04-05T10:00:00Z\"\nts_frac  = \"2026-04-05T10:00:00.123Z\"\n\nrecords = [\n    {\n        \"sealed_body\": {\n            \"artifact_type\": \"model_chat_log\",\n            \"recorded_by\": \"test\",\n            \"timestamp_utc\": ts_whole,\n            \"storage_mode\": \"full_payload\",\n            \"payload_hash\": \"a\",\n            \"metadata\": {\"model\": \"test\", \"round\": 1, \"experiment\": \"falsify\"},\n            \"payload\": {\"response\": \"CONFIRM C9999 test\"}\n        },\n        \"chain_hash\": \"a\"\n    },\n    {\n        \"sealed_body\": {\n            \"artifact_type\": \"model_chat_log\",\n            \"recorded_by\": \"test\",\n            \"timestamp_utc\": ts_frac,\n            \"storage_mode\": \"full_payload\",\n            \"payload_hash\": \"b\",\n            \"metadata\": {\"model\": \"test\", \"round\": 1, \"experiment\": \"falsify\"},\n            \"payload\": {\"response\": \"SUBMIT C9999 test\"}\n        },\n        \"chain_hash\": \"b\"\n    }\n]\nchain = VerificationChain(records=records, epochs=[])\nstore = EvidenceStore(chain, \"falsify_test\")\ntrace = store.trace_finding(\"C9999\")\nassert len(trace) == 2, f\"expected 2 events, got {len(trace)}\"\nif trace[0].timestamp_utc == ts_frac:\n    print(\"FALSIFIED: lexical sort places fractional before whole-second timestamp\")\n    raise AssertionError(\"FALSIFIED: timestamp sort defective\")\n# clean exit otherwise\n```",
+  "metadata": {
+    "round": 1,
+    "elapsed": 392.2,
+    "chars": 1838,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

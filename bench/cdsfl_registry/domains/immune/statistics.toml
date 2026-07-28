@@ -1,0 +1,48 @@
+# Immune pipeline parameterisation — Statistics Domain
+# Specialist B-Cell routing for statistical claims.
+
+[immune.claim_patterns]
+
+statistical = [
+    "(?:\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bsignificant\\b|\\bnull\\s*hypothesis\\b|\\balternative\\s*hypothesis\\b)",
+    "(?:\\bconfidence\\s*interval\\b|\\bCI\\b|\\b\\d+%\\s*CI\\b)",
+    "(?:\\bcorrelation\\b|\\bregression\\b|\\bcoefficient\\b)",
+    "(?:\\bANOVA\\b|\\bt-test\\b|\\bchi-square\\b|\\bKruskal|\\bWilcoxon\\b)",
+    "(?:\\bdistribution\\b|\\bnormal\\b|\\bPoisson\\b|\\bbinomial\\b|\\bexponential\\b)",
+    "(?:\\bvariance\\b|\\bstandard\\s*(?:deviation|error)\\b|\\bmean\\b|\\bmedian\\b)",
+    "(?:\\beffect\\s*size\\b|\\bCohen|\\bhedge|\\bGlass\\b)",
+    "(?:\\bconvergence\\b.*\\brate\\b|\\bdepletion\\b|\\bgamma\\b|\\brho\\b)",
+    "(?:\\btime\\s*series\\b|\\bautocorrelation\\b|\\bstationarity\\b|\\bADF\\b)",
+]
+
+mathematical = [
+    "(?:\\bformula\\b|\\bequation\\b|\\bderivation\\b)",
+    "(?:[=<>]|\\bbound\\b|\\bthreshold\\b)",
+]
+
+[immune.verification_tools]
+
+statistical = ["statsmodels", "scipy"]
+mathematical = ["sympy", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating statistical claims. Your output will be mechanically verified.
+
+For hypothesis tests: identify the null hypothesis, test statistic, sample size, and p-value.
+For effect sizes: identify the measure, its value, and confidence interval.
+For distributional claims: identify the assumed distribution, the diagnostic used, and the result.
+For convergence claims: identify the metric, the trend, and the stopping criterion.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:table|figure|result|test|model)\\s*(?:#|:)?\\s*(\\d+(?:\\.\\d+)*)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:sample\\s*size\\s*(?:is\\s*)?(?:1|one)\\b)"
+source = "Single observation: not a statistical finding"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:p\\s*=\\s*1\\.0|p\\s*=\\s*0\\.0{4,})"
+source = "Extreme p-value: likely computational artifact, not genuine finding"

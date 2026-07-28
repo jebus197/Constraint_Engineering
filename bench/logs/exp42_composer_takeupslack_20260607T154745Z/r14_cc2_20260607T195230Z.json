@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T195230Z",
+  "phase": "r14",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2561,
+  "response": "Confirmed: `tomllib` is imported but never used — all TOML loading is via `registry._load_toml`. This is LOW severity (dead import, no operational impact), which the instructions say to ignore.\n\n---\n\n## Round 14 Output\n\n### SCHEMA FEEDBACK RESPONSE\n\nWITHDRAW CC2_UNSTRUCTURED — Schema flagged as NEAR-DUPLICATE of DeepSeek_UNSTRUCTURED (cosine 0.73) with full ADMISSIBILITY failure. Not resubmitting.\n\n### VERDICTS ON CONFIRMED ENTRIES\n\nCONFIRM C0010 — join separator mismatch in `resolve_layer_conflicts`. Fix applied, root cause correctly identified.\n\nCONFIRM C0041 — `calibrate_coherence_thresholds` metadata dict assumption. Fix applied.\n\nCONFIRM C0068 — `_count_constraints` undercounting nested policy sections. Fix applied.\n\nCONFIRM C0069 — `_prune_for_coherence` situation-before-domain pruning order. Fix applied.\n\nCONFIRM C0070 — Phenotype transform blank-line stripping. Fix applied.\n\nCONFIRM C0071 — `compose()` ignoring kwargs when `review_target` empty. Fix applied.\n\nCONFIRM C0072 — Same root cause as C0010 (join separator). Fix applied.\n\nMERGE C0042 <- C0041 — identical root cause (`entry.get(\"metadata\", {})` crash in `calibrate_coherence_thresholds`).\n\nMERGE C0044 <- C0041 — identical root cause, third filing of the same metadata dict assumption bug.\n\n### NEW DISCOVERY FINDINGS\n\nNo new CRITICAL or HIGH findings. The registry has 72 canonical entries, 0 open CRIT/HIGH, and γ=0.477 indicates strong depletion. I systematically checked:\n\n1. **Operator precedence** in the `response_text` ternary chain (lines 1168-1172) — correct; Python's right-to-left associativity produces the intended behavior for str/dict/other inputs.\n2. **`_extract_hard_behavioural_directives`** bullet parsing — correctly skips intro text and header lines; multi-line continuation works.\n3. **`_prune_for_coherence` Pass 2 index consistency** — indices from `prunable` remain valid after Pass 1's in-place modifications; packet names are stable across modifications.\n4. **`_directive_topic_and_stance` substring false positives** (e.g., \"reasonable\"→\"reason\", \"notable\"→\"table\") — real but LOW severity in the controlled-vocabulary context of CDSFL directives; already covered by the settled C0054/C0055/C0060 cluster.\n5. **Unused `tomllib` import** — confirmed dead code (0 uses), but LOW severity (no operational impact).\n\nThe well is dry. The 14 applied fixes address all identified CRIT/HIGH issues. Remaining settled findings cover the residual fragility in `_directive_topic_and_stance` and `calibrate_coherence_thresholds`. I recommend closing the review.",
+  "metadata": {
+    "round": 14,
+    "elapsed": 292.5,
+    "chars": 2561,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

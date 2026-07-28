@@ -1,0 +1,211 @@
+Premises:
+1. I only have a partial codebase excerpt, but `launch_exp39.py`, registry/schema/universal, selected configs, and new TOMLs are sufficient to evaluate several hard launch blockers directly.
+2. For 39-0, the highest-consequence risks are orchestration correctness: pause/resume semantics, dependency gating, runtime enforcement of newly declared HARD constraints, and domain plumbing/fallback.
+3. A blocker exists if the shown code demonstrably permits unsafe or misleading execution of the infrastructure gate.
+
+## Finding 1
+
+**FIND**  
+`--resume` in the top-level sequencer is not scoped to the paused sub-experiment; it is forwarded to every subsequently launched sub-experiment in the resolved sequence.  
+Location: `bench/launch_exp39.py:148-151, 241-255, 431-435, 453-458`  
+Evidence:
+- `run_sub_experiment(..., resume: bool = False)` appends `--resume` whenever `resume` is true.
+- `run_sequence(...)` passes the same `resume` flag to every experiment it launches.
+- `main()` resolves the full ordered list again, then calls `run_sequence(... resume=args.resume)`.
+- After a HIL pause, resume instruction printed is `python3 bench/launch_exp39.py --resume --hil-review`, which re-enters the full sequence, not a single paused sub-experiment.
+
+Concrete trace:
+- Suppose order starts `39-0`, `39-A`, `39-B`, ...
+- Run `python3 bench/launch_exp39.py --hil-review`.
+- `39-0` pauses and exits 42; sequencer breaks and exits 42.
+- Operator resumes with printed command.
+- Sequencer rebuilds the full order and starts again from the beginning.
+- Every launched child gets `--resume`, including experiments that were never paused and may have no checkpoint.
+
+**FOLLOW**  
+Consequences:
+- Resume semantics are ambiguous: child runner may attempt checkpoint restore for non-paused jobs.
+- If `reference_runner.py --resume` requires a valid checkpoint, subsequent jobs can fail spuriously.
+- If it silently ignores missing checkpoints, the printed resume contract is still false: it is not restoring “the paused sub-experiment” cleanly, it is re-running sequence state with a blanket flag.
+- This directly impacts focus area A: checkpoint integrity and clean restore are not demonstrated by this orchestration.
+
+**ANALYSE**  
+CONFIRMED.
+
+**FIX**  
+Persist sequence state at pause and resume only the paused sub-experiment, then continue remaining experiments without `--resume`. Simplest sufficient correction:
+- On HIL pause, write a sequence checkpoint containing ordered IDs, completed results, and `paused_sub_id`.
+- On `--resume`, require/loading that checkpoint.
+- Invoke `run_sub_experiment(paused_exp, resume=True)` only for `paused_sub_id`.
+- For later experiments, pass `resume=False`.
+
+**P-PASS**  
+Could the child runner safely ignore `--resume` when no checkpoint exists, making this non-blocking? Even then the contract remains wrong because the sequencer does not know where to resume and may rerun prior experiments. Since the printed operator instruction is sequence-level and unconditional, this remains a real orchestration defect.
+
+---
+
+## Finding 2
+
+**FIND**  
+Resume path reruns already completed earlier sub-experiments because the sequencer does not persist prior sequence results and always starts from the first item in topological order.  
+Location: `bench/launch_exp39.py:241-255, 431-458`  
+Evidence:
+- No sequence checkpoint/state load exists anywhere in file.
+- `resolve_execution_order(...)` always returns the full planned list.
+- `run_sequence(...)` initializes `results = []` and `results_by_id = {}` on every invocation.
+- `--resume` affects only child CLI flags; it does not alter which experiments are skipped or where iteration begins.
+
+Concrete trace:
+- If `39-0` completed round/phase N and paused, resuming the sequence can rerun `39-0` from top-level launch rather than continuing from persisted sequence context.
+- If a later experiment paused, all earlier experiments before it are candidates to rerun from top-level sequencing.
+
+**FOLLOW**  
+Consequences:
+- Violates operator expectation for HIL review.
+- Risks duplicate artifacts, overwritten logs, repeated API spend, and inconsistent dependency status.
+- For an infrastructure gate test, replaying prior steps on resume corrupts the causal meaning of “paused then resumed cleanly.”
+
+**ANALYSE**  
+CONFIRMED.
+
+**FIX**  
+Same root-cause fix as Finding 1: add explicit sequence checkpointing and resume-from-paused-index behavior.
+
+**P-PASS**  
+If child-level checkpointing is perfect, could rerunning top-level be acceptable? No: the sequencer still lacks knowledge of what was already completed and can reissue completed sub-experiments or mis-handle downstream gating. Not acceptable for a launch gate.
+
+---
+
+## Finding 3
+
+**FIND**  
+Unknown dependency IDs are treated as valid during topological sort instead of being rejected, which can produce a runtime `KeyError` rather than deterministic config validation.  
+Location: `bench/launch_exp39.py:101-130`  
+Evidence:
+- In `resolve_execution_order`, for each `dep in e.depends_on`, code does:
+  - `adj.setdefault(dep, []).append(e.id)`
+  - increments `in_degree[e.id]`
+- There is no validation that `dep in by_id`.
+- Final return is `[by_id[eid] for eid in ordered]`.
+- If an unknown dep has zero indegree, it can enter `queue_k`, then `ordered`, then `by_id[eid]` raises `KeyError`.
+
+Concrete example:
+- Experiment X depends on `"NONEXISTENT"`.
+- `adj["NONEXISTENT"] = ["X"]`; `"NONEXISTENT"` not in `in_degree`, so it may not queue immediately, but if added elsewhere or depending on graph shape the algorithm is operating on invalid nodes.
+- More importantly, X's indegree never becomes zero because nonexistent parent is never processed, causing cycle-style error or malformed graph semantics instead of “unknown dependency id”.
+- Either way, config invalidity is not diagnosed directly.
+
+**FOLLOW**  
+Consequences:
+- Focus area D: dependency resolution is not robust.
+- A typo in `exp39_config.json` can fail at launch time with misleading cycle/KeyError behavior instead of crisp validation.
+- This is especially relevant for a 13-step sequence where dependency gating correctness matters.
+
+**ANALYSE**  
+CONFIRMED.
+
+**FIX**  
+Before Kahn’s algorithm, validate `for dep in e.depends_on: if dep not in by_id: raise ValueError(f"{e.id} depends on unknown sub-experiment {dep}")`.
+
+**P-PASS**  
+Could current master config avoid this path entirely? Possibly, but the review focus explicitly includes dependency resolution correctness. The code is incorrect for invalid input and lacks fail-fast validation. For a pre-launch gate, this is a blocker in orchestration robustness.
+
+---
+
+## Finding 4
+
+**FIND**  
+New HARD constraints are declared in schema/registry/universal, but no runtime enforcement is shown in the reviewed execution path; the system currently proves only merge-time monotonicity, not operational enforcement.  
+Location:
+- Declaration: `bench/cdsfl_registry/schema.toml:57-68`
+- Universal enablement: `bench/cdsfl_registry/universal.toml:10-11`
+- Monotonic merge only: `bench/cdsfl_registry/registry.py:38-53, 132-184, 191-257`
+
+Evidence:
+- `ffafp_required` and `structured_reasoning_required` are added as HARD booleans.
+- `registry.py` ensures merged policy cannot set them to false.
+- No code shown in `launch_exp39.py` or registry binds these flags to runtime validation of model outputs, prompts, or convergence checks.
+- `protocol.reasoning_protocol` is explicitly SOFT and just a style selector; description says all protocols remain subject to CDSFL falsification/verification regardless of style, but no enforcement code is shown here.
+
+Concrete derivation:
+- A policy may load with `constraints.ffafp_required = true`.
+- If downstream runner ignores that field, launch still proceeds and outputs can omit FFAFP/structured reasoning.
+- Therefore “HARD” exists in config semantics only, not necessarily execution semantics.
+
+**FOLLOW**  
+Consequences:
+- Focus area C asks specifically: “Are ffafp_required and structured_reasoning_required enforced at runtime? Can a lower layer override them to False? Is monotonicity maintained?”
+- Based on shown code, monotonicity is maintained.
+- Runtime enforcement is unproven and likely absent from the reviewed path.
+- For 39-0, whose purpose is infrastructure gating of the bench itself, config-only hardness without execution enforcement is insufficient.
+
+**ANALYSE**  
+UNCERTAIN leaning CONFIRMED for lack of evidence of runtime enforcement. I cannot prove full absence without `reference_runner.py`, `runner_core.py`, or output validators. I can prove the provided code does not establish runtime enforcement.
+
+**FIX**  
+Before launch, demonstrate or add:
+- explicit runtime validator that rejects outputs missing FFAFP/Meta SRP-required fields when policy flags are true;
+- tests proving those flags cannot be bypassed by lower layers or by prompt-style selection.
+
+**P-PASS**  
+Could enforcement exist in omitted files? Yes. Because dependency tracing to the system boundary is incomplete, this cannot be upgraded to fully confirmed from the excerpt alone. I therefore do not use this as a sole blocker, but it remains unresolved launch risk.
+
+---
+
+## Finding 5
+
+**FIND**  
+Domain plumbing/fallback for 39-0 is inconsistent with the newly added `cs_software` domain: config uses `"software"`, which maps to legacy `"code"` policy, not the new stricter software domain TOML.  
+Location:
+- Config: `bench/exp39_configs/39_0_gate.json:16`
+- Mapping: `bench/cdsfl_registry/registry.py:77-94`
+
+Evidence:
+- `39_0_gate.json` sets `"domain": "software"`.
+- `DOMAIN_MAP["software"] = "code"`.
+- New domain TOML added is `domains/cs_software.toml`, not a modified `domains/code.toml`.
+- Therefore 39-0 will not use the new stricter Layer-2 software policy unless some separate domain-plumbing remaps it later.
+
+Concrete trace:
+- `load_effective_policy(domain="software")` → domain key `"code"`.
+- Result excludes `static_analysis=true`, `test_execution="mandatory"`, `type_check=true`, etc. from `cs_software.toml`.
+
+**FOLLOW**  
+Consequences:
+- The infrastructure gate intended to test recent domain plumbing may not actually exercise the new software domain.
+- Reduces coverage of the very changes being launched.
+- If immune pipeline separately consumes raw `cfg.domain="software"` while PE uses mapped `"code"`, policy and immune behavior may diverge by domain.
+
+**ANALYSE**  
+CONFIRMED that 39-0 does not select `cs_software.toml` via the shown registry path. Whether this is intended is uncertain, but for a pre-launch of domain plumbing this is at minimum a coverage gap.
+
+**FIX**  
+Either:
+- change 39-0 config `domain` to `"cs_software"`, or
+- map `"software"` to `"cs_software"` if that is the intended canonical domain for Exp 39, and update any legacy callers explicitly.
+
+**P-PASS**  
+Could using legacy `"code"` be intentional for backward compatibility? Yes. But the review context says domain plumbing was added and 6 new domain TOMLs introduced this session. Using the old alias in the gate test fails to exercise the new path, so the issue survives as a blocker for launch readiness of this specific experiment.
+
+---
+
+## Global P-pass
+
+I looked for contradictions across findings.
+
+- Findings 1 and 2 share root cause: sequence-level resume is not stateful. They are distinct effects of the same defect, not contradictory.
+- Finding 3 is independent and concerns dependency validation.
+- Finding 4 is dependency-trace incomplete; I explicitly marked it uncertain and not a standalone blocker.
+- Finding 5 is a concrete configuration/policy mismatch and consistent with the stated domain-plumbing risk.
+
+Formal conclusion:
+- HIL pause propagation of exit 42 is implemented in `launch_exp39.py`, but clean resume semantics are not.
+- Dependency resolution is not robust against invalid config references.
+- 39-0 does not appear to exercise the new `cs_software` domain policy through the shown registry path.
+- These are launch blockers for an infrastructure gate whose purpose is to validate bench orchestration and new plumbing.
+
+**VERDICT: NO-GO** — blockers:
+1. `bench/launch_exp39.py:148-151, 241-255, 431-458` — `--resume` is broadcast to the whole remaining sequence with no persisted paused-subexperiment state; clean HIL restore is not implemented.
+2. `bench/launch_exp39.py:241-255, 431-458` — sequence resume reruns from fresh top-level order because no sequence checkpoint/index is saved or reloaded.
+3. `bench/launch_exp39.py:101-130` — dependency resolution does not validate unknown dependency IDs, so sequencer correctness/cycle diagnostics are not robust.
+4. `bench/exp39_configs/39_0_gate.json:16` with `bench/cdsfl_registry/registry.py:77-94` — 39-0 uses `domain: "software"` which maps to legacy `code`, so the new `cs_software` Layer-2 policy is not actually exercised by the gate.

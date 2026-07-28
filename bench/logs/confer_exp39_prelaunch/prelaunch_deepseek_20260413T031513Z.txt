@@ -1,0 +1,87 @@
+**VERDICT: NO-GO**
+
+## Blocker Summary
+
+| Blocker ID | Severity | Location | Description |
+|------------|----------|----------|-------------|
+| B1 | CRITICAL | `bench/reference_runner.py` lines 3295–3298 & 3325–3328 | HIL pause exits without saving checkpoint → resume loses progress |
+| B2 | CRITICAL | `bench/cdsfl_registry/registry.py` DOMAIN_MAP | Missing entries for new domains (biology, cs_software, information_science) |
+| B3 | CRITICAL | `bench/launch_exp39.py` lines 287–290 | HIL pause breaks entire sequence; resume restarts from experiment 1 |
+| B4 | HARD VIOLATION | `bench/cdsfl_registry/registry.py` + `bench/cdsfl_registry/schema.toml` | HARD constraints `ffafp_required`/`structured_reasoning_required` unenforced vs `protocol.reasoning_protocol` |
+
+## Extended Falsification Pass (Global P-Pass)
+
+After completing FFAFP on the five findings, I performed a global falsification pass looking for cross-cutting contradictions and systemic risks:
+
+**Finding B1 × B3 Interaction:** The checkpoint issue (B1) compounds the sequence restart problem (B3). If the runner doesn't save checkpoint and the sequencer restarts the entire sequence, **all progress from previously completed sub-experiments is lost**. This violates the CDSFL directive "Do not silently comply with tangential requests" — the HIL feature as implemented creates more problems than it solves.
+
+**Finding B2 × Domain Plumbing Chain:** The missing DOMAIN_MAP entries mean the new domain TOMLs are never loaded. The immune pipeline expects domain-specific CT prompts, but with no mapping, tasks in biology/cs_software/information_science domains will fall back to generic verification, **defeating the purpose of domain specialist tooling**.
+
+**Finding B4 × Constraint Precedence:** The HARD constraints `ffafp_required` and `structured_reasoning_required` are universal Layer 1 mandates. The SOFT `protocol.reasoning_protocol` can be overridden to "conversational" by a lower layer while the HARD constraints remain True. This creates a **policy contradiction**: the system claims to require FFAFP+MetaSR but can instruct models not to use them. Physics/mathematics constraints (HARD classification) must take precedence over protocol preferences (SOFT).
+
+**Boundary Tracing (CDSFL §3 Amendment):** The domain plumbing chain dependency is not fully traced. The claim "domain configs reach immune pipeline" depends on:
+1. `cfg.domain` → `DynamicManagementConfig.domain`
+2. `InsectBrain` → loads domain TOML + immune TOML
+3. `run_immune_pipeline` receives `domain_config`
+4. `cytotoxic_t_cell` passes to `_build_ct_prompt`
+
+Step 2 is outside the reviewed code (not in git diff). Without verifying the InsectBrain implementation, the claim carries **unresolved dependency risk**. The falsification debt for this boundary is material.
+
+**Crash Path Analysis:** The HIL pause exit code 42 is a new crash path. If the operator runs `--resume` without `--hil-review`, the runner will load checkpoint and continue, but the sequencer has already exited. This creates a **state desynchronization** between the runner's checkpoint and the sequencer's run list. The system lacks a coordination protocol for resume-after-pause.
+
+**Data Integrity Check:** The `_enum_safe_default()` replacement of `default=str` is present in the diff but absent from the provided source files. This creates **serialization risk** for `RegulatoryResult` and other enum-bearing dataclasses. If not applied consistently, JSON round-trip will break.
+
+## Required Fixes (Pre-Launch)
+
+### 1. Checkpoint Before HIL Exit (B1)
+```python
+# bench/reference_runner.py ~line 3295
+if cfg.hil_review and not (burst_plan and burst_state):
+    # Save checkpoint before exiting
+    _save_checkpoint(cfg, result, registry, burst_plan, burst_state)
+    # ... rest of HIL pause logic
+    sys.exit(42)
+```
+
+### 2. DOMAIN_MAP Update (B2)
+```python
+# bench/cdsfl_registry/registry.py ~line 57
+DOMAIN_MAP: dict[str, str] = {
+    # ... existing entries
+    "biology": "biology",
+    "cs_software": "cs_software",
+    "information_science": "information_science",
+}
+```
+
+### 3. Sequencer State Persistence (B3)
+- Modify `RunResult` to include `completed: bool`
+- Save sequencer state to `exp39_sequence_state.json` on HIL pause
+- Add `--resume-from <sub_id>` flag to continue from paused point
+- Update topological sort to exclude already-completed experiments
+
+### 4. Policy Consistency Enforcement (B4)
+Add post-merge validation in `load_effective_policy`:
+```python
+def _validate_reasoning_protocol(policy: dict) -> None:
+    protocol = policy.get("protocol", {}).get("reasoning_protocol", "")
+    if policy["constraints"]["ffafp_required"] and protocol not in {"combined_4_layer", "ffafp"}:
+        raise PolicyViolationError(f"ffafp_required=True but reasoning_protocol={protocol}")
+    # similar check for structured_reasoning_required
+```
+
+### 5. Boundary Tracing Completion
+- Require InsectBrain source code review for domain config loading
+- Add fallback test: if domain_config is None, log warning and use generic CT prompt
+
+## GO/NO-GO Determination
+
+The experiment **cannot proceed** with these blockers. B1 and B3 create a **progress loss guarantee** — the HIL feature as implemented will destroy work. B2 renders three new domain configurations **dead code**. B4 violates the **monotonicity principle** (HARD constraints must be enforced).
+
+The falsification debt from untraced boundaries (InsectBrain domain loading) plus the serialization uncertainty (`_enum_safe_default` whereabouts) elevate the risk beyond acceptable threshold for a gate experiment.
+
+**Recommendation:** Fix B1–B4, verify boundary tracing, then re-review.
+
+---
+
+**VERDICT: NO-GO** — Blockers B1, B2, B3, B4 must be resolved before launch.

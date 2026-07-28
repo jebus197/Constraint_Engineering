@@ -1,0 +1,64 @@
+# Immune pipeline parameterisation — Biology Domain (Phase B4)
+# Extracted from domains/biology.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bKm\\b|\\bVmax\\b|\\bKd\\b|\\bIC50\\b|\\bEC50\\b|\\bLD50\\b)",
+    "(?:\\bMichaelis|\\bHill\\s*coefficient|\\bHenderson.Hasselbalch)",
+    "(?:\\bgrowth\\s*rate|\\bdoubling\\s*time|\\bhalf.life)",
+    "(?:\\bconcentration\\b|\\bmolarity\\b|\\bmolar\\b)\\s*[=<>]",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\bnecessary\\b.*\\bsufficient\\b|\\bcausal\\b.*\\bcorrelat)",
+    "(?:\\bpathway\\b.*\\binhibit|\\bactivat.*\\bdownstream\\b)",
+    "(?:\\bconserved\\b.*\\bacross\\s*species|\\bhomolog)",
+    "(?:\\bknockout\\b.*\\bphenotype|\\bloss.of.function\\b)",
+]
+
+statistical = [
+    "(?:\\bsignificant\\b|\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bsample\\s*size\\b|\\bn\\s*=\\s*\\d|\\bpower\\s*analysis\\b)",
+    "(?:\\bconfidence\\s*interval\\b|\\berror\\s*bar\\b|\\bSEM\\b|\\bSD\\b)",
+    "(?:\\bANOVA\\b|\\bt-test\\b|\\bchi-squared\\b|\\bFisher\\b)",
+    "(?:\\bfold.change\\b|\\blog2?\\s*FC\\b|\\bdifferential\\s*expression\\b)",
+]
+
+[immune.verification_tools]
+
+# Biology verification relies on logical consistency and statistical
+# rigour rather than symbolic computation.  SymPy for kinetics equations,
+# scipy.stats for statistical claims.
+# biological_sequence (Biopython) handles DNA/RNA/protein sequence claims
+# (length, GC content, translation, reverse complement).
+mathematical = ["sympy", "biological_sequence", "dimensional_analysis"]
+logical = ["z3"]
+statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
+
+[immune.ct_prompt_template]
+template = """You are investigating biological claims. Your output will be mechanically verified.
+
+For mechanism claims: trace the pathway step by step and identify whether each step is supported by the cited evidence or assumed.
+For experimental design claims: identify the controls, sample sizes, and statistical tests used. Report whether they are appropriate for the claim.
+For quantitative claims: identify the exact values, units, and conditions. Report whether the measurement methodology supports the precision claimed.
+For evolutionary/phylogenetic claims: identify the species, the comparison method, and the evidence for homology vs analogy.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:figure|fig\\.?|table|tab\\.?|supplementary|supp\\.?)\\s*(?:#|:)?\\s*(\\d+(?:[a-z])?(?:\\.\\d+)*)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:in\\s*vitro|cell\\s*line)\\s*(?:result|finding).*(?:may\\s*not|cannot).*(?:in\\s*vivo|organism))"
+source = "In vitro generalisation FP: in vitro results are valid within their stated scope"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:model\\s*organism.*(?:not|cannot).*(?:human|clinical|patient))"
+source = "Model organism FP: mouse/fly/worm findings are valid for the model organism studied"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:metaphor|analogy).*(?:inexact|imprecise|not\\s*literal))"
+source = "Biological metaphor FP: immune system metaphors in software are architectural, not literal"

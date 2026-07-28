@@ -1,0 +1,66 @@
+{
+  "_comment": "Exp 41b — RETURN TO FIRST PRINCIPLES (founder-directed 2026-05-22). Same frozen test article as Exp 41 (bench/dm/_convergence.py, the ConvergenceDetector), re-run under the restored simple convergence design. The hardened gamma gate (the 'unwieldy attachments') is stripped: convergence is decided by the original state gate — no new GENUINE discoveries for consecutive_rounds_required rounds (the top of the decay curve) — with gamma demoted to a pure diagnostic (never gates, never triggers). The specialist B-Cell verifier is promoted from shadow to LIVE for the software domain (code: LIVE_SPECIALIST_DOMAINS) so it filters noise, and novel_this_round is recomputed from the settled, verifier-filtered series (code: reference_runner_v2 round loop) so 'no new discoveries' means 'no new genuine discoveries that survived the verifier'. This is a controlled re-run: only the gate + verifier changed vs Exp 41; the target, panel, and all other knobs are identical, so a different outcome is attributable to the methodology fix, not a different target. It also double-confirms the maths model — reviewing the (validated) convergence detector should yield few/zero genuine defects and converge fast (~3–5 rounds).",
+  "test_article": "bench/dm/_convergence.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 12,
+  "extension_cap": 12,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp41b_first_principles",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 2,
+  "hardened_gate_enabled": false,
+  "gamma_alt_threshold": 1.1,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "test_cmd": "python3 -m pytest bench/tests/test_dynamic_management.py::TestConvergenceDetector -q --tb=line",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "SIMPLE STATE GATE (hardened_gate_enabled=false; gamma diagnostic only). Converged iff the state gate passes for consecutive_rounds_required (2) consecutive rounds, where a round passes iff: no new GENUINE (verifier-filtered, settled) findings beyond max_novel_findings, open critical/high count not increasing over the stability window, no contested findings, not churning, and round >= earliest_stop_round. Gamma is computed and logged as a diagnostic but NEVER gates (gamma_alt_threshold=1.1 makes the gamma-alt limb unreachable; the run stays within the gamma telemetry-only window). This restores the founder's original definition: the top of the decay curve is the point at which no new genuine discoveries are being made; beyond that is noise or iteration. The specialist verifier (now LIVE for software) decides what counts as a genuine discovery.",
+    "pass_condition": "state gate passes for 2 consecutive rounds (no new verifier-filtered genuine findings; open-critical stable; not contested; not churning).",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": true
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  },
+  "_methodology_changes_vs_exp41": "(1) hardened_gate_enabled true->false: the F4+F6 conjunction gamma gate is removed; the original state gate governs. (2) gamma_alt_threshold 0.30->1.1: gamma can no longer trigger convergence either — it is purely diagnostic, both directions, per the founder's original design (gamma is the decay-curve descriptor, not the convergence threshold). (3) Verifier promoted: 'software' added to LIVE_SPECIALIST_DOMAINS so the B-Cell specialist (z3/mypy vs source AST) filters findings live instead of running in shadow. (4) novel_this_round recomputed from the settled verifier-filtered series before the gate check, so the gate counts genuine surviving discoveries, not raw registrations. max_rounds 20->12 keeps the run inside the gamma telemetry-only window and reflects the expectation of fast, honest convergence.",
+  "_plan_ref": "Founder direction 2026-05-22: 'return to first principles — we built the wheel then added unwieldy attachments; clearly it didn't work.' See Experiment 41 Convergence Investigation notes (2026-05-22) for the full diagnosis the revised design responds to."
+}

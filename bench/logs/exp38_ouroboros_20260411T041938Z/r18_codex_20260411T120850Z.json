@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260411T120850Z",
+  "phase": "r18",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2191,
+  "response": "CONFIRM C0101 — `RunnerConfig.__post_init__()` unconditionally rewrites caller-supplied `rho_earliest_round` to `earliest_stop_round`. Evidence: `if self.rho_earliest_round != self.earliest_stop_round: self.rho_earliest_round = self.earliest_stop_round` overwrites any non-default value. This directly affects `_compute_rho(..., cfg)` because churn gating compares against `cfg.rho_earliest_round`.\n\nCONFIRM C0086 — `FindingRegistry.open_crit_high_count()` omits `REOPENED` from active non-terminal statuses while `build_summary()` explicitly treats `REOPENED` as active. Evidence: `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")` versus `full_detail_statuses = (\"OPEN\", \"CONTESTED\", \"REOPENED\")`. This undercounts active high-severity findings and propagates into the registry summary line `Open CRIT/HIGH: ...` and any convergence logic that consumes that count.\n\nCONFIRM C0082 — `FindingRegistry.contested_count()` hardcodes the aging threshold as `current_round - oldest > 1` instead of using the `grace_period` parameter. Evidence: the function accepts `grace_period: int = 2`, uses it for `UNCONFIRMED`, but ignores it for unresolved challenges. This makes the API internally inconsistent and affects all callers expecting `grace_period` to control contested aging uniformly.\n\nCONFIRM C0090 — `_compute_rho()` uses zero-based `round_idx = len(raw_counts) - 1` when comparing against config thresholds expressed as human round numbers. Evidence: with one completed round, `len(raw_counts) == 1` but `round_idx == 0`; churn check is delayed by one round. This affects `_evaluate_gate_conditions`, `_check_state_convergence`, and `_itc_adapt` through the returned `rho_churn`.\n\nCONFIRM C0116 — `_compute_rho()` returns early when `raw_counts[-1] == 0`, forcing `(0.0, 0.0, False)` and suppressing rolling-average churn even though the loop below already handles zero raw counts by appending `0.0`. Evidence: early return precedes `rho_values` construction. This masks churn in rounds with no raw findings and propagates to the same convergence and ITC paths that consume `rho_avg` and `rho_churn`.\n\nNo new high-confidence findings beyond the confirmed registry items above in the reviewed section.",
+  "metadata": {
+    "round": 18,
+    "elapsed": 10.8,
+    "chars": 2191,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

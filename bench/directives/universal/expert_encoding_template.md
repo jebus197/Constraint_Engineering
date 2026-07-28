@@ -123,10 +123,15 @@
 # -------------------------------------------------------------------------
 # 6. DOMAIN-SPECIFIC S* GUIDANCE
 # -------------------------------------------------------------------------
-# The break-even threshold S* = (nu_b + nu_f - q·R) / nu_f is computed
-# from the current system state. However, domains may have structural
-# reasons to set a FLOOR on S* (minimum acceptable fix quality) or to
-# provide guidance on typical nu_b and nu_f ranges.
+# The break-even threshold is:
+#   S* = (nu_b + nu_f − nu_b·nu_f − q·R) / (nu_f · (1 − nu_b))
+# (This is the full form used in cdsfl_operational.md §4. Earlier
+# drafts of this template used the approximation S* = (nu_b + nu_f − q·R)
+# / nu_f, which is only accurate when nu_b ≪ 1. Use the full form.)
+#
+# S* is computed from the current system state. However, domains may have
+# structural reasons to set a FLOOR on S* (minimum acceptable fix quality)
+# or to provide guidance on typical nu_b and nu_f ranges.
 
 # [S* GUIDANCE]
 # Typical nu_b range: <range and rationale>

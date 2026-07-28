@@ -2,8 +2,7 @@
 
 **Date:** 7 April 2026, 01:50–05:34 BST (224 min experiment, ~4h total session)
 **Session scope:** Launch, live monitoring, and post-run analysis of Exp 36
-
-This document collates ALL findings from the Exp 36 monitoring session — CC monitoring observations, founder observations and questions, joint analysis, and design proposals. It is the authoritative record of what was learned.
+**Sources:** CC monitoring observations, founder observations and questions, joint analysis, and design proposals.
 
 ## I. Monitoring Observations (CC)
 

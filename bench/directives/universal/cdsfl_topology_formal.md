@@ -346,6 +346,89 @@ For each claim c_i about system component A:
 
 ---
 
+## T9. Feedback Channel Interaction (§17)
+
+**Natural language:**
+The feedback channel (§17 of `cdsfl_operational.md`) routes per-finding
+schema judgement back to the model that produced the finding, prior to the
+next round's dispatch. At topology level, this extends the T1 communication
+graph with a per-round R → m_i channel carrying compact per-finding records.
+It is NOT a m_i → m_j channel; the runner remains the sole write authority
+on the blackboard, and no direct model-to-model path is introduced.
+
+**Formal:**
+```
+Per-finding feedback record:
+  F(f, r) = (flags, verdict, refutations, admissibility_fails,
+             near_dup_ids, r_k_discrepancy)
+    where flags ∈ {REFUTED, ADMISSIBILITY_FAIL, NEAR_DUPLICATE,
+                    R_K_INCONSISTENT}
+
+Per-model dispatch:
+  feedback_section(m, r+1) =
+    render({F(f, r) : f.origin = m ∧ F(f, r).flags ≠ ∅}, top_k, max_chars)
+
+Channel extension to T1:
+  R → m_i : carries prompt(r+1) ⊕ feedback_section(m_i, r+1)
+  m_i → R : unchanged (proposals P_i)
+
+Invariants:
+  ∀ m_i: feedback_section(m_i, r+1) ⊆ B(r)
+    (feedback is derived from, not independent of, blackboard state)
+  ∀ m_j ≠ m_i: feedback_section(m_i, r+1) ⊄ render(m_j, r+1)
+    (strict per-model routing; no cross-contamination)
+```
+
+Interaction with T2: a flagged finding that is resubmitted unchanged in
+round r+1 is inadmissible on arrival (handled by the immune pipeline
+before it reaches the registry). The T2 state machine is unaffected.
+
+---
+
+## T10. Divergence Directive Interaction (§18)
+
+**Natural language:**
+The divergence directive (§18 of `cdsfl_operational.md`) enforces
+generator-side novelty. At topology level, it introduces a per-finding
+audit (§18 admissibility) that gates a finding's candidacy for the T2
+status transitions. It does NOT alter the FSM; it alters which proposals
+reach the FSM.
+
+**Formal:**
+```
+Per-finding divergence audit:
+  D(f) = (alternatives, dimensions, isomorphism_scores,
+          null_justification, compliant)
+    where compliant = True iff
+      |admissible_alternatives(f)| ≥ min_alternatives
+      OR valid_null_justification(f)
+
+Admissibility gate at immune pipeline ingress:
+  accept(f) ≡ standard_admissibility(f) ∧ D(f).compliant
+
+Isomorphism suppression:
+  ∀ (f_i, f_j) ∈ B.entries:
+    jaccard(tokens(f_i), tokens(f_j)) > isomorphism_threshold
+    → treat f_j as near-duplicate (feeds NK cell)
+
+Channel assignment (5-panel resolution, 15-16 April 2026):
+  The §18 multiplier attaches to η_int (internal novelty), NOT to R_k.
+  Function: eta_int_modulator(f) ∈ (0, 1].
+    Compliant:                 1.00
+    Engaged but failed:        0.85
+    No engagement:             0.70
+    Isomorphic-only:           0.60
+
+  R_k(i) is unaffected by §18. Validity measurement and generator-side
+  novelty enforcement are orthogonal channels.
+```
+
+Interaction with T4: §18 non-compliant findings do not reach CONFIRMED
+status, so they cannot block the convergence gate via g_2 (severity-
+weighted open / contested count). The gate behaviour is unchanged.
+
+---
+
 ## Classification Summary (Extension)
 
 | Section | Formal Structure | Formalisable |
@@ -358,3 +441,5 @@ For each claim c_i about system component A:
 | T6. Round taxonomy | Response classifier | Yes |
 | T7. Durability contract | State persistence invariant | Yes |
 | T8. P-pass boundary tracing | Dependency-chain completeness predicate | Yes |
+| T9. Feedback channel (§17) | Per-model extension of T1 with per-finding records | Yes |
+| T10. Divergence audit (§18) | Per-finding admissibility gate upstream of T2 FSM | Yes |

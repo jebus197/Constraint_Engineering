@@ -488,3 +488,647 @@ class TestCTOutputParsing:
     def test_garbage_output(self):
         results = _parse_ct_output("This is just rambling text with no JSON at all.")
         assert results == []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 1: Domain-aware DC v2 classification (Exp 38 fix cycle)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from bench.immune_agents import (
+    _classify_claim_v2,
+    _CODE_CONTEXT_PATTERN,
+    _STRONG_MATH_SIGNAL,
+    dendritic_cell_v2,
+    load_domain_config,
+)
+
+
+class TestLayer1CodeContext:
+    """Layer 1: software-domain code-context routing before math."""
+
+    def test_code_bug_with_operators_routes_to_code(self):
+        """Code finding with >= operator should NOT be misrouted to MATHEMATICAL."""
+        f = _make_finding(
+            desc="FIND: add_verdict() unconditionally overwrites "
+                 "`self.entries[canonical_id]['last_status_change_round'] = round_idx` "
+                 "on every verdict, corrupting the escalation timer"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_code_bug_status_transition_routes_to_code(self):
+        """Status transition bugs should route to CODE_BEHAVIORAL in software domain."""
+        f = _make_finding(
+            desc="The status transition from REOPENED to OPEN directly mutates "
+                 "entry['status'] = 'OPEN' bypassing resolve(), so "
+                 "last_status_change_round is never updated"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_function_def_routes_to_code(self):
+        """Finding mentioning def function_name routes to CODE_BEHAVIORAL."""
+        f = _make_finding(
+            desc="def escalate_stale_contested bypasses resolve() and does "
+                 "a direct entry['status'] = 'CONFIRMED' mutation"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_real_math_preserved_in_software_domain(self):
+        """Strong math signals should NOT be overridden even in software domain.
+
+        When code-context AND strong-math both match, math wins.
+        Description must also trigger code-context for the guard to apply.
+        """
+        f = _make_finding(
+            desc="The function compute_bound returns sqrt(n) but the proof "
+                 "shows the equation requires n^2 for correctness"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        # "function" triggers code-context, but "proof" + "equation" trigger
+        # _STRONG_MATH_SIGNAL, so code-context yield is suppressed.
+        # Then _MATH_PATTERN_V2 catches "sqrt(" and "equation".
+        assert ct == ClaimType.MATHEMATICAL
+
+    def test_statistical_preserved_in_software_domain(self):
+        """Statistical findings should route to STATISTICAL regardless of domain."""
+        f = _make_finding(
+            desc="The p-value of the distribution test is 0.003"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.STATISTICAL
+
+    def test_no_domain_falls_to_uncategorised(self):
+        """Without domain, ambiguous findings should be UNCATEGORISED."""
+        f = _make_finding(desc="Something vague with no clear indicators")
+        ct, _, conf = _classify_claim_v2(f, domain="")
+        assert ct == ClaimType.UNCATEGORISED
+
+    def test_software_domain_uncategorised_residue_to_code(self):
+        """In software domain, UNCATEGORISED residue defaults to CODE_BEHAVIORAL."""
+        f = _make_finding(desc="Something vague with no clear indicators")
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+        assert conf == 0.40  # Low confidence fallback
+
+    def test_code_context_pattern_matches_expected(self):
+        """Verify _CODE_CONTEXT_PATTERN matches Python constructs."""
+        assert _CODE_CONTEXT_PATTERN.search("def escalate_stale_contested")
+        assert _CODE_CONTEXT_PATTERN.search("self.entries[id]")
+        assert _CODE_CONTEXT_PATTERN.search("class FindingRegistry")
+        assert _CODE_CONTEXT_PATTERN.search("import json")
+        assert _CODE_CONTEXT_PATTERN.search("__init__")
+        assert _CODE_CONTEXT_PATTERN.search("raises ValueError when")
+        assert _CODE_CONTEXT_PATTERN.search("bug in runtime logic errors")
+        # CX-F1: bare words removed — "function", "method", "attribute",
+        # "variable" no longer match (they appear in math vocabulary)
+        assert not _CODE_CONTEXT_PATTERN.search("the function f(x) is bounded")
+        assert not _CODE_CONTEXT_PATTERN.search("the attribute is symmetric")
+
+    def test_strong_math_signal_matches_expected(self):
+        """Verify _STRONG_MATH_SIGNAL matches genuine math indicators."""
+        assert _STRONG_MATH_SIGNAL.search("p-value of 0.05")
+        assert _STRONG_MATH_SIGNAL.search("standard deviation is too high")
+        assert _STRONG_MATH_SIGNAL.search("proof by induction")
+        assert _STRONG_MATH_SIGNAL.search("theorem 3.2 states")
+        assert _STRONG_MATH_SIGNAL.search("O(n^2) complexity")
+        assert _STRONG_MATH_SIGNAL.search("asymptotic bound on the function")
+        # CX-F2: expanded coverage
+        assert _STRONG_MATH_SIGNAL.search("bounded above by 1")
+        assert _STRONG_MATH_SIGNAL.search("quadratic time algorithm")
+        assert _STRONG_MATH_SIGNAL.search("for all x > 0")
+        assert _STRONG_MATH_SIGNAL.search("the inequality holds")
+        assert _STRONG_MATH_SIGNAL.search("satisfies the constraint")
+        assert _STRONG_MATH_SIGNAL.search("the relation is transitive")
+        assert not _STRONG_MATH_SIGNAL.search("entry status = OPEN")
+
+    def test_cx_f1_math_with_function_word_not_misrouted(self):
+        """CX-F1 regression: 'the function f(x)' should NOT route to CODE_BEHAVIORAL."""
+        f = _make_finding(
+            desc="The function f(x) = x^2 is bounded below by 0"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        # Should NOT be CODE_BEHAVIORAL — "function" is math vocabulary here
+        assert ct != ClaimType.CODE_BEHAVIORAL
+
+    def test_dendritic_v2_passes_domain(self):
+        """DC v2 should use domain when classifying."""
+        f = _make_finding(
+            desc="def add_verdict overwrites the timer, "
+                 "self.entries[id]['last_status_change_round'] = round_idx"
+        )
+        v1 = [TriagedFinding(finding=f, claim_type=ClaimType.CODE_BEHAVIORAL)]
+        v2 = dendritic_cell_v2([f], v1, domain="software")
+        assert v2[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    def test_exp38_code_bug_misroute_fixed(self):
+        """Regression: Exp 38 code bugs should NOT go to MATHEMATICAL.
+
+        In R0, 17/26 code findings were misrouted to MATHEMATICAL because
+        descriptions contained operators like >=, ==, = in code context.
+        Layer 1 code-context check should prevent this.
+        """
+        # Real Exp 38 finding descriptions (abbreviated)
+        descs = [
+            "add_verdict() mutates last_status_change_round for every verdict, "
+            "even when no status has changed. self.entries[canonical_id]"
+            "['last_status_change_round'] = round_idx",
+
+            "escalate_stale_contested and auto_resolve_contested bypass resolve() "
+            "and directly mutate entry['status']",
+
+            "CONFIRMED+verified close before challenge check. "
+            "if entry['status'] == 'CONFIRMED' and entry.get('verified')",
+        ]
+        for desc in descs:
+            f = _make_finding(desc=desc)
+            ct, _, _ = _classify_claim_v2(f, domain="software")
+            assert ct == ClaimType.CODE_BEHAVIORAL, (
+                f"Expected CODE_BEHAVIORAL for: {desc[:60]}..."
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 2: LLM classifier residue reclassification
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from bench.immune_agents import _apply_llm_reclassification
+
+
+class TestLayer2LLMReclassification:
+    """Layer 2: targeted LLM reclassification of UNCATEGORISED residue."""
+
+    def test_no_uncategorised_is_noop(self):
+        """If no findings are UNCATEGORISED, Layer 2 does nothing."""
+        triaged = [
+            TriagedFinding(finding=_make_finding(), claim_type=ClaimType.CODE_BEHAVIORAL),
+            TriagedFinding(finding=_make_finding(fid="f2"), claim_type=ClaimType.MATHEMATICAL),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 0
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+        assert triaged[1].claim_type == ClaimType.MATHEMATICAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_uncategorised_reclassified_by_llm(self, mock_llm):
+        """UNCATEGORISED finding reclassified when LLM returns confident result."""
+        mock_llm.return_value = (ClaimType.LOGICAL, 0.75)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="some ambiguous finding"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.LOGICAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_low_confidence_falls_back_to_code_in_software(self, mock_llm):
+        """Low LLM confidence in software domain falls back to CODE_BEHAVIORAL."""
+        mock_llm.return_value = (ClaimType.LOGICAL, 0.30)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_llm_failure_falls_back_to_code_in_software(self, mock_llm):
+        """LLM failure in software domain falls back to CODE_BEHAVIORAL."""
+        mock_llm.return_value = (None, 0.0)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_uncategorised_stays_without_software_domain(self, mock_llm):
+        """Without software domain, UNCATEGORISED stays if LLM fails."""
+        mock_llm.return_value = (None, 0.0)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="")
+        assert count == 0
+        assert triaged[0].claim_type == ClaimType.UNCATEGORISED
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 3: Domain routing + hard verification gate
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestLayer3DomainRouting:
+    """Layer 3: domain config loading and verification gate."""
+
+    def test_load_software_domain_config(self):
+        """Software domain should load code.toml (via alias)."""
+        config = load_domain_config("software")
+        assert "immune" in config
+        assert "claim_patterns" in config["immune"]
+        assert "verification_tools" in config["immune"]
+
+    def test_load_mathematics_domain_config(self):
+        """Mathematics domain should load mathematics.toml."""
+        config = load_domain_config("mathematics")
+        assert "immune" in config
+        assert "mathematical" in config["immune"]["claim_patterns"]
+
+    def test_load_unknown_domain_returns_empty(self):
+        """Unknown domain returns empty dict, no error."""
+        config = load_domain_config("unknown_domain_xyz")
+        assert config == {}
+
+    def test_domain_config_cached(self):
+        """Second load should return cached result."""
+        c1 = load_domain_config("software")
+        c2 = load_domain_config("software")
+        assert c1 is c2  # Same object from cache
+
+    def test_immune_response_includes_domain(self):
+        """ImmuneResponse should carry domain field."""
+        response = ImmuneResponse(
+            triaged=[], cell_verdicts={}, final_verdicts={},
+            final_confidences={}, filtered_findings=[], rejected_findings=[],
+            rejection_rate=0.0, autoimmune_flag=False, stage_timings={},
+            tool_usage={}, observation_only=True, domain="software",
+        )
+        assert response.domain == "software"
+
+
+class TestHardVerificationGate:
+    """Stage 6: nothing exits without a tool-grounded verdict."""
+
+    def test_finding_with_ct_verdict_passes(self):
+        """Finding with CT verdict should not be escalated by gate."""
+        f = _make_finding()
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T, finding_id="f1",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="Bug exists at line 305", tool_used="ct_v1",
+            ),
+        ]
+        # Simulate gate check
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) > 0  # Has tool-grounded verdict
+
+    def test_finding_with_only_helper_t_escalated(self):
+        """Finding with only Helper T verdict should be escalated."""
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.HELPER_T, finding_id="f1",
+                verdict="UNCERTAIN", confidence=0.3,
+                evidence="No cell could verify", tool_used="helper_t",
+            ),
+        ]
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) == 0  # No tool-grounded verdict → escalate
+
+    def test_finding_with_b_cell_verdict_passes(self):
+        """Finding with B-Cell verdict should not be escalated."""
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id="f1",
+                verdict="REJECTED", confidence=0.7,
+                evidence="z3 counterexample", tool_used="z3",
+            ),
+        ]
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase B4: Specialist B-Cell Dispatch
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestSpecialistBCellDispatch:
+
+    def test_specialist_selects_correct_tools(self):
+        """Specialist dispatch routes mathematical claims to sympy."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="sqrt(4) = 3"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="sqrt(4) = 3",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {
+                    "mathematical": ["sympy", "z3"],
+                    "logical": ["z3"],
+                },
+            },
+        }
+        verdicts = _specialist_b_cell_dispatch([tf], domain_config)
+        assert len(verdicts) >= 1
+        assert verdicts[0].finding_id == "f1"
+
+    def test_specialist_fallback_empty_config(self):
+        """Specialist dispatch returns empty on missing tool config."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="x > 0"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="x > 0",
+        )
+        verdicts = _specialist_b_cell_dispatch([tf], {})
+        assert verdicts == []
+
+    def test_specialist_domain_patterns_override(self):
+        """Domain config routes statistical claims to statsmodels."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="convergence test"),
+            claim_type=ClaimType.STATISTICAL,
+            extracted_claim="p-value < 0.05 significant",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {
+                    "statistical": ["statsmodels"],
+                },
+            },
+        }
+        verdicts = _specialist_b_cell_dispatch([tf], domain_config)
+        assert len(verdicts) >= 1
+
+    def test_specialist_shadow_no_pipeline_mutation(self):
+        """Specialist and generic B-Cell produce independent results."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="2 + 2 = 5"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="2 + 2 = 5",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {"mathematical": ["sympy"]},
+            },
+        }
+        specialist = _specialist_b_cell_dispatch([tf], domain_config)
+        generic = b_cell_verify([tf])
+        assert isinstance(specialist, list)
+        assert isinstance(generic, list)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 7: Ouroboros Cell (O1)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestMacrophageCell:
+    """Tests for the Macrophage cell (internal pipeline monitor)."""
+
+    def test_shadow_mode_no_pipeline_mutation(self):
+        """Macrophage shadow mode must never modify pipeline state."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL, shadow=True)
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        summary = macro.observe(verdicts)
+        assert summary.pipeline_modified is False
+
+    def test_patrol_detects_verdict_cluster(self):
+        """Patrol mode flags when >80% verdicts are the same."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        # 9/10 REJECTED = 90% cluster
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="REJECTED", confidence=0.7,
+                evidence="test", tool_used="z3",
+            )
+            for i in range(9)
+        ] + [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id="f9",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+        ]
+        summary = macro.observe(verdicts)
+        anomalies = [o for o in summary.observations if o.category == "verdict_cluster"]
+        assert len(anomalies) >= 1
+
+    def test_self_check_detects_source_monoculture(self):
+        """Self-check mode flags when all verdicts come from one source."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.SELF_CHECK)
+        # All verdicts from same tool/source
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(6)
+        ]
+        summary = macro.observe(verdicts)
+        monoculture = [o for o in summary.observations if o.category == "source_monoculture"]
+        assert len(monoculture) >= 1
+
+    def test_signed_chain_verifiable(self):
+        """Macrophage observations can be signed into verification chain."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode, MacrophageObservation
+        from bench.verification_chain import VerificationChain
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        chain = VerificationChain()
+        obs = MacrophageObservation(
+            observation_id="macro_test",
+            mode=MacrophageMode.PATROL,
+            category="test",
+            description="Test observation",
+            severity=0.5,
+            is_anomaly=True,
+        )
+        record = macro.sign_observation(obs, chain)
+        assert record is not None
+        assert record["sealed_body"]["artifact_type"] == "macrophage_observation"
+        assert len(chain._records) == 1
+
+    def test_immune_deficiency_detection(self):
+        """Macrophage flags 0% gate rejection as immune deficiency."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        gate_stats = {"total_passed": 10, "total_failed": 0}
+        summary = macro.observe(verdicts, gate_stats=gate_stats)
+        deficiency = [o for o in summary.observations if o.category == "immune_deficiency"]
+        assert len(deficiency) >= 1
+
+    def test_provenance_monoculture_detection(self):
+        """Macrophage flags low source diversity in provenance."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        # Same source repeated 5 times
+        provenance = [
+            {"origin_type": "external_ouroboros", "source_ref": "same_paper", "source_hash": "abc"}
+            for _ in range(5)
+        ]
+        summary = macro.observe(verdicts, provenance=provenance)
+        monoculture = [o for o in summary.observations if o.category == "source_monoculture"]
+        assert len(monoculture) >= 1
+
+
+class TestOuroborosCell:
+    """Tests for the Ouroboros cell (external research + self-improvement)."""
+
+    def test_shadow_mode_no_injection(self):
+        """Ouroboros shadow mode logs but does not inject claims."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=["verdict_cluster detected"],
+        )
+        # Shadow mode: may produce candidates but never injects
+        assert shadow_log.round_idx == 1
+        # Metadata status: "live" or "live_empty" (real API), or
+        # "shadow_mock" (API fallback on network/package error).
+        # All are valid — shadow mode controls injection, not querying.
+        valid_statuses = {"shadow_mock", "live", "live_empty"}
+        for meta in shadow_log.metadata_retrieved:
+            assert meta.get("status") in valid_statuses
+
+    def test_hard_caps_enforced(self):
+        """Ouroboros respects max queries and max claims caps."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        # Give it many anomalies
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=[f"anomaly_{i}" for i in range(10)],
+        )
+        assert len(shadow_log.queries_issued) <= o1.MAX_QUERIES_PER_ROUND
+        assert len(shadow_log.candidate_claims) <= o1.MAX_CANDIDATE_CLAIMS
+
+    def test_activity_metrics(self):
+        """Ouroboros provides activity metrics for Macrophage monitoring."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        # Before any rounds
+        metrics = o1.get_activity_metrics()
+        assert metrics["rounds_active"] == 0
+
+        # After a round
+        o1.run_between_rounds(round_idx=0, anomalies=["test_anomaly"])
+        metrics = o1.get_activity_metrics()
+        assert metrics["rounds_active"] == 1
+        assert metrics["queries_total"] >= 0
+
+    def test_provenance_on_candidates(self):
+        """All Ouroboros candidate claims carry provenance packets."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=["convergence_dispute"],
+        )
+        for candidate in shadow_log.candidate_claims:
+            assert candidate.provenance.origin_type == "external_ouroboros"
+            assert candidate.falsification_debt == "high"
+
+
+class TestSympyF1SandboxAllowList:
+    """F1 fix regression: global_dict must carry the SymPy AST allow-list.
+
+    Before the F1 fix (2026-04-21), global_dict was empty
+    ('__builtins__': {}) and every SymPy verdict returned UNCERTAIN with
+    evidence "UNVERIFIABLE: name 'Integer' is not defined" because
+    parse_expr could not resolve the symbolic classes it constructs at
+    AST parse time. The fix adds Integer, Float, Rational, Symbol, Add,
+    Mul, Pow, log, exp plus the pi/E/oo/sqrt/Eq/Gt/Lt/Ge/Le constants.
+    """
+
+    def test_basic_arithmetic_resolves_not_uncertain(self):
+        """F1 baseline: 2 + 2 == 4 must parse without the Integer NameError."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("2 + 2 == 4")
+        # Prior to fix: UNCERTAIN with "Integer is not defined" in evidence.
+        assert "Integer" not in verdict.evidence, (
+            "F1 regression: SymPy cannot resolve 'Integer' — "
+            f"global_dict allow-list missing; evidence={verdict.evidence}"
+        )
+        assert verdict.verdict in ("CONFIRMED", "UNCERTAIN"), verdict.verdict
+        # If the verdict ran at all (not just NameError), prefer CONFIRMED
+        # on a trivially-true claim.
+        if "UNVERIFIABLE" not in verdict.evidence:
+            assert verdict.verdict == "CONFIRMED", (
+                f"2 + 2 == 4 should be CONFIRMED when SymPy can parse it; "
+                f"got {verdict.verdict} with evidence={verdict.evidence}"
+            )
+
+    def test_algebraic_identity_confirmed(self):
+        """F1 functional: (x+1)**2 == x**2 + 2*x + 1 resolves to VERIFIED_TRUE."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("(x + 1)**2 == x**2 + 2*x + 1")
+        assert "Integer" not in verdict.evidence
+        assert "UNVERIFIABLE" not in verdict.evidence, (
+            f"F1 algebraic identity failed: {verdict.evidence}"
+        )
+
+    def test_rce_blocklist_still_catches_import(self):
+        """F1 safety: MF-40 AST blocklist continues to reject RCE vectors.
+
+        The F1 allow-list adds symbolic classes but must NOT weaken the
+        MF-40 dangerous-token blocklist. A claim containing __import__
+        must still be blocked before parse_expr runs.
+        """
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("__import__('os').system('id')")
+        assert verdict.verdict == "UNCERTAIN"
+        assert (
+            "MF-40 blocklist" in verdict.evidence
+            or "BLOCKED" in verdict.evidence
+        ), f"RCE vector not blocked — evidence: {verdict.evidence}"
+
+    def test_rce_blocklist_catches_builtins_subclasses(self):
+        """F1 safety: __subclasses__ path-to-code-execution is blocked."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("().__class__.__subclasses__()[0]")
+        assert verdict.verdict == "UNCERTAIN"
+        assert (
+            "MF-40 blocklist" in verdict.evidence
+            or "BLOCKED" in verdict.evidence
+        ), f"Subclasses RCE path not blocked — evidence: {verdict.evidence}"

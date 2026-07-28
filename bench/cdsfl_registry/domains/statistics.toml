@@ -1,0 +1,14 @@
+# CDSFL Registry — Layer 2: Statistics Domain
+# Applied when task domain is "statistics".
+
+[verification]
+hypothesis_test_required = true     # statistical claims must have p-value or CI
+effect_size_required = true         # must report effect size, not just significance
+distribution_check = true           # verify distributional assumptions
+
+[constraints]
+sample_size_stated = true           # must state N
+alpha_level_stated = true           # must state significance threshold
+multiple_comparison_correction = "when_applicable"
+
+# Immune pipeline parameterisation lives in domains/immune/statistics.toml

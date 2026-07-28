@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260522T203941Z",
+  "phase": "r4",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1782,
+  "response": "CHALLENGE C0018 | Registry marks C0018 as WITHDRAWN with Fix: N/A. There is no admissible source SEARCH text in the visible registry to re-emit byte-for-byte. Reconstructing a SEARCH/REPLACE block would fabricate an unverifiable fix, so no fix block is emitted.\n\nCONFIRM C0015 | Evidence from `bench/dm/_convergence.py`: `_compute_equivalence_classes()` merges findings solely when `self.similarity_fn(findings[i], findings[j]) >= self._tau_sim()`. It then assigns `flaw_class = members[0].flaw_class`, so a mixed-class cluster inherits the first member’s class and hides the others. This confirms the mechanism that `flaw_class` is ignored during equivalence comparisons.\n\nCONFIRM C0017 | Evidence from `add_round_findings()`: `round_idx`, `duration`, and `adoption_delta` are stored directly without validation:\n`self._round_findings[round_idx] = list(findings)`,\n`self._round_durations[round_idx] = duration`,\n`self._adoption_deltas[round_idx] = adoption_delta`.\nInvalid `duration` values directly affect `_novel_rate()` in `kappa_rate()`; invalid `adoption_delta` affects `kappa_adopt()` before clamping. This confirms unvalidated control input.\n\nCONFIRM C0019 | Evidence from `_weighted_novel_severity()`: class contribution uses `class_weight = max(self._suppression_weight(member, prior_findings) for member in ec.members)` and then `total += class_weight * ec.aggregated_severity`. A class containing both strongly-suppressed duplicate-like members and weakly-suppressed members is weighted by the least-suppressed member, inflating the whole class’s severity contribution.\n\nNo new DISCOVERY findings filed for Round 4. I found no additional CRITICAL/HIGH defects in `bench/dm/_convergence.py` that are both novel relative to the registry and supported by concrete evidence.",
+  "metadata": {
+    "round": 4,
+    "elapsed": 45.0,
+    "chars": 1782,
+    "findings_count": 0,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

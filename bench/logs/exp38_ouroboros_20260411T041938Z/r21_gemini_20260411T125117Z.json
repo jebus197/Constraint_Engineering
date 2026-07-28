@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260411T125117Z",
+  "phase": "r21",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2330,
+  "response": "CHALLENGE C0007 | `_check_gamma_gate` correctly fails the gate when gamma < threshold because low gamma indicates weak novelty depletion, so premature state closure must be prevented. Semantics are not inverted.\nCHALLENGE C0083 | The `REOPENED` status is dynamically managed by `_update_finding_statuses` and is explicitly integrated into the active `full_detail_statuses` summary grouping. \nCHALLENGE C0003 | `_parse_verdicts` strictly captures the target ID in group 2 and the raw evidence in group 3. The distinction between target and source is cleanly preserved and properly handled downstream by `_resolve_merge_source`.\nCHALLENGE C0022 | Setting the status to `UNCONFIRMED` alongside `hil_escalated=True` is the explicit and correct mechanism for HIL grace-period aging.\n\nFINDING_ID: F001\nSEVERITY: 0.85\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.8\nDESCRIPTION: FIND — In `_compute_rho`, the rolling average loop appends `0.0` to `rho_values` when a previous round in the window had `raw_counts[i] == 0`.\nFOLLOW: A round with 0 raw findings indicates no proposals were made, not that there was 100% duplicate spam. Treating undefined efficiency (0/0) as `0.0` artificially plummets the rolling average `rho_avg` for subsequent rounds. If the rolling window includes a recent round with 0 findings, the dragged-down average falsely triggers `churn = True` (`rho_avg < cfg.rho_threshold`), which misrepresents a quiet round as high-duplicate discovery degradation. \nANALYSE: CONFIRMED. The code explicitly penalises quiet rounds via `else: rho_values.append(0.0)`. Rounds with no proposals should be skipped in the efficiency average to maintain an accurate metric of actual proposal novelty.\nPROPOSED_FIX: \n<<<< SEARCH bench/reference_runner.py\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n====\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n>>>> REPLACE\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 21,
+    "elapsed": 259.0,
+    "chars": 2330,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

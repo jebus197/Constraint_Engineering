@@ -54,6 +54,20 @@ constraint_class = "HARD"
 min_layer = "universal"
 description = "Verifiable mathematical claims are auto-checked via SymPy."
 
+[constraints.ffafp_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All findings must be processed through FIND-FOLLOW-ANALYSE-FIX before presentation."
+
+[constraints.structured_reasoning_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All findings must include explicit premises, concrete derivation, and formal conclusion (Meta Structured Reasoning Protocol)."
+
 [constraints.deterministic_output]
 type = "bool"
 default = false
@@ -102,6 +116,28 @@ default = false
 constraint_class = "SOFT"
 min_layer = "domain"
 description = "Verify material properties used in calculations."
+
+[constraints.sample_size_stated]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must state sample size (N)."
+
+[constraints.alpha_level_stated]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must state significance threshold (alpha)."
+
+[constraints.multiple_comparison_correction]
+type = "string"
+default = "not_applicable"
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Multiple comparison correction policy."
+allowed_values = ["not_applicable", "when_applicable", "mandatory"]
 
 [constraints.shared_variable_consistency]
 type = "bool"
@@ -299,6 +335,27 @@ constraint_class = "SOFT"
 min_layer = "domain"
 description = "Engineering claims must address safety margins."
 
+[verification.hypothesis_test_required]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must include hypothesis test (p-value or CI)."
+
+[verification.effect_size_required]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Must report effect size, not just statistical significance."
+
+[verification.distribution_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify distributional assumptions before applying parametric tests."
+
 [verification.cross_domain_interface_check]
 type = "bool"
 default = false
@@ -351,6 +408,14 @@ default = false
 constraint_class = "SOFT"
 min_layer = "model"
 description = "Include explicit formatting instructions in prompts."
+
+[protocol.reasoning_protocol]
+type = "string"
+default = "combined_4_layer"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Reasoning protocol applied to model interactions. All protocols remain subject to CDSFL falsification/verification regardless of style."
+allowed_values = ["combined_4_layer", "meta_structured", "ffafp", "p_pass", "conversational"]
 
 [protocol.structured_output_native]
 type = "bool"
@@ -411,6 +476,110 @@ default = true
 constraint_class = "SOFT"
 min_layer = "universal"
 description = "Enable the novelty detection channel."
+
+# =============================================================================
+# [feedback_channel] — cdsfl_operational.md §17: schema → model corrective loop
+# =============================================================================
+
+[feedback_channel.enabled]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Enable the schema-to-model feedback channel (§17). Live default; disable only for controlled ablation."
+
+[feedback_channel.top_k]
+type = "int"
+default = 10
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Maximum detailed flagged findings per model per round. Surplus summarised in aggregate."
+
+[feedback_channel.max_chars_per_model]
+type = "int"
+default = 8000
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Hard cap on feedback section size per model to prevent prompt blow-up."
+
+[feedback_channel.mode]
+type = "enum"
+default = "imperative"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Directive strength — imperative (MUST address) or advisory (SHOULD address)."
+allowed_values = ["imperative", "advisory"]
+
+# =============================================================================
+# [divergence] — cdsfl_operational.md §18: generator-side invention directive
+# =============================================================================
+
+[divergence.enabled]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Enable the divergence directive (§18). Live default; disable only for controlled ablation."
+
+[divergence.min_alternatives]
+type = "int"
+default = 1
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum alternatives required per non-trivial finding (null-justification substitutes)."
+
+[divergence.max_chars_per_alternative]
+type = "int"
+default = 2000
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Hard cap on per-alternative block size to prevent prompt blow-up."
+
+[divergence.mode]
+type = "enum"
+default = "imperative"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Directive strength — imperative (MUST supply) or advisory (SHOULD supply)."
+allowed_values = ["imperative", "advisory"]
+
+[divergence.isomorphism_threshold]
+type = "float"
+default = 0.85
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Jaccard similarity above which alternative is treated as cosmetic isomorphism (rejected)."
+
+[divergence.null_justification_min_chars]
+type = "int"
+default = 60
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum character length for scoped null-alternative justification block."
+
+# Round-2 additions (16 April 2026) — unanimous 5/5 model convergence.
+# Mandatory contrast statement, near-copy severe tier, sibling ship-blocker.
+
+[divergence.min_contrast_chars]
+type = "int"
+default = 20
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum character length for the mandatory 'Differs from primary:' contrast statement on every alternative."
+
+[divergence.near_copy_threshold]
+type = "float"
+default = 0.98
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Jaccard at or above this triggers the severe 0.60 eta_int modulation tier (reserved for near-copy and recidivism)."
+
+[divergence.sibling_isomorphism_threshold]
+type = "float"
+default = 0.85
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Sibling alt-vs-alt Jaccard at or above this marks the later-occurring alternative inadmissible (ship-blocker)."
 
 # =============================================================================
 # [model] — model-specific settings (Layer 4 only)

@@ -1,0 +1,1270 @@
+[04:27:07] ============================================================
+[04:27:07] EXPERIMENT: exp40_gate
+[04:27:07]   Topology: star/blackboard
+[04:27:07]   Pattern: four_layer
+[04:27:07]   Max rounds: 8 (extension to 10)
+[04:27:07]   Convergence: state-based, earliest R3
+[04:27:07]   Target: bench/dm/_feedback.py
+[04:27:07]   Context: ['bench/dm/_types.py']
+[04:27:07]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[04:27:07]   Domain: software
+[04:27:07]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z
+[04:27:07] ============================================================
+[04:27:07]   Target: 21,473 chars
+[04:27:07]   Context: 1 files
+[04:27:07]   Total: 49,129 chars with headers
+[04:27:07]   RESUMED from round 3
+[04:27:07]   Registry restored: 34 entries
+[04:27:07]   S_k pipeline: capturing baseline gate scores...
+[04:27:08]   S_k baseline: ruff=0, bandit={'high': 0, 'medium': 0}
+[04:27:08] 
+------------------------------------------------------------
+[04:27:08] Round 3/7 (adaptive)
+[04:27:08] ------------------------------------------------------------
+[04:27:08]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[04:27:08]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[04:27:08]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:27:08]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:27:08]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[04:27:08]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=599227d4..., ~112,895 chars total
+[04:27:08]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[04:27:08]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:27:08]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[04:27:08]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:27:08]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[04:27:13]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:27:17]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:27:40]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (651 chars)
+[04:27:40]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:28:11]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[04:28:11]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:28:13]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (474 chars)
+[04:28:13]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:28:13]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,338 chars)
+[04:28:13]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:28:15]   [openrouter:openai/gpt-5.5] section 1 analysis complete (1,773 chars)
+[04:28:15]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:28:32]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,520 chars)
+[04:28:32]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:28:33]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,320 chars)
+[04:28:33]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:28:58]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[04:28:58]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[04:29:36]   [openrouter:openai/gpt-5.5] synthesis complete (147.6s, 5,715 chars)
+[04:29:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round3_codex_20260514T032936Z.json
+[04:29:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r3_codex_20260514T032936Z.json
+[04:30:22]   [openrouter:openai/gpt-5.5] synthesis complete (194.0s, 12,578 chars)
+[04:30:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round3_chatgpt_20260514T033022Z.json
+[04:30:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r3_chatgpt_20260514T033022Z.json
+[04:30:33]   [claude-cli] synthesis complete (205.7s, 7,623 chars)
+[04:30:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round3_cc2_20260514T033033Z.json
+[04:30:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r3_cc2_20260514T033033Z.json
+[04:33:02]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (353.2s, 0 chars)
+[04:33:02]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round3_gemini_20260514T033302Z.json
+[04:33:02]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r3_gemini_20260514T033302Z.json
+[04:36:36]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (568.0s, 9,421 chars)
+[04:36:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round3_deepseek_20260514T033636Z.json
+[04:36:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r3_deepseek_20260514T033636Z.json
+[04:36:36]   R_k FAIL: ChatGPT_F002 — model=0.457, recomputed=1.000, delta=0.543
+[04:36:36]   R_k FAIL: CC2_F001 — model=0.310, recomputed=0.438, delta=0.128
+[04:36:36]   R_k validation [ChatGPT]: FAIL=1, SKIP=6
+[04:36:36]   R_k validation [CC2]: FAIL=1
+[04:36:36]   R_k validation [DeepSeek]: SKIP=1
+[04:36:36]   Registry: 5 novel / 9 raw, 39 total, rho=0.556, rho_avg=0.595
+[04:36:36]   MERGE DEFERRED C0016: target disagreement (C0030, C0032) [1/5]
+[04:36:36]   MERGE DEFERRED C0023: target disagreement (C0002, C0033) [1/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_str` — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding.finding_id!r} from " — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_str — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F006 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 9/9 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F002 — regex=code_behavioral → llm=logical (conf=0.78, threshold=0.70, 13.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.72, threshold=0.70, 15.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 10.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding.finding_id!r} from " — regex=code_behavioral → llm=code_structural (conf=0.70, threshold=0.70, 13.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 9.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_str — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 10.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F006 — regex=code_behavioral → llm=code_structural (conf=0.95, threshold=0.70, 10.3s)
+INFO:immune.pipeline:LLM classifier: 2/9 agree with regex (22.2%), 7 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  ChatGPT_F002: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 9 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 171.8s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 7 verdicts; detail=[{"finding_id": "ChatGPT_F002", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "ChatGPT_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding.finding_id!r} from \"", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_str", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_F006", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding.finding_id!r} from " specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_str specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_F006 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 7 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 7 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_str — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding.finding_id!r} from " — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_str` — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings} — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F006 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 7 finding(s): CC2_F001, ChatGPT_F002, ChatGPT_f for f in findings}, ChatGPT_str, ChatGPT_str`, ChatGPT_{finding.finding_id!r} from ", DeepSeek_F006
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 7/7 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 7/7 (100%) findings from ChatGPT removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 7/7 (100%) findings from ChatGPT removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 7 locked rejections
+[04:41:19]   [feedback] round 3 → round 4: 3 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[04:41:22]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:25]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:27]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:30]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:32]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[04:41:34]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:41:34]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:41:34]   S_k [C0016]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:41:37]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:39]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:41]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:41]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:41:41]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:41:44]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:44]   S_k [C0030]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:41:46]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:46]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:41:48]   S_k [C0033]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:51]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:41:51]   S_k pipeline: 18 evaluated, 13 ADMISSIBLE, 2 REJECTED, 3 ESCALATE
+[04:41:51]   *** HIL FLAG: Codex has 3 consecutive ITC interventions (latest: CAPABILITY_MISMATCH). Flagged for HIL review. ***
+[04:41:51]   gamma: 0.297 (telemetry, passed) — Weak depletion — state closure may be premature
+[04:41:51]   Round 3: 9 findings, 568.7s
+[04:41:51]   Convergence: Gate failed: open_ch=18 > max=5, novel=5, contested=1
+[04:41:51]   γ-alt: γ-alt not met: gamma=0.297 < 0.3; novel_crit_recent=[7, 5, 1]
+[04:41:51] 
+------------------------------------------------------------
+[04:41:51] Round 4/7 (adaptive)
+[04:41:51] ------------------------------------------------------------
+[04:41:51]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:41:51]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[04:41:51]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:41:51]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[04:41:51]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[04:41:51]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=a8d04c7a..., ~115,167 chars total
+[04:41:51]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[04:41:51]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:41:51]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[04:41:51]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:41:51]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[04:41:55]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:41:59]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:42:23]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[04:42:23]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:42:52]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (474 chars)
+[04:42:52]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:43:00]   [openrouter:openai/gpt-5.5] section 1 analysis complete (6,192 chars)
+[04:43:00]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:43:08]   [openrouter:openai/gpt-5.5] section 1 analysis complete (579 chars)
+[04:43:08]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:43:19]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,439 chars)
+[04:43:19]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:43:41]   [openrouter:openai/gpt-5.5] section 2 analysis complete (4,096 chars)
+[04:43:41]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:44:29]   [openrouter:openai/gpt-5.5] synthesis complete (158.2s, 1,730 chars)
+[04:44:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round4_codex_20260514T034429Z.json
+[04:44:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r4_codex_20260514T034429Z.json
+[04:45:28]   [openrouter:openai/gpt-5.5] synthesis complete (217.1s, 12,182 chars)
+[04:45:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round4_chatgpt_20260514T034528Z.json
+[04:45:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r4_chatgpt_20260514T034528Z.json
+[04:45:43]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (13,921 chars)
+[04:45:43]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:46:32]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (280.4s, 22,869 chars)
+[04:46:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round4_gemini_20260514T034632Z.json
+[04:46:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r4_gemini_20260514T034632Z.json
+[04:46:36]   [claude-cli] synthesis complete (284.7s, 7,783 chars)
+[04:46:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round4_cc2_20260514T034636Z.json
+[04:46:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r4_cc2_20260514T034636Z.json
+[04:47:49]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[04:47:49]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[04:50:37]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (525.6s, 13,807 chars)
+[04:50:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round4_deepseek_20260514T035037Z.json
+[04:50:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r4_deepseek_20260514T035037Z.json
+[04:50:37]   R_k WARN: Gemini_F001 — model=0.480, recomputed=0.505, delta=0.025
+[04:50:37]   R_k WARN: Gemini_` first, but that would require a complete rewrite of the parsing logic which is designed to operate on a single finding's text block. Adding `FINDING_ID` to the terminator regex is the minimal sufficient fix that preserves the existing permissive design. — model=0.480, recomputed=0.505, delta=0.025
+[04:50:37]   R_k WARN: Gemini_F003 — model=0.470, recomputed=0.509, delta=0.039
+[04:50:37]   R_k WARN: Gemini_F004 — model=0.490, recomputed=0.508, delta=0.018
+[04:50:37]   R_k WARN: Gemini_F005 — model=0.490, recomputed=0.508, delta=0.018
+[04:50:37]   R_k WARN: Gemini_F006 — model=0.490, recomputed=0.508, delta=0.018
+[04:50:37]   R_k WARN: Gemini_F007 — model=0.480, recomputed=0.505, delta=0.025
+[04:50:37]   R_k FAIL: CC2_F002 — model=0.340, recomputed=0.493, delta=0.153
+[04:50:37]   R_k FAIL: DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it. — model=0.367, recomputed=1.000, delta=0.633
+[04:50:37]   R_k WARN: DeepSeek_{finding_by_id[finding.finding_id]!r} from " — model=0.454, recomputed=0.443, delta=0.011
+[04:50:37]   R_k validation [ChatGPT]: SKIP=3
+[04:50:37]   R_k validation [Gemini]: WARN=7, SKIP=2
+[04:50:37]   R_k validation [CC2]: FAIL=1
+[04:50:37]   R_k validation [DeepSeek]: WARN=1, FAIL=1, SKIP=3
+[04:50:37]   Registry: 9 novel / 18 raw, 48 total, rho=0.500, rho_avg=0.539
+[04:50:37]   MERGE DEFERRED C0016: target disagreement (C0030, C0032) [2/5]
+[04:50:37]   MERGE DEFERRED C0023: target disagreement (C0002, C0033) [2/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 18 passed, 0 failed out of 18 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before `:`, so the admissibility block can overrun into the next finding. This confirms the parsing-boundary defect. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_{finding.finding_id!r} from ".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 5/18 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 18 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.58, threshold=0.70, 8.8s)
+INFO:immune.pipeline:LLM classifier: Gemini_` of the next finding. It will consume the next finding's text, potentially corrupting the admissibility parsing for both findings. — regex=code_behavioral llm=uncategorised (conf=0.20, below threshold 0.70, 8.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F005 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 9.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F006 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 9.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F002 — regex=mathematical → llm=code_structural (conf=0.95, threshold=0.70, 7.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it. — regex=code_behavioral → llm=code_structural (conf=0.60, threshold=0.70, 13.5s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_{finding_by_id[finding.finding_id]!r} from " — regex=mathematical llm=uncategorised (conf=0.20, below threshold 0.70, 10.0s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_{finding.finding_id!r} from ".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038. — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 9.6s)
+INFO:immune.pipeline:LLM classifier: 10/18 agree with regex (55.6%), 6 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  DeepSeek_{finding_by_id[finding.finding_id]!r} from ": UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 18 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 252.2s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 5 verdicts; detail=[{"finding_id": "ChatGPT_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "CC2_F002", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_{finding_by_id[finding.finding_id]!r} from \"", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "DeepSeek_{finding.finding_id!r} from \".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_F002 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_{finding.finding_id!r} from ".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 18 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 18 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F008 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before `:`, so the admissibility block can overrun into the next finding. This confirms the parsing-boundary defect. — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it. — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F007 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` silently collapses duplicate local finding IDs across models or rounds. Since `Finding` has both `finding_id` and `model_id`, and model outputs commonly reuse IDs like `F001`, a plain ID map is unsafe unless upstream guarantees global namespacing. The current function does not enforce that invariant. — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings} — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_` of the next finding. It will consume the next finding's text, potentially corrupting the admissibility parsing for both findings. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_{finding_by_id[finding.finding_id]!r} from " — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_{finding.finding_id!r} from ".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_` first, but that would require a complete rewrite of the parsing logic which is designed to operate on a single finding's text block. Adding `FINDING_ID` to the terminator regex is the minimal sufficient fix that preserves the existing permissive design. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 18 finding(s): CC2_F002, ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before `:`, so the admissibility block can overrun into the next finding. This confirms the parsing-boundary defect., ChatGPT_f for f in findings}, ChatGPT_f for f in findings}` silently collapses duplicate local finding IDs across models or rounds. Since `Finding` has both `finding_id` and `model_id`, and model outputs commonly reuse IDs like `F001`, a plain ID map is unsafe unless upstream guarantees global namespacing. The current function does not enforce that invariant., DeepSeek_F007, DeepSeek_F008, DeepSeek_{finding.finding_id!r} from ".  The current `_feedback.py` I see does not contain that line in any function.  So it's likely already fixed.  In that case, I can simply withdraw both C0037 and C0038., DeepSeek_{finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the current file and fix it., DeepSeek_{finding_by_id[finding.finding_id]!r} from ", Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F005, Gemini_F006, Gemini_F007, Gemini_` first, but that would require a complete rewrite of the parsing logic which is designed to operate on a single finding's text block. Adding `FINDING_ID` to the terminator regex is the minimal sufficient fix that preserves the existing permissive design., Gemini_` of the next finding. It will consume the next finding's text, potentially corrupting the admissibility parsing for both findings.
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 18/18 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 9/9 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 9/9 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 18 locked rejections
+[04:57:44]   [feedback] round 4 → round 5: 4 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[04:57:47]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:57:50]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:57:52]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:57:55]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:57:57]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[04:57:59]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:57:59]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:57:59]   S_k [C0016]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:58:01]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:04]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:06]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:06]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:58:06]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:58:08]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:08]   S_k [C0030]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:58:12]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:12]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:58:14]   S_k [C0033]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:16]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:19]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:21]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:23]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:58:23]   S_k pipeline: 21 evaluated, 16 ADMISSIBLE, 2 REJECTED, 3 ESCALATE
+[04:58:23]   ITC [DeepSeek]: parse yield 1.00 (5+2/7 markers, verdicts=2, baseline=1.64, threshold=1.39) — DEGRADATION
+[04:58:23]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=1.000 >= 0.25 (normal depletion)
+[04:58:23]   *** HIL FLAG: Codex has 4 consecutive ITC interventions (latest: CAPABILITY_MISMATCH). Flagged for HIL review. ***
+[04:58:23]   gamma: 0.289 (telemetry, passed) — Weak depletion — state closure may be premature
+[04:58:23]   Round 4: 18 findings, 525.9s
+[04:58:23]   Convergence: Gate failed: open_ch=14 > max=5, novel=9, contested=1
+[04:58:23]   γ-alt: γ-alt not met: gamma=0.289 < 0.3; novel_crit_recent=[5, 1, 1]
+[04:58:23] 
+------------------------------------------------------------
+[04:58:23] Round 5/7 (adaptive)
+[04:58:23] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:58:23]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[04:58:23]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[04:58:23]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=17ab9804..., ~117,005 chars total
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:58:23]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[04:58:23]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[04:58:23]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[04:58:23]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[04:58:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:58:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[04:58:24]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[04:58:24]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[04:58:29]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:58:34]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:58:57]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[04:58:57]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:59:25]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (474 chars)
+[04:59:25]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:59:39]   [openrouter:openai/gpt-5.5] section 1 analysis complete (3,281 chars)
+[04:59:39]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:59:41]   [openrouter:openai/gpt-5.5] section 1 analysis complete (2,481 chars)
+[04:59:41]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:59:55]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,169 chars)
+[04:59:55]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:00:00]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,712 chars)
+[05:00:00]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:00:49]   [claude-cli] synthesis complete (146.0s, 6,316 chars)
+[05:00:49]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round5_cc2_20260514T040049Z.json
+[05:00:49]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r5_cc2_20260514T040049Z.json
+[05:01:16]   [openrouter:openai/gpt-5.5] synthesis complete (172.0s, 5,489 chars)
+[05:01:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round5_chatgpt_20260514T040116Z.json
+[05:01:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r5_chatgpt_20260514T040116Z.json
+[05:01:43]   [openrouter:openai/gpt-5.5] synthesis complete (199.5s, 15,048 chars)
+[05:01:43]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round5_codex_20260514T040143Z.json
+[05:01:43]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r5_codex_20260514T040143Z.json
+[05:01:46]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (13,817 chars)
+[05:01:46]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[05:02:46]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[05:02:46]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:04:12]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (348.2s, 9,464 chars)
+[05:04:12]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round5_gemini_20260514T040412Z.json
+[05:04:12]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r5_gemini_20260514T040412Z.json
+[05:06:20]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (476.1s, 15,946 chars)
+[05:06:20]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round5_deepseek_20260514T040620Z.json
+[05:06:20]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r5_deepseek_20260514T040620Z.json
+[05:06:20]   R_k FAIL: CC2_F003 — model=0.330, recomputed=0.456, delta=0.126
+[05:06:20]   R_k FAIL: Codex_F001 — model=0.497, recomputed=1.000, delta=0.503
+[05:06:20]   R_k FAIL: Gemini_W001 — model=0.000, recomputed=0.500, delta=0.500
+[05:06:20]   R_k validation [CC2]: FAIL=1
+[05:06:20]   R_k validation [ChatGPT]: SKIP=2
+[05:06:20]   R_k validation [Codex]: FAIL=1
+[05:06:20]   R_k validation [Gemini]: FAIL=1
+[05:06:20]   R_k validation [DeepSeek]: SKIP=4
+[05:06:20]   Registry: 7 novel / 9 raw, 55 total, rho=0.778, rho_avg=0.611
+[05:06:20]   MERGE DEFERRED C0016: target disagreement (C0030, C0032, C0017) [3/5]
+[05:06:20]   MERGE DEFERRED C0023: target disagreement (C0002, C0033) [3/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` is not matched by the terminator regex. The supplied artifact still has: — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_W001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` matching. CONFIRM both. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` will not terminate the ADMISSIBILITY section, causing the parser to consume subsequent finding text. The fix must add `FINDING_ID` to the alternation. Example: — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F009 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.pipeline:DC v2 (v2): 8/9 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_` is not matched by the terminator regex. The supplied artifact still has: — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 11.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008. — regex=code_behavioral → llm=code_structural (conf=0.82, threshold=0.70, 10.4s)
+INFO:immune.pipeline:LLM classifier: Gemini_W001 — regex=code_behavioral llm=uncategorised (conf=0.92, below threshold 0.70, 8.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F009 — regex=mathematical → llm=logical (conf=0.90, threshold=0.70, 10.5s)
+INFO:immune.pipeline:LLM classifier: 5/9 agree with regex (55.6%), 3 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  DeepSeek_F009: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 9 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 219.5s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 3 verdicts; detail=[{"finding_id": "ChatGPT_` is not matched by the terminator regex. The supplied artifact still has:", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_` does not match `FINDING\\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_F009", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_PARSED: extracted 3 numeric values"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_` is not matched by the terminator regex. The supplied artifact still has: specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 9 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 9 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` matching. CONFIRM both. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` is not matched by the terminator regex. The supplied artifact still has: — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_W001 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` will not terminate the ADMISSIBILITY section, causing the parser to consume subsequent finding text. The fix must add `FINDING_ID` to the alternation. Example: — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F009 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 9 finding(s): CC2_F003, ChatGPT_` does not match `FINDING\s*:` because `_ID` appears before the colon. Same root cause; merge to C0008., ChatGPT_` is not matched by the terminator regex. The supplied artifact still has:, Codex_F001, DeepSeek_F001, DeepSeek_F009, DeepSeek_` matching. CONFIRM both., DeepSeek_` will not terminate the ADMISSIBILITY section, causing the parser to consume subsequent finding text. The fix must add `FINDING_ID` to the alternation. Example:, Gemini_W001
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 9/9 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 9 locked rejections
+[05:11:22]   [feedback] round 5 → round 6: 5 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[05:11:26]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:29]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:31]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:34]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:37]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[05:11:39]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[05:11:39]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[05:11:39]   S_k [C0016]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:11:41]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:43]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:46]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:46]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[05:11:46]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:11:48]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:48]   S_k [C0030]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:11:50]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:50]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:11:52]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:54]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:57]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:11:59]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:12:01]   S_k [C0049]: ADMISSIBLE sk=0.990 (S*=0.000) R: 0.500 -> 0.370
+[05:12:04]   S_k [C0054]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:12:06]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:12:06]   S_k pipeline: 23 evaluated, 18 ADMISSIBLE, 2 REJECTED, 3 ESCALATE
+[05:12:06]   ITC [DeepSeek]: parse yield 1.25 (4+1/4 markers, verdicts=1, baseline=1.72, threshold=1.47) — DEGRADATION
+[05:12:06]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.917 >= 0.25 (normal depletion)
+[05:12:06]   ITC [Gemini]: parse yield 0.20 (1+0/5 markers, baseline=2.02, threshold=1.77) — DEGRADATION
+[05:12:06]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.407 >= 0.25 (normal depletion)
+[05:12:06]   *** HIL FLAG: Gemini has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:12:06]   gamma: 0.284 (telemetry, passed) — Weak depletion — state closure may be premature
+[05:12:06]   Round 5: 9 findings, 476.3s
+[05:12:06]   Convergence: Gate failed: open_ch=14 > max=5, novel=7, contested=1
+[05:12:06]   γ-alt: γ-alt not met: gamma=0.284 < 0.3; novel_crit_recent=[1, 1, 1]
+[05:12:06] 
+------------------------------------------------------------
+[05:12:06] Round 6/7 (adaptive)
+[05:12:06] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:12:06]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[05:12:06]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:12:06]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[05:12:06]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[05:12:06]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[05:12:06]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=a777c14e..., ~118,206 chars total
+[05:12:06]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[05:12:07]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[05:12:07]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:12:07]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[05:12:07]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:12:11]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[05:12:18]   [claude-cli] delivering final instruction (chunk 3/3)
+[05:12:44]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[05:12:44]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[05:13:12]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (15,215 chars)
+[05:13:12]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[05:13:15]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (474 chars)
+[05:13:15]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[05:13:18]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,724 chars)
+[05:13:18]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:13:21]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,078 chars)
+[05:13:21]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:13:40]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,639 chars)
+[05:13:40]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:13:47]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,381 chars)
+[05:13:47]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:14:08]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (15,087 chars)
+[05:14:08]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:14:37]   [openrouter:openai/gpt-5.5] synthesis complete (150.6s, 3,292 chars)
+[05:14:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round6_codex_20260514T041437Z.json
+[05:14:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r6_codex_20260514T041437Z.json
+[05:14:40]   [openrouter:openai/gpt-5.5] synthesis complete (153.2s, 3,920 chars)
+[05:14:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round6_chatgpt_20260514T041440Z.json
+[05:14:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r6_chatgpt_20260514T041440Z.json
+[05:14:51]   [claude-cli] synthesis complete (164.9s, 10,291 chars)
+[05:14:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round6_cc2_20260514T041451Z.json
+[05:14:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r6_cc2_20260514T041451Z.json
+[05:17:25]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (318.6s, 19,666 chars)
+[05:17:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round6_gemini_20260514T041725Z.json
+[05:17:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r6_gemini_20260514T041725Z.json
+[05:19:15]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (428.4s, 6,735 chars)
+[05:19:15]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round6_deepseek_20260514T041915Z.json
+[05:19:15]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r6_deepseek_20260514T041915Z.json
+[05:19:15]   R_k FAIL: CC2_F001 — model=0.420, recomputed=0.508, delta=0.088
+[05:19:15]   R_k FAIL: Gemini_F006 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k FAIL: Gemini_F008 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k FAIL: Gemini_F009 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k FAIL: Gemini_F010 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k FAIL: Gemini_F011 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k FAIL: Gemini_F012 — model=0.250, recomputed=0.342, delta=0.092
+[05:19:15]   R_k validation [Codex]: SKIP=1
+[05:19:15]   R_k validation [ChatGPT]: SKIP=2
+[05:19:15]   R_k validation [CC2]: FAIL=1
+[05:19:15]   R_k validation [Gemini]: FAIL=6, SKIP=2
+[05:19:15]   R_k validation [DeepSeek]: SKIP=1
+[05:19:15]   Registry: 8 novel / 13 raw, 63 total, rho=0.615, rho_avg=0.631
+[05:19:15]   MERGE DEFERRED C0016: target disagreement (C0030, C0032, C0017) [4/5]
+[05:19:15]   MERGE DEFERRED C0023: target disagreement (C0002, C0033) [4/5]
+[05:19:15]   MERGE DEFERRED C0032: target disagreement (C0016, C0030) [1/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 13 passed, 0 failed out of 13 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_` does not match `^\s*FINDING\s*:` because `_ID` appears before the colon. This confirms the parser can fail to terminate the ADMISSIBILITY block at the next finding boundary. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F006 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F010 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F011 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F012 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` not matched by terminator regex — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 8/13 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 13 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_` is not matched by `FINDING\s*:`. — regex=mathematical → llm=code_behavioral (conf=0.75, threshold=0.70, 11.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 9.7s)
+INFO:immune.pipeline:LLM classifier: Gemini_`. — regex=code_behavioral llm=uncategorised (conf=0.20, below threshold 0.70, 9.0s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F010 — regex=code_behavioral → llm=logical (conf=0.85, threshold=0.70, 14.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F012 — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 10.4s)
+INFO:immune.pipeline:LLM classifier: 8/13 agree with regex (61.5%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Gemini_F010: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 13 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 268.8s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 2 verdicts; detail=[{"finding_id": "Gemini_F010", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_SINGLE_VALUE: 23.0"}, {"finding_id": "Gemini_F012", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}]
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_F012 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 13 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 13 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` is not matched by `FINDING\s*:`. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F010 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F011 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F012 — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matched by terminator regex — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F009 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_` does not match `^\s*FINDING\s*:` because `_ID` appears before the colon. This confirms the parser can fail to terminate the ADMISSIBILITY block at the next finding boundary. — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_`. — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F008 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 13 finding(s): CC2_F001, ChatGPT_F002, ChatGPT_` is not matched by `FINDING\s*:`., Codex_` does not match `^\s*FINDING\s*:` because `_ID` appears before the colon. This confirms the parser can fail to terminate the ADMISSIBILITY block at the next finding boundary., DeepSeek_` not matched by terminator regex, Gemini_F006, Gemini_F007, Gemini_F008, Gemini_F009, Gemini_F010, Gemini_F011, Gemini_F012, Gemini_`.
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 13/13 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 13 locked rejections
+[05:26:08]   [feedback] round 6 → round 7: 5 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+Gate C preflight: PASS (5 canonical cases, 5 gates verified)
+[05:26:09] Dispatching to CC2 (opus) via claude_cli...
+[05:27:07]   [claude-cli:opus] done (58.0s, 989 chars)
+[05:27:10]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:12]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:14]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:17]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:19]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[05:27:21]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[05:27:21]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[05:27:21]   S_k [C0016]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:27:24]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:26]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:29]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:29]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[05:27:29]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:27:31]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:31]   S_k [C0030]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:27:33]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:33]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:27:36]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:38]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:40]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:44]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:47]   S_k [C0049]: ADMISSIBLE sk=0.990 (S*=0.000) R: 0.500 -> 0.370
+[05:27:49]   S_k [C0054]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:52]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:54]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:57]   S_k [C0059]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:59]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:27:59]   S_k [C0061]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:28:02]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:28:02]   S_k pipeline: 28 evaluated, 22 ADMISSIBLE, 2 REJECTED, 4 ESCALATE
+[05:28:02]   ITC [DeepSeek]: parse yield 0.50 (1+0/2 markers, baseline=1.72, threshold=1.47) — DEGRADATION
+[05:28:02]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.917 >= 0.25 (normal depletion)
+[05:28:02]   *** HIL FLAG: DeepSeek has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:28:02]   ITC [ChatGPT]: parse yield 4.00 (2+10/3 markers, verdicts=10, baseline=5.22, threshold=4.97) — DEGRADATION
+[05:28:02]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=0.722 >= 0.25 (normal depletion)
+[05:28:02]   *** HIL FLAG: ChatGPT has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:28:02]   ITC [Gemini]: parse yield 0.67 (8+0/12 markers, baseline=2.02, threshold=1.77) — DEGRADATION
+[05:28:02]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.616 >= 0.25 (normal depletion)
+[05:28:02]   *** HIL FLAG: Gemini has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:28:02]   gamma: 0.275 (telemetry, passed) — Weak depletion — state closure may be premature
+[05:28:02]   Round 6: 13 findings, 428.6s
+[05:28:02]   Convergence: Gate failed: open_ch=13 > max=5, novel=8, contested=1
+[05:28:02]   γ-alt: γ-alt not met: gamma=0.275 < 0.3; novel_crit_recent=[1, 1, 4]
+[05:28:02] 
+------------------------------------------------------------
+[05:28:02] Round 7/7 (adaptive)
+[05:28:02] ------------------------------------------------------------
+[05:28:02]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[05:28:02]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[05:28:02]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=5274fa7a..., ~119,657 chars total
+[05:28:02]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[05:28:02]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:28:02]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[05:28:02]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[05:28:02]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:28:02]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:28:02]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[05:28:02]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[05:28:07]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[05:28:12]   [claude-cli] delivering final instruction (chunk 3/3)
+[05:28:34]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[05:28:34]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[05:29:01]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[05:29:01]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[05:29:02]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (497 chars)
+[05:29:02]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[05:29:09]   [openrouter:openai/gpt-5.5] section 1 analysis complete (5,661 chars)
+[05:29:09]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:29:16]   [openrouter:openai/gpt-5.5] section 1 analysis complete (2,952 chars)
+[05:29:16]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:29:27]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,717 chars)
+[05:29:27]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:29:46]   [openrouter:openai/gpt-5.5] section 2 analysis complete (6,111 chars)
+[05:29:46]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:30:06]   [openrouter:openai/gpt-5.5] synthesis complete (123.9s, 2,644 chars)
+[05:30:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round7_chatgpt_20260514T043006Z.json
+[05:30:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r7_chatgpt_20260514T043006Z.json
+[05:30:24]   [claude-cli] synthesis complete (141.9s, 8,874 chars)
+[05:30:24]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round7_cc2_20260514T043024Z.json
+[05:30:24]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r7_cc2_20260514T043024Z.json
+[05:31:35]   [openrouter:openai/gpt-5.5] synthesis complete (213.5s, 12,006 chars)
+[05:31:35]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round7_codex_20260514T043135Z.json
+[05:31:35]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r7_codex_20260514T043135Z.json
+[05:32:16]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (14,258 chars)
+[05:32:16]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:33:15]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (313.1s, 0 chars)
+[05:33:15]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round7_gemini_20260514T043315Z.json
+[05:33:15]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r7_gemini_20260514T043315Z.json
+[05:37:06]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (544.3s, 11,336 chars)
+[05:37:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round7_deepseek_20260514T043706Z.json
+[05:37:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r7_deepseek_20260514T043706Z.json
+[05:37:06]   R_k FAIL: CC2_` appears at the start of each finding in multi-finding text, the ADMISSIBILITY block parser can consume text past its boundary into the next finding. The confirmed C0008/C0025 fixes address the broader terminator issue, but `FINDING_ID` specifically should be added. — model=0.410, recomputed=0.504, delta=0.094
+[05:37:06]   R_k validation [ChatGPT]: SKIP=2
+[05:37:06]   R_k validation [CC2]: FAIL=1, SKIP=3
+[05:37:06]   R_k validation [Codex]: SKIP=2
+[05:37:06]   R_k validation [DeepSeek]: SKIP=6
+[05:37:06]   Registry: 9 novel / 14 raw, 72 total, rho=0.643, rho_avg=0.679
+[05:37:06]   D4 MERGE QUORUM C0016 -> C0032: 5 votes vs 3
+[05:37:06]   D4 MERGE DEADLOCK C0023: escalated to HIL after 5 rounds
+[05:37:06]   CLOSED C0025: verified fix, no unresolved challenges
+[05:37:06]   MERGE DEFERRED C0030: target disagreement (C0016, C0061) [1/5]
+[05:37:06]   MERGE DEFERRED C0032: target disagreement (C0016, C0030) [2/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 14 passed, 0 failed out of 14 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` is not matched by the terminator regex. Prior submission was duplicate and inadmissible as a separate finding. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_` appears at the start of each finding in multi-finding text, the ADMISSIBILITY block parser can consume text past its boundary into the next finding. The confirmed C0008/C0025 fixes address the broader terminator issue, but `FINDING_ID` specifically should be added. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_str — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_"F001", model_id: "DeepSeek", severity: 0.9}`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_"F001", model_id: "Gemini", severity: 0.4}`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_"F001"` – the feedback record for the refuted one would contain the wrong `model_origin`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 8/14 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 14 findings to classify.
+INFO:immune.pipeline:LLM classifier: ChatGPT_` headers. Prior submission lacked complete admissibility/tool blocks; I do not resubmit it as a discovery. — regex=mathematical llm=uncategorised (conf=0.65, below threshold 0.70, 11.1s)
+INFO:immune.pipeline:LLM classifier: CC2_str — regex=code_behavioral llm=uncategorised (conf=0.87, below threshold 0.70, 10.3s)
+INFO:immune.pipeline:LLM classifier: CC2_str — regex=code_behavioral llm=uncategorised (conf=0.05, below threshold 0.70, 7.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F002 — regex=mathematical → llm=code_behavioral (conf=0.88, threshold=0.70, 14.1s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_f for f in findings} — regex=code_behavioral llm=uncategorised (conf=0.68, below threshold 0.70, 13.3s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_"F001", model_id: "DeepSeek", severity: 0.9}`. — regex=code_behavioral llm=uncategorised (conf=0.95, below threshold 0.70, 8.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.70, threshold=0.70, 12.0s)
+INFO:immune.pipeline:LLM classifier: 7/14 agree with regex (50.0%), 2 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  ChatGPT_` headers. Prior submission lacked complete admissibility/tool blocks; I do not resubmit it as a discovery.: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 14 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 188.0s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 2 verdicts; detail=[{"finding_id": "ChatGPT_` headers. Prior submission lacked complete admissibility/tool blocks; I do not resubmit it as a discovery.", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "DeepSeek_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 12 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 12 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` is not matched by the terminator regex. Prior submission was duplicate and inadmissible as a separate finding. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_"F001", model_id: "DeepSeek", severity: 0.9}`. — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_"F001"` – the feedback record for the refuted one would contain the wrong `model_origin`. — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_f for f in findings}` silently overwrites earlier findings with the same local `finding_id`. Because models commonly emit `F001`, this can route feedback to the wrong `model_origin`. I am not filing this as a new discovery because C0035/C0041-family already covers the root cause. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_f for f in findings} — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_"F001", model_id: "Gemini", severity: 0.4}`. — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_` appears at the start of each finding in multi-finding text, the ADMISSIBILITY block parser can consume text past its boundary into the next finding. The confirmed C0008/C0025 fixes address the broader terminator issue, but `FINDING_ID` specifically should be added. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` headers. Prior submission lacked complete admissibility/tool blocks; I do not resubmit it as a discovery. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_str — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 12 finding(s): CC2_F002, CC2_` appears at the start of each finding in multi-finding text, the ADMISSIBILITY block parser can consume text past its boundary into the next finding. The confirmed C0008/C0025 fixes address the broader terminator issue, but `FINDING_ID` specifically should be added., CC2_str, ChatGPT_` headers. Prior submission lacked complete admissibility/tool blocks; I do not resubmit it as a discovery., ChatGPT_` is not matched by the terminator regex. Prior submission was duplicate and inadmissible as a separate finding., Codex_F002, Codex_f for f in findings}` silently overwrites earlier findings with the same local `finding_id`. Because models commonly emit `F001`, this can route feedback to the wrong `model_origin`. I am not filing this as a new discovery because C0035/C0041-family already covers the root cause., DeepSeek_"F001", model_id: "DeepSeek", severity: 0.9}`., DeepSeek_"F001", model_id: "Gemini", severity: 0.4}`., DeepSeek_"F001"` – the feedback record for the refuted one would contain the wrong `model_origin`., DeepSeek_F001, DeepSeek_f for f in findings}
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 12/12 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 4/4 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 4/4 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 12 locked rejections
+[05:43:01]   [feedback] round 7 → round 8: 4 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[05:43:02] Dispatching to CC2 (opus) via claude_cli...
+[05:43:33]   [claude-cli:opus] done (31.4s, 1198 chars)
+[05:43:36]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:39]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:41]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:43]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:46]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[05:43:48]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[05:43:48]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[05:43:50]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:53]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:55]   S_k [C0021]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:55]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[05:43:55]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:43:57]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:43:57]   S_k [C0030]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:44:00]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:00]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:44:02]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:05]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:07]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:09]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:12]   S_k [C0054]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:14]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:17]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:19]   S_k [C0059]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:21]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:24]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:44:24]   S_k pipeline: 25 evaluated, 21 ADMISSIBLE, 2 REJECTED, 2 ESCALATE
+[05:44:24]   ITC [ChatGPT]: parse yield 3.50 (2+5/2 markers, verdicts=5, baseline=5.50, threshold=5.25) — DEGRADATION
+[05:44:24]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=0.833 >= 0.25 (normal depletion)
+[05:44:24]   *** HIL FLAG: ChatGPT has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:44:24]   *** HIL FLAG: Gemini has 5 consecutive ITC interventions (latest: TRANSIENT_FAILURE). Flagged for HIL review. ***
+[05:44:24]   gamma: 0.261 (telemetry, passed) — Weak depletion — state closure may be premature
+[05:44:24]   Round 7: 14 findings, 544.5s
+[05:44:24]   Convergence: Gate failed: novel=9, contested=2
+[05:44:24]   γ-alt: γ-alt not met: gamma=0.261 < 0.3; novel_crit_recent=[1, 4, 1]
+[05:44:24] 
+  BUDGET EXTENDED to 10: Budget extended: open CRIT/HIGH: 3; contested: 2
+[05:44:24] 
+------------------------------------------------------------
+[05:44:24] Round 8/9 (adaptive)
+[05:44:24] ------------------------------------------------------------
+[05:44:24]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:44:24]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[05:44:24]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[05:44:24]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=456a9348..., ~121,684 chars total
+[05:44:24]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[05:44:24]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:44:24]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[05:44:24]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[05:44:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:44:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[05:44:24]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[05:44:29]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[05:44:33]   [claude-cli] delivering final instruction (chunk 3/3)
+[05:44:56]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (531 chars)
+[05:44:56]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[05:45:34]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,488 chars)
+[05:45:34]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:45:34]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (543 chars)
+[05:45:34]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[05:45:40]   [openrouter:openai/gpt-5.5] section 1 analysis complete (855 chars)
+[05:45:40]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:45:52]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,135 chars)
+[05:45:52]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:46:05]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,411 chars)
+[05:46:05]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:46:47]   [openrouter:openai/gpt-5.5] synthesis complete (143.2s, 3,407 chars)
+[05:46:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round8_codex_20260514T044647Z.json
+[05:46:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r8_codex_20260514T044647Z.json
+[05:47:16]   [claude-cli] synthesis complete (172.2s, 9,551 chars)
+[05:47:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round8_cc2_20260514T044716Z.json
+[05:47:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r8_cc2_20260514T044716Z.json
+[05:47:22]   [openrouter:openai/gpt-5.5] synthesis complete (178.4s, 3,959 chars)
+[05:47:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round8_chatgpt_20260514T044722Z.json
+[05:47:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r8_chatgpt_20260514T044723Z.json
+[05:48:22]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (17,026 chars)
+[05:48:22]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[05:49:47]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (323.3s, 24,932 chars)
+[05:49:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round8_gemini_20260514T044947Z.json
+[05:49:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r8_gemini_20260514T044947Z.json
+[05:50:01]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[05:50:01]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:53:53]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (568.8s, 15,300 chars)
+[05:53:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round8_deepseek_20260514T045353Z.json
+[05:53:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r8_deepseek_20260514T045353Z.json
+[05:53:53]   R_k FAIL: CC2_in-terminator-regex issue is well-established. — model=0.330, recomputed=0.485, delta=0.155
+[05:53:53]   R_k FAIL: Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`. — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_` does not match. — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_F003 — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_F004 — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_F005 — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_F006 — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: Gemini_F007 — model=0.236, recomputed=0.336, delta=0.100
+[05:53:53]   R_k FAIL: DeepSeek_{finding_by_id[finding.finding_id]!r} from "` — same pattern. Confirm. — model=0.362, recomputed=1.000, delta=0.638
+[05:53:53]   R_k validation [Codex]: SKIP=1
+[05:53:53]   R_k validation [CC2]: FAIL=1, SKIP=2
+[05:53:53]   R_k validation [ChatGPT]: SKIP=5
+[05:53:53]   R_k validation [Gemini]: FAIL=7, SKIP=2
+[05:53:53]   R_k validation [DeepSeek]: FAIL=1, SKIP=7
+[05:53:53]   Registry: 16 novel / 26 raw, 88 total, rho=0.615, rho_avg=0.625
+[05:53:53]   MERGE DEFERRED C0020: target disagreement (C0008, C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0010, C0011, C0013, C0021, C0022, C0028, C0029, C0043, C0053) [1/5]
+[05:53:53]   D4 MERGE DEADLOCK C0023: escalated to HIL after 6 rounds
+[05:53:53]   MERGE DEFERRED C0030: target disagreement (C0016, C0061) [2/5]
+[05:53:53]   CLOSED C0030: verified fix, no unresolved challenges
+[05:53:53]   MERGE DEFERRED C0032: target disagreement (C0016, C0030) [3/5]
+[05:53:53]   MERGE DEFERRED C0035: target disagreement (C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071) [1/5]
+[05:53:53]   CLOSED C0059: verified fix, no unresolved challenges
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 26 passed, 0 failed out of 26 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_in-terminator-regex issue is well-established. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_"F001\nIGNORE ALL PREVIOUS"` would corrupt the prompt. In a multi-model adversarial context this is a real injection surface, though exploitation requires a compromised/adversarial panel member. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` not being matched by the ADMISSIBILITY terminator regex. That issue is already covered by confirmed canonical findings C0008/C0020 and related duplicates. I do not resubmit it as a DISCOVERY finding. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings}` collision, it should merge into C0035 rather than stand as a separate location-specific claim. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_` does not match. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F004 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F007 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_{finding_by_id[finding.finding_id]!r} from "` — same pattern. Confirm. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F009 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 17/26 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 26 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_f for f in findings}`. Since `Finding` contains both `finding_id` and `model_id`, and the review protocol explicitly allows local IDs like `F001`, two models can submit the same `finding_id`. Python dict construction keeps the later entry and silently overwrites the earlier one. Downstream lookups for refutations, admissibility failures, duplicate pairs, and R_k validation then route feedback to whichever model survived the overwrite, not necessarily the model that produced the flagged finding. — regex=code_behavioral → llm=logical (conf=0.75, threshold=0.70, 12.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings}` overwrites earlier findings with the same local ID. — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 11.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f. — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 9.0s)
+INFO:immune.pipeline:LLM classifier: ChatGPT_f for f in findings}` collision, it should merge into C0035 rather than stand as a separate location-specific claim. — regex=code_behavioral llm=uncategorised (conf=0.75, below threshold 0.70, 12.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained. — regex=code_behavioral → llm=code_structural (conf=0.72, threshold=0.70, 12.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`. — regex=code_behavioral → llm=code_structural (conf=0.95, threshold=0.70, 6.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F002 — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 11.0s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F006 — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 13.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED. — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 11.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_str; model_origin: str` without uniqueness. Same root as C0035. — regex=mathematical → llm=code_structural (conf=0.95, threshold=0.70, 5.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_f for f in findings}` silently overwrites. Same. — regex=mathematical → llm=code_behavioral (conf=0.75, threshold=0.70, 13.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_"F001"` feedback record contains wrong `model_origin`. Same. — regex=mathematical → llm=code_behavioral (conf=0.75, threshold=0.70, 10.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_"F001", model_id: "Gemini"` ordering issue. Same root. — regex=code_behavioral → llm=code_structural (conf=0.65, threshold=0.70, 16.1s)
+INFO:immune.pipeline:LLM classifier: 13/26 agree with regex (50.0%), 12 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Codex_f for f in findings}`. Since `Finding` contains both `finding_id` and `model_id`, and the review protocol explicitly allows local IDs like `F001`, two models can submit the same `finding_id`. Python dict construction keeps the later entry and silently overwrites the earlier one. Downstream lookups for refutations, admissibility failures, duplicate pairs, and R_k validation then route feedback to whichever model survived the overwrite, not necessarily the model that produced the flagged finding.: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 26 verdicts (0 intra-round dups, 1 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 90.3s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 8 verdicts; detail=[{"finding_id": "Codex_f for f in findings}`. Since `Finding` contains both `finding_id` and `model_id`, and the review protocol explicitly allows local IDs like `F001`, two models can submit the same `finding_id`. Python dict construction keeps the later entry and silently overwrites the earlier one. Downstream lookups for refutations, admissibility failures, duplicate pairs, and R_k validation then route feedback to whichever model survived the overwrite, not necessarily the model that produced the flagged finding.", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_SINGLE_VALUE: 1.0"}, {"finding_id": "ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Gemini_F002", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_str; model_origin: str` without uniqueness. Same root as C0035.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_\"F001\", model_id: \"Gemini\"` ordering issue. Same root.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_F002 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_str; model_origin: str` without uniqueness. Same root as C0035. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_"F001", model_id: "Gemini"` ordering issue. Same root. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 26 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 26 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F008 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_str; model_origin: str` without uniqueness. Same root as C0035. — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_in-terminator-regex issue is well-established. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_"F001", model_id: "Gemini"` ordering issue. Same root. — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` collision, it should merge into C0035 rather than stand as a separate location-specific claim. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`. — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_` does not match. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F009 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` not being matched by the ADMISSIBILITY terminator regex. That issue is already covered by confirmed canonical findings C0008/C0020 and related duplicates. I do not resubmit it as a DISCOVERY finding. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained. — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_f for f in findings}` silently overwrites. Same. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_f for f in findings}`. Since `Finding` contains both `finding_id` and `model_id`, and the review protocol explicitly allows local IDs like `F001`, two models can submit the same `finding_id`. Python dict construction keeps the later entry and silently overwrites the earlier one. Downstream lookups for refutations, admissibility failures, duplicate pairs, and R_k validation then route feedback to whichever model survived the overwrite, not necessarily the model that produced the flagged finding. — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_"F001"` feedback record contains wrong `model_origin`. Same. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_"F001\nIGNORE ALL PREVIOUS"` would corrupt the prompt. In a multi-model adversarial context this is a real injection surface, though exploitation requires a compromised/adversarial panel member. — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` overwrites earlier findings with the same local ID. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_{finding_by_id[finding.finding_id]!r} from "` — same pattern. Confirm. — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 26 finding(s): CC2_"F001\nIGNORE ALL PREVIOUS"` would corrupt the prompt. In a multi-model adversarial context this is a real injection surface, though exploitation requires a compromised/adversarial panel member., CC2_F001, CC2_in-terminator-regex issue is well-established., ChatGPT_` not being matched by the ADMISSIBILITY terminator regex. That issue is already covered by confirmed canonical findings C0008/C0020 and related duplicates. I do not resubmit it as a DISCOVERY finding., ChatGPT_f for f in findings}` collision, it should merge into C0035 rather than stand as a separate location-specific claim., ChatGPT_f for f in findings}` overwrites earlier findings with the same local ID., ChatGPT_{finding.finding_id!r}` / `from` is not present in the supplied `bench/dm/_feedback.py` artifact. The actual file contains no such error-message construction. If C0044 intends to refer to the real `finding_by_id = {f., ChatGPT_{finding_by_id[finding.finding_id]!r} from`. The concrete collision bug exists, but the location/evidence in C0045 is not reproducible from the current target file and should be merged into C0035 if retained., Codex_f for f in findings}`. Since `Finding` contains both `finding_id` and `model_id`, and the review protocol explicitly allows local IDs like `F001`, two models can submit the same `finding_id`. Python dict construction keeps the later entry and silently overwrites the earlier one. Downstream lookups for refutations, admissibility failures, duplicate pairs, and R_k validation then route feedback to whichever model survived the overwrite, not necessarily the model that produced the flagged finding., DeepSeek_"F001", model_id: "Gemini"` ordering issue. Same root., DeepSeek_"F001"` feedback record contains wrong `model_origin`. Same., DeepSeek_F008, DeepSeek_F009, DeepSeek_` not matched by `section_terminator` regex. C0020 is CONFIRMED., DeepSeek_f for f in findings}` silently overwrites. Same., DeepSeek_str; model_origin: str` without uniqueness. Same root as C0035., DeepSeek_{finding_by_id[finding.finding_id]!r} from "` — same pattern. Confirm., Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F005, Gemini_F006, Gemini_F007, Gemini_` does not match., Gemini_{finding.finding_id!r} from` does not exist in `bench/dm/_feedback.py`.
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 26/26 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 9/9 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 8/8 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 9/9 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 8/8 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 26 locked rejections
+[06:02:47]   [feedback] round 8 → round 9: 5 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[06:02:47] Dispatching to CC2 (opus) via claude_cli...
+[06:03:26]   [claude-cli:opus] done (38.7s, 700 chars)
+[06:03:29]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:31]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:33]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:35]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:38]   S_k [C0013]: ADMISSIBLE sk=0.970 (S*=0.000) R: 0.500 -> 0.375
+[06:03:40]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[06:03:40]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[06:03:43]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:45]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:45]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[06:03:45]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[06:03:47]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:49]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:49]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:03:52]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:55]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:57]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:03:59]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:01]   S_k [C0054]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:04]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:06]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:08]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:10]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:04:10]   S_k pipeline: 22 evaluated, 19 ADMISSIBLE, 2 REJECTED, 1 ESCALATE
+[06:04:10]   ITC [ChatGPT]: parse yield 1.38 (5+6/8 markers, verdicts=6, baseline=5.50, threshold=5.25) — DEGRADATION
+[06:04:10]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=0.833 >= 0.25 (normal depletion)
+[06:04:10]   *** HIL FLAG: ChatGPT has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[06:04:10]   ITC [CC2]: parse yield 1.80 (3+6/5 markers, verdicts=6, baseline=2.07, threshold=1.82) — DEGRADATION
+[06:04:10]   ITC [CC2]: DEGRADATION suppressed — rho_avg=0.389 >= 0.25 (normal depletion)
+[06:04:10]   gamma: 0.232 (telemetry, passed) — Weak depletion — state closure may be premature
+[06:04:10]   Round 8: 26 findings, 569.0s
+[06:04:10]   Convergence: Gate failed: novel=16, contested=3
+[06:04:10]   γ-alt: γ-alt not met: gamma=0.232 < 0.3; novel_crit_recent=[4, 1, 0]
+[06:04:10] 
+------------------------------------------------------------
+[06:04:10] Round 9/9 (adaptive)
+[06:04:10] ------------------------------------------------------------
+[06:04:11]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[06:04:11]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[06:04:11]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=9d46e8e5..., ~123,172 chars total
+[06:04:11]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[06:04:11]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[06:04:11]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[06:04:11]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[06:04:11]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[06:04:11]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (21,545 chars, target_0)
+[06:04:11]   [openrouter:openai/gpt-5.5] independent session 1/2 (21,545 chars, target_0)
+[06:04:11]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (21,545 chars, target_0)
+[06:04:15]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[06:04:21]   [claude-cli] delivering final instruction (chunk 3/3)
+[06:04:49]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[06:04:49]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[06:05:21]   [openrouter:openai/gpt-5.5] section 1 analysis complete (2,232 chars)
+[06:05:21]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[06:05:24]   [openrouter:openai/gpt-5.5] section 1 analysis complete (2,676 chars)
+[06:05:24]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[06:05:30]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (543 chars)
+[06:05:30]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[06:05:44]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,356 chars)
+[06:05:44]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[06:05:45]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,868 chars)
+[06:05:45]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[06:05:51]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (14,673 chars)
+[06:05:51]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[06:05:55]   [claude-cli] synthesis complete (104.1s, 6,369 chars)
+[06:05:55]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round9_cc2_20260514T050555Z.json
+[06:05:55]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r9_cc2_20260514T050555Z.json
+[06:06:31]   [openrouter:openai/gpt-5.5] synthesis complete (140.8s, 7,206 chars)
+[06:06:31]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round9_chatgpt_20260514T050631Z.json
+[06:06:31]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r9_chatgpt_20260514T050631Z.json
+[06:06:41]   [openrouter:openai/gpt-5.5] synthesis complete (150.7s, 4,252 chars)
+[06:06:41]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round9_codex_20260514T050641Z.json
+[06:06:41]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r9_codex_20260514T050641Z.json
+[06:07:58]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[06:07:58]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[06:08:27]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (256.7s, 23,167 chars)
+[06:08:27]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round9_gemini_20260514T050827Z.json
+[06:08:27]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r9_gemini_20260514T050827Z.json
+[06:10:03]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (352.2s, 22,891 chars)
+[06:10:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round9_deepseek_20260514T051003Z.json
+[06:10:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r9_deepseek_20260514T051003Z.json
+[06:10:03]   R_k WARN: Gemini_`. — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k WARN: Gemini_F002 — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k WARN: Gemini_F002 — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k WARN: Gemini_F003 — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k WARN: Gemini_F004 — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k WARN: Gemini_F005 — model=0.490, recomputed=0.508, delta=0.018
+[06:10:03]   R_k FAIL: DeepSeek_` terminator issue. Same root. — model=0.295, recomputed=1.000, delta=0.705
+[06:10:03]   R_k FAIL: DeepSeek_` not matched by terminator. Same root. — model=0.409, recomputed=1.000, delta=0.591
+[06:10:03]   R_k validation [CC2]: SKIP=11
+[06:10:03]   R_k validation [ChatGPT]: SKIP=12
+[06:10:03]   R_k validation [Codex]: SKIP=5
+[06:10:03]   R_k validation [Gemini]: WARN=6, SKIP=4
+[06:10:03]   R_k validation [DeepSeek]: FAIL=2, SKIP=32
+[06:10:03]   Registry: 58 novel / 72 raw, 146 total, rho=0.806, rho_avg=0.688
+[06:10:03]   REOPEN C0049: new evidence after UNCONFIRMED
+[06:10:03]   MERGE DEFERRED C0008: target disagreement (C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053) [1/5]
+[06:10:03]   MERGE DEFERRED C0020: target disagreement (C0008, C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0010, C0011, C0013, C0021, C0022, C0028, C0029, C0043, C0053) [2/5]
+[06:10:03]   CLOSED C0020: verified fix, no unresolved challenges
+[06:10:03]   D4 MERGE DEADLOCK C0023: escalated to HIL after 7 rounds
+[06:10:03]   MERGE DEFERRED C0032: target disagreement (C0016, C0030) [4/5]
+[06:10:03]   MERGE DEFERRED C0035: target disagreement (C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071, C0073, C0077, C0079, C0085, C0086, C0087, C0088) [2/5]
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 72 passed, 0 failed out of 72 findings
+INFO:immune.pipeline:DC v2 reclassification: CC2_in-terminator-regex — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_` because the pattern `FINDING\s*:` matches `FINDING:` but not ` — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_f for f in findings}` silently overwrites when two findings from different models share a `finding_id`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_{finding_by_id[finding.finding_id]!r} from "` which does not exist in the file. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_{finding.finding_id!r}` / `from` not present in the file. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_C0082_reformat — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_` and the `_ID` remnant corrupts the next parse. Regex alternation is left-to-right greedy in Python's `re` module — the first branch that matches wins. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct — `FINDING_ID` must be an explicit branch. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings}` collapses non-globally-unique local IDs. I am not resubmitting them as discovery findings. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` terminator submissions flagged in schema feedback — same root cause as confirmed C0008/C0020. I am not resubmitting them as discovery findings. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings}` but no such f-string error-message site. If C0044 intends the real collision bug, it should merge into C0035; as written, its stated location/evidence is not reproducible. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` does not match the terminator regex. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_` is missing from `section_terminator`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F005 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` terminator fix. The SEARCH/REPLACE block is correct. CONFIRMED. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` not matching `FINDING\s*:`. Same root cause. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is: — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` not matched. Same root. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_`. The `_ID` suffix prevents the match. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` does not match `FINDING\s*:` because `_ID` appears before `:`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` into the next finding's text. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` headers after ADMISSIBILITY blocks. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` is a valid section header in the CDSFL finding format. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` does not match the pattern `FINDING\s*:` because `_ID` intervenes. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit ` — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` is a valid and expected section header. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` while `FINDING` matches `FINDING:`. No conflict. ✓ — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` headers. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D010 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_` as a top-level key. The assumption is false — the fix is warranted. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 43/72 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 72 findings to classify.
+INFO:immune.pipeline:LLM classifier: CC2_`. — regex=code_behavioral llm=uncategorised (conf=0.65, below threshold 0.70, 9.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code. — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 9.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_{finding_by_id[finding.finding_id]!r} from "` which does not exist in the file. — regex=code_behavioral → llm=code_structural (conf=0.78, threshold=0.70, 8.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_{finding.finding_id!r}` / `from` not present in the file. — regex=code_behavioral → llm=code_structural (conf=0.96, threshold=0.70, 8.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_`. The ordering IS required: without `FINDING_ID` as a separate alternation branch, the terminator never fires on ` — regex=code_behavioral → llm=logical (conf=0.85, threshold=0.70, 10.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct — `FINDING_ID` must be an explicit branch. — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 7.4s)
+INFO:immune.pipeline:LLM classifier: ChatGPT_` terminator submissions flagged in schema feedback — same root cause as confirmed C0008/C0020. I am not resubmitting them as discovery findings. — regex=code_behavioral llm=uncategorised (conf=0.55, below threshold 0.70, 12.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f. — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 9.1s)
+INFO:immune.pipeline:LLM classifier: ChatGPT_f for f in findings}` but no such f-string error-message site. If C0044 intends the real collision bug, it should merge into C0035; as written, its stated location/evidence is not reproducible. — regex=code_behavioral llm=uncategorised (conf=0.58, below threshold 0.70, 16.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041. — regex=code_behavioral → llm=code_structural (conf=0.92, threshold=0.70, 8.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings}` silently overwrites findings sharing the same local `finding_id`. — regex=mathematical → llm=code_behavioral (conf=0.88, threshold=0.70, 13.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_` is not matched by the admissibility block terminator regex. — regex=mathematical → llm=code_structural (conf=0.78, threshold=0.70, 15.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035. — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 7.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035. — regex=code_behavioral → llm=code_structural (conf=0.80, threshold=0.70, 10.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_{finding.finding_id!r} from` site does not exist in the supplied `bench/dm/_feedback.py`. — regex=mathematical → llm=code_structural (conf=0.95, threshold=0.70, 6.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_` is missing from `section_terminator`. — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 9.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery. — regex=code_behavioral → llm=code_structural (conf=0.70, threshold=0.70, 13.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_` is not matched by the admissibility block section terminator. — regex=mathematical → llm=code_structural (conf=0.95, threshold=0.70, 9.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_` does not match `FINDING\s*:`. — regex=mathematical → llm=code_structural (conf=0.87, threshold=0.70, 8.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported. — regex=code_behavioral → llm=code_structural (conf=0.58, threshold=0.70, 14.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`. — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 6.2s)
+INFO:immune.pipeline:LLM classifier: Gemini_`. — regex=code_behavioral llm=uncategorised (conf=0.25, below threshold 0.70, 7.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F002 — regex=statistical → llm=mathematical (conf=0.95, threshold=0.70, 9.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F004 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 10.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 9.3s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` matching. CONFIRMED; merge to C0008. — regex=code_behavioral llm=uncategorised (conf=0.20, below threshold 0.70, 6.3s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` terminator fix. The SEARCH/REPLACE block is correct. CONFIRMED. — regex=code_behavioral llm=uncategorised (conf=0.45, below threshold 0.70, 14.8s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` terminator issue. Same root. — regex=code_behavioral llm=uncategorised (conf=0.35, below threshold 0.70, 10.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` not matched by terminator. Same root. — regex=code_behavioral → llm=code_structural (conf=0.78, threshold=0.70, 9.8s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` not matching. Same root. — regex=code_behavioral llm=uncategorised (conf=0.35, below threshold 0.70, 10.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` not matched. Same root. — regex=code_behavioral → llm=code_structural (conf=0.68, threshold=0.70, 10.3s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` headers. Same root. — regex=code_behavioral llm=uncategorised (conf=0.35, below threshold 0.70, 6.7s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` not matched. Same root. — regex=code_behavioral llm=uncategorised (conf=0.78, below threshold 0.70, 8.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is: — regex=code_behavioral → llm=code_structural (conf=0.87, threshold=0.70, 6.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` not matched. Same root. — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 6.2s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_`. The `_ID` suffix prevents the match. — regex=code_behavioral llm=uncategorised (conf=0.20, below threshold 0.70, 6.5s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_F002 — regex=code_behavioral llm=uncategorised (conf=0.60, below threshold 0.70, 10.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` does not match `FINDING\s*:` because `_ID` appears before `:`. — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 11.1s)
+INFO:immune.pipeline:LLM classifier: DeepSeek_` is a valid section header in the CDSFL finding format. — regex=code_behavioral llm=uncategorised (conf=0.65, below threshold 0.70, 7.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit ` — regex=code_behavioral → llm=code_structural (conf=0.68, threshold=0.70, 11.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` is a valid and expected section header. — regex=code_behavioral → llm=code_structural (conf=0.35, threshold=0.70, 9.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` as a top-level key. The assumption is false — the fix is warranted. — regex=code_behavioral → llm=logical (conf=0.60, threshold=0.70, 13.0s)
+INFO:immune.pipeline:LLM classifier: 30/72 agree with regex (41.7%), 29 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 4 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  CC2_`. The ordering IS required: without `FINDING_ID` as a separate alternation branch, the terminator never fires on `: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  Gemini_F002: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  DeepSeek_` as a section header. The gap is reachable.: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  DeepSeek_` as a top-level key. The assumption is false — the fix is warranted.: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 72 verdicts (0 intra-round dups, 3 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 235.5s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 28 verdicts; detail=[{"finding_id": "CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "CC2_{finding_by_id[finding.finding_id]!r} from \"` which does not exist in the file.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "CC2_{finding.finding_id!r}` / `from` not present in the file.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "CC2_`. The ordering IS required: without `FINDING_ID` as a separate alternation branch, the terminator never fires on `", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct \u2014 `FINDING_ID` must be an explicit branch.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_` is not matched by the admissibility block terminator regex.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_{finding.finding_id!r} from` site does not exist in the supplied `bench/dm/_feedback.py`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "ChatGPT_` is missing from `section_terminator`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Codex_` is not matched by the admissibility block section terminator.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Codex_` does not match `FINDING\\s*:`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`.", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "Gemini_F002", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_PARSED: extracted 15 numeric values"}, {"finding_id": "Gemini_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` not matched by terminator. Same root.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` not matched. Same root.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is:", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "DeepSeek_` not matched. Same root.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` does not match `FINDING\\s*:` because `_ID` appears before `:`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit `", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` as a section header. The gap is reachable.", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "DeepSeek_` is a valid and expected section header.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_` as a top-level key. The assumption is false \u2014 the fix is warranted.", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_SINGLE_VALUE: 4.0"}]
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_{finding_by_id[finding.finding_id]!r} from "` which does not exist in the file. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_{finding.finding_id!r}` / `from` not present in the file. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct — `FINDING_ID` must be an explicit branch. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_` is not matched by the admissibility block terminator regex. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_{finding.finding_id!r} from` site does not exist in the supplied `bench/dm/_feedback.py`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_` is missing from `section_terminator`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_` is not matched by the admissibility block section terminator. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_` does not match `FINDING\s*:`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`. specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` not matched by terminator. Same root. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` not matched. Same root. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is: specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` not matched. Same root. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` does not match `FINDING\s*:` because `_ID` appears before `:`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit ` specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` is a valid and expected section header. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 66 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 66 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_f for f in findings} — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_`. The `_ID` suffix prevents the match. — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` is not matched by the admissibility block terminator regex. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_`. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_in-terminator-regex — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` does not match `FINDING\s*:` because `_ID` appears before `:`. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_f for f in findings}` silently overwrites when two findings from different models share a `finding_id`. — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` is a valid section header in the CDSFL finding format. — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` terminator fix. The SEARCH/REPLACE block is correct. CONFIRMED. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` does not match the pattern `FINDING\s*:` because `_ID` intervenes. — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` headers. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_str; model_origin: str` without uniqueness. CONFIRMED; merge to C0035. — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` as the next section header after ADMISSIBILITY, the parser does not recognise it as a terminator and continues consuming text into the next finding. — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D010 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_C0082_reformat — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` is missing from `section_terminator`. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` as a section header. The gap is reachable. — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` is a valid and expected section header. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_` is not matched by the admissibility block section terminator. — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_`, causing the parser to consume subsequent findings. — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matched by terminator. Same root. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_{finding.finding_id!r}` / `from` not present in the file. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matching. Same root. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_` and the `_ID` remnant corrupts the next parse. Regex alternation is left-to-right greedy in Python's `re` module — the first branch that matches wins. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_`. — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` while `FINDING` matches `FINDING:`. No conflict. ✓ — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` headers after ADMISSIBILITY blocks. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035. — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` as a top-level key. The assumption is false — the fix is warranted. — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` is never emitted as a section header. D009 challenges this. The CDSFL format specification requires ` — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct — `FINDING_ID` must be an explicit branch. — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` silently overwrites findings sharing the same local `finding_id`. — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_str; model_origin: str` without uniqueness. Same root. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is: — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` does not match the terminator regex. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` headers. Same root. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_` terminator submissions flagged in schema feedback — same root cause as confirmed C0008/C0020. I am not resubmitting them as discovery findings. — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` matching. CONFIRMED; merge to C0008. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` collapses non-globally-unique local IDs. I am not resubmitting them as discovery findings. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` into the next finding's text. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D009 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit ` — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` but no such f-string error-message site. If C0044 intends the real collision bug, it should merge into C0035; as written, its stated location/evidence is not reproducible. — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_{finding_by_id[finding.finding_id]!r} from "` which does not exist in the file. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding.finding_id!r} from` site does not exist in the supplied `bench/dm/_feedback.py`. — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035. — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_`. The ordering IS required: without `FINDING_ID` as a separate alternation branch, the terminator never fires on ` — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` appears at start of each finding, ADMISSIBILITY parser can consume text past boundary. CONFIRMED; merge to C0008. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` terminator issue. Same root. — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matching `FINDING\s*:`. Same root cause. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_` does not match `FINDING\s*:`. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_` because the pattern `FINDING\s*:` matches `FINDING:` but not ` — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` not matched. Same root. — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 66 finding(s): CC2_C0082_reformat, CC2_` and the `_ID` remnant corrupts the next parse. Regex alternation is left-to-right greedy in Python's `re` module — the first branch that matches wins., CC2_` because the pattern `FINDING\s*:` matches `FINDING:` but not `, CC2_` lines regardless of order. RESULT: falsifier disproven. The fix is correct — `FINDING_ID` must be an explicit branch., CC2_`., CC2_`. The ordering IS required: without `FINDING_ID` as a separate alternation branch, the terminator never fires on `, CC2_f for f in findings}` silently overwrites when two findings from different models share a `finding_id`., CC2_in-terminator-regex, CC2_{finding.finding_id!r}` / `from` not present in the file., CC2_{finding.finding_id!r}` inside a `from` clause does not exist in `bench/dm/_feedback.py`. Grep of the file confirms no such line. This finding references non-existent code., CC2_{finding_by_id[finding.finding_id]!r} from "` which does not exist in the file., ChatGPT_` does not match the terminator regex., ChatGPT_` is missing from `section_terminator`., ChatGPT_` is not matched by the admissibility block terminator regex., ChatGPT_` terminator submissions flagged in schema feedback — same root cause as confirmed C0008/C0020. I am not resubmitting them as discovery findings., ChatGPT_f for f in findings}` but no such f-string error-message site. If C0044 intends the real collision bug, it should merge into C0035; as written, its stated location/evidence is not reproducible., ChatGPT_f for f in findings}` collapses non-globally-unique local IDs. I am not resubmitting them as discovery findings., ChatGPT_f for f in findings}` silently overwrites findings sharing the same local `finding_id`., ChatGPT_{finding.finding_id!r} from ...` is not present in the supplied `bench/dm/_feedback.py`. The current artifact contains `finding_by_id = {f., ChatGPT_{finding.finding_id!r} from` site does not exist in the supplied `bench/dm/_feedback.py`., ChatGPT_{finding.finding_id!r}` / `from` error-message construction is absent from the supplied artifact. If this is intended to describe the dict-collision issue, merge to C0035., ChatGPT_{finding_by_id[finding.finding_id]!r} from ...`. The reproducible issue is the existing non-namespaced `finding_by_id` map, already confirmed as C0035/C0041., ChatGPT_{finding_by_id[finding.finding_id]!r} from` text is absent from the supplied artifact. If retained, only the broader collision mechanism is reproducible, which belongs under C0035., Codex_` does not match `FINDING\s*:`., Codex_` is not matched by the admissibility block section terminator., Codex_f for f in findings}` keys records by non-globally-unique local `finding_id`, so cross-model duplicate IDs overwrite. I am not resubmitting it as a new discovery., Codex_{finding.finding_id!r} from` as executable code in `bench/dm/_feedback.py`. If C0044 is meant to describe the confirmed local-ID collision, it should merge to C0035; as a distinct current-artifact location claim, it is unsupported., Codex_{finding_by_id[finding.finding_id]!r} from` fragment is not present in the supplied `_feedback.py`., DeepSeek_D009, DeepSeek_D010, DeepSeek_F002, DeepSeek_` appears at start of each finding, ADMISSIBILITY parser can consume text past boundary. CONFIRMED; merge to C0008., DeepSeek_` as a section header. The gap is reachable., DeepSeek_` as a top-level key. The assumption is false — the fix is warranted., DeepSeek_` as a top-level key. The prompt template in `reference_runner.py` instructs models to emit `, DeepSeek_` as the next section header after ADMISSIBILITY, the parser does not recognise it as a terminator and continues consuming text into the next finding., DeepSeek_` does not match `FINDING\s*:` because `_ID` appears before `:`., DeepSeek_` does not match the pattern `FINDING\s*:` because `_ID` intervenes., DeepSeek_` does not match. Same root. Note: C0082 needs a SEARCH/REPLACE block per the reformat request. The fix is:, DeepSeek_` headers after ADMISSIBILITY blocks., DeepSeek_` headers., DeepSeek_` headers. Same root., DeepSeek_` into the next finding's text., DeepSeek_` is a valid and expected section header., DeepSeek_` is a valid section header in the CDSFL finding format., DeepSeek_` is never emitted as a section header. D009 challenges this. The CDSFL format specification requires `, DeepSeek_` matching. CONFIRMED; merge to C0008., DeepSeek_` not matched by terminator. Same root., DeepSeek_` not matched. Same root., DeepSeek_` not matching `FINDING\s*:`. Same root cause., DeepSeek_` not matching. Same root., DeepSeek_` terminator fix. The SEARCH/REPLACE block is correct. CONFIRMED., DeepSeek_` terminator issue. Same root., DeepSeek_` while `FINDING` matches `FINDING:`. No conflict. ✓, DeepSeek_`. The `_ID` suffix prevents the match., DeepSeek_str; model_origin: str` without uniqueness. CONFIRMED; merge to C0035., DeepSeek_str; model_origin: str` without uniqueness. Same root., Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F005, Gemini_F006, Gemini_`, causing the parser to consume subsequent findings., Gemini_`., Gemini_f for f in findings}
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 66/66 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 11/11 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 12/12 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 10/10 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 34/34 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 11/11 (100%) findings from CC2 removed — possible systematic bias; [RT_v2] 12/12 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 10/10 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 34/34 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 66 locked rejections
+[06:26:17]   [feedback] round 9 → round 10: 5 model(s) flagged
+WARNING:cdsfl.shadow_cells:Stage 6 calibrator failed (non-fatal): 'int' object has no attribute 'lower'
+[06:26:17] Dispatching to CC2 (opus) via claude_cli...
+[06:26:57]   [claude-cli:opus] done (39.2s, 713 chars)
+[06:27:00]   S_k [C0004]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:02]   S_k [C0006]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:05]   S_k [C0007]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:08]   S_k [C0008]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:11]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[06:27:11]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[06:27:13]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:15]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:15]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[06:27:15]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[06:27:18]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:20]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:20]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:27:22]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:24]   S_k [C0042]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:27]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:29]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:31]   S_k [C0054]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:33]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:36]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:38]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:40]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:42]   S_k [C0096]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:45]   S_k [C0110]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:47]   S_k [C0116]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:49]   S_k [C0117]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:51]   S_k [C0130]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:53]   S_k [C0138]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:56]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:27:56]   S_k pipeline: 28 evaluated, 25 ADMISSIBLE, 2 REJECTED, 1 ESCALATE
+[06:27:56]   ITC [DeepSeek]: parse yield 1.72 (34+33/39 markers, verdicts=33, baseline=3.08, threshold=2.83) — DEGRADATION
+[06:27:56]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.747 >= 0.25 (normal depletion)
+[06:27:56]   *** HIL FLAG: DeepSeek has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[06:27:56]   ITC [ChatGPT]: parse yield 2.67 (12+20/12 markers, verdicts=20, baseline=5.50, threshold=5.25) — DEGRADATION
+[06:27:56]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=1.000 >= 0.25 (normal depletion)
+[06:27:56]   *** HIL FLAG: ChatGPT has 6 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[06:27:56]   ITC [Gemini]: parse yield 1.80 (10+26/20 markers, verdicts=26, baseline=2.93, threshold=2.68) — DEGRADATION
+[06:27:56]   *** HIL FLAG: Gemini has 6 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[06:27:56]   gamma: 0.143 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[06:27:56]   Round 9: 72 findings, 352.5s
+[06:27:56]   Convergence: Gate failed: novel=58, contested=5
+[06:27:56]   γ-alt: γ-alt not met: gamma=0.143 < 0.3; novel_crit_recent=[1, 0, 1]
+[06:27:56]   Fingerprints saved: 5 models -> /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/fingerprints
+[06:27:56] 
+============================================================
+[06:27:56] EXPERIMENT exp40_gate — 10 ROUNDS COMPLETE
+[06:27:56]   Total findings: 207
+[06:27:56]   Registry: 146 canonical entries
+[06:27:56]   gamma final: 0.143
+[06:27:56]   Elapsed: 7249s
+[06:27:56]   Report: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/exp40_gate_report.json
+[06:27:56] ============================================================
+
+Experiment 40 ended without convergence (likely wall-clock).

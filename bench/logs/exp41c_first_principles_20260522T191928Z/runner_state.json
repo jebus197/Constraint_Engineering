@@ -1,0 +1,335 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.82,
+        "description": "`ConvergenceDetector.converged()` can report convergence for an entirely empty review history once `round_idx >= min_rounds_for_convergence`.\n\nLocation: `bench/dm/_convergence.py`, method `converged()`.\n\nEvidence from the current code:\ndef converged(self, round_idx: int) -> bool:\n    \"\"\"Convergence predicate.\n\n    converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n    Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n    \"\"\"\n    if round_idx < self.config.m",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nif round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n==== REPLACE\nif round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if not self.get_cumulative_classes(round_idx):\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.82,
+        "description": "`bench/dm/_convergence.py::ConvergenceDetector.converged()` can report convergence when every reviewed round contains zero findings. Evidence is in the control flow: `kappa_set()` returns `1.0` for an empty cumulative finding set because it computes `1 - 0 / epsilon`; `kappa_rate()` returns `1.0` when `peak < epsilon_conv`; `kappa_adopt()` defaults to `1.0`; `_veto()` is false because there are no novel classes. Therefore, once `round_idx >= min_rounds_for_convergence`, `converged()` returns tru",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n==== REPLACE\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n        AND at least one cumulative finding exists.\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if not self.get_cumulative_classes(round_idx):\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.7,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.8,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.85,
+        "description": "In `_novel_classes`, a round\u2019s equivalence class is marked non\u2011novel as soon as *any* of its members has similarity \u2265 \u03c4 with *any* prior finding.  This discards genuinely novel findings that happen to be grouped with a redundant one.  The effect is that equivalent classes containing both old and new findings disappear from the novelty stream, undercounting true novel discoveries.\n  Location: `bench/dm/_convergence.py`, method `_novel_classes`, lines 163\u2011180 (as written in current file).",
+        "proposed_fix": "Change `_novel_classes` to consider a class novel if *at least one* member has no prior match.  The downstream `_weighted_novel_severity` already applies per\u2011member suppression, so the aggregated severity of the class will be appropriately damped for the redundant members while carrying the weight of the novel ones.\n\n  <<<< SEARCH bench/dm/_convergence.py\n        novel = []\n        for ec in current_classes:\n            is_novel = True\n            for member in ec.members:\n                for prev_f in prev_findings:\n                    if self.similarity_fn(member, prev_f) >= self._tau_sim():\n                        is_novel = False\n                        break\n                if not is_novel:\n                    break\n            if is_novel:\n                novel.append(ec)\n        return novel\n  ====\n        novel = []\n        for ec in current_classes:\n            # A class is novel if AT LEAST ONE member has no similar prior.\n            has_novel_member = False\n            for member in ec.members:\n                member_is_novel = True\n                for prev_f in prev_findings:\n                    if self.similarity_fn(member, prev_f) >= self._tau_sim():\n                        member_is_novel = False\n                        break\n                if member_is_novel:\n                    has_novel_member = True\n                    break\n            if has_novel_member:\n                novel.append(ec)\n        return novel\n  >>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.55,
+        "description": "`converged()` returns `True` when zero findings exist across all rounds (after `min_rounds`), despite the documented convention in `validate_no_findings` (line ~410) which states: *\"Convention: not converged unless null_expected.\"* This convention is never implemented. With empty findings: `kappa_set = 1.0` (0/\u03b5), `kappa_rate = 1.0` (no novelty \u2192 no decline signal \u2192 early return), `kappa_adopt = 1.0` (default delta=0). `kappa = 1.0 \u2265 tau_kappa`. No veto (no novel classes). Result: `converged(2) ",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n==== REPLACE\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds\n                         AND NOT veto(r) AND F^(<=r) is non-empty.\n\n        Empty cumulative findings \u2192 not converged. Without this guard,\n        kappa degenerates to 1.0 on zero findings (0/\u03b5 numerator),\n        producing false convergence when no review actually occurred.\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if not self.get_cumulative_classes(round_idx):\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      }
+    },
+    "next_id": 7,
+    "alias_map": {
+      "ChatGPT:ChatGPT_F001": "C0001",
+      "Codex:Codex_F001": "C0002",
+      "Gemini:Gemini_F001": "C0003",
+      "Gemini:Gemini_F002": "C0004",
+      "DeepSeek:DeepSeek_F001": "C0005",
+      "CC2:CC2_F001": "C0006"
+    }
+  },
+  "novelty_counts": [
+    6
+  ],
+  "raw_counts": [
+    6
+  ],
+  "novelty_counts_per_model": {
+    "ChatGPT": [
+      1
+    ],
+    "CC2": [
+      1
+    ],
+    "Gemini": [
+      2
+    ],
+    "Codex": [
+      1
+    ],
+    "DeepSeek": [
+      1
+    ]
+  },
+  "raw_counts_per_model": {
+    "ChatGPT": [
+      1
+    ],
+    "CC2": [
+      1
+    ],
+    "Gemini": [
+      2
+    ],
+    "Codex": [
+      1
+    ],
+    "DeepSeek": [
+      1
+    ]
+  },
+  "rho_history": [
+    1.0
+  ],
+  "gamma_history": [
+    0.0
+  ],
+  "gate_history": [
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 5,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    5
+  ],
+  "cumulative_context_chars": 37839,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {},
+  "itc_hil_flags": [],
+  "burst_state": null
+}

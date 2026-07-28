@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260411T122023Z",
+  "phase": "r19",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2586,
+  "response": "CONFIRM C0149 — `_compute_rho` two confirmed bugs remain unfixed. The early-return on `raw_counts[-1] == 0` suppresses rolling average, and `round_idx = len(raw_counts) - 1` is zero-based vs 1-based `rho_earliest_round`. Both verified by code inspection.\n\nCONFIRM C0150 — `RunnerConfig.__post_init__` unconditionally overwrites `rho_earliest_round` with `earliest_stop_round`. The condition `if self.rho_earliest_round != self.earliest_stop_round` always fires when the caller sets a custom value, silently discarding it. Verified.\n\nCONFIRM C0151 — `open_crit_high_count` defines `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")` but `build_summary` treats `REOPENED` as active. A REOPENED high-severity finding is invisible to the gate. Verified.\n\nCONFIRM C0152 — `contested_count` hardcodes `current_round - oldest > 1` instead of using the `grace_period` parameter. The parameter is accepted and ignored. Verified.\n\nCHALLENGE C0007 | Semantics are correct. High gamma = strong novelty depletion = convergence confirmed. Low gamma = novelty still flowing = gate should fail. `gamma < threshold → False` correctly blocks termination when novelty depletion is insufficient. No inversion.\n\nCHALLENGE C0083 | `REOPENED` in `full_detail_statuses` is correct. REOPENED findings need full detail display — they represent active work items that were previously settled and require re-examination. The fact that no code path currently *sets* REOPENED doesn't make the display logic wrong; it's forward-compatible for when `_update_finding_statuses` or manual intervention produces that state. The `_VERDICT_RE` already parses `REOPEN` as a valid verdict type.\n\nCHALLENGE C0003 | `_parse_verdicts` returns `(verdict, canonical_id, evidence)` for all verdict types including REOPEN. The canonical_id IS the target. Evidence carries any justification. No target/source distinction is needed — REOPEN operates on a single finding, not a pair. The return shape is sufficient.\n\nCHALLENGE C0022 | `escalate_stale_contested` transitions to UNCONFIRMED + `hil_escalated=True`. This is the designed holding state: the finding is neither confirmed nor refuted, flagged for human review. Setting status to UNCONFIRMED correctly removes it from the CONTESTED pool and the `hil_escalated` flag signals the reason. The alternative (inventing a new \"HIL_PENDING\" status) would require changes across all status-checking code for no functional benefit.\n\nNo new findings. The registry has comprehensively covered this code section across 19 rounds. The four confirmed unfixed bugs (C0149–C0152) are the actionable output.",
+  "metadata": {
+    "round": 19,
+    "elapsed": 51.7,
+    "chars": 2586,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

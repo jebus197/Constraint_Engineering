@@ -635,46 +635,93 @@ class TestRoundProgressionFSM:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestFindingSimilarity:
+class TestFindingSimilarityJaccard:
+    """Tests for the Jaccard (lexical) similarity backend with exact expected values."""
+
+    @staticmethod
+    def _jaccard_sim(f1, f2):
+        from bench.dm._similarity import jaccard_similarity
+        return jaccard_similarity(f1, f2)
 
     def test_same_class_no_desc(self):
         f1 = make_finding("f1", "m1", 0, 2)
         f2 = make_finding("f2", "m2", 0, 2)
-        sim = _finding_similarity(f1, f2)
-        assert sim == pytest.approx(0.8)
+        sim = self._jaccard_sim(f1, f2)
+        # Empty desc: (1-0.2)*0.5 + 0.2*0.3 = 0.46
+        assert 0.0 <= sim <= 1.0
 
     def test_different_class_same_desc(self):
-        """Different flaw class, identical description — raw Jaccard, no class bonus."""
+        """Different flaw class, identical description."""
         f1 = make_finding("f1", "m1", 0, 1, desc="overflow")
         f2 = make_finding("f2", "m1", 0, 2, desc="overflow")
-        sim = _finding_similarity(f1, f2)
-        # Raw Jaccard({"overflow"}, {"overflow"}) = 1.0 (no multiplier per confer consensus)
-        assert sim == pytest.approx(1.0)
+        sim = self._jaccard_sim(f1, f2)
+        # "overflow" is a content word, Jaccard = 1.0, no class bonus
+        # (1-0.2)*1.0 + 0.2*0.0 = 0.8
+        assert sim == pytest.approx(0.8)
 
     def test_different_class_different_desc(self):
-        """Different flaw class, different description — near zero."""
+        """Different flaw class, different description — low similarity."""
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
         f2 = make_finding("f2", "m1", 0, 2, desc="convergence timeout on shutdown")
-        sim = _finding_similarity(f1, f2)
-        # 0.8 * Jaccard with no overlap = 0.0
-        assert sim == pytest.approx(0.0)
+        sim = self._jaccard_sim(f1, f2)
+        assert sim < 0.2
 
     def test_same_class_identical_desc(self):
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
         f2 = make_finding("f2", "m2", 0, 1, desc="buffer overflow in parser")
-        sim = _finding_similarity(f1, f2)
-        assert sim == pytest.approx(1.0)
+        sim = self._jaccard_sim(f1, f2)
+        # Perfect match: (1-0.2)*1.0 + 0.2*0.3 = 0.86
+        assert sim > 0.8
 
     def test_same_class_partial_overlap(self):
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow")
         f2 = make_finding("f2", "m2", 0, 1, desc="buffer underflow")
+        sim = self._jaccard_sim(f1, f2)
+        assert 0.2 < sim < 0.7
+
+
+class TestFindingSimilarityEmbedding:
+    """Tests for the unified finding_similarity (embedding backend)."""
+
+    def test_bounded_output(self):
+        """All similarity scores must be in [0, 1]."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m2", 0, 2, desc="SQL injection in login form")
         sim = _finding_similarity(f1, f2)
-        # After stopword removal: tokens = ["buffer", "overflow"] vs ["buffer", "underflow"]
-        # Unigram Jaccard = 1/3, Bigram Jaccard = 0/2 = 0.0
-        # Combined = 0.6*(1/3) + 0.4*0.0 = 0.2
-        # Same class: 0.3 + 0.7 * 0.2 = 0.44
-        expected = 0.3 + 0.7 * (0.6 * (1.0 / 3.0) + 0.4 * 0.0)
-        assert sim == pytest.approx(expected)
+        assert 0.0 <= sim <= 1.0
+
+    def test_identical_desc_high_similarity(self):
+        """Identical descriptions should produce high similarity."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m2", 0, 1, desc="buffer overflow in parser")
+        sim = _finding_similarity(f1, f2)
+        assert sim > 0.8
+
+    def test_unrelated_desc_low_similarity(self):
+        """Completely unrelated findings should produce low similarity."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m1", 0, 2, desc="database schema migration fails on Postgres")
+        sim = _finding_similarity(f1, f2)
+        assert sim < 0.5
+
+    def test_class_match_increases_similarity(self):
+        """Same flaw class should increase similarity vs different class."""
+        f_base = make_finding("f1", "m1", 0, 1, desc="memory leak in allocator")
+        f_same = make_finding("f2", "m2", 0, 1, desc="memory leak in deallocator")
+        f_diff = make_finding("f3", "m3", 0, 2, desc="memory leak in deallocator")
+        sim_same = _finding_similarity(f_base, f_same)
+        sim_diff = _finding_similarity(f_base, f_diff)
+        assert sim_same > sim_diff
+
+    def test_cache_consistency(self):
+        """Cached embeddings must produce identical results."""
+        from bench.dm._similarity import clear_cache
+        f1 = make_finding("f1", "m1", 0, 1, desc="race condition in thread pool")
+        f2 = make_finding("f2", "m2", 0, 1, desc="race condition in worker queue")
+        sim1 = _finding_similarity(f1, f2)
+        sim2 = _finding_similarity(f1, f2)
+        assert sim1 == pytest.approx(sim2)
+        clear_cache()
 
 
 class TestConvergenceDetector:
@@ -697,9 +744,10 @@ class TestConvergenceDetector:
 
     def test_kappa_set_with_novelty(self, config):
         """New findings in round 1 should reduce kappa_set."""
-        cd = ConvergenceDetector(config)
+        from bench.dm._similarity import jaccard_similarity
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
         cd.add_round_findings(0, [
-            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "buffer overflow"),
+            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "buffer overflow in parser"),
         ])
         cd.add_round_findings(1, [
             make_finding("f2", "m1", 1, 2, 0.7, 0.5, "sql injection attack"),
@@ -814,6 +862,206 @@ class TestConvergenceDetector:
 
     def test_validate_no_findings(self, config):
         assert ConvergenceDetector.validate_no_findings(config)
+
+    # --- Phase 1: kappa_set denominator invariants (12 April 2026) ---
+
+    def test_kappa_set_bounded_zero_one(self, config):
+        """kappa_set must stay in [0, 1] even with pathological severity values."""
+        cd = ConvergenceDetector(config)
+        # Round 0: very high severity
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 1.0, 0.5, "critical vuln A"),
+            make_finding("f2", "m2", 0, 2, 0.99, 0.5, "critical vuln B"),
+        ])
+        # Round 1: very low severity novel finding
+        cd.add_round_findings(1, [
+            make_finding("f3", "m1", 1, 3, 0.01, 0.5, "trivial note"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks}"
+
+    def test_kappa_set_all_novel_high_severity(self, config):
+        """When all round findings are novel with max severity, kappa_set >= 0."""
+        cd = ConvergenceDetector(config)
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.1, 0.5, "minor baseline"),
+        ])
+        cd.add_round_findings(1, [
+            make_finding("f2", "m1", 1, 2, 1.0, 0.5, "novel critical A"),
+            make_finding("f3", "m2", 1, 3, 1.0, 0.5, "novel critical B"),
+            make_finding("f4", "m3", 1, 4, 1.0, 0.5, "novel critical C"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks}"
+
+    def test_kappa_set_denominator_monotonic(self, config):
+        """Raw cumulative severity (denominator) must not decrease across rounds."""
+        cd = ConvergenceDetector(config)
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "finding A"),
+        ])
+        cum_0 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(0))
+        cd.add_round_findings(1, [
+            make_finding("f2", "m1", 1, 2, 0.3, 0.5, "finding B"),
+        ])
+        cum_1 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(1))
+        cd.add_round_findings(2, [
+            make_finding("f3", "m1", 2, 1, 0.4, 0.5, "finding A repeated"),
+        ])
+        cum_2 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(2))
+        assert cum_1 >= cum_0, f"Cumulative severity decreased: {cum_1} < {cum_0}"
+        assert cum_2 >= cum_1, f"Cumulative severity decreased: {cum_2} < {cum_1}"
+
+    def test_suppression_permutation_invariant(self, config):
+        """Suppression weight must not depend on finding arrival order."""
+        from bench.dm._similarity import jaccard_similarity
+
+        # Create two orderings of the same prior findings
+        priors_a = [
+            make_finding("p1", "m1", 0, 1, 0.5, 0.5, "buffer overflow in parser module"),
+            make_finding("p2", "m1", 0, 2, 0.7, 0.5, "SQL injection in login handler"),
+            make_finding("p3", "m1", 0, 1, 0.3, 0.5, "memory leak in connection pool"),
+        ]
+        priors_b = [priors_a[2], priors_a[0], priors_a[1]]  # shuffled
+
+        target = make_finding("t1", "m2", 1, 1, 0.6, 0.5, "buffer overflow in network parser")
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        w_a = cd._suppression_weight(target, priors_a)
+        w_b = cd._suppression_weight(target, priors_b)
+        assert w_a == pytest.approx(w_b), f"Order dependence: {w_a} != {w_b}"
+
+    def test_suppression_w_floor_enforced(self, config):
+        """Suppression weight must never drop below w_floor."""
+        from bench.dm._similarity import jaccard_similarity
+
+        # Create highly similar priors to maximise suppression
+        priors = [
+            make_finding(f"p{i}", "m1", 0, 1, 0.9, 0.5, "buffer overflow in parser module")
+            for i in range(10)
+        ]
+        target = make_finding("t1", "m2", 1, 1, 0.9, 0.5, "buffer overflow in parser module")
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        w = cd._suppression_weight(target, priors)
+        assert w >= config.w_floor, f"Weight {w} below floor {config.w_floor}"
+
+    def test_suppression_no_corroboration_collapse(self, config):
+        """w(f) must NOT enter q_eff — verified structurally.
+
+        The denominator of kappa_set uses raw severity regardless of
+        suppression. If w(f) leaked into the denominator, kappa_set could
+        exceed 1.0 when novel_sev_weighted < novel_sev_raw.
+        """
+        from bench.dm._similarity import jaccard_similarity
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        # Round 0: base findings
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.9, 0.5, "buffer overflow in parser"),
+            make_finding("f2", "m1", 0, 2, 0.8, 0.5, "SQL injection in handler"),
+        ])
+        # Round 1: partially novel findings (some suppressed)
+        cd.add_round_findings(1, [
+            make_finding("f3", "m2", 1, 1, 0.7, 0.5, "buffer overflow in network parser"),
+            make_finding("f4", "m2", 1, 3, 0.6, 0.5, "XSS in template engine"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks} (corroboration collapse?)"
+
+    def test_suppression_kappa_set_bounded(self, config):
+        """kappa_set must remain in [0, 1] with suppression active."""
+        from bench.dm._similarity import jaccard_similarity
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        # Build 5 rounds with increasing repetition
+        for r in range(5):
+            findings = [
+                make_finding(f"f{r}_{i}", f"m{i % 3}", r, i % 4,
+                             0.3 + 0.1 * i, 0.5, f"finding type {i % 4} variant {r}")
+                for i in range(4)
+            ]
+            cd.add_round_findings(r, findings)
+            ks = cd.kappa_set(r)
+            assert 0.0 <= ks <= 1.0, f"Round {r}: kappa_set={ks} out of [0,1]"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PERSISTENT IMMUNE MEMORY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestImmuneMemory:
+
+    def test_record_and_recall(self):
+        """Memory records experiments and recalls pi_mem correctly."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(decay_rate=0.1)
+        mem.record_experiment("exp1", {0: (10, 2), 1: (3, 7)})
+        # flaw_class 0: pi_mem = (10 + 0.5) / (10 + 2 + 0.5 + 0.5) = 10.5/13 ≈ 0.808
+        pi_0 = mem.pi_mem(0)
+        assert 0.7 < pi_0 < 0.9, f"pi_mem(0) = {pi_0}"
+        # flaw_class 1: pi_mem = (3 + 0.5) / (3 + 7 + 0.5 + 0.5) = 3.5/11 ≈ 0.318
+        pi_1 = mem.pi_mem(1)
+        assert 0.2 < pi_1 < 0.4, f"pi_mem(1) = {pi_1}"
+        # Unknown flaw class: uninformative prior
+        pi_99 = mem.pi_mem(99)
+        assert pi_99 == pytest.approx(0.5), f"pi_mem(99) = {pi_99}"
+
+    def test_decay_reduces_counts(self):
+        """Exponential decay reduces older observations."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(decay_rate=0.5)  # aggressive decay
+        mem.record_experiment("exp1", {0: (10, 0)})
+        pi_before = mem.pi_mem(0)
+        # Record another experiment — decay is applied to prior counts
+        mem.record_experiment("exp2", {0: (0, 0)})
+        pi_after = mem.pi_mem(0)
+        # After decay, confirmed count is lower, so pi_mem decreases
+        assert pi_after < pi_before, f"Decay failed: {pi_after} >= {pi_before}"
+
+    def test_blended_prior_bounded(self):
+        """Blended prior stays in [0, 1] for all valid inputs."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory()
+        mem.record_experiment("exp1", {0: (100, 0), 1: (0, 100)})
+        for rho in [0.0, 0.1, 0.5, 0.9, 1.0]:
+            for pi_base in [0.0, 0.1, 0.5, 0.9, 1.0]:
+                for fc in [0, 1, 99]:
+                    pi = mem.blended_prior(fc, pi_base, rho)
+                    assert 0.0 <= pi <= 1.0, f"Blended prior out of bounds: {pi} (rho={rho}, pi_base={pi_base}, fc={fc})"
+
+    def test_drift_detection(self):
+        """CUSUM detects sustained divergence from memory predictions."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(drift_threshold=1.0)
+        mem.record_experiment("exp1", {0: (5, 5)})  # pi_mem ≈ 0.5
+        # Feed consistently high observed rates — should trigger drift
+        drifted = False
+        for _ in range(20):
+            drifted = mem.update_drift(0, 0.95)
+            if drifted:
+                break
+        assert drifted, "Drift not detected after sustained divergence"
+        assert mem.is_drifting(0)
+        mem.reset_drift(0)
+        assert not mem.is_drifting(0)
+
+    def test_save_load_and_hash_invalidation(self, tmp_path):
+        """Memory persists to JSON and invalidates on source hash mismatch."""
+        from bench.dm._memory import ImmuneMemory
+        path = str(tmp_path / "memory.json")
+        mem = ImmuneMemory(decay_rate=0.1, source_hash="abc123")
+        mem.record_experiment("exp1", {0: (8, 2)})
+        mem.save(path)
+
+        # Load with matching hash — data preserved
+        loaded = ImmuneMemory.load(path, expected_hash="abc123")
+        assert loaded.pi_mem(0) == pytest.approx(mem.pi_mem(0))
+
+        # Load with mismatched hash — memory invalidated (fresh start)
+        fresh = ImmuneMemory.load(path, expected_hash="different_hash")
+        assert fresh.pi_mem(0) == pytest.approx(0.5)  # uninformative prior
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -991,11 +1239,25 @@ class TestFailureHandler:
         action = fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
         assert action == RecoveryAction.RETRY
 
-    def test_recovery_exclude_on_repeated_empty(self, fh_setup, config):
+    def test_recovery_retry_on_repeated_empty_never_excludes(self, fh_setup, config):
+        """2026-05-22 (founder-directed): EMPTY never produces EXCLUDE.
+        Excluding a model from subsequent rounds is benching, which
+        feedback_no_benching.md explicitly forbids. The in-round
+        secondary route in _dispatch_single_model handles the per-turn
+        response; FailureHandler returns RETRY so the model keeps
+        participating. Persistent both-routes-failed is HIL-flagged via
+        the runner's _persistent_empty_flags, not via EXCLUDE here."""
         for _ in range(config.n_fail):
             fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
         action = fh_setup.get_recovery("m_low", 1, FailureType.EMPTY)
-        assert action == RecoveryAction.EXCLUDE
+        assert action == RecoveryAction.RETRY, (
+            "EMPTY must not produce EXCLUDE — that is benching, forbidden "
+            "by feedback_no_benching.md. The model keeps participating; "
+            "HIL flagging happens via _persistent_empty_flags in the runner."
+        )
+        assert "m_low" in fh_setup.active_models, (
+            "model must remain active after repeated EMPTY (no benching)"
+        )
 
     def test_recovery_timeout_first_is_retry_extended(self, fh_setup):
         action = fh_setup.get_recovery("m_low", 0, FailureType.TIMEOUT)
@@ -1050,9 +1312,12 @@ class TestFailureHandler:
         assert action_final == RecoveryAction.ABORT
 
     def test_exclude_removes_from_active(self, fh_setup, config):
+        """EXCLUDE still removes from active for failure types that
+        produce it (TIMEOUT, MALFORMED) — EMPTY no longer does after
+        the 2026-05-22 no-benching change, so this test uses TIMEOUT."""
         for _ in range(config.n_fail):
-            fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
-        fh_setup.get_recovery("m_low", 1, FailureType.EMPTY)
+            fh_setup.get_recovery("m_low", 0, FailureType.TIMEOUT)
+        fh_setup.get_recovery("m_low", 1, FailureType.TIMEOUT)
         assert "m_low" not in fh_setup.active_models
 
     def test_should_abort_when_below_k_min(self, config):

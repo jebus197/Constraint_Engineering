@@ -95,19 +95,66 @@ DECOMPOSITION_CONTEXT_THRESHOLD = {
     "CC2": 120000,
 }
 
-# WP4b: Per-model context character budgets for findings relay.
-# When accumulated findings exceed this, the insect brain switches to
-# summary-only mode (finding IDs + one-line descriptions). This prevents
-# prompt bloat while preserving cross-pollination awareness.
-# Mirrors DynamicManagementConfig.context_budget_overrides but available
-# at the runner level for non-DM dispatch paths.
-CONTEXT_CHAR_BUDGET = {
-    "CC2": 30_000,        # WP4c: matches DeepSeek's proven limit
-    "ChatGPT": 80_000,
-    "Gemini": 200_000,    # 1M context window — generous budget
-    "DeepSeek": 30_000,   # Reasoner CoT scales with input
+# WP4b: Per-model context character budget CEILINGS for findings relay.
+# These are maximum allowed budgets — the actual operating budget is
+# computed dynamically by get_effective_context_budget() using fingerprint
+# data when available. No model operates above its ceiling regardless of
+# fingerprint data. Values are conservative starting points, NOT derived
+# from vendor context window claims.
+CONTEXT_CHAR_BUDGET_CEILING = {
+    "CC2": 30_000,
+    "ChatGPT": 60_000,
+    "Gemini": 60_000,
+    "DeepSeek": 30_000,
     "Codex": 60_000,
 }
+# Conservative default for models not in the ceiling table.
+_DEFAULT_BUDGET_CEILING = 40_000
+
+
+def get_effective_context_budget(
+    model_label: str,
+    fingerprints: Optional[Dict[str, Dict]] = None,
+) -> int:
+    """Compute relay budget from measured fingerprint data.
+
+    Priority:
+    1. If fingerprint has prompt_chars_history with >= 3 entries,
+       use the 80th percentile of successful prompt sizes as the budget
+       (capped at the static ceiling). This adapts to measured performance.
+    2. Otherwise, use the static ceiling as a starting point until
+       enough data accumulates.
+
+    No model gets a budget above its ceiling. No model gets a budget
+    based on vendor claims — only measured data or conservative defaults.
+    """
+    ceiling = CONTEXT_CHAR_BUDGET_CEILING.get(model_label, _DEFAULT_BUDGET_CEILING)
+
+    if not fingerprints:
+        return ceiling
+
+    fp = fingerprints.get(model_label, {})
+    history = fp.get("prompt_chars_history", [])
+
+    if len(history) < 3:
+        # Not enough data — use ceiling as starting point.
+        return ceiling
+
+    # 80th percentile of observed successful prompt sizes.
+    sorted_h = sorted(history)
+    p80_idx = int(len(sorted_h) * 0.8)
+    p80 = sorted_h[min(p80_idx, len(sorted_h) - 1)]
+
+    # Budget = p80 * 0.9 (10% below 80th percentile for safety margin),
+    # but never above the ceiling and never below 10K (floor to prevent
+    # the degradation ladder from collapsing to summary-only too early).
+    effective = max(10_000, int(p80 * 0.9))
+    return min(effective, ceiling)
+
+
+# Backward-compatible alias — code that reads CONTEXT_CHAR_BUDGET directly
+# gets the ceiling values. New code should call get_effective_context_budget().
+CONTEXT_CHAR_BUDGET = CONTEXT_CHAR_BUDGET_CEILING
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -236,7 +283,99 @@ def _parse_flaw_class(text: str) -> int:
     return (abs(hash(key)) % 8) + 1
 
 
-def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
+_TARGET_FILE_RE = re.compile(
+    r'(?:^|[\s`\'"])(\S+\.(?:py|js|ts|toml|yaml|json|rs|go|c|cpp|h|java))\b',
+)
+
+
+def _infer_target_file(description: str, proposed_fix: str,
+                       explicit: str = "") -> str:
+    """P4 fix: infer target file from finding text when not explicit.
+
+    Priority: explicit TARGET_FILE > chevron file hint > first .py reference
+    in description > first .py reference in proposed_fix.
+    """
+    if explicit:
+        return explicit.strip()
+    for text in (description, proposed_fix):
+        m = _TARGET_FILE_RE.search(text)
+        if m:
+            return m.group(1)
+    return ""
+
+
+# Regex for detecting unevaluated f-string templates in finding IDs.
+# Models echo source code like f"{model_id}_UNSTRUCTURED" as literal JSON
+# values. This pattern matches the f-string envelope so we can extract and
+# evaluate the intended value.
+_FSTRING_TEMPLATE_RE = re.compile(
+    r'^f["\']'           # f-string prefix: f" or f'
+    r'\{model_id\}'      # literal {model_id} placeholder
+    r'(.+?)'             # the suffix (e.g. _UNSTRUCTURED)
+    r'["\'],?$'          # closing quote and optional trailing comma
+)
+
+
+def _sanitize_fstring_id(fid: str, model_id: str) -> str:
+    """Resolve unevaluated f-string templates in finding IDs.
+
+    When a model echoes parser source code as a finding, the FINDING_ID
+    field may contain the literal text 'f"{model_id}_UNSTRUCTURED"' instead
+    of the evaluated value 'DeepSeek_UNSTRUCTURED'. Detect this pattern
+    and substitute the actual model_id.
+    """
+    m = _FSTRING_TEMPLATE_RE.match(fid.strip())
+    if m:
+        return f"{model_id}{m.group(1)}"
+    return fid
+
+
+# Exp 40 fix 1a (post-continuation 15 May 2026): structural finding-ID
+# validation. Live evidence from the 15 May continuation run surfaced
+# finding IDs drawn from arbitrary code fragments (e.g. `f for f in
+# findings}` from a Python dict-comprehension, single-backtick literals,
+# multi-token descriptive text). The Exp 39 leakage guards
+# (`_CODE_LEAK_VARNAMES`, parens, f-string markers) only caught Python
+# variable-name leaks. The structural rule catches the broader class:
+# a finding ID is a single token of [A-Za-z0-9_] characters only. Every
+# legitimate ID in the project's registry conforms — F001, CC2_F001,
+# C0144_VERDICT_CONFIRM, IM_F001, UNSTRUCTURED, LB_R2_F001, etc.
+# Anomaly captured in
+# `experimental_notes/Exp40_Continuation_Postmortem_2026-05-15.md` §2.
+# The panel that produced the mangled IDs ALSO independently diagnosed
+# the underlying defect (`{f.finding_id: f for f in findings}` silently
+# overwriting on shared finding_id) — making the panel's own analysis
+# the design reference.
+_VALID_FID_STRUCTURE = re.compile(r'^[A-Za-z0-9_]+$')
+
+
+def _structurally_valid_fid(fid: str) -> bool:
+    """Return True iff `fid` matches the canonical structural pattern.
+
+    Strict: a finding ID is a single token of alphanumeric characters
+    and underscores only. Whitespace, braces, backticks, hyphens,
+    operators, and any other punctuation are rejected.
+
+    All five model paths (JSON array, JSON object, tuple, marker, bare)
+    must call this on the candidate ID after `_sanitize_fstring_id` and
+    after the model_id-prefix application. Block-level fallbacks (e.g.
+    the UNSTRUCTURED sentinel) bypass this check by construction since
+    their IDs are runner-generated, not model-supplied.
+    """
+    if not fid:
+        return False
+    # Exp 40 fix 1a P-pass hardening (15 May 2026): a pathological
+    # all-alphanumeric id (e.g. 5000 chars) is structurally "valid"
+    # but degenerate — no real finding id exceeds ~40 chars
+    # (longest observed: C0144_VERDICT_CONFIRM = 21). Bound the length
+    # so a model echoing a huge token cannot register a giant phantom
+    # canonical key. 128 is generous headroom over any legitimate id.
+    if len(fid) > 128:
+        return False
+    return bool(_VALID_FID_STRUCTURE.match(fid))
+
+
+def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Extract structured findings from model response.
 
     Parser priority (first match wins):
@@ -264,6 +403,31 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # Strip triple-backtick code fences — Gemini wraps in ```text...```
     response = re.sub(r'^\s*```\w*\s*\n?', '', response, flags=re.MULTILINE)
     response = re.sub(r'^\s*```\s*$', '', response, flags=re.MULTILINE)
+
+    # Exp 40 fix 1B.3: DeepSeek often emits findings as markdown H3 headers
+    # of the form '### Finding N: Title' followed by FIND/FOLLOW/ANALYSE/FIX
+    # blocks without explicit FINDING_ID/SEVERITY/FLAW_CLASS markers. Parse
+    # this by converting the header into synthetic marker lines that the
+    # downstream marker-format parser (Format 3 below) recognises. Default
+    # severity 0.7 (above CRITICAL threshold so the finding isn't lost to
+    # autoimmune filtering), default flaw_class 1 (generic). Models that
+    # supply explicit markers override these defaults automatically.
+    def _deepseek_header_adapter(m: 're.Match') -> str:
+        num = m.group(1)
+        title = m.group(2).strip()
+        return (
+            f"\nFINDING_ID: F{int(num):03d}\n"
+            f"SEVERITY: 0.7\n"
+            f"FLAW_CLASS: 1\n"
+            f"ABSTRACTION_INDEX: 0.6\n"
+            f"DESCRIPTION: {title}\n"
+        )
+    response = re.sub(
+        r'^###\s+Finding\s+(\d+)\s*:\s*(.+?)$',
+        _deepseek_header_adapter,
+        response,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
 
     # ── 1. JSON array parser ─────────────────────────────────────────
     # ChatGPT (GPT-5.4) outputs findings as JSON arrays:
@@ -305,8 +469,22 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         continue
                     norm = {k.upper().replace(" ", "_"): v for k, v in obj.items()}
                     fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                    # Exp 39 fix: models sometimes echo the parser's own
+                    # f-string template as a literal FINDING_ID value (e.g.
+                    # 'f"{model_id}_UNSTRUCTURED"'). Detect and resolve these
+                    # to the intended evaluated form.
+                    fid = _sanitize_fstring_id(fid, model_id)
                     # Skip _FOLLOW companion entries — supplementary
                     if "_FOLLOW" in fid.upper():
+                        continue
+                    # Exp 40 fix 1a: strip stray whitespace (parity with
+                    # the marker path's .strip()) then reject mangled IDs.
+                    # A model emitting "F001 " with a trailing space is
+                    # producing a legitimate ID with trivial noise — not
+                    # a code-fragment leak — so normalise before the
+                    # structural gate rather than dropping the finding.
+                    fid = fid.strip()
+                    if not _structurally_valid_fid(fid):
                         continue
                     severity = float(norm.get("SEVERITY", 0.5))
                     severity = max(0.0, min(1.0, severity))
@@ -320,8 +498,18 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         flaw_class = max(1, min(8, int(flaw_raw)))
                     abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
                     abstraction = max(0.0, min(1.0, abstraction))
-                    description = str(norm.get("DESCRIPTION", ""))
+                    description = str(norm.get("DESCRIPTION")
+                                  or norm.get("FIND")
+                                  or norm.get("FINDING")
+                                  or norm.get("DESC") or "")
+                # Exp 44 C0007-9 fix (2026-07-27): Gemini's JSON findings use
+                # the FFF key FIND, not DESCRIPTION — the old mapping silently
+                # registered empty descriptions (content was present, harvest
+                # incomplete — the recurring Gemini parse-loss class).
                     proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                    target_file = _infer_target_file(
+                        description, proposed_fix,
+                        str(norm.get("TARGET_FILE", "")))
                     verified_raw = norm.get("VERIFIED", False)
                     if isinstance(verified_raw, str):
                         verified = verified_raw.upper() == "TRUE"
@@ -341,7 +529,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         abstraction_index=abstraction,
                         description=description,
                         proposed_fix=proposed_fix,
+                        target_file=target_file,
                         verified=verified,
+                        origin_type="model",
                     ))
                 if findings:
                     return findings
@@ -381,7 +571,13 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             for entry in nested_dicts:
                 norm = {k.upper().replace(" ", "_"): v for k, v in entry.items()}
                 fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                fid = _sanitize_fstring_id(fid, model_id)
                 if "_FOLLOW" in fid.upper():
+                    continue
+                # Exp 40 fix 1a: strip then reject mangled IDs (see
+                # JSON-array path above for rationale).
+                fid = fid.strip()
+                if not _structurally_valid_fid(fid):
                     continue
                 severity = float(norm.get("SEVERITY", 0.5))
                 severity = max(0.0, min(1.0, severity))
@@ -395,8 +591,18 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     flaw_class = max(1, min(8, int(flaw_raw)))
                 abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
                 abstraction = max(0.0, min(1.0, abstraction))
-                description = str(norm.get("DESCRIPTION", ""))
+                description = str(norm.get("DESCRIPTION")
+                                  or norm.get("FIND")
+                                  or norm.get("FINDING")
+                                  or norm.get("DESC") or "")
+                # Exp 44 C0007-9 fix (2026-07-27): Gemini's JSON findings use
+                # the FFF key FIND, not DESCRIPTION — the old mapping silently
+                # registered empty descriptions (content was present, harvest
+                # incomplete — the recurring Gemini parse-loss class).
                 proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                target_file = _infer_target_file(
+                    description, proposed_fix,
+                    str(norm.get("TARGET_FILE", "")))
                 verified_raw = norm.get("VERIFIED", False)
                 if isinstance(verified_raw, str):
                     verified = verified_raw.upper() == "TRUE"
@@ -415,7 +621,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     abstraction_index=abstraction,
                     description=description,
                     proposed_fix=proposed_fix,
+                    target_file=target_file,
                     verified=verified,
+                    origin_type="model",
                 ))
             if findings:
                 return findings
@@ -455,6 +663,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction = max(0.0, min(1.0, float(m.group(4))))
             description = m.group(5).replace('\\"', '"')
             proposed_fix = m.group(6).replace('\\"', '"')
+            target_file = _infer_target_file(description, proposed_fix)
             verified = m.group(7).upper() == "TRUE"
             full_id = fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
             findings.append(Finding(
@@ -466,7 +675,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 abstraction_index=abstraction,
                 description=description,
                 proposed_fix=proposed_fix,
+                target_file=target_file,
                 verified=verified,
+                origin_type="model",
             ))
         return findings
 
@@ -547,7 +758,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         # Extract PROPOSED_FIX — try chevron format first, then freeform
         # CC2 uses labels: <<<< OLD / ==== NEW / >>>>
         chevron_match = re.search(
-            r'(?m)^<{4,}[^\n]*$\n(.*?)\n^={4,}[^\n]*$\n(.*?)\n^>{4,}[^\n]*$',
+            r'(?m)^<{4,}\s*(?:SEARCH\s+)?([^\n]*?)\s*$\n(.*?)\n^={4,}[^\n]*$\n(.*?)\n^>{4,}[^\n]*$',
             block, re.DOTALL | re.MULTILINE
         )
         # PROPOSED_FIX or FIX (CC2 uses FIX: instead of PROPOSED_FIX:)
@@ -560,22 +771,73 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         )
 
         if fid_match:
-            finding_id = fid_match.group(1).strip().strip("*")
+            raw_fid = fid_match.group(1).strip().strip("*")
+            # P2 fix (Exp 38): tighten ID extraction — only keep the
+            # F-prefix ID, not trailing description text that leaked in.
+            fid_only = re.match(r'([A-Z0-9_]*F\d{2,4})', raw_fid)
+            finding_id = fid_only.group(1) if fid_only else raw_fid
         else:
             finding_id = f"F{len(findings)+1:03d}"
+
+        # Exp 39 fix: guard against source code leaking as finding IDs.
+        # When models output code snippets containing parser source (e.g.
+        # `findings.append(Finding(finding_id=full_id, ...))`) the regex
+        # extracts Python variable names like `full_id,` or `description,`
+        # as literal finding IDs, creating phantom findings (CC2_full_id,).
+        _CODE_LEAK_VARNAMES = {
+            "full_id", "finding_id", "description", "target_file",
+            "proposed_fix", "model_id", "round_idx", "severity",
+            "flaw_class", "abstraction", "verified", "fid", "raw_fid",
+        }
+        _stripped_fid = finding_id.rstrip(",;)]} ")
+        if (
+            finding_id.endswith(",")
+            or _stripped_fid.lower() in _CODE_LEAK_VARNAMES
+            or "(" in finding_id
+            or ")" in finding_id
+            or finding_id.startswith("f\"")
+            or finding_id.startswith("f'")
+        ):
+            continue
+
+        # Exp 40 fix 1a (post-continuation 15 May 2026): structural
+        # finding-ID validation. See `_structurally_valid_fid` helper at
+        # module top for rationale + the four other parser paths that
+        # call the same helper. Mangled-ID class documented in
+        # `experimental_notes/Exp40_Continuation_Postmortem_2026-05-15.md`
+        # Anomaly 2.
+        if not _structurally_valid_fid(finding_id):
+            continue
         severity = float(sev_match.group(1)) if sev_match else 0.5
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
         description = desc_match.group(1).strip() if desc_match else block[:200]
         # Chevron format preferred: captures old→new as structured diff
+        # group(1) = file path hint (from <<<< SEARCH path or <<<< path)
+        # group(2) = old code, group(3) = new code
+        # P4: extract TARGET_FILE from block (explicit field or chevron hint)
+        tf_match = re.search(
+            r'[Tt][Aa][Rr][Gg][Ee][Tt][\s_-]*[Ff][Ii][Ll][Ee]\s*[:=\-]\s*(\S+)',
+            block
+        )
+        explicit_tf = tf_match.group(1).strip() if tf_match else ""
+
         if chevron_match:
-            old_code = chevron_match.group(1).strip()
-            new_code = chevron_match.group(2).strip()
-            proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
+            file_hint = chevron_match.group(1).strip() if chevron_match.group(1) else ""
+            old_code = chevron_match.group(2).strip()
+            new_code = chevron_match.group(3).strip()
+            if file_hint:
+                proposed_fix = f"<<<< SEARCH {file_hint}\n{old_code}\n==== REPLACE\n{new_code}\n>>>>"
+            else:
+                proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
+            # Chevron file hint is target_file if no explicit field
+            if not explicit_tf and file_hint:
+                explicit_tf = file_hint
         elif fix_match:
             proposed_fix = fix_match.group(1).strip()
         else:
             proposed_fix = ""
+        target_file = _infer_target_file(description, proposed_fix, explicit_tf)
         verified = (
             ver_match.group(1).upper() == "TRUE" if ver_match else False
         )
@@ -583,6 +845,17 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         severity = max(0.0, min(1.0, severity))
         abstraction = max(0.0, min(1.0, abstraction))
         flaw_class = max(1, min(8, flaw_class))
+
+        # P3 fix (Exp 38): skip findings whose description is actually a
+        # verdict declaration (Gemini produces "CONFIRM C0042 — ..." as a
+        # finding). Check if description starts with a verdict keyword +
+        # canonical ID — that's a verdict, not a new finding.
+        _VERDICT_AS_FINDING = re.match(
+            r'\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+C\d{4}',
+            description
+        )
+        if _VERDICT_AS_FINDING:
+            continue
 
         full_id = finding_id if finding_id.startswith(f"{model_id}_") else f"{model_id}_{finding_id}"
         findings.append(Finding(
@@ -594,7 +867,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction_index=abstraction,
             description=description,
             proposed_fix=proposed_fix,
+            target_file=target_file,
             verified=verified,
+            origin_type="model",
         ))
 
     # ── 5. Fallback ──────────────────────────────────────────────────
@@ -605,7 +880,32 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         r'^\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE)\s+C\d{4}',
         response, re.MULTILINE,
     ))
-    if not findings and not _has_verdicts and len(response.strip()) > 50:
+    # FIX 3 (Exp 43 C0040, 2026-07-22): also suppress fallback for
+    # registry-referential prose — a round-review/summary that cites
+    # canonical registry IDs (C0040-class leak: DeepSeek's "Round 8
+    # Review" cross-referencing C0019/C0020/... registered as a finding
+    # at sev 0.3 with no falsifier, then blocked the gate as "contested").
+    # A genuine unstructured NEW finding describes a defect; it does not
+    # cite canonical C-ids (models use local F-ids) and is not headed
+    # "Round N Review"/"Review Summary". Findings with the proper schema
+    # are unaffected — this touches only the last-resort fallback.
+    # Adversarial-pass repair (2026-07-27): scan for C-ids only OUTSIDE fenced
+    # code — a genuine unstructured finding may quote patch code containing
+    # C-id comments (proven historical case: exp36 r43 Codex evidence-tampering
+    # finding, later CONFIRMED as C0211, carries C-ids only inside ``` fences).
+    # (fences may already be unwrapped by earlier normalisation, leaving the
+    # quoted patch code inline — so also drop comment-style lines, where quoted
+    # C-id references live in the historical case.)
+    _prose_only = "\n".join(
+        _l for _l in re.sub(r'```.*?```', '', response, flags=re.S).splitlines()
+        if not _l.lstrip().startswith(('#', '//')))
+    _is_registry_prose = bool(
+        re.search(r'\bC\d{4}\b', _prose_only)
+        or re.search(r'^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?Review(?:\s+Summary)?\b',
+                     response.strip()[:80], re.IGNORECASE)
+    )
+    if (not findings and not _has_verdicts and not _is_registry_prose
+            and len(response.strip()) > 50):
         findings.append(Finding(
             finding_id=f"{model_id}_UNSTRUCTURED",
             model_id=model_id,
@@ -615,6 +915,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction_index=0.3,
             description=response[:500],
             verified=False,
+            origin_type="model",
         ))
 
     # ── Falsification gate ───────────────────────────────────────────
@@ -622,7 +923,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # flagged. The FALSIFICATION section must contain a concrete attempt
     # to disprove the claim — not just "VERIFIED: TRUE".
     _FALSIF_MARKERS = re.compile(
-        r'(?:FALSIF(?:ICATION|IER|IED)|CORROBORATION\s*:'
+        r'(?:FALSIF(?:ICATION|IER|IED)'
         r'|ATTEMPT(?:ED)?[\s_-]*TO[\s_-]*(?:BREAK|DISPROVE[DN]?|REFUTE[DN]?)'
         r'|DISPROVE[DN]?\s+by|REFUTE[DN]?\s+by'
         r'|COUNTER[\s_-]*EXAMPLE|WOULD[\s_-]*(?:BREAK|FAIL|DISPROVE)'
@@ -630,27 +931,156 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         r'|BOUNDARY[\s_-]*(?:CONDITION|CHECK|TEST))',
         re.IGNORECASE
     )
+    # ── Corroboration gate (independent of falsification) ─────────
+    # R_k numerical computation markers. The CORROBORATION section must
+    # contain quantitative self-assessment, not qualitative-only claims.
+    _CORROB_MARKERS = re.compile(
+        r'(?:CORROBORATION\s*:'
+        r'|R_k\s*[=≈≤≥<>]'
+        r'|R_old\s*[=≈]'
+        r'|R_(?:det|base)\s*[=≈]'
+        r'|[ηη]\s*[·*×]\s*d\s*[·*×]\s*p'
+        r'|q\s*=\s*[ηη]'
+        r'|residual\s+risk)',
+        re.IGNORECASE
+    )
     for f in findings:
-        desc = f.description + (f.proposed_fix or "")
-        if _FALSIF_MARKERS.search(desc):
-            object.__setattr__(f, 'falsification_present', True)
-        else:
-            object.__setattr__(f, 'falsification_present', False)
-            # Downgrade confidence — unfalsified findings get lower priority
-            if f.verified:
-                object.__setattr__(f, 'verified', False)  # Self-certification without falsification
+        combined_text = f.description + (f.proposed_fix or "")
+        has_falsif = bool(_FALSIF_MARKERS.search(combined_text))
+        has_corrob = bool(_CORROB_MARKERS.search(combined_text))
+        object.__setattr__(f, 'falsification_present', has_falsif)
+        object.__setattr__(f, 'corroboration_present', has_corrob)
+        # Downgrade confidence — unfalsified findings get lower priority
+        if f.verified and not has_falsif:
+            object.__setattr__(f, 'verified', False)  # Self-certification without falsification
 
     return findings
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Falsifier extraction ("tools decide" integration, 3 June 2026)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# A FALSIFIER block is a per-finding fenced Python snippet:
+#
+#   FINDING: <one-line description>            (or  FINDING_ID: <id>)
+#   FALSIFIER:
+#   ```python
+#   <runnable code that RAISES/prints FALSIFIED iff the defect is real>
+#   ```
+#
+# The runner re-runs each block independently (see bench/falsifier_verify.py);
+# the re-run result, not the model's prose, decides the verdict. Extraction is
+# additive: a response with no FALSIFIER block leaves findings byte-identical.
+_FALSIFIER_BLOCK_RE = re.compile(
+    r"FALSIFIER:\s*```(?:python|py)?\s*\n(.*?)```",
+    re.DOTALL | re.IGNORECASE,
+)
+# Captures the finding key (id or description text) that precedes a falsifier,
+# so multiple falsifiers in one response can be matched to the right finding.
+_FALSIFIER_LABELLED_RE = re.compile(
+    r"(?:FINDING_ID|FINDING)\s*[:=]\s*(?P<key>.+?)\s*?\n"
+    r".*?FALSIFIER:\s*```(?:python|py)?\s*\n(?P<code>.*?)```",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def extract_falsifiers(response: str) -> "tuple[dict, list]":
+    """Pull FALSIFIER code blocks out of a raw model response.
+
+    Returns ``(by_key, ordered)`` where:
+      * ``by_key`` maps a normalised finding key (lowercased id or the first
+        ~60 chars of the finding description) to its falsifier code, for
+        id/description-aware association.
+      * ``ordered`` is the list of falsifier code strings in document order,
+        used as a positional fallback when key matching does not resolve.
+
+    Pure text operation — no code is executed here.
+    """
+    by_key: dict = {}
+    for m in _FALSIFIER_LABELLED_RE.finditer(response):
+        key = (m.group("key") or "").strip().strip("`*\"' ").lower()
+        code = (m.group("code") or "").strip()
+        if key and code and key not in by_key:
+            by_key[key[:60]] = code
+    ordered = [m.group(1).strip() for m in _FALSIFIER_BLOCK_RE.finditer(response)]
+    return by_key, ordered
+
+
+def _attach_falsifiers(findings: List[Finding], response: str) -> List[Finding]:
+    """Return findings enriched with any falsifier code found in ``response``.
+
+    Association order: (1) exact finding-id match, (2) description-prefix match,
+    (3) positional fallback (i-th finding gets the i-th falsifier block) only
+    when block and finding counts line up well enough to be unambiguous.
+    Frozen-safe via :func:`dataclasses.replace`. No-op when no blocks exist.
+    """
+    if not findings or "FALSIFIER:" not in response.upper():
+        return findings
+
+    import dataclasses
+
+    by_key, ordered = extract_falsifiers(response)
+    if not by_key and not ordered:
+        return findings
+
+    out: List[Finding] = []
+    used_ordered = 0
+    for idx, f in enumerate(findings):
+        code = ""
+        # (1) finding-id match — strip the model_id prefix the parser may add.
+        fid = f.finding_id.lower()
+        bare_fid = fid.split(f"{f.model_id.lower()}_", 1)[-1]
+        for cand in (fid, bare_fid):
+            if cand in by_key:
+                code = by_key[cand]
+                break
+        # (2) description-prefix match.
+        if not code and f.description:
+            dkey = f.description.strip().lower()[:60]
+            if dkey in by_key:
+                code = by_key[dkey]
+        # (3) positional fallback — only if labelled matching found nothing
+        #     and the block count is not larger than the finding count (so we
+        #     do not misalign a single finding against many stray blocks).
+        if not code and not by_key and ordered and len(ordered) <= len(findings):
+            if idx < len(ordered):
+                code = ordered[idx]
+                used_ordered += 1
+        out.append(
+            dataclasses.replace(f, falsifier_code=code) if code else f
+        )
+    return out
+
+
+def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
+    """Public finding parser: structured extraction plus falsifier attachment.
+
+    Thin wrapper over :func:`_parse_findings_core` (the multi-format parser).
+    After findings are parsed, any per-finding ``FALSIFIER:`` fenced Python
+    block in the response is attached to ``finding.falsifier_code``. Behaviour
+    is byte-identical to the core parser when the response carries no falsifier
+    blocks, so existing experiments are unaffected.
+    """
+    findings = _parse_findings_core(model_id, round_idx, response)
+    return _attach_falsifiers(findings, response)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue):
-    """Worker function for multiprocessing watchdog."""
+def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue,
+                     enable_tools=False):
+    """Worker function for multiprocessing watchdog.
+
+    ``enable_tools`` (GATED, default OFF) is forwarded to ``dispatch`` so the
+    OpenAI-compatible routes get the execute_python tool loop when the
+    falsifier gate is on. Default False keeps behaviour byte-identical.
+    """
     try:
-        response = dispatch(model_config, prompt, cdsfl_text)
+        response = dispatch(model_config, prompt, cdsfl_text,
+                            enable_tools=enable_tools)
         result_queue.put(("ok", response))
     except Exception as e:
         result_queue.put(("error", e))
@@ -661,6 +1091,7 @@ def dispatch_to_model(
     prompt: str,
     cdsfl_text: str,
     wall_clock_limit: float = 0,
+    enable_tools: bool = False,
 ) -> tuple[str, float]:
     """Dispatch prompt to model, return (response_text, elapsed_seconds).
 
@@ -670,6 +1101,13 @@ def dispatch_to_model(
     seconds, it is forcibly terminated. Catches stuck sockets, GIL-holding
     C-extension blocks, and any other failure that httpx timeouts miss.
     Default wall_clock_limit = model timeout * 2.
+
+    ``enable_tools`` (GATED, default OFF, 2026-06-03 "tools decide") is passed
+    through the mp watchdog worker to ``dispatch``; when True the
+    OpenAI-compatible routes run the execute_python tool loop. The nested
+    subprocess (the execute_python sandbox) therefore launches from INSIDE this
+    daemon worker process — the integration smoke test exercises exactly that
+    path. Default False => byte-identical to prior behaviour.
     """
     import multiprocessing as mp
 
@@ -693,7 +1131,7 @@ def dispatch_to_model(
     result_queue = mp.Queue()
     proc = mp.Process(
         target=_dispatch_worker,
-        args=(model_config, prompt, cdsfl_text, result_queue),
+        args=(model_config, prompt, cdsfl_text, result_queue, enable_tools),
         daemon=True,
     )
     proc.start()

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T210326Z",
+  "phase": "r2",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1694,
+  "response": "FINDING_ID: F005\nSEVERITY: 0.60\nFIND: Intra‑packet SOFT directive pruning assumes later directives are lower priority, potentially dropping critical constraints.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _prune_packet_directives, DirectivePacket\n\npacket = DirectivePacket(\n    layer=\"situation\",\n    name=\"test\",\n    text=\"Less important directive.\\n\\nCritical directive that MUST NOT be dropped.\",\n    constraint_class=\"SOFT\",\n)\nbudget = len(\"Less important directive.\") + 1   # force truncation of second block\npruned = _prune_packet_directives(packet, budget)\nif \"Critical directive\" not in pruned.text:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```\n\nFINDING_ID: F006\nSEVERITY: 0.95\nFIND: The compose function applies the phenotype transform to HARD situation packets, corrupting mandatory constraints.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import compose, build_interaction_pattern\n\nsituation = build_interaction_pattern(\"four_layer\")\nresult = compose(task_domain=\"software\", model=\"deepseek_v3\", situation=situation)\nsit_pkt = next(p for p in result.packets if p.layer == \"situation\")\nif sit_pkt.text != situation.text:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```\n\nFINDING_ID: F007\nSEVERITY: 0.80\nFIND: _block_is_hard treats any block containing uppercase \"ALWAYS\" as HARD, causing false positives in SOFT directives.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _block_is_hard\n\nblock_text = \"You should ALWAYS check for null.\"\nif _block_is_hard(block_text):\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```",
+  "metadata": {
+    "round": 2,
+    "elapsed": 562.8,
+    "chars": 1694,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

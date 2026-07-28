@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T181900Z",
+  "phase": "r8",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 442,
+  "response": "FINDING_ID: F012\nSEVERITY: 0.70\nFIND: In `resolve_layer_conflicts`, `_split_packet_directives` fragments monolithic prose presets, causing silent loss of protocol content.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _split_packet_directives, _PRESET_CONVERSATIONAL\n\nblocks = _split_packet_directives(_PRESET_CONVERSATIONAL)\nif len(blocks) > 1:\n    print(\"FALSIFIED: _split_packet_directives fragments monolithic prose\")\n```",
+  "metadata": {
+    "round": 8,
+    "elapsed": 356.7,
+    "chars": 442,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-Experiment 37 is the most successful experiment in the CDSFL project to date. Five frontier AI models collaboratively reviewed `evidence.py` under structured Popperian falsification, converging in 16 rounds (22 min) with 222 canonical findings at a 36% confirmation rate — an 18× improvement over Experiment 36.
+Experiment 37 is the most successful experiment in the CDSFL project (Constraint-Driven Synthesis and Falsification, a Popperian multi-vendor LLM falsification framework) to date. Five frontier AI models — Gemini 3.1 Pro (Google), Claude Opus 4.6 (Anthropic, internally CC2 in CLI mode), Codex GPT-5.4 (OpenAI via OpenRouter), ChatGPT GPT-5.4 (OpenAI via OpenRouter), and DeepSeek Reasoner (DeepSeek) — collaboratively reviewed `evidence.py` under structured Popperian falsification, converging in 16 rounds (22 min) with 222 canonical findings at a 36% confirmation rate — an 18× improvement over Experiment 36.
 
-**Headline result:** Every model, across every vendor, computed the R_k self-assessment equation numerically in virtually every round. In Experiment 36, no model used the equation at all. The shift from 0% to ~100% adoption is the single most significant finding.
+**Headline result:** Every model, across every vendor, computed R_k (the iterative residual-risk self-assessment equation) numerically in virtually every round. In Experiment 36, no model used the equation at all. The shift from 0% to ~100% adoption is the single most significant finding.
 
 ---
 
@@ -37,7 +37,7 @@ Experiment 37 found more real issues in less than half the time, and the issues 
 
 ## 2. γ Decay Curve
 
-γ measures the depletion of novel findings over time (Duane reliability growth model). γ ≥ 0.45 = strong depletion.
+γ (gamma, the depletion-of-novelty metric) measures the depletion of novel findings over time (Duane reliability growth model). γ ≥ 0.45 = strong depletion.
 
 ### Exp 37 γ History
 
@@ -102,13 +102,13 @@ Exp 36: spiked to 0.675 at R4, then took 41 rounds to decay to 0.393. The long t
 
 ### What is R_k?
 
-The unified self-assessment equation (derived 8 April 2026) is a 3-phase model:
+The unified self-assessment equation (derived 8 April 2026) is a 3-phase model. Symbol glosses: R is residual risk, q is effective detection rate, η (eta) is novelty coefficient, d is approach diversity, p is detection capability, σ (sigma) is solution efficacy, ν (nu) is re-injection rate.
 
 1. **Phase 1** — R_det = R·(1−q) / (1−q·R), where q = η·d·p
 2. **Phase 2** — R_base = σ·R_det + (1−σ)·R
 3. **Phase 3** — R_k = R_base·(1−ν) + ν
 
-Each model computes R_k to estimate its own reliability on the current task and determine whether further analysis is productive (convergent when ν < ν*).
+Each model computes R_k to estimate its own reliability on the current task and determine whether further analysis is productive (convergent when ν < ν*, where ν* is the critical re-injection threshold).
 
 ### Adoption Per Round
 
@@ -286,7 +286,7 @@ The R11 spike (28 findings) corresponds to DeepSeek (13) and Gemini (7) discover
 ### Cross-Model Review
 
 - **56 entries** received multiple independent verdicts from different models
-- **26 entries** were escalated through the CC2v verification pipeline
+- **26 entries** were escalated through the CC2v verification pipeline (CC2v = Claude CLI verification subagent)
 - **140 records** in the Merkle chain (tamper-evident provenance)
 
 ---
@@ -351,6 +351,8 @@ The R11 spike (28 findings) corresponds to DeepSeek (13) and Gemini (7) discover
 ---
 
 ## 9. Brain Metrics
+
+The "brain" subsystem is the convergence-tracking module of the CDSFL framework. κ (kappa) is the per-finding convergence indicator; κ_set is the set-level convergence metric; κ_rate is its time derivative; γ̂ (gamma-hat) is the brain's internal depletion estimate.
 
 | Metric | R14 | R15 | Interpretation |
 |--------|-----|-----|---------------|

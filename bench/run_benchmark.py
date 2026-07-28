@@ -421,6 +421,97 @@ def call_anthropic_thinking(
     return "\n".join(text_parts)
 
 
+def call_claude_code(
+    model: str,
+    system_prompt: str | None,
+    user_prompt: str,
+) -> str:
+    """Run a benchmark task via claude -p (Claude Code Max subscription).
+
+    Uses subscription auth — no ANTHROPIC_API_KEY required.
+    """
+    import subprocess as _sp
+
+    # Combine system + user prompt (claude -p reads from stdin)
+    full_prompt = ""
+    if system_prompt:
+        full_prompt += f"SYSTEM INSTRUCTIONS:\n{system_prompt}\n\n"
+    full_prompt += f"TASK:\n{user_prompt}"
+
+    proj_dir = str(Path.home() / "Developer_Projects" / "Constraint_Engineering")
+
+    try:
+        result = _sp.run(
+            [
+                "claude", "-p",
+                "--no-session-persistence",
+                "--model", model,
+            ],
+            input=full_prompt,
+            capture_output=True, text=True, timeout=300,
+            cwd=proj_dir,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"claude -p failed (exit code {result.returncode}): "
+                f"{result.stderr[:200] if result.stderr else '(no stderr)'}"
+            )
+        response = result.stdout.strip()
+        if not response:
+            raise RuntimeError("claude -p returned empty output")
+        return response
+    except _sp.TimeoutExpired:
+        raise RuntimeError("claude -p timed out after 300s")
+    except FileNotFoundError:
+        raise RuntimeError("claude CLI not found — install Claude Code")
+
+
+def call_claude_code_thinking(
+    model: str,
+    system_prompt: str | None,
+    user_prompt: str,
+) -> str:
+    """Run a benchmark task via claude -p with extended thinking.
+
+    Uses subscription auth — no ANTHROPIC_API_KEY required.
+    Thinking is model-dependent (Opus/Sonnet support it natively).
+    Longer timeout to accommodate thinking budget.
+    """
+    import subprocess as _sp
+
+    full_prompt = ""
+    if system_prompt:
+        full_prompt += f"SYSTEM INSTRUCTIONS:\n{system_prompt}\n\n"
+    full_prompt += f"TASK:\n{user_prompt}"
+
+    proj_dir = str(Path.home() / "Developer_Projects" / "Constraint_Engineering")
+
+    try:
+        result = _sp.run(
+            [
+                "claude", "-p",
+                "--no-session-persistence",
+                "--model", model,
+            ],
+            input=full_prompt,
+            capture_output=True, text=True, timeout=600,
+            cwd=proj_dir,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"claude -p failed (exit code {result.returncode}): "
+                f"{result.stderr[:200] if result.stderr else '(no stderr)'}"
+            )
+        response = result.stdout.strip()
+        if not response:
+            raise RuntimeError("claude -p returned empty output")
+        return response
+    except _sp.TimeoutExpired:
+        raise RuntimeError("claude -p timed out after 600s")
+    except FileNotFoundError:
+        raise RuntimeError("claude CLI not found — install Claude Code")
+
+
 def _truncate_prompt_for_gemini(system_prompt: str | None, user_prompt: str) -> tuple[str | None, str]:
     """Progressively reduce prompt size for Gemini when it can't cope.
 
@@ -683,6 +774,8 @@ def call_codex(
 PROVIDERS = {
     "anthropic": call_anthropic,
     "anthropic-thinking": call_anthropic_thinking,
+    "claude-code": call_claude_code,
+    "claude-code-thinking": call_claude_code_thinking,
     "openai": call_openai,
     "openai-reasoning": call_openai_reasoning,
     "gemini": call_gemini,
@@ -2068,6 +2161,7 @@ def main() -> None:
         "groq": "GROQ_API_KEY",
         "github": "GITHUB_TOKEN",
         # codex: no env key needed (Codex Business subscription)
+        # claude-code / claude-code-thinking: no env key needed (Max subscription)
     }
     required_key = env_requirements.get(args.provider)
     if required_key and not os.environ.get(required_key):

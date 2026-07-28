@@ -1,0 +1,431 @@
+{
+  "round_idx": 3,
+  "findings": [
+    {
+      "finding_id": "CC2_UNSTRUCTURED",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6282,
+      "flaw_class": 1,
+      "encounter_count": 12,
+      "description_snippet": "Confirmed. With a bad `mode`, `observe()` crashes at line 201 (`self.mode.value` in the anomaly-logging block) the insta"
+    },
+    {
+      "finding_id": "Codex_F004",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 6,
+      "encounter_count": 2,
+      "description_snippet": "`MacrophageCell._patrol_observe()` can crash the advisory monitor when a verdict\u2019s `confidence` attribute is present but"
+    },
+    {
+      "finding_id": "ChatGPT_F006",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 2,
+      "encounter_count": 3,
+      "description_snippet": "`bench/macrophage_cell.py`, `MacrophageCell.__init__()` accepts `shadow=False` and stores it directly even though the co"
+    },
+    {
+      "finding_id": "ChatGPT_F007",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 6,
+      "encounter_count": 3,
+      "description_snippet": "`bench/macrophage_cell.py`, `MacrophageCell._check_ouroboros_metrics()` silently accepts non-finite `diversity_score` va"
+    },
+    {
+      "finding_id": "Gemini_F007",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.632,
+      "flaw_class": 1,
+      "encounter_count": 13,
+      "description_snippet": "The `_check_provenance` method creates a separate `provenance_incomplete` anomaly for every single item in the `provenan"
+    },
+    {
+      "finding_id": "Gemini_F008",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6354,
+      "flaw_class": 1,
+      "encounter_count": 14,
+      "description_snippet": "In `_self_check_observe`, the `source_monoculture` anomaly is only raised if `len(verdicts) > 5`. However, the global th"
+    },
+    {
+      "finding_id": "DeepSeek_D_F001",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6386,
+      "flaw_class": 1,
+      "encounter_count": 15,
+      "description_snippet": "FINDING_ID: D_F001\nSEVERITY: 0.80\nFIND: The guard `median_t > 0.1` suppresses spike detection for fast pipelines, allowi"
+    },
+    {
+      "finding_id": "DeepSeek_D_F002",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6417,
+      "flaw_class": 1,
+      "encounter_count": 16,
+      "description_snippet": "FINDING_ID: D_F002\nSEVERITY: 0.45\nFIND: `_check_provenance()` only enforces three of the six provenance fields declared "
+    }
+  ],
+  "tool_fpr": {
+    "Codex_F001": {
+      "tool_name": "Codex_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F001": {
+      "tool_name": "ChatGPT_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F002": {
+      "tool_name": "Gemini_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F001": {
+      "tool_name": "CC2_F001",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F002": {
+      "tool_name": "CC2_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F001": {
+      "tool_name": "DeepSeek_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F002": {
+      "tool_name": "DeepSeek_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F003": {
+      "tool_name": "DeepSeek_F003",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 4,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F001": {
+      "tool_name": "Gemini_F001",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 3,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F003": {
+      "tool_name": "CC2_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F003": {
+      "tool_name": "ChatGPT_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F005": {
+      "tool_name": "Codex_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F004": {
+      "tool_name": "DeepSeek_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F004": {
+      "tool_name": "Gemini_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F003": {
+      "tool_name": "Gemini_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F005": {
+      "tool_name": "CC2_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F003": {
+      "tool_name": "Codex_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F004": {
+      "tool_name": "ChatGPT_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F005": {
+      "tool_name": "ChatGPT_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F005": {
+      "tool_name": "Gemini_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F006": {
+      "tool_name": "Gemini_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F005": {
+      "tool_name": "DeepSeek_F005",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 2,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F006": {
+      "tool_name": "CC2_F006",
+      "passes": 0,
+      "fails": 2,
+      "inconclusive": 2,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_UNSTRUCTURED": {
+      "tool_name": "CC2_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F004": {
+      "tool_name": "Codex_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F006": {
+      "tool_name": "ChatGPT_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F007": {
+      "tool_name": "ChatGPT_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F007": {
+      "tool_name": "Gemini_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F008": {
+      "tool_name": "Gemini_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_D_F001": {
+      "tool_name": "DeepSeek_D_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_D_F002": {
+      "tool_name": "DeepSeek_D_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.5,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1784431324.175114
+}

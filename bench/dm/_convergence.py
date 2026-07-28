@@ -9,8 +9,6 @@ from __future__ import annotations
 import math
 from typing import Callable, Dict, List, Optional, Sequence
 
-import numpy as np
-
 from bench.dm._types import (
     DynamicManagementConfig,
     Finding,
@@ -18,99 +16,12 @@ from bench.dm._types import (
 )
 
 
-_STOPWORDS = frozenset({
-    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "shall",
-    "should", "may", "might", "must", "can", "could", "and", "but", "or",
-    "nor", "not", "no", "so", "if", "then", "than", "that", "this", "these",
-    "those", "it", "its", "of", "in", "on", "at", "to", "for", "with",
-    "by", "from", "as", "into", "through", "during", "before", "after",
-    "above", "below", "between", "out", "up", "down", "about", "each",
-    "all", "any", "both", "such", "when", "where", "which", "who", "whom",
-    "what", "how", "there", "here", "very", "just", "also", "only", "more",
-    "most", "other", "some", "over", "under", "again", "further", "once",
-})
-
-
-def _tokenize_for_similarity(text: str) -> list[str]:
-    """Tokenize text for similarity comparison: lowercase, strip stopwords."""
-    words = text.lower().split()
-    return [w for w in words if w not in _STOPWORDS and len(w) > 2]
-
-
-def _bigrams(tokens: list[str]) -> set[tuple[str, str]]:
-    """Generate bigram set from token list."""
-    return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
-
-
-def _finding_similarity(f1: Finding, f2: Finding) -> float:
-    """Compute similarity between two findings.
-
-    Uses flaw-class match + combined unigram/bigram Jaccard on description
-    words (stopwords removed). Bigrams capture phrase-level semantic overlap
-    that raw word sets miss — "race condition" and "condition race" are
-    different bigrams, but "race condition" and "race condition" match.
-
-    The combined score weights unigrams 0.6 and bigrams 0.4. This provides
-    a middle ground between the original raw Jaccard (too strict for
-    semantic duplicates) and embedding-based similarity (too complex for
-    the current infrastructure).
-
-    When flaw classes differ, the combined Jaccard alone determines the score
-    (no class bonus). This prevents models that assign different integer
-    labels to the same concept from appearing maximally novel.
-
-    Self-healing note: if this function fails to detect convergence (kappa
-    stuck at 0.0 for consecutive rounds), the DetectorHealthMonitor will
-    flag the pathology. See §immune_response below.
-
-    Args:
-        f1, f2: Findings to compare.
-
-    Returns:
-        Similarity in [0, 1].
-    """
-    class_match = f1.flaw_class == f2.flaw_class
-
-    # Tokenize with stopword removal
-    tokens1 = _tokenize_for_similarity(f1.description)
-    tokens2 = _tokenize_for_similarity(f2.description)
-
-    # Handle empty descriptions
-    if not tokens1 and not tokens2:
-        return 0.8 if class_match else 0.2
-    if not tokens1 or not tokens2:
-        return 0.3 if class_match else 0.1
-
-    # Unigram Jaccard (on content words only)
-    words1 = set(tokens1)
-    words2 = set(tokens2)
-    uni_inter = len(words1 & words2)
-    uni_union = len(words1 | words2)
-    uni_jaccard = uni_inter / uni_union if uni_union else 0.0
-
-    # Bigram Jaccard (phrase-level overlap)
-    bg1 = _bigrams(tokens1)
-    bg2 = _bigrams(tokens2)
-    if bg1 or bg2:
-        bg_inter = len(bg1 & bg2)
-        bg_union = len(bg1 | bg2)
-        bg_jaccard = bg_inter / bg_union if bg_union else 0.0
-    else:
-        bg_jaccard = uni_jaccard  # single-word descriptions: fall back to unigram
-
-    # Combined similarity: 60% unigram + 40% bigram
-    combined = 0.6 * uni_jaccard + 0.4 * bg_jaccard
-
-    if class_match:
-        # 0.3 base from class match + 0.7 from combined Jaccard
-        return 0.3 + 0.7 * combined
-    else:
-        # No class match bonus — combined Jaccard only.
-        # Confer consensus: raw Jaccard at tau_sim=0.8 was too strict.
-        # Stopword removal + bigrams increase similarity for genuine
-        # duplicates while maintaining discrimination.
-        return combined
+from bench.dm._similarity import finding_similarity as _finding_similarity
+from bench.dm._similarity import effective_tau_sim as _effective_tau_sim
+# Backward-compat re-exports (used by dynamic_management.py shim and _diminishing_returns.py)
+from bench.dm._similarity import _tokenize as _tokenize_for_similarity  # noqa: F401
+from bench.dm._similarity import _bigrams  # noqa: F401
+from bench.dm._similarity import _STOPWORDS  # noqa: F401
 
 
 class ConvergenceDetector:
@@ -149,6 +60,28 @@ class ConvergenceDetector:
         self._round_durations: Dict[int, float] = {}
         # Adoption deltas (from external source)
         self._adoption_deltas: Dict[int, float] = {}
+
+    def _tau_sim(self) -> float:
+        """Equivalence-merge threshold matched to THIS detector's similarity
+        function — not to global package state.
+
+        For the default embedding-backed similarity (_finding_similarity), use
+        the embedding-calibrated threshold (tau_sim_embed) when the embedding
+        backend is active, else the lexical tau_sim — via effective_tau_sim().
+        For a CUSTOM similarity_fn the caller owns its calibration, so use
+        config.tau_sim directly.
+
+        Confer condition (2026-05-22, 5-model fix-verification): bind the
+        threshold to the function actually in use. A custom lexical
+        similarity_fn run while sentence-transformers happens to be installed
+        must NOT silently inherit the 0.55 embedding threshold (which would
+        stop identical lexical findings from merging -> infinite false
+        novelty -> non-convergence). This keeps threshold and similarity
+        scale coupled.
+        """
+        if self.similarity_fn is _finding_similarity:
+            return _effective_tau_sim(self.config)
+        return self.config.tau_sim
 
     def add_round_findings(
         self,
@@ -202,7 +135,7 @@ class ConvergenceDetector:
 
         for i in range(n):
             for j in range(i + 1, n):
-                if self.similarity_fn(findings[i], findings[j]) >= self.config.tau_sim:
+                if self.similarity_fn(findings[i], findings[j]) >= self._tau_sim():
                     union(i, j)
 
         # Group by root
@@ -275,7 +208,7 @@ class ConvergenceDetector:
             is_novel = True
             for member in ec.members:
                 for prev_f in prev_findings:
-                    if self.similarity_fn(member, prev_f) >= self.config.tau_sim:
+                    if self.similarity_fn(member, prev_f) >= self._tau_sim():
                         is_novel = False
                         break
                 if not is_novel:
@@ -284,17 +217,89 @@ class ConvergenceDetector:
                 novel.append(ec)
         return novel
 
+    def _suppression_weight(
+        self, finding: Finding, prior_findings: Sequence[Finding]
+    ) -> float:
+        """Compute suppression weight for a single finding.
+
+        w(f) = max(exp(-λ_s · Σ_{g ∈ TopK(f)} sim(f, g)), w_floor)
+
+        TopK(f) selects the k most similar prior findings regardless of
+        arrival order, making this permutation-invariant by construction.
+        This fixes the order-dependence bug from predecessor-product
+        suppression (Error 2, 12 April 2026).
+
+        Returns weight in [w_floor, 1.0].
+        """
+        if not prior_findings:
+            return 1.0  # No priors → no suppression
+
+        # Compute similarity to all prior findings
+        sims = sorted(
+            (self.similarity_fn(finding, g) for g in prior_findings),
+            reverse=True,
+        )
+
+        # Sum top-k similarities
+        k = self.config.suppression_k
+        top_k_sum = sum(sims[:k])
+
+        # Exponential decay, floored
+        w = math.exp(-self.config.lambda_s * top_k_sum)
+        return max(w, self.config.w_floor)
+
+    def _weighted_novel_severity(
+        self, novel_classes: List[FindingEquivalenceClass],
+        prior_findings: Optional[Sequence[Finding]] = None,
+    ) -> float:
+        """Compute suppression-weighted severity for novel equivalence classes.
+
+        w(f) = max(exp(-λ_s · Σ TopK sim), w_floor) per finding, then
+        class weight = max member weight (conservative: least suppressed).
+
+        CRITICAL CONSTRAINT (Confer 12 April 2026 — Corroboration Collapse):
+        Suppression weights apply to kappa_set NUMERATOR ONLY. They must
+        NEVER enter q_eff in the Bayesian update (q = η·d·p, no w(f)).
+        The denominator uses raw (unweighted) aggregated_severity.
+        """
+        if prior_findings is None or not prior_findings:
+            # No priors → identity weight (1.0)
+            return sum(ec.aggregated_severity for ec in novel_classes)
+
+        total = 0.0
+        for ec in novel_classes:
+            # Per-class weight: max of member weights (least suppressed)
+            class_weight = max(
+                self._suppression_weight(member, prior_findings)
+                for member in ec.members
+            ) if ec.members else 1.0
+            total += class_weight * ec.aggregated_severity
+        return total
+
     def kappa_set(self, round_idx: int) -> float:
         """Set-theoretic stability (severity-weighted novelty).
 
-        kappa_set(r) = 1 - sum(Sev_agg of novel classes) / (sum(Sev_agg of all cumulative) + eps)
+        kappa_set(r) = 1 - Σ(w·Sev_novel) / (Σ Sev_cumulative + ε)
+
+        Numerator: suppression-weighted severity of novel classes.
+        Denominator: raw (unweighted) severity of all cumulative classes.
+        This asymmetry prevents the kappa overflow bug (Error 3, 12 April 2026)
+        where weighting the denominator caused kappa to leave [0, 1].
 
         Returns value in [0, 1]. Higher = more converged.
         """
         novel = self._novel_classes(round_idx)
         cumulative = self.get_cumulative_classes(round_idx)
 
-        novel_sev = sum(ec.aggregated_severity for ec in novel)
+        # Collect prior findings for suppression weighting
+        prior_findings: List[Finding] = []
+        if round_idx > 0:
+            for ec in self.get_cumulative_classes(round_idx - 1):
+                prior_findings.extend(ec.members)
+
+        # Numerator: suppression-weighted (w(f) applied here)
+        novel_sev = self._weighted_novel_severity(novel, prior_findings)
+        # Denominator: raw, unweighted — w(f) EXCLUDED (Corroboration Collapse fix)
         total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv
 
         return 1.0 - (novel_sev / total_sev)
@@ -302,33 +307,43 @@ class ConvergenceDetector:
     def kappa_rate(self, round_idx: int) -> float:
         """Rate-based stability (Duane connection).
 
-        kappa_rate(r) = 1 - lambda_hat(r) / (lambda_hat(1) + eps)
+        kappa_rate(r) = clamp(1 - lambda_novel(r) / lambda_peak, 0, 1)
 
-        where lambda_hat(r) = |F^(r)| / delta_t_r.
+        where lambda_novel(r) = |novel classes at r| / delta_t_r is the
+        NOVEL discovery intensity (new equivalence classes per unit time),
+        and lambda_peak is the maximum novel intensity over rounds 0..r
+        (the initial discovery burst). As the novel rate decays from its
+        peak the metric rises toward 1; a genuinely quiet state (no new
+        discoveries) reads converged. When no novelty has ever appeared
+        there is no decline signal, so the metric returns 1.0 and does
+        not veto (kappa_set / kappa_adopt govern).
 
-        Returns value in (-inf, 1]. Clamped to [0, 1] in combined metric.
+        2026-05-22 (Exp 41 materiality review, founder-approved fold of the
+        three material kappa_rate findings; the other findings were
+        non-material footnotes deferred to the iteration backlog):
+        - C1 (DS_R7_001 etc.): count NOVEL classes, not all round classes,
+          so repeated findings no longer register as ongoing discovery and
+          wrongly block convergence. This is the Duane-correct quantity
+          (new failures/discoveries per round), not raw round volume.
+        - C2/C3 (kappa_rate baseline + quiet-state): use the PEAK novel
+          rate as the baseline (robust to a quiet round 1) and treat a
+          genuinely quiet state as converged, not 0.0/-1.0. Replaces the
+          brittle "no-baseline" special case with one clear rule.
+
+        Returns value in [0, 1]. Higher = more converged.
         """
         if round_idx < 1:
             return 0.0
 
-        def _rate(r: int) -> float:
-            classes = self.get_round_classes(r)
+        def _novel_rate(r: int) -> float:
             dt = self._round_durations.get(r, 1.0)
-            return len(classes) / max(dt, 1e-10)
+            return len(self._novel_classes(r)) / max(dt, 1e-10)
 
-        rate_r = _rate(round_idx)
-        rate_1 = _rate(1) if 1 in self._round_findings else _rate(0)
-
-        # MM_F006 + GEM_FFF_002: When rate_1 is near zero (no baseline
-        # established), check if rate_r is also near zero. If both are
-        # near zero, return 0.0 (no data). If rate_r > 0 with rate_1 ≈ 0,
-        # the system is diverging — return -1.0 (bounded minimum).
-        if rate_1 < self.config.epsilon_conv:
-            if rate_r < self.config.epsilon_conv:
-                return 0.0  # No baseline, no current activity
-            return -1.0  # Diverging: new findings with no baseline
-        result = 1.0 - (rate_r / (rate_1 + self.config.epsilon_conv))
-        return max(-1.0, min(1.0, result))
+        rate_r = _novel_rate(round_idx)
+        peak = max((_novel_rate(r) for r in range(round_idx + 1)), default=0.0)
+        if peak < self.config.epsilon_conv:
+            return 1.0  # no novelty ever -> no decline signal; do not veto
+        return max(0.0, min(1.0, 1.0 - rate_r / (peak + self.config.epsilon_conv)))
 
     def kappa_adopt(self, round_idx: int) -> float:
         """Adoption stabilisation metric.

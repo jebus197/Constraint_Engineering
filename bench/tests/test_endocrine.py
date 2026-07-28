@@ -149,6 +149,35 @@ class TestApplyFix:
         assert result is not None
         assert "old_value = 99" in result
 
+    def test_search_replace_blocks(self):
+        """Strategy 0: <<<< SEARCH ... ==== ... >>>> REPLACE blocks."""
+        source = "def foo():\n    return 42\n\ndef bar():\n    return 0\n"
+        fix = textwrap.dedent("""\
+            <<<< SEARCH some_file.py
+                return 42
+            ====
+                return 99
+            >>>> REPLACE
+        """)
+        result = _apply_fix_to_source(source, fix)
+        assert result is not None
+        assert "return 99" in result
+        assert "return 42" not in result
+        # bar() should be unchanged
+        assert "return 0" in result
+
+    def test_search_replace_blocks_multiple(self):
+        """Strategy 0: multiple SEARCH/REPLACE blocks in one fix."""
+        source = "a = 1\nb = 2\n"
+        fix = (
+            "<<<< SEARCH f.py\na = 1\n====\na = 10\n>>>> REPLACE\n"
+            "<<<< SEARCH f.py\nb = 2\n====\nb = 20\n>>>> REPLACE\n"
+        )
+        result = _apply_fix_to_source(source, fix)
+        assert result is not None
+        assert "a = 10" in result
+        assert "b = 20" in result
+
     def test_unfixable_returns_none(self):
         source = "x = 1\n"
         fix = "This is just a description of what to do, no actionable pattern."
@@ -233,10 +262,16 @@ class TestFindTargetFile:
         paths = ["/src/bench/immune_agents.py", "/src/bench/other.py"]
         assert _find_target_file(finding, paths) == "/src/bench/immune_agents.py"
 
-    def test_no_match_returns_none(self):
-        """When no file path matches the description, return None (not a wrong guess)."""
+    def test_no_match_single_path_falls_back(self):
+        """With one source path and no regex match, fall back to that path."""
         finding = _make_finding(desc="Some abstract description")
         paths = ["/src/bench/main.py"]
+        assert _find_target_file(finding, paths) == "/src/bench/main.py"
+
+    def test_no_match_multiple_paths_returns_none(self):
+        """With multiple source paths and no regex match, return None (ambiguous)."""
+        finding = _make_finding(desc="Some abstract description")
+        paths = ["/src/bench/main.py", "/src/bench/other.py"]
         assert _find_target_file(finding, paths) is None
 
     def test_empty_paths_returns_none(self):

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T103708Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1192,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: In `_compute_shadow_e_values`, loop iterates over finding‑ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_combined` always `None`.\nFALSIFIER:\n```python\nimport sys, logging\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(\"bench/dm\").resolve()))\nfrom _shadow_stage6 import (\n    ShadowStage6Calibrator,\n    PerToolFPRLog,\n    ShadowStage6RoundLog,\n)\n\ncal = ShadowStage6Calibrator()\ntracker = PerToolFPRLog(tool_name=\"mypy\")\ntracker.passes = 10\ntracker.fails = 2\ncal._cumulative_tool_fpr[\"mypy\"] = tracker\n\nclass MockVerdict:\n    def __init__(self, tool_used, verdict):\n        self.tool_used = tool_used\n        self.verdict = verdict\n        self.cell_type = None\n\nclass MockImmuneResponse:\n    def __init__(self, cell_verdicts):\n        self.cell_verdicts = cell_verdicts\n\ncell_verdicts = {\"finding_123\": [MockVerdict(\"mypy\", \"PASS\")]}\nir = MockImmuneResponse(cell_verdicts)\nround_log = ShadowStage6RoundLog(round_idx=1)\ncal._compute_shadow_e_values(ir, round_log)\n\nif round_log.shadow_e_combined is None:\n    raise AssertionError(\"Defect present: shadow_e_combined is None (bug exists)\")\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 315.9,
+    "chars": 1192,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

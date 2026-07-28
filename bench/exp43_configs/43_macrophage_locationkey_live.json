@@ -1,0 +1,76 @@
+{
+  "_comment": "Exp 43 — MACROPHAGE admissibility (verdict-wiring confirmation under live load). GENERALISATION TEST of the convergence fix proven on Exp 42: does the code-LOCATION novelty key + the TWO-SIDED convergence gate work on a SECOND, different module, or was composer.py special? Target bench/macrophage_cell.py (547 lines, ~22K chars, self-contained stdlib-only, 15 AST symbols — confirmed a clean location-keyed review target; the operational-plan 'immune_agents.py macrophage section' pointer was WRONG and is corrected). SAME instrument as the Exp 42 landmark: single fixed runner, CONFIRM-only falsifier gate, capability-aware take-up-slack routing (Codex->CC2), code-location novelty key. CONVERGENCE = the TWO-SIDED GATE (founder ruling 2026-06-10, gamma is LOAD-BEARING, NOT demoted): converged iff BOTH (1) gamma_critical >= gamma_alt_threshold (0.30) — the critical decay curve has flattened — AND (2) gamma_alt_consecutive_zero_crit (3) consecutive rounds with zero NEW genuine critical on the SETTLED/verifier-filtered, location-keyed series — the strict threshold-free endpoint; both are sides of the same diminishing-returns measure and naturally agree (verified: exp41c gamma_critical=1.0, exp42=0.69, both clear 0.30; the count is the binding side). Guarded by (a) the A4 verifier fail-safe (an UNCONFIRMED sev>=0.7 candidate blocks + is logged for HIL, never silently counted as zero), (b) not-contested, (c) not-churning, (d) the small irreducible-queue alarm. PREDICTION: if the fix generalises, macrophage_cell.py converges within the round budget with low/zero residual HIL. If it does NOT converge, the cause is almost certainly MECHANICAL (dedup/routing/wiring), NOT the model or the maths — diagnose under cy, do not demote gamma. Report BOTH directions honestly: true-convergence-preserved AND false-convergence-prevented. severity_calibration is deliberately OFF (it is inert without a latent-tagger and would confound a clean generalisation test). CX2 is wired separately and is NOT a 6th panel model.",
+  "test_article": "bench/macrophage_cell.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 16,
+  "extension_cap": 16,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp43_macrophage_locationkey_live",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds set above the gamma ceiling (1.0) so the stall detector can never fire via gamma — convergence rests on the two-sided gamma-alt gate (gamma_critical AND zero-new-critical count), not the state-gate or stall-path gamma. Config-level guard, not a behaviour change.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "test_cmd": "python3 -m pytest bench/tests/test_immune_agents.py -q --tb=line",
+  "_test_cmd_note": "Macrophage regression guard (runs in a sandbox against any proposed fix, 120s cap). bench/tests/test_immune_agents.py covers the macrophage's advisory invariant (pipeline_modified=False) and observe() behaviour. apply_fixes_back_enabled=false (static review) so this guard is informational this run; it is the macrophage-relevant suite rather than the broader dynamic-management baseline used for Exp 42.",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING (NOT reported-only). Converged iff ALL of: (1) gamma_critical >= gamma_alt_threshold (0.30) — the critical decay curve, on the location-keyed critical series, has flattened; AND (2) gamma_alt_consecutive_zero_crit (3) consecutive rounds with zero NEW genuine critical on the settled/verifier-filtered, location-keyed series; AND (3) no unverified critical candidate pending (A4 fail-safe — UNCONFIRMED sev>=0.7 blocks + logged for HIL); AND (4) not contested; AND (5) not churning; AND (6) irreducible queue within bound. The two gamma_critical and count conditions are sides of the same diminishing-returns measure and naturally agree. All-severity novelty is NOT required to be low.",
+    "pass_condition": "gamma_critical >= 0.30 (decay curve flattened) AND 3 consecutive zero-NEW-genuine-critical rounds (settled, location-keyed) AND no unverified (UNCONFIRMED sev>=0.7) critical pending AND not contested AND not churning AND irreducible queue within bound.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds; OR non-convergence (then assume MECHANICAL, diagnose under cy — do not demote gamma)."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": true
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  },
+  "_pre_registration": "Frozen 2026-06-10 before the run. Exp 43 generalisation test of the Exp 42 convergence landmark on a NEW target (bench/macrophage_cell.py). Thresholds identical to the Exp 42 landmark: gamma_alt_threshold=0.30 (the ACTIVE gamma side of the two-sided gate), gamma_alt_consecutive_zero_crit=3, consecutive_rounds_required=3, earliest_stop_round=3, hardened_gate_enabled=false, location_keyed_convergence=true, take_up_slack_enabled=true, falsifier_gate_enabled=true. gamma is LOAD-BEARING (the two-sided gate requires gamma_critical>=0.30 AND the zero-new-critical count). No tuning after results. Success = clean convergence via the two-sided gate on the macrophage module within the round budget, with the post-run HIL materiality review confirming no genuine critical was silenced. Failure modes to report honestly: (a) does not converge -> assume MECHANICAL (dedup/routing/wiring/location-key on a new symbol set), diagnose under cy, do NOT demote gamma; (b) converges but HIL finds a silenced genuine critical -> verifier too aggressive OR A4 mapping wrong. This is the first test of whether the location-keyed two-sided gate is a GENERAL convergence instrument or was specific to composer.py.",
+  "_plan_ref": "Exp 43, macrophage admissibility (Exp 40-54 matrix). Generalisation test of the Exp 42 convergence redesign + landmark (location-keyed two-sided gate). Runner: reference_runner_v2.py (v2 active for Exp 40-54).",
+  "take_up_slack_enabled": true,
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "2026-06-10 Exp 43 generalisation test. location_keyed_convergence=true keys the per-round NEW-critical count by which macrophage_cell.py function each critical names (AST-extracted from the 15 target symbols), not by the model-chosen finding-id. This is the same fix proven live on Exp 42 (composer.py converged at round 6). gamma_critical (on the location-keyed critical series) is the ACTIVE first side of the two-sided gate. If macrophage_cell.py converges cleanly too, that is strong evidence the fix is a general convergence instrument."
+}

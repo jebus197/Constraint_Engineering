@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T195057Z",
+  "phase": "r14",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1229,
+  "response": "WITHDRAW ChatGPT_UNSTRUCTURED — schema flagged the prior unstructured submission as DUPLICATE with ADMISSIBILITY failure. I am not resubmitting it unchanged. The registry already contains the same root causes as settled canonical findings.\n\nMERGE C0004 <- ChatGPT_target0_F001 — same root cause: `_prune_for_coherence()` attempts to reduce constraint density by deleting text while the policy-derived constraint numerator remains constant.\n\nMERGE C0002 <- ChatGPT_target0_F002 — same root cause: `_compute_cid()` omits directive text content and can collide for equal-length substitutions.\n\nMERGE C0001 <- ChatGPT_target0_F003 — same root cause: final rendered-text / phenotype length truncation can amputate HARD directive content despite the “HARD constraints are NEVER pruned” guarantee.\n\nMERGE C0003 <- ChatGPT_target0_F004 — same root cause: `compose()` mutates the caller-supplied `situation` packet, violating the documented pure-function contract.\n\nNo new DISCOVERY findings filed. Registry review shows the independently found issues are already settled as C0001–C0004, and Round 14 has 0 OPEN/CONTESTED entries. Re-reporting them with full finding blocks would violate the focus redirect and duplicate settled findings.",
+  "metadata": {
+    "round": 14,
+    "elapsed": 198.8,
+    "chars": 1229,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

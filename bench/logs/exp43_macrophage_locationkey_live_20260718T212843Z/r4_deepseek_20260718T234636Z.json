@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260718T234636Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1656,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.65\nFIND: In _patrol_observe, median is computed using sorted(values)[len(values)//2] instead of statistics.median, causing missed timing-spike anomalies on even-length timing lists.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, \"bench\")\nfrom macrophage_cell import MacrophageCell, MacrophageMode, MacrophageSummary\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL, shadow=True)\nsummary = MacrophageSummary()\ntimings = {\"a\": 10.0, \"b\": 10.0, \"c\": 100.0, \"d\": 600.0}\ncell._patrol_observe([], triaged=None, timings=timings, summary=summary)\nif not any(o.category == \"timing_spike\" for o in summary.observations):\n    print(\"FALSIFIED: median bug causes missing spike\")\n```\n\nFINDING_ID: F002\nSEVERITY: 0.35\nFIND: In _self_check_observe, tool-name matching is case-sensitive, causing false method_claim_mismatch anomalies when tool_used has mixed case (e.g., \"SymPy\").\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, \"bench\")\nfrom macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK, shadow=True)\n\nclass MockVerdict:\n    def __init__(self, tool):\n        self.verdict = \"ACCEPTED\"\n        self.tool_used = tool\n        self.confidence = 0.9\n\nverdicts = [MockVerdict(\"SymPy\") for _ in range(6)]\n\nclass MockClaimType:\n    value = \"mathematical\"\n\nclass MockTriaged:\n    claim_type = MockClaimType()\n\ntriaged = [MockTriaged() for _ in range(3)]\n\nsummary = cell.observe(verdicts, triaged=triaged)\nanomalies = [o for o in summary.observations if o.category == \"method_claim_mismatch\"]\nif anomalies:\n    print(\"FALSIFIED: method_claim_mismatch despite SymPy being used\")\n```",
+  "metadata": {
+    "round": 4,
+    "elapsed": 419.5,
+    "chars": 1656,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

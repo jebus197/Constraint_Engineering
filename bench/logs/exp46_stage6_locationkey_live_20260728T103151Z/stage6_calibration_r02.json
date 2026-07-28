@@ -1,0 +1,241 @@
+{
+  "round_idx": 2,
+  "findings": [
+    {
+      "finding_id": "ChatGPT_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 2,
+      "encounter_count": 4,
+      "description_snippet": "`bench/dm/_shadow_stage6.py` treats `o1_metadata[*][\"results_count\"]` as numeric in three separate O1-metadata consumers"
+    },
+    {
+      "finding_id": "Codex_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 6,
+      "encounter_count": 4,
+      "description_snippet": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator` assumes O1 metadata field `results_count` is already an `int` in "
+    },
+    {
+      "finding_id": "CC2_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 6,
+      "encounter_count": 5,
+      "description_snippet": "FINDING_ID: CC2_F004\nSEVERITY: 0.58\nFLAW_CLASS: 6   (edge-case; root cause is unguarded None)\nABSTRACTION_INDEX: 0.20\nFI"
+    },
+    {
+      "finding_id": "Gemini_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 6,
+      "encounter_count": 6,
+      "description_snippet": "In `_estimate_source_coverage`, `_track_source_cooccurrence`, and `_estimate_retrieval_sparsity`, the code uses `meta.ge"
+    },
+    {
+      "finding_id": "Gemini_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 6,
+      "encounter_count": 7,
+      "description_snippet": "In `_assess_finding` and `_estimate_h_ratio`, the code extracts the `description` attribute from the `finding` object us"
+    },
+    {
+      "finding_id": "Gemini_F006",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6151,
+      "flaw_class": 1,
+      "encounter_count": 9,
+      "description_snippet": "In `_estimate_source_coverage`, the query quality `q_s` is estimated based on `status` and `results_count`. If `status ="
+    },
+    {
+      "finding_id": "DeepSeek_F001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6199,
+      "flaw_class": 1,
+      "encounter_count": 10,
+      "description_snippet": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: After C0010 fix, `_compute_shadow_e_values` still uses finding ID to lookup `_cumu"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 25,
+      "total": 25,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "mypy": {
+      "tool_name": "mypy",
+      "passes": 2,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 17,
+      "total": 17,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785238114.249563
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260515T031137Z",
+  "phase": "r12",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 3010,
+  "response": "SCHEMA_FEEDBACK_RESPONSE:\n- WITHDRAW CC2_F001 — schema flagged as DUPLICATE with all 5 admissibility gates failed. Accepted.\n\n---\n\nEXTEND C0023 | `priority_score()` has a parallel defect for the same root cause. When `final_verdict == \"REJECTED\"` but `self.refutations` is empty, the priority score is only `0.1 * severity_claimed` (max ≈ 0.10). This ranks below a single admissibility failure (+0.8), any near-duplicate (+0.2 minimum), or any R_k discrepancy. Consequence: a pipeline-REJECTED finding can be pushed entirely out of the top-K feedback window by `build_feedback_sections`, making the feedback channel completely silent about it. The C0023 fix (adding `final_verdict == \"REJECTED\"` check to `action`) is necessary but not sufficient — `priority_score` also needs a boost (e.g., +3.0 matching the refutation weight) for REJECTED findings without refutations, or the finding will still be deprioritised below admissibility/duplicate flags. This also intersects with the invariant stated in the module docstring line 16: \"REJECTED > FFAFP-FAIL > DUPLICATE by similarity > R_k discrepancy\" — that ordering is violated when REJECTED carries no refutations.\n\nConcrete trace:\n- Finding X: `final_verdict=\"REJECTED\"`, no refutations, `severity_claimed=0.90`\n- `priority_score()`: `0.0 + 0.0 + 0.0 + 0.0 + 0.1*0.90 = 0.09`\n- Finding Y: 1 admissibility failure, `severity_claimed=0.30`\n- `priority_score()`: `0.0 + 0.8*1 + 0.0 + 0.0 + 0.1*0.30 = 0.83`\n- Result: Y (admissibility) ranks above X (REJECTED) — invariant violated.\n\nWith `top_k=10`, if a model has 10+ flagged findings, the REJECTED one would be dropped from the feedback section entirely.\n\n---\n\nCONFIRM C0144 — The defensive `getattr` fix for `immune_result.final_verdicts` / `immune_result.cell_verdicts` is sound. The current code (`immune_result.final_verdicts if immune_result else {}`) guards against `None` but not against a truthy object missing the expected attributes. Since `immune_result` is untyped (`immune_result,` with no annotation beyond the docstring comment), a duck-typing failure is plausible if a caller passes a partial mock or a different response type. Note potential overlap with C0047/C0055 which cover the same code region — may warrant a merge if the fixes are identical.\n\n---\n\nMERGE C0089, C0090, C0091 -> C0008 | These are all about `FINDING_ID` not matching the section_terminator regex, which is the exact root cause of C0008. The fix (adding `FINDING_ID` to the alternation) has already been applied to the artifact. These should be closed as duplicates.\n\nMERGE C0092, C0100, C0105 -> C0035 | These are all about `finding_by_id = {f.finding_id: f for f in findings}` silently overwriting when two findings from different models share a `finding_id`. Same root cause as C0035.\n\n---\n\nNo new DISCOVERY findings filed this round. After 12 rounds and 153 canonical entries, the CRITICAL/HIGH surface of `_feedback.py` is saturated. The remaining open work is fix application and merge consolidation, not discovery.",
+  "metadata": {
+    "round": 12,
+    "elapsed": 331.4,
+    "chars": 3010,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

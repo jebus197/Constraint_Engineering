@@ -1,0 +1,3300 @@
+{
+  "experiment": "exp39_0_gate",
+  "topology": "star",
+  "relay_mode": null,
+  "start_time": "2026-04-13T14:12:27.038455+00:00",
+  "pattern": "four_layer",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/reference_runner.py",
+  "context_files": [
+    "bench/runner_core.py",
+    "bench/immune_agents.py"
+  ],
+  "max_rounds": 8,
+  "extension_cap": 10,
+  "domain": "software",
+  "convergence_config": {
+    "earliest_stop": 3,
+    "consecutive_required": 2,
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3
+  },
+  "rounds": [
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 7,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 2,
+          "severity": 0.89,
+          "description": "CONFIRM C0006 — main() validates args.pattern instead of the effective runtime value cfg.pattern. Premises: (1) with --config, cfg is loaded from JSON via RunnerConfig.from_json(args.config); (2) CLI default args.pattern remains 'fff' unless explicitly overridden; (3) the code later uses cfg.pattern for runtime dispatch. Concrete trace: config file contains {\"pattern\": \"invalid_x\"}, CLI omits --pattern, so args.pattern == 'fff' and the current validation passes. Later _dispatch_single_model inde",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 2,
+          "severity": 0.56,
+          "description": "CONFIRM C0020 — _dispatch_round_star() and _dispatch_round_relay() are annotated as returning 3-tuples, but both actually return 4 values: findings, responses, per_model_durations, prompt_lengths. Premises: (1) both signatures declare Tuple[List[Finding], Dict[str, str], Dict[str, float]]; (2) both functions return four objects; (3) run_experiment destructures four values from each call. Concrete trace: a caller trusting the annotation and writing `a, b, c = _dispatch_round_star(...)` would get ",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 4,
+          "severity": 0.71,
+          "description": "DISCOVERY — run_experiment() ignores cfg.test_cmd when constructing EndocrineLayer, hardcoding test_cmd=None. Premises: (1) RunnerConfig defines test_cmd: Optional[str]; (2) later S_k evaluation correctly receives cfg.test_cmd; (3) EndocrineLayer is instantiated as `EndocrineLayer(source_paths=source_paths_str, test_cmd=None, max_fix_evals=20)`. Concrete trace: user config sets `\"test_cmd\": \"pytest -q\"`; S_k receives that command, but endocrine receives None, so the same experiment config drives",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "CC2_C0029",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.5,
+          "description": "Burst-mode HIL exit (line 3453) does not call `brain._save_checkpoint()` before `sys.exit(42)`. The monolithic HIL path (line 3391) does. On burst HIL resume, the last round's immune pipeline results, S_k evaluations, and post-dispatch registry mutations are lost because only the pre-immune checkpoint (from `persist()` earlier in the loop) survives.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "CC2_C0030",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "`auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`), but the window is asymmetric with how verdicts are timestamped. A CONFIRM verdict issued in the same round as the auto-resolve check (round N) with `v[\"round\"] == N` passes the filter, but the auto-resolve runs BEFORE new verdicts from round N are registered (verdicts are added during dispatch, auto-resolve runs post-dispatch). This means the window effectively covers rounds",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "CC2_C0031",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.5,
+          "description": "`_run_effect_regression` (lines 2238-2251) scoring logic treats \"no tests collected\" (pytest exit code 5) as a perfect score of 1.0. A SEARCH/REPLACE fix that silently deletes or breaks the test file would score S_k = 1.0 on the regression gate because no tests fail — they simply don't exist in the sandbox. This creates a perverse incentive in the S_k pipeline: destructive fixes that remove testable surface score higher than constructive fixes that expose failures.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "Gemini_UNSTRUCTURED",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 1.0,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.9,\n    \"DESCRIPTION\": \"FIND — The prompt generation code contains a massive hardcoded string of the Round 2 registry state injected by a bad SEARCH/REPLACE block in a previous round. This completely breaks the runner because it ignores the actual dynamic registry state and always injects the hardcoded Round 2 state into the prompt. Evidence: `_itc_build_recovery_prompt`, `_dispatch_round_star`, `",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 4,
+      "registry_total": 32,
+      "open_crit_high": 14,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 816.6,
+      "gamma": 0.0,
+      "rho": 0.5714,
+      "rho_avg": 0.7857,
+      "verification": {
+        "skipped": true,
+        "reason": "round 2 < 6"
+      },
+      "sk_pipeline": {
+        "round": 2,
+        "evaluated": 31,
+        "admissible": 11,
+        "rejected": 5,
+        "escalated": 15,
+        "results": {
+          "C0001": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0002": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0003": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0004": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0005": {
+            "sk": 0.9333,
+            "A": 1,
+            "E": 0.9333,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 0.8,
+                "detail": "47 total, 2 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.38553528515
+          },
+          "C0006": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 2,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0009": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 6,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0011": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 4,
+            "blocks_applied": 4,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0013": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 3,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0016": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 2,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0020": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 2,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0021": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0022": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0023": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0024": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0025": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0026": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0027": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0028": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0029": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0030": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0031": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 2,
+        "open_ch": 14,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 2 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "observation_details": []
+        },
+        "ouroboros": {
+          "anomalies_observed": 0,
+          "queries_issued": 0,
+          "candidate_claims": 0,
+          "would_have_injected": false
+        }
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 6,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_UNSTRUCTURED",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.83,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.73,\n    \"DESCRIPTION\": \"FIND — `run_experiment()` registers findings as novel using only `(model_id, finding_id)` alias lookup, which is not runner-enforced stable identity. Location: registration block after dispatch: `existing = registry.lookup_alias(f.model_id, f.finding_id)`. Premises: (1) prompts request STABLE IDs but code does not enforce stability, (2) relay/star adaptive rounds can caus",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 5,
+          "severity": 1.0,
+          "description": "FIND — `base_prompt.replace(\"=== FINDING REGISTRY\\n=== ARTIFACT:\", ...)` in `_make_prompt` replaces ALL occurrences of the marker string. Because `reference_runner.py` contains this exact string literal in its own source code, reviewing `reference_runner.py` causes the runner to inject the massive finding registry directly into the source code presented to the models. Evidence: The corrupted source code provided in this very prompt contains the Round 3 registry injected into the `_make_prompt` s",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "Gemini_F002",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.95,
+          "description": "FIND — Burst-mode resume restores `burst_state` from `runner_state.json` but fails to reconstruct `full_code` and `base_prompt` for the restored phase. Evidence: `full_code` is built before the resume block using Phase 0. If the run resumes into Phase 2, it will execute Phase 2 logic but feed the models the Phase 0 source code and prompt.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "Gemini_F003",
+          "model_id": "Gemini",
+          "flaw_class": 4,
+          "severity": 0.8,
+          "description": "FIND — `FindingRegistry.register` does not save `model_params` from the `Finding` object into the registry entry. Evidence: `_evaluate_sk_for_findings` attempts to extract `meta = entry.get(\"model_params\", {})`, but `register` never populates this key.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/reference_runner.py"
+        },
+        {
+          "finding_id": "Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== FINDING REGISTRY (Round 3) ===\\nTotal: 32 canonical findings\\nActive: 32 | Settled: 0 | Hidden: 0\\nOpen CRIT/HIGH: 14\\n\\n--- OPEN (32) ---\\n  C0005 (sev 0.95) [ChatGPT] FIND — Burst-mode resume restores `burst_state` from `runner_state.json` but does not reconstruct the active phase/integ\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    experiment_start = time.monotonic()\\n    effective_max = cf\\n  C0027 (sev 0.95) [DeepSeek] Command‑injection vulnerability in `_run_effect_regression` via `test_cmd`. User‑controlled input from config flows into\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0006 (sev 0.89) [ChatGPT] FIND — Config-driven CLI validation checks `args.pattern` instead of the effective config value `cfg.pattern`. Evidence:\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0014 (sev 0.86) [Codex] FIND — burst-mode resume restores `burst_state` but not `burst_plan`, so resumed burst runs can skip remaining phases an\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n            # R39-04: Restore burst_state if it was persisted\\n\\n  C0001 (sev 0.80) [Gemini] FIND — `_itc_detect` penalises models for correctly transitioning to pure-verdict behaviour. If a model outputs 0 findin\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif findings_count == 0 and len(response_text) > 200:\\n        h\\n  C0002 (sev 0.80) [Gemini] FIND — The ITC context stripping recovery mechanism is dead code. `_itc_build_recovery_prompt` is defined to reduce the \\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _dispatch_round_star(\\n    exp_config: ExperimentConfig, mg\\n  C0021 (sev 0.80) [CC2] FIND — Star topology `_make_prompt` ignores all ITC adaptations except `change_focus`. When `_itc_adapt` sets `strip_con\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _make_prompt(mc_label: str) -> str:\\n        if round_idx =\\n  C0026 (sev 0.80) [DeepSeek] Race condition in module‑level globals `_itc_model_state` and `_itc_hil_flags` during concurrent dispatch via `ThreadPoo\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n_itc_model_state: Dict[str, Dict[str, Any]] = {}\\n_itc_hil_flag\\n  C0015 (sev 0.79) [Codex] FIND — when `--config` is used, CLI pattern validation checks `args.pattern` instead of the effective runtime value `cfg\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0022 (sev 0.75) [CC2] FIND — `_itc_build_recovery_prompt` (line ~808) claims to reduce context to `max_ok_chars` but includes the full, untrun\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif max_ok_chars > 0 and len(base_prompt) > max_ok_chars:\\n     \\n  C0007 (sev 0.72) [ChatGPT] FIND — `_dispatch_round_star()` and `_dispatch_round_relay()` create `ThreadPoolExecutor(max_workers=len(eligible))` wit\\n    Verdicts: ChatGPT:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0016 (sev 0.72) [Codex] FIND — both `_dispatch_round_star` and `_dispatch_round_relay` create `ThreadPoolExecutor(max_workers=len(eligible))` wi\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0003 (sev 0.70) [Gemini] FIND — The \\\"F12 fix\\\" in `_evaluate_gate_conditions` breaks the `open_ch_history` stability window. It only appends to th\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0004 (sev 0.70) [Gemini] FIND — `_verification_step` processes CC2v verdicts and resolves finding statuses, but never calls `registry.add_verdict\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif finding_id not in batch_ids:\\n            continue\\n        s\\n  C0017 (sev 0.68) [Codex] FIND — burst-mode HIL exits do not save the later brain checkpoint, unlike monolithic HIL exits, so persisted state can \\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if cfg.hil_review:\\n                    _log(f\\\"\\n  C0008 (sev 0.67) [ChatGPT] FIND — Endocrine context telemetry counts response sizes, not prompt/context sizes, while storing the metric in `cumulat\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        round_timings = _build_round_timings(responses, per_mo\\n  C0023 (sev 0.65) [CC2] FIND — `_evaluate_gate_conditions` deduplicates consecutive identical `open_ch_history` entries (line ~571), which preve\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0009 (sev 0.61) [ChatGPT] FIND — MERGE deadlock escalation is advisory-only and does not transition the finding out of the active workflow. Eviden\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if defer_count >= max_defer:\\n                 \\n  C0018 (sev 0.61) [Codex] FIND — `_dispatch_single_model` catches `Exception` in the same tuple as operational failures, converting internal progr\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    except (CircuitBreakerTripped, TimeoutError, Exception) as\\n  C0010 (sev 0.58) [ChatGPT] FIND — Wall-clock deadline is enforced only at round boundaries; subprocess-based verification helpers use fixed per-cal\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0024 (sev 0.55) [CC2] FIND — Module-level mutable state (`_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, `_shadow_ouroboros`) is n\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nexperiment_start = time.monotonic()\\n    effective_max = cfg.ma\\n  C0025 (sev 0.55) [CC2] FIND — `_evaluate_sk_for_findings` receives `str(target_rel)` (a relative path like `bench/reference_runner.py`) as `sou\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# S_k solution verification pipeline\\n        sk_stats: Dict[st\\n  C0029 (sev 0.50) [CC2] Burst-mode HIL exit (line 3453) does not call `brain._save_checkpoint()` before `sys.exit(42)`. The monolithic HIL path \\n    Fix: <<<< SEARCH bench/reference_runner.py\\npartial_report = logs_dir / f\\\"{cfg.experiment_name}_hil_phase_\\n  C0030 (sev 0.50) [CC2] `auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nrecent_verdicts = [\\n            v for v in entry.get(\\\"verdicts\\n  C0031 (sev 0.50) [CC2] `_run_effect_regression` (lines 2238-2251) scoring logic treats \\\"no tests collected\\\" (pytest exit code 5) as a perfect s\\n    Fix: <<<< SEARCH bench/reference_runner.py\\npassed = int(m.group(1)) if re.search(r'(\\\\d+)\\\\s+passed', outpu\\n  C0011 (sev 0.49) [ChatGPT] FIND — Persistence is only partially atomic: `runner_state.json` uses temp-file replace, but fingerprint files, final re\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        fp_path = FINGERPRINT_DIR / f\\\"{model_id}.json\\\"\\n       \\n  C0019 (sev 0.49) [Codex] FIND — module-global ITC and shadow-cell state is not reset at fresh experiment start, so multiple experiments in one Py\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef run_experiment(\\n    exp_config: ExperimentConfig,\\n    cdsf\\n  C0012 (sev 0.47) [ChatGPT] FIND — `_load_fingerprints()` silently discards corrupted fingerprint files via `except (json.JSONDecodeError, OSError):\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        except (json.JSONDecodeError, OSError):\\n            pa\\n  C0013 (sev 0.41) [ChatGPT] FIND — `_run_effect_ruff()`, `_run_effect_bandit()`, and `_capture_baseline()` unconditionally call `os.unlink(tmp_path)\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    finally:\\n        os.unlink(tmp_path)\\n====\\n    finally:\\n   \\n  C0028 (sev 0.30) [DeepSeek] Missing `encoding=\\\"utf-8\\\"` in `ctx_path.read_text()` call in `parse_search_replace_blocks` fallback (line ~2120). Uses p\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# P1 fallback: extract from markdown code blocks with file pat\\n  C0032 (sev 0.30) [Gemini] [\\n  {\\n    \\\"FINDING_ID\\\": \\\"F001\\\",\\n    \\\"SEVERITY\\\": 1.0,\\n    \\\"FLAW_CLASS\\\": 5,\\n    \\\"ABSTRACTION_INDEX\\\": 0.9,\\n    \\\"DESCRIPTION\\n  C0020 (sev 0.24) [Codex] FIND — `_dispatch_round_star` and `_dispatch_round_relay` are annotated as returning 3-tuples, but both return 4 values:\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\\n=\\n\\n=== END REGISTRY ===\\n=== PANEL METRICS (Round 3) ===\\nρ (discovery efficiency / semantic novelty rate) = 0.571\\nρ̄₃ (3-round rolling average) = 0.786\\nγ (Duane reliability growth) = 0.000\\nRegistry: 32 OPEN, 0 CONFIRMED, 0 CLOSED/MERGED\\n\\nInterpretation: Productive phase — continue finding and falsifying.\\n\\n\\nThis is Round 3. Review the registry above. File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n====\\n    def _build_prompt(code_payload: str, artifact_label: str = \\\"\\\") -> str:\\n        \\\"\\\"\\\"Build base prompt from awareness preamble + code payload.\\\"\\\"\\\"\\n        label = artifact_label or f\\\"{target_rel} + Context\\\"\\n        return (\\n            f\\\"{awareness_preamble}\\\"\\n            f\\\"YOUR TASK:\\\\n\\\"\\n            f\\\"Review {target_rel} under full CDSFL + FFF constraints.\\\\n\\\\n\\\"\\n            f\\\"For each finding, provide (keys in this exact order):\\\\n\\\"\\n            f\\\"",
+          "model_id": "Codex",
+          "flaw_class": 8,
+          "severity": 0.0,
+          "description": "FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n        ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n>>>> REPLACE\",",
+          "model_id": "Codex",
+          "flaw_class": 8,
+          "severity": 0.0,
+          "description": "FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n        ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 3,
+      "registry_total": 35,
+      "open_crit_high": 10,
+      "models_responded": [
+        "ChatGPT",
+        "Gemini",
+        "Codex",
+        "CC2"
+      ],
+      "elapsed_s": 904.4,
+      "gamma": 0.798,
+      "rho": 0.5,
+      "rho_avg": 0.6905,
+      "verification": {
+        "skipped": true,
+        "reason": "round 3 < 6"
+      },
+      "sk_pipeline": {
+        "round": 3,
+        "evaluated": 28,
+        "admissible": 10,
+        "rejected": 4,
+        "escalated": 14,
+        "results": {
+          "C0001": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0002": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0004": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0005": {
+            "sk": 0.9333,
+            "A": 1,
+            "E": 0.9333,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 0.8,
+                "detail": "47 total, 2 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.38553528515
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0009": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 6,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0011": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 4,
+            "blocks_applied": 4,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0013": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 3,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0016": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 2,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "45 total, 0 new (baseline: 45)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              },
+              "_unavailable": [
+                "e2_regression"
+              ]
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0020": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 2,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "search_ambiguous"
+            }
+          },
+          "C0021": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0022": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0023": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0024": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0025": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0026": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0027": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0028": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0029": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0030": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0031": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 3,
+        "open_ch": 10,
+        "contested": 0,
+        "gamma": 0.798,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 3 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "observation_details": []
+        },
+        "ouroboros": {
+          "anomalies_observed": 0,
+          "queries_issued": 0,
+          "candidate_claims": 0,
+          "would_have_injected": false
+        }
+      }
+    }
+  ],
+  "total_findings": 78,
+  "total_rounds": 4,
+  "total_elapsed_s": 5013.6,
+  "end_time": "2026-04-13T15:36:00.223524+00:00",
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.798
+  ],
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.8,
+        "description": "FIND — `_itc_detect` penalises models for correctly transitioning to pure-verdict behaviour. If a model outputs 0 findings but > 200 characters of text, it is flagged with `ITC_TRANSIENT_FAILURE`. In later rounds, models are expected to issue `CONFIRM`/`CHALLENGE` verdicts with evidence, which easily exceeds 200 characters while containing 0 new findings.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nif findings_count == 0 and len(response_text) > 200:\n        history = _itc_model_state.get(model_label, {}).get(\"history\", [])\n        recent_empty = sum(1 for h in history[-2:] if h.get(\"findings\") == 0)\n        if recent_empty >= 1:\n            return ITC_CAPABILITY_MISMATCH\n        return ITC_TRANSIENT_FAILURE\n==== REPLACE\nif findings_count == 0 and len(response_text) > 200:\n        if not _VERDICT_RE.search(response_text):\n            history = _itc_model_state.get(model_label, {}).get(\"history\", [])\n            recent_empty = sum(1 for h in history[-2:] if h.get(\"findings\") == 0)\n            if recent_empty >= 1:\n                return ITC_CAPABILITY_MISMATCH\n            return ITC_TRANSIENT_FAILURE\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.8,
+        "description": "FIND — The ITC context stripping recovery mechanism is dead code. `_itc_build_recovery_prompt` is defined to reduce the prompt size for models suffering context overflow (`ITC_CAPABILITY_MISMATCH`), but it is never called in `_dispatch_round_star` or `_dispatch_round_relay`.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== REPLACE\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n    observed_fingerprints: Optional[Dict[str, Dict[str, Any]]] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Correct observation"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.7,
+        "description": "FIND — The \"F12 fix\" in `_evaluate_gate_conditions` breaks the `open_ch_history` stability window. It only appends to the history list if the value changes (`open_ch_history[-1] != open_ch`). If `open_ch` remains stable across rounds, the history list does not grow, causing `len(open_ch_history) < cfg.open_ch_stability_window` to perpetually fail with \"insufficient history\".",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n# F12 fix: guard against duplicate entries if called multiple times per round.\n    if open_ch_history is not None:\n        if not open_ch_history or open_ch_history[-1] != open_ch:\n            open_ch_history.append(open_ch)\n==== REPLACE\n# F12 fix: guard against duplicate entries if called multiple times per round.\n    if open_ch_history is not None:\n        if len(open_ch_history) == round_idx:\n            open_ch_history.append(open_ch)\n        elif len(open_ch_history) > round_idx:\n            open_ch_history[round_idx] = open_ch\n        else:\n            open_ch_history.append(open_ch)\n>>>>",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0023"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0023"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        },
+        "merged_into": "C0023"
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.7,
+        "description": "FIND — `_verification_step` processes CC2v verdicts and resolves finding statuses, but never calls `registry.add_verdict`.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nif finding_id not in batch_ids:\n            continue\n        stats[\"verdicts\"][finding_id] = {\n            \"action\": action, \"confidence\": confidence, \"evidence\": evidence[:200],\n        }\n        if action == \"ESCALATE\":\n==== REPLACE\nif finding_id not in batch_ids:\n            continue\n        stats[\"verdicts\"][finding_id] = {\n            \"action\": action, \"confidence\": confidence, \"evidence\": evidence[:200],\n        }\n        \n        evidence_str = evidence\n        if action == \"DUPLICATE\" and merge_target:\n            evidence_str = f\"merged_into={merge_target} | {evidence}\"\n        registry.add_verdict(finding_id, \"CC2v\", action, round_idx, evidence_str)\n\n        if action == \"ESCALATE\":\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.95,
+        "description": "FIND — Burst-mode resume restores `burst_state` from `runner_state.json` but does not reconstruct the active phase/integration payload or reapply phase-specific convergence overrides before the next dispatch. Evidence: `run_experiment()` always rebuilds `full_code` from the monolithic target+context at startup, sets `base_prompt = _build_prompt(full_code)`, and only swaps to phase-specific payloads during fresh burst initialisation or later phase-transition code paths. In the resume block, `_res",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    # Burst mode: extend loop cap to accommodate all phases + integration\n    if burst_plan:\n        phase_rounds_each = 8  # generous per-phase budget\n        burst_total = (len(burst_plan.phases) + 1) * phase_rounds_each\n        loop_cap = max(loop_cap, burst_total)\n        effective_max = max(effective_max, burst_total)\n        _log(f\"  Burst loop cap: {loop_cap} rounds \"\n             f\"({len(burst_plan.phases)} phases × {phase_rounds_each} + integration)\")\n====\n    if burst_plan and burst_state:\n        # Resume fix: reconstruct the active burst payload and convergence\n        # overrides from restored burst_state before any dispatch occurs.\n        if burst_state.get(\"integration_started\") and not burst_state.get(\"integration_done\"):\n            all_findings = \"\\n\".join(burst_state.get(\"phase_findings\", {}).values())\n            full_code = build_integration_code(\n                target_text, str(target_rel), all_findings,\n                burst_state.get(\"context_signatures\", \"\"))\n            base_prompt = _build_prompt(\n                full_code, f\"{target_rel} Integration\")\n            overrides = integration_convergence_overrides(start_round)\n            cfg = replace(cfg, overrides)\n            _log(\"  Burst resume: restored integration payload and overrides\")\n        elif not burst_state.get(\"integration_done\"):\n            phase_idx = burst_state.get(\"phase_idx\", 0)\n            phase = burst_plan.phases[phase_idx]\n            prior_summary = \"\\n\".join(burst_state.get(\"phase_findings\", {}).values())\n            full_code = build_phase_code(\n                phase, str(target_rel), burst_plan.signatures, prior_summary)\n            base_prompt = _build_prompt(\n                full_code, f\"{target_rel} Phase {phase_idx}: {phase.name}\")\n            overrides = phase_convergence_overrides(start_round)\n            cfg = replace(cfg, overrides)\n            _log(f\"  Burst resume: restored Phase {phase_idx} payload and overrides\")\n\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    # Burst mode: extend loop cap to accommodate all phases + integration\n    if burst_plan:\n        phase_rounds_each = 8  # generous per-phase budget\n        burst_total = (len(burst_plan.phases) + 1) * phase_rounds_each\n        loop_cap = max(loop_cap, burst_total)\n        effective_max = max(effective_max, burst_total)\n        _log(f\"  Burst loop cap: {loop_cap} rounds \"\n             f\"({len(burst_plan.phases)} phases × {phase_rounds_each} + integration)\")\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Resume path restores `burst_state` from `runner_state.json` but does not reconstruct `burst_plan`. Premises observed in `bench/reference_runner.py`: `burst_plan = None` is initialised before resume; r"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "F002"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.9333,
+          "A": 1,
+          "E": 0.9333,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 0.8,
+              "detail": "47 total, 2 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.38553528515
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.89,
+        "description": "FIND — Config-driven CLI validation checks `args.pattern` instead of the effective config value `cfg.pattern`. Evidence: `main()` builds `cfg = RunnerConfig.from_json(args.config)` when `--config` is used, then later validates `if args.pattern not in INTERACTION_PATTERN_PRESETS:`. This is the wrong source of truth for config-driven runs. Concrete trace: `python3 bench/reference_runner.py run --config experiment.json` where JSON sets `\"pattern\": \"fff\"` or another preset. Expected: validate `cfg.p",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`main()` validates `args.pattern` instead of the effective runtime value `cfg.pattern`. Premises observed: in `--config` branch `cfg = RunnerConfig.from_json(args.config)` and pattern is not overwritt"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0015"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0015"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "merged_into": "C0015"
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.72,
+        "description": "FIND — `_dispatch_round_star()` and `_dispatch_round_relay()` create `ThreadPoolExecutor(max_workers=len(eligible))` without guarding the empty-model case. Evidence: `eligible` is built from `exp_config.models` filtered by `cfg.models` and `mc.role != 'collator'`; if user config selects zero valid participants, `len(eligible)==0`. Python requires `max_workers >= 1`. Concrete trace: JSON config with `\"models\": []`, or all selected labels absent from `exp_config.models`, or only collators. Expecte",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n====\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    if not eligible:\n        raise ValueError(\"No eligible models selected for this run\")\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n====\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    if not eligible:\n        raise ValueError(\"No eligible models selected for this run\")\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n>>>> REPLACE",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0016"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0016"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 2,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_ambiguous"
+          }
+        },
+        "merged_into": "C0016"
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.67,
+        "description": "FIND — Endocrine context telemetry counts response sizes, not prompt/context sizes, while storing the metric in `cumulative_context_chars` / `per_model_context`. Evidence: after dispatch, `for label, text in responses.items(): per_model_context[label] = ... + len(text); cumulative_context_chars += len(text)`. The variable name and downstream call `endo.run(... cumulative_context_chars=cumulative_context_chars, context_budget=...)` imply prompt/context load, but the implementation measures output",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        round_timings = _build_round_timings(responses, per_model_durations, findings, round_idx)\n        for label, text in responses.items():\n            per_model_context[label] = per_model_context.get(label, 0) + len(text)\n            cumulative_context_chars += len(text)\n====\n        round_timings = _build_round_timings(responses, per_model_durations, findings, round_idx)\n        for label, prompt_len in prompt_lengths.items():\n            per_model_context[label] = per_model_context.get(label, 0) + prompt_len\n            cumulative_context_chars += prompt_len\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.61,
+        "description": "FIND — MERGE deadlock escalation is advisory-only and does not transition the finding out of the active workflow. Evidence: in `_update_finding_statuses()`, when conflicting merge targets persist and `defer_count >= max_defer`, code sets `entry['hil_escalated']=True` and `entry['hil_reason']=...` but does not call `registry.resolve(...)`. The finding remains OPEN/CONTESTED/REOPENED. Concrete trace: one finding receives alternating `MERGE` votes toward `C0001` and `C0002` for enough rounds to hit",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n                if defer_count >= max_defer:\n                    # Deadlock: escalate to HIL, remove from active merge\n                    entry[\"hil_escalated\"] = True\n                    entry[\"hil_reason\"] = (\n                        f\"MERGE deadlock for {defer_count} rounds, \"\n                        f\"targets: {', '.join(by_target.keys())}\"\n                    )\n                    _log(f\"  D4 MERGE DEADLOCK {canonical_id}: \"\n                         f\"escalated to HIL after {defer_count} rounds\")\n                else:\n====\n                if defer_count >= max_defer:\n                    # Deadlock: escalate to HIL and transition out of the\n                    # active autonomous workflow.\n                    registry.resolve(canonical_id, \"UNCONFIRMED\", round_idx)\n                    entry[\"hil_escalated\"] = True\n                    entry[\"hil_reason\"] = (\n                        f\"MERGE deadlock for {defer_count} rounds, \"\n                        f\"targets: {', '.join(by_target.keys())}\"\n                    )\n                    _log(f\"  D4 MERGE DEADLOCK {canonical_id}: \"\n                         f\"escalated to HIL after {defer_count} rounds\")\n                else:\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.58,
+        "description": "FIND — Wall-clock deadline is enforced only at round boundaries; subprocess-based verification helpers use fixed per-call timeouts and do not receive the remaining experiment budget. Evidence: `run_experiment()` checks `wall_elapsed > cfg.wall_clock_cap_s` before a round, but `_run_effect_regression(... timeout=120)`, `_run_effect_ruff(... timeout=30)`, and `_run_effect_bandit(... timeout=30)` have hardcoded values and no remaining-deadline parameter. Concrete trace: with 10 seconds left before ",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _run_effect_regression(\n    modified_source: str, source_path: str, test_cmd: Optional[str] = None,\n) -> Tuple[Optional[float], str]:\n====\ndef _run_effect_regression(\n    modified_source: str, source_path: str, test_cmd: Optional[str] = None,\n    timeout_s: int = 120,\n) -> Tuple[Optional[float], str]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n                shlex.split(test_cmd),\n                capture_output=True, text=True, timeout=120,\n                cwd=str(sandbox),\n====\n                shlex.split(test_cmd),\n                capture_output=True, text=True, timeout=timeout_s,\n                cwd=str(sandbox),\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\ndef _run_effect_ruff(\n    modified_source: str, baseline_violations: Optional[int],\n    source_path: str = \"\",\n) -> Tuple[Optional[float], str]:\n====\ndef _run_effect_ruff(\n    modified_source: str, baseline_violations: Optional[int],\n    source_path: str = \"\", timeout_s: int = 30,\n) -> Tuple[Optional[float], str]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            [sys.executable, \"-m\", \"ruff\", \"check\", tmp_path,\n             \"--output-format=json\", \"--quiet\"],\n            capture_output=True, text=True, timeout=30,\n====\n            [sys.executable, \"-m\", \"ruff\", \"check\", tmp_path,\n             \"--output-format=json\", \"--quiet\"],\n            capture_output=True, text=True, timeout=timeout_s,\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\ndef _run_effect_bandit(\n    modified_source: str, baseline_findings: Optional[Dict[str, int]],\n    source_path: str = \"\",\n) -> Tuple[Optional[float], str]:\n====\ndef _run_effect_bandit(\n    modified_source: str, baseline_findings: Optional[Dict[str, int]],\n    source_path: str = \"\", timeout_s: int = 30,\n) -> Tuple[Optional[float], str]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            [sys.executable, \"-m\", \"bandit\", \"-f\", \"json\", tmp_path],\n            capture_output=True, text=True, timeout=30,\n====\n            [sys.executable, \"-m\", \"bandit\", \"-f\", \"json\", tmp_path],\n            capture_output=True, text=True, timeout=timeout_s,\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Known limitation of round-based loops, low severity."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 6,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_ambiguous"
+          }
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F007"
+        ],
+        "severity": 0.49,
+        "description": "FIND — Persistence is only partially atomic: `runner_state.json` uses temp-file replace, but fingerprint files, final reports, and HIL partial reports are written directly with `write_text()`. Evidence: `_save_fingerprints()` writes each JSON directly; `partial_report.write_text(...)` is used in both HIL pause paths; final `report_path.write_text(...)` is also direct. Concrete trace: process receives SIGKILL during report or fingerprint write. Expected: previous valid file remains intact. Actual",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        fp_path = FINGERPRINT_DIR / f\"{model_id}.json\"\n        fp_path.write_text(json.dumps(fp_data, indent=2), encoding=\"utf-8\")\n====\n        fp_path = FINGERPRINT_DIR / f\"{model_id}.json\"\n        fp_tmp = fp_path.with_suffix(\".json.tmp\")\n        fp_tmp.write_text(json.dumps(fp_data, indent=2), encoding=\"utf-8\")\n        fp_tmp.replace(fp_path)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            partial_report = logs_dir / f\"{cfg.experiment_name}_hil_r{round_idx:02d}.json\"\n            partial_report.write_text(\n                json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                encoding=\"utf-8\",\n            )\n====\n            partial_report = logs_dir / f\"{cfg.experiment_name}_hil_r{round_idx:02d}.json\"\n            partial_tmp = partial_report.with_suffix(\".json.tmp\")\n            partial_tmp.write_text(\n                json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                encoding=\"utf-8\",\n            )\n            partial_tmp.replace(partial_report)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n====\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_tmp = partial_report.with_suffix(\".json.tmp\")\n                    partial_tmp.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    partial_tmp.replace(partial_report)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    report_path = logs_dir / f\"{cfg.experiment_name}_report.json\"\n    report_path.write_text(\n        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n        encoding=\"utf-8\",\n    )\n====\n    report_path = logs_dir / f\"{cfg.experiment_name}_report.json\"\n    report_tmp = report_path.with_suffix(\".json.tmp\")\n    report_tmp.write_text(\n        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n        encoding=\"utf-8\",\n    )\n    report_tmp.replace(report_path)\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 4,
+          "blocks_applied": 4,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F008"
+        ],
+        "severity": 0.47,
+        "description": "FIND — `_load_fingerprints()` silently discards corrupted fingerprint files via `except (json.JSONDecodeError, OSError): pass`. Evidence: this function is the load path for context-budget adaptation state, and the same file set is written non-atomically elsewhere in the runner. Concrete trace: fingerprint JSON gets truncated on prior shutdown, next run loads it, exception is swallowed, and the model starts with no observed fingerprint data. Expected: operator-visible warning and continued load o",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        except (json.JSONDecodeError, OSError):\n            pass\n====\n        except (json.JSONDecodeError, OSError) as e:\n            _log(f\"  WARNING: failed to load fingerprint {fp_file.name}: {e}\")\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Silently discarding corrupted cache files and starting fresh is standard and acceptable behaviour for fingerprints."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F009"
+        ],
+        "severity": 0.41,
+        "description": "FIND — `_run_effect_ruff()`, `_run_effect_bandit()`, and `_capture_baseline()` unconditionally call `os.unlink(tmp_path)` in `finally` blocks without guarding `FileNotFoundError`/`OSError`. Evidence: `_run_hard_gate_compile()` already uses a guarded unlink, showing the safer pattern exists in the same file. Concrete trace: temp file removed externally or by unusual filesystem behavior after subprocess completion. Expected: helper returns the already computed result. Actual: cleanup exception can",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    finally:\n        os.unlink(tmp_path)\n====\n    finally:\n        try:\n            os.unlink(tmp_path)\n        except FileNotFoundError:\n            pass\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    finally:\n        os.unlink(tmp_path)\n====\n    finally:\n        try:\n            os.unlink(tmp_path)\n        except FileNotFoundError:\n            pass\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    finally:\n        os.unlink(tmp_path)\n====\n    finally:\n        try:\n            os.unlink(tmp_path)\n        except FileNotFoundError:\n            pass\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`tmp_path` is assigned before the `try` block. If `NamedTemporaryFile` fails, the exception propagates before reaching `finally`."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 3,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_ambiguous"
+          }
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.86,
+        "description": "FIND — burst-mode resume restores `burst_state` but not `burst_plan`, so resumed burst runs can skip remaining phases and fall through to non-burst final convergence. Premises: (1) `burst_plan` is built only in the initial burst-planning block before resume restoration. (2) Resume later loads `ckpt_data.get('burst_state')` and assigns `burst_state = _restored_burst`. (3) Phase-transition logic is guarded by `if burst_plan and burst_state and not burst_state['integration_done']:`. (4) The checkpo",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n            # R39-04: Restore burst_state if it was persisted\n            _restored_burst = ckpt_data.get(\"burst_state\")\n            if _restored_burst and isinstance(_restored_burst, dict):\n                burst_state = _restored_burst\n                _log(f\"  Burst state restored: phase_idx={burst_state.get('phase_idx', 0)}\")\n            _log(f\"  Registry restored: {len(registry.entries)} entries\")\n====\n            # R39-04: Restore burst_state if it was persisted\n            _restored_burst = ckpt_data.get(\"burst_state\")\n            if _restored_burst and isinstance(_restored_burst, dict):\n                burst_state = _restored_burst\n                _log(f\"  Burst state restored: phase_idx={burst_state.get('phase_idx', 0)}\")\n                # Rebuild burst plan on resume so phase transitions remain valid.\n                if cfg.burst_mode != \"off\":\n                    from bench.burst_planner import plan_phases, extract_signatures\n                    burst_plan = plan_phases(\n                        target_text, MODEL_SPECS, INITIAL_FINGERPRINTS,\n                        sorted(baseline), str(target_rel),\n                    )\n                    ctx_sigs = \"\"\n                    for ctx_path in context_paths:\n                        try:\n                            ctx_text = ctx_path.read_text(encoding=\"utf-8\")\n                            ctx_sigs += (\n                                f\"# === {ctx_path.name} ===\\n\"\n                                + extract_signatures(ctx_text) + \"\\n\"\n                            )\n                        except Exception:\n                            pass\n                    burst_state.setdefault(\"context_signatures\", ctx_sigs)\n            _log(f\"  Registry restored: {len(registry.entries)} entries\")\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "F002"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.79,
+        "description": "FIND — when `--config` is used, CLI pattern validation checks `args.pattern` instead of the effective runtime value `cfg.pattern`. Premises: (1) `cfg = RunnerConfig.from_json(args.config)` loads `cfg.pattern` from JSON. (2) After config construction, main validates `if args.pattern not in INTERACTION_PATTERN_PRESETS:`. (3) argparse gives `--pattern` a default of `'fff'`, so `args.pattern` is populated even when the user did not pass it. (4) Dispatch later uses `cfg.pattern`, not `args.pattern`, ",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.72,
+        "description": "FIND — both `_dispatch_round_star` and `_dispatch_round_relay` create `ThreadPoolExecutor(max_workers=len(eligible))` without guarding the empty-model case, which raises `ValueError` when `eligible == []`. Premises: (1) `eligible = [mc for mc in exp_config.models if mc.label in baseline and mc.role != 'collator']`. (2) The code immediately executes `ThreadPoolExecutor(max_workers=len(eligible))`. (3) Python requires `max_workers > 0`. Concrete trace: JSON config supplies `models: []` or only unk",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n====\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    if not eligible:\n        return [], {}, {}, {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n====\n    logs_dir = brain.logs_dir\n    prompt_lengths: Dict[str, int] = {}\n    if not eligible:\n        return [], {}, {}, {}\n    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 2,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_ambiguous"
+          }
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.68,
+        "description": "FIND — burst-mode HIL exits do not save the later brain checkpoint, unlike monolithic HIL exits, so persisted state can be stale at the pause boundary. Premises: (1) In the monolithic HIL gate, before `sys.exit(42)`, the runner explicitly calls `brain._save_checkpoint()` with a comment explaining that the earlier persist call misses later pipeline results. (2) In the burst-mode phase-boundary HIL gate, the code writes only a partial report and exits. (3) The same round has already run immune pip",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n                if cfg.hil_review:\n                    _log(f\"\\n  ═══ HIL REVIEW GATE — Phase '{current_phase_name}' \"\n                         f\"converged ({reason_type}) ═══\")\n                    _log(f\"  Findings summary:\\n{burst_state['phase_findings'][current_phase_name]}\")\n                    _log(f\"  Registry total: {len(registry.entries)}\")\n                    remaining = len(burst_plan.phases) - phase_idx - 1\n                    _log(f\"  Phases remaining: {remaining} + integration\")\n                    _log(f\"  Checkpoint saved. Resume with --resume --hil-review\")\n                    _log(f\"  ═══════════════════════════════════════════════════\\n\")\n                    result[\"hil_paused_at_round\"] = round_idx\n                    result[\"hil_paused_at_phase\"] = current_phase_name\n                    result[\"hil_status\"] = \"paused_for_review\"\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    sys.exit(42)\n====\n                if cfg.hil_review:\n                    _log(f\"\\n  ═══ HIL REVIEW GATE — Phase '{current_phase_name}' \"\n                         f\"converged ({reason_type}) ═══\")\n                    _log(f\"  Findings summary:\\n{burst_state['phase_findings'][current_phase_name]}\")\n                    _log(f\"  Registry total: {len(registry.entries)}\")\n                    remaining = len(burst_plan.phases) - phase_idx - 1\n                    _log(f\"  Phases remaining: {remaining} + integration\")\n                    _log(f\"  Checkpoint saved. Resume with --resume --hil-review\")\n                    _log(f\"  ═══════════════════════════════════════════════════\\n\")\n                    brain._save_checkpoint()\n                    result[\"hil_paused_at_round\"] = round_idx\n                    result[\"hil_paused_at_phase\"] = current_phase_name\n                    result[\"hil_status\"] = \"paused_for_review\"\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    sys.exit(42)\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0029"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.61,
+        "description": "FIND — `_dispatch_single_model` catches `Exception` in the same tuple as operational failures, converting internal programming errors into model dispatch failures. Premises: (1) The handler is `except (CircuitBreakerTripped, TimeoutError, Exception) as e:`. (2) Including `Exception` subsumes the specific exception types. (3) The handler logs, attempts multi-turn fallback, and finally returns `__DISPATCH_FAILED__...`. Concrete trace: if `parse_findings(...)` raises due to a parser bug or if `_com",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    except (CircuitBreakerTripped, TimeoutError, Exception) as e:\n        _log(f\"  {mc.label}: {type(e).__name__} — {e}\")\n        fallback = _multiturn_fallback(\n            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)\n        if fallback is not None:\n            text, elapsed = fallback\n            _record_throughput(mc.label, len(prompt), elapsed)\n            model_findings = parse_findings(mc.label, round_idx, text)\n            logs_dir.mkdir(parents=True, exist_ok=True)\n            save_output(\n                logs_dir, f\"r{round_idx}\", mc.label, prompt[:200] + \"...\", text,\n                metadata={\"round\": round_idx, \"elapsed\": round(elapsed, 1),\n                          \"chars\": len(text), \"findings_count\": len(model_findings),\n                          \"decomposed\": True, \"multiturn\": True})\n            return model_findings, text\n        return [], f\"__DISPATCH_FAILED__:{type(e).__name__}: {e}\"\n====\n    except (CircuitBreakerTripped, TimeoutError) as e:\n        _log(f\"  {mc.label}: {type(e).__name__} — {e}\")\n        fallback = _multiturn_fallback(\n            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)\n        if fallback is not None:\n            text, elapsed = fallback\n            _record_throughput(mc.label, len(prompt), elapsed)\n            model_findings = parse_findings(mc.label, round_idx, text)\n            logs_dir.mkdir(parents=True, exist_ok=True)\n            save_output(\n                logs_dir, f\"r{round_idx}\", mc.label, prompt[:200] + \"...\", text,\n                metadata={\"round\": round_idx, \"elapsed\": round(elapsed, 1),\n                          \"chars\": len(text), \"findings_count\": len(model_findings),\n                          \"decomposed\": True, \"multiturn\": True})\n            return model_findings, text\n        return [], f\"__DISPATCH_FAILED__:{type(e).__name__}: {e}\"\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Catching `Exception` is intentional here to prevent a bug in one model's worker process from crashing the entire round."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.49,
+        "description": "FIND — module-global ITC and shadow-cell state is not reset at fresh experiment start, so multiple experiments in one Python process can contaminate each other. Premises: (1) `_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, and `_shadow_ouroboros` live at module scope. (2) `run_experiment()` initialises logs, brain, registry, etc. but does not clear those globals when `cfg.resume` is false. (3) The runner can be imported and invoked programmatically, not only as a one-shot CLI process",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef run_experiment(\n    exp_config: ExperimentConfig,\n    cdsfl_text: str,\n    cfg: RunnerConfig,\n) -> Dict[str, Any]:\n    \"\"\"Run a parameterised CDSFL experiment.\n\n    This is the generic entry point for Exp 37+ and Bench Run 2.\n    All experiment-specific parameters come from cfg (RunnerConfig).\n    \"\"\"\n    logs_dir = _find_or_create_logs_dir(cfg)\n====\ndef run_experiment(\n    exp_config: ExperimentConfig,\n    cdsfl_text: str,\n    cfg: RunnerConfig,\n) -> Dict[str, Any]:\n    \"\"\"Run a parameterised CDSFL experiment.\n\n    This is the generic entry point for Exp 37+ and Bench Run 2.\n    All experiment-specific parameters come from cfg (RunnerConfig).\n    \"\"\"\n    global _shadow_macrophage, _shadow_ouroboros\n    if not cfg.resume:\n        _itc_model_state.clear()\n        _itc_hil_flags.clear()\n        _shadow_macrophage = None\n        _shadow_ouroboros = None\n\n    logs_dir = _find_or_create_logs_dir(cfg)\n>>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.24,
+        "description": "FIND — `_dispatch_round_star` and `_dispatch_round_relay` are annotated as returning 3-tuples, but both return 4 values: `findings, responses, per_model_durations, prompt_lengths`. Premises: (1) Each function signature declares `-> Tuple[List[Finding], Dict[str, str], Dict[str, float]]`. (2) Each function ends with `return findings, responses, per_model_durations, prompt_lengths`. (3) Call sites unpack four values. Concrete trace: runtime succeeds because Python ignores annotations, but type che",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 3,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 2,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_ambiguous"
+          }
+        }
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.8,
+        "description": "FIND — Star topology `_make_prompt` ignores all ITC adaptations except `change_focus`. When `_itc_adapt` sets `strip_context`, `section_assign`, or `restart_fresh`, the star topology's `_dispatch_round_star._make_prompt` (lines ~1060-1080) only checks `if adaptation == \"change_focus\"` and ignores all other adaptation states. This means a model that hits `CAPABILITY_MISMATCH` (context overflow) receives the identical oversized prompt every subsequent round, wasting API calls until `_itc_flag_unde",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _make_prompt(mc_label: str) -> str:\n        if round_idx == 0:\n            return base_prompt\n        adaptation = _itc_get_adaptation(mc_label)\n        focus_prefix = \"\"\n        if adaptation == \"change_focus\" and registry is not None:\n            focus_prefix = _build_change_focus_instruction(registry, round_idx)\n        star_section = (\n            f\"{registry_summary}\\n\\n\"\n            f\"This is Round {round_idx}. Review the registry above. \"\n            f\"File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n\"\n        )\n        combined = f\"{focus_prefix}{star_section}\"\n        if \"=== ARTIFACT:\" in base_prompt:\n            return base_prompt.replace(\"=== ARTIFACT:\", f\"{combined}=== ARTIFACT:\")\n        return f\"{base_prompt}\\n\\n{combined}\"\n==== REPLACE\ndef _make_prompt(mc_label: str) -> str:\n        if round_idx == 0:\n            return base_prompt\n        adaptation = _itc_get_adaptation(mc_label)\n        focus_prefix = \"\"\n        if adaptation == \"change_focus\" and registry is not None:\n            focus_prefix = _build_change_focus_instruction(registry, round_idx)\n        elif adaptation in (\"strip_context\", \"restart_fresh\", \"section_assign\"):\n            # F001 fix: apply ITC recovery to star topology prompts.\n            # Rebuild a reduced prompt using fingerprint-measured safe size.\n            recovered = _itc_build_recovery_prompt(\n                mc_label, base_prompt, observed_fingerprints, round_idx,\n            )\n            _itc_clear_adaptation(mc_label)\n            star_section = (\n                f\"{registry_summary}\\n\\n\"\n                f\"This is Round {round_idx}. Review the registry above. \"\n                f\"File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n\"\n            )\n            if \"=== ARTIFACT:\" in recovered:\n                return recovered.replace(\"=== ARTIFACT:\", f\"{star_section}=== ARTIFACT:\")\n            return f\"{recovered}\\n\\n{star_section}\"\n        star_section = (\n            f\"{registry_summary}\\n\\n\"\n            f\"This is Round {round_idx}. Review the registry above. \"\n            f\"File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n\"\n        )\n        combined = f\"{focus_prefix}{star_section}\"\n        if \"=== ARTIFACT:\" in base_prompt:\n            return base_prompt.replace(\"=== ARTIFACT:\", f\"{combined}=== ARTIFACT:\")\n        return f\"{base_prompt}\\n\\n{combined}\"\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Correct observation"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.75,
+        "description": "FIND — `_itc_build_recovery_prompt` (line ~808) claims to reduce context to `max_ok_chars` but includes the full, untruncated artifact section. The code extracts a 2000-char preamble and concatenates the ENTIRE artifact: `preamble + artifact`. If the artifact is 280K chars and `max_ok_chars` is 100K, the \"reduced\" prompt is still ~282K chars. The log message `\"context reduced to ~{max_ok_chars:,} chars\"` is misleading — no truncation occurs. This means even if F001 is fixed to wire up this funct",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nif max_ok_chars > 0 and len(base_prompt) > max_ok_chars:\n        artifact_start = base_prompt.find(\"=== ARTIFACT:\")\n        if artifact_start > 0:\n            preamble = base_prompt[:min(2000, artifact_start)]\n            artifact = base_prompt[artifact_start:]\n            return (\n                f\"{preamble}\\n\\n\"\n                f\"(Recovery dispatch — context reduced to ~{max_ok_chars:,} chars.)\\n\\n\"\n                f\"Focus on the most impactful findings. Quality over quantity.\\n\\n\"\n                f\"{artifact}\"\n            )\n==== REPLACE\nif max_ok_chars > 0 and len(base_prompt) > max_ok_chars:\n        artifact_start = base_prompt.find(\"=== ARTIFACT:\")\n        if artifact_start > 0:\n            preamble = base_prompt[:min(2000, artifact_start)]\n            artifact = base_prompt[artifact_start:]\n            # F002 fix: actually truncate the artifact to fit within\n            # max_ok_chars. Reserve space for preamble + recovery text.\n            overhead = len(preamble) + 200  # preamble + recovery message\n            artifact_budget = max(10_000, max_ok_chars - overhead)\n            if len(artifact) > artifact_budget:\n                artifact = artifact[:artifact_budget] + (\n                    f\"\\n\\n... (artifact truncated from {len(artifact):,} \"\n                    f\"to {artifact_budget:,} chars for context recovery)\\n\"\n                )\n            return (\n                f\"{preamble}\\n\\n\"\n                f\"(Recovery dispatch — context reduced to ~{max_ok_chars:,} chars.)\\n\\n\"\n                f\"Focus on the most impactful findings. Quality over quantity.\\n\\n\"\n                f\"{artifact}\"\n            )\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.65,
+        "description": "FIND — `_evaluate_gate_conditions` deduplicates consecutive identical `open_ch_history` entries (line ~571), which prevents the stability window check from ever accumulating enough history when `open_ch` is stable and non-zero. The guard `if not open_ch_history or open_ch_history[-1] != open_ch` was intended (per the F12 comment) to prevent double-counting from multiple calls per round, but it suppresses exactly the signal the stability check needs: consecutive identical values across rounds. Wi",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n# F12 fix: guard against duplicate entries if called multiple times per round.\n    if open_ch_history is not None:\n        if not open_ch_history or open_ch_history[-1] != open_ch:\n            open_ch_history.append(open_ch)\n==== REPLACE\n# F12 fix (revised F003): always append — _evaluate_gate_conditions is\n    # called once per round, so within-round duplicates don't occur.\n    # The prior dedup guard suppressed consecutive identical values,\n    # preventing the stability window from detecting stable state.\n    if open_ch_history is not None:\n        open_ch_history.append(open_ch)\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.55,
+        "description": "FIND — Module-level mutable state (`_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, `_shadow_ouroboros`) is not cleared at the start of a fresh (non-resume) `run_experiment` call. If `run_experiment` is called multiple times in the same process (e.g., test harness, interactive use), ITC history, HIL flags, and shadow cell state from previous runs persist and contaminate the new run. The resume path correctly restores/clears this state, but the fresh-start path does not. Lines ~1289-12",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nexperiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n==== REPLACE\n# F004 fix: clear module-level mutable state on fresh (non-resume) starts.\n    if not cfg.resume:\n        _itc_model_state.clear()\n        _itc_hil_flags.clear()\n        global _shadow_macrophage, _shadow_ouroboros\n        _shadow_macrophage = None\n        _shadow_ouroboros = None\n\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0019"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.55,
+        "description": "FIND — `_evaluate_sk_for_findings` receives `str(target_rel)` (a relative path like `bench/reference_runner.py`) as `source_path` (line ~1485), but multiple S_k gate functions use `Path(source_path).parent` to anchor temp files for config discovery (`_run_hard_gate_compile`, `_run_effect_ruff`, `_run_effect_bandit`) and `Path(source_path).resolve()` for sandbox overlay (`_run_effect_regression`). These operations resolve relative to CWD. If CWD is not REPO_ROOT (e.g., running from a subdirectory",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n# S_k solution verification pipeline\n        sk_stats: Dict[str, Any] = {}\n        if cfg.sk_enabled:\n            sk_stats = _evaluate_sk_for_findings(\n                registry, target_text, str(target_rel),\n                baseline=sk_baseline,\n                round_idx=round_idx,\n                test_cmd=cfg.test_cmd,\n                s_floor=cfg.sk_s_floor,\n            )\n==== REPLACE\n# S_k solution verification pipeline\n        sk_stats: Dict[str, Any] = {}\n        if cfg.sk_enabled:\n            # F005 fix: pass absolute path so S_k gates anchor temp files\n            # correctly regardless of CWD.\n            sk_stats = _evaluate_sk_for_findings(\n                registry, target_text, str(target_path),\n                baseline=sk_baseline,\n                round_idx=round_idx,\n                test_cmd=cfg.test_cmd,\n                s_floor=cfg.sk_s_floor,\n            )\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS001"
+        ],
+        "severity": 0.8,
+        "description": "Race condition in module‑level globals `_itc_model_state` and `_itc_hil_flags` during concurrent dispatch via `ThreadPoolExecutor`. No locking protects these mutable structures, leading to potential corruption, crashes, or incorrect adaptation decisions.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n_itc_model_state: Dict[str, Dict[str, Any]] = {}\n_itc_hil_flags: List[Dict[str, Any]] = []\n==== REPLACE\nimport threading\n\n_itc_model_state: Dict[str, Dict[str, Any]] = {}\n_itc_hil_flags: List[Dict[str, Any]] = []\n_itc_lock = threading.RLock()\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`_itc_detect` is called sequentially in the main thread after the ThreadPoolExecutor finishes; there is no race condition."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS002"
+        ],
+        "severity": 0.95,
+        "description": "Command‑injection vulnerability in `_run_effect_regression` via `test_cmd`. User‑controlled input from config flows into `subprocess.run(shlex.split(test_cmd), ...)` without validation, allowing arbitrary command execution.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _run_effect_regression(\n    modified_source: str, source_path: str, test_cmd: Optional[str] = None,\n) -> Tuple[Optional[float], str]:\n    \"\"\"e2: Regression suite — run existing tests against modified source.\n\n    Returns (score in [0,1] or None if unavailable, detail). Copies the\n    entire repo into a sandbox, overlays the modified source, and runs\n    tests there so that pytest evaluates the actual proposed fix, not\n    the original.\n    \"\"\"\n    if not test_cmd:\n        return None, \"no test command configured\"\n    target_path = Path(source_path).resolve()\n    try:\n        rel_target = target_path.relative_to(REPO_ROOT)\n    except ValueError:\n        return None, f\"source not under REPO_ROOT\"\n    with tempfile.TemporaryDirectory() as tmpdir:\n        sandbox = Path(tmpdir) / \"sandbox\"\n        shutil.copytree(\n            REPO_ROOT, sandbox,\n            symlinks=True,\n            ignore=shutil.ignore_patterns(\n                \".git\", \"__pycache__\", \".pytest_cache\", \"*.pyc\", \"logs\",\n            ),\n        )\n        # Overlay the modified source into the sandbox\n        sandbox_target = sandbox / rel_target\n        sandbox_target.parent.mkdir(parents=True, exist_ok=True)\n        sandbox_target.write_text(modified_source, encoding=\"utf-8\")\n        try:\n            result = subprocess.run(\n                shlex.split(test_cmd),\n                capture_output=True, text=True, timeout=120,\n                cwd=str(sandbox),\n                env={os.environ, \"PYTHONDONTWRITEBYTECODE\": \"1\"},\n            )\n            output = result.stdout + result.stderr\n\n            m = re.search(r'(\\d+)\\s+passed', output)\n            passed = int(m.group(1)) if m else 0\n            m = re.search(r'(\\d+)\\s+failed', output)\n            failed = int(m.group(1)) if m else 0\n            collected_zero = bool(re.search(r'collected\\s+0\\s+items', output))\n\n            total = passed + failed\n            if total > 0:\n                score = passed / total\n                return score, f\"{passed}/{total} passed (sandbox)\"\n\n            # Genuine \"no tests\" — pytest exit code 5 = no tests collected\n            if collected_zero and result.returncode == 5:\n                return 1.0, \"no tests collected\"\n\n            # Unparseable output (collection error, crash, etc.) — unavailable\n            return None, (\n                f\"test results unavailable: rc={result.returncode} \"\n                f\"output={output[:200]!r}\"\n            )\n        except (subprocess.TimeoutExpired, OSError) as e:\n            return None, f\"test execution failed: {e}\"\n==== REPLACE\ndef _run_effect_regression(\n    modified_source: str, source_path: str, test_cmd: Optional[str] = None,\n) -> Tuple[Optional[float], str]:\n    \"\"\"e2: Regression suite — run existing tests against modified source.\n\n    Returns (score in [0,1] or None if unavailable, detail). Copies the\n    entire repo into a sandbox, overlays the modified source, and runs\n    tests there so that pytest evaluates the actual proposed fix, not\n    the original.\n    \"\"\"\n    if not test_cmd:\n        return None, \"no test command configured\"\n    # Security: validate test_cmd against allowed commands\n    allowed_commands = [\"pytest\", \"python -m pytest\", \"python3 -m pytest\"]\n    parts = shlex.split(test_cmd)\n    if not parts:\n        return None, \"empty test command\"\n    # Normalize the command (allow absolute paths and paths with .)\n    # We'll check the base command (first part) after removing path and extension\n    import os\n    base_cmd = os.path.basename(parts[0])\n    # Remove extension if present\n    base_cmd = os.path.splitext(base_cmd)[0]\n    # Check if the base command is in the allowed list (without extension)\n    allowed_bases = [cmd.split()[-1] for cmd in allowed_commands]  # last part of allowed command\n    if base_cmd not in allowed_bases:\n        return None, f\"test command not allowed: {base_cmd}\"\n    target_path = Path(source_path).resolve()\n    try:\n        rel_target = target_path.relative_to(REPO_ROOT)\n    except ValueError:\n        return None, f\"source not under REPO_ROOT\"\n    with tempfile.TemporaryDirectory() as tmpdir:\n        sandbox = Path(tmpdir) / \"sandbox\"\n        shutil.copytree(\n            REPO_ROOT, sandbox,\n            symlinks=True,\n            ignore=shutil.ignore_patterns(\n                \".git\", \"__pycache__\", \".pytest_cache\", \"*.pyc\", \"logs\",\n            ),\n        )\n        # Overlay the modified source into the sandbox\n        sandbox_target = sandbox / rel_target\n        sandbox_target.parent.mkdir(parents=True, exist_ok=True)\n        sandbox_target.write_text(modified_source, encoding=\"utf-8\")\n        try:\n            result = subprocess.run(\n                shlex.split(test_cmd),\n                capture_output=True, text=True, timeout=120,\n                cwd=str(sandbox),\n                env={os.environ, \"PYTHONDONTWRITEBYTECODE\": \"1\"},\n            )\n            output = result.stdout + result.stderr\n\n            m = re.search(r'(",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS003"
+        ],
+        "severity": 0.3,
+        "description": "Missing `encoding=\"utf-8\"` in `ctx_path.read_text()` call in `parse_search_replace_blocks` fallback (line ~2120). Uses platform‑dependent default encoding, risking `UnicodeDecodeError` on non‑UTF‑8 locales.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n# P1 fallback: extract from markdown code blocks with file path comments.\n        # Models sometimes use ```python\\n# file: path/to/file.py\\n... instead of\n        # <<<< SEARCH blocks. Look for paired \"before\"/\"after\" or \"current\"/\"fixed\"\n        # code blocks.\n        #\n        # SHADOW MODE (Exp 39): log what the fallback would extract but do not\n        # return the blocks. This gives empirical data on firing rate and\n        # precision without confounding the Exp 39 fix validation.\n        if not blocks:\n            _MD_BLOCK_RE = re.compile(\n                r'```\\w*\\n(?:#\\s*(?:file|path|target):\\s*([^\\n]+)\\n)?'\n                r'(.*?)\\n```',\n                re.DOTALL\n            )\n            md_blocks = list(_MD_BLOCK_RE.finditer(text))\n            if len(md_blocks) >= 2:\n                shadow_blocks: List[FixBlock] = []\n                for j in range(len(md_blocks) - 1):\n                    b1, b2 = md_blocks[j], md_blocks[j + 1]\n                    between = text[b1.end():b2.start()].lower()\n                    if any(kw in between for kw in (\"after\", \"replace\", \"fixed\", \"corrected\", \"new\")):\n                        fp = b1.group(1) or b2.group(1) or \"\"\n                        search = b1.group(2).strip()\n                        replace_text = b2.group(2).strip()\n                        if fp and search:\n                            shadow_blocks.append(FixBlock(\n                                file_path=fp.strip(),\n                                search=search,\n                                replace=replace_text,\n                            ))\n                if shadow_blocks:\n                    _log(f\"  P1 SHADOW: fallback parser found {len(shadow_blocks)} \"\n                         f\"block(s) from markdown — NOT applied. \"\n                         f\"Files: {[b.file_path for b in shadow_blocks]}, \"\n                         f\"search_lens: {[len(b.search) for b in shadow_blocks]}\")\n        return blocks\n==== REPLACE\n# P1 fallback: extract from markdown code blocks with file path comments.\n        # Models sometimes use ```python\\n# file: path/to/file.py\\n... instead of\n        # <<<< SEARCH blocks. Look for paired \"before\"/\"after\" or \"current\"/\"fixed\"\n        # code blocks.\n        #\n        # SHADOW MODE (Exp 39): log what the fallback would extract but do not\n        # return the blocks. This gives empirical data on firing rate and\n        # precision without confounding the Exp 39 fix validation.\n        if not blocks:\n            _MD_BLOCK_RE = re.compile(\n                r'```\\w*\\n(?:#\\s*(?:file|path|target):\\s*([^\\n]+)\\n)?'\n                r'(.*?)\\n```',\n                re.DOTALL\n            )\n            md_blocks = list(_MD_BLOCK_RE.finditer(text))\n            if len(md_blocks) >= 2:\n                shadow_blocks: List[FixBlock] = []\n                for j in range(len(md_blocks) - 1):\n                    b1, b2 = md_blocks[j], md_blocks[j + 1]\n                    between = text[b1.end():b2.start()].lower()\n                    if any(kw in between for kw in (\"after\", \"replace\", \"fixed\", \"corrected\", \"new\")):\n                        fp = b1.group(1) or b2.group(1) or \"\"\n                        search = b1.group(2).strip()\n                        replace_text = b2.group(2).strip()\n                        if fp and search:\n                            shadow_blocks.append(FixBlock(\n                                file_path=fp.strip(),\n                                search=search,\n                                replace=replace_text,\n                            ))\n                if shadow_blocks:\n                    _log(f\"  P1 SHADOW: fallback parser found {len(shadow_blocks)} \"\n                         f\"block(s) from markdown — NOT applied. \"\n                         f\"Files: {[b.file_path for b in shadow_blocks]}, \"\n                         f\"search_lens: {[len(b.search) for b in shadow_blocks]}\")\n        return blocks\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`parse_search_replace_blocks` operates on a string in memory and does not call `read_text()`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_C0029"
+        ],
+        "severity": 0.5,
+        "description": "Burst-mode HIL exit (line 3453) does not call `brain._save_checkpoint()` before `sys.exit(42)`. The monolithic HIL path (line 3391) does. On burst HIL resume, the last round's immune pipeline results, S_k evaluations, and post-dispatch registry mutations are lost because only the pre-immune checkpoint (from `persist()` earlier in the loop) survives.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\npartial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    sys.exit(42)\n==== REPLACE\nbrain._save_checkpoint()\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    sys.exit(42)\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_C0030"
+        ],
+        "severity": 0.5,
+        "description": "`auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`), but the window is asymmetric with how verdicts are timestamped. A CONFIRM verdict issued in the same round as the auto-resolve check (round N) with `v[\"round\"] == N` passes the filter, but the auto-resolve runs BEFORE new verdicts from round N are registered (verdicts are added during dispatch, auto-resolve runs post-dispatch). This means the window effectively covers rounds",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nrecent_verdicts = [\n            v for v in entry.get(\"verdicts\", [])\n            if v.get(\"round\", 0) >= current_round - 2\n        ]\n==== REPLACE\nrecent_verdicts = [\n            v for v in entry.get(\"verdicts\", [])\n            if v.get(\"round\", 0) >= current_round - 3\n            and v.get(\"round\", 0) < current_round\n        ]\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`auto_resolve_contested` logic is correct; it checks `if entry.get(\"status\") != \"CONTESTED\": continue` before counting."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_C0031"
+        ],
+        "severity": 0.5,
+        "description": "`_run_effect_regression` (lines 2238-2251) scoring logic treats \"no tests collected\" (pytest exit code 5) as a perfect score of 1.0. A SEARCH/REPLACE fix that silently deletes or breaks the test file would score S_k = 1.0 on the regression gate because no tests fail — they simply don't exist in the sandbox. This creates a perverse incentive in the S_k pipeline: destructive fixes that remove testable surface score higher than constructive fixes that expose failures.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\npassed = int(m.group(1)) if re.search(r'(\\d+)\\s+passed', output) else 0\n    failed = int(m.group(1)) if re.search(r'(\\d+)\\s+failed', output) else 0\n    total = passed + failed\n    if total > 0:\n        score = passed / total\n        return score, f\"{passed}/{total} passed (sandbox)\"\n==== REPLACE\nm_passed = re.search(r'(\\d+)\\s+passed', output)\n    m_failed = re.search(r'(\\d+)\\s+failed', output)\n    passed = int(m_passed.group(1)) if m_passed else 0\n    failed = int(m_failed.group(1)) if m_failed else 0\n    total = passed + failed\n    if total > 0:\n        score = passed / total\n        return score, f\"{passed}/{total} passed (sandbox)\"\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Fix is correct"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 1.0,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.9,\n    \"DESCRIPTION\": \"FIND — The prompt generation code contains a massive hardcoded string of the Round 2 registry state injected by a bad SEARCH/REPLACE block in a previous round. This completely breaks the runner because it ignores the actual dynamic registry state and always injects the hardcoded Round 2 state into the prompt. Evidence: `_itc_build_recovery_prompt`, `_dispatch_round_star`, `",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.83,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.73,\n    \"DESCRIPTION\": \"FIND — `run_experiment()` registers findings as novel using only `(model_id, finding_id)` alias lookup, which is not runner-enforced stable identity. Location: registration block after dispatch: `existing = registry.lookup_alias(f.model_id, f.finding_id)`. Premises: (1) prompts request STABLE IDs but code does not enforce stability, (2) relay/star adaptive rounds can caus",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== FINDING REGISTRY (Round 3) ===\\nTotal: 32 canonical findings\\nActive: 32 | Settled: 0 | Hidden: 0\\nOpen CRIT/HIGH: 14\\n\\n--- OPEN (32) ---\\n  C0005 (sev 0.95) [ChatGPT] FIND — Burst-mode resume restores `burst_state` from `runner_state.json` but does not reconstruct the active phase/integ\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    experiment_start = time.monotonic()\\n    effective_max = cf\\n  C0027 (sev 0.95) [DeepSeek] Command‑injection vulnerability in `_run_effect_regression` via `test_cmd`. User‑controlled input from config flows into\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0006 (sev 0.89) [ChatGPT] FIND — Config-driven CLI validation checks `args.pattern` instead of the effective config value `cfg.pattern`. Evidence:\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0014 (sev 0.86) [Codex] FIND — burst-mode resume restores `burst_state` but not `burst_plan`, so resumed burst runs can skip remaining phases an\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n            # R39-04: Restore burst_state if it was persisted\\n\\n  C0001 (sev 0.80) [Gemini] FIND — `_itc_detect` penalises models for correctly transitioning to pure-verdict behaviour. If a model outputs 0 findin\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif findings_count == 0 and len(response_text) > 200:\\n        h\\n  C0002 (sev 0.80) [Gemini] FIND — The ITC context stripping recovery mechanism is dead code. `_itc_build_recovery_prompt` is defined to reduce the \\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _dispatch_round_star(\\n    exp_config: ExperimentConfig, mg\\n  C0021 (sev 0.80) [CC2] FIND — Star topology `_make_prompt` ignores all ITC adaptations except `change_focus`. When `_itc_adapt` sets `strip_con\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _make_prompt(mc_label: str) -> str:\\n        if round_idx =\\n  C0026 (sev 0.80) [DeepSeek] Race condition in module‑level globals `_itc_model_state` and `_itc_hil_flags` during concurrent dispatch via `ThreadPoo\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n_itc_model_state: Dict[str, Dict[str, Any]] = {}\\n_itc_hil_flag\\n  C0015 (sev 0.79) [Codex] FIND — when `--config` is used, CLI pattern validation checks `args.pattern` instead of the effective runtime value `cfg\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0022 (sev 0.75) [CC2] FIND — `_itc_build_recovery_prompt` (line ~808) claims to reduce context to `max_ok_chars` but includes the full, untrun\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif max_ok_chars > 0 and len(base_prompt) > max_ok_chars:\\n     \\n  C0007 (sev 0.72) [ChatGPT] FIND — `_dispatch_round_star()` and `_dispatch_round_relay()` create `ThreadPoolExecutor(max_workers=len(eligible))` wit\\n    Verdicts: ChatGPT:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0016 (sev 0.72) [Codex] FIND — both `_dispatch_round_star` and `_dispatch_round_relay` create `ThreadPoolExecutor(max_workers=len(eligible))` wi\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0003 (sev 0.70) [Gemini] FIND — The \\\"F12 fix\\\" in `_evaluate_gate_conditions` breaks the `open_ch_history` stability window. It only appends to th\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0004 (sev 0.70) [Gemini] FIND — `_verification_step` processes CC2v verdicts and resolves finding statuses, but never calls `registry.add_verdict\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif finding_id not in batch_ids:\\n            continue\\n        s\\n  C0017 (sev 0.68) [Codex] FIND — burst-mode HIL exits do not save the later brain checkpoint, unlike monolithic HIL exits, so persisted state can \\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if cfg.hil_review:\\n                    _log(f\\\"\\n  C0008 (sev 0.67) [ChatGPT] FIND — Endocrine context telemetry counts response sizes, not prompt/context sizes, while storing the metric in `cumulat\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        round_timings = _build_round_timings(responses, per_mo\\n  C0023 (sev 0.65) [CC2] FIND — `_evaluate_gate_conditions` deduplicates consecutive identical `open_ch_history` entries (line ~571), which preve\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0009 (sev 0.61) [ChatGPT] FIND — MERGE deadlock escalation is advisory-only and does not transition the finding out of the active workflow. Eviden\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if defer_count >= max_defer:\\n                 \\n  C0018 (sev 0.61) [Codex] FIND — `_dispatch_single_model` catches `Exception` in the same tuple as operational failures, converting internal progr\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    except (CircuitBreakerTripped, TimeoutError, Exception) as\\n  C0010 (sev 0.58) [ChatGPT] FIND — Wall-clock deadline is enforced only at round boundaries; subprocess-based verification helpers use fixed per-cal\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0024 (sev 0.55) [CC2] FIND — Module-level mutable state (`_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, `_shadow_ouroboros`) is n\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nexperiment_start = time.monotonic()\\n    effective_max = cfg.ma\\n  C0025 (sev 0.55) [CC2] FIND — `_evaluate_sk_for_findings` receives `str(target_rel)` (a relative path like `bench/reference_runner.py`) as `sou\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# S_k solution verification pipeline\\n        sk_stats: Dict[st\\n  C0029 (sev 0.50) [CC2] Burst-mode HIL exit (line 3453) does not call `brain._save_checkpoint()` before `sys.exit(42)`. The monolithic HIL path \\n    Fix: <<<< SEARCH bench/reference_runner.py\\npartial_report = logs_dir / f\\\"{cfg.experiment_name}_hil_phase_\\n  C0030 (sev 0.50) [CC2] `auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nrecent_verdicts = [\\n            v for v in entry.get(\\\"verdicts\\n  C0031 (sev 0.50) [CC2] `_run_effect_regression` (lines 2238-2251) scoring logic treats \\\"no tests collected\\\" (pytest exit code 5) as a perfect s\\n    Fix: <<<< SEARCH bench/reference_runner.py\\npassed = int(m.group(1)) if re.search(r'(\\\\d+)\\\\s+passed', outpu\\n  C0011 (sev 0.49) [ChatGPT] FIND — Persistence is only partially atomic: `runner_state.json` uses temp-file replace, but fingerprint files, final re\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        fp_path = FINGERPRINT_DIR / f\\\"{model_id}.json\\\"\\n       \\n  C0019 (sev 0.49) [Codex] FIND — module-global ITC and shadow-cell state is not reset at fresh experiment start, so multiple experiments in one Py\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef run_experiment(\\n    exp_config: ExperimentConfig,\\n    cdsf\\n  C0012 (sev 0.47) [ChatGPT] FIND — `_load_fingerprints()` silently discards corrupted fingerprint files via `except (json.JSONDecodeError, OSError):\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        except (json.JSONDecodeError, OSError):\\n            pa\\n  C0013 (sev 0.41) [ChatGPT] FIND — `_run_effect_ruff()`, `_run_effect_bandit()`, and `_capture_baseline()` unconditionally call `os.unlink(tmp_path)\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    finally:\\n        os.unlink(tmp_path)\\n====\\n    finally:\\n   \\n  C0028 (sev 0.30) [DeepSeek] Missing `encoding=\\\"utf-8\\\"` in `ctx_path.read_text()` call in `parse_search_replace_blocks` fallback (line ~2120). Uses p\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# P1 fallback: extract from markdown code blocks with file pat\\n  C0032 (sev 0.30) [Gemini] [\\n  {\\n    \\\"FINDING_ID\\\": \\\"F001\\\",\\n    \\\"SEVERITY\\\": 1.0,\\n    \\\"FLAW_CLASS\\\": 5,\\n    \\\"ABSTRACTION_INDEX\\\": 0.9,\\n    \\\"DESCRIPTION\\n  C0020 (sev 0.24) [Codex] FIND — `_dispatch_round_star` and `_dispatch_round_relay` are annotated as returning 3-tuples, but both return 4 values:\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\\n=\\n\\n=== END REGISTRY ===\\n=== PANEL METRICS (Round 3) ===\\nρ (discovery efficiency / semantic novelty rate) = 0.571\\nρ̄₃ (3-round rolling average) = 0.786\\nγ (Duane reliability growth) = 0.000\\nRegistry: 32 OPEN, 0 CONFIRMED, 0 CLOSED/MERGED\\n\\nInterpretation: Productive phase — continue finding and falsifying.\\n\\n\\nThis is Round 3. Review the registry above. File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n====\\n    def _build_prompt(code_payload: str, artifact_label: str = \\\"\\\") -> str:\\n        \\\"\\\"\\\"Build base prompt from awareness preamble + code payload.\\\"\\\"\\\"\\n        label = artifact_label or f\\\"{target_rel} + Context\\\"\\n        return (\\n            f\\\"{awareness_preamble}\\\"\\n            f\\\"YOUR TASK:\\\\n\\\"\\n            f\\\"Review {target_rel} under full CDSFL + FFF constraints.\\\\n\\\\n\\\"\\n            f\\\"For each finding, provide (keys in this exact order):\\\\n\\\"\\n            f\\\""
+        ],
+        "severity": 0.0,
+        "description": "FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n        ",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n>>>> REPLACE\","
+        ],
+        "severity": 0.0,
+        "description": "FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n        ",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      }
+    },
+    "next_id": 36,
+    "alias_map": {
+      "Gemini:Gemini_F001": "C0001",
+      "Gemini:Gemini_F002": "C0002",
+      "Gemini:Gemini_F003": "C0003",
+      "Gemini:Gemini_F004": "C0004",
+      "ChatGPT:ChatGPT_F001": "C0005",
+      "ChatGPT:ChatGPT_F002": "C0006",
+      "ChatGPT:ChatGPT_F003": "C0007",
+      "ChatGPT:ChatGPT_F004": "C0008",
+      "ChatGPT:ChatGPT_F005": "C0009",
+      "ChatGPT:ChatGPT_F006": "C0010",
+      "ChatGPT:ChatGPT_F007": "C0011",
+      "ChatGPT:ChatGPT_F008": "C0012",
+      "ChatGPT:ChatGPT_F009": "C0013",
+      "Codex:Codex_F001": "C0014",
+      "Codex:Codex_F002": "C0015",
+      "Codex:Codex_F003": "C0016",
+      "Codex:Codex_F004": "C0017",
+      "Codex:Codex_F005": "C0018",
+      "Codex:Codex_F006": "C0019",
+      "Codex:Codex_F007": "C0020",
+      "CC2:CC2_F001": "C0021",
+      "CC2:CC2_F002": "C0022",
+      "CC2:CC2_F003": "C0023",
+      "CC2:CC2_F004": "C0024",
+      "CC2:CC2_F005": "C0025",
+      "DeepSeek:DeepSeek_DS001": "C0026",
+      "DeepSeek:DeepSeek_DS002": "C0027",
+      "DeepSeek:DeepSeek_DS003": "C0028",
+      "CC2:CC2_C0029": "C0029",
+      "CC2:CC2_C0030": "C0030",
+      "CC2:CC2_C0031": "C0031",
+      "Gemini:Gemini_UNSTRUCTURED": "C0032",
+      "ChatGPT:ChatGPT_UNSTRUCTURED": "C0033",
+      "Codex:Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== FINDING REGISTRY (Round 3) ===\\nTotal: 32 canonical findings\\nActive: 32 | Settled: 0 | Hidden: 0\\nOpen CRIT/HIGH: 14\\n\\n--- OPEN (32) ---\\n  C0005 (sev 0.95) [ChatGPT] FIND — Burst-mode resume restores `burst_state` from `runner_state.json` but does not reconstruct the active phase/integ\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    experiment_start = time.monotonic()\\n    effective_max = cf\\n  C0027 (sev 0.95) [DeepSeek] Command‑injection vulnerability in `_run_effect_regression` via `test_cmd`. User‑controlled input from config flows into\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0006 (sev 0.89) [ChatGPT] FIND — Config-driven CLI validation checks `args.pattern` instead of the effective config value `cfg.pattern`. Evidence:\\n    Verdicts: ChatGPT:CONFIRM, Codex:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0014 (sev 0.86) [Codex] FIND — burst-mode resume restores `burst_state` but not `burst_plan`, so resumed burst runs can skip remaining phases an\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n            # R39-04: Restore burst_state if it was persisted\\n\\n  C0001 (sev 0.80) [Gemini] FIND — `_itc_detect` penalises models for correctly transitioning to pure-verdict behaviour. If a model outputs 0 findin\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif findings_count == 0 and len(response_text) > 200:\\n        h\\n  C0002 (sev 0.80) [Gemini] FIND — The ITC context stripping recovery mechanism is dead code. `_itc_build_recovery_prompt` is defined to reduce the \\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _dispatch_round_star(\\n    exp_config: ExperimentConfig, mg\\n  C0021 (sev 0.80) [CC2] FIND — Star topology `_make_prompt` ignores all ITC adaptations except `change_focus`. When `_itc_adapt` sets `strip_con\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _make_prompt(mc_label: str) -> str:\\n        if round_idx =\\n  C0026 (sev 0.80) [DeepSeek] Race condition in module‑level globals `_itc_model_state` and `_itc_hil_flags` during concurrent dispatch via `ThreadPoo\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n_itc_model_state: Dict[str, Dict[str, Any]] = {}\\n_itc_hil_flag\\n  C0015 (sev 0.79) [Codex] FIND — when `--config` is used, CLI pattern validation checks `args.pattern` instead of the effective runtime value `cfg\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\\n      \\n  C0022 (sev 0.75) [CC2] FIND — `_itc_build_recovery_prompt` (line ~808) claims to reduce context to `max_ok_chars` but includes the full, untrun\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif max_ok_chars > 0 and len(base_prompt) > max_ok_chars:\\n     \\n  C0007 (sev 0.72) [ChatGPT] FIND — `_dispatch_round_star()` and `_dispatch_round_relay()` create `ThreadPoolExecutor(max_workers=len(eligible))` wit\\n    Verdicts: ChatGPT:CONFIRM\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0016 (sev 0.72) [Codex] FIND — both `_dispatch_round_star` and `_dispatch_round_relay` create `ThreadPoolExecutor(max_workers=len(eligible))` wi\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    logs_dir = brain.logs_dir\\n    prompt_lengths: Dict[str, in\\n  C0003 (sev 0.70) [Gemini] FIND — The \\\"F12 fix\\\" in `_evaluate_gate_conditions` breaks the `open_ch_history` stability window. It only appends to th\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0004 (sev 0.70) [Gemini] FIND — `_verification_step` processes CC2v verdicts and resolves finding statuses, but never calls `registry.add_verdict\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nif finding_id not in batch_ids:\\n            continue\\n        s\\n  C0017 (sev 0.68) [Codex] FIND — burst-mode HIL exits do not save the later brain checkpoint, unlike monolithic HIL exits, so persisted state can \\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if cfg.hil_review:\\n                    _log(f\\\"\\n  C0008 (sev 0.67) [ChatGPT] FIND — Endocrine context telemetry counts response sizes, not prompt/context sizes, while storing the metric in `cumulat\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        round_timings = _build_round_timings(responses, per_mo\\n  C0023 (sev 0.65) [CC2] FIND — `_evaluate_gate_conditions` deduplicates consecutive identical `open_ch_history` entries (line ~571), which preve\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# F12 fix: guard against duplicate entries if called multiple \\n  C0009 (sev 0.61) [ChatGPT] FIND — MERGE deadlock escalation is advisory-only and does not transition the finding out of the active workflow. Eviden\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n                if defer_count >= max_defer:\\n                 \\n  C0018 (sev 0.61) [Codex] FIND — `_dispatch_single_model` catches `Exception` in the same tuple as operational failures, converting internal progr\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    except (CircuitBreakerTripped, TimeoutError, Exception) as\\n  C0010 (sev 0.58) [ChatGPT] FIND — Wall-clock deadline is enforced only at round boundaries; subprocess-based verification helpers use fixed per-cal\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef _run_effect_regression(\\n    modified_source: str, source_p\\n  C0024 (sev 0.55) [CC2] FIND — Module-level mutable state (`_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, `_shadow_ouroboros`) is n\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nexperiment_start = time.monotonic()\\n    effective_max = cfg.ma\\n  C0025 (sev 0.55) [CC2] FIND — `_evaluate_sk_for_findings` receives `str(target_rel)` (a relative path like `bench/reference_runner.py`) as `sou\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# S_k solution verification pipeline\\n        sk_stats: Dict[st\\n  C0029 (sev 0.50) [CC2] Burst-mode HIL exit (line 3453) does not call `brain._save_checkpoint()` before `sys.exit(42)`. The monolithic HIL path \\n    Fix: <<<< SEARCH bench/reference_runner.py\\npartial_report = logs_dir / f\\\"{cfg.experiment_name}_hil_phase_\\n  C0030 (sev 0.50) [CC2] `auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`\\n    Fix: <<<< SEARCH bench/reference_runner.py\\nrecent_verdicts = [\\n            v for v in entry.get(\\\"verdicts\\n  C0031 (sev 0.50) [CC2] `_run_effect_regression` (lines 2238-2251) scoring logic treats \\\"no tests collected\\\" (pytest exit code 5) as a perfect s\\n    Fix: <<<< SEARCH bench/reference_runner.py\\npassed = int(m.group(1)) if re.search(r'(\\\\d+)\\\\s+passed', outpu\\n  C0011 (sev 0.49) [ChatGPT] FIND — Persistence is only partially atomic: `runner_state.json` uses temp-file replace, but fingerprint files, final re\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        fp_path = FINGERPRINT_DIR / f\\\"{model_id}.json\\\"\\n       \\n  C0019 (sev 0.49) [Codex] FIND — module-global ITC and shadow-cell state is not reset at fresh experiment start, so multiple experiments in one Py\\n    Fix: <<<< SEARCH bench/reference_runner.py\\ndef run_experiment(\\n    exp_config: ExperimentConfig,\\n    cdsf\\n  C0012 (sev 0.47) [ChatGPT] FIND — `_load_fingerprints()` silently discards corrupted fingerprint files via `except (json.JSONDecodeError, OSError):\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n        except (json.JSONDecodeError, OSError):\\n            pa\\n  C0013 (sev 0.41) [ChatGPT] FIND — `_run_effect_ruff()`, `_run_effect_bandit()`, and `_capture_baseline()` unconditionally call `os.unlink(tmp_path)\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n    finally:\\n        os.unlink(tmp_path)\\n====\\n    finally:\\n   \\n  C0028 (sev 0.30) [DeepSeek] Missing `encoding=\\\"utf-8\\\"` in `ctx_path.read_text()` call in `parse_search_replace_blocks` fallback (line ~2120). Uses p\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n# P1 fallback: extract from markdown code blocks with file pat\\n  C0032 (sev 0.30) [Gemini] [\\n  {\\n    \\\"FINDING_ID\\\": \\\"F001\\\",\\n    \\\"SEVERITY\\\": 1.0,\\n    \\\"FLAW_CLASS\\\": 5,\\n    \\\"ABSTRACTION_INDEX\\\": 0.9,\\n    \\\"DESCRIPTION\\n  C0020 (sev 0.24) [Codex] FIND — `_dispatch_round_star` and `_dispatch_round_relay` are annotated as returning 3-tuples, but both return 4 values:\\n    Fix: <<<< SEARCH bench/reference_runner.py\\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\\n=\\n\\n=== END REGISTRY ===\\n=== PANEL METRICS (Round 3) ===\\nρ (discovery efficiency / semantic novelty rate) = 0.571\\nρ̄₃ (3-round rolling average) = 0.786\\nγ (Duane reliability growth) = 0.000\\nRegistry: 32 OPEN, 0 CONFIRMED, 0 CLOSED/MERGED\\n\\nInterpretation: Productive phase — continue finding and falsifying.\\n\\n\\nThis is Round 3. Review the registry above. File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\\n=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n====\\n    def _build_prompt(code_payload: str, artifact_label: str = \\\"\\\") -> str:\\n        \\\"\\\"\\\"Build base prompt from awareness preamble + code payload.\\\"\\\"\\\"\\n        label = artifact_label or f\\\"{target_rel} + Context\\\"\\n        return (\\n            f\\\"{awareness_preamble}\\\"\\n            f\\\"YOUR TASK:\\\\n\\\"\\n            f\\\"Review {target_rel} under full CDSFL + FFF constraints.\\\\n\\\\n\\\"\\n            f\\\"For each finding, provide (keys in this exact order):\\\\n\\\"\\n            f\\\"": "C0034",
+      "Codex:Codex_unique identifier (e.g., F001). STABLE across rounds.\\\\n\\\"\\n            f\\\"  SEVERITY: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, \\\"\\n            f\\\"4=completeness, 5=correctness, 6=edge-case, 7=performance, \\\"\\n            f\\\"8=documentation)\\\\n\\\"\\n            f\\\"  ABSTRACTION_INDEX: 0.0 to 1.0\\\\n\\\"\\n            f\\\"  DESCRIPTION: FIND — what is wrong, where, evidence\\\\n\\\"\\n            f\\\"  FOLLOW: trace downstream consequences before proposing a fix\\\\n\\\"\\n            f\\\"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\\\\n\\\"\\n            f\\\"    Without these blocks, the fix cannot be verified by the S_k pipeline.\\\\n\\\"\\n            f\\\"    Format:\\\\n\\\"\\n            f\\\"    <<<< SEARCH file_path\\\\n\\\"\\n            f\\\"    [exact current content to replace — copy verbatim from source]\\\\n\\\"\\n            f\\\"    ====\\\\n\\\"\\n            f\\\"    [exact replacement content]\\\\n\\\"\\n            f\\\"    >>>> REPLACE\\\\n\\\"\\n            f\\\"  VERIFIED: TRUE if proven, FALSE if assertion\\\\n\\\\n\\\"\\n            f\\\"Produce ALL findings. Do not hold back.\\\\n\\\\n\\\"\\n            f\\\"=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\\\\n\\\\n\\\"\\n            f\\\"{code_payload}\\\\n\\\\n\\\"\\n            f\\\"=== END ARTIFACT ===\\\\n\\\\n\\\"\\n            f\\\"Produce your findings now.\\\"\\n        )\\n>>>> REPLACE\",": "C0035"
+    }
+  },
+  "hil_flags": []
+}

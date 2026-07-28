@@ -10,12 +10,14 @@ Checks:
   2. Broken file references in markdown
   3. Test count consistency between docs and actual
   4. Experiment number consistency between docs and logs
+  5. Onboarding script wiring (cdsfl_onboard.py --dry-run passes)
 """
 
 from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -182,6 +184,135 @@ def check_glossary(root: Path) -> list[dict]:
     return findings
 
 
+def check_log_seals(root: Path) -> list[dict]:
+    """Verify every sealed_chain.json under logs/confer and logs/chat.
+
+    Runs `scripts/cdsfl_seal_logs.py --verify` as a subprocess. If any
+    seal is missing or its Merkle chain fails verification, a STALE
+    finding is returned naming the affected directory.
+    """
+    findings: list[dict] = []
+    script = root / "scripts" / "cdsfl_seal_logs.py"
+    logs_root = root / "logs"
+
+    if not script.exists():
+        findings.append({
+            "category": "MISSING",
+            "file": "scripts/cdsfl_seal_logs.py",
+            "detail": "Log sealing script not found",
+        })
+        return findings
+
+    if not logs_root.exists():
+        return findings
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script), "--verify"],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        findings.append({
+            "category": "WARN",
+            "file": "logs/",
+            "detail": "Seal verification timed out after 60s",
+        })
+        return findings
+    except OSError as err:
+        findings.append({
+            "category": "WARN",
+            "file": "logs/",
+            "detail": f"Could not run seal verification: {err}",
+        })
+        return findings
+
+    if result.returncode == 0:
+        findings.append({
+            "category": "OK",
+            "file": "logs/",
+            "detail": "All log seals verify (Merkle chains intact)",
+        })
+    else:
+        # Surface TAMPERED / UNSEALED lines from the verifier.
+        bad_lines = [
+            ln.strip() for ln in (result.stdout + "\n" + result.stderr).splitlines()
+            if "TAMPERED" in ln or "UNSEALED" in ln or "ERROR" in ln
+        ]
+        detail = "; ".join(bad_lines) if bad_lines else "seal verification failed"
+        findings.append({
+            "category": "STALE",
+            "file": "logs/",
+            "detail": detail,
+        })
+
+    return findings
+
+
+def check_onboard_script(root: Path) -> list[dict]:
+    """Run `cdsfl_onboard.py --dry-run` to verify the onboarding script's
+    canonical-document wiring is intact.
+
+    The onboarding script reads project prose from resources/ONBOARDING.md
+    and the MC command reference from docs/REPRODUCING.md at runtime. If
+    either file is missing a required section or marker, the dry-run
+    fails and is surfaced here so staleness is caught before commit.
+    """
+    findings: list[dict] = []
+    script = root / "scripts" / "cdsfl_onboard.py"
+
+    if not script.exists():
+        findings.append({
+            "category": "MISSING",
+            "file": "scripts/cdsfl_onboard.py",
+            "detail": "Onboarding script not found",
+        })
+        return findings
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script), "--dry-run"],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        findings.append({
+            "category": "WARN",
+            "file": "scripts/cdsfl_onboard.py",
+            "detail": "--dry-run timed out after 30s",
+        })
+        return findings
+    except OSError as err:
+        findings.append({
+            "category": "WARN",
+            "file": "scripts/cdsfl_onboard.py",
+            "detail": f"Could not run --dry-run: {err}",
+        })
+        return findings
+
+    if result.returncode == 0:
+        findings.append({
+            "category": "OK",
+            "file": "scripts/cdsfl_onboard.py",
+            "detail": "--dry-run passes (canonical-doc wiring intact)",
+        })
+    else:
+        # Surface the specific failures from stderr as STALE findings.
+        stderr_lines = [ln for ln in result.stderr.splitlines() if ln.strip()]
+        detail = "; ".join(stderr_lines) if stderr_lines else "--dry-run failed (no stderr)"
+        findings.append({
+            "category": "STALE",
+            "file": "scripts/cdsfl_onboard.py",
+            "detail": detail,
+        })
+
+    return findings
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="CDSFL Quality Control")
     parser.parse_args()
@@ -207,6 +338,12 @@ def main() -> None:
 
     print("Checking glossary...", flush=True)
     all_findings.extend(check_glossary(root))
+
+    print("Checking onboarding script wiring...", flush=True)
+    all_findings.extend(check_onboard_script(root))
+
+    print("Checking log seals...", flush=True)
+    all_findings.extend(check_log_seals(root))
 
     # Report
     print("\n" + "=" * 70)

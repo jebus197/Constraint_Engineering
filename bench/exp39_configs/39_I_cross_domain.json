@@ -1,0 +1,49 @@
+{
+    "_comment": "39-I: Cross-domain Synthesis. How findings from different specialist domains compose. Fresh article: dm/_manager.py (already near threshold, no context).",
+    "_payload_note": "dm/_manager.py ~71K + no context = ~71K total (under 80K threshold)",
+    "test_article": "bench/dm/_manager.py",
+    "context_files": [],
+    "topology": "star",
+    "pattern": "four_layer",
+    "max_rounds": 10,
+    "extension_cap": 12,
+    "wall_clock_cap_s": 7200,
+    "earliest_stop_round": 4,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_I_cross_domain",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": "python3 -m pytest bench/tests/ -q --tb=line",
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_cross_domain_inputs": {
+        "description": "Synthesise findings from mathematics (A), statistics (E), and CS/software (F) specialists.",
+        "checks": [
+            "Mathematical proposals (A) statistically validated (E)",
+            "Software tool findings (F) aligned with mathematical model (A)",
+            "Cross-domain contradictions identified and resolved",
+            "Unified finding severity calibration across domains"
+        ]
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: cross-domain synthesis produces stable composite view.",
+        "primary": "gamma >= 0.40 AND 0 unresolved cross-domain contradictions for 2 rounds",
+        "secondary": "3+ rounds with no new cross-domain finding",
+        "fail_condition": "Unresolved contradictions between domain outputs at wall clock cap"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_I_cross_domain_report.json",
+        "required_fields": [
+            "cross_domain_contradictions",
+            "unified_severity_calibration",
+            "domain_interaction_findings",
+            "synthesis_quality_assessment"
+        ]
+    }
+}

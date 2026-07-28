@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekdecomposedr5",
+  "path": "decomposed",
+  "run": 5,
+  "ok": true,
+  "response": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: Static constraint count in `_count_constraints()` causes `_prune_for_coherence()` to use an unchanging numerator while the denominator shrinks, making density rise during pruning and breaking coherence budget enforcement.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import compose\n\npolicy = {\n    'cdsfl': {\n        'coherence_budget': 0.01,\n        'token_budget': 100,\n        'constraints': {\n            'hard': [\n                'Directive A', 'Directive B', 'Directive C', 'Directive D',\n                'Directive E', 'Directive F', 'Directive G', 'Directive H',\n                'Directive I', 'Directive J',\n            ]\n        },\n        'verification': {\n            'checks': ['check1', 'check2', 'check3']\n        },\n        'protocol': {\n            'steps': ['step1', 'step2']\n        },\n    }\n}\n\nresult = compose(policy)\n\nassert result.constraint_density <= 0.01, (\n    f\"FALSIFIED: constraint density {result.constraint_density} \"\n    f\"exceeds budget 0.01 due to static constraint count\"\n)\n```",
+  "response_length": 1061,
+  "elapsed_s": 322.0
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260411T123150Z",
+  "phase": "r20",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2000,
+  "response": "**Round 20 — CC2 Assessment**\n\nRegistry has converged. All 5 confirmed bugs are settled. The 4 remaining non-zero-severity open findings (C0007, C0083, C0003, C0022) are false positives, each challenged by ≥3 models with evidence. No new code defects found in this pass.\n\n---\n\nCONFIRM C0141 | `_check_gamma_gate` semantics are correct. High gamma = strong novelty depletion = gate passes. Low gamma = still discovering = gate fails (don't stop). C0007 misread the directionality. Three models independently verified.\n\nCONFIRM C0154 | `build_summary` including `REOPENED` in `full_detail_statuses` is correct. `REOPENED` is a valid non-terminal active status parsed via `_parse_verdicts` REOPEN verb and set by `resolve()`. Showing it in full detail is the right windowing choice. C0083 is a false positive.\n\nCONFIRM C0142 | `_parse_verdicts` returns `(verdict, canonical_id, evidence)` — a 3-tuple that is fully sufficient. The REOPEN verb targets the canonical_id in group(2); no separate target/source distinction is needed because REOPEN operates on a single finding. C0003 is a false positive.\n\nCONFIRM C0143 | `escalate_stale_contested` setting status to `UNCONFIRMED` while adding `hil_escalated=True` is intentional two-signal design. `UNCONFIRMED` moves the finding out of the CONTESTED gate count; `hil_escalated` flags it for human review. The alternative (a dedicated `HIL_PENDING` status) would require changes across all status-checking code for no functional gain in a PoC. C0022 is a false positive.\n\n---\n\n**Convergence assessment:** Δ(20) = 0. No new findings, no new failures. The 5 confirmed bugs (off-by-one in `_compute_rho`, early-return suppression in `_compute_rho`, unconditional override in `__post_init__`, hardcoded grace in `contested_count`, missing `REOPENED` in `open_crit_high_count`) are all settled with fixes. Two consecutive passes (19, 20) produced zero novel above-threshold findings. The review has reached fixed-point convergence under the corroboration model.",
+  "metadata": {
+    "round": 20,
+    "elapsed": 100.5,
+    "chars": 2000,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

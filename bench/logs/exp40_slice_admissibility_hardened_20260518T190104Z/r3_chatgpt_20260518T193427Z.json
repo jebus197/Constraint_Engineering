@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260518T193427Z",
+  "phase": "r3",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1233,
+  "response": "WITHDRAW ChatGPT_F001 — prior schema feedback accepted. The prior finding was a near-duplicate of Gemini_F001/C0009 and lacked measured post-fix σ evidence, so I withdraw it rather than resubmit it unchanged.\n\nCONFIRM C0021 — The `section_terminator` search omits `re.IGNORECASE`, unlike `marker_match`, so a lower/mixed-case next section such as `Novelty:` is not recognised and the ADMISSIBILITY block can consume downstream text. Concrete trace: with `ADMISSIBILITY:\\n  S_min: PASS\\nNovelty:\\n...`, `marker_match` succeeds, but `section_terminator` does not match `Novelty:` because it is compiled with only `re.MULTILINE`. The block therefore extends past the real boundary. This is a confirmed parser-boundary bug.\n\nEXTEND C0011 | The same hyphen-variant flaw also affects the ASCII `sigma-measured` spelling of `σ_measured`. Current code has `gate_patterns.append(r\"sigma[_\\s]*measured\")`, which accepts `sigma_measured` and `sigma measured` but rejects `sigma-measured`, despite the parser claiming separator tolerance. This is the same root-cause family as C0011, not a new discovery.\n\nNo new DISCOVERY findings filed this round. I found no novel CRITICAL/HIGH issue not already represented by the active or settled registry.",
+  "metadata": {
+    "round": 3,
+    "elapsed": 46.0,
+    "chars": 1233,
+    "findings_count": 0,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

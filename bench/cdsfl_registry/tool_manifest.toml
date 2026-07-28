@@ -1,0 +1,250 @@
+# B-Cell Specialist Tool Manifest
+#
+# Single source of truth for all verification tools available to
+# `_specialist_b_cell_dispatch()` in `bench/immune_agents.py`.
+#
+# Each `[tools.<name>]` table describes one tool. The dispatch walks the
+# per-domain tool list (from the immune TOMLs under
+# `bench/cdsfl_registry/domains/immune/*.toml`), looks up each name in this
+# manifest, and calls the named verifier function. Entries that set
+# `delegate = "<cell>"` are skipped by this dispatch because another cell
+# handles them (e.g. the structural AST walker in B-Cell v2, or pytest in
+# the CT cell).
+#
+# Fields:
+#   description     : Human-readable summary of what the tool verifies.
+#   verifier        : Function name in bench/immune_agents.py. Omit for
+#                     delegated tools.
+#   needs_file      : If true, verifier signature is (claim, file_path);
+#                     otherwise (claim,).
+#   claim_types     : ClaimType values this tool can decide (mathematical,
+#                     logical, statistical, code_structural, code_behavioral).
+#   domain_hints    : Free-text domain tags — used by the future UX
+#                     "app store" to group tools by discipline.
+#   cost_class      : "fast" (< 2 s typical), "medium" (2–10 s), "slow" (> 10 s).
+#                     Subjective wall-clock estimate on reference hardware.
+#   install_check   : Python expression that returns truthy when the tool is
+#                     installed. Evaluated in the tools-Python interpreter.
+#   package_hint    : PEP 508 style hint for future auto-install suggestions.
+#   delegate        : If set, this tool is handled by a different cell. Value
+#                     is a short label of the owning cell.
+#
+# Adding a new tool:
+#   1. Write _verify_<name>(claim[, file_path]) in bench/immune_agents.py,
+#      following the existing CellVerdict pattern.
+#   2. Append a [tools.<name>] block below.
+#   3. Reference the name from the appropriate domains/immune/*.toml file.
+#   No changes to the dispatch code are required.
+
+# ── STEM / mathematical tools ────────────────────────────────────────────
+
+[tools.sympy]
+description = "Symbolic mathematics: algebraic identities, limits, equation solving."
+verifier = "_verify_sympy"
+needs_file = false
+claim_types = ["mathematical", "logical"]
+domain_hints = ["mathematics", "physics", "chemistry", "engineering"]
+cost_class = "fast"
+install_check = "import sympy"
+package_hint = "sympy>=1.14"
+
+[tools.z3]
+description = "SMT constraint satisfaction and formal verification."
+verifier = "_verify_z3"
+needs_file = false
+claim_types = ["logical", "mathematical"]
+domain_hints = ["mathematics", "cs_software", "engineering"]
+cost_class = "medium"
+install_check = "import z3"
+package_hint = "z3-solver>=4.16"
+
+[tools.statsmodels]
+description = "Regression, ADF, ARIMA, t-tests, hypothesis testing."
+verifier = "_verify_statistical"
+needs_file = false
+claim_types = ["statistical"]
+domain_hints = ["statistics", "biology", "social_science"]
+cost_class = "medium"
+install_check = "import statsmodels"
+package_hint = "statsmodels>=0.14"
+
+# scipy shares the same verifier because _verify_statistical already routes
+# to scipy.stats for point tests. Listed separately so domain TOMLs can
+# name either preference without duplicating the elif branch.
+[tools.scipy]
+description = "scipy.stats tests, optimisation, integration (shared with statsmodels)."
+verifier = "_verify_statistical"
+needs_file = false
+claim_types = ["statistical"]
+domain_hints = ["statistics", "physics", "engineering"]
+cost_class = "medium"
+install_check = "import scipy"
+package_hint = "scipy>=1.13"
+
+[tools.dimensional_analysis]
+description = "Dimensional / unit consistency via pint."
+verifier = "_verify_dimensional_analysis"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["physics", "engineering", "chemistry"]
+cost_class = "fast"
+install_check = "import pint"
+package_hint = "pint>=0.25"
+
+[tools.uncertainty_propagation]
+description = "Error propagation via the uncertainties package."
+verifier = "_verify_uncertainty_propagation"
+needs_file = false
+claim_types = ["statistical", "mathematical"]
+domain_hints = ["physics", "engineering", "statistics"]
+cost_class = "fast"
+install_check = "import uncertainties"
+package_hint = "uncertainties>=3.2"
+
+[tools.stoichiometric_balance]
+description = "Atom conservation check on chemical equations (regex + Counter)."
+verifier = "_verify_stoichiometric_balance"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["chemistry"]
+cost_class = "fast"
+install_check = "import re"
+package_hint = "stdlib"
+
+[tools.linear_programming]
+description = "LP / integer programming feasibility and bound checks (PuLP)."
+verifier = "_verify_linear_programming"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["operations_research", "engineering", "economics"]
+cost_class = "medium"
+install_check = "import pulp"
+package_hint = "pulp>=3.3"
+
+[tools.astronomical]
+description = "Astronomical constants and unit conversion (astropy)."
+verifier = "_verify_astronomical"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["astronomy", "physics"]
+cost_class = "medium"
+install_check = "import astropy"
+package_hint = "astropy>=7.2"
+
+[tools.chemistry_structure]
+description = "SMILES validity, molecular formula, molecular weight (RDKit)."
+verifier = "_verify_chemistry_structure"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["chemistry", "biology"]
+cost_class = "medium"
+install_check = "from rdkit import Chem"
+package_hint = "rdkit>=2026.3"
+
+[tools.biological_sequence]
+description = "DNA/RNA/protein length, GC content, translation, reverse complement (Biopython)."
+verifier = "_verify_biological_sequence"
+needs_file = false
+claim_types = ["mathematical"]
+domain_hints = ["biology", "genomics"]
+cost_class = "fast"
+install_check = "import Bio"
+package_hint = "biopython>=1.87"
+
+[tools.ml_claim]
+description = "ML metric bounds, estimator existence, confusion-matrix dims (scikit-learn)."
+verifier = "_verify_ml_claim"
+needs_file = false
+claim_types = ["mathematical", "statistical"]
+domain_hints = ["machine_learning", "data_science"]
+cost_class = "fast"
+install_check = "import sklearn"
+package_hint = "scikit-learn>=1.8"
+
+[tools.graph_property]
+description = "Graph node/edge counts, connectivity, tree, cycle, diameter (NetworkX)."
+verifier = "_verify_graph_property"
+needs_file = false
+claim_types = ["mathematical", "logical"]
+domain_hints = ["cs_software", "mathematics", "network_science"]
+cost_class = "fast"
+install_check = "import networkx"
+package_hint = "networkx>=3.6"
+
+# ── Code analysis tools (file-based) ─────────────────────────────────────
+
+[tools.type_checker]
+description = "mypy --strict subset for signature / type consistency."
+verifier = "_verify_type_check"
+needs_file = true
+claim_types = ["code_structural"]
+domain_hints = ["cs_software"]
+cost_class = "slow"
+install_check = "import mypy"
+package_hint = "mypy>=1.19"
+
+[tools.lint_check]
+description = "ruff linting for code quality issues."
+verifier = "_verify_lint_check"
+needs_file = true
+claim_types = ["code_structural", "code_behavioral"]
+domain_hints = ["cs_software"]
+cost_class = "fast"
+install_check = "import ruff"
+package_hint = "ruff>=0.15"
+
+[tools.security_scan]
+description = "bandit static security scan."
+verifier = "_verify_security_scan"
+needs_file = true
+claim_types = ["code_behavioral"]
+domain_hints = ["cs_software", "security"]
+cost_class = "medium"
+install_check = "import bandit"
+package_hint = "bandit>=1.8"
+
+[tools.bytecode_analysis]
+description = "dis-module bytecode inspection for dead code after RETURN_VALUE."
+verifier = "_verify_bytecode_analysis"
+needs_file = true
+claim_types = ["logical", "code_behavioral"]
+domain_hints = ["cs_software"]
+cost_class = "fast"
+install_check = "import dis"
+package_hint = "stdlib"
+
+[tools.symbolic_execution]
+description = "crosshair z3-backed symbolic execution of Python contracts."
+verifier = "_verify_symbolic_execution"
+needs_file = true
+claim_types = ["code_behavioral"]
+domain_hints = ["cs_software"]
+cost_class = "slow"
+install_check = "import crosshair"
+package_hint = "crosshair-tool>=0.0.102"
+
+# ── Model-backed specialists (network, cost-bounded) ────────────────────
+
+[tools.deepseek_formal]
+description = "DeepSeek R1 reasoner as formal-verification specialist — LLM fallback for claims mechanical verifiers cannot decide."
+verifier = "_verify_deepseek_formal"
+needs_file = false
+claim_types = ["logical", "mathematical"]
+domain_hints = ["mathematics", "information_science", "cs_software"]
+cost_class = "slow"
+install_check = "import openai"
+package_hint = "openai>=1.0"
+
+# ── Delegated tools (handled by other cells) ─────────────────────────────
+
+[tools.ast_analysis]
+description = "Structural AST walk. Delegated to B-Cell v2, not run here."
+delegate = "b_cell_v2"
+claim_types = ["code_structural", "code_behavioral"]
+domain_hints = ["cs_software"]
+
+[tools.test_runner]
+description = "pytest runner. Delegated to CT cell, not run here."
+delegate = "ct_cell"
+claim_types = ["code_behavioral"]
+domain_hints = ["cs_software"]

@@ -1,0 +1,461 @@
+{
+  "round_idx": 0,
+  "findings": [
+    {
+      "finding_id": "Gemini_F001",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 1,
+      "encounter_count": 1,
+      "description_snippet": "The `ImmuneMemory.load` method fails to initialize `source_hash` when returning a fresh instance (either because the fil"
+    },
+    {
+      "finding_id": "Codex_F001",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 5,
+      "encounter_count": 1,
+      "description_snippet": "`ImmuneMemory.load()` in `bench/dm/_memory.py` accepts persisted memory with no `source_hash` even when the caller suppl"
+    },
+    {
+      "finding_id": "Codex_F002",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 6,
+      "encounter_count": 1,
+      "description_snippet": "`ImmuneMemory` accepts negative confirmed/rejected counts from both the public ingestion API and persisted JSON records,"
+    },
+    {
+      "finding_id": "DeepSeek_F001",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 1,
+      "encounter_count": 2,
+      "description_snippet": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a cal"
+    },
+    {
+      "finding_id": "DeepSeek_F002",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 1,
+      "encounter_count": 3,
+      "description_snippet": "FINDING_ID: F002\nSEVERITY: 0.50\nFIND: CUSUM drift detection in `update_drift` lacks a slack parameter, so small persiste"
+    },
+    {
+      "finding_id": "ChatGPT_F001",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 5,
+      "encounter_count": 2,
+      "description_snippet": "`ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when `expected_hash` is supplied but the persisted JS"
+    },
+    {
+      "finding_id": "ChatGPT_F002",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 6,
+      "encounter_count": 2,
+      "description_snippet": "`compute_source_hash()` is collision-prone for different source-file states because it hashes only the concatenated file"
+    },
+    {
+      "finding_id": "ChatGPT_F003",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 2,
+      "encounter_count": 1,
+      "description_snippet": "Public methods accept invalid probability and count inputs, allowing `pi_mem()` and `blended_prior()` to return values o"
+    },
+    {
+      "finding_id": "CC2_F001",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 4,
+      "encounter_count": 1,
+      "description_snippet": "`save()` (lines ~230\u2013248) serialises `records` but never serialises `self._drift`. `load()` (lines ~250\u2013305) rebuilds `_"
+    },
+    {
+      "finding_id": "CC2_F002",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 6,
+      "encounter_count": 3,
+      "description_snippet": "`blended_prior` (lines ~157\u2013182) computes `(1.0 - rho) * pi_base + rho * pm` with no validation or clamping of `rho`, `p"
+    },
+    {
+      "finding_id": "CC2_F003",
+      "nu_k_proxy": 0.2,
+      "c_ext_raw": 0.7,
+      "c_ext": 0.49,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        },
+        {
+          "source_name": "semantic_scholar",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.5,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.5
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.5472,
+      "delta": 0.3528,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 5,
+      "encounter_count": 3,
+      "description_snippet": "`update_drift` (lines ~184\u2013224) implements a tabular CUSUM with no reference/slack value `k`: `ds.cusum_pos = max(0.0, d"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 9,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "statsmodels": {
+      "tool_name": "statsmodels",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.2,
+  "mean_c_ext": 0.49,
+  "mean_delta": 0.3528,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {
+    "arxiv|semantic_scholar": {
+      "both": 1
+    }
+  },
+  "timestamp": 1785193557.932468
+}

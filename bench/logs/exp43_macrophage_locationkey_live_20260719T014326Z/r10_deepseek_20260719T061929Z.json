@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260719T061929Z",
+  "phase": "r10",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1064,
+  "response": "FINDING_ID: F011\nSEVERITY: 0.45\nFIND: In `_check_gate_stats()`, the method hardcodes the string `\"external_ouroboros\"` to look up Ouroboros‑specific gate statistics, silently missing immune deficiency if upstream uses a different origin key.\nFALSIFIER:\n```python\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nmacro = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\ndummy_verdict = type(\"V\", (), {\"verdict\": \"CONFIRMED\", \"confidence\": 0.8})()\n\ngate_stats = {\n    \"total_passed\": 5,\n    \"total_failed\": 0,\n    \"by_origin\": {\n        # Pipeline uses a different origin key\n        \"ouroboros_internal\": {\"passed\": 5, \"failed\": 0}\n    }\n}\n\nsummary = macro.observe(verdicts=[dummy_verdict]*5, gate_stats=gate_stats)\n# The hardcoded string \"external_ouroboros\" misses this key,\n# so the ouroboros-specific immune-deficiency anomaly is NOT raised.\nif len(summary.anomalies) == 0:\n    print(\"FALSIFIED: origin-key mismatch causes missed immune-deficiency detection\")\nelse:\n    raise AssertionError(\"Defect not present – anomaly unexpectedly raised\")\n```",
+  "metadata": {
+    "round": 10,
+    "elapsed": 319.6,
+    "chars": 1064,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

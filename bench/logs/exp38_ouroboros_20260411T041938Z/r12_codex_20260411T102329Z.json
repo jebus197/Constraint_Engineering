@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260411T102329Z",
+  "phase": "r12",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2311,
+  "response": "CONFIRM C0101 — FIND: `RunnerConfig.__post_init__` overwrites caller-supplied `rho_earliest_round` whenever it differs from `earliest_stop_round`. Evidence in `bench/reference_runner.py`, Configuration dataclass: `if self.rho_earliest_round != self.earliest_stop_round: self.rho_earliest_round = self.earliest_stop_round`. This destroys explicit configuration and forces rho gating to mirror stop-round gating.\n\nCONFIRM C0082 — FIND: `FindingRegistry.contested_count()` ignores its `grace_period` parameter for challenged findings. Evidence in `bench/reference_runner.py`, `contested_count`: unresolved challenge age is gated by hardcoded `if current_round - oldest > 1:` instead of `grace_period`, while `UNCONFIRMED` uses `grace_period`. Same function, same temporal policy, inconsistent implementation.\n\nCONFIRM C0086 — FIND: `FindingRegistry.open_crit_high_count()` omits `REOPENED` from active non-terminal statuses. Evidence in `bench/reference_runner.py`, `open_crit_high_count`: `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")`, but `build_summary()` treats `REOPENED` as active via `full_detail_statuses = (\"OPEN\", \"CONTESTED\", \"REOPENED\")`. Active reopened critical/high findings are therefore excluded from convergence gating and registry headline counts.\n\nCONFIRM C0090 — FIND: `_compute_rho()` uses zero-based history length for a one-based round threshold. Evidence in `bench/reference_runner.py`, `_compute_rho`: `round_idx = len(raw_counts) - 1`, then `churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round`. With one sample for round 1, `len(raw_counts)-1 == 0`; with 12 samples for round 12, computed `round_idx == 11`, delaying churn eligibility by one round against config values expressed in round numbers elsewhere.\n\nCONFIRM C0116 — FIND: `_compute_rho()` returns early when the latest `raw_counts[-1] == 0`, forcing `(0.0, 0.0, False)` and discarding rolling-window evidence. Evidence in `bench/reference_runner.py`, `_compute_rho`: the initial guard `if not raw_counts or raw_counts[-1] == 0: return 0.0, 0.0, False` runs before `rho_values` and `rho_avg` are computed, so a zero-raw current round suppresses churn detection even if prior rounds in the rolling window already satisfy the low-rho condition.\n\nNo new discovery findings beyond already-confirmed registry items.",
+  "metadata": {
+    "round": 12,
+    "elapsed": 10.3,
+    "chars": 2311,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

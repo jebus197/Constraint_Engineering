@@ -1,6 +1,6 @@
 # Novelty/Discovery Extension — Confer Results
 
-*9 April 2026, 03:31 BST. CC1 proposal verified SymPy + Wolfram, then conferred with Gemini 3.1 Pro and Codex GPT-5.4 under combined 4-layer schema (Meta Structured Prompting + CDSFL + FFAFP + Conversational fallback).*
+*9 April 2026, 03:31 BST. A CC1 (Claude Opus 4.6, primary instance) proposal was verified by SymPy and Wolfram, then put through a confer (cross-model adversarial review) with Gemini 3.1 Pro and Codex GPT-5.4 under the combined 4-layer schema: Meta Structured Prompting + CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass) + Conversational fallback.*
 
 ---
 
@@ -10,14 +10,14 @@ The refined unified equation (8 April 2026) is a risk minimisation engine. Two s
 
 **Blind Spot A — Novelty invisible.** Rehashed findings get full detection credit. The diversity term d captures approach independence, not output novelty. A model can use a different approach and produce the same finding.
 
-**Blind Spot B — Solution quality unmodelled.** The resolution phase (ν term) asks only "did the fix re-inject?" not "was the fix correct?" A wrong fix gets full detection credit.
+**Blind Spot B — Solution quality unmodelled.** The resolution phase (ν, the re-injection term) asks only "did the fix re-inject?" not "was the fix correct?" A wrong fix gets full detection credit.
 
 ## CC1's Initial Proposal
 
-Two new terms:
+Two new terms were proposed:
 
-- **η (novelty coefficient)**: Replace `q = d·p` with `q = η·d·p`. Scales detection credit by output novelty.
-- **σ (solution efficacy)**: Replace resolution phase with `R_new = σ·[R_det·(1-ν) + ν] + (1-σ)·R_old`. Scales cycle outcome by fix quality.
+- **η (eta, the novelty coefficient)**: Replace `q = d·p` with `q = η·d·p`. Scales detection credit by output novelty.
+- **σ (sigma, solution efficacy)**: Replace resolution phase with `R_new = σ·[R_det·(1-ν) + ν] + (1-σ)·R_old`. Scales cycle outcome by fix quality.
 
 ## Confer Protocol
 
@@ -48,17 +48,17 @@ Two new terms:
 
 **Critical Finding: σ placement is physically wrong.**
 
-Both models independently identified the same structural flaw in CC1's σ term.
+Both models independently identified the same structural flaw in the CC1 σ term.
 
-CC1's form: `R_new = σ·[R_det·(1-ν) + ν] + (1-σ)·R`
+The CC1 form: `R_new = σ·[R_det·(1-ν) + ν] + (1-σ)·R`
 
 This says: when σ=0 (fix fails), R_new = R. The model is fully protected from re-injection. But in reality, attempting a fix and having it fail still mutates the system. The act of attempting carries re-injection risk regardless of whether the target flaw was resolved.
 
 **Proof (R=0 case):**
-- CC1: R_new = σ·ν (failed fix on clean code barely re-injects)
-- Reality: if you modify clean code with a bad fix, the full re-injection rate applies
+- CC1 form: R_new = σ·ν (failed fix on clean code barely re-injects)
+- Reality: modifying clean code with a bad fix invokes the full re-injection rate
 
-**Gemini's correction** (verified SymPy + Wolfram):
+**Gemini's correction** (verified by SymPy and Wolfram):
 
 ```
 Phase 1: R_det   = R·(1-q) / (1-q·R)           (detection, unchanged)
@@ -77,7 +77,7 @@ The key insight: resolve the target first (σ determines how much detection gain
 
 | Property | Value |
 |---|---|
-| Difference from CC1 | ν·(1-R)·(1-σ) ≥ 0 (corrected form always ≥ CC1) |
+| Difference from CC1 form | ν·(1-R)·(1-σ) ≥ 0 (corrected form always ≥ CC1 form) |
 | σ=1 | Reduces exactly to refined baseline |
 | σ=0, ν=0 | R unchanged (no fix attempted, no side effects) |
 | σ=0, ν>0 | R_new = R + ν·(1-R) > R (failed fix still damages) |
@@ -96,17 +96,17 @@ The key insight: resolve the target first (σ determines how much detection gain
 | Keep η in the recursion | Remove η from recursion, track as auxiliary metric |
 | η acts on result space, d acts on method space — distinct | Only q = η·d·p is structural; η,d,p not separately identifiable |
 
-**Codex's argument:** If a model independently discovers the same flaw another model found, that IS epistemically valid for the discovering model. System novelty (η=0 because finding exists) should not penalise the model's own risk update. The risk recursion tracks individual model state.
+**The Codex argument:** If a model independently discovers the same flaw another model found, that IS epistemically valid for the discovering model. System novelty (η=0 because the finding already exists) should not penalise the model's own risk update. The risk recursion tracks individual model state.
 
-**Codex's proposed alternative:** Keep `q = d·p` in the risk recursion. Track novelty separately as a utility metric `U_discovery = η · finding_count`, parallel to but not inside the risk update.
+**The Codex proposed alternative:** Keep `q = d·p` in the risk recursion. Track novelty separately as a utility metric `U_discovery = η · finding_count`, parallel to but not inside the risk update.
 
 **Assessment of the divergence:**
 
-Codex's objection applies when η represents *system novelty*. But in CDSFL, models receive the registry (all prior findings from all models) before each pass. A model that re-describes a finding already in the registry is NOT reducing its own uncertainty — it already has that information. In this context, η as "novel relative to the model's available information including the registry" IS a valid risk-reduction modifier.
+The Codex objection applies when η represents *system novelty*. But in CDSFL, models receive the registry (all prior findings from all models) before each pass. A model that re-describes a finding already in the registry is NOT reducing its own uncertainty — it already has that information. In this context, η as "novel relative to the model's available information including the registry" IS a valid risk-reduction modifier.
 
-The resolution is definitional: η must be defined as *local novelty relative to available context* (including registry), not *system novelty*. With this definition, Gemini's position (keep η in recursion) is correct.
+The resolution is definitional: η must be defined as *local novelty relative to available context* (including registry), not *system novelty*. With this definition, the Gemini position (keep η in recursion) is correct.
 
-However, Codex's identifiability objection stands: a model cannot reliably separate η from d·p without external instrumentation (registry comparison). This is operationally tractable — the registry IS the external reference — but must be stated.
+However, the Codex identifiability objection stands: a model cannot reliably separate η from d·p without external instrumentation (registry comparison). This is operationally tractable — the registry IS the external reference — but must be stated.
 
 ### Additional Findings
 
@@ -134,7 +134,7 @@ Lists 7 unmodelled phenomena: delayed validation, parameter uncertainty, referen
 
 ## The Corrected Extended Equation
 
-Incorporating Gemini's structural correction (verified SymPy + Wolfram) and Codex's definitional refinement on η:
+Incorporating the Gemini structural correction (verified by SymPy and Wolfram) and the Codex definitional refinement on η:
 
 **Phase 1 — Detection (novelty-weighted):**
 

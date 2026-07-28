@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260719T041327Z",
+  "phase": "r5",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1864,
+  "response": "FINDING_ID: F004\nSEVERITY: 0.75\nFIND: Unchecked non‑numeric `confidence` causes `TypeError` in severity computation in `_patrol_observe`.\nFALSIFIER:\n```python\nimport bench.macrophage_cell as mc\nfrom unittest.mock import MagicMock\n\nclass FakeMacrophage(mc.Macrophage):\n    def __init__(self):\n        # bypass real init, provide necessary attributes\n        self.logger = MagicMock()\n        self._mock = MagicMock()\n    def __getattr__(self, name):\n        return self._mock\n\ndef test():\n    m = FakeMacrophage()\n    # Verdicts with one string confidence\n    class Verdict:\n        def __init__(self, confidence):\n            self.confidence = confidence\n    verdicts = [Verdict(\"high\"), Verdict(0.9)]\n    try:\n        m._patrol_observe(verdicts)\n    except TypeError:\n        raise AssertionError(\"FALSIFIED: string confidence caused TypeError in _patrol_observe\")\n    # No error means the defect is not present; exit cleanly\n    exit(0)\n\nif __name__ == \"__main__\":\n    test()\n```\n\nFINDING_ID: F005\nSEVERITY: 0.70\nFIND: `_check_gate_stats` assumes `external_ouroboros` value is a dict, causing `AttributeError` if not.\nFALSIFIER:\n```python\nimport bench.macrophage_cell as mc\nfrom unittest.mock import MagicMock\n\nclass FakeMacrophage(mc.Macrophage):\n    def __init__(self):\n        # bypass real init, provide necessary attributes\n        self.logger = MagicMock()\n        self._mock = MagicMock()\n    def __getattr__(self, name):\n        return self._mock\n\ndef test():\n    m = FakeMacrophage()\n    gate_stats = {\"by_origin\": {\"external_ouroboros\": [\"bad\"]}}\n    try:\n        m._check_gate_stats(gate_stats)\n    except AttributeError:\n        raise AssertionError(\"FALSIFIED: non-dict external_ouroboros caused AttributeError in _check_gate_stats\")\n    # No error means the defect is not present; exit cleanly\n    exit(0)\n\nif __name__ == \"__main__\":\n    test()\n```",
+  "metadata": {
+    "round": 5,
+    "elapsed": 493.6,
+    "chars": 1864,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T195245Z",
+  "phase": "r14",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2632,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.50\nFIND: resolve_layer_conflicts joins kept directive blocks with \"\\n\", losing blank‑line separators.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry import composer as c\n\np1 = c.DirectivePacket(\"situation\", \"p1\", \"Alpha\\n\\nBeta\", \"SOFT\")\np2 = c.DirectivePacket(\"domain\",    \"p2\", \"Gamma\",         \"SOFT\")\n\nprelim = c.ComposedDirectiveSet(\n    packets=[p1, p2],\n    rendered_text=\"\", policy={}, cid=\"test\",\n    constraint_count=0, token_estimate=1, constraint_density=0.0,\n    coherence_budget=1.0, pruned_soft=[], manifest={},\n)\n\nresolved, _ = c.resolve_layer_conflicts(prelim)\nrebuilt_p1 = [p for p in resolved.packets if p.name == \"p1\"][0]\nif \"\\n\\n\" not in rebuilt_p1.text:\n    print(\"FALSIFIED: blank line lost after conflict resolution\")\n```\n\nFINDING_ID: F002\nSEVERITY: 0.60\nFIND: calibrate_coherence_thresholds crashes on non‑dict metadata via unsafe .get() chain.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import calibrate_coherence_thresholds\nimport json, tempfile, pathlib\n\nd = tempfile.mkdtemp()\nlog = {\n    \"model\": \"deepseek_v3\",\n    \"constraint_density\": 0.02,\n    \"metadata\": [\"not a dict\"],\n    \"response\": \"FINDING_ID: F001\\n\" * 20,\n}\nwith open(pathlib.Path(d) / \"log.json\", \"w\") as f:\n    json.dump([log], f)\n\ntry:\n    calibrate_coherence_thresholds(d, min_points_per_model=1)\nexcept AttributeError:\n    print(\"FALSIFIED: crash on non-dict metadata\")\n```\n\nFINDING_ID: F003\nSEVERITY: 0.65\nFIND: _prune_for_coherence removes situation layer before domain, discarding task description first.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry import composer as c\n\np_domain = c.DirectivePacket(\"domain\", \"p_domain\", \"some domain text\", \"SOFT\")\np_sit   = c.DirectivePacket(\"situation\", \"p_sit\", \"some situation text\", \"SOFT\")\n\nbudget = 0.0001\npolicy = {\"constraints\": {\"c1\": True}} * 20\n\n_, pruned = c._prune_for_coherence([p_domain, p_sit], policy, budget)\ndomain_removed = any(\"p_domain\" in name for name in pruned)\nsit_removed    = any(\"p_sit\"    in name for name in pruned)\n\nif sit_removed and not domain_removed:\n    print(\"FALSIFIED: situation pruned before domain\")\n```\n\nFINDING_ID: F004\nSEVERITY: 0.50\nFIND: _apply_phenotype_transform collapse/deduplicate steps join with \"\\n\", stripping blank‑line separators.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\n\ntext = \"First directive.\\n\\nSecond directive.\"\ntransform = PhenotypeTransform(format_style=\"concise\")\nresult = _apply_phenotype_transform(text, transform)\n\nif \"\\n\\n\" not in result:\n    print(\"FALSIFIED: blank lines deleted by phenotype transform\")\n```",
+  "metadata": {
+    "round": 14,
+    "elapsed": 307.5,
+    "chars": 2632,
+    "findings_count": 5,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

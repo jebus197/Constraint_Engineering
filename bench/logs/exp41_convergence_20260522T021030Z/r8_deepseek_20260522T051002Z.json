@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260522T051002Z",
+  "phase": "r8",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1887,
+  "response": "**Schema Feedback (Round 7)**\n- **DS_R7_001 (C0042)**: withdrawn. Near-duplicate of CC2_F001 (cosine 0.69); ADMISSIBILITY not supplied. Not resubmitted.\n\n---\n\n**Verdicts on OPEN Registry Entries**\n\n- **CONFIRM C0037** – The fix (iterate over only existing round IDs ≤ `round_idx`) correctly handles sparse round indices. No remaining bug.\n- **CONFIRM C0025** – The near-zero baseline handling in `kappa_rate` (0.0 when both rates near zero, −1.0 when current rate > 0 without baseline) is correctly implemented in the code.\n- **CHALLENGE C0031** – `kappa_set` cannot be negative.  \n  *Evidence*: `novel_sev` is the sum of suppression-weighted aggregated severity of novel classes. Because the suppression weight ∈ [0,1], `novel_sev` ≤ raw severity of novel classes. The novel classes are a subset of the cumulative union, so raw novel severity ≤ `total_sev` (sum of all cumulative aggregated severities). Therefore `novel_sev ≤ total_sev` ⇒ `kappa_set = 1 − (novel_sev/total_sev) ≥ 0`. No counterexample exists with the current definition.  \n- **MERGE C0044 → C0014** – `_veto()` inherits the same class-level novelty grain issue as `_novel_classes()`; the root cause is the coarse-grained “entire class novel if any member is novel” semantics already described in C0014.  \n- **CONFIRM C0023** – The proposed fix (adding a homogeneity check before assigning `flaw_class`) is sufficient. The code now shows that fix applied, correctly preventing mixed‑flaw‑class equivalence classes.\n\n**No new DISCOVERY findings** of severity ≥ 0.7 remain unaddressed.\n\n*Global P‑pass*: All verdicts are internally consistent; no cross‑verdict contradiction detected. The open registry now contains 12 active entries (after withdrawals and merges), all of which have either verified fixes or are under active challenge. The remaining issues are minor (low severity) or already covered by confirmed fixes.",
+  "metadata": {
+    "round": 8,
+    "elapsed": 487.7,
+    "chars": 1887,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

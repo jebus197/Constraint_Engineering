@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekwholer3",
+  "path": "whole",
+  "run": 3,
+  "ok": true,
+  "response": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: `_prune_for_coherence()` treats situation\u2011layer SOFT packets as prunable, causing task\u2011defining blocks to be removed under a tight coherence budget.\nFALSIFIER:\n```python\nimport unittest.mock\nfrom bench.cdsfl_registry import composer\n\nclass DummyPolicy:\n    def check(self, *args, **kwargs):\n        return True\n\ndef mock_load_universal():\n    p = composer.DirectivePacket(\n        layer=\"universal\",\n        name=\"universal\",\n        text=\"universal text\",\n        constraint_class=\"HARD\"\n    )\n    p.policy = DummyPolicy()\n    return p\n\nwith unittest.mock.patch.object(composer, '_load_universal_directive', mock_load_universal):\n    with unittest.mock.patch.dict(composer.MODEL_COHERENCE_BUDGETS, {\"deepseek_v3\": 0.010}):\n        model = \"deepseek_v3\"\n        review_target = \"FALSIFIER_TARGET: this text must survive composition\"\n        situation = composer._build_situation_packet(review_target=review_target)\n        huge_domain = composer.DirectivePacket(\n            layer=\"domain\",\n            name=\"bloat\",\n            text=\"bloat text for pruning\\n\" * 5000,\n            constraint_class=\"SOFT\",\n        )\n        universal = mock_load_universal()\n        budget = composer.MODEL_COHERENCE_BUDGETS[model]\n        pruned_packets, _ = composer._prune_for_coherence(\n            [universal, huge_domain, situation],\n            universal.policy,\n            budget\n        )\n        rendered = composer._render_directive_text(pruned_packets)\n        if review_target not in rendered:\n            raise AssertionError(\"FALSIFIED: review target pruned\")\n```",
+  "response_length": 1599,
+  "elapsed_s": 310.0
+}

@@ -1,0 +1,1170 @@
+[03:15:48] ============================================================
+[03:15:48] EXPERIMENT: exp40_gate
+[03:15:48]   Topology: star/blackboard
+[03:15:48]   Pattern: four_layer
+[03:15:48]   Max rounds: 18 (extension to 20)
+[03:15:48]   Convergence: state-based, earliest R3
+[03:15:48]   Target: bench/dm/_feedback.py
+[03:15:48]   Context: ['bench/dm/_types.py']
+[03:15:48]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[03:15:48]   Domain: software
+[03:15:48]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z
+[03:15:48] ============================================================
+[03:15:48]   Target: 22,122 chars
+[03:15:48]   Context: 1 files
+[03:15:48]   Total: 49,778 chars with headers
+[03:15:48]   RESUMED from round 10
+[03:15:48]   Registry restored: 146 entries
+[03:15:48]   S_k pipeline: capturing baseline gate scores...
+[03:15:48]   S_k baseline: ruff=0, bandit={'high': 0, 'medium': 0}
+[03:15:48] 
+------------------------------------------------------------
+[03:15:48] Round 10/17 (adaptive)
+[03:15:48] ------------------------------------------------------------
+[03:15:48]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[03:15:48]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+[03:15:48]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[03:15:48]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[03:15:48]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+[03:15:48]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=08bc99d0..., ~128,201 chars total
+[03:15:48]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+[03:15:49]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[03:15:49]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[03:15:49]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[03:15:49]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[03:15:53]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[03:15:56]   [claude-cli] delivering final instruction (chunk 3/3)
+[03:16:25]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (666 chars)
+[03:16:25]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[03:16:58]   [openrouter:openai/gpt-5.5] section 1 analysis complete (0 chars)
+[03:16:58]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[03:17:00]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (0 chars)
+[03:17:00]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[03:17:02]   [openrouter:openai/gpt-5.5] section 1 analysis complete (1,861 chars)
+[03:17:02]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[03:17:20]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,380 chars)
+[03:17:20]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,941 chars)
+[03:17:20]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[03:17:20]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[03:17:34]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (1,107 chars)
+[03:17:34]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[03:17:47]   [openrouter:openai/gpt-5.5] synthesis complete (118.4s, 1,678 chars)
+[03:17:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round10_codex_20260515T021747Z.json
+[03:17:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r10_codex_20260515T021747Z.json
+[03:19:08]   [openrouter:openai/gpt-5.5] synthesis complete (198.9s, 9,363 chars)
+[03:19:08]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round10_chatgpt_20260515T021908Z.json
+[03:19:08]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r10_chatgpt_20260515T021908Z.json
+[03:21:19]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[03:21:19]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[03:21:25]   [claude-cli] synthesis complete (337.0s, 7,000 chars)
+[03:21:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round10_cc2_20260515T022125Z.json
+[03:21:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r10_cc2_20260515T022125Z.json
+[03:22:53]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (424.3s, 12,855 chars)
+[03:22:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round10_gemini_20260515T022253Z.json
+[03:22:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r10_gemini_20260515T022253Z.json
+[03:25:21]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (572.0s, 42,810 chars)
+[03:25:21]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round10_deepseek_20260515T022521Z.json
+[03:25:21]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r10_deepseek_20260515T022521Z.json
+[03:25:21]   R_k FAIL: CC2_F001 — model=0.400, recomputed=0.499, delta=0.099
+[03:25:21]   R_k FAIL: Gemini_F003 — model=34.000, recomputed=0.342, delta=33.658
+[03:25:21]   R_k FAIL: Gemini_F004 — model=40.000, recomputed=0.459, delta=39.541
+[03:25:21]   R_k FAIL: DeepSeek_F001 — model=0.372, recomputed=1.000, delta=0.628
+[03:25:21]   R_k FAIL: DeepSeek_F002 — model=0.425, recomputed=1.000, delta=0.575
+[03:25:21]   R_k FAIL: DeepSeek_F003 — model=0.429, recomputed=1.000, delta=0.571
+[03:25:21]   R_k FAIL: DeepSeek_F004 — model=0.460, recomputed=1.000, delta=0.540
+[03:25:21]   R_k FAIL: DeepSeek_F005 — model=0.469, recomputed=1.000, delta=0.531
+[03:25:21]   R_k validation [Codex]: SKIP=1
+[03:25:21]   R_k validation [ChatGPT]: SKIP=1
+[03:25:21]   R_k validation [CC2]: FAIL=1
+[03:25:21]   R_k validation [Gemini]: FAIL=2, SKIP=2
+[03:25:21]   R_k validation [DeepSeek]: FAIL=5
+[03:25:21]   Registry: 1 novel / 12 raw, 147 total, rho=0.083, rho_avg=0.501
+[03:25:23]   BUGZILLA CLOSED-loop verified C0004: verified: ruff=True mypy=True bandit=True test=True
+[03:25:23]   CLOSED C0004: verified fix, no unresolved challenges
+[03:25:25]   BUGZILLA CLOSED-loop verified C0006: verified: ruff=True mypy=True bandit=True test=True
+[03:25:25]   CLOSED C0006: verified fix, no unresolved challenges
+[03:25:26]   BUGZILLA CLOSED-loop verified C0007: verified: ruff=True mypy=True bandit=True test=True
+[03:25:26]   CLOSED C0007: verified fix, no unresolved challenges
+[03:25:26]   MERGE DEFERRED C0008: target disagreement (C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053, C0089, C0090, C0091) [2/5]
+[03:25:26]   BUGZILLA close-the-loop failed for C0008: sandbox apply failed: old_code not found in target file
+[03:25:27]   BUGZILLA close-the-loop failed for C0014: verification failed: ruff: F821 Undefined name `_rebuild_single_item_truncated`
+   --> /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_4s36lnq
+[03:25:27]   D4 MERGE DEADLOCK C0023: escalated to HIL after 8 rounds
+[03:25:27]   D4 MERGE DEADLOCK C0032: escalated to HIL after 5 rounds
+[03:25:27]   MERGE DEFERRED C0035: target disagreement (C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071, C0073, C0077, C0079, C0085, C0086, C0087, C0088) [3/5]
+[03:25:27]   CLOSED C0082: verified fix, no unresolved challenges
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 12 passed, 0 failed out of 12 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F010 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F004 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F004 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 8/12 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 12 findings to classify.
+INFO:immune.pipeline:LLM classifier: Codex_UNSTRUCTURED — regex=mathematical llm=uncategorised (conf=0.78, below threshold 0.70, 14.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F010 — regex=mathematical → llm=logical (conf=0.80, threshold=0.70, 14.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 10.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F002 — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 9.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F005 — regex=mathematical → llm=logical (conf=0.78, threshold=0.70, 11.0s)
+INFO:immune.pipeline:LLM classifier: 7/12 agree with regex (58.3%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 3 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Codex_UNSTRUCTURED: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  ChatGPT_F010: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  DeepSeek_F005: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 12 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 254.4s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 4 verdicts; detail=[{"finding_id": "Codex_UNSTRUCTURED", "verdict": "REJECTED", "confidence": 0.95, "tool_used": "sympy", "evidence": "SymPy: VERIFIED_FALSE [specialist:sympy]"}, {"finding_id": "ChatGPT_F010", "verdict": "CONFIRMED", "confidence": 0.3, "tool_used": "z3", "evidence": "z3: VERIFIED_TRUE: 0.0 <= 1.0 [specialist:z3]"}, {"finding_id": "DeepSeek_F002", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_F005", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_PARSED: extracted 3 numeric values"}]
+INFO:immune.pipeline:B-Cell specialist divergence: Codex_UNSTRUCTURED specialist=REJECTED generic=UNCERTAIN
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_F010 specialist=CONFIRMED generic=UNCERTAIN
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_F002 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 12 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 12 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F005 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_UNSTRUCTURED — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F004 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F010 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F003 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 12 finding(s): CC2_F001, ChatGPT_F010, Codex_UNSTRUCTURED, DeepSeek_F001, DeepSeek_F002, DeepSeek_F003, DeepSeek_F004, DeepSeek_F005, Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 12/12 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 4/4 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 4/4 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 12 locked rejections
+[03:33:36]   [feedback] round 10 → round 11: 5 model(s) flagged
+Gate C preflight: PASS (5 canonical cases, 5 gates verified)
+[03:33:36] Dispatching to CC2 (opus) via claude_cli...
+[03:33:59]   [claude-cli:opus] done (23.0s, 1258 chars)
+[03:33:59]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:33:59]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:02]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[03:34:02]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[03:34:04]   S_k [C0018]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:07]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:07]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[03:34:07]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:09]   S_k [C0024]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:11]   S_k [C0031]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:11]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[03:34:13]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:13]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:34:13]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:16]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:18]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:20]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:22]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:24]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:26]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:34:26]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:34:26]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:34:26]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[03:34:26]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[03:34:26]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:26]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[03:34:26]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[03:34:28]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[03:34:28]   S_k pipeline: 24 evaluated, 13 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[03:34:28]   ITC [DeepSeek]: parse yield 0.45 (5+0/11 markers, baseline=3.08, threshold=2.83) — DEGRADATION
+[03:34:28]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.525 >= 0.25 (normal depletion)
+[03:34:28]   *** HIL FLAG: DeepSeek has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[03:34:28]   ITC [ChatGPT]: parse yield 0.50 (1+0/2 markers, baseline=3.39, threshold=3.14) — DEGRADATION
+[03:34:28]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=1.000 >= 0.25 (normal depletion)
+[03:34:28]   *** HIL FLAG: ChatGPT has 7 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[03:34:28]   ITC [Gemini]: parse yield 2.00 (4+6/5 markers, verdicts=6, baseline=2.46, threshold=2.21) — DEGRADATION
+[03:34:28]   *** HIL FLAG: Gemini has 7 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[03:34:28]   gamma: 0.094 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[03:34:28]   Round 10: 12 findings, 579.1s
+[03:34:28]   Convergence: Gate failed: contested=8
+[03:34:28]   γ-alt: γ-alt not met: gamma=0.094 < 0.3; novel_crit_recent=[0, 1, 0]
+[03:34:28] 
+------------------------------------------------------------
+[03:34:28] Round 11/17 (adaptive)
+[03:34:28] ------------------------------------------------------------
+[03:34:28]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[03:34:28]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[03:34:28]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=1ca14d1a..., ~129,327 chars total
+[03:34:28]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[03:34:28]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+[03:34:28]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[03:34:28]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+[03:34:28]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[03:34:28]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[03:34:28]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[03:34:28]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[03:34:32]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[03:34:45]   [claude-cli] delivering final instruction (chunk 3/3)
+[03:35:01]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (666 chars)
+[03:35:01]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[03:35:27]   [openrouter:openai/gpt-5.5] section 1 analysis complete (6,113 chars)
+[03:35:27]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[03:35:32]   [openrouter:openai/gpt-5.5] section 1 analysis complete (2,994 chars)
+[03:35:32]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[03:35:36]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (448 chars)
+[03:35:36]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[03:35:41]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,524 chars)
+[03:35:41]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[03:35:57]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,278 chars)
+[03:35:57]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[03:36:40]   [openrouter:openai/gpt-5.5] synthesis complete (131.4s, 2,027 chars)
+[03:36:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round11_chatgpt_20260515T023640Z.json
+[03:36:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r11_chatgpt_20260515T023640Z.json
+[03:36:59]   [openrouter:openai/gpt-5.5] synthesis complete (150.7s, 9,657 chars)
+[03:36:59]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round11_codex_20260515T023659Z.json
+[03:36:59]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r11_codex_20260515T023659Z.json
+[03:37:56]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (15,999 chars)
+[03:37:56]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[03:39:20]   [openrouter:google/gemini-3.1-pro-preview] WARN: synthesis returned 0 chars; reconstructed from 2 chunk analyses (1,278 chars)
+[03:39:20]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (292.4s, 1,278 chars)
+[03:39:20]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round11_gemini_20260515T023920Z.json
+[03:39:20]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r11_gemini_20260515T023920Z.json
+[03:39:43]   [claude-cli] synthesis complete (315.5s, 7,177 chars)
+[03:39:43]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round11_cc2_20260515T023943Z.json
+[03:39:44]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r11_cc2_20260515T023944Z.json
+[03:41:00]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[03:41:00]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[03:58:51]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (1463.2s, 22,189 chars)
+[03:58:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round11_deepseek_20260515T025851Z.json
+[03:58:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r11_deepseek_20260515T025851Z.json
+[03:58:51]   R_k FAIL: CC2_F001 — model=0.350, recomputed=0.464, delta=0.114
+[03:58:51]   R_k FAIL: DeepSeek_D011 — model=0.384, recomputed=1.000, delta=0.616
+[03:58:51]   R_k validation [ChatGPT]: SKIP=1
+[03:58:51]   R_k validation [Gemini]: SKIP=1
+[03:58:51]   R_k validation [CC2]: FAIL=1
+[03:58:51]   R_k validation [DeepSeek]: PASS=3, FAIL=1
+[03:58:51]   Registry: 6 novel / 7 raw, 153 total, rho=0.857, rho_avg=0.582
+[03:58:51]   MERGE DEFERRED C0008: target disagreement (C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053, C0089, C0090, C0091) [3/5]
+[03:58:55]   BUGZILLA CLOSED-loop verified C0018: verified: ruff=True mypy=True bandit=True test=True
+[03:58:55]   CLOSED C0018: verified fix, no unresolved challenges
+[03:58:56]   BUGZILLA CLOSED-loop verified C0019: verified: ruff=True mypy=True bandit=True test=True
+[03:58:56]   CLOSED C0019: verified fix, no unresolved challenges
+[03:58:56]   D4 MERGE DEADLOCK C0023: escalated to HIL after 9 rounds
+[03:58:56]   BUGZILLA close-the-loop failed for C0023: sandbox apply failed: old_code not found in target file
+[03:58:58]   BUGZILLA CLOSED-loop verified C0024: verified: ruff=True mypy=True bandit=True test=True
+[03:58:58]   CLOSED C0024: verified fix, no unresolved challenges
+[03:58:59]   BUGZILLA CLOSED-loop verified C0031: verified: ruff=True mypy=True bandit=True test=True
+[03:58:59]   CLOSED C0031: verified fix, no unresolved challenges
+[03:58:59]   D4 MERGE DEADLOCK C0032: escalated to HIL after 6 rounds
+[03:58:59]   MERGE DEFERRED C0035: target disagreement (C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071, C0073, C0077, C0079, C0085, C0086, C0087, C0088) [4/5]
+[03:58:59]   D2 HIL escalation: C0052 unresolved challenge since R6 -> UNCONFIRMED + HIL flag
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 7 passed, 0 failed out of 7 findings
+INFO:immune.pipeline:DC v2 reclassification: Gemini_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 1/7 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 7 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_UNSTRUCTURED — regex=mathematical → llm=code_behavioral (conf=0.80, threshold=0.70, 14.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 9.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_D014 — regex=code_behavioral → llm=code_structural (conf=0.82, threshold=0.70, 10.6s)
+INFO:immune.pipeline:LLM classifier: 4/7 agree with regex (57.1%), 3 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 7 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 278.7s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 1 verdicts; detail=[{"finding_id": "DeepSeek_D014", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_D014 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 7 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 7 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D012 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D014 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D011 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_UNSTRUCTURED — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D013 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_UNSTRUCTURED — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 7 finding(s): CC2_F001, ChatGPT_UNSTRUCTURED, DeepSeek_D011, DeepSeek_D012, DeepSeek_D013, DeepSeek_D014, Gemini_UNSTRUCTURED
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 7/7 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 7 locked rejections
+[04:04:55]   [feedback] round 11 → round 12: 4 model(s) flagged
+[04:04:55] Dispatching to CC2 (opus) via claude_cli...
+[04:05:37]   [claude-cli:opus] done (42.3s, 1187 chars)
+[04:05:37]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:37]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:40]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:05:40]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:05:40]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:05:40]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:40]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:05:43]   S_k [C0034]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:43]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:43]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:45]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:47]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:50]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:52]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:55]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:57]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:57]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:57]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:57]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:05:57]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:05:57]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:57]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:05:57]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:05:59]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:06:02]   S_k [C0150]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:06:05]   S_k [C0152]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:06:05]   S_k pipeline: 22 evaluated, 11 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[04:06:05]   ITC [DeepSeek]: parse yield 0.57 (4+0/7 markers, baseline=3.08, threshold=2.83) — DEGRADATION
+[04:06:05]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.608 >= 0.25 (normal depletion)
+[04:06:05]   *** HIL FLAG: DeepSeek has 6 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:06:05]   ITC [CC2]: DEGRADATION suppressed — rho_avg=0.333 >= 0.25 (normal depletion)
+[04:06:05]   *** HIL FLAG: CC2 has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:06:05]   ITC [Codex]: parse yield 0.50 (0+1/2 markers, verdicts=1, baseline=2.37, threshold=2.12) — DEGRADATION
+[04:06:05]   ITC [Codex]: DEGRADATION suppressed — rho_avg=0.333 >= 0.25 (normal depletion)
+[04:06:05]   *** HIL FLAG: Codex has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:06:05]   gamma: 0.063 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[04:06:05]   Round 11: 7 findings, 1471.2s
+[04:06:05]   Convergence: Gate failed: novel=6, contested=10
+[04:06:05]   γ-alt: γ-alt not met: gamma=0.063 < 0.3; novel_crit_recent=[1, 0, 3]
+[04:06:05] 
+------------------------------------------------------------
+[04:06:05] Round 12/17 (adaptive)
+[04:06:05] ------------------------------------------------------------
+[04:06:06]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[04:06:06]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=15a52f40..., ~130,116 chars total
+[04:06:06]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+[04:06:06]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:06:06]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:06:06]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:06:06]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+[04:06:06]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:06:06]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[04:06:06]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[04:06:06]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:06:10]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:06:15]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:06:44]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (666 chars)
+[04:06:44]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:07:09]   [openrouter:openai/gpt-5.5] section 1 analysis complete (5,253 chars)
+[04:07:09]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:07:16]   [openrouter:openai/gpt-5.5] section 1 analysis complete (3,682 chars)
+[04:07:16]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:07:20]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (0 chars)
+[04:07:20]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:07:25]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,640 chars)
+[04:07:25]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:07:31]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,926 chars)
+[04:07:31]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:08:37]   [openrouter:openai/gpt-5.5] synthesis complete (151.6s, 10,574 chars)
+[04:08:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round12_chatgpt_20260515T030837Z.json
+[04:08:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r12_chatgpt_20260515T030837Z.json
+[04:08:46]   [openrouter:openai/gpt-5.5] synthesis complete (160.1s, 8,876 chars)
+[04:08:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round12_codex_20260515T030846Z.json
+[04:08:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r12_codex_20260515T030846Z.json
+[04:09:45]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (14,162 chars)
+[04:09:45]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:11:14]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (308.5s, 19,209 chars)
+[04:11:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round12_gemini_20260515T031114Z.json
+[04:11:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r12_gemini_20260515T031114Z.json
+[04:11:37]   [claude-cli] synthesis complete (331.4s, 3,010 chars)
+[04:11:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round12_cc2_20260515T031137Z.json
+[04:11:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r12_cc2_20260515T031137Z.json
+[04:12:02]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[04:12:02]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[04:15:56]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (590.6s, 23,375 chars)
+[04:15:56]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round12_deepseek_20260515T031556Z.json
+[04:15:56]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r12_deepseek_20260515T031556Z.json
+[04:15:56]   R_k FAIL: ChatGPT_F012 — model=469.000, recomputed=1.000, delta=468.000
+[04:15:56]   R_k WARN: Gemini_C0035 — model=0.490, recomputed=0.508, delta=0.018
+[04:15:56]   R_k WARN: Gemini_f for f in findings} — model=0.490, recomputed=0.508, delta=0.018
+[04:15:56]   R_k WARN: Gemini_C0002 — model=0.490, recomputed=0.508, delta=0.018
+[04:15:56]   R_k WARN: Gemini_C0003 — model=0.490, recomputed=0.508, delta=0.018
+[04:15:56]   R_k FAIL: DeepSeek_F008 — model=0.350, recomputed=1.000, delta=0.650
+[04:15:56]   R_k validation [ChatGPT]: FAIL=1
+[04:15:56]   R_k validation [Codex]: SKIP=1
+[04:15:56]   R_k validation [Gemini]: WARN=4, SKIP=1
+[04:15:56]   R_k validation [CC2]: SKIP=1
+[04:15:56]   R_k validation [DeepSeek]: FAIL=1, SKIP=3
+[04:15:56]   Registry: 7 novel / 12 raw, 160 total, rho=0.583, rho_avg=0.508
+[04:15:56]   MERGE DEFERRED C0008: target disagreement (C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053, C0089, C0090, C0091) [4/5]
+[04:15:56]   D4 MERGE DEADLOCK C0023: escalated to HIL after 10 rounds
+[04:15:56]   D4 MERGE DEADLOCK C0032: escalated to HIL after 7 rounds
+[04:15:56]   BUGZILLA close-the-loop failed for C0032: extract failed: no SEARCH/REPLACE or OLD/NEW markers found in proposed_fix
+[04:15:59]   BUGZILLA CLOSED-loop verified C0034: verified: ruff=True mypy=True bandit=True test=True
+[04:15:59]   CLOSED C0034: verified fix, no unresolved challenges
+[04:15:59]   D4 MERGE DEADLOCK C0035: escalated to HIL after 5 rounds
+[04:15:59]   BUGZILLA close-the-loop failed for C0037: extract failed: no SEARCH/REPLACE or OLD/NEW markers found in proposed_fix
+[04:15:59]   BUGZILLA close-the-loop failed for C0038: extract failed: no SEARCH/REPLACE or OLD/NEW markers found in proposed_fix
+[04:15:59]   BUGZILLA close-the-loop failed for C0039: extract failed: no SEARCH/REPLACE or OLD/NEW markers found in proposed_fix
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 12 passed, 0 failed out of 12 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_C0035 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_C0003 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_f for f in findings}` silently overwriting when two findings from different models share a `finding_id`. Same root cause as C0035. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_F008 — v1=mathematical → v2=code_behavioral (conf=0.75)
+INFO:immune.pipeline:DC v2 (v2): 6/12 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 12 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F012 — regex=mathematical → llm=code_structural (conf=0.75, threshold=0.70, 15.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_C0035 — regex=code_behavioral → llm=code_structural (conf=0.68, threshold=0.70, 8.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 8.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_C0002 — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 12.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_C0147 — regex=mathematical → llm=code_behavioral (conf=0.78, threshold=0.70, 15.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_F008 — regex=code_behavioral → llm=code_structural (conf=0.92, threshold=0.70, 6.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` — regex=mathematical → llm=code_structural (conf=0.65, threshold=0.70, 15.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_` — regex=mathematical → llm=code_behavioral (conf=0.70, threshold=0.70, 14.7s)
+INFO:immune.pipeline:LLM classifier: 4/12 agree with regex (33.3%), 8 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 12 verdicts (0 intra-round dups, 1 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 123.0s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 5 verdicts; detail=[{"finding_id": "ChatGPT_F012", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "Gemini_C0035", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Gemini_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_F008", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "DeepSeek_`", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_F012 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_C0035 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_F008 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_` specialist=REJECTED generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 11 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 11 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_f for f in findings}` silently overwriting when two findings from different models share a `finding_id`. Same root cause as C0035. — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0002 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0035 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_UNSTRUCTURED — both pipelines REJECTED (v1=0.68, v2=0.68, max=0.68 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0147 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_f for f in findings} — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F008 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0003 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F012 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_` — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_F009 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 11 finding(s): CC2_f for f in findings}` silently overwriting when two findings from different models share a `finding_id`. Same root cause as C0035., ChatGPT_F012, Codex_UNSTRUCTURED, DeepSeek_F008, DeepSeek_F009, DeepSeek_`, Gemini_C0002, Gemini_C0003, Gemini_C0035, Gemini_C0147, Gemini_f for f in findings}
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 11/11 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 5/5 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 5/5 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 11 locked rejections
+[04:20:23]   [feedback] round 12 → round 13: 5 model(s) flagged
+[04:20:23] Dispatching to CC2 (opus) via claude_cli...
+[04:20:45]   [claude-cli:opus] done (21.8s, 2101 chars)
+[04:20:45]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:20:45]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:20:48]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:20:48]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:20:48]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:20:48]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:20:48]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:20:48]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:20:48]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:20:51]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:20:53]   S_k [C0048]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:20:56]   S_k [C0055]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:20:58]   S_k [C0058]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:01]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:04]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:21:04]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:21:04]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:21:04]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:21:04]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:21:04]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:04]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:21:04]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:21:07]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:10]   S_k [C0150]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:12]   S_k [C0152]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:15]   S_k [C0154]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:16]   S_k [C0156]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:18]   S_k [C0158]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:20]   S_k [C0160]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:21:20]   S_k pipeline: 25 evaluated, 14 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[04:21:20]   ITC [DeepSeek]: parse yield 0.50 (4+0/8 markers, baseline=2.22, threshold=1.97) — DEGRADATION
+[04:21:20]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.417 >= 0.25 (normal depletion)
+[04:21:20]   *** HIL FLAG: DeepSeek has 7 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:21:20]   ITC [Gemini]: parse yield 0.31 (5+0/16 markers, baseline=2.46, threshold=2.21) — DEGRADATION
+[04:21:20]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.600 >= 0.25 (normal depletion)
+[04:21:20]   *** HIL FLAG: Gemini has 8 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:21:20]   gamma: 0.045 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[04:21:20]   Round 12: 12 findings, 593.2s
+[04:21:20]   Convergence: Gate failed: novel=7, contested=10
+[04:21:20]   γ-alt: γ-alt not met: gamma=0.045 < 0.3; novel_crit_recent=[0, 3, 2]
+[04:21:20] 
+------------------------------------------------------------
+[04:21:20] Round 13/17 (adaptive)
+[04:21:20] ------------------------------------------------------------
+[04:21:20]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[04:21:20]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:21:20]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=917cb1ec..., ~131,128 chars total
+[04:21:20]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:21:20]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:21:20]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:21:20]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+[04:21:20]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[04:21:20]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:21:20]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[04:21:20]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:21:25]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:21:30]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:21:56]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[04:21:56]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:22:24]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (536 chars)
+[04:22:24]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:22:27]   [openrouter:openai/gpt-5.5] section 1 analysis complete (3,906 chars)
+[04:22:27]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:22:30]   [openrouter:openai/gpt-5.5] section 1 analysis complete (692 chars)
+[04:22:30]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:22:47]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,515 chars)
+[04:22:47]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:22:52]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,406 chars)
+[04:22:52]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:23:16]   [openrouter:openai/gpt-5.5] synthesis complete (115.8s, 3,345 chars)
+[04:23:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round13_codex_20260515T032316Z.json
+[04:23:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r13_codex_20260515T032316Z.json
+[04:23:37]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[04:23:37]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:24:42]   [openrouter:openai/gpt-5.5] synthesis complete (202.0s, 11,796 chars)
+[04:24:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round13_chatgpt_20260515T032442Z.json
+[04:24:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r13_chatgpt_20260515T032442Z.json
+[04:25:50]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (0 chars)
+[04:25:50]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[04:26:11]   [claude-cli] synthesis complete (290.5s, 8,009 chars)
+[04:26:11]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round13_cc2_20260515T032611Z.json
+[04:26:11]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r13_cc2_20260515T032611Z.json
+[04:26:39]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (318.4s, 27,362 chars)
+[04:26:39]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round13_gemini_20260515T032639Z.json
+[04:26:39]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r13_gemini_20260515T032639Z.json
+[04:27:46]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (386.3s, 32,606 chars)
+[04:27:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round13_deepseek_20260515T032746Z.json
+[04:27:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r13_deepseek_20260515T032746Z.json
+[04:27:47]   R_k FAIL: Gemini_F001 — model=0.320, recomputed=1.000, delta=0.680
+[04:27:47]   R_k FAIL: Gemini_F002 — model=0.320, recomputed=1.000, delta=0.680
+[04:27:47]   R_k FAIL: Gemini_F003 — model=0.320, recomputed=1.000, delta=0.680
+[04:27:47]   R_k FAIL: Gemini_F004 — model=0.320, recomputed=1.000, delta=0.680
+[04:27:47]   R_k FAIL: Gemini_F007 — model=0.320, recomputed=1.000, delta=0.680
+[04:27:47]   R_k FAIL: DeepSeek_D015 — model=0.396, recomputed=1.000, delta=0.604
+[04:27:47]   R_k FAIL: DeepSeek_D016 — model=0.287, recomputed=1.000, delta=0.713
+[04:27:47]   R_k validation [Codex]: SKIP=1
+[04:27:47]   R_k validation [ChatGPT]: SKIP=2
+[04:27:47]   R_k validation [CC2]: SKIP=1
+[04:27:47]   R_k validation [Gemini]: FAIL=5, SKIP=2
+[04:27:47]   R_k validation [DeepSeek]: FAIL=2, SKIP=1
+[04:27:47]   Registry: 5 novel / 14 raw, 165 total, rho=0.357, rho_avg=0.599
+[04:27:47]   D4 MERGE DEADLOCK C0008: escalated to HIL after 5 rounds
+[04:27:47]   D4 MERGE DEADLOCK C0023: escalated to HIL after 11 rounds
+[04:27:47]   D4 MERGE DEADLOCK C0032: escalated to HIL after 8 rounds
+[04:27:47]   D4 MERGE DEADLOCK C0035: escalated to HIL after 6 rounds
+[04:27:47]   BUGZILLA close-the-loop failed for C0042: sandbox apply failed: old_code not found in target file
+[04:27:49]   BUGZILLA close-the-loop failed for C0047: verification failed: mypy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_wcogz_88__feedback.py:155: error: Need type annotation for "final_v
+[04:27:50]   BUGZILLA CLOSED-loop verified C0048: verified: ruff=True mypy=True bandit=True test=True
+[04:27:50]   CLOSED C0048: verified fix, no unresolved challenges
+[04:27:52]   BUGZILLA CLOSED-loop verified C0055: verified: ruff=True mypy=True bandit=True test=True
+[04:27:52]   CLOSED C0055: verified fix, no unresolved challenges
+[04:27:54]   BUGZILLA CLOSED-loop verified C0058: verified: ruff=True mypy=True bandit=True test=True
+[04:27:54]   CLOSED C0058: verified fix, no unresolved challenges
+[04:27:54]   CLOSED C0156: verified fix, no unresolved challenges
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 14 passed, 0 failed out of 14 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F013 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F006 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D015 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D016 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D017 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 8/14 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 14 findings to classify.
+INFO:immune.pipeline:LLM classifier: Codex_UNSTRUCTURED — regex=code_behavioral llm=uncategorised (conf=0.88, below threshold 0.70, 7.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`. — regex=code_behavioral → llm=code_structural (conf=0.75, threshold=0.70, 8.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.88, threshold=0.70, 10.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F004 — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 11.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F007 — regex=mathematical → llm=code_behavioral (conf=0.68, threshold=0.70, 17.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_D016 — regex=code_behavioral → llm=code_structural (conf=0.65, threshold=0.70, 13.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: DeepSeek_D017 — regex=code_behavioral → llm=code_structural (conf=0.78, threshold=0.70, 8.1s)
+INFO:immune.pipeline:LLM classifier: 7/14 agree with regex (50.0%), 6 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 14 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 218.2s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 3 verdicts; detail=[{"finding_id": "ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`.", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "DeepSeek_D016", "verdict": "REJECTED", "confidence": 0.8, "tool_used": "mypy", "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"}, {"finding_id": "DeepSeek_D017", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`. specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_D016 specialist=REJECTED generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: DeepSeek_D017 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 14 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 14 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F013 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D017 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_UNSTRUCTURED — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F007 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D016 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F006 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D015 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`. — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 14 finding(s): CC2_F001, ChatGPT_F013, ChatGPT_f for f in findings}` collapsing non-globally-unique IDs. F013 concerns ignoring the `model_id` namespace already present in `rk_validation`., Codex_UNSTRUCTURED, DeepSeek_D015, DeepSeek_D016, DeepSeek_D017, Gemini_F001, Gemini_F002, Gemini_F003, Gemini_F004, Gemini_F005, Gemini_F006, Gemini_F007
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 14/14 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 7/7 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 7/7 (100%) findings from Gemini removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 14 locked rejections
+[04:34:06]   [feedback] round 13 → round 14: 5 model(s) flagged
+[04:34:06] Dispatching to CC2 (opus) via claude_cli...
+[04:34:57]   [claude-cli:opus] done (51.3s, 1330 chars)
+[04:34:58]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:34:58]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:00]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:35:00]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:35:00]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:35:00]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:00]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:35:00]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:35:00]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:03]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:05]   S_k [C0060]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:08]   S_k [C0062]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:35:08]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:35:08]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:35:08]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:35:08]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:35:08]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:08]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:35:08]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:35:10]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:12]   S_k [C0150]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:15]   S_k [C0152]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:17]   S_k [C0154]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:20]   S_k [C0158]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:22]   S_k [C0160]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:24]   S_k [C0164]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:35:24]   S_k pipeline: 22 evaluated, 11 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[04:35:24]   ITC [ChatGPT]: parse yield 0.50 (2+0/4 markers, baseline=2.51, threshold=2.26) — DEGRADATION
+[04:35:24]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=1.000 >= 0.25 (normal depletion)
+[04:35:24]   *** HIL FLAG: ChatGPT has 8 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:35:24]   ITC [CC2]: parse yield 1.50 (1+2/2 markers, verdicts=2, baseline=3.03, threshold=2.78) — DEGRADATION
+[04:35:24]   ITC [CC2]: DEGRADATION suppressed — rho_avg=0.333 >= 0.25 (normal depletion)
+[04:35:24]   *** HIL FLAG: CC2 has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:35:24]   *** HIL FLAG: Codex has 6 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:35:24]   ITC [Gemini]: parse yield 0.64 (7+0/11 markers, baseline=2.46, threshold=2.21) — DEGRADATION
+[04:35:24]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.600 >= 0.25 (normal depletion)
+[04:35:24]   *** HIL FLAG: Gemini has 9 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:35:24]   gamma: 0.035 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[04:35:24]   Round 13: 14 findings, 393.5s
+[04:35:24]   Convergence: Gate failed: open_ch=2 (increasing: 0->2 over 3r), novel=5, contested=8
+[04:35:24]   γ-alt: γ-alt not met: gamma=0.035 < 0.3; novel_crit_recent=[3, 2, 1]
+[04:35:24] 
+------------------------------------------------------------
+[04:35:24] Round 14/17 (adaptive)
+[04:35:24] ------------------------------------------------------------
+[04:35:24]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[04:35:24]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=9593b2fe..., ~131,252 chars total
+[04:35:24]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:35:24]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:35:24]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:35:24]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+[04:35:24]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:35:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:35:24]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:35:24]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[04:35:24]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[04:35:29]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:35:34]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:36:02]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[04:36:02]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:36:29]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,680 chars)
+[04:36:29]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:36:30]   [openrouter:openai/gpt-5.5] section 1 analysis complete (6,824 chars)
+[04:36:30]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:36:30]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (0 chars)
+[04:36:30]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:36:44]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,852 chars)
+[04:36:44]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:36:47]   [openrouter:openai/gpt-5.5] section 2 analysis complete (2,483 chars)
+[04:36:47]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:37:08]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[04:37:08]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:37:14]   [openrouter:openai/gpt-5.5] synthesis complete (109.2s, 2,237 chars)
+[04:37:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round14_chatgpt_20260515T033714Z.json
+[04:37:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r14_chatgpt_20260515T033714Z.json
+[04:37:30]   [openrouter:openai/gpt-5.5] synthesis complete (125.2s, 1,949 chars)
+[04:37:30]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round14_codex_20260515T033730Z.json
+[04:37:30]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r14_codex_20260515T033730Z.json
+[04:39:03]   [claude-cli] synthesis complete (218.4s, 6,018 chars)
+[04:39:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round14_cc2_20260515T033903Z.json
+[04:39:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r14_cc2_20260515T033903Z.json
+[04:40:07]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (14,190 chars)
+[04:40:07]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[04:41:05]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (340.7s, 24,447 chars)
+[04:41:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round14_gemini_20260515T034105Z.json
+[04:41:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r14_gemini_20260515T034105Z.json
+[04:45:33]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (608.1s, 12,664 chars)
+[04:45:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round14_deepseek_20260515T034533Z.json
+[04:45:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r14_deepseek_20260515T034533Z.json
+[04:45:33]   R_k FAIL: CC2_F001 — model=0.350, recomputed=0.499, delta=0.149
+[04:45:33]   R_k FAIL: Gemini_F008 — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: Gemini_f for f in findings}` silently overwrites findings when multiple models use the same local `finding_id`. Additionally, `duplicate_pairs` only adds the duplicate to `fid_a`, leaving `fid_b` without feedback. — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: Gemini_f for f in findings} — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: Gemini_F009 — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: Gemini_F010 — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: Gemini_F011 — model=0.280, recomputed=0.370, delta=0.090
+[04:45:33]   R_k FAIL: DeepSeek_D018 — model=0.396, recomputed=1.000, delta=0.604
+[04:45:33]   R_k FAIL: DeepSeek_D019 — model=0.439, recomputed=1.000, delta=0.561
+[04:45:33]   R_k validation [Codex]: SKIP=1
+[04:45:33]   R_k validation [CC2]: FAIL=1
+[04:45:33]   R_k validation [Gemini]: FAIL=6, SKIP=2
+[04:45:33]   R_k validation [DeepSeek]: FAIL=2
+[04:45:33]   Registry: 4 novel / 12 raw, 169 total, rho=0.333, rho_avg=0.425
+[04:45:33]   D4 MERGE DEADLOCK C0008: escalated to HIL after 6 rounds
+[04:45:33]   D4 MERGE DEADLOCK C0023: escalated to HIL after 12 rounds
+[04:45:33]   D4 MERGE DEADLOCK C0032: escalated to HIL after 9 rounds
+[04:45:33]   D4 MERGE DEADLOCK C0035: escalated to HIL after 7 rounds
+[04:45:35]   BUGZILLA CLOSED-loop verified C0060: verified: ruff=True mypy=True bandit=True test=True
+[04:45:35]   CLOSED C0060: verified fix, no unresolved challenges
+[04:45:36]   BUGZILLA CLOSED-loop verified C0062: verified: ruff=True mypy=True bandit=True test=True
+[04:45:36]   CLOSED C0062: verified fix, no unresolved challenges
+[04:45:38]   BUGZILLA CLOSED-loop verified C0150: verified: ruff=True mypy=True bandit=True test=True
+[04:45:38]   CLOSED C0150: verified fix, no unresolved challenges
+[04:45:39]   BUGZILLA CLOSED-loop verified C0152: verified: ruff=True mypy=True bandit=True test=True
+[04:45:39]   CLOSED C0152: verified fix, no unresolved challenges
+[04:45:40]   BUGZILLA CLOSED-loop verified C0154: verified: ruff=True mypy=True bandit=True test=True
+[04:45:40]   CLOSED C0154: verified fix, no unresolved challenges
+[04:45:40]   REOPEN C0156: escalated to HIL
+[04:45:40]   D2 HIL escalation: C0071 unresolved challenge since R9 -> UNCONFIRMED + HIL flag
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 11 passed, 1 failed out of 12 findings
+INFO:immune.pipeline:  BLOCKED: CC2_F001 — Cited file not found: (location=foo.py
+INFO:immune.pipeline:DC v2 reclassification: Codex_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F008 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_f for f in findings} — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_F009 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D018 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: DeepSeek_D019 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 6/11 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 11 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F008 — regex=code_behavioral → llm=code_structural (conf=0.78, threshold=0.70, 6.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_f for f in findings} — regex=code_behavioral → llm=code_structural (conf=0.85, threshold=0.70, 10.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F011 — regex=mathematical → llm=code_behavioral (conf=0.92, threshold=0.70, 9.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F012 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 10.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_F013 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 10.6s)
+INFO:immune.pipeline:LLM classifier: 6/11 agree with regex (54.5%), 5 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 11 verdicts (0 intra-round dups, 1 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 230.6s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 2 verdicts; detail=[{"finding_id": "Gemini_F008", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}, {"finding_id": "Gemini_f for f in findings}", "verdict": "UNCERTAIN", "confidence": 0.0, "tool_used": "mypy", "evidence": "mypy: no valid file_path for type checking"}]
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_F008 specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:B-Cell specialist divergence: Gemini_f for f in findings} specialist=UNCERTAIN generic=NONE
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 11 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 11 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D018 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_UNSTRUCTURED — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F011 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_f for f in findings} — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F013 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: DeepSeek_D019 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F009 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F008 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F010 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_f for f in findings}` silently overwrites findings when multiple models use the same local `finding_id`. Additionally, `duplicate_pairs` only adds the duplicate to `fid_a`, leaving `fid_b` without feedback. — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_F012 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 11 finding(s): Codex_UNSTRUCTURED, DeepSeek_D018, DeepSeek_D019, Gemini_F008, Gemini_F009, Gemini_F010, Gemini_F011, Gemini_F012, Gemini_F013, Gemini_f for f in findings}, Gemini_f for f in findings}` silently overwrites findings when multiple models use the same local `finding_id`. Additionally, `duplicate_pairs` only adds the duplicate to `fid_a`, leaving `fid_b` without feedback.
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 11/11 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 11 locked rejections
+[04:51:24]   [feedback] round 14 → round 15: 4 model(s) flagged
+[04:51:25] Dispatching to CC2 (opus) via claude_cli...
+[04:51:56]   [claude-cli:opus] done (31.1s, 2227 chars)
+[04:51:56]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:51:56]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:51:59]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[04:51:59]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[04:51:59]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[04:51:59]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:51:59]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[04:51:59]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:51:59]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:52:02]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:52:02]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:52:02]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[04:52:02]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:52:02]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:02]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[04:52:02]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[04:52:05]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:07]   S_k [C0158]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:10]   S_k [C0160]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:12]   S_k [C0164]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:15]   S_k [C0167]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:17]   S_k [C0168]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:19]   S_k [C0169]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[04:52:19]   S_k pipeline: 20 evaluated, 9 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[04:52:19]   ITC [DeepSeek]: parse yield 1.00 (2+0/2 markers, baseline=1.27, threshold=1.02) — DEGRADATION
+[04:52:19]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.750 >= 0.25 (normal depletion)
+[04:52:19]   *** HIL FLAG: DeepSeek has 8 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:52:19]   ITC [CC2]: DEGRADATION suppressed — rho_avg=0.333 >= 0.25 (normal depletion)
+[04:52:19]   *** HIL FLAG: CC2 has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:52:19]   *** HIL FLAG: Codex has 7 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:52:19]   ITC [Gemini]: parse yield 0.94 (8+7/16 markers, verdicts=7, baseline=1.58, threshold=1.33) — DEGRADATION
+[04:52:19]   ITC [Gemini]: DEGRADATION suppressed — rho_avg=0.350 >= 0.25 (normal depletion)
+[04:52:19]   *** HIL FLAG: Gemini has 10 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[04:52:19]   gamma: 0.032 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[04:52:19]   Round 14: 12 findings, 616.1s
+[04:52:19]   Convergence: Gate failed: open_ch=3 (increasing: 1->3 over 3r), novel=4, contested=6
+[04:52:19]   γ-alt: γ-alt not met: gamma=0.032 < 0.3; novel_crit_recent=[2, 1, 0]
+[04:52:19] 
+------------------------------------------------------------
+[04:52:19] Round 15/17 (adaptive)
+[04:52:19] ------------------------------------------------------------
+[04:52:19]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:52:19]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=172dc495..., ~132,318 chars total
+[04:52:19]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:52:19]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+[04:52:19]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[04:52:19]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+[04:52:19]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[04:52:20]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[04:52:20]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:52:20]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[04:52:20]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[04:52:25]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[04:52:30]   [claude-cli] delivering final instruction (chunk 3/3)
+[04:52:56]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[04:52:56]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[04:53:22]   [openrouter:openai/gpt-5.5] section 1 analysis complete (6,432 chars)
+[04:53:22]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:53:28]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (0 chars)
+[04:53:28]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[04:53:28]   [openrouter:openai/gpt-5.5] section 1 analysis complete (1,003 chars)
+[04:53:28]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[04:53:42]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,630 chars)
+[04:53:42]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:53:42]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,513 chars)
+[04:53:42]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[04:54:03]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[04:54:03]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[04:54:40]   [claude-cli] synthesis complete (140.2s, 9,820 chars)
+[04:54:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round15_cc2_20260515T035440Z.json
+[04:54:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r15_cc2_20260515T035440Z.json
+[04:55:10]   [openrouter:openai/gpt-5.5] synthesis complete (170.4s, 17,326 chars)
+[04:55:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round15_chatgpt_20260515T035510Z.json
+[04:55:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r15_chatgpt_20260515T035510Z.json
+[04:55:13]   [openrouter:openai/gpt-5.5] synthesis complete (173.1s, 12,316 chars)
+[04:55:13]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round15_codex_20260515T035513Z.json
+[04:55:13]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r15_codex_20260515T035513Z.json
+[04:56:38]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (258.7s, 21,945 chars)
+[04:56:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round15_gemini_20260515T035638Z.json
+[04:56:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r15_gemini_20260515T035638Z.json
+[04:56:54]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (16,065 chars)
+[04:56:54]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:01:10]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (530.5s, 18,883 chars)
+[05:01:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round15_deepseek_20260515T040110Z.json
+[05:01:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r15_deepseek_20260515T040110Z.json
+[05:01:10]   R_k FAIL: CC2_F002 — model=0.310, recomputed=0.442, delta=0.132
+[05:01:10]   R_k FAIL: Gemini_f for f in findings}` does not overwrite findings from different models. The bug is a phantom. — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0003 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0032 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0164 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0002 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0144 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k FAIL: Gemini_C0147 — model=0.250, recomputed=0.342, delta=0.092
+[05:01:10]   R_k validation [CC2]: FAIL=1
+[05:01:10]   R_k validation [ChatGPT]: SKIP=2
+[05:01:10]   R_k validation [Gemini]: FAIL=7, SKIP=1
+[05:01:10]   Registry: 7 novel / 11 raw, 176 total, rho=0.636, rho_avg=0.442
+[05:01:10]   REOPEN C0157: new evidence after UNCONFIRMED
+[05:01:10]   D4 MERGE QUORUM C0002 -> C0023: 2 votes vs 1
+[05:01:10]   D4 MERGE DEADLOCK C0008: escalated to HIL after 7 rounds
+[05:01:10]   REOPEN C0019: escalated to HIL
+[05:01:10]   D4 MERGE DEADLOCK C0023: escalated to HIL after 13 rounds
+[05:01:10]   D4 MERGE DEADLOCK C0032: escalated to HIL after 10 rounds
+[05:01:10]   D4 MERGE DEADLOCK C0035: escalated to HIL after 8 rounds
+[05:01:10]   MERGE DEFERRED C0147: target disagreement (C0158, C0167) [1/5]
+[05:01:12]   BUGZILLA CLOSED-loop verified C0158: verified: ruff=True mypy=True bandit=True test=True
+[05:01:12]   CLOSED C0158: verified fix, no unresolved challenges
+[05:01:14]   BUGZILLA CLOSED-loop verified C0164: verified: ruff=True mypy=True bandit=True test=True
+[05:01:14]   CLOSED C0164: verified fix, no unresolved challenges
+[05:01:18]   BUGZILLA CLOSED-loop verified C0167: verified: ruff=True mypy=True bandit=True test=True
+[05:01:18]   CLOSED C0167: verified fix, no unresolved challenges
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 11 passed, 0 failed out of 11 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_C0156_VERDICT_CONFIRM — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_f for f in findings}` does not overwrite findings from different models. The bug is a phantom. — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_C0003 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_C0032 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Gemini_C0144 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 (v2): 5/11 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 11 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F002 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 7.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_C0144_VERDICT_CONFIRM — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 8.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_C0002 — regex=mathematical → llm=code_behavioral (conf=0.87, threshold=0.70, 8.4s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Gemini_C0147 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 10.0s)
+INFO:immune.pipeline:LLM classifier: 7/11 agree with regex (63.6%), 4 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+INFO:immune.pipeline:NK v2 (v2): 11 verdicts (0 intra-round dups, 3 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 318.8s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 0 verdicts; detail=[]
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 11 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 11 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_f for f in findings}` does not overwrite findings from different models. The bug is a phantom. — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0002 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0144 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0164 — both pipelines REJECTED (v1=0.85, v2=0.85, max=0.85 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0032 — both pipelines REJECTED (v1=0.76, v2=0.76, max=0.76 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0019_REOPEN — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_C0144_VERDICT_CONFIRM — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_C0156_VERDICT_CONFIRM — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0003 — both pipelines REJECTED (v1=0.83, v2=0.83, max=0.83 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_C0147 — both pipelines REJECTED (v1=0.84, v2=0.84, max=0.84 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 11 finding(s): CC2_F002, ChatGPT_C0144_VERDICT_CONFIRM, ChatGPT_C0156_VERDICT_CONFIRM, Gemini_C0002, Gemini_C0003, Gemini_C0019_REOPEN, Gemini_C0032, Gemini_C0144, Gemini_C0147, Gemini_C0164, Gemini_f for f in findings}` does not overwrite findings from different models. The bug is a phantom.
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 11/11 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 8/8 (100%) findings from Gemini removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 11 locked rejections
+[05:08:17]   [feedback] round 15 → round 16: 3 model(s) flagged
+[05:08:18] Dispatching to CC2 (opus) via claude_cli...
+[05:09:32]   [claude-cli:opus] done (73.8s, 1516 chars)
+[05:09:32]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:32]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:35]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[05:09:35]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[05:09:35]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[05:09:35]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:35]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:09:35]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:35]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:37]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:37]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:37]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:09:37]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[05:09:37]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:37]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[05:09:37]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:09:40]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:42]   S_k [C0156]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:45]   S_k [C0160]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:48]   S_k [C0168]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:51]   S_k [C0169]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:53]   S_k [C0174]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:55]   S_k [C0176]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:09:55]   S_k pipeline: 20 evaluated, 9 ADMISSIBLE, 10 REJECTED, 1 ESCALATE
+[05:09:55]   ITC [DeepSeek]: parse yield 0.33 (0+1/3 markers, verdicts=1, baseline=1.27, threshold=1.02) — DEGRADATION
+[05:09:55]   ITC [DeepSeek]: DEGRADATION suppressed — rho_avg=0.667 >= 0.25 (normal depletion)
+[05:09:55]   *** HIL FLAG: DeepSeek has 9 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:09:56]   ITC [ChatGPT]: parse yield 0.50 (2+2/8 markers, verdicts=2, baseline=1.51, threshold=1.26) — DEGRADATION
+[05:09:56]   ITC [ChatGPT]: DEGRADATION suppressed — rho_avg=0.667 >= 0.25 (normal depletion)
+[05:09:56]   *** HIL FLAG: ChatGPT has 9 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:09:56]   ITC [Codex]: parse yield 0.25 (0+1/4 markers, verdicts=1, baseline=2.37, threshold=2.12) — DEGRADATION
+[05:09:56]   *** HIL FLAG: Codex has 8 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:09:56]   gamma: 0.031 (soft, BLOCKED) — Gamma disagrees with state closure — recommend HIL audit
+[05:09:56]   Round 15: 11 findings, 538.3s
+[05:09:56]   Convergence: Gate failed: novel=7, contested=5, gamma=0.031 (soft)
+[05:09:56]   γ-alt: γ-alt not met: gamma=0.031 < 0.3; novel_crit_recent=[1, 0, 4]
+[05:09:56] 
+------------------------------------------------------------
+[05:09:56] Round 16/17 (adaptive)
+[05:09:56] ------------------------------------------------------------
+[05:09:56]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,764 chars
+[05:09:56]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=956a3b5d..., ~133,355 chars total
+[05:09:56]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,764 chars
+[05:09:56]   [claude-cli] delivering chunk 1/3 (22,194 chars, target_0)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:09:56]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[05:09:56]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,764 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1826: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[05:09:56]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,764 chars
+[05:09:56]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[05:09:56]   [openrouter:openai/gpt-5.5] independent session 1/2 (22,194 chars, target_0)
+[05:09:56]   [openrouter:google/gemini-3.1-pro-preview] independent session 1/2 (22,194 chars, target_0)
+[05:09:56]   [openrouter:deepseek/deepseek-v4-pro] independent session 1/2 (22,194 chars, target_0)
+[05:10:00]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[05:10:06]   [claude-cli] delivering final instruction (chunk 3/3)
+[05:10:31]   [openrouter:google/gemini-3.1-pro-preview] section 1 analysis complete (0 chars)
+[05:10:31]   [openrouter:google/gemini-3.1-pro-preview] independent session 2/2 (27,570 chars, target_1)
+[05:10:35]   [openrouter:deepseek/deepseek-v4-pro] section 1 analysis complete (0 chars)
+[05:10:35]   [openrouter:deepseek/deepseek-v4-pro] independent session 2/2 (27,570 chars, target_1)
+[05:10:49]   [openrouter:openai/gpt-5.5] section 1 analysis complete (7,402 chars)
+[05:10:49]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:10:57]   [openrouter:openai/gpt-5.5] section 1 analysis complete (4,168 chars)
+[05:10:57]   [openrouter:openai/gpt-5.5] independent session 2/2 (27,570 chars, target_1)
+[05:11:04]   [openrouter:google/gemini-3.1-pro-preview] section 2 analysis complete (0 chars)
+[05:11:04]   [openrouter:google/gemini-3.1-pro-preview] delivering synthesis instruction (chunk 3/3)
+[05:11:04]   [openrouter:openai/gpt-5.5] section 2 analysis complete (1,675 chars)
+[05:11:04]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:11:17]   [openrouter:openai/gpt-5.5] section 2 analysis complete (3,217 chars)
+[05:11:17]   [openrouter:openai/gpt-5.5] delivering synthesis instruction (chunk 3/3)
+[05:12:23]   [openrouter:openai/gpt-5.5] synthesis complete (147.1s, 17,258 chars)
+[05:12:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round16_codex_20260515T041223Z.json
+[05:12:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r16_codex_20260515T041223Z.json
+[05:12:23]   [claude-cli] synthesis complete (147.7s, 7,933 chars)
+[05:12:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round16_cc2_20260515T041223Z.json
+[05:12:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r16_cc2_20260515T041223Z.json
+[05:12:42]   [openrouter:openai/gpt-5.5] synthesis complete (166.4s, 8,932 chars)
+[05:12:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round16_chatgpt_20260515T041242Z.json
+[05:12:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r16_chatgpt_20260515T041242Z.json
+[05:13:21]   [openrouter:deepseek/deepseek-v4-pro] section 2 analysis complete (13,420 chars)
+[05:13:21]   [openrouter:deepseek/deepseek-v4-pro] delivering synthesis instruction (chunk 3/3)
+[05:15:09]   [openrouter:deepseek/deepseek-v4-pro] synthesis complete (313.2s, 13,121 chars)
+[05:15:09]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round16_deepseek_20260515T041509Z.json
+[05:15:09]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r16_deepseek_20260515T041509Z.json
+[05:15:51]   [openrouter:google/gemini-3.1-pro-preview] synthesis complete (354.8s, 0 chars)
+[05:15:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/round16_gemini_20260515T041551Z.json
+[05:15:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/r16_gemini_20260515T041551Z.json
+[05:15:51]   R_k FAIL: Codex_VERDICT_C0156_CONFIRM — model=0.054, recomputed=1.000, delta=0.946
+[05:15:51]   R_k FAIL: Codex_VERDICT_C0171_CONFIRM — model=0.061, recomputed=1.000, delta=0.939
+[05:15:51]   R_k FAIL: Codex_VERDICT_C0173_MERGE — model=0.063, recomputed=1.000, delta=0.937
+[05:15:51]   R_k validation [Codex]: FAIL=3
+[05:15:51]   R_k validation [CC2]: SKIP=1
+[05:15:51]   R_k validation [ChatGPT]: SKIP=1
+[05:15:51]   Registry: 3 novel / 5 raw, 179 total, rho=0.600, rho_avg=0.523
+[05:15:51]   REOPEN C0044: new evidence after UNCONFIRMED
+[05:15:51]   D4 MERGE DEADLOCK C0008: escalated to HIL after 8 rounds
+[05:15:51]   D4 MERGE DEADLOCK C0023: escalated to HIL after 14 rounds
+[05:15:51]   D4 MERGE DEADLOCK C0032: escalated to HIL after 11 rounds
+[05:15:51]   D4 MERGE DEADLOCK C0035: escalated to HIL after 9 rounds
+[05:15:51]   MERGE DEFERRED C0044: target disagreement (C0093, C0094, C0095, C0102, C0104, C0107, C0108, C0109, C0115, C0116) [1/5]
+[05:15:53]   BUGZILLA close-the-loop failed for C0144: verification failed: mypy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/bugzilla_sandbox_ti_1lbvj__feedback.py:155: error: Need type annotation for "final_v
+[05:15:53]   MERGE DEFERRED C0147: target disagreement (C0158, C0167) [2/5]
+[05:15:53]   CLOSED C0156: verified fix, no unresolved challenges
+[05:15:54]   BUGZILLA CLOSED-loop verified C0174: verified: ruff=True mypy=True bandit=True test=True
+[05:15:54]   CLOSED C0174: verified fix, no unresolved challenges
+[05:15:54]   D2 HIL escalation: C0044 unresolved challenge since R9 -> UNCONFIRMED + HIL flag
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 5 passed, 0 failed out of 5 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_VERDICT_C0156_CONFIRM — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_VERDICT_C0173_MERGE — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 2/5 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 5 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_VERDICT_C0171_CONFIRM — regex=mathematical → llm=logical (conf=0.80, threshold=0.70, 24.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 7.8s)
+INFO:immune.pipeline:LLM classifier: ChatGPT_UNSTRUCTURED — regex=mathematical llm=uncategorised (conf=0.95, below threshold 0.70, 7.7s)
+INFO:immune.pipeline:LLM classifier: 2/5 agree with regex (40.0%), 2 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 2 claims checked, 0 grounded proofs
+INFO:immune.pipeline:  Codex_VERDICT_C0171_CONFIRM: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  ChatGPT_UNSTRUCTURED: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 5 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 166.1s — none
+INFO:immune.pipeline:B-Cell specialist (shadow, domain=software): 2 verdicts; detail=[{"finding_id": "Codex_VERDICT_C0171_CONFIRM", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint"}, {"finding_id": "ChatGPT_UNSTRUCTURED", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "z3", "evidence": "z3: Z3_PARSED: extracted 2 numeric values"}]
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 5 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 5 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_VERDICT_C0156_CONFIRM — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_VERDICT_C0173_MERGE — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_VERDICT_C0171_CONFIRM — both pipelines REJECTED (v1=0.81, v2=0.81, max=0.81 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_UNSTRUCTURED — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 5 finding(s): CC2_F001, ChatGPT_UNSTRUCTURED, Codex_VERDICT_C0156_CONFIRM, Codex_VERDICT_C0171_CONFIRM, Codex_VERDICT_C0173_MERGE
+INFO:immune.pipeline:RT v2: depletion (not autoimmune) — removal rate 5/5 (100.0%), all duplicates, rejected=0
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 0 findings, kept 5 locked rejections
+[05:19:42]   [feedback] round 16 → round 17: 3 model(s) flagged
+[05:19:42] Dispatching to CC2 (opus) via claude_cli...
+[05:20:08]   [claude-cli:opus] done (26.1s, 1468 chars)
+[05:20:08]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:08]   S_k [C0008]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:11]   S_k [C0014]: ADMISSIBLE sk=0.980 (S*=0.000) R: 0.500 -> 0.372
+[05:20:11]   S_k [C0015]: REJECTED A=0.0 ({'error': 'no_blocks_for_target'})
+[05:20:13]   S_k [C0019]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:13]   S_k: SEARCH block not found in source (first 60 chars: 'def action(self) -> str:\n        """Imperative action the mo')
+[05:20:13]   S_k [C0023]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:13]   S_k [C0032]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:20:13]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:13]   S_k [C0042]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k [C0047]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:16]   S_k [C0096]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:16]   S_k [C0110]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:16]   S_k [C0116]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'section_terminator = re.search(\n        r"^\\s*(NOVELTY|VERIF')
+[05:20:16]   S_k [C0117]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[05:20:16]   S_k [C0130]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:16]   S_k: SEARCH block not found in source (first 60 chars: 'r"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANAL')
+[05:20:16]   S_k [C0138]: REJECTED A=0.0 ({'error': 'search_not_found'})
+[05:20:18]   S_k [C0144]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:20]   S_k [C0160]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:22]   S_k [C0168]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:24]   S_k [C0169]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:26]   S_k [C0176]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[05:20:26]   S_k [C0179]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[05:20:26]   S_k pipeline: 20 evaluated, 8 ADMISSIBLE, 10 REJECTED, 2 ESCALATE
+[05:20:26]   ITC [Codex]: parse yield 0.30 (3+0/10 markers, baseline=2.32, threshold=2.07) — DEGRADATION
+[05:20:26]   ITC [Codex]: DEGRADATION suppressed — rho_avg=0.333 >= 0.25 (normal depletion)
+[05:20:26]   *** HIL FLAG: Codex has 9 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review. ***
+[05:20:26]   *** HIL FLAG: Gemini has 11 consecutive ITC interventions (latest: TRANSIENT_FAILURE). Flagged for HIL review. ***
+[05:20:26]   gamma: 0.034 (soft, BLOCKED) — Gamma disagrees with state closure — recommend HIL audit
+[05:20:26]   Round 16: 5 findings, 358.6s
+[05:20:26]   Convergence: Gate failed: novel=3, contested=5, gamma=0.034 (soft)
+[05:20:26]   γ-alt: γ-alt not met: gamma=0.034 < 0.3; novel_crit_recent=[0, 4, 2]
+[05:20:26] 
+WALL CLOCK CAP reached (7478s). Stopping.
+[05:20:26]   Fingerprints saved: 5 models -> /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/fingerprints
+[05:20:26] 
+============================================================
+[05:20:26] EXPERIMENT exp40_gate — 17 ROUNDS COMPLETE
+[05:20:26]   Total findings: 280
+[05:20:26]   Registry: 179 canonical entries
+[05:20:26]   gamma final: 0.034
+[05:20:26]   Elapsed: 7478s
+[05:20:26]   Report: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z/exp40_gate_report.json
+[05:20:26] ============================================================
+
+Experiment 40 ended without convergence (likely wall-clock).

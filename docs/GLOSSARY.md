@@ -37,6 +37,15 @@ Constraint-Driven Synthesis and Falsification. The protocol-level architecture f
 
 Popper's degree of corroboration. Measures how well evidence E supports hypothesis H given background knowledge. Used in the runner to track overall corroboration of findings. Defined in the white paper Section 2.1.
 
+### Closure-State Labels (F4 lexicon)
+
+Four-label vocabulary describing a code component's maturity within the runtime pipeline. Locked 21 April 2026 (three labels); extended 13 May 2026 (added `tripwire`). Full definitions in `resources/ONBOARDING.md` under "Closure-State Lexicon". Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional and applies specifically to flag-gated runtime guards.
+
+- **`library_complete`** — code present and tested, not hooked into any live or shadow pipeline path.
+- **`tripwire`** — code hooked into the pipeline, observation-only by default (off, or on-emit-only), but becomes assertive (halts the run, blocks the gate, drives an outcome) when an explicit flag is set. Example: `DEBUG_CHANNEL_CHECK` assertion at `bench/reference_runner_v2.py:3510`.
+- **`shadow_integrated`** — code hooked into the live pipeline in observation-only capacity. Runs on every relevant input, emits logs and metrics, but does not drive verdicts, promotions, or gate decisions. Example: K/L/M shadow-audit logging.
+- **`live_operational`** — code drives live decisions; outputs affect verdicts, gates, or downstream state. Reversion requires explicit policy change. Examples: §17 feedback directive, §18 divergence directive.
+
 ### Composer
 
 The directive composition system (`bench/cdsfl_registry/composer.py`). Produces per-model phenotype-transformed versions of CDSFL directives. Each model receives the same underlying constraints but formatted for its processing characteristics (length caps, format density, stripping levels).
@@ -89,13 +98,13 @@ Health monitoring subsystem (`bench/endocrine.py`). Runs periodic health cycles 
 
 Parameter modelling the probability that a model can successfully deliver findings given its current context state. Degrades with context size but currently modelled as a constant (Gap 4 in the model audit).
 
-### FFAF (Find-Follow-Analyse-Fix)
+### FFAFP (Find-Follow-Analyse-Fix-P-pass)
 
-Intra-model reasoning cycle. Find the issue. Follow consequences through the system before fixing. Analyse dispassionately (CONFIRMED, UNCERTAIN, or REJECTED). Fix with the simplest sufficient correction. Evolution of FFF with the Analyse step added pre-Experiment 36.
+Five-step intra-model reasoning cycle. (1) Find the issue, its location, and the evidence. (2) Follow consequences through the entire system before touching anything — trace dependencies, interfaces, downstream effects. (3) Analyse dispassionately with available tools (CONFIRMED, UNCERTAIN, or REJECTED). (4) Fix with the simplest sufficient correction addressing root cause and downstream consequences. (5) P-pass: actively try to disprove the fix. Triggered by the `f` metacognitive command. Supersedes the original 3-step FFF (Find-Follow-Fix) and the 4-step FFAF (Find-Follow-Analyse-Fix).
 
-### FFF (Find-Follow-Fix)
+### FFF (Find-Follow-Fix) [DEPRECATED]
 
-Original intra-model reasoning cycle before the Analyse step was added. See FFAF.
+Original 3-step intra-model reasoning cycle. Superseded by FFAFP. Historical references in experiment logs reflect the protocol used at the time of those experiments.
 
 ### FindingRegistry
 

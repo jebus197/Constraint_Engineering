@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260718T230940Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1489,
+  "response": "FINDING_ID: F301\nSEVERITY: 0.70\nFIND: In `_check_gate_stats`, unconditional immune_deficiency anomaly with `is_anomaly=True` and severity 0.9 when `total_failed==0` and `total>=5`, causing false positive for correct pipelines.\nFALSIFIER:\n```python\nfrom bench.macrophage_cell import MacrophageCell, MacrophageSummary, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = MacrophageSummary()\n# Simulate a correct pipeline: all gates pass.\ngate_stats = {\"total_passed\": 5, \"total_failed\": 0}\ncell._check_gate_stats(gate_stats, summary)\nif any(o.category == \"immune_deficiency\" and o.is_anomaly for o in summary.observations):\n    print(\"FALSIFIED: immune_deficiency false positive confirmed\")\n```\n\nFINDING_ID: F302\nSEVERITY: 0.70\nFIND: In `_check_gate_stats`, unconditional immune_deficiency anomaly for Ouroboros claims with `is_anomaly=True` and severity 0.9 when `o_total>=3` and `o_failed==0`, causing false positive.\nFALSIFIER:\n```python\nfrom bench.macrophage_cell import MacrophageCell, MacrophageSummary, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = MacrophageSummary()\ngate_stats = {\n    \"total_passed\": 3,\n    \"total_failed\": 0,\n    \"by_origin\": {\n        \"external_ouroboros\": {\"passed\": 3, \"failed\": 0}\n    }\n}\ncell._check_gate_stats(gate_stats, summary)\nif any(o.category == \"immune_deficiency\" and o.is_anomaly for o in summary.observations):\n    print(\"FALSIFIED: immune_deficiency false positive (Ouroboros) confirmed\")\n```",
+  "metadata": {
+    "round": 3,
+    "elapsed": 316.8,
+    "chars": 1489,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

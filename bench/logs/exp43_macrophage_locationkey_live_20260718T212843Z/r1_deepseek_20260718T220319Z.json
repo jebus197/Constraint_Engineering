@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260718T220319Z",
+  "phase": "r1",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2147,
+  "response": "FINDING_ID: F101\nSEVERITY: 0.40\nFIND: Dead parameter `prior_observations` in `observe()` is never used, silently ignoring passed prior observations.\nFALSIFIER:\n```python\nimport macrophage_cell\nfrom macrophage_cell import MacrophageObservation, MacrophageSummary\n\ncell = macrophage_cell.MacrophageCell(mode=\"test\")\ndummy_obs = MacrophageObservation(\n    observation_id=\"0\", mode=\"test\", category=\"test\",\n    description=\"test\", severity=0.5, evidence={}, is_anomaly=False\n)\n\nsummary1 = cell.observe(verdicts=[], prior_observations=[dummy_obs])\nsummary2 = cell.observe(verdicts=[], prior_observations=None)\n\ndef normalize_obs(obs):\n    return MacrophageObservation(\n        observation_id=None,\n        mode=obs.mode,\n        category=obs.category,\n        description=obs.description,\n        severity=obs.severity,\n        evidence=obs.evidence,\n        is_anomaly=obs.is_anomaly,\n    )\n\nsummary1_norm = MacrophageSummary(\n    summary_id=None,\n    mode=summary1.mode,\n    observations=[normalize_obs(o) for o in summary1.observations],\n    summary_text=summary1.summary_text,\n)\nsummary2_norm = MacrophageSummary(\n    summary_id=None,\n    mode=summary2.mode,\n    observations=[normalize_obs(o) for o in summary2.observations],\n    summary_text=summary2.summary_text,\n)\n\nif summary1_norm == summary2_norm:\n    raise AssertionError(\"FALSIFIED: prior_observations parameter has no effect (unused)\")\n```\n\nFINDING_ID: F102\nSEVERITY: 0.55\nFIND: Missing `diversity_score` defaults to 1.0 in `_check_ouroboros_metrics()`, suppressing source monoculture alert when Ouroboros fails to supply the key.\nFALSIFIER:\n```python\nimport macrophage_cell\nfrom macrophage_cell import MacrophageCell\n\ncell = MacrophageCell(mode=\"test\")\nsummary = cell.observe(\n    verdicts=[],\n    triaged=None,\n    timings=None,\n    prior_observations=None,\n    provenance=None,\n    gate_stats=None,\n    ouroboros_metrics={\"queries_this_round\": 10},  # diversity_score intentionally missing\n)\n\nif not any(obs.is_anomaly for obs in summary.observations):\n    raise AssertionError(\n        \"FALSIFIED: missing diversity_score leads to no anomaly (defaults to perfect diversity)\"\n    )\n```",
+  "metadata": {
+    "round": 1,
+    "elapsed": 376.2,
+    "chars": 2147,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

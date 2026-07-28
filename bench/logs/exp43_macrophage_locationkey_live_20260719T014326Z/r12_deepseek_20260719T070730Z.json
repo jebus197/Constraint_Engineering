@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260719T070730Z",
+  "phase": "r12",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2581,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.9\nFIND: `_check_ouroboros_metrics` crashes with `TypeError` when `diversity_score` is a non‑numeric string due to an unguarded comparison.\nFALSIFIER:\n```python\nimport sys\nfrom bench.macrophage_cell import MacrophageCell, MacrophageSummary\n\ncell = MacrophageCell(mode=\"monitor\")\nsummary = MacrophageSummary(observations=[], anomaly_count=0)\nmetrics = {\"diversity_score\": \"0.2\"}\ntry:\n    cell._check_ouroboros_metrics(metrics, summary)\nexcept TypeError:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```\n\nFINDING_ID: F002\nSEVERITY: 0.75\nFIND: Timing spike guard `and median_t > 0.1` still present in `_self_check_observe`, suppressing spike detection when `median_t` ≤ 0.1.\nFALSIFIER:\n```python\nimport inspect\nimport sys\nfrom bench.macrophage_cell import MacrophageCell\n\nsource = inspect.getsource(MacrophageCell._self_check_observe)\nif \"and median_t > 0.1\" in source:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```\n\nFINDING_ID: F003\nSEVERITY: 0.4\nFIND: `_round_history` appended after persistent anomaly check, causing alert to fire one round late (on the 4th anomalous round instead of the 3rd).\nFALSIFIER:\n```python\nimport sys\nfrom bench.macrophage_cell import MacrophageCell, MacrophageSummary, MacrophageObservation\n\ncell = MacrophageCell(mode=\"monitor\")\ncell._round_history = [\n    {\"anomaly_count\": 1, \"observation_count\": 1, \"verdict_count\": 0, \"timestamp\": 0},\n    {\"anomaly_count\": 2, \"observation_count\": 1, \"verdict_count\": 0, \"timestamp\": 0},\n]\nsummary = MacrophageSummary(observations=[], anomaly_count=1)\ndummy = MacrophageObservation(\n    observation_id=0,\n    mode=\"monitor\",\n    category=\"test\",\n    description=\"dummy\",\n    severity=0.0,\n    evidence={},\n    is_anomaly=False,\n)\ndummy.timing = 0.1\nobservations = [dummy]\nverdicts = []\ncell._self_check_observe(observations, summary, verdicts)\nhas_persistent = any(obs.category == \"persistent_anomaly\" for obs in summary.observations)\nif not has_persistent:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```\n\nFINDING_ID: F004\nSEVERITY: 0.45\nFIND: `_check_ouroboros_metrics` defaults a missing `diversity_score` to 1.0, treating a missing metric as perfect health and hiding reporting failures.\nFALSIFIER:\n```python\nimport sys\nfrom bench.macrophage_cell import MacrophageCell, MacrophageSummary\n\ncell = MacrophageCell(mode=\"monitor\")\nsummary = MacrophageSummary(observations=[], anomaly_count=0)\nmetrics = {\"queries_this_round\": 5}\ncell._check_ouroboros_metrics(metrics, summary)\nif len(summary.observations) == 0:\n    print(\"FALSIFIED\")\n    sys.exit(1)\nsys.exit(0)\n```",
+  "metadata": {
+    "round": 12,
+    "elapsed": 417.7,
+    "chars": 2581,
+    "findings_count": 4,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,295 @@
+{
+  "round_idx": 5,
+  "findings": [
+    {
+      "finding_id": "CC2_CC1_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 3,
+      "encounter_count": 1,
+      "description_snippet": "`bench/dm/_shadow_stage6.py:182`, field declaration\n`source_cooccurrence: Dict[str, int] = field(default_factory=dict)` "
+    },
+    {
+      "finding_id": "Codex_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6151,
+      "flaw_class": 6,
+      "encounter_count": 9,
+      "description_snippet": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._track_tool_fpr()` assumes each `cell_verdicts` value is an iterab"
+    },
+    {
+      "finding_id": "Gemini_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6445,
+      "flaw_class": 1,
+      "encounter_count": 17,
+      "description_snippet": "In `_compute_shadow_e_values`, the loop `for cell_name, verdicts in cell_verdicts.items():` incorrectly assumes `cell_na"
+    },
+    {
+      "finding_id": "Gemini_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6472,
+      "flaw_class": 1,
+      "encounter_count": 18,
+      "description_snippet": "In `_track_source_cooccurrence`, if `len(queried_sources) < 2`, the method returns early. This skips the snapshot step `"
+    },
+    {
+      "finding_id": "ChatGPT_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 5,
+      "encounter_count": 7,
+      "description_snippet": "`_estimate_retrieval_sparsity()` infers novelty/knownness from `results_count` even when the source query failed.\n\nLocat"
+    },
+    {
+      "finding_id": "DeepSeek_F001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6498,
+      "flaw_class": 1,
+      "encounter_count": 19,
+      "description_snippet": "FINDING_ID: F001\nSEVERITY: 0.7\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.6\nDESCRIPTION: Inverted verdict-to-pass/fail mapping i"
+    },
+    {
+      "finding_id": "DeepSeek_F001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6522,
+      "flaw_class": 1,
+      "encounter_count": 20,
+      "description_snippet": "In `_track_tool_fpr` (line ~470) and `_compute_shadow_e_values` (line ~530), the code treats a verdict of `\"CONFIRMED\"` "
+    },
+    {
+      "finding_id": "DeepSeek_F002",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6546,
+      "flaw_class": 1,
+      "encounter_count": 21,
+      "description_snippet": "FINDING_ID: F002\nSEVERITY: 0.7\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.6\nDESCRIPTION: `_assess_finding` crashes on `None`\u2011val"
+    },
+    {
+      "finding_id": "DeepSeek_F002",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6199,
+      "flaw_class": 6,
+      "encounter_count": 10,
+      "description_snippet": "In `_assess_finding`, the code uses `getattr(finding, \"novelty\", 0.9)` and `getattr(finding, \"detection_confidence\", 0.5"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 48,
+      "total": 48,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 7,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "mypy": {
+      "tool_name": "mypy",
+      "passes": 3,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 40,
+      "total": 40,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785240717.2397592
+}

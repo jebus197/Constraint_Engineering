@@ -1,0 +1,69 @@
+{
+  "_comment": "Exp 41 \u2014 Bounded Mathematics module: bench/dm/_convergence.py (the ConvergenceDetector \u2014 three-metric conservative convergence detection with severity veto, kappa_set/kappa_rate/kappa_adopt combined via min, tau_kappa separate from gamma). Per operational tracker target-article matrix: 'Mathematics calibration target'. ARTEFACT IS SUBSTANTIAL: 437 lines, ~17K bytes \u2014 NOT a small slice. This is the first experiment under the corrected methodology (founder-directed 2026-05-22): (1) STATIC TEST ARTICLE \u2014 apply_fixes_back_enabled is false, the panel reviews the same frozen file every round, fixes are folded between experiments not during them; (2) COMPELLED CONVERGENCE \u2014 \u00a710 of cdsfl_core_formal.md now formalises the per-round sufficiency assessment (terminate when all hard assumptions tested+sound, no residual finding meets the real-world-consequence threshold, no novel findings this round; declarations are evidenced and refutable); (3) PRIMARY/SECONDARY ROUTE FALLBACK \u2014 every model has a secondary route configured in load_default_config, the runner's _dispatch_single_model retries in-round on empty/raise (no model misses a round); (4) RECONSTRUCTION BYPASSES REMOVED \u2014 reasoning-trace substitution and synthesis chunk-analyses reconstruction were deleted (commit 86470a5), empty content propagates honestly to ITC and the FailureHandler; (5) HARDENED GATE \u2014 F4 settled-registry + F6 consequence-based critical definition + conjunction + dual-series + sparsity fallback, frozen pre-registered defaults identical to Exp 40 (theta=0.30, W=3, sustain=2, min_cum=8, loo=0.05). 15 Exp 40 fixes harvested into live bench/dm/_feedback.py before this run (full-suite-gated). Exp 41 tests whether the corrected methodology produces clean convergence on a substantial bounded-mathematics artefact \u2014 a stronger methodology test than re-running the open-ended Exp 40 parser slice.",
+  "test_article": "bench/dm/_convergence.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 20,
+  "extension_cap": 20,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp41_convergence",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 2,
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "hardened_gate_enabled": true,
+  "gamma_crit_sustain_rounds": 2,
+  "gamma_crit_min_cumulative": 8,
+  "gamma_crit_loo_tol": 0.05,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "test_cmd": "python3 -m pytest bench/tests/test_dynamic_management.py::TestConvergenceDetector -q --tb=line",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "HARDENED gate (hardened_gate_enabled=true). Converged iff, on the SETTLED post-reconciliation registry critical/structural series: (A) gamma_critical >= 0.30 AND (B) sustained over 2 consecutive settled recomputes AND leave-one-round-out robust within 0.05, AND (C) 3 consecutive settled rounds with zero novel critical findings. Sparsity fallback: if cumulative critical < 8 closure rests on (C) alone, gamma_critical reported-not-gated. All-severity gamma is logged as a diagnostic only and NEVER gates. Conjunction, not the legacy OR. NEW (2026-05-22): models now also operate under \u00a710 compelled-convergence \u2014 they are expected to declare convergence with reasoning when material defects are exhausted, rather than continuing to enumerate immaterial edge cases. Their declarations are themselves falsifiable evidence; they do not replace the hardened gate but reduce instructional pressure to over-produce findings.",
+    "pass_condition": "(gamma_crit>=0.30 sustained+loo-robust AND 3r zero-novel-critical) OR (sparsity fallback: cum_crit<8 AND 3r zero-novel-critical).",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": true
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science"
+    ]
+  },
+  "_payload_note": "Target ~17K chars (the bounded ConvergenceDetector module, 437 lines). Likely triggers decomposed dispatch for some models on large rounds; the (now-bypass-free) decomposed path will engage; if it returns empty, the in-round secondary route fallback engages; if both empty, the persistent_empty_flags HIL accumulator records it (no model excluded \u2014 no benching).",
+  "_methodology_changes_vs_exp40": "(1) STATIC TARGET: apply_fixes_back_enabled=false \u2014 the panel reviews the same frozen bench/dm/_convergence.py every round. Fixes are folded post-experiment, not mid-experiment. This eliminates the moving-target problem observed in Exp 40 (cumulative critical climbed A\u219218, C\u219215). (2) Compelled convergence via \u00a710 of cdsfl_core_formal.md \u2014 system prompt now explicitly frames the per-round task as a sufficiency assessment, not unbounded problem-finding. (3) Secondary route fallback architecture (commit e0272c6) \u2014 every model has a secondary; no model misses a round. (4) Reconstruction bypasses removed (commit 86470a5) \u2014 empties propagate honestly to ITC + FailureHandler.",
+  "_plan_ref": "Operational tracker Exp 41 row + founder direction 2026-05-22 ('go directly to 41'). cdsfl_core_formal.md \u00a710 (compelled convergence); commits ffc88fe (gate-hardening), 86470a5 (bypass removal), e0272c6 (secondary routes), and 86234b3 (Exp 40 campaign synthesis) provide the methodology baseline."
+}

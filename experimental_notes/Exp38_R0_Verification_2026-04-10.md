@@ -1,7 +1,7 @@
 # Experiment 38 Round 0 — Verification Results
 
 **Date:** 10 April 2026
-**Type:** Ouroboros — system reviews and improves itself under structured falsification
+**Type:** Ouroboros — the system reviews and improves itself under structured falsification
 **Target:** `bench/reference_runner.py`, star topology, 5 models, burst mode (5 phases)
 **Status:** PAUSED after Round 0 to fix immune/endocrine gaps
 
@@ -16,7 +16,7 @@
 | REJECTED | 4 (20%) |
 | Immune UNCERTAIN | 23/26 |
 | Fix verification UNEVALUABLE | 20/20 |
-| S_k evaluated (before pause) | 3/26, all ADMISSIBLE |
+| S_k (severity/stringency tristate gate) evaluated (before pause) | 3/26, all ADMISSIBLE |
 
 ## Confirmed Findings (14)
 
@@ -27,7 +27,7 @@
 | F0/F4 | 0.95/0.91 | CONFIRMED+verified entries close before challenge check — `continue` at L607 skips unresolved challenges | 604–607 |
 | F2/F5 | 0.82/0.88 | `add_verdict()` unconditionally overwrites `last_status_change_round` on every verdict, corrupting escalation timer | 305 |
 | F6 | 0.83 | `escalate_stale_contested` and `auto_resolve_contested` bypass `resolve()` — direct mutation, stale timer | 413, 435 |
-| F9 | 0.70 | Escalation timer resets on any verdict → findings stay CONTESTED indefinitely | Follows F2/F5 |
+| F9 | 0.70 | Escalation timer resets on any verdict, so findings stay CONTESTED indefinitely | Follows F2/F5 |
 | F18 | 0.80 | REOPENED status silently overwritten to OPEN next round | 614–615 |
 
 ### Convergence Gate Bugs
@@ -74,20 +74,20 @@
 ### B-Cell Math Verification
 - `_build_smt2_from_claim()` only handles `VARIABLE >= VALUE` patterns
 - 17/26 findings contain mathematical/logical claims about algorithm behaviour
-- All 17 returned UNCERTAIN → 9 escalated to HIL
-- Formalisation Agent (shadow only) extracted preconditions from 8, translated 2 to z3
+- All 17 returned UNCERTAIN, of which 9 escalated to HIL
+- The Formalisation Agent (shadow only) extracted preconditions from 8, translated 2 to z3
 
 ### Fix Verification (Endocrine)
 - `_apply_fix_to_source()` handles: "Replace X with Y", whole-file replacement, line hints
 - Does NOT handle `<<<< SEARCH / ==== / >>>> REPLACE` blocks
-- Runner has `parse_search_replace_blocks()` (line 1485) — endocrine doesn't use it
+- The runner has `parse_search_replace_blocks()` (line 1485); endocrine does not use it
 - CC2: `_find_target_file()` returns None (no `.py` path in description text)
 
 ### Required Fixes Before Restart
 1. Wire `parse_search_replace_blocks()` + `apply_fix_blocks()` into endocrine as Strategy 0
 2. Fall back to `source_paths[0]` in `_find_target_file()` when no match found
-3. Promote Formalisation Agent from shadow to active
-4. Add SymPy verification pathway for mathematical claims about known formulas
+3. Promote the Formalisation Agent from shadow to active
+4. Add a SymPy verification pathway for mathematical claims about known formulas
 
 ## Burst Architecture Performance
 
@@ -95,4 +95,4 @@
 - No context overflow errors (vs 178K chars in monolithic mode)
 - DeepSeek: 225s response (vs 534s monolithic)
 - 26 findings vs 16 in failed monolithic run
-- All findings passed skin barrier (vs many UNEVALUABLE in monolithic)
+- All findings passed the skin barrier (vs many UNEVALUABLE in monolithic)

@@ -1,15 +1,31 @@
 #!/usr/bin/env python3
-"""CDSFL Onboarding Script — interactive setup for external researchers.
+"""CDSFL Onboarding Script — interactive setup + dynamic info source.
 
-Usage: python3 scripts/cdsfl_onboard.py
+Usage:
+  python3 scripts/cdsfl_onboard.py              # Default overview + env checks
+  python3 scripts/cdsfl_onboard.py --full       # Include full ONBOARDING.md content
+  python3 scripts/cdsfl_onboard.py --dry-run    # Self-test only; exits 0 on success
 
-Checks environment, explains project structure, installs dependencies
-with user permission, and points to key documentation. Designed for a
-researcher's first contact with the project.
+Dual purpose. First, this script is a researcher's first contact with the
+project: it checks environment, offers to install missing dependencies
+with permission, and points to documentation. Second, it serves as a
+live summary view of the project: canonical prose is read at runtime
+from `resources/ONBOARDING.md` and `docs/REPRODUCING.md` rather than
+hardcoded in this file. The `sv` and `qc` scripts verify that the
+wiring remains intact.
+
+Security. This script never uploads, transmits, or commits API keys,
+private keys, or crypto wallet keys. The API-key section reads local
+environment variables only to tell you which keys are present or
+missing — key *values* are never printed, logged, or transmitted. If
+a required key is missing, supply it yourself via `.env` or shell
+export. Never commit `.env` or any file containing real key material
+to git.
 """
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import os
 import platform
@@ -20,7 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from cdsfl_utils import latest_experiment, repo_root, source_env, test_count
+from cdsfl_utils import latest_experiment, read_section, repo_root, source_env, test_count
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +94,9 @@ SYSTEM_TOOLS = [
 ]
 
 MIN_PYTHON = (3, 13)
+
+SV_START_MARKER = "<!-- SV:LATEST_EXP_START -->"
+SV_END_MARKER = "<!-- SV:LATEST_EXP_END -->"
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +273,19 @@ def check_wolfram_mcp() -> bool:
 
 
 def check_api_keys() -> None:
-    """Check API key availability."""
+    """Check API key availability.
+
+    Reads local environment variables to detect *presence* of named keys.
+    Never prints, logs, or transmits key values. If a required key is
+    missing, supply it yourself via `.env` or shell export; do not commit
+    `.env` or any file containing real key material to git.
+    """
+    print("  SECURITY: This check reads local environment variables to")
+    print("  report key presence only. Key values are never printed or")
+    print("  transmitted. If a required key is missing, supply it via")
+    print("  `.env` or shell export. Never commit `.env` or any file")
+    print("  containing real key material to git.")
+    print()
     source_env()
     for key, (level, desc) in API_KEYS.items():
         found = os.environ.get(key)
@@ -305,19 +336,50 @@ def install_system_tools(missing: list[str]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Info display
+# Dynamic content readers
 # ---------------------------------------------------------------------------
 
-def print_project_summary() -> None:
-    print("  CDSFL (Constraint-Driven Synthesis and Falsification) is a protocol-level")
-    print("  architecture for scientific cognition. It formalises Popperian falsification")
-    print("  as a structured protocol that AI models follow when producing and reviewing")
-    print("  technical output.")
-    print()
-    print("  The system operates a panel of 5 frontier models from 4 vendors under")
-    print("  structured falsification rounds. An immune-inspired pipeline processes")
-    print("  findings, a convergence gate detects epistemic saturation, and a")
-    print("  verification chain provides cryptographic audit trails.")
+def read_onboarding_what_is(root: Path, strip_sv: bool = True) -> str:
+    """Read the 'What This Project Is' section from resources/ONBOARDING.md.
+
+    If strip_sv is True (default), removes the SV:LATEST_EXP content block
+    so the default overview stays short. --full includes it.
+    """
+    path = root / "resources" / "ONBOARDING.md"
+    content = read_section(path, "## What This Project Is", "\n## ")
+    if not content:
+        return ""
+    if strip_sv:
+        start = content.find(SV_START_MARKER)
+        end = content.find(SV_END_MARKER)
+        if start != -1 and end != -1:
+            content = content[:start].rstrip() + "\n" + content[end + len(SV_END_MARKER):].lstrip()
+    return content.strip()
+
+
+def read_reproducing_mc(root: Path) -> str:
+    """Read the Metacognitive Commands section from docs/REPRODUCING.md."""
+    path = root / "docs" / "REPRODUCING.md"
+    return read_section(path, "## Metacognitive Commands (MC)", "\n## ")
+
+
+# ---------------------------------------------------------------------------
+# Info display (driven from canonical documents at runtime)
+# ---------------------------------------------------------------------------
+
+def print_project_summary(root: Path, full: bool = False) -> None:
+    """Print the project summary, sourced from resources/ONBOARDING.md.
+
+    Default mode strips the SV:LATEST_EXP block. `full=True` includes it.
+    """
+    what = read_onboarding_what_is(root, strip_sv=not full)
+    if what:
+        for line in what.split("\n"):
+            print(f"  {line}" if line.strip() else "")
+    else:
+        print("  [WARNING] Could not read resources/ONBOARDING.md.")
+        print("  Canonical project prose is sourced from that file; without")
+        print("  it this summary is empty. Run `git pull` to sync.")
     print()
 
     exp = latest_experiment()
@@ -332,45 +394,36 @@ def print_project_summary() -> None:
         print(f"  Test suite: {tests} tests")
 
 
-def print_structure() -> None:
-    root = repo_root()
-    structure = """
-  Constraint_Engineering/
-  |
-  |-- bench/                     Runner infrastructure
-  |   |-- experiment_11_orchestrator.py   Model dispatch and API config
-  |   |-- runner_core.py                  Shared runner infrastructure
-  |   |-- insect_brain.py                 Central relay and checkpoints
-  |   |-- immune_agents.py                Immune pipeline (6 cell types)
-  |   |-- evidence.py                     Evidence layer
-  |   |-- endocrine.py                    Endocrine layer (health monitoring)
-  |   |-- cdsfl_registry/                 Policy engine and directive composition
-  |   |-- directives/                     CDSFL system prompts
-  |   |-- run_exp*.py                     Experiment-specific runners
-  |   |-- logs/                           Experiment logs and reports
-  |   +-- tests/                          Test suite
-  |
-  |-- docs/                      Documentation
-  |   |-- GLOSSARY.md                     Term definitions (51 terms)
-  |   |-- ARCHITECTURE.md                 System components and data flow
-  |   |-- REPRODUCING.md                  How to replicate experiments
-  |   |-- CURRENT_STATE.md                Machine-generated state snapshot
-  |   +-- MATHEMATICAL_APPENDIX.md        Mathematical framework (1081 lines)
-  |
-  |-- resources/                 Recovery resources
-  |   |-- ONBOARDING.md                   Full project context and history
-  |   +-- RECOVERY.md                     Recovery protocol and pending work
-  |
-  |-- experimental_notes/        Analysis and results per experiment
-  |-- scripts/                   Automation (this script, sv, qc, recover)
-  +-- .claude/CLAUDE.md          CC1 command configuration"""
+def print_structure(root: Path) -> None:
+    """Print a short structural map of top-level directories.
 
-    print(structure)
+    The full architecture tree lives in `resources/ONBOARDING.md
+    § Architecture Overview`. Printing only the top-level layout here
+    avoids the staleness problems that hardcoded deep trees suffer.
+    """
+    print("  Top-level layout:\n")
+    top_level = [
+        ("PAPER.md", "Canonical technical statement (white paper)"),
+        ("README.md", "Operational front door"),
+        ("bench/", "Runner infrastructure, experiment code, tests"),
+        ("docs/", "Architecture, glossary, reproducing, mathematical appendix"),
+        ("resources/", "Onboarding, recovery, shortcuts, memory mirrors"),
+        ("experimental_notes/", "Markdown analysis per experiment"),
+        ("scripts/", "This script, sv, qc, recover (automation)"),
+        (".claude/CLAUDE.md", "CC1 command configuration"),
+    ]
+    for path, desc in top_level:
+        exists = (root / path).exists()
+        marker = "[OK]     " if exists else "[MISSING]"
+        print(f"    {marker} {path:22s} {desc}")
+    print()
+    print("  Full architecture map: resources/ONBOARDING.md § Architecture Overview")
 
-    print("\n  Documentation status:")
+    print("\n  Documentation presence:")
     docs = [
         "docs/GLOSSARY.md", "docs/ARCHITECTURE.md", "docs/REPRODUCING.md",
         "docs/CURRENT_STATE.md", "docs/MATHEMATICAL_APPENDIX.md",
+        "resources/ONBOARDING.md", "resources/RECOVERY.md", "resources/SHORTCUTS.md",
     ]
     for d in docs:
         exists = (root / d).exists()
@@ -378,12 +431,97 @@ def print_structure() -> None:
         print(f"    {'  ' if exists else '! '}{d}: {status}")
 
 
+def print_mc_commands(root: Path) -> None:
+    """Print the Metacognitive Commands reference from docs/REPRODUCING.md."""
+    mc = read_reproducing_mc(root)
+    if mc:
+        for line in mc.split("\n"):
+            print(f"  {line}" if line.strip() else "")
+    else:
+        print("  [WARNING] Could not read MC section from docs/REPRODUCING.md.")
+        print("  Canonical MC reference is sourced from that file.")
+
+
+# ---------------------------------------------------------------------------
+# Dry-run mode (used by sv / qc sanity checks)
+# ---------------------------------------------------------------------------
+
+def dry_run(root: Path) -> int:
+    """Verify canonical documents exist and expected markers are present.
+
+    Exit 0 on success. Produces minimal output so it can be embedded in
+    the sv post-commit sanity step and the qc staleness sweep.
+    """
+    errors: list[str] = []
+
+    onboarding = root / "resources" / "ONBOARDING.md"
+    reproducing = root / "docs" / "REPRODUCING.md"
+
+    if not onboarding.exists():
+        errors.append(f"MISSING: {onboarding}")
+    else:
+        text = onboarding.read_text(encoding="utf-8")
+        if SV_START_MARKER not in text:
+            errors.append(f"MISSING MARKER in ONBOARDING.md: {SV_START_MARKER}")
+        if SV_END_MARKER not in text:
+            errors.append(f"MISSING MARKER in ONBOARDING.md: {SV_END_MARKER}")
+        if "## What This Project Is" not in text:
+            errors.append("MISSING SECTION in ONBOARDING.md: ## What This Project Is")
+
+    if not reproducing.exists():
+        errors.append(f"MISSING: {reproducing}")
+    else:
+        text = reproducing.read_text(encoding="utf-8")
+        if "## Metacognitive Commands (MC)" not in text:
+            errors.append("MISSING SECTION in REPRODUCING.md: ## Metacognitive Commands (MC)")
+
+    if not read_onboarding_what_is(root):
+        errors.append("read_onboarding_what_is returned empty — dynamic summary would be blank")
+
+    if not read_reproducing_mc(root):
+        errors.append("read_reproducing_mc returned empty — dynamic MC table would be blank")
+
+    if errors:
+        print("cdsfl_onboard --dry-run: FAIL", file=sys.stderr)
+        for err in errors:
+            print(f"  {err}", file=sys.stderr)
+        return 1
+
+    print("cdsfl_onboard --dry-run: OK")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
+    ap = argparse.ArgumentParser(
+        description="CDSFL onboarding + dynamic info source.",
+        epilog=(
+            "Key values are never printed or transmitted. Supply missing "
+            "keys via `.env` or shell export; never commit `.env`."
+        ),
+    )
+    ap.add_argument(
+        "--full",
+        action="store_true",
+        help="Include the SV:LATEST_EXP block in the project summary (full ONBOARDING state).",
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Self-test only; no prompts, no installs. Exit 0 on success.",
+    )
+    return ap.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
     root = repo_root()
+
+    if args.dry_run:
+        return dry_run(root)
 
     print()
     print("  CDSFL Project Onboarding")
@@ -392,7 +530,7 @@ def main() -> None:
 
     # --- PROJECT SUMMARY ---
     print_header("PROJECT SUMMARY")
-    print_project_summary()
+    print_project_summary(root, full=args.full)
 
     # --- PYTHON VERSION ---
     print_header("PYTHON VERSION")
@@ -430,7 +568,7 @@ def main() -> None:
 
     # --- PROJECT STRUCTURE ---
     print_header("PROJECT STRUCTURE")
-    print_structure()
+    print_structure(root)
 
     # --- INSTALLATION ---
     print_header("INSTALLATION")
@@ -453,45 +591,31 @@ def main() -> None:
 
     # --- GETTING STARTED ---
     print_header("GETTING STARTED")
-    print("  1. Read docs/GLOSSARY.md for term definitions")
-    print("  2. Read docs/ARCHITECTURE.md for system overview")
-    print("  3. Read docs/REPRODUCING.md for how to run experiments")
-    print("  4. Run: python3 scripts/cdsfl_recover.py --full")
+    print("  1. Read resources/ONBOARDING.md for full project context")
+    print("  2. Read docs/GLOSSARY.md for term definitions")
+    print("  3. Read docs/ARCHITECTURE.md for system components and data flow")
+    print("  4. Read docs/REPRODUCING.md for how to run experiments")
+    print("  5. Run: python3 scripts/cdsfl_recover.py --full")
     print("     to see the current project state")
     print()
     print("  To run the test suite:")
     print("    python3 -m pytest bench/tests/ -v")
+    print()
+    print("  To view the full ONBOARDING summary via this script:")
+    print("    python3 scripts/cdsfl_onboard.py --full")
     print()
     print("  To replicate the latest experiment:")
     print("    See docs/REPRODUCING.md for step-by-step instructions")
 
     # --- METACOGNITIVE COMMANDS ---
     print_header("METACOGNITIVE COMMANDS (MC)")
-    print("  This project uses short text commands to direct AI model behaviour")
-    print("  during interactive sessions. They are typed as plain text and can")
-    print("  be combined (e.g. 'p a e d' = P-pass, analyse, extrapolate, discuss).")
+    print_mc_commands(root)
     print()
-    print("  Core commands:")
-    print("    p    P-pass: Popperian falsification (iterative until diminishing returns)")
-    print("    a    Analyse dispassionately")
-    print("    e    Extrapolate beyond immediate domain")
-    print("    d    Discuss before proceeding")
-    print("    f    Find-Follow-Fix: trace consequences before fixing")
-    print("    sy   Use all available STEM tools (SymPy, Wolfram, SciPy, z3, etc.)")
-    print("    sv   Save state (update docs, commit)")
-    print("    qc   Quality control (staleness, consistency, reference checks)")
-    print("    rc   Recover state (rebuild context from recovery resources)")
-    print("    re   External research (web, arXiv, Semantic Scholar)")
+    print("  Canonical source: docs/REPRODUCING.md § Metacognitive Commands")
+    print("  Model config:     .claude/CLAUDE.md")
     print()
-    print("  Model confer commands (combinable):")
-    print("    cc2  Claude Opus 4.6 (CLI)    cx   Codex GPT-5.4 (OpenRouter)")
-    print("    ge   Gemini 3.1 Pro (Google)   cgpt ChatGPT GPT-5.4 (OpenRouter)")
-    print("    ds   DeepSeek Reasoner          Example: cx ge cc2")
-    print()
-    print("  Full reference: docs/REPRODUCING.md, section 'Metacognitive Commands'")
-    print("  Model config:   .claude/CLAUDE.md")
-    print()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

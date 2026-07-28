@@ -1,0 +1,98 @@
+I have applied the CDSFL methodology and FFAFP protocol to evaluate the pre-run state of Experiment 39-0. 
+
+Below is the classification, P-Pass analysis, dependency tracing, and definitive stance for each of the five questions.
+
+---
+
+### QUESTION 1 — What is truly BLOCKING for 39-0?
+
+**Constraint Classification:**
+*   **HARD:** Experiment 39-0 must produce scientifically valid data verifying the pipeline infrastructure (mathematical/physics constraint on experimental validity).
+*   **SOFT:** The agreed 10-item execution order. (Plans are negotiable; experimental validity is not).
+
+**Falsification Loop (P-Pass):**
+*   *Claim:* All 10 items must be completed prior to 39-0.
+*   *Falsifier:* 39-0 can fully test the bench infrastructure (routing, gates, convergence) without implementing item X.
+*   *Attempt 1 (Item 1 & 5: Gate Interface & Severity Fusion):* If we run without the domain-agnostic gate interface and severity fusion (Known Issue D), the falsification gate only checks for string existence ("FALSIFICATION" section) rather than structured Pass/Fail/Evidence data. The HIL cannot verify immune cell verdicts. *Falsifier fails. Items 1 & 5 are BLOCKING.*
+*   *Attempt 2 (Item 2: Convergence C6):* If we run without churn detection (Known Issue E), oscillation between LLM stylistic preferences will be interpreted as non-convergence, leading to infinite loops or budget exhaustion. *Falsifier fails. Item 2 is BLOCKING.*
+*   *Attempt 3 (Items 3 & 4: Domain configs & B-cell dispatch):* If we lack domain routing, we cannot test whether the B-cell successfully dispatches to domain-specific tools. We only need the CS/Software config, not biology/info-science. *Falsifier partially succeeds. `cs_software.toml` and B-cell dispatch are BLOCKING; other domains are DEFERRABLE.*
+*   *Attempt 4 (Items 6 & 7: Sycophancy & O1 Calibration):* These are behavioural adjustments. They do not structurally alter the infrastructure routing or state machine. *Falsifier succeeds. Items 6 & 7 are DEFERRABLE.*
+
+**Definitive Stance:**
+The 10-item list is bloated for an MVP. Items 1 (Gate Protocol), 2 (C6 Churn), 4 (B-cell Dispatch), and 5 (Severity Fusion) are mandatory blockers. The non-CS domain configs (Item 3), Sycophancy (Item 6), O1 Calibration (Item 7), MC Sync (Item 9), and Phase 9 (Item 10) are deferred to post-39-0.
+
+---
+
+### QUESTION 2 — Are cell I/O formats sound for system + HIL?
+
+**Constraint Classification:**
+*   **HARD:** Cell outputs must be machine-parsable by downstream cells.
+*   **HARD:** Cell outputs must be serialized to JSON and readable by the Human-In-the-Loop (HIL) to allow verification.
+
+**Falsification Loop (P-Pass):**
+*   *Claim:* Current cell I/O formats are sound and ready for 39-0.
+*   *Falsifier:* There exists a cell output that breaks downstream parsing, fails JSON serialization, or is obscured from the HIL reviewer.
+*   *Attempt 1 (HIL Visibility - Known Issue C):* The FindingRegistry captures detailed provenance (6 fields, origin_type="model"), but the round report summary only outputs *counts*. 
+*   *Boundary Trace:* Cell outputs -> `ImmuneResponse` -> `round_data` dictionary -> JSON serialization -> HIL Viewer. 
+*   *Analysis:* The dependency chain breaks at the `round_data` dictionary step. The HIL is effectively blind to the content and provenance of the findings, rendering human verification impossible. The falsifier is satisfied. *Claim refuted.*
+
+**Definitive Stance:**
+The cell I/O formats are structurally unsound at the system boundary (JSON -> HIL). You must patch the `round_data` exporter to dump the full FindingRegistry payload (including the 6 provenance fields) into the JSON checkpoint, not just the counts. 
+
+---
+
+### QUESTION 3 — Domain TOML strategy for 39-0
+
+**Constraint Classification:**
+*   **HARD:** The test must validate the infrastructure's ability to apply domain-specific rules to domain-specific code.
+
+**Falsification Loop (P-Pass):**
+*   *Claim:* 39-0 can run using only the existing `universal.toml` and defaults.
+*   *Falsifier:* `universal.toml` contains sufficient rules and tool-bindings to test CS/Software verification loops.
+*   *Attempt:* `universal.toml` dictates physics, mathematics, and strict logical contradictions (HARD constraints). It does not contain rules for software architecture, type-checking, or AST validation tools. If 39-0 tests the "bench code itself", the B-Cell cannot test domain-dispatch because there is no domain to dispatch to. The falsifier fails. *Claim refuted.*
+
+**Definitive Stance:**
+You cannot use `universal.toml` alone. You must create a minimal `bench/cdsfl_registry/domains/cs_software.toml` containing rules for software validation and at least one mapped verification tool (e.g., a linter or AST parser hook). Without this, the B-Cell dispatch infrastructure remains untested.
+
+---
+
+### QUESTION 4 — ImmuneResponse checkpointing
+
+**Constraint Classification:**
+*   **HARD:** System state must survive API failures and budget exhaustion limits without corrupting mathematical metrics (safety/physics constraint on run persistence).
+
+**Falsification Loop (P-Pass):**
+*   *Claim:* We can accept the risk of transient `ImmuneResponse` objects for a 15-24 round run.
+*   *Falsifier:* A crash and subsequent resumption without `ImmuneResponse` history does not alter the mathematical outcome of the experiment.
+*   *Attempt:* 39-0 utilizes C6 churn metrics (Item 2) to detect convergence. C6 strictly depends on historical verdicts (B-cell) and severity deltas (NK-cell) over time. 
+*   *Boundary Trace:* API crash -> Runner resumes from JSON -> `ImmuneResponse` is instantiated blank -> Regulatory Cell attempts to calculate C6 -> History is missing -> Convergence math resets to zero.
+*   *Analysis:* If [VERIFY:current] API stability is typical, a 15-24 round run taking several hours has a non-zero probability of network/API failure. Losing the transient state corrupts the fixed-point iteration check (P-Pass convergence). The falsifier is satisfied. *Claim refuted.*
+
+**Definitive Stance:**
+Accepting the risk is mathematical negligence. You must serialize `ImmuneResponse` (including T, B, NK, CT, Dendritic, and Regulatory verdicts) and Shadow Cell observations to the checkpoint JSON before executing 39-0.
+
+---
+
+### QUESTION 5 — Minimum viable path to 39-0
+
+**Constraint Classification:**
+*   **HARD:** Sequence ordering (dependencies dictate order).
+*   **SOFT:** Effort estimations [SPECULATIVE].
+
+**Falsification Loop (P-Pass):**
+*   *Claim:* The shortest path requires executing all outstanding fixes concurrently.
+*   *Falsifier:* There is a strict topological dependency that forces a sequential pipeline.
+*   *Attempt:* We cannot synthesize gate results (Item 5) without the gate interface (Item 1). We cannot calculate C6 churn (Item 2) without checkpointed historical verdicts (Fix A/B). We cannot verify 39-0 via HIL without provenance visibility (Fix C).
+*   *Revision:* The path must be strictly sequential, ordered by foundational dependencies.
+
+**Definitive Stance:**
+The minimum viable path to running 39-0 without compromising scientific validity consists of 5 sequential steps. All other items are deferred.
+
+**Execution Order (The MVP):**
+1.  **State Persistence (Fixes A & B)**: Implement JSON serialization/deserialization for `ImmuneResponse` and Shadow Cells in `runner_core.py`. *(Effort: Moderate. Structuring dataclasses for JSON).*
+2.  **HIL Visibility (Fix C)**: Modify round reporting to serialize full FindingRegistry arrays (with provenance), replacing the current counts-only implementation. *(Effort: Low).*
+3.  **Gate Interface (Item 1 & Fix D)**: Implement the `IFalsificationGate` protocol and ensure `runner_core.py` expects and parses structured Pass/Fail/Evidence data. *(Effort: Moderate).*
+4.  **Convergence Math (Item 2 & 5)**: Implement C6 churn detection and Severity Fusion. This relies entirely on the historical data secured in Step 1. *(Effort: High. Requires careful math implementation from the Appendix).*
+5.  **Domain Routing (Item 4 & partial 3)**: Create `cs_software.toml` and wire the B-Cell dispatch mechanism to read it. *(Effort: Moderate).*
+
+Execute these five steps. Do not proceed to 39-0 until Step 5 is verified via unit tests.

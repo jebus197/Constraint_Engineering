@@ -28,6 +28,7 @@ context assembly in run_baseline_confer.py.
 
 from __future__ import annotations
 
+import enum
 import json
 import logging
 import os
@@ -41,6 +42,18 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from bench.dm._types import DynamicManagementConfig, Finding
 from bench.dm._convergence import ConvergenceDetector
+
+
+def _enum_safe_default(obj: Any) -> Any:
+    """JSON serialization default that extracts .value from Enums.
+
+    Without this, ``json.dumps(default=str)`` converts ``CellType.CYTOTOXIC_T``
+    to the repr string ``"CellType.CYTOTOXIC_T"`` instead of the clean value
+    ``"cytotoxic_t"``.  Codex 5.3 confer, 13 April 2026.
+    """
+    if isinstance(obj, enum.Enum):
+        return obj.value
+    return str(obj)
 
 logger = logging.getLogger("insect_brain")
 
@@ -913,6 +926,8 @@ class InsectBrain:
             "finding_count": record.finding_count,
             "duration_s": record.duration_s,
             "failures": record.failures,
+            # Codex 5.3 confer fix (13 April 2026): provenance fields were
+            # defined on Finding but never serialised to per-round JSON.
             "findings": [
                 {
                     "finding_id": f.finding_id,
@@ -923,8 +938,18 @@ class InsectBrain:
                     "abstraction_index": f.abstraction_index,
                     "description": f.description,
                     "proposed_fix": f.proposed_fix,
+                    "target_file": f.target_file,
                     "verified": f.verified,
                     "escalated": f.escalated,
+                    "falsification_present": f.falsification_present,
+                    "pm_verdict": f.pm_verdict,
+                    "dedup_of": f.dedup_of,
+                    "origin_type": f.origin_type,
+                    "source_ref": f.source_ref,
+                    "retrieval_query": f.retrieval_query,
+                    "retrieved_at": f.retrieved_at,
+                    "source_hash": f.source_hash,
+                    "source_diversity": f.source_diversity,
                 }
                 for f in record.findings
             ],
@@ -941,7 +966,7 @@ class InsectBrain:
                 if len(text) > 10000
             },
         }
-        filepath.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self._atomic_write_json(filepath, data)
 
     def _save_checkpoint(self) -> None:
         """Save full state checkpoint for recovery."""
@@ -958,7 +983,19 @@ class InsectBrain:
                     "abstraction_index": f.abstraction_index,
                     "description": f.description,
                     "proposed_fix": f.proposed_fix,
+                    "target_file": f.target_file,
                     "verified": f.verified,
+                    "escalated": f.escalated,
+                    "falsification_present": f.falsification_present,
+                    "pm_verdict": f.pm_verdict,
+                    "dedup_of": f.dedup_of,
+                    # Provenance fields (pre-launch review fix, 13 April 2026)
+                    "origin_type": f.origin_type,
+                    "source_ref": f.source_ref,
+                    "retrieval_query": f.retrieval_query,
+                    "retrieved_at": f.retrieved_at,
+                    "source_hash": f.source_hash,
+                    "source_diversity": f.source_diversity,
                 }
                 for f in rnd
             ])
@@ -979,9 +1016,11 @@ class InsectBrain:
                 try:
                     from dataclasses import asdict
                     ir_dict = asdict(rr.immune_response)
-                    # Round-trip through JSON with default=str to handle enums etc.
+                    # Round-trip through JSON with _enum_safe_default to get
+                    # clean enum values ("cytotoxic_t") not repr strings
+                    # ("CellType.CYTOTOXIC_T").  Codex 5.3 confer fix.
                     rr_data["immune_response"] = json.loads(
-                        json.dumps(ir_dict, default=str)
+                        json.dumps(ir_dict, default=_enum_safe_default)
                     )
                 except Exception:
                     rr_data["immune_response"] = str(rr.immune_response)
@@ -1010,7 +1049,10 @@ class InsectBrain:
             "failed": self.state.failed,
             "failure_reason": self.state.failure_reason,
         }
-        filepath.write_text(json.dumps(checkpoint, indent=2), encoding="utf-8")
+        # Pre-launch review fix: use atomic write to prevent checkpoint
+        # corruption on interruption (Bug#62 pattern, already used in
+        # signal_complete but was missing here).
+        self._atomic_write_json(filepath, checkpoint)
 
     # ───────────────────────────────────────────────────────────────────────
     # Core function 3: read_context()
@@ -1199,6 +1241,18 @@ class InsectBrain:
         """
         from bench.immune_agents import run_immune_pipeline
 
+        # Exp 40 fix 1c (post-continuation 15 May 2026): persistent
+        # per-model bias-window state. Lives on the brain so it spans
+        # the whole experiment (the brain is the only object that
+        # persists across rounds at this layer). Passed into the
+        # Regulatory T v2 meta-check so a model's ≥85%-removal AUTOIMMUNE
+        # flag only fires after the condition holds for N consecutive
+        # rounds — preventing per-round HIL noise in converged-state
+        # runs where one model reasonably produces mostly known
+        # findings (continuation Anomaly 4).
+        if not hasattr(self, "_rt_bias_window_state"):
+            self._rt_bias_window_state: Dict[str, int] = {}
+
         # Prior findings for NK cell dedup
         prior = [f for rnd in self.state.all_findings[:-1] for f in rnd] if self.state.all_findings else []
 
@@ -1214,6 +1268,9 @@ class InsectBrain:
             observation_only=observation_only,
             ct_enabled=True,
             ct_timeout=600,  # Allow CT v2 full investigation time (was 300, timed out)
+            domain=getattr(self.config, "domain", ""),
+            rt_bias_window_state=self._rt_bias_window_state,
+            rt_bias_window_rounds=3,
         )
         elapsed = time.monotonic() - t0
 
@@ -1364,8 +1421,19 @@ class InsectBrain:
                     abstraction_index=fd.get("abstraction_index", 0.5),
                     description=fd.get("description", ""),
                     proposed_fix=fd.get("proposed_fix", ""),
+                    target_file=fd.get("target_file", ""),
                     verified=fd.get("verified", False),
                     escalated=fd.get("escalated", False),
+                    falsification_present=fd.get("falsification_present", False),
+                    pm_verdict=fd.get("pm_verdict", ""),
+                    dedup_of=fd.get("dedup_of", ""),
+                    # Provenance fields (pre-launch review fix, 13 April 2026)
+                    origin_type=fd.get("origin_type", ""),
+                    source_ref=fd.get("source_ref", ""),
+                    retrieval_query=fd.get("retrieval_query", ""),
+                    retrieved_at=fd.get("retrieved_at", ""),
+                    source_hash=fd.get("source_hash", ""),
+                    source_diversity=fd.get("source_diversity", 0.0),
                 ))
             self.state.all_findings.append(findings)
 
@@ -1411,12 +1479,19 @@ class InsectBrain:
                 except (json.JSONDecodeError, OSError) as e:
                     logger.warning("Failed to load round %d responses: %s", round_idx, e)
 
+            # Codex 5.3 confer fix (13 April 2026): immune_response was
+            # serialised to checkpoint.json but never restored into
+            # RoundRecord on resume.  Pass the dict back so post-hoc
+            # analysis can access immune verdicts and cell decisions.
+            ir_data = rr.get("immune_response", None)
+
             self.state.round_records.append(RoundRecord(
                 round_idx=round_idx,
                 timestamp=rr.get("timestamp", ""),
                 model_responses=model_responses,
                 findings=findings,
                 finding_count=len(findings),
+                immune_response=ir_data,
                 metrics=rr.get("metrics", {}),
                 failures=rr.get("failures", {}),
                 duration_s=duration,

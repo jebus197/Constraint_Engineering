@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T114959Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1052,
+  "response": "F001\nSEVERITY: 0.75\nFIND: `_track_tool_fpr` crashes with `AttributeError` on string verdicts because it accesses attributes before `isinstance(verdict, str)` check.\nFALSIFIER:\n```python\nfrom bench.dm._shadow_stage6 import ShadowStage6Calibrator, ShadowStage6RoundLog\nfrom types import SimpleNamespace\nimport sys\n\ncal = ShadowStage6Calibrator()\nfake_resp = SimpleNamespace()\nfake_resp.cell_verdicts = {\"f1\": [\"CONFIRMED\"]}\nround_log = ShadowStage6RoundLog(round_idx=0)\n\ntry:\n    cal._track_tool_fpr(fake_resp, round_log)\nexcept AttributeError:\n    print(\"FALSIFIED\")\n    sys.exit(1)\n```\n\nF002\nSEVERITY: 0.45\nFIND: `_estimate_retrieval_sparsity` double‑counts results from duplicate source metadata, biasing ν_k proxy low.\nFALSIFIER:\n```python\nfrom bench.dm._shadow_stage6 import ShadowStage6Calibrator\n\ncal = ShadowStage6Calibrator()\nmeta = [\n    {\"source\": \"arxiv\", \"results_count\": 3},\n    {\"source\": \"arxiv\", \"results_count\": 3},\n]\nresult = cal._estimate_retrieval_sparsity(None, meta)\nif result == 0.2:\n    print(\"FALSIFIED\")\n    exit(1)\nexit(0)\n```",
+  "metadata": {
+    "round": 4,
+    "elapsed": 349.2,
+    "chars": 1052,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -276,9 +276,17 @@ class FailureHandler:
 
         # Standard recovery policy table
         if failure_type == FailureType.EMPTY:
-            action = (
-                RecoveryAction.EXCLUDE if repeated else RecoveryAction.RETRY
-            )
+            # 2026-05-22 (founder-directed): EMPTY never produces EXCLUDE.
+            # Excluding a model from subsequent rounds is benching, which
+            # feedback_no_benching.md explicitly forbids ("no model misses
+            # a round"). The in-round secondary route fallback in
+            # _dispatch_single_model handles the immediate per-turn
+            # response; FailureHandler here just records the EMPTY event
+            # and returns RETRY so the model keeps participating. The
+            # persistent-empty HIL signal is raised by the runner's
+            # `_persistent_empty_flags` accumulator (turns where BOTH
+            # primary and secondary routes failed), not by EXCLUDE here.
+            action = RecoveryAction.RETRY
         elif failure_type == FailureType.TIMEOUT:
             action = (
                 RecoveryAction.EXCLUDE if repeated else RecoveryAction.RETRY_EXTENDED

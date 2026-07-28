@@ -1,0 +1,479 @@
+{
+  "round_idx": 9,
+  "findings": [
+    {
+      "finding_id": "ChatGPT_F006",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6282,
+      "flaw_class": 5,
+      "encounter_count": 12,
+      "description_snippet": "`bench/macrophage_cell.py`, `MacrophageCell._check_ouroboros_metrics()` assumes `ouroboros_metrics[\"diversity_score\"]` i"
+    },
+    {
+      "finding_id": "CC2_F013",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6199,
+      "flaw_class": 6,
+      "encounter_count": 10,
+      "description_snippet": "FINDING_ID: F013 (EXTEND C0027)\nSEVERITY: 0.55 \u00b7 FLAW_CLASS: 6 (edge-case) \u00b7 ABSTRACTION_INDEX: 0.25\n\nFIND \u2014 `_check_our"
+    },
+    {
+      "finding_id": "Codex_F011",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 2,
+      "encounter_count": 7,
+      "description_snippet": "`bench/macrophage_cell.py`, `_check_provenance()`, source-diversity block crashes when a provenance record has a truthy "
+    },
+    {
+      "finding_id": "DeepSeek_F010",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.632,
+      "flaw_class": 5,
+      "encounter_count": 13,
+      "description_snippet": "FINDING_ID: F010  \nSEVERITY: 0.55  \nFLAW_CLASS: 5 (correctness \u2013 runtime crash)  \nABSTRACTION_INDEX: 0.15  \n\nFIND  \nIn `"
+    },
+    {
+      "finding_id": "Gemini_F001",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6778,
+      "flaw_class": 1,
+      "encounter_count": 34,
+      "description_snippet": "In `_self_check_observe`, `claim_types.add(getattr(ct, \"value\", str(ct)))` can add integers to the set if `ct.value` is "
+    }
+  ],
+  "tool_fpr": {
+    "Codex_F001": {
+      "tool_name": "Codex_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F001": {
+      "tool_name": "ChatGPT_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F002": {
+      "tool_name": "Gemini_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F001": {
+      "tool_name": "CC2_F001",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 6,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F002": {
+      "tool_name": "CC2_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F001": {
+      "tool_name": "DeepSeek_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 9,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F002": {
+      "tool_name": "DeepSeek_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F003": {
+      "tool_name": "DeepSeek_F003",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 6,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F001": {
+      "tool_name": "Gemini_F001",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 11,
+      "total": 12,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F003": {
+      "tool_name": "CC2_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F003": {
+      "tool_name": "ChatGPT_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F005": {
+      "tool_name": "Codex_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F004": {
+      "tool_name": "DeepSeek_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F004": {
+      "tool_name": "Gemini_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F003": {
+      "tool_name": "Gemini_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F005": {
+      "tool_name": "CC2_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F003": {
+      "tool_name": "Codex_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F004": {
+      "tool_name": "ChatGPT_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F005": {
+      "tool_name": "ChatGPT_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F005": {
+      "tool_name": "Gemini_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F006": {
+      "tool_name": "Gemini_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F005": {
+      "tool_name": "DeepSeek_F005",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 6,
+      "total": 7,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F006": {
+      "tool_name": "CC2_F006",
+      "passes": 0,
+      "fails": 2,
+      "inconclusive": 2,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_UNSTRUCTURED": {
+      "tool_name": "CC2_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F004": {
+      "tool_name": "Codex_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F006": {
+      "tool_name": "ChatGPT_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F007": {
+      "tool_name": "ChatGPT_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F007": {
+      "tool_name": "Gemini_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F008": {
+      "tool_name": "Gemini_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_D_F001": {
+      "tool_name": "DeepSeek_D_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_D_F002": {
+      "tool_name": "DeepSeek_D_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_D_F003": {
+      "tool_name": "DeepSeek_D_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F002": {
+      "tool_name": "ChatGPT_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_UNSTRUCTURED": {
+      "tool_name": "ChatGPT_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F006": {
+      "tool_name": "Codex_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F008": {
+      "tool_name": "Codex_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F009": {
+      "tool_name": "Codex_F009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F010": {
+      "tool_name": "Codex_F010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_UNSTRUCTURED": {
+      "tool_name": "DeepSeek_UNSTRUCTURED",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F013": {
+      "tool_name": "CC2_F013",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F011": {
+      "tool_name": "Codex_F011",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F010": {
+      "tool_name": "DeepSeek_F010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.5,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1784440648.78095
+}

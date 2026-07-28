@@ -10,6 +10,8 @@ hard_soft_classification = true # HARD — all findings must classify constraint
 fail_closed_unassessed = true   # HARD — unassessed HARDs block convergence
 json_schema_required = true     # HARD — all I/O must be structured JSON
 sympy_auto_verify = true        # HARD — verifiable claims checked automatically
+ffafp_required = true           # HARD — findings processed through FIND-FOLLOW-ANALYSE-FIX-PPASS (5 steps), AND must carry the §15 admissibility block (S_min, G-completeness, d_tool, σ_measured, q_retest)
+structured_reasoning_required = true  # HARD — explicit premises, derivation, conclusion (Meta SRP)
 
 [convergence]
 method = "non_compensatory"     # v_comp AND v_struct AND hard_coverage all must pass
@@ -43,3 +45,34 @@ tuple_canonicalisation = true
 validated_novelty = true
 min_independent_families = 2
 novelty_channel_enabled = true
+
+[feedback_channel]
+# cdsfl_operational.md §17 — corrective loop from schema to model prompt.
+# Per-model feedback on flagged findings is prepended to round K+1's prompt.
+# Defaults ON — the whole point of CDSFL is corrective feedback. Disable
+# only for controlled ablation experiments. Implementation: bench/dm/_feedback.py.
+enabled = true
+top_k = 10                       # max detailed flags per model per round
+max_chars_per_model = 8000       # hard cap on rendered section size
+mode = "imperative"              # imperative = MUST address; advisory = SHOULD address
+
+[divergence]
+# cdsfl_operational.md §18 — generator-side directive: every non-trivial
+# finding must supply >=1 alternative on a named dimension (mechanism /
+# assumption / scope / timescale / tradeoff), or a scoped null-justification.
+# Defaults ON — CDSFL's invention-engine arm. Disable only for controlled
+# ablation. Implementation: bench/dm/_divergence.py.
+#
+# Channel assignment (round-2 5/5 unanimous, 16 April 2026): the modulator
+# multiplies eta_int, never R_k directly, never credits nu_k. See module
+# docstring in bench/dm/_divergence.py for the orthogonality contract.
+enabled = true
+min_alternatives = 1                    # required per non-trivial finding
+max_chars_per_alternative = 2000        # hard cap per alternative block
+mode = "imperative"                     # imperative = MUST; advisory = SHOULD
+isomorphism_threshold = 0.85            # Jaccard >= this vs primary = cosmetic reject
+null_justification_min_chars = 60       # floor for scoped null-alternative rationale
+# Round-2 additions (16 April 2026)
+min_contrast_chars = 20                 # floor for the mandatory "Differs from primary:" clause
+near_copy_threshold = 0.98              # Jaccard >= this triggers the severe 0.60 tier
+sibling_isomorphism_threshold = 0.85    # alt-vs-alt Jaccard >= this flips the later alt inadmissible

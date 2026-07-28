@@ -137,6 +137,18 @@ Each falsification pass that a claim survives increases trust in that claim,
 but never reaches certainty. Diminishing returns apply — each additional pass
 contributes less than the previous one.
 
+> **Stage-awareness note.** C(n) is Stage 1 of a five-stage model evolution.
+> Later stages subsume it: Stage 4's recursive R_k(i) generalises C(n) to
+> include prior flaw rate π and detection capability p per flaw class; Stage
+> 5 extends R_k(i) with novelty (η), fix efficacy (σ/S_k), and re-injection
+> (ν); Stage 6 adds literature-calibrated novelty (η_int, ν_k, c_ext). Each
+> stage is a strict generalisation — C(n) is a special case of R_k(i) with
+> π = 0 and all pass-specific factors collapsed into a single p. The
+> operational specification that models actually use is
+> `cdsfl_operational.md` §3 (Stage 5) and §16 (Stage 6). The full derivation
+> chain is in `docs/MATHEMATICAL_APPENDIX.md` §1.1. C(n) is retained below
+> for reference and for budget-exhausted termination accounting.
+
 **Formal:**
 ```
 Cumulative detection probability after n passes:
@@ -260,6 +272,81 @@ If ¬search_tools_available(): flag(c, [VERIFY:current])
 
 ---
 
+## 10. Sufficiency Assessment and Convergence Declaration
+
+**Natural language:**
+Each round, after applying §3 (P-Pass) and §6 (Extended P-Pass) to the
+artefact under review, render a sufficiency judgement. A senior reviewer
+does not enumerate edge cases indefinitely — they assess whether the
+artefact correctly performs its specified function and report only
+*material* defects. When §6's termination criteria are met (all hard
+assumptions tested and sound; no remaining finding meets the
+real-world-consequence threshold; the prior round yielded no new
+failures), declare convergence with reasoning. The declaration is
+itself falsifiable by the next round and by the schema's independent
+checks; do not declare convergence to satisfy the instruction.
+"Material" = a defect whose consequence meets the §6
+real_world_threshold, i.e. one that would plausibly cause:
+
+  1. **Wrong result** — incorrect output or invalid derivation in the
+     artefact's specified function.
+  2. **Hard-constraint violation** — breach of physics, mathematics,
+     law/safety, or any explicit HARD constraint per §1.
+  3. **Verification-integrity corruption** — a defect in the
+     measurement / accounting machinery itself.
+  4. **Silent evidence loss** — suppression or misclassification of a
+     finding that, if retained, would change a hard-constraint
+     conclusion.
+  5. **Unreproducibility** — an accepted result that cannot be
+     reproduced from the logged inputs.
+
+Marginal observations (style, naming, micro-optimisation that does not
+affect correctness) MUST NOT be emitted as material findings. They may
+be noted briefly under EPISTEMIC marking (§8) but they do not block
+convergence.
+
+**Formal:**
+```
+sufficiency_round(k, artefact) ≡
+  let F_k = {findings_emitted_this_round} in
+  let novel_k = F_k \ ⋃_{j<k} F_j in
+  if    ∀ a ∈ C_H: tested(a) ∧ sound(a)
+     ∧  ∀ f ∈ ⋃_{j≤k} F_j: consequence(f) < real_world_threshold
+     ∧  |novel_k| = 0
+  then  emit declare(CONVERGED, justification, evidence)
+  else  emit findings F_k under the §17 schema
+
+declare(CONVERGED, justification, evidence) requires:
+  justification : prose naming what was assessed and why no material
+                  defect remains under the five categories above
+  evidence      : enumeration of hard assumptions tested and the
+                  consequence-class of each residual finding (showing
+                  each is below threshold)
+
+Refutability:
+  - The next round may surface a material defect and refute the
+    declaration. The original declarer is not penalised for an
+    honest declaration that turns out to be premature; they are
+    penalised for declaring convergence without evidence.
+  - Independent schema checks (§7 survival predicate, §5
+    corroboration) may refute the declaration without a new round.
+
+Integrity:
+  A CONVERGED declaration motivated by instruction-satisfaction
+  rather than by met criteria is itself a §1 HARD-class violation
+  (verification integrity corruption, category 3 above).
+```
+
+**Behavioural:**
+- Do NOT continue to enumerate immaterial findings once §6 criteria
+  are met. Stopping when the work is materially done is the
+  competent-reviewer norm, not a concession.
+- Do NOT declare convergence when material defects remain unresolved
+  to satisfy any instructional pressure. The declaration is evidenced
+  or it does not exist.
+
+---
+
 ## Non-Formalisable Directives (Prose Only)
 
 The following directives encode behavioural expectations that have no meaningful
@@ -282,6 +369,91 @@ mathematical representation. Formalising them would be false rigour.
 
 ---
 
+## Objective and Diminishing Returns
+
+> **Added 2026-05-23 (panel convergence redesign).** This section reframes the
+> review objective. It does not supersede §1–§2 (constraint classification /
+> precedence) or §6 (falsification loop); it governs *where to spend effort*
+> within them.
+
+**Natural language:**
+The objective is to build and validate a **robust working solution**: find the
+**material** defects that decide whether it works, and get the job done
+efficiently. Review is **value-weighted, not count-weighted** — a long list of
+minor observations is not progress; one defect that decides whether the solution
+works is. Weigh the marginal value of more review against its effort, prioritise
+high-value findings, and **converge when further effort yields only marginal
+value** (when the remaining work is footnotes, not faults). Two guards keep this
+from degrading into premature closure:
+
+1. **Value governs *where* to spend effort, NOT whether a real defect counts as
+   critical.** Severity is **materiality** — the consequence if the defect ships
+   — and is independent of how *interesting* the defect is. A dull-but-important
+   defect (a boring off-by-one, an unglamorous unhandled error path) stays
+   critical. Never downgrade a material defect for being uninteresting, nor
+   inflate an interesting observation that changes nothing.
+
+2. **To justify continuing past a quiet stretch, name a specific mechanism.**
+   "There might be more" does not keep the review open. Continuation requires
+   naming a **specific, plausible, high-value mechanism** — a concrete place a
+   material defect could still hide, and why — not yet adequately examined.
+   Absent that, a quiet stretch is evidence of convergence, not of insufficient
+   effort.
+
+**Formal:**
+```
+V(f) = materiality(f) = consequence if defect f ships (= severity).
+Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit     (interest(f) does NOT enter).
+Guard 2:  may_continue(K) ⇔ ∃ mechanism m: plausible(m) ∧ high_value(m)
+                                          ∧ ¬adequately_examined(m, ≤K).
+Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
+material critical remains open (per §6 termination + the A4 fail-safe).
+```
+
+---
+
+## Runnable Falsifiers for Critical Findings
+
+> **Added 2026-06-03 ("tools decide, not votes").** Active only when the
+> falsifier gate is enabled for the experiment. Reinforces the objective above:
+> the goal is a **robust working proof-of-concept that is confirmed to work**,
+> not an unbounded enumeration of every conceivable fault. A critical finding
+> earns its status by being *demonstrated*, not asserted.
+
+**Natural language:**
+When you report a **CRITICAL** finding about code, you **MUST** attach a
+*runnable falsifier* — a fenced `python` block, labelled `FALSIFIER:`, that
+mechanically demonstrates the defect. The falsifier **MUST**:
+
+1. **Import the REAL target module** (e.g. `from bench.dm._convergence import ...`).
+   Do **NOT** retype, paraphrase, or redefine the function under test — a
+   model-authored copy proves nothing about the repository's actual code.
+2. **Fail *if and only if* the claimed defect is genuinely present**: raise
+   `AssertionError` or print the literal token `FALSIFIED` when the defect is
+   real, and **exit cleanly** (no raise, no `FALSIFIED`) when the claim is false.
+   A falsifier that fails for an unrelated reason (bad import, typo) does not
+   demonstrate the defect.
+3. **Be RUN first** via the `execute_python` tool, so you confirm it behaves as
+   intended before you report it. Paste the tool's actual output.
+
+The **runner re-runs your falsifier independently**, and *that* re-run — never
+your prose verdict — decides CONFIRMED / REFUTED. A critical finding with **no
+runnable falsifier**, or one the runner cannot trust (broken, times out), is
+routed to **human review**, not auto-confirmed.
+
+**Formal:**
+```
+report_critical(f) ⇒ ∃ falsifier(f): imports_real_target(f)
+                                    ∧ fails_iff_defect(f)
+                                    ∧ ran_via_execute_python(f).
+verdict(f) := runner_reverify(falsifier(f))   # model prose is NOT the decider.
+  CONFIRMED ⇔ re-run raised AssertionError ∨ printed FALSIFIED.
+  REFUTED   ⇔ re-run exited cleanly (defect not demonstrated).
+  otherwise (missing / broken / timeout) ⇒ HIL (never auto-CONFIRM).
+```
+
+---
+
 ## Classification Summary
 
 | Directive | Formal Structure | Formalisable |
@@ -290,11 +462,15 @@ mathematical representation. Formalising them would be false rigour.
 | Constraint precedence | Strict partial order | Yes |
 | Falsification loop | Fixed-point iteration with termination condition | Yes |
 | Proportionality gate | Threshold function on claim type | Yes |
-| Corroboration model | Geometric probability: C(n) = 1−(1−p)^n | Yes |
+| Corroboration model (Stage 1, reference) | Geometric probability: C(n) = 1−(1−p)^n | Yes |
+| Residual-risk model (Stage 5–6, operational) | Recursive R_k(i) with η·d·p, S_k, ν_eff, η_combined via ν_k & c_ext — see `cdsfl_operational.md` §3, §16 and `docs/MATHEMATICAL_APPENDIX.md` §1.1 | Yes |
+| Feedback channel (Stage 6, operational) | Per-finding feedback records (refutations, admissibility, duplicates, R_k discrepancies) prepended to round K+1 prompt — see `cdsfl_operational.md` §17 and `bench/dm/_feedback.py` | Yes |
+| Divergence directive (Stage 6, operational) | Primary finding + ≥1 alternative differing on a named dimension (mechanism / assumption / scope / timescale / tradeoff), or scoped null-justification; isomorphism check penalises cosmetic rewording — see `cdsfl_operational.md` §18 and `bench/dm/_divergence.py` | Yes |
 | Extended P-Pass | DAG with isolation constraint | Yes |
 | Falsification survival | Predicate over pass sequence | Yes |
 | Epistemic marking | Classification function with consolidation | Yes |
 | Proactive verification | Conditional trigger with fallback | Partial |
+| Sufficiency assessment & convergence declaration (§10) | Per-round predicate over §6 termination criteria; declarations are evidenced + refutable | Yes |
 | Push back / honesty | Behavioural | No |
 | Simplicity default | Behavioural | No |
 | Tangential detection | Behavioural | No |

@@ -1,0 +1,38 @@
+{
+    "_comment": "39-A: Mathematics Specialist. Target: convergence detector (17K) — the mathematical heart of the system. Context: types (30K). SymPy/z3 verification.",
+    "test_article": "bench/dm/_convergence.py",
+    "context_files": [
+        "bench/dm/_types.py"
+    ],
+    "topology": "star",
+    "pattern": "four_layer",
+    "max_rounds": 15,
+    "extension_cap": 18,
+    "wall_clock_cap_s": 14400,
+    "earliest_stop_round": 5,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_A_mathematics",
+    "domain": "mathematics",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": null,
+    "sk_s_floor": 0.0,
+    "burst_mode": "auto",
+
+    "_specialist_cell": {
+        "type": "mathematics",
+        "tools": ["sympy", "z3", "mpmath"],
+        "toml_config": "bench/cdsfl_registry/domains/mathematics.toml",
+        "immune_config": "bench/cdsfl_registry/domains/immune/mathematics.toml"
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: R_k equation proposals stabilize. Models produce verified (SymPy/z3) proposals.",
+        "primary": "gamma >= 0.45 AND 2 consecutive rounds with 0 novel findings",
+        "secondary": "3+ consecutive churn rounds with gamma >= 0.35"
+    },
+
+    "_payload_note": "dm/_convergence.py=17K + dm/_types.py=30K = 47K total. Well under 80K. All monolithic."
+}

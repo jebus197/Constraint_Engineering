@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260727T232829Z",
+  "phase": "r3",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1844,
+  "response": "WITHDRAW ChatGPT_F005 — prior submission is a DUPLICATE of the version-field finding already represented by C0024/C0025. I do not resubmit it unchanged. The missing σ_measured gate is not worth repairing as a separate ticket because the root cause is already represented in the registry.\n\nMERGE C0025 -> C0024 — same file, same function, same persisted `\"version\"` field ignored by `ImmuneMemory.load()`, same downstream consequence, same fix shape.\n\nCONFIRM C0027 — confirmed by tool execution. Loading JSON with `\"decay_rate\": null` constructs `ImmuneMemory(decay_rate=None)`, and the next `record_experiment()` raises `TypeError` at `math.exp(-self.decay_rate)`. This is the same mechanism described in C0027.\n\nCONFIRM C0017 — confirmed by tool execution. `ImmuneMemory(decay_rate=float(\"nan\"))` is accepted; after two `record_experiment()` calls, the decayed count becomes `nan`, poisoning subsequent priors. However, C0017 appears semantically duplicative of settled C0015/C0008. The correct registry action is likely MERGE C0017 -> C0015 or C0008, not a new discovery.\n\nCONFIRM C0012 — confirmed by tool execution. `ImmuneMemory.load()` catches malformed JSON syntax but not malformed top-level schema: a JSON list causes `AttributeError: 'list' object has no attribute 'get'` after `json.load()` succeeds.\n\nCONFIRM C0018 — confirmed by tool execution. `{\"records\": []}` causes `AttributeError: 'list' object has no attribute 'items'`, and `{\"records\": {\"x\": {\"confirmed\": 1}}}` causes `KeyError: 'flaw_class'` during `FlawClassRecord.from_dict()`.\n\nNo new DISCOVERY findings filed. After checking the registry, every operation-blocking or silently-wrong issue I could reproduce in `bench/dm/_memory.py` maps to existing OPEN or SETTLED entries. Re-reporting them as new findings would be duplicate compute waste under the registry rules.",
+  "metadata": {
+    "round": 3,
+    "elapsed": 69.3,
+    "chars": 1844,
+    "findings_count": 0,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

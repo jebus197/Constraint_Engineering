@@ -177,7 +177,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat until diminishing returns) |
 | `a` | Analyse dispassionately |
 | `e` | Extrapolate beyond immediate domain (what generalises, boundary conditions, new falsifiable questions) |
-| `f` | Find-Follow-Fix — trace consequences through the system before fixing (Find, Follow, Fix) |
+| `f` | Find, Follow, Analyse (with available tools), Fix, P-pass (FFAFP five-step cycle) |
 | `sy` | Use all available mathematical and STEM tools (SymPy, Wolfram, SciPy, NumPy, z3, uncertainties, mpmath) in analysis |
 | `t` | Send output to TTS plain-text file |
 | `c` | Confer with another model, run mutual P-passes until convergence |
@@ -188,19 +188,25 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest-period warnings |
+| `sth` | Synthesise — consolidate findings into a coherent whole |
+| `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+| `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
+| `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds; CX2/Codex-CLI optional 6th) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
 
 ### Model Confer Dispatch
 
 These commands direct the model to confer on the current task with a specific
 frontier model from the panel. Combinable: `cx ge cc2` confers with all three.
 
-| Cmd | Model | Route |
-|-----|-------|-------|
-| `cc2` | Claude Opus 4.6 | CLI piped mode (`claude -p`), Max subscription |
-| `cx` | Codex GPT-5.4 | OpenRouter API |
-| `ge` | Gemini 3.1 Pro | Google GenAI API |
-| `cgpt` | ChatGPT GPT-5.4 | OpenRouter API |
-| `ds` | DeepSeek Reasoner | DeepSeek API |
+| Cmd | Model | Route | Identifier |
+|-----|-------|-------|---|
+| `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription | `opus` |
+| `cx` | Codex GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ge` | Gemini 3.1 Pro Preview | OpenRouter API | `google/gemini-3.1-pro-preview` |
+| `cgpt` | ChatGPT GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ds` | DeepSeek V4 Pro | DeepSeek direct API | `deepseek-v4-pro` |
+
+Panel updated 14 May 2026: Claude Opus 4.6→4.7 (Max subscription), GPT-5.4→5.5 for `cx`/`cgpt` (same OpenRouter tier), Gemini route moved Google direct→OpenRouter (same price tier, draws on existing prepaid credits), DeepSeek Reasoner R1-0528→V4 Pro (mandatory; older endpoint retired by DeepSeek). All four upgraded routes were smoke-tested against a known-answer prompt before adoption. The panel is rotated to current frontier on a rolling basis; reproduction should use whichever versions are current at run time, smoke-tested per route.
 
 All models run under CDSFL directives as system prompt. See
 `bench/directives/universal/cdsfl_core_formal.md` for the directive text and

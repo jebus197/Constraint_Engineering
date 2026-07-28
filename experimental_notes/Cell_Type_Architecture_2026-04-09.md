@@ -2,7 +2,7 @@
 
 ## Core Insight
 
-The CDSFL framework generalises not by becoming general-purpose, but by **hosting specialist components that share a common protocol** — exactly as in biology.
+The CDSFL framework (Constraint-Driven Synthesis and Falsification, a Popperian multi-vendor LLM falsification framework) generalises not by becoming general-purpose, but by **hosting specialist components that share a common protocol** — exactly as in biology.
 
 ## Biological Mapping
 
@@ -30,7 +30,7 @@ cell_type:
 
 ## Multi-Cell $S_k$ Composition
 
-When multiple cell types are active (e.g., software + mathematics for a SymPy module):
+When multiple cell types are active (e.g., software + mathematics for a SymPy module), the composed score $S_k$ (the tool-verified solution-reliability score, a product of admissibility gates and effect evidence) is built as follows:
 
 $$A = \prod_{\text{all active cell types}} \prod_{j \in \mathcal{G}_{\text{hard}}} g_j$$
 
@@ -63,6 +63,8 @@ Current monolithic cross-domain directives (`cross_software_hardware.txt`, etc.)
 
 ## P-Pass Results (5 passes, all survived)
 
+P-pass denotes Popperian falsification, an iterative attempt to disprove the proposed design. HIL is human-in-the-loop review.
+
 | Pass | Challenge | Outcome |
 |------|-----------|---------|
 | 1 | Multi-cell $S_k$ composition sound? | **Survives** — $A \cdot E$ structure handles naturally |
@@ -77,7 +79,7 @@ Current monolithic cross-domain directives (`cross_software_hardware.txt`, etc.)
 
 2. **Cell types evolve through self-improvement.** When the panel discovers a missing verification gate, that discovery is a finding about the cell type itself. The system improves its own specialist components. (Ouroboros at the architectural level.)
 
-3. **Adaptive activation.** Historical $\gamma/\rho$ data could predict which cell types will be most productive for a given task. [SPECULATIVE — requires empirical validation from BR2 data.]
+3. **Adaptive activation.** Historical $\gamma/\rho$ data (the convergence/depletion metrics tracked by the brain module) could predict which cell types will be most productive for a given task. [SPECULATIVE — requires empirical validation from BR2 (Bench Run 2) data.]
 
 ## Tooling Maturity (NOT Schema Limitations)
 

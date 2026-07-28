@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260609T170035Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1933,
+  "response": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: `_render_universal_minimal` raises ValueError when rendered text exceeds max_chars, causing crash in compose for small‑context models.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _render_universal_minimal\n\ndefect_present = False\ntry:\n    _render_universal_minimal(max_chars=100)\nexcept ValueError:\n    defect_present = True\n\nif defect_present:\n    print(\"FALSIFIED: _render_universal_minimal raised ValueError\")\n```\n\nFINDING_ID: F002\nSEVERITY: 0.8\nFIND: `_count_constraints` counts only boolean True and strings, skipping numeric/list/dict constraints, underestimating constraint count and affecting coherence density.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _count_constraints\n\npolicy = {\n    \"constraints\": {\n        \"min_independent_observations\": 1,\n        \"hard_soft_classification\": True,\n        \"some_string_opt\": \"value\"\n    },\n    \"verification\": {},\n    \"protocol\": {}\n}\ncount = _count_constraints(policy)\nif count < 3:\n    print(\"FALSIFIED: count={}, expected at least 3\".format(count))\n```\n\nFINDING_ID: F003\nSEVERITY: 0.8\nFIND: Global truncation in compose removes HARD constraints from later layers (e.g., Situation) when total length exceeds max_directive_chars, violating non‑pruning guarantee.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import compose, DirectivePacket\n\nmarker = \"UNIQUEMARKERTHISISATEST\"\nlong_text = marker + \" \" + \"X \" * 2500  # > 4000 chars total\nsituation = DirectivePacket(\n    layer=\"situation\",\n    name=\"test_hard\",\n    text=long_text,\n    constraint_class=\"HARD\",\n)\nresult = compose(\"software\", \"deepseek_v3\", situation=situation)\nif result.rendered_text.endswith(\"[... truncated for model capacity]\") and marker not in result.rendered_text:\n    print(\"FALSIFIED: HARD Situation text truncated\")\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 526.2,
+    "chars": 1933,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

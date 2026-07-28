@@ -1,0 +1,2741 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.76,
+        "description": "`bench/macrophage_cell.py`, `MacrophageObservation.to_dict()`, only stringifies floats at the first level of `evidence`. The docstring states floats are stringified for VerificationChain canonical JSON determinism, but nested floats inside dicts/lists remain native `float` values.\n\nEvidence from the target code:\n\"evidence\": {\n    k: str(v) if isinstance(v, float) else v\n    for k, v in self.evidence.items()\n},\nConcrete example:\nMacrophageObservation(\n    observation_id=\"id\",\n    mode=MacrophageM",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ndef to_dict(self) -> dict:\n        \"\"\"Serialise to dict. Floats are stringified for VerificationChain\n        cross-platform determinism (canonical_json requirement).\"\"\"\n        return {\n            \"observation_id\": self.observation_id,\n            \"mode\": self.mode.value,\n            \"category\": self.category,\n            \"description\": self.description,\n            \"severity\": str(self.severity),\n            \"evidence\": {\n                k: str(v) if isinstance(v, float) else v\n                for k, v in self.evidence.items()\n            },\n            \"is_anomaly\": self.is_anomaly,\n            \"timestamp\": str(self.timestamp),\n        }\n==== REPLACE\ndef to_dict(self) -> dict:\n        \"\"\"Serialise to dict. Floats are stringified for VerificationChain\n        cross-platform determinism (canonical_json requirement).\"\"\"\n\n        def canonicalise(value: Any) -> Any:\n            if isinstance(value, float):\n                return str(value)\n            if isinstance(value, enum.Enum):\n                return value.value\n            if isinstance(value, dict):\n                return {str(k): canonicalise(v) for k, v in value.items()}\n            if isinstance(value, (list, tuple)):\n                return [canonicalise(v) for v in value]\n            return value\n\n        return {\n            \"observation_id\": self.observation_id,\n            \"mode\": self.mode.value,\n            \"category\": self.category,\n            \"description\": self.description,\n            \"severity\": str(self.severity),\n            \"evidence\": canonicalise(self.evidence),\n            \"is_anomaly\": self.is_anomaly,\n            \"timestamp\": str(self.timestamp),\n        }\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode, MacrophageObservation\n\n\ndef contains_float(value):\n    if isinstance(value, float):\n        return True\n    if isinstance(value, dict):\n        return any(contains_float(v) for v in value.values())\n    if isinstance(value, (list, tuple)):\n        return any(contains_float(v) for v in value)\n    return False\n\n\nobs = MacrophageObservation(\n    observation_id=\"id\",\n    mode=MacrophageMode.PATROL,\n    category=\"cat\",\n    description=\"desc\",\n    severity=0.1,\n    evidence={\"nested\": {\"x\": 0.1}, \"values\": [0.2]},\n)\n\npayload = obs.to_dict()\n\nif contains_float(payload[\"evidence\"]):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.62,
+        "description": "`bench/macrophage_cell.py`, `_patrol_observe()`, timing spike detection computes the median incorrectly for even-sized timing sets.\n\nCurrent code:\nmedian_t = sorted(values)[len(values) // 2]\nFor an even number of values, this selects the upper middle value, not the median. Python/statistical median for `[1.0, 1.0, 10.0, 20.0]` is `(1.0 + 10.0) / 2 = 5.5`, but the current code uses `10.0`.\n\nConcrete example:\ntimings = {\n    \"a\": 1.0,\n    \"b\": 1.0,\n    \"mid\": 10.0,\n    \"slow\": 20.0,\n}\nExpected und",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nmedian_t = sorted(values)[len(values) // 2]\n==== REPLACE\nsorted_values = sorted(values)\n                midpoint = len(sorted_values) // 2\n                if len(sorted_values) % 2 == 0:\n                    median_t = (sorted_values[midpoint - 1] + sorted_values[midpoint]) / 2\n                else:\n                    median_t = sorted_values[midpoint]\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\n\nclass Verdict:\n    def __init__(self, verdict):\n        self.verdict = verdict\n        self.confidence = None\n\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n\nsummary = cell.observe(\n    verdicts=[Verdict(\"a\"), Verdict(\"b\"), Verdict(\"c\")],\n    timings={\n        \"a\": 1.0,\n        \"b\": 1.0,\n        \"mid\": 10.0,\n        \"slow\": 20.0,\n    },\n)\n\nhas_slow_spike = any(\n    obs.category == \"timing_spike\" and obs.evidence.get(\"stage\") == \"slow\"\n    for obs in summary.observations\n)\n\nif not has_slow_spike:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0004"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.72,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._patrol_observe`, timing spike detection.\n\nThe timing-spike detector claims to flag stages where `t > median_t * TIMING_SPIKE_FACTOR`, but for exactly two positive stage timings it computes:\nmedian_t = sorted(values)[len(values) // 2]\nFor two values, `len(values) // 2 == 1`, so `median_t` is the larger value. Therefore the slower stage is compared against itself:\ntimings = {\"fast\": 1.0, \"slow\": 10.0}\nvalues = [1.0, 10.0]\nmedian_t = sorted(values)[1] = ",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nif timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\n            if values:\n                median_t = sorted(values)[len(values) // 2]\n                for stage, t in timings.items():\n                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:\n                        obs = MacrophageObservation(\n                            observation_id=self._next_id(),\n                            mode=self.mode,\n                            category=\"timing_spike\",\n                            description=(\n                                f\"Stage '{stage}' took {t:.2f}s \"\n                                f\"({t/median_t:.1f}x median {median_t:.2f}s)\"\n                            ),\n                            severity=min(1.0, t / (median_t * 10)),\n                            evidence={\"stage\": stage, \"time\": t, \"median\": median_t},\n                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,\n                        )\n                        summary.observations.append(obs)\n==== REPLACE\nif timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\n            if values:\n                for stage, t in timings.items():\n                    if t <= 0:\n                        continue\n                    peer_values = sorted(v for other_stage, v in timings.items()\n                                         if other_stage != stage and v > 0)\n                    if not peer_values:\n                        continue\n                    mid = len(peer_values) // 2\n                    if len(peer_values) % 2 == 0:\n                        median_t = (peer_values[mid - 1] + peer_values[mid]) / 2\n                    else:\n                        median_t = peer_values[mid]\n                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:\n                        obs = MacrophageObservation(\n                            observation_id=self._next_id(),\n                            mode=self.mode,\n                            category=\"timing_spike\",\n                            description=(\n                                f\"Stage '{stage}' took {t:.2f}s \"\n                                f\"({t/median_t:.1f}x median {median_t:.2f}s)\"\n                            ),\n                            severity=min(1.0, t / (median_t * 10)),\n                            evidence={\"stage\": stage, \"time\": t, \"median\": median_t},\n                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,\n                        )\n                        summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "#!/usr/bin/env python3\n\"\"\"\nFalsifier for bench.macrophage_cell.MacrophageCell._patrol_observe timing median bug.\n\nRaises AssertionError and prints FALSIFIED iff the real implementation uses the\nupper element as the median for exactly two positive timings, causing the slow\nstage to be compared against itself.\n\"\"\"\n\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode, MacrophageSummary\n\n\ndef main() -> None:\n    cell = MacrophageCell(mode=MacrophageMode.PATROL)\n\n    # Force the detector branch to emit an observation even when the buggy\n    # \"median\" equals the slow timing. This isolates the median computation\n    # from the production threshold value while still executing the real path.\n    cell.TIMING_SPIKE_FACTOR = 0.5\n\n    # Satisfy MIN_FINDINGS_FOR_ANALYSIS without triggering unrelated verdict or\n    # severity observations.\n    verdicts = [\"v1\", \"v2\", \"v3\"]\n\n    # Exactly two positive timings: the buggy code computes sorted(values)[1],\n    # i.e. 10.0, instead of a real even-count median such as 5.5.\n    timings = {\"fast\": 1.0, \"slow\": 10.0}\n\n    summary = MacrophageSummary(mode=MacrophageMode.PATROL)\n\n    # Snapshot values before the in-place-mutating call. _patrol_observe mutates\n    # summary.observations by appending observations.\n    observations_before = tuple(summary.observations)\n    timings_before = dict(timings)\n    verdicts_before = list(verdicts)\n\n    cell._patrol_observe(\n        verdicts=verdicts,\n        triaged=None,\n        timings=timings,\n        summary=summary,\n    )\n\n    # Sanity-check that our inputs were not changed while the summary was the\n    # intended in-place mutation target.\n    assert timings == timings_before\n    assert verdicts == verdicts_before\n    new_observations = summary.observations[len(observations_before):]\n\n    slow_timing_observations = [\n        obs\n        for obs in new_observations\n        if obs.category == \"timing_spike\" and obs.evidence.get(\"stage\") == \"slow\"\n    ]\n\n    if not slow_timing_observations:\n        # If a corrected implementation chooses not to flag this case, that is\n        # not this defect.\n        return\n\n    observed_median = slow_timing_observations[0].evidence.get(\"median\")\n\n    if observed_median == timings_before[\"slow\"]:\n        print(\n            \"FALSIFIED: for exactly two positive timings, \"\n            \"_patrol_observe used the slower timing itself as median_t \"\n            f\"({observed_median!r}), so the slow stage was compared against itself.\"\n        )\n        raise AssertionError(\"timing spike median bug present\")\n\n    # A fixed implementation should report a median other than the slower value,\n    # e.g. 5.5 for [1.0, 10.0], or avoid emitting this observation entirely.\n    return\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_routing": "Codex",
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.45,
+        "description": "`_patrol_observe`, timing-spike block: `median_t = sorted(values)[len(values) // 2]`. For an even-length list this returns the *upper* middle element, not the true median. Tool output: `values=[1.0, 10.0]` \u2192 code median `10.0`, true median `5.5`. The spike threshold is `median_t * 3.0`, so the inflated median raises the detection bar and produces false negatives. Concrete miss: `timings={\"a\":1.0,\"b\":1.0,\"c\":10.0,\"slow\":20.0}` \u2192 code median `10.0`, threshold `30.0` (20.0 not flagged); true median",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nimport enum\nimport hashlib\nimport json\nimport logging\nimport math\nimport time\n==== REPLACE\nimport enum\nimport hashlib\nimport json\nimport logging\nimport math\nimport statistics\nimport time\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "even-length median. `sorted(values)[len(values)//2]` returns the upper-of-two middle elements, not their average (true median). Independently confirmed by inspection at line 287. Fix correct."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "current code still computes `median_t = sorted(values)[len(values) // 2]`, which is the upper middle element for even-length timing lists, not the statistical median."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "the timing-spike median computation `sorted(values)[len(values)//2]` returns the lower median for even-length lists, not the true median. The effect is minimal in most cases, but the fix (import `stat"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.9667,
+          "A": 1,
+          "E": 0.9667,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 0.9,
+              "detail": "5 total, 1 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.37612205181666664
+        },
+        "bugzilla_attempted": true
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.5,
+        "description": "The class docstring promises \"Circuit breaker preventing alert flooding during systemic events\" and \"Semantic clustering grouping identical observations by root cause.\" Neither exists. `_check_provenance` emits one `provenance_incomplete` observation *per claim* in a bare loop. Tool run with 50 claims each missing `source_hash` produced 50 separate anomaly observations and 50 log lines \u2014 the exact flooding the documented circuit breaker was meant to prevent. `dir(macro)` confirms no circuit-brea",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Missing provenance fields\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"provenance_incomplete\",\n                    description=(\n                        f\"External claim missing provenance fields: {', '.join(sorted(missing))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(missing))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# Missing provenance fields \u2014 cluster identical gaps into one\n        # observation (semantic clustering by root cause; prevents alert flooding).\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        missing_union: set = set()\n        incomplete_count = 0\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                incomplete_count += 1\n                missing_union |= missing\n        if incomplete_count:\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"provenance_incomplete\",\n                description=(\n                    f\"{incomplete_count}/{len(provenance)} external claims missing \"\n                    f\"provenance fields: {', '.join(sorted(missing_union))}\"\n                ),\n                severity=0.5,\n                evidence={\n                    \"incomplete_count\": incomplete_count,\n                    \"total_claims\": len(provenance),\n                    \"missing_fields\": list(sorted(missing_union)),\n                },\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "class docstring promises \"Circuit breaker preventing alert flooding\" and \"Semantic clustering grouping identical observations by root cause.\" Tool check across the full module source found **no implem"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The proposed fix correctly groups missing provenance fields into a single semantic observation, preventing the O(N) alert flood."
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 4,
+            "evidence": "The class docstring lists a **third** unimplemented promise not enumerated in C0005: *\"Sensitivity dial (1-11 UX, 0-1 internal) controlling observation output\"* (docstring, lines ~30). No `sensitivity"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "F402"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_MACRO_001"
+        ],
+        "severity": 0.7,
+        "description": "In `MacrophageCell._self_check_observe`, source tool attribution uses `getattr(v, \"tool_used\", \"unknown\")`. If CellVerdict objects lack a `tool_used` attribute, all verdicts default to \"unknown\". When more than 5 verdicts are present, the monoculture detector triggers a false anomaly (category `source_monoculture`) even though the underlying data is simply incomplete, not homogeneous. This conflates missing provenance information with a genuine monoculture crisis, producing spurious alerts and m",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nsources_used: Dict[str, int] = {}\n        for v in verdicts:\n            source = getattr(v, \"tool_used\", \"unknown\")\n            sources_used[source] = sources_used.get(source, 0) + 1\n\n        if len(sources_used) == 1 and len(verdicts) > 5:\n            source_name = list(sources_used.keys())[0]\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"source_monoculture\",\n                description=(\n                    f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                    f\"\u2014 verification diversity compromised\"\n                ),\n                severity=0.7,\n                evidence={\"source\": source_name, \"count\": len(verdicts)},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n==== REPLACE\nsources_used: Dict[str, int] = {}\n        for v in verdicts:\n            source = getattr(v, \"tool_used\", None)\n            if source is None:\n                source = \"unknown\"\n            sources_used[source] = sources_used.get(source, 0) + 1\n\n        if len(sources_used) == 1 and len(verdicts) > 5:\n            source_name = list(sources_used.keys())[0]\n            # If all sources are \"unknown\", attribute was missing; skip false alarm\n            if source_name != \"unknown\":\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"source_monoculture\",\n                    description=(\n                        f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                        f\"\u2014 verification diversity compromised\"\n                    ),\n                    severity=0.7,\n                    evidence={\"source\": source_name, \"count\": len(verdicts)},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "\"\"\"Disprove MACRO_001: create mock verdicts without tool_used, run Macrophage,\nassert no spurious monoculture anomaly is raised.\"\"\"\nimport sys\nsys.path.insert(0, 'bench')\nfrom macrophage_cell import MacrophageCell, MacrophageMode\n\n# Mock CellVerdict without tool_used attribute\nclass FakeVerdict:\n    def __init__(self, verdict=\"CONFIRMED\"):\n        self.verdict = verdict\n\nverdicts = [FakeVerdict() for _ in range(6)]\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\nsummary = cell.observe(verdicts=verdicts)\n# Under original code: monoculture anomaly raised because all default to \"unknown\".\n# After fix: no anomaly because source \"unknown\" is skipped.\nanomaly_categories = [obs.category for obs in summary.anomalies]\nassert \"source_monoculture\" not in anomaly_categories, (\n    f\"FALSIFIED: unexpected monoculture anomaly raised: {anomaly_categories}\"\n)\nprint(\"MACRO_001 verified: no false anomaly from missing tool_used\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_MACRO_002"
+        ],
+        "severity": 0.9,
+        "description": "In `MacrophageCell._check_gate_stats`, the code extracts Ouroboros-specific gate statistics with `ouroboros_stats = by_origin.get(\"external_ouroboros\", {})` and then unconditionally calls `ouroboros_stats.get(\"passed\", 0)` and `ouroboros_stats.get(\"failed\", 0)`. If the `gate_stats[\"by_origin\"]` dict contains a non-dict value keyed by `\"external_ouroboros\"` (e.g., a string or an integer due to upstream serialisation error or malformed GateStats), the subsequent `.get()` call raises an `AttributeE",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nby_origin = gate_stats.get(\"by_origin\", {})\n        ouroboros_stats = by_origin.get(\"external_ouroboros\", {})\n        if ouroboros_stats:\n            o_passed = ouroboros_stats.get(\"passed\", 0)\n            o_failed = ouroboros_stats.get(\"failed\", 0)\n==== REPLACE\nby_origin = gate_stats.get(\"by_origin\", {})\n        ouroboros_raw = by_origin.get(\"external_ouroboros\", {})\n        ouroboros_stats = ouroboros_raw if isinstance(ouroboros_raw, dict) else {}\n        if ouroboros_stats:\n            o_passed = ouroboros_stats.get(\"passed\", 0)\n            o_failed = ouroboros_stats.get(\"failed\", 0)\n>>>>",
+        "falsifier_code": "\"\"\"Disprove MACRO_002: supply gate_stats with non-dict by_origin value,\nverify no AttributeError is raised.\"\"\"\nimport sys\nsys.path.insert(0, 'bench')\nfrom macrophage_cell import MacrophageCell, MacrophageMode\n\n# Fake verdicts to meet MIN_FINDINGS threshold\nclass FakeVerdict:\n    def __init__(self, v):\n        self.verdict = v\n\nverdicts = [FakeVerdict(\"CONFIRMED\") for _ in range(5)]\nbad_gate_stats = {\n    \"total_passed\": 5,\n    \"total_failed\": 0,\n    \"by_origin\": {\"external_ouroboros\": \"malformed_string\"}\n}\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\ntry:\n    summary = cell.observe(verdicts=verdicts, gate_stats=bad_gate_stats)\n    # No crash => correctly skipped\nexcept AttributeError as e:\n    print(f\"FALSIFIED: crash on malformed gate_stats: {e}\")\n    raise\n\nprint(\"MACRO_002 verified: handles malformed by_origin gracefully\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 1.0,
+        "description": "The `persistent_anomaly` check in `_self_check_observe` creates an infinite feedback loop. It checks if the last 3 rounds had `anomaly_count > 0`. If true, it generates a new `persistent_anomaly`, which increments the current round's `anomaly_count`. This guarantees the next round will also see `anomaly_count > 0` in its history, causing the anomaly to persist forever even after the underlying issue is resolved.",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Store round history for cross-round analysis\n        self._round_history.append({\n            \"observation_count\": len(summary.observations),\n            \"anomaly_count\": summary.anomaly_count,\n            \"verdict_count\": len(verdicts),\n            \"timestamp\": time.time(),\n        })\n==== REPLACE\n# Store round history for cross-round analysis\n        base_anomalies = sum(1 for o in summary.anomalies if o.category != \"persistent_anomaly\")\n        self._round_history.append({\n            \"observation_count\": len(summary.observations),\n            \"anomaly_count\": summary.anomaly_count,\n            \"base_anomaly_count\": base_anomalies,\n            \"verdict_count\": len(verdicts),\n            \"timestamp\": time.time(),\n        })\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ndef falsifier():\n    cell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\n    for _ in range(3):\n        cell._round_history.append({\"anomaly_count\": 1})\n    \n    class DummyVerdict:\n        tool_used = \"tool1\"\n    verdicts = [DummyVerdict(), DummyVerdict(), DummyVerdict()]\n    \n    summary4 = cell.observe(verdicts=verdicts)\n    summary5 = cell.observe(verdicts=verdicts)\n    \n    if summary5.anomaly_count > 0 and summary5.anomalies[0].category == \"persistent_anomaly\":\n        print(\"FALSIFIED\")\n        raise AssertionError(\"Persistent anomaly loop exists\")\n\nfalsifier()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.6,
+        "description": "The timing spike detection in `_patrol_observe` attempts to find spikes by comparing each stage's time against `median_t * 3.0`. However, it allows execution when `len(timings) >= 2`. For exactly 2 stages (e.g., `a` and `b` where `b > a > 0`), the median is either `b` (current buggy implementation) or `(a+b)/2` (correct mathematical median). In either case, it is mathematically impossible for `b > 3.0 * median`. If median is `b`, `b > 3b` is false. If median is `(a+b)/2`, `b > 1.5a + 1.5b` is fa",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# 3. Timing spikes: is any stage disproportionately slow?\n        if timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\n            if values:\n                median_t = sorted(values)[len(values) // 2]\n==== REPLACE\n# 3. Timing spikes: is any stage disproportionately slow?\n        if timings and len(timings) >= 2:\n            values = sorted([v for v in timings.values() if v > 0])\n            if values:\n                n = len(values)\n                # For N=2, use the minimum to allow spike detection. Otherwise use true median.\n                median_t = values[0] if n == 2 else (values[n // 2] + values[(n - 1) // 2]) / 2.0\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ndef falsifier():\n    cell = MacrophageCell(mode=MacrophageMode.PATROL)\n    timings = {\"stage1\": 1.0, \"stage2\": 10.0}\n    \n    class DummyVerdict: pass\n    verdicts = [DummyVerdict(), DummyVerdict(), DummyVerdict()]\n    \n    summary = cell.observe(verdicts=verdicts, timings=timings)\n    spikes = [o for o in summary.observations if o.category == \"timing_spike\"]\n    \n    if len(spikes) == 0:\n        print(\"FALSIFIED\")\n        raise AssertionError(\"Failed to detect 10x timing spike with 2 stages\")\n\nfalsifier()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.66,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell.__init__`.\n\nCurrent code:\ndef __init__(\n        self,\n        mode: MacrophageMode = MacrophageMode.PATROL,\n        shadow: bool = True,\n    ) -> None:\n        self.mode = mode\n        self.shadow = shadow  # MUST be True for Exp 39\nThe comment states `shadow` must be true for Exp 39, but the constructor accepts and stores `shadow=False`.\n\nConcrete input:\ncell = MacrophageCell(shadow=False)\nassert cell.shadow is False\nThis later affects signed verifica",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ndef __init__(\n        self,\n        mode: MacrophageMode = MacrophageMode.PATROL,\n        shadow: bool = True,\n    ) -> None:\n        self.mode = mode\n        self.shadow = shadow  # MUST be True for Exp 39\n        self._observation_counter = 0\n        self._round_history: List[Dict[str, Any]] = []\n==== REPLACE\ndef __init__(\n        self,\n        mode: MacrophageMode = MacrophageMode.PATROL,\n        shadow: bool = True,\n    ) -> None:\n        if not shadow:\n            raise ValueError(\"MacrophageCell must run in shadow mode for Exp 39\")\n        self.mode = mode\n        self.shadow = True  # MUST be True for Exp 39\n        self._observation_counter = 0\n        self._round_history: List[Dict[str, Any]] = []\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell\n\ntry:\n    cell = MacrophageCell(shadow=False)\nexcept ValueError:\n    raise SystemExit(0)\n\nif cell.shadow is False:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.66,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._patrol_observe()`, verdict clustering groups raw `v.verdict` values without normalizing semantically equivalent enum and string representations.\n\nEvidence from current code:\nverdict_counts: Dict[str, int] = {}\nfor v in verdicts:\n    vstr = getattr(v, \"verdict\", str(v))\n    verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1\nIf three verdict objects contain `Verdict.CONFIRMED` and two contain `\"confirmed\"`, the detector treats them as two separate b",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nverdict_counts: Dict[str, int] = {}\n        for v in verdicts:\n            vstr = getattr(v, \"verdict\", str(v))\n            verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1\n==== REPLACE\nverdict_counts: Dict[str, int] = {}\n        for v in verdicts:\n            raw_verdict = getattr(v, \"verdict\", str(v))\n            if isinstance(raw_verdict, enum.Enum):\n                vstr = str(raw_verdict.value)\n            else:\n                vstr = str(raw_verdict)\n            verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "current code still derives `vstr = getattr(v, \"verdict\", str(v))` and uses it directly as a `Dict[str, int]` key/evidence value, so non-string verdict objects can cross the observation/signing boundar"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Verdict clustering groups raw `v.verdict` values without normalisation. Confirmed by smoke test: verdicts `\"CONFIRMED\"` bucket by exact string; case/whitespace variants (`\"confirmed\"`, `\" CONFIRMED \"`"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "verdict clustering groups raw `v.verdict` strings without normalisation (e.g., \u201cCONFIRMED\u201d vs \u201cConfirmed\u201d). This can create duplicate anomaly entries and misreport cluster size. The finding is valid."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F010"
+        ],
+        "severity": 0.35,
+        "description": "`MacrophageCell.observe()` declares `prior_observations: Optional[List[MacrophageObservation]] = None` (bench/macrophage_cell.py:150) and documents it (line 163: \"Observations from prior rounds (optional)\"), but the method body never reads it. Cross-round analysis is instead served by `self._round_history` (counts only). Evidence: AST load-set of the `observe` body contains no `Load` of `prior_observations`; falsifier below prints `FALSIFIED`. Not in registry C0001\u2013C0009 \u2014 distinct from C0005 (c",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ntriaged: Optional[List[Any]] = None,\n        timings: Optional[Dict[str, float]] = None,\n        prior_observations: Optional[List[MacrophageObservation]] = None,\n        provenance: Optional[List[Dict[str, Any]]] = None,\n==== REPLACE\ntriaged: Optional[List[Any]] = None,\n        timings: Optional[Dict[str, float]] = None,\n        provenance: Optional[List[Dict[str, Any]]] = None,\n>>>>",
+        "falsifier_code": "import ast, inspect, textwrap\nimport bench.macrophage_cell as m\nsrc = textwrap.dedent(inspect.getsource(m.MacrophageCell.observe))\nfn = ast.parse(src).body[0]\nargnames = [a.arg for a in fn.args.args + fn.args.kwonlyargs]\nassert \"prior_observations\" in argnames, \"param already removed \u2014 defect absent\"\nloads = {n.id for n in ast.walk(fn)\n         if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}\nassert \"prior_observations\" not in loads, \"param IS read \u2014 claim false\"\nprint(\"FALSIFIED: prior_observations declared+documented but never read in observe() body\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0013"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F101"
+        ],
+        "severity": 0.4,
+        "description": "FINDING_ID: F101\nSEVERITY: 0.40\nFIND: Dead parameter `prior_observations` in `observe()` is never used, silently ignoring passed prior observations.\nFALSIFIER:\nimport macrophage_cell\nfrom macrophage_c",
+        "proposed_fix": "",
+        "falsifier_code": "import macrophage_cell\nfrom macrophage_cell import MacrophageObservation, MacrophageSummary\n\ncell = macrophage_cell.MacrophageCell(mode=\"test\")\ndummy_obs = MacrophageObservation(\n    observation_id=\"0\", mode=\"test\", category=\"test\",\n    description=\"test\", severity=0.5, evidence={}, is_anomaly=False\n)\n\nsummary1 = cell.observe(verdicts=[], prior_observations=[dummy_obs])\nsummary2 = cell.observe(verdicts=[], prior_observations=None)\n\ndef normalize_obs(obs):\n    return MacrophageObservation(\n        observation_id=None,\n        mode=obs.mode,\n        category=obs.category,\n        description=obs.description,\n        severity=obs.severity,\n        evidence=obs.evidence,\n        is_anomaly=obs.is_anomaly,\n    )\n\nsummary1_norm = MacrophageSummary(\n    summary_id=None,\n    mode=summary1.mode,\n    observations=[normalize_obs(o) for o in summary1.observations],\n    summary_text=summary1.summary_text,\n)\nsummary2_norm = MacrophageSummary(\n    summary_id=None,\n    mode=summary2.mode,\n    observations=[normalize_obs(o) for o in summary2.observations],\n    summary_text=summary2.summary_text,\n)\n\nif summary1_norm == summary2_norm:\n    raise AssertionError(\"FALSIFIED: prior_observations parameter has no effect (unused)\")",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Dead parameter `prior_observations` in `observe()` is accepted, documented in the Args docstring, and never read in any branch. AST confirms no reference to the name after the signature. Note it share"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "CC2_F011 is **not** issued \u2014 F011 was a distinct (refuted) claim and is withdrawn above, not merged."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F102"
+        ],
+        "severity": 0.55,
+        "description": "FINDING_ID: F102\nSEVERITY: 0.55\nFIND: Missing `diversity_score` defaults to 1.0 in `_check_ouroboros_metrics()`, suppressing source monoculture alert when Ouroboros fails to supply the key.\nFALSIFIER:",
+        "proposed_fix": "",
+        "falsifier_code": "import macrophage_cell\nfrom macrophage_cell import MacrophageCell\n\ncell = MacrophageCell(mode=\"test\")\nsummary = cell.observe(\n    verdicts=[],\n    triaged=None,\n    timings=None,\n    prior_observations=None,\n    provenance=None,\n    gate_stats=None,\n    ouroboros_metrics={\"queries_this_round\": 10},  # diversity_score intentionally missing\n)\n\nif not any(obs.is_anomaly for obs in summary.observations):\n    raise AssertionError(\n        \"FALSIFIED: missing diversity_score leads to no anomaly (defaults to perfect diversity)\"\n    )",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.6,
+        "description": "The `method_claim_mismatch` check in `_self_check_observe` uses exact string matching against a set to detect mathematical verification tools: `any(t in source_types for t in (\"sympy\", \"z3\"))`. If the tool is named `sympy_sandbox` (as referenced in the system policy), this exact match fails.",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Flag if mathematical claims exist but no sympy/z3 used\n            math_claims = any(\"math\" in ct.lower() for ct in claim_types)\n            math_sources = any(t in source_types for t in (\"sympy\", \"z3\"))\n            if math_claims and not math_sources and len(verdicts) > 0:\n==== REPLACE\n# Flag if mathematical claims exist but no sympy/z3 used\n            math_claims = any(\"math\" in ct.lower() for ct in claim_types)\n            math_sources = any(\"sympy\" in t.lower() or \"z3\" in t.lower() for t in source_types)\n            if math_claims and not math_sources and len(verdicts) > 0:\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\nclass DummyVerdict:\n    tool_used = \"sympy_sandbox\"\nclass DummyTriage:\n    claim_type = \"mathematical_proof\"\n\nverdicts = [DummyVerdict() for _ in range(5)]\ntriaged = [DummyTriage() for _ in range(5)]\n\nsummary = cell.observe(verdicts=verdicts, triaged=triaged)\nmismatch_anomalies = [a for a in summary.anomalies if a.category == \"method_claim_mismatch\"]\n\nif len(mismatch_anomalies) > 0:\n    print(\"FALSIFIED: Exact string match failed to detect math tool\")\n    raise AssertionError(\"defect present: exact match failed\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.7,
+        "description": "The source diversity check in `_check_provenance` uses the metric `diversity = len(unique_sources) / len(sources)`. This metric penalizes a high volume of claims, even if the absolute number of unique sources is large. For example, 1000 claims from 100 unique sources yields a diversity of 0.1, triggering a false-positive anomaly (`<= 0.5`), despite 100 sources being highly diverse.",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Source diversity check\n        sources = [p.get(\"source_ref\", \"\") for p in provenance if p.get(\"source_ref\")]\n        if len(sources) >= 3:\n            unique_sources = set(sources)\n            diversity = len(unique_sources) / len(sources)\n            if diversity <= 0.5:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"source_monoculture\",\n                    description=(\n                        f\"Ouroboros source diversity low ({diversity:.0%}) \u2014 \"\n                        f\"{len(unique_sources)} unique sources from {len(sources)} claims\"\n                    ),\n                    severity=0.7,\n                    evidence={\n                        \"unique_sources\": len(unique_sources),\n                        \"total_claims\": len(sources),\n                        \"diversity\": diversity,\n                    },\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# Source diversity check\n        sources = [p.get(\"source_ref\", \"\") for p in provenance if p.get(\"source_ref\")]\n        if len(sources) >= 3:\n            unique_sources = set(sources)\n            # A monoculture is when a very small number of sources dominate a large number of claims\n            if len(unique_sources) <= 2 and len(sources) >= 5:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"source_monoculture\",\n                    description=(\n                        f\"Ouroboros source diversity critically low \u2014 \"\n                        f\"only {len(unique_sources)} unique sources for {len(sources)} claims\"\n                    ),\n                    severity=0.7,\n                    evidence={\n                        \"unique_sources\": len(unique_sources),\n                        \"total_claims\": len(sources),\n                    },\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n# 1000 claims from 100 unique sources (10 claims per source)\nprovenance = [{\"source_ref\": f\"source_{i % 100}\"} for i in range(1000)]\nsummary = cell.observe(verdicts=[], provenance=provenance)\nanomalies = [a for a in summary.anomalies if a.category == \"source_monoculture\"]\n\nif len(anomalies) > 0:\n    print(\"FALSIFIED: False positive source_monoculture detected for 100 unique sources.\")\n    raise AssertionError(\"defect present: flawed diversity metric\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 0.6,
+        "description": "In `_patrol_observe`, the verdict clustering check uses `vstr = getattr(v, \"verdict\", str(v))`. If a verdict object lacks a `verdict` attribute and does not override `__str__`, `str(v)` evaluates to a string containing the object's memory address (e.g., `<DummyVerdict object at 0x...>`). This makes every verdict string unique, completely defeating the clustering detection.",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# 1. Verdict clustering: are too many verdicts the same?\n        verdict_counts: Dict[str, int] = {}\n        for v in verdicts:\n            vstr = getattr(v, \"verdict\", str(v))\n            verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1\n==== REPLACE\n# 1. Verdict clustering: are too many verdicts the same?\n        verdict_counts: Dict[str, int] = {}\n        for v in verdicts:\n            vstr = str(getattr(v, \"verdict\", \"unknown_verdict\"))\n            verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nclass DummyVerdict:\n    pass\n\n# 10 identical verdicts, but lacking a 'verdict' attribute\nverdicts = [DummyVerdict() for _ in range(10)]\nsummary = cell.observe(verdicts=verdicts)\ncluster_anomalies = [a for a in summary.anomalies if a.category == \"verdict_cluster\"]\n\nif len(cluster_anomalies) == 0:\n    print(\"FALSIFIED: Verdict clustering defeated by unique memory addresses in str(v).\")\n    raise AssertionError(\"defect present: clustering check bypassed\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.58,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_provenance()` treats required provenance fields as present if the key exists, even when the value is empty.\n\nCurrent code:\n# Missing provenance fields\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                obs = MacrophageObservation(\nThe check only tests key presence. It does not reject unusable values such ",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Missing provenance fields\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"provenance_incomplete\",\n                    description=(\n                        f\"External claim missing provenance fields: {', '.join(sorted(missing))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(missing))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# Missing provenance fields. Required provenance fields must be\n        # present and non-empty; an empty source_ref/source_hash is not usable\n        # provenance for downstream audit/signing.\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            present_required = required_fields & set(p.keys())\n            empty = {field for field in present_required if not p.get(field)}\n            invalid = missing | empty\n            if invalid:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"provenance_incomplete\",\n                    description=(\n                        f\"External claim missing provenance fields: {', '.join(sorted(invalid))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(invalid))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = cell.observe(\n    verdicts=[],\n    provenance=[\n        {\n            \"origin_type\": \"external_ouroboros\",\n            \"source_ref\": \"\",\n            \"source_hash\": \"\",\n        }\n    ],\n)\n\nif not any(o.category == \"provenance_incomplete\" for o in summary.observations):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.62,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._self_check_observe()` returns before checking `triaged` claim types when `len(verdicts) < MIN_FINDINGS_FOR_ANALYSIS`.\n\nEvidence in current code:\ndef _self_check_observe(...):\n    \"\"\"Self-check mode: self-referential pipeline health checks.\"\"\"\n\n    if len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:\n        return\nThe method-claim consistency check appears later:\nif triaged:\n            claim_types = set()\n            ...\n            math_claims = any(\"",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nif len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:\n            return\n\n        # 1. Source diversity: are verdicts all coming from one source/tool?\n==== REPLACE\nhas_enough_verdicts = len(verdicts) >= self.MIN_FINDINGS_FOR_ANALYSIS\n\n        # 1. Source diversity: are verdicts all coming from one source/tool?\n>>>>",
+        "falsifier_code": "from types import SimpleNamespace\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\nsummary = cell.observe(\n    verdicts=[],\n    triaged=[SimpleNamespace(claim_type=\"mathematical_identity\")],\n)\n\nif not any(o.category == \"method_claim_mismatch\" for o in summary.observations):\n    print(\"FALSIFIED: mathematical triaged claim with no verdicts emits no method_claim_mismatch anomaly\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.9667,
+          "A": 1,
+          "E": 0.9667,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 0.9,
+              "detail": "5 total, 1 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.37612205181666664
+        }
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.6,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_provenance()` treats required provenance fields as present if the keys exist, even when the values are blank strings or `None`.\n\nCurrent code:\nrequired_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\nfor p in provenance:\n    missing = required_fields - set(p.keys())\n    if missing:\n        obs = MacrophageObservation(...)\nConcrete input:\nprovenance = [\n    {\"origin_type\": \"\", \"source_ref\": \"\", \"source_hash\": \"\"},\n    {\"origin_type\": None, ",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nmissing = required_fields - set(p.keys())\n            if missing:\n==== REPLACE\nmissing = {\n                field for field in required_fields\n                if (\n                    field not in p\n                    or p[field] is None\n                    or (isinstance(p[field], str) and not p[field].strip())\n                )\n            }\n            if missing:\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageSummary\n\ncell = MacrophageCell()\nsummary = MacrophageSummary()\n\ncell._check_provenance(\n    [\n        {\"origin_type\": \"\", \"source_ref\": \"\", \"source_hash\": \"\"},\n        {\"origin_type\": None, \"source_ref\": None, \"source_hash\": None},\n    ],\n    summary,\n)\n\nif not any(o.category == \"provenance_incomplete\" for o in summary.observations):\n    print(\"FALSIFIED: blank/None required provenance values produce no provenance_incomplete anomaly\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F011"
+        ],
+        "severity": 0.35,
+        "description": "`SEVERITY_SHIFT_THRESHOLD: float = 0.3` (`bench/macrophage_cell.py:127`) is a dead class constant \u2014 0 usages anywhere in the module or repo (only its own definition). It backs an advertised-but-unimplemented capability: the module docstring line 12 lists patrol mode as scanning for \"severity distribution shifts\", and line 67 documents a `\"severity_shift\"` observation category \u2014 but no code path ever computes a between-round severity shift or emits that category. The only round-over-round check i",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ncategory: str  # e.g. \"verdict_cluster\", \"severity_shift\", \"source_monoculture\"\n==== REPLACE\ncategory: str  # e.g. \"verdict_cluster\", \"severity_concentration\", \"source_monoculture\"\n>>>>",
+        "falsifier_code": "import ast, inspect\nimport bench.macrophage_cell as mod\ntree = ast.parse(inspect.getsource(mod))\ndefn = {id(n.target) for n in ast.walk(tree)\n        if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name)\n        and n.target.id == \"SEVERITY_SHIFT_THRESHOLD\"}\nusages = sum(\n    1 for n in ast.walk(tree)\n    if (isinstance(n, ast.Attribute) and n.attr == \"SEVERITY_SHIFT_THRESHOLD\")\n    or (isinstance(n, ast.Name) and n.id == \"SEVERITY_SHIFT_THRESHOLD\" and id(n) not in defn)\n)\nemits = 'category=\"severity_shift\"' in inspect.getsource(mod)\n# defect present IFF constant unused AND category never emitted\nassert usages == 0 and not emits, f\"defect ABSENT: usages={usages}, emits={emits}\"\nprint(\"FALSIFIED: SEVERITY_SHIFT_THRESHOLD dead (0 usages); 'severity_shift' capability unimplemented\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F201"
+        ],
+        "severity": 0.7,
+        "description": "(\n                        f\"External claim missing provenance fields: {', '.join(sorted(missing))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(missing))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n====\n        # Missing provenance fields \u2014 aggregate across all claims\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        incomplete_count ",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Missing provenance fields\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"provenance_incomplete\",\n                    description=(\n                        f\"External claim missing provenance fields: {', '.join(sorted(missing))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(missing))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# Missing provenance fields \u2014 aggregate across all claims\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        incomplete_count = 0\n        missing_field_union: set[str] = set()\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                incomplete_count += 1\n                missing_field_union.update(missing)\n\n        if incomplete_count:\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"provenance_incomplete\",\n                description=(\n                    f\"{incomplete_count} external claims have incomplete provenance. \"\n                    f\"Missing fields: {', '.join(sorted(missing_field_union))}\"\n                ),\n                severity=0.5,\n                evidence={\n                    \"incomplete_count\": incomplete_count,\n                    \"missing_field_union\": sorted(missing_field_union),\n                },\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n# 20 provenance items all missing source_hash\nprovenance = [{\"origin_type\": \"external\", \"source_ref\": \"ref\"} for _ in range(20)]\nsummary = cell.observe(verdicts=[], provenance=provenance)\nobs_count = sum(1 for o in summary.observations if o.category == \"provenance_incomplete\")\nassert obs_count > 1, \"Expected flood (>1 observations for identical missing fields)\"\nprint(f\"FALSIFIED: {obs_count} duplicate provenance_incomplete observations\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F202"
+        ],
+        "severity": 0.5,
+        "description": "FINDING_ID: F202  \nSEVERITY: 0.50  \nFLAW_CLASS: 4 (completeness \u2014 observation stored but never surfaced)  \nABSTRACTION_INDEX: 0.25  \n\nFIND  \nIn `_patrol_observe`, the severity\u2011concentration check crea",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nif variance < 0.01 and mean_sev > 0.5:\n==== REPLACE\nif variance < 0.005 and mean_sev > 0.5:\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass Verdict:\n    def __init__(self, confidence):\n        self.confidence = confidence\n        self.verdict = \"x\"\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\n# Confidences 0.6, 0.7, 0.8 \u2192 mean 0.7, variance \u2248 0.00667 (in the gap)\nverdicts = [Verdict(0.6), Verdict(0.7), Verdict(0.8)]\nsummary = cell.observe(verdicts)\n\nfor obs in summary.observations:\n    if obs.category == \"severity_concentration\" and not obs.is_anomaly:\n        print(\"FALSIFIED: non\u2011anomaly severity_concentration observation stored\")\n        break\nelse:\n    raise AssertionError(\"Expected non\u2011anomaly observation not found\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F203"
+        ],
+        "severity": 0.6,
+        "description": "(\n                    f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                    f\"\u2014 verification diversity compromised\"\n                ),\n                severity=0.7,\n                evidence={\"source\": source_name, \"count\": len(verdicts)},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n====\n        if len(sources_used) == 1 and len(verdicts) > 5:\n            source_name = list(sources_used.keys())[0]\n            if sou",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nif len(sources_used) == 1 and len(verdicts) > 5:\n            source_name = list(sources_used.keys())[0]\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"source_monoculture\",\n                description=(\n                    f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                    f\"\u2014 verification diversity compromised\"\n                ),\n                severity=0.7,\n                evidence={\"source\": source_name, \"count\": len(verdicts)},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n==== REPLACE\nif len(sources_used) == 1 and len(verdicts) > 5:\n            source_name = list(sources_used.keys())[0]\n            if source_name != \"unknown\":\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"source_monoculture\",\n                    description=(\n                        f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                        f\"\u2014 verification diversity compromised\"\n                    ),\n                    severity=0.7,\n                    evidence={\"source\": source_name, \"count\": len(verdicts)},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass Verdict: pass\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\nverdicts = [Verdict() for _ in range(6)]  # no tool_used attribute\nsummary = cell.observe(verdicts)\n\nif any(o.category == \"source_monoculture\" for o in summary.observations):\n    print(\"FALSIFIED: source_monoculture anomaly on unknown tools\")\nelse:\n    raise AssertionError(\"Expected source_monoculture anomaly but not found\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F008"
+        ],
+        "severity": 0.7,
+        "description": "The `_round_history` list in `MacrophageCell` grows unboundedly with every call to `observe()`, causing a memory leak in long-running daemon deployments.",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# Store round history for cross-round analysis\n        self._round_history.append({\n            \"observation_count\": len(summary.observations),\n            \"anomaly_count\": summary.anomaly_count,\n            \"verdict_count\": len(verdicts),\n            \"timestamp\": time.time(),\n        })\n\n        # CRITICAL: advisory-only guarantee\n==== REPLACE\n# Store round history for cross-round analysis\n        self._round_history.append({\n            \"observation_count\": len(summary.observations),\n            \"anomaly_count\": summary.anomaly_count,\n            \"verdict_count\": len(verdicts),\n            \"timestamp\": time.time(),\n        })\n        # Prevent unbounded memory growth in long-running daemon\n        if len(self._round_history) > 10:\n            self._round_history = self._round_history[-10:]\n\n        # CRITICAL: advisory-only guarantee\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell\n\ncell = MacrophageCell()\nfor _ in range(20):\n    cell.observe(verdicts=[])\n\nif len(cell._round_history) == 20:\n    print(\"FALSIFIED: Memory leak detected.\")\n    raise AssertionError(\"Defect present: history grows unboundedly\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F012"
+        ],
+        "severity": 0.25,
+        "description": "FINDING_ID: CC2_F012\nSEVERITY: 0.25\nFLAW_CLASS: 8 (documentation / dead code)\nABSTRACTION_INDEX: 0.05\n\nFIND\n`bench/macrophage_cell.py:41\u201347` imports four names never referenced anywhere in the module:",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nimport enum\nimport hashlib\nimport json\nimport logging\nimport math\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Any, Dict, List, Optional, Sequence\n==== REPLACE\nimport enum\nimport logging\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Any, Dict, List, Optional\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.55,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_gate_stats()` assumes gate-count values are native integers. If counts arrive as numeric strings, the monitor either silently misses an immune-deficiency anomaly or crashes in the Ouroboros by-origin branch.\n\nRelevant current code:\ntotal_passed = gate_stats.get(\"total_passed\", 0)\n        total_failed = gate_stats.get(\"total_failed\", 0)\n        total = total_passed + total_failed\nand:\no_passed = ouroboros_stats.get(\"passed\", 0)\n            o_fail",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ntotal_passed = gate_stats.get(\"total_passed\", 0)\n        total_failed = gate_stats.get(\"total_failed\", 0)\n        total = total_passed + total_failed\n==== REPLACE\ndef _as_int(value: Any) -> int:\n            try:\n                return int(value)\n            except (TypeError, ValueError):\n                return 0\n\n        total_passed = _as_int(gate_stats.get(\"total_passed\", 0))\n        total_failed = _as_int(gate_stats.get(\"total_failed\", 0))\n        total = total_passed + total_failed\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell\n\nm = MacrophageCell()\nsummary = m.observe(verdicts=[], gate_stats={\"total_passed\": \"5\", \"total_failed\": \"0\"})\n\nif not any(o.category == \"immune_deficiency\" for o in summary.observations):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "F404"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.5,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_ouroboros_metrics()` assumes `diversity_score` is numeric if the key exists. If the key is present with `None`, the monitor raises `TypeError`.\n\nCurrent code:\ndiversity = ouroboros_metrics.get(\"diversity_score\", 1.0)\n        if diversity < 0.3:\nConcrete input:\nouroboros_metrics = {\"diversity_score\": None}\nExecution:\n\n1. `diversity = None`.\n2. Python evaluates `None < 0.3`.\n3. This raises `TypeError: '<' not supported between instances of 'NoneTy",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\ndiversity = ouroboros_metrics.get(\"diversity_score\", 1.0)\n        if diversity < 0.3:\n==== REPLACE\ndiversity_raw = ouroboros_metrics.get(\"diversity_score\", 1.0)\n        try:\n            diversity = float(diversity_raw)\n        except (TypeError, ValueError):\n            return\n        if not math.isfinite(diversity):\n            return\n        if diversity < 0.3:\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell\n\nm = MacrophageCell()\ntry:\n    m.observe(verdicts=[], ouroboros_metrics={\"diversity_score\": None})\nexcept TypeError:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "3 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F007"
+        ],
+        "severity": 0.5,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._patrol_observe()` assumes `confidence` values are numeric. If a verdict object provides confidence as a numeric string, severity distribution analysis raises `TypeError`.\n\nCurrent code:\nseverities = []\n        for v in verdicts:\n            sev = getattr(v, \"confidence\", None)\n            if sev is not None:\n                severities.append(sev)\n\n        if len(severities) >= self.MIN_FINDINGS_FOR_ANALYSIS:\n            mean_sev = sum(severities) / le",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nseverities = []\n        for v in verdicts:\n            sev = getattr(v, \"confidence\", None)\n            if sev is not None:\n                severities.append(sev)\n==== REPLACE\nseverities = []\n        for v in verdicts:\n            sev_raw = getattr(v, \"confidence\", None)\n            if sev_raw is not None:\n                try:\n                    sev = float(sev_raw)\n                except (TypeError, ValueError):\n                    continue\n                if math.isfinite(sev):\n                    severities.append(sev)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass Verdict:\n    verdict = \"accept\"\n    confidence = \"0.75\"\n\nm = MacrophageCell(mode=MacrophageMode.PATROL)\ntry:\n    m.observe(verdicts=[Verdict(), Verdict(), Verdict()])\nexcept TypeError:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "F403"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "3 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F008"
+        ],
+        "severity": 0.48,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._patrol_observe()` assumes all timing values are numeric. If a timings dict contains `None`, the timing-spike analysis raises `TypeError`.\n\nThis is distinct from settled timing-spike threshold/median/early-return issues: the mechanism here is unvalidated telemetry type, not spike-detection mathematics.\n\nCurrent code:\nif timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\nConcrete input:\nverdicts = [object(), objec",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# 3. Timing spikes: is any stage disproportionately slow?\n        if timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\n            if values:\n                median_t = sorted(values)[len(values) // 2]\n                for stage, t in timings.items():\n                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:\n                        obs = MacrophageObservation(\n                            observation_id=self._next_id(),\n                            mode=self.mode,\n                            category=\"timing_spike\",\n                            description=(\n                                f\"Stage '{stage}' took {t:.2f}s \"\n                                f\"({t/median_t:.1f}x median {median_t:.2f}s)\"\n                            ),\n                            severity=min(1.0, t / (median_t * 10)),\n                            evidence={\"stage\": stage, \"time\": t, \"median\": median_t},\n                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,\n                        )\n                        summary.observations.append(obs)\n==== REPLACE\n# 3. Timing spikes: is any stage disproportionately slow?\n        if timings and len(timings) >= 2:\n            numeric_timings: Dict[str, float] = {}\n            for stage, raw_t in timings.items():\n                try:\n                    t = float(raw_t)\n                except (TypeError, ValueError):\n                    continue\n                if math.isfinite(t) and t > 0:\n                    numeric_timings[stage] = t\n\n            values = list(numeric_timings.values())\n            if values:\n                median_t = sorted(values)[len(values) // 2]\n                for stage, t in numeric_timings.items():\n                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:\n                        obs = MacrophageObservation(\n                            observation_id=self._next_id(),\n                            mode=self.mode,\n                            category=\"timing_spike\",\n                            description=(\n                                f\"Stage '{stage}' took {t:.2f}s \"\n                                f\"({t/median_t:.1f}x median {median_t:.2f}s)\"\n                            ),\n                            severity=min(1.0, t / (median_t * 10)),\n                            evidence={\"stage\": stage, \"time\": t, \"median\": median_t},\n                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,\n                        )\n                        summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nm = MacrophageCell(mode=MacrophageMode.PATROL)\ntry:\n    m.observe(\n        verdicts=[object(), object(), object()],\n        timings={\"stage_a\": 1.0, \"stage_b\": None},\n    )\nexcept TypeError:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Independent verification of the timing-`None` `TypeError`. Premise: `_patrol_observe` filters `values = [v for v in timings.values() if v > 0]`, but a `None` value raises `TypeError: '>' not supported"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "3 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F301"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: F301\nSEVERITY: 0.70\nFIND: In `_check_gate_stats`, unconditional immune_deficiency anomaly with `is_anomaly=True` and severity 0.9 when `total_failed==0` and `total>=5`, causing false posit",
+        "proposed_fix": "",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageSummary, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = MacrophageSummary()\n# Simulate a correct pipeline: all gates pass.\ngate_stats = {\"total_passed\": 5, \"total_failed\": 0}\ncell._check_gate_stats(gate_stats, summary)\nif any(o.category == \"immune_deficiency\" and o.is_anomaly for o in summary.observations):\n    print(\"FALSIFIED: immune_deficiency false positive confirmed\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F302"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: F302\nSEVERITY: 0.70\nFIND: In `_check_gate_stats`, unconditional immune_deficiency anomaly for Ouroboros claims with `is_anomaly=True` and severity 0.9 when `o_total>=3` and `o_failed==0`, ",
+        "proposed_fix": "",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageSummary, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = MacrophageSummary()\ngate_stats = {\n    \"total_passed\": 3,\n    \"total_failed\": 0,\n    \"by_origin\": {\n        \"external_ouroboros\": {\"passed\": 3, \"failed\": 0}\n    }\n}\ncell._check_gate_stats(gate_stats, summary)\nif any(o.category == \"immune_deficiency\" and o.is_anomaly for o in summary.observations):\n    print(\"FALSIFIED: immune_deficiency false positive (Ouroboros) confirmed\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F301"
+        ],
+        "severity": 0.85,
+        "description": "FINDING_ID: F301\nSEVERITY: 0.85 (CRITICAL)\nFLAW_CLASS: 1 (Logic / Type Safety)\nABSTRACTION_INDEX: 0.4\n\nFIND\nThe Macrophage cell uses the `.get(key, default)` pattern to extract metrics from `gate_stat",
+        "proposed_fix": "<<<< SEARCH total_passed = gate_stats.get(\"total_passed\", 0)\ntotal_failed = gate_stats.get(\"total_failed\", 0)\n        total = total_passed + total_failed\n==== REPLACE\ntotal_passed = gate_stats.get(\"total_passed\")\n        total_passed = total_passed if total_passed is not None else 0\n        total_failed = gate_stats.get(\"total_failed\")\n        total_failed = total_failed if total_failed is not None else 0\n        total = total_passed + total_failed\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ndef test_none_values_crash():\n    cell = MacrophageCell(mode=MacrophageMode.PATROL)\n    \n    # Test 1: gate_stats with explicit None values\n    try:\n        cell.observe([], gate_stats={\"total_passed\": None, \"total_failed\": 0})\n    except TypeError as e:\n        if \"NoneType\" in str(e):\n            print(\"FALSIFIED\")\n            return\n            \n    raise AssertionError(\"Did not crash, bug not present\")\n\nif __name__ == \"__main__\":\n    test_none_values_crash()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F302"
+        ],
+        "severity": 0.6,
+        "description": "FINDING_ID: F302\nSEVERITY: 0.60 (HIGH)\nFLAW_CLASS: 1 (Logic)\nABSTRACTION_INDEX: 0.3\n\nFIND\nThe `source_monoculture` check in `_self_check_observe` contains two logic flaws. First, it hardcodes `len(ver",
+        "proposed_fix": "<<<< SEARCH if len(sources_used) == 1 and len(verdicts) > 5:\nsource_name = list(sources_used.keys())[0]\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"source_monoculture\",\n                description=(\n                    f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                    f\"\u2014 verification diversity compromised\"\n                ),\n                severity=0.7,\n                evidence={\"source\": source_name, \"count\": len(verdicts)},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n==== REPLACE\nif len(sources_used) == 1 and len(verdicts) >= self.MIN_FINDINGS_FOR_ANALYSIS:\n            source_name = list(sources_used.keys())[0]\n            if source_name != \"unknown\":\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"source_monoculture\",\n                    description=(\n                        f\"All {len(verdicts)} verdicts from single source '{source_name}' \"\n                        f\"\u2014 verification diversity compromised\"\n                    ),\n                    severity=0.7,\n                    evidence={\"source\": source_name, \"count\": len(verdicts)},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ndef test_source_monoculture_bugs():\n    cell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\n    \n    class ValidVerdict:\n        def __init__(self):\n            self.tool_used = \"my_tool\"\n            \n    # 4 verdicts (>= MIN_FINDINGS_FOR_ANALYSIS but <= 5)\n    summary = cell.observe([ValidVerdict()] * 4)\n    has_anomaly = any(o.category == \"source_monoculture\" for o in summary.anomalies)\n    \n    if not has_anomaly:\n        print(\"FALSIFIED\")\n        return\n        \n    raise AssertionError(\"Anomaly detected, bug not present\")\n\nif __name__ == \"__main__\":\n    test_source_monoculture_bugs()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F401"
+        ],
+        "severity": 0.2,
+        "description": "FINDING_ID: F401 (stable)\nSEVERITY: 0.20\nFLAW_CLASS: 8 (documentation / dead code)\nABSTRACTION_INDEX: 0.05\n\nFIND \u2014 `bench/macrophage_cell.py:41\u201347`. Four module-level imports are unused: `hashlib` (41",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nimport enum\nimport hashlib\nimport json\nimport logging\nimport math\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Any, Dict, List, Optional, Sequence\n==== REPLACE\nimport enum\nimport logging\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Any, Dict, List, Optional\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F009"
+        ],
+        "severity": 0.62,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._self_check_observe()`, source collection assumes `tool_used` is hashable and scalar.\n\nCurrent code:\nsources_used: Dict[str, int] = {}\nfor v in verdicts:\n    source = getattr(v, \"tool_used\", \"unknown\")\n    sources_used[source] = sources_used.get(source, 0) + 1\nEvidence: if a verdict reports multiple tools/sources as a list, e.g. `tool_used = [\"sympy\", \"z3\"]`, the list is used directly as a dictionary key. Python lists are unhashable, so `observe()` rai",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\nsources_used: Dict[str, int] = {}\n        for v in verdicts:\n            source = getattr(v, \"tool_used\", \"unknown\")\n            sources_used[source] = sources_used.get(source, 0) + 1\n==== REPLACE\nsources_used: Dict[str, int] = {}\n        for v in verdicts:\n            source_raw = getattr(v, \"tool_used\", \"unknown\")\n            if isinstance(source_raw, (list, tuple, set, frozenset)):\n                source_values = source_raw or [\"unknown\"]\n            else:\n                source_values = [source_raw]\n\n            for source_value in source_values:\n                if isinstance(source_value, enum.Enum):\n                    source = str(source_value.value)\n                elif source_value is None or isinstance(source_value, (str, int, float, bool)):\n                    source = str(source_value)\n                else:\n                    try:\n                        source = json.dumps(source_value, sort_keys=True, default=str)\n                    except TypeError:\n                        source = str(source_value)\n\n                sources_used[source] = sources_used.get(source, 0) + 1\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass V:\n    tool_used = [\"sympy\", \"z3\"]\n\ntry:\n    MacrophageCell(mode=MacrophageMode.SELF_CHECK).observe([V() for _ in range(6)])\nexcept TypeError as exc:\n    if \"unhashable type\" in str(exc):\n        print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "3 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.55,
+        "description": "`bench/macrophage_cell.py`, `MacrophageCell._self_check_observe`, persistent-anomaly detection checks only previous history and excludes the current invocation. As a result, three consecutive anomalous self-check invocations do not trigger `persistent_anomaly` on the third invocation; the alert is delayed until a fourth invocation.\n\nCurrent code:\n# 2. Round-over-round stability: persistent anomalies across rounds\nif len(self._round_history) >= 3:\n    recent = self._round_history[-3:]\n    all_had",
+        "proposed_fix": "<<<< SEARCH bench/macrophage_cell.py\n# 2. Round-over-round stability: persistent anomalies across rounds\n        if len(self._round_history) >= 3:\n            recent = self._round_history[-3:]\n            all_had_anomalies = all(r[\"anomaly_count\"] > 0 for r in recent)\n            if all_had_anomalies:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"persistent_anomaly\",\n                    description=(\n                        \"Anomalies detected in 3+ consecutive rounds \u2014 \"\n                        \"possible systemic issue not being addressed\"\n                    ),\n                    severity=0.8,\n                    evidence={\n                        \"rounds_with_anomalies\": len(recent),\n                        \"anomaly_counts\": [r[\"anomaly_count\"] for r in recent],\n                    },\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# 2. Round-over-round stability: persistent anomalies across rounds\n        if len(self._round_history) >= 2 and summary.anomalies:\n            recent = self._round_history[-2:]\n            all_had_anomalies = all(r[\"anomaly_count\"] > 0 for r in recent)\n            if all_had_anomalies:\n                current_anomaly_count = len(summary.anomalies)\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"persistent_anomaly\",\n                    description=(\n                        \"Anomalies detected in 3+ consecutive rounds \u2014 \"\n                        \"possible systemic issue not being addressed\"\n                    ),\n                    severity=0.8,\n                    evidence={\n                        \"rounds_with_anomalies\": len(recent) + 1,\n                        \"anomaly_counts\": [\n                            *[r[\"anomaly_count\"] for r in recent],\n                            current_anomaly_count,\n                        ],\n                    },\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\n\nclass Verdict:\n    verdict = \"CONFIRMED\"\n    confidence = 0.8\n    tool_used = \"same_tool\"\n\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\n\nfor _ in range(3):\n    summary = cell.observe(verdicts=[Verdict() for _ in range(6)])\n\nhas_persistent = any(\n    obs.category == \"persistent_anomaly\"\n    for obs in summary.observations\n)\n\nif not has_persistent:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/test_immune_agents.py', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "4 total, 0 new (baseline: 4)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F401"
+        ],
+        "severity": 0.85,
+        "description": "In `_self_check_observe`, `tool_used` and `claim_type` attributes are extracted from dynamically typed objects without coercion. If `tool_used` is an Enum, it becomes a dictionary key and is passed to `evidence`, causing a `TypeError` during JSON serialization in `to_dict()`. If `claim_type.value` is an integer, `ct.lower()` crashes with `AttributeError`.",
+        "proposed_fix": "<<<< SEARCH sources_used: Dict[str, int] = {}\nfor v in verdicts:\n            source = getattr(v, \"tool_used\", \"unknown\")\n            sources_used[source] = sources_used.get(source, 0) + 1\n==== REPLACE\nsources_used: Dict[str, int] = {}\n        for v in verdicts:\n            raw_source = getattr(v, \"tool_used\", \"unknown\")\n            source = str(getattr(raw_source, \"value\", raw_source))\n            sources_used[source] = sources_used.get(source, 0) + 1\n>>>>",
+        "falsifier_code": "import enum\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass ClaimType(enum.Enum):\n    MATH = 1\n\nclass MockTriaged:\n    def __init__(self, ct):\n        self.claim_type = ct\n\nclass MockVerdict:\n    def __init__(self):\n        self.tool_used = \"other\"\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\nverdicts = [MockVerdict() for _ in range(6)]\ntriaged = [MockTriaged(ClaimType.MATH)]\n\ntry:\n    cell.observe(verdicts=verdicts, triaged=triaged)\nexcept AttributeError as e:\n    if \"'int' object has no attribute 'lower'\" in str(e):\n        raise AssertionError(\"FALSIFIED: 'int' object has no attribute 'lower'\")\n    raise",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F402"
+        ],
+        "severity": 0.6,
+        "description": "The docstring promises a \"Circuit breaker preventing alert flooding\" and \"Semantic clustering grouping identical observations\", but `_check_provenance` iterates over all items in `provenance` and appends an anomaly for *every* claim missing fields without any upper bound or grouping.",
+        "proposed_fix": "<<<< SEARCH # Missing provenance fields\nrequired_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                obs = MacrophageObservation(\n                    observation_id=self._next_id(),\n                    mode=self.mode,\n                    category=\"provenance_incomplete\",\n                    description=(\n                        f\"External claim missing provenance fields: {', '.join(sorted(missing))}\"\n                    ),\n                    severity=0.5,\n                    evidence={\"missing_fields\": list(sorted(missing))},\n                    is_anomaly=True,\n                )\n                summary.observations.append(obs)\n==== REPLACE\n# Missing provenance fields\n        required_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\n        missing_counts: Dict[str, int] = {}\n        for p in provenance:\n            missing = required_fields - set(p.keys())\n            if missing:\n                key = \", \".join(sorted(missing))\n                missing_counts[key] = missing_counts.get(key, 0) + 1\n                \n        for missing_str, count in missing_counts.items():\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"provenance_incomplete\",\n                description=(\n                    f\"{count} external claims missing provenance fields: {missing_str}\"\n                ),\n                severity=0.5,\n                evidence={\"missing_fields\": missing_str.split(\", \"), \"count\": count},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nprovenance = [{\"origin_type\": \"test\"} for _ in range(100)]\nsummary = cell.observe(verdicts=[], provenance=provenance)\nprov_anomalies = [obs for obs in summary.observations if obs.category == \"provenance_incomplete\"]\nif len(prov_anomalies) == 100:\n    raise AssertionError(\"FALSIFIED: Generated 100 unclustered anomalies instead of grouping them\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F403"
+        ],
+        "severity": 0.5,
+        "description": "In `_patrol_observe`, the severity distribution check assumes `confidence` values are numeric. If a verdict object provides confidence as a numeric string (e.g., `\"0.9\"`), `sum(severities)` crashes with `TypeError: unsupported operand type(s) for +: 'int' and 'str'`.",
+        "proposed_fix": "<<<< SEARCH # 2. Severity distribution: is severity concentrated?\nseverities = []\n        for v in verdicts:\n            sev = getattr(v, \"confidence\", None)\n            if sev is not None:\n                severities.append(sev)\n==== REPLACE\n# 2. Severity distribution: is severity concentrated?\n        severities = []\n        for v in verdicts:\n            sev = getattr(v, \"confidence\", None)\n            if isinstance(sev, (int, float)) and not isinstance(sev, bool):\n                severities.append(float(sev))\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass MockVerdict:\n    def __init__(self, conf):\n        self.confidence = conf\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nverdicts = [MockVerdict(\"0.9\") for _ in range(5)]\n\ntry:\n    cell.observe(verdicts=verdicts)\nexcept TypeError as e:\n    if \"unsupported operand type(s) for +\" in str(e):\n        raise AssertionError(\"FALSIFIED: sum() crashed on string confidence\")\n    raise",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F404"
+        ],
+        "severity": 0.55,
+        "description": "In `_check_gate_stats`, the code assumes `total_passed` and `total_failed` are native integers. If they arrive as numeric strings (e.g., `\"5\"`), `total = total_passed + total_failed` crashes with `TypeError: unsupported operand type(s) for +: 'str' and 'int'`. The same issue exists for `ouroboros_stats`.",
+        "proposed_fix": "<<<< SEARCH total_passed = gate_stats.get(\"total_passed\", 0)\ntotal_failed = gate_stats.get(\"total_failed\", 0)\n        total = total_passed + total_failed\n\n        if total == 0:\n            return\n==== REPLACE\ntry:\n            total_passed = int(gate_stats.get(\"total_passed\", 0))\n            total_failed = int(gate_stats.get(\"total_failed\", 0))\n        except (ValueError, TypeError):\n            return\n        total = total_passed + total_failed\n\n        if total == 0:\n            return\n>>>>",
+        "falsifier_code": "from bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\ngate_stats = {\"total_passed\": \"5\", \"total_failed\": 0}\n\ntry:\n    cell.observe(verdicts=[], gate_stats=gate_stats)\nexcept TypeError as e:\n    if \"unsupported operand type(s) for +\" in str(e):\n        raise AssertionError(\"FALSIFIED: string concatenation crash in gate_stats\")\n    raise",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.65,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.65\nFIND: In _patrol_observe, median is computed using sorted(values)[len(values)//2] instead of statistics.median, causing missed timing-spike anomalies on even-length tim",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nsys.path.insert(0, \"bench\")\nfrom macrophage_cell import MacrophageCell, MacrophageMode, MacrophageSummary\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL, shadow=True)\nsummary = MacrophageSummary()\ntimings = {\"a\": 10.0, \"b\": 10.0, \"c\": 100.0, \"d\": 600.0}\ncell._patrol_observe([], triaged=None, timings=timings, summary=summary)\nif not any(o.category == \"timing_spike\" for o in summary.observations):\n    print(\"FALSIFIED: median bug causes missing spike\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0043": {
+        "canonical_id": "C0043",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.35,
+        "description": "FINDING_ID: F002\nSEVERITY: 0.35\nFIND: In _self_check_observe, tool-name matching is case-sensitive, causing false method_claim_mismatch anomalies when tool_used has mixed case (e.g., \"SymPy\").\nFALSIFI",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nsys.path.insert(0, \"bench\")\nfrom macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK, shadow=True)\n\nclass MockVerdict:\n    def __init__(self, tool):\n        self.verdict = \"ACCEPTED\"\n        self.tool_used = tool\n        self.confidence = 0.9\n\nverdicts = [MockVerdict(\"SymPy\") for _ in range(6)]\n\nclass MockClaimType:\n    value = \"mathematical\"\n\nclass MockTriaged:\n    claim_type = MockClaimType()\n\ntriaged = [MockTriaged() for _ in range(3)]\n\nsummary = cell.observe(verdicts, triaged=triaged)\nanomalies = [o for o in summary.observations if o.category == \"method_claim_mismatch\"]\nif anomalies:\n    print(\"FALSIFIED: method_claim_mismatch despite SymPy being used\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      }
+    },
+    "next_id": 44,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "Codex:Codex_F002": "C0002",
+      "ChatGPT:ChatGPT_F001": "C0003",
+      "CC2:CC2_F001": "C0004",
+      "CC2:CC2_F002": "C0005",
+      "DeepSeek:DeepSeek_MACRO_001": "C0006",
+      "DeepSeek:DeepSeek_MACRO_002": "C0007",
+      "Gemini:Gemini_F001": "C0008",
+      "Gemini:Gemini_F002": "C0009",
+      "Codex:Codex_F003": "C0010",
+      "ChatGPT:ChatGPT_F002": "C0011",
+      "CC2:CC2_F010": "C0012",
+      "DeepSeek:DeepSeek_F101": "C0013",
+      "DeepSeek:DeepSeek_F102": "C0014",
+      "Gemini:Gemini_F003": "C0015",
+      "Gemini:Gemini_F004": "C0016",
+      "Gemini:Gemini_F005": "C0017",
+      "ChatGPT:ChatGPT_F004": "C0018",
+      "Codex:Codex_F004": "C0019",
+      "Codex:Codex_F005": "C0020",
+      "CC2:CC2_F011": "C0021",
+      "DeepSeek:DeepSeek_F201": "C0022",
+      "DeepSeek:DeepSeek_F202": "C0023",
+      "DeepSeek:DeepSeek_F203": "C0024",
+      "Gemini:Gemini_F008": "C0025",
+      "CC2:CC2_F012": "C0026",
+      "ChatGPT:ChatGPT_F005": "C0027",
+      "ChatGPT:ChatGPT_F006": "C0028",
+      "ChatGPT:ChatGPT_F007": "C0029",
+      "ChatGPT:ChatGPT_F008": "C0030",
+      "DeepSeek:DeepSeek_F301": "C0031",
+      "DeepSeek:DeepSeek_F302": "C0032",
+      "Gemini:Gemini_F301": "C0033",
+      "Gemini:Gemini_F302": "C0034",
+      "CC2:CC2_F401": "C0035",
+      "ChatGPT:ChatGPT_F009": "C0036",
+      "Codex:Codex_F006": "C0037",
+      "Gemini:Gemini_F401": "C0038",
+      "Gemini:Gemini_F402": "C0039",
+      "Gemini:Gemini_F403": "C0040",
+      "Gemini:Gemini_F404": "C0041",
+      "DeepSeek:DeepSeek_F001": "C0042",
+      "DeepSeek:DeepSeek_F002": "C0043"
+    }
+  },
+  "novelty_counts": [
+    9,
+    8,
+    8,
+    9,
+    9
+  ],
+  "raw_counts": [
+    9,
+    10,
+    12,
+    10,
+    11
+  ],
+  "novelty_counts_per_model": {
+    "ChatGPT": [
+      1,
+      1,
+      1,
+      4,
+      1
+    ],
+    "Codex": [
+      2,
+      1,
+      2,
+      0,
+      1
+    ],
+    "CC2": [
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "Gemini": [
+      2,
+      3,
+      1,
+      2,
+      4
+    ],
+    "DeepSeek": [
+      2,
+      2,
+      3,
+      2,
+      2
+    ]
+  },
+  "raw_counts_per_model": {
+    "ChatGPT": [
+      1,
+      1,
+      1,
+      4,
+      1
+    ],
+    "Codex": [
+      2,
+      3,
+      2,
+      1,
+      3
+    ],
+    "CC2": [
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "Gemini": [
+      2,
+      3,
+      5,
+      2,
+      4
+    ],
+    "DeepSeek": [
+      2,
+      2,
+      3,
+      2,
+      2
+    ]
+  },
+  "rho_history": [
+    1.0,
+    0.8,
+    0.666667,
+    0.9,
+    0.818182
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.071389,
+    0.069516,
+    0.041953
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [
+    0
+  ],
+  "stall_history": [
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 1
+    },
+    {
+      "open_ch": 0,
+      "contested": 1
+    }
+  ],
+  "novel_critical_history": [
+    4,
+    1,
+    2,
+    0,
+    0
+  ],
+  "cumulative_context_chars": 315082,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "Codex": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.75
+    },
+    "CC2": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.5
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Gemini": {
+      "history": [
+        {
+          "round": 3,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.6666666666666667,
+        1.25,
+        1.0,
+        1.75
+      ],
+      "last_adaptive_threshold": 1.3055555555555556
+    },
+    "DeepSeek": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        0.7142857142857143,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.75
+    },
+    "ChatGPT": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

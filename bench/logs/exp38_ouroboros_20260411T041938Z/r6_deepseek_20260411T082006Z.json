@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260411T082006Z",
+  "phase": "r6",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2570,
+  "response": "**VERDICTS**\n\nCONFIRM C0023 | The `build_summary` function includes \"REOPENED\" in `full_detail_statuses`, but the `FindingRegistry` never sets a finding’s status to \"REOPENED\". This is an inconsistency between the summary presentation and the actual status transitions.\n\nCONFIRM C0082 | The `contested_count` method uses a hard‑coded threshold `current_round - oldest > 1` instead of the `grace_period` parameter. This ignores the configurable grace period and may incorrectly exclude challenges that are only one round old.\n\nCONFIRM C0090 | The `_compute_rho` function calculates `round_idx = len(raw_counts) - 1`, a 0‑based index, and compares it directly to `cfg.rho_earliest_round` (a 1‑based round number). This is an off‑by‑one error that delays churn detection by one round.\n\n---\n\n**NEW DISCOVERY FINDING**\n\nFINDING_ID: F100\nSEVERITY: 0.80\nFLAW_CLASS: 2\nABSTRACTION_INDEX: 0.5\nDESCRIPTION:\n**FIND:** The system accepts REOPEN verdicts but lacks a handler to transition findings to the REOPENED status. The verdict parser `_parse_verdicts` includes REOPEN, and `build_summary` expects \"REOPENED\" in `full_detail_statuses`. However, `FindingRegistry.resolve()` does not list REOPENED as a documented status, and no code in the provided module processes a REOPEN verdict to set that status. This breaks the documented reopening feature.\n\n**FOLLOW:** Without a REOPEN handler, any REOPEN verdict parsed from model output is ignored. Findings can never enter the REOPENED status, so the REOPENED section of the registry summary remains perpetually empty. This misleads models into believing reopening is supported and may cause them to issue ineffective REOPEN verdicts.\n\n**ANALYSE:** CONFIRMED. The code explicitly includes REOPEN in the verdict regex and REOPENED in the summary status list, but the registry’s status‑transition logic never produces a REOPENED status. The `resolve` method can set any string status, so the missing piece is the caller that invokes `resolve` with status=\"REOPENED\" upon a REOPEN verdict.\n\n**PROPOSED_FIX:** Two changes are required: (1) update `open_crit_high_count` to treat REOPENED as a non‑terminal status (already covered by C0089/C0063/C0086), and (2) implement a REOPEN verdict handler in the caller (not in the provided module). Since we cannot modify the caller, we only fix the visible inconsistency by ensuring REOPENED is counted as active.\n\n<<<< SEARCH bench/reference_runner.py\n        _NON_TERMINAL = (\"OPEN\", \"CONTESTED\")\n====\n        _NON_TERMINAL = (\"OPEN\", \"CONTESTED\", \"REOPENED\")\n>>>> REPLACE\n\n**VERIFIED:** TRUE",
+  "metadata": {
+    "round": 6,
+    "elapsed": 204.7,
+    "chars": 2570,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

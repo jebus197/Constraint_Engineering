@@ -1,0 +1,100 @@
+Looking at this Experiment 39 pre-launch review, I need to apply the full CDSFL methodology to assess GO/NO-GO readiness.
+
+## Meta Structured Reasoning Protocol
+
+**Premises:**
+1. Exp 39-0 is a critical infrastructure gate testing 5 models across 8 rounds
+2. Recent changes include HIL review gate, domain plumbing, PE constraint additions, and enum serialization fixes
+3. 793/793 tests pass, providing baseline confidence
+4. PE HARD constraints must be enforced with monotonicity per CDSFL specification
+
+**Execution Trace:**
+launch_exp39.py → reference_runner.py → immune pipeline → model dispatch → result collection
+
+## FFAFP Analysis
+
+### FINDING 1: PE HARD Constraint Runtime Enforcement Missing
+
+**FIND:** The new PE HARD constraints `constraints.ffafp_required` and `constraints.structured_reasoning_required` are defined in schema.toml and registry.py but have no visible runtime enforcement mechanism. These constraints are marked as `constraint_class = "HARD"` but I see no validation logic in the immune pipeline or model interaction layer.
+
+**FOLLOW:** 
+- Models could violate FFAFP structure without detection
+- Structured reasoning requirements could be ignored
+- Policy becomes documentation-only rather than active enforcement  
+- Experiment validity is compromised—findings marked as validated may not meet stated methodology requirements
+- False confidence in results that don't actually follow CDSFL protocols
+
+**ANALYSE:** CONFIRMED. Policy definitions exist in schema.toml:556-570 and registry.py:49-50, but no runtime checking visible in immune_agents.py or reference_runner.py.
+
+**FIX:** Implement runtime validation in immune pipeline to verify model outputs conform to FFAFP structure and include structured reasoning elements before accepting findings.
+
+**P-PASS:** Could enforcement be implicit through prompt instructions? No—HARD constraints require automated verification, not just instructional compliance. The schema description "All findings must be processed through FIND-FOLLOW-ANALYSE-FIX before presentation" implies verification, not just instruction.
+
+### FINDING 2: HIL Review Gate State Restoration Path
+
+**FIND:** HIL review gate correctly exits with code 42 and saves checkpoints (reference_runner.py:3299, 3358), but the `--resume` restoration mechanism isn't specified in the provided code. How does resume restore the exact experimental state?
+
+**FOLLOW:**
+- Operator reviews findings and makes fixes
+- Resume might start from wrong state or skip/repeat phases
+- Could invalidate experimental continuity
+- HIL collaborative cycle becomes ineffective
+
+**ANALYSE:** UNCERTAIN. Pause mechanism is clear but resume details not shown in diff.
+
+**FIX:** Verify checkpoint restoration preserves round state, registry contents, and convergence metrics.
+
+**P-PASS:** This might be existing functionality not changed in this session. But it's critical for HIL effectiveness.
+
+### FINDING 3: Domain Config Loading Path Unverified  
+
+**FIND:** Domain plumbing passes `domain_config` to immune functions (immune_agents.py:689, 1869) but the loading path from `cfg.domain` string to domain config dict isn't visible. Unknown domain handling also unclear.
+
+**FOLLOW:**
+- Domain-specific CT prompts might not load
+- Immune parameterization could default to generic behavior
+- Cross-domain experiment differentiation lost
+- Silent failures for invalid domains
+
+**ANALYSE:** UNCERTAIN. Plumbing exists but loading mechanism not shown.
+
+**FIX:** Verify domain string → config dict resolution and graceful unknown domain fallback.
+
+**P-PASS:** May be existing functionality in registry.py domain mapping, but should be verified.
+
+## Extended Falsification (Global P-Pass)
+
+Cross-finding analysis reveals no contradictions. The PE constraint enforcement issue (#1) is independent and most critical. Issues #2-3 may be diff artifacts but should be verified.
+
+System-level risks: What if domain TOML files have syntax errors during loading? Registry validation should catch this, but runtime robustness should be confirmed.
+
+## Critical Assessment
+
+The PE HARD constraint enforcement gap is the blocking issue. These constraints are fundamental to CDSFL methodology validity:
+
+- `ffafp_required = true` with `constraint_class = "HARD"` 
+- `structured_reasoning_required = true` with `constraint_class = "HARD"`
+
+For HARD constraints, the system must provide automated verification, not just prompt instruction. Without this, experimental findings could be marked as validated while violating core methodology requirements.
+
+This creates a systematic risk of false confidence in results that don't actually meet CDSFL standards.
+
+## Other Verifications
+
+✓ HIL gate exit code 42 propagation: launch_exp39.py:89-91, 299-302  
+✓ Sequencer dependency resolution: Kahn's algorithm correctly implemented  
+✓ Enum serialization: `_enum_safe_default()` replaces `default=str`  
+✓ Basic syntax/structure: No syntax errors observed  
+✓ Test coverage: 793/793 tests passing provides baseline confidence  
+
+**VERDICT: NO-GO**
+
+**Blocking Issue:** PE HARD constraint runtime enforcement missing (schema.toml:556-570, registry.py:49-50). The constraints `ffafp_required` and `structured_reasoning_required` are defined as HARD but lack runtime validation in the immune pipeline. This compromises experimental validity by allowing non-compliant findings to be accepted as validated.
+
+**Required Fix:** Implement automated verification in immune_agents.py to check that model outputs conform to FFAFP structure and structured reasoning requirements before findings are accepted into the registry.
+
+**Secondary Issues to Address:**
+- Verify HIL resume checkpoint restoration mechanism  
+- Confirm domain config loading path handles unknown domains gracefully
+
+The gate test should not proceed until HARD constraint enforcement is implemented to ensure experimental validity.

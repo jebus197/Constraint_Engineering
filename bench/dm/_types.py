@@ -82,13 +82,19 @@ class DynamicManagementConfig:
     blind_first: bool = True  # HARD: always start with blind round
 
     # --- Area 4: Convergence Detection ---
-    tau_sim: float = 0.33  # finding similarity threshold for equivalence
+    tau_sim: float = 0.33  # finding similarity threshold for equivalence (Jaccard)
     # Run 8 calibration: max pairwise sim was 0.553, old 0.8 was unreachable.
     # At 0.33 (centroid-based): 67 clusters from 339 findings (80% churn detected).
+    tau_sim_embed: float = 0.55  # embedding similarity threshold (higher than Jaccard
+    # because cosine on embeddings produces denser scores — calibrate against Exp 38 data)
     tau_kappa: float = 0.95  # convergence threshold (SEPARATE from gamma)
     eta_veto: float = 0.9  # severity veto threshold (ChatGPT contribution)
     epsilon_conv: float = 1e-8  # zero-denominator regulariser
     min_rounds_for_convergence: int = 2  # r >= this to allow convergence
+    # Continuous suppression (Phase 3, 12 April 2026)
+    lambda_s: float = 1.5  # suppression decay rate (higher = faster suppression)
+    w_floor: float = 0.05  # minimum suppression weight (prevents total silencing)
+    suppression_k: int = 3  # top-k similar findings to aggregate for suppression
 
     # --- Area 5: Diminishing Returns ---
     tau_mu: float = 0.05  # minimum acceptable VCR
@@ -143,6 +149,12 @@ class DynamicManagementConfig:
     # ABORT is a recoverable action, not a state-machine-ending event.
     no_exclusion_mode: bool = False
 
+    # --- Domain routing (Exp 39 plumbing fix, 13 April 2026) ---
+    # Experiment domain passed through to InsectBrain → immune pipeline.
+    # Without this, getattr(config, "domain", "") returns "" and all
+    # domain-aware classification in _classify_claim_v2() silently fails.
+    domain: str = ""
+
     # --- Resolution hysteresis (Run 6 bug 4) ---
     # Require this many consecutive non-pathological rounds before resolving
     # a detected pathology. Prevents flip-flopping when metrics hover near
@@ -189,6 +201,11 @@ class DynamicManagementConfig:
     # Minimum fingerprint signal: when all models fall below this on all
     # dimensions, switch to round-robin allocation.
     fingerprint_min_signal: float = 0.05
+
+    # --- Persistent memory (Phase 4, 12 April 2026) ---
+    rho_memory: float = 0.2  # blending weight for memory prior (0 = ignore memory)
+    memory_decay_rate: float = 0.1  # exponential decay per experiment (higher = faster forget)
+    memory_drift_threshold: float = 2.0  # CUSUM threshold for drift detection
 
     # --- Role-specific baseline coefficients for expected performance ---
     # b_rho vectors for expected(m, r) = b_rho . q_m
@@ -253,6 +270,19 @@ class DynamicManagementConfig:
         for label, budget in self.context_budget_overrides.items():
             if budget < 1000:
                 raise ValueError(f"context_budget_overrides[{label}] must be >= 1000, got {budget}")
+        if not (0.0 <= self.rho_memory <= 1.0):
+            raise ValueError(f"rho_memory must be in [0, 1], got {self.rho_memory}")
+        if self.memory_decay_rate < 0:
+            raise ValueError(f"memory_decay_rate must be >= 0, got {self.memory_decay_rate}")
+        if self.memory_drift_threshold <= 0:
+            raise ValueError(f"memory_drift_threshold must be > 0, got {self.memory_drift_threshold}")
+        # Phase 3 suppression parameters (DM convergence review, 13 April 2026)
+        if self.lambda_s < 0:
+            raise ValueError(f"lambda_s must be >= 0, got {self.lambda_s}")
+        if not (0.0 < self.w_floor <= 1.0):
+            raise ValueError(f"w_floor must be in (0, 1], got {self.w_floor}")
+        if self.suppression_k < 1:
+            raise ValueError(f"suppression_k must be >= 1, got {self.suppression_k}")
 
     def get_alpha(self, role: Role) -> NDArray[np.float64]:
         """Return the capability weight vector for a given role."""
@@ -383,11 +413,26 @@ class Finding:
     abstraction_index: float  # H(f) in [0, 1]
     description: str = ""
     proposed_fix: str = ""  # Model's proposed fix (CX: was parsed but discarded)
+    target_file: str = ""  # P4 fix: explicit file path for fix verification
     verified: bool = False  # Whether finding was independently verified (SymPy, etc.)
     escalated: bool = False  # Escalated to HIL — no programmatic fix possible
     falsification_present: bool = False  # Whether finding contains falsification evidence
     pm_verdict: str = ""  # PM's verdict on this finding (Category 2)
     dedup_of: str = ""  # finding_id this is a duplicate of, if any (Category 2)
+    # Provenance fields for external-origin claims (Ouroboros cell split, 12 April 2026)
+    origin_type: str = ""  # e.g. "model", "external_ouroboros"
+    source_ref: str = ""  # Paper DOI, URL, or identifier
+    retrieval_query: str = ""  # Search query that found this source
+    retrieved_at: str = ""  # ISO 8601 timestamp of retrieval
+    source_hash: str = ""  # SHA-256 of source content
+    source_diversity: float = 0.0  # Source diversity metric (0-1)
+    # Falsifier fields ("tools decide" integration, 3 June 2026). The model
+    # attaches a runnable Python falsifier per critical finding; the runner
+    # independently re-runs it and the runner's result is the verdict (never
+    # the model's claim). Defaults empty so all existing call sites are
+    # unaffected and the frozen dataclass stays positional-compatible.
+    falsifier_code: str = ""  # Runnable Python that RAISES/prints FALSIFIED iff defect is real
+    falsifier_verdict: str = ""  # Runner's independent re-run verdict: CONFIRMED/REFUTED/ERROR/UNTOOLABLE
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,8 +1,8 @@
 # What the S_k Confer Actually Tells Us
 
 **Date:** 9 April 2026
-**Type:** Analytical synthesis of S_k reliability confer results
-**Predecessor:** Exp 37 (converged), S_k confer round (Codex + Gemini)
+**Type:** Analytical synthesis of S_k (tool-verified solution-reliability score) confer results
+**Predecessor:** Exp 37 (converged), S_k confer round (Codex GPT-5.4 + Gemini 3.1 Pro)
 
 ---
 
@@ -13,17 +13,15 @@ Five questions were posed:
 2. Can the system self-regulate toward novel discovery — not just finding problems but fixing them?
 3. Can it work beyond code, across STEM domains?
 4. How does it scale with more models?
-5. How do we actually get solutions out of these models instead of just a list of complaints?
+5. How can solutions actually be extracted from these models, rather than just a list of complaints?
 
 ---
 
 ## 2. Is the Model Optimal?
 
-The detection side is strong. Exp 37 proved it: all five models used R_k to calibrate
-their own reliability, converged in 16 rounds with an 18× improvement in confirmation
-rate. The microscope works.
+The detection side is strong. Exp 37 proved it: all five models used R_k (the iterative residual-risk self-assessment equation) to calibrate their own reliability, and the panel converged in 16 rounds with an 18× improvement in confirmation rate. The microscope works.
 
-The resolution side was barely functional. σ (solution efficacy) was model-estimated —
+The resolution side was barely functional. σ (sigma, solution efficacy) was model-estimated —
 models grading their own homework. One fix out of six worked. Not tool-verified. Hope.
 
 S_k closes this gap. Instead of models estimating their own fix quality, S_k derives
@@ -41,7 +39,7 @@ model is now sound. Remaining gap: empirical calibration (Exp 38).
 
 ## 3. Self-Regulation and the Valley of Bad Fixes
 
-Gemini discovered, and we verified numerically, that the extended equation has a
+Gemini discovered, and numerical verification confirmed, that the extended equation has a
 built-in penalty for half-baked fixes.
 
 R_new(S) is not monotonically decreasing. It is a downward-opening parabola:
@@ -62,16 +60,16 @@ that would make things worse, and accepts only fixes that demonstrably improve t
 
 ## 4. Getting Solutions Out
 
-Both models agreed on the core problem. The NL pipeline (describe fix in prose →
-convert to code) fails 83% of the time and violates the constraint box principle.
+Both models agreed on the core problem. The NL (natural-language) pipeline (describe fix in prose,
+then convert to code via an agent) fails 83% of the time and violates the constraint box principle (which requires that tool output be the evidence; LLM reasoning interprets but does not substitute for it).
 
-Models must output fixes in machine-verifiable format. Two composable proposals:
+Models must output fixes in machine-verifiable format. Two composable proposals emerged:
 - **Codex:** FixSpec JSON envelope (target file, edit operations, preconditions,
   expected properties, forbidden regressions)
 - **Gemini:** SEARCH/REPLACE blocks (exact lines to find, exact replacement)
 
 These compose: SEARCH/REPLACE blocks are edit operations inside a FixSpec envelope.
-Use both. The edit block gives the change; the envelope gives the metadata.
+Both should be used. The edit block gives the change; the envelope gives the metadata.
 
 Once in machine-readable format, the tool gate pipeline evaluates automatically:
 parse → lint → test → targeted test → full regression. Each gate produces a score.
@@ -106,10 +104,10 @@ models. The expert encoding architecture is exactly right.
 The per-finding update equation does not change with more models. What changes is
 orchestration:
 
-- **Detection:** Codex proposes correlation-adjusted q_eff to account for model
+- **Detection:** Codex proposes correlation-adjusted q_eff (effective detection rate adjusted for inter-model correlation) to account for model
   overlap (naive independence breaks down at 10+ models)
 - **Resolution:** Gemini proposes max-pooling — compute S_k for each model's fix,
-  pick the best. If even the best falls below S*, all rejected.
+  pick the best. If even the best falls below S* (the break-even threshold), all are rejected.
 
 These operate at different levels (detection vs resolution) and compose without conflict.
 
@@ -120,9 +118,9 @@ verification, parallel fix generation, centralised S_k evaluation.
 
 ## 7. The Composed Model
 
-The proposals from Codex and Gemini operate at different layers and compose fully:
-- A·E structure (hard admissibility × graded evidence) subsumes simpler product form
-- Bounded ν_eff subsumes linear form
+The proposals from Codex and Gemini operate at different layers and compose fully. A is the hard-admissibility product; E is the graded effect-evidence aggregate. ν_eff (nu_eff) is the effective re-injection rate.
+- A·E structure (hard admissibility × graded evidence) subsumes the simpler product form
+- Bounded ν_eff subsumes the linear form
 - FixSpec envelope contains SEARCH/REPLACE blocks
 - Correlation-adjusted detection and max-pooling resolution complement each other
 
@@ -140,7 +138,7 @@ current experiment design.
 
 The confer produced two dual perspectives on the break-even condition:
 
-**S* (implemented):** Minimum fix quality for a given re-injection rate.
+**S* (implemented):** Minimum fix quality for a given re-injection rate. ν_b is baseline re-injection; ν_f is fix-induced re-injection; q is detection probability; R is residual risk.
 ```
 S* = (ν_b + ν_f - ν_b·ν_f - q·R) / (ν_f · (1 - ν_b))
 ```
@@ -151,9 +149,9 @@ for a given fix quality.
 ```
 ν* = S_k · R · q / (1 - q · R · (1 - S_k))
 ```
-Answers: "How much re-injection can I tolerate?"
+Answers: "How much re-injection can be tolerated?"
 
-These are algebraic duals — knowing one gives you the other. The runner implements
+These are algebraic duals — knowing one gives the other. The runner implements
 S* because it answers the operational question. ν* answers the design question and
 is available for analytical use but is not computed in the pipeline.
 

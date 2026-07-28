@@ -1,0 +1,268 @@
+{
+  "round_idx": 2,
+  "findings": [
+    {
+      "finding_id": "CC2_F006",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 5,
+      "encounter_count": 4,
+      "description_snippet": "`save()` (lines ~230\u2013248) writes JSON directly onto the destination path via `open(path, \"w\")`, which truncates the targ"
+    },
+    {
+      "finding_id": "Codex_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 5,
+      "encounter_count": 5,
+      "description_snippet": "`ImmuneMemory.load()` ignores the persisted `\"version\"` field even though `save()` writes `\"version\": 1`. Location: `ben"
+    },
+    {
+      "finding_id": "ChatGPT_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 5,
+      "encounter_count": 6,
+      "description_snippet": "`ImmuneMemory.load()` ignores the persisted `\"version\"` field even though `save()` writes `\"version\": 1`. Location: `ben"
+    },
+    {
+      "finding_id": "Gemini_C0009",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 4,
+      "encounter_count": 5,
+      "description_snippet": "`save()` serialises `records` but never serialises `self._drift`. `load()` rebuilds `_records` but never restores `_drif"
+    },
+    {
+      "finding_id": "Gemini_C0016",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 5,
+      "encounter_count": 7,
+      "description_snippet": "`ImmuneMemory.load()` in loop rebuilding persisted records: `for fc_str, rec_dict in data.get(\"records\", {}).items():` c"
+    },
+    {
+      "finding_id": "Gemini_F003",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6099,
+      "flaw_class": 5,
+      "encounter_count": 8,
+      "description_snippet": "`ImmuneMemory.load()` uses `data.get(\"decay_rate\", 0.1)` to provide a default value. However, if the JSON file explicitl"
+    },
+    {
+      "finding_id": "Gemini_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 1,
+      "encounter_count": 7,
+      "description_snippet": "`update_drift()` implements a CUSUM drift detector but fails to reset the accumulators (`cusum_pos`, `cusum_neg`) after "
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 10,
+      "total": 10,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 9,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 19,
+      "total": 19,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 18,
+      "total": 19,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "statsmodels": {
+      "tool_name": "statsmodels",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 19,
+      "total": 19,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 15,
+      "total": 15,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_bug_closed": {
+      "tool_name": "v2_bug_closed",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785194733.797437
+}
