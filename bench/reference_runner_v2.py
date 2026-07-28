@@ -448,6 +448,11 @@ class RunnerConfig:
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
     max_contested_rounds: int = 5
+    # POST-CONVERGENCE SWEEP (founder-approved 2026-07-28): after the terminal
+    # convergence verdict is RECORDED, run up to this many bounded epilogue
+    # rounds whose ONLY duty is clearing residual non-terminal findings
+    # (runnable falsifier or reasoned withdrawal). 0 = off (byte-identical).
+    post_convergence_sweep_rounds: int = 0
     # Static-queue closure (2026-06-09): the automated loop may converge while handing a
     # SMALL queue of ladder-exhausted irreducible criticals to the human. A queue larger
     # than this is treated as a mechanical-failure ALARM (routing/dedup), not genuine
@@ -1676,6 +1681,127 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
     if any(tally.values()):
         _log(f"  routing: {tally['resolved']} resolved by strong writer, "
              f"{tally['dup']} dedup'd, {tally['hil']} -> HIL")
+
+
+_SWEEP_SYSTEM = (
+    "You are completing a code review that has ALREADY CONVERGED. The "
+    "convergence verdict is recorded and cannot change. Your ONLY task is to "
+    "clear the residual findings listed in the prompt: for each, either "
+    "supply a runnable falsifier or withdraw it with a reason. Any NEW "
+    "finding you write will be ignored. Use the execute_python tool to read "
+    "the real module and RUN your falsifier before answering."
+)
+
+
+def _sweep_prompt(residuals: dict, target_rel: str, target_src: str) -> str:
+    lines = [
+        "This is what was found during the run and remains unresolved. "
+        "Now clear the residuals.",
+        "",
+        f"TARGET MODULE ({target_rel}):",
+        "```python", target_src[:60000], "```", "",
+        "RESIDUAL FINDINGS TO CLEAR:",
+    ]
+    for cid, e in residuals.items():
+        lines.append(
+            f"- {cid} (severity {e.get('severity')}, status {e['status']}): "
+            f"{(e.get('description') or '')[:400]}"
+        )
+    lines += [
+        "",
+        "For EACH residual above, respond with exactly one of:",
+        "  FALSIFIER: <id>",
+        "  ```python",
+        "  # runnable test importing the REAL module; AssertionError/FALSIFIED",
+        "  # iff the defect is present; clean exit otherwise",
+        "  ```",
+        "or:",
+        "  WITHDRAW <id>: <one-line reason it is not a real/testable defect>",
+        "Nothing else counts. New findings are ignored.",
+    ]
+    return "\n".join(lines)
+
+
+def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None):
+    """Bounded epilogue: panel clears residual non-terminal findings AFTER the
+    convergence verdict is recorded. Guards (founder malady-proofing,
+    2026-07-28): (1) runs strictly after the verdict — can never block,
+    reverse, or improve convergence; (2) registers NO new findings (only the
+    two labelled forms below are parsed); (3) bounded rounds; leftovers are
+    reported honestly. Criticals can only be cleared by a CONFIRMED runnable
+    demonstration — never by withdrawal (CONFIRM-only discipline holds)."""
+    import re as _re
+    n_rounds = int(getattr(cfg, "post_convergence_sweep_rounds", 0) or 0)
+    if n_rounds <= 0:
+        return {}
+    from bench.falsifier_verify import reverify_falsifier
+    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    stats = {"cleared": 0, "withdrawn": 0, "rounds": 0, "remaining": 0}
+    try:
+        target_src = (Path(repo_root or REPO_ROOT) / cfg.test_article).read_text(
+            encoding="utf-8", errors="replace")
+    except OSError:
+        target_src = ""
+    for _sweep_i in range(n_rounds):
+        residuals = {cid: e for cid, e in registry.entries.items()
+                     if e["status"] not in _TERMINAL}
+        if not residuals:
+            break
+        stats["rounds"] += 1
+        _log(f"  sweep round {_sweep_i + 1}/{n_rounds}: "
+             f"{len(residuals)} residual(s) -> panel")
+        prompt = _sweep_prompt(residuals, cfg.test_article, target_src)
+        for mc in exp_config.models:
+            live = {cid: e for cid, e in residuals.items()
+                    if registry.entries[cid]["status"] not in _TERMINAL}
+            if not live:
+                break
+            try:
+                resp, _ = dispatch_to_model(mc, prompt, _SWEEP_SYSTEM,
+                                            enable_tools=True)
+            except Exception:  # noqa: BLE001 — a dead model just skips its turn
+                continue
+            # (a) labelled falsifier re-attachment
+            for m in _re.finditer(
+                    r"FALSIFIER:\s*(C\d{4})\s*```(?:python)?\s*\n(.*?)```",
+                    resp or "", _re.S):
+                cid, code = m.group(1), m.group(2).strip()
+                e = registry.entries.get(cid)
+                if e is None or e["status"] in _TERMINAL or not code:
+                    continue
+                verdict = reverify_falsifier(code, repo_root=repo_root)
+                if verdict == "CONFIRMED":
+                    e["falsifier_code"] = code
+                    e["falsifier_verdict"] = "CONFIRMED"
+                    e["verified"] = True
+                    e["resolved_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
+                    registry.resolve(cid, "CONFIRMED", round_idx)
+                    stats["cleared"] += 1
+                elif (verdict == "REFUTED"
+                        and float(e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD):
+                    e["falsifier_verdict"] = "REFUTED"
+                    e["withdrawn_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
+                    registry.resolve(cid, "REFUTED", round_idx)
+                    stats["withdrawn"] += 1
+                # ERROR / critical-REFUTED: leave for the residual report.
+            # (b) reasoned withdrawal — SUB-CRITICAL ONLY
+            for m in _re.finditer(r"WITHDRAW\s+(C\d{4})\s*:\s*(.{3,300})",
+                                  resp or ""):
+                cid, reason = m.group(1), m.group(2).strip()
+                e = registry.entries.get(cid)
+                if (e is None or e["status"] in _TERMINAL
+                        or float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD):
+                    continue
+                e["withdrawn_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
+                e["withdraw_reason"] = reason[:200]
+                registry.resolve(cid, "REFUTED", round_idx)
+                stats["withdrawn"] += 1
+    _TERMINAL2 = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    stats["remaining"] = sum(1 for e in registry.entries.values()
+                             if e["status"] not in _TERMINAL2)
+    _log(f"  sweep complete: {stats['cleared']} cleared, "
+         f"{stats['withdrawn']} withdrawn, {stats['remaining']} remaining")
+    return stats
 
 
 def _evaluate_gate_conditions(
@@ -6691,6 +6817,16 @@ def run_experiment(
     # HIL signals for route-degradation review.
     result["secondary_route_usage"] = _secondary_route_usage[:]
     result["persistent_empty_flags"] = _persistent_empty_flags[:]
+
+    # POST-CONVERGENCE SWEEP (2026-07-28): verdict already recorded above;
+    # the sweep can only clean the residual ledger, never touch convergence.
+    if converged and getattr(cfg, "post_convergence_sweep_rounds", 0):
+        try:
+            result["post_convergence_sweep"] = _post_convergence_sweep(
+                registry, exp_config, cfg, round_idx)
+        except Exception as _sw_exc:  # noqa: BLE001 — sweep must never kill the report
+            _log(f"  WARNING: post-convergence sweep failed ({_sw_exc})")
+            result["post_convergence_sweep"] = {"error": str(_sw_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

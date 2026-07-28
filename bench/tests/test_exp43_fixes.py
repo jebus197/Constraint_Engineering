@@ -332,3 +332,77 @@ class TestVerdictReaderHygiene:
         from bench.falsifier_verify import reverify_falsifier
         self._fake_run(monkeypatch, stderr="AssertionError: accepted tampered record", rc=1)
         assert reverify_falsifier("print('x')") == "CONFIRMED"
+
+
+# ── Post-convergence sweep (founder-approved 2026-07-28) ─────────────────────
+
+class TestPostConvergenceSweep:
+    def _run(self, monkeypatch, reg, response, sweep_rounds=2, reverify="CONFIRMED"):
+        import bench.reference_runner_v2 as rv2
+        import bench.falsifier_verify as fv
+        calls = []
+        def fake_dispatch(mc, prompt, system, enable_tools=False):
+            calls.append(getattr(mc, "label", str(mc)))
+            return response, 0.1
+        monkeypatch.setattr(rv2, "dispatch_to_model", fake_dispatch)
+        monkeypatch.setattr(fv, "reverify_falsifier",
+                            lambda code, repo_root=None: reverify)
+        cfg = RunnerConfig(post_convergence_sweep_rounds=sweep_rounds,
+                           test_article="bench/dm/_memory.py")
+        exp_config = SimpleNamespace(models=[SimpleNamespace(label="CC2")])
+        stats = rv2._post_convergence_sweep(reg, exp_config, cfg, 5)
+        return stats, calls
+
+    def test_disabled_is_noop(self, monkeypatch):
+        import bench.reference_runner_v2 as rv2
+        reg = FindingRegistry()
+        _register(reg, "F030", 0.4, "OPEN")
+        cfg = RunnerConfig(post_convergence_sweep_rounds=0)
+        assert rv2._post_convergence_sweep(reg, SimpleNamespace(models=[]), cfg, 5) == {}
+
+    def test_falsifier_reattachment_clears_residual(self, monkeypatch):
+        reg = FindingRegistry()
+        cid = _register(reg, "F031", 0.5, "OPEN")
+        resp = f"FALSIFIER: {cid}\n```python\nimport bench.dm._memory\nassert False\n```"
+        stats, _ = self._run(monkeypatch, reg, resp, reverify="CONFIRMED")
+        assert reg.entries[cid]["status"] == "CONFIRMED"
+        assert reg.entries[cid]["resolved_by_sweep"] == "CC2"
+        assert stats["cleared"] == 1 and stats["remaining"] == 0
+
+    def test_withdrawal_subcritical_only(self, monkeypatch):
+        reg = FindingRegistry()
+        sub = _register(reg, "F032", 0.4, "OPEN")
+        crit = _register(reg, "F033", 0.9, "OPEN")
+        resp = (f"WITHDRAW {sub}: duplicate of established behaviour\n"
+                f"WITHDRAW {crit}: also withdrawing this one")
+        stats, _ = self._run(monkeypatch, reg, resp)
+        assert reg.entries[sub]["status"] == "REFUTED"
+        assert reg.entries[sub]["withdraw_reason"].startswith("duplicate")
+        assert reg.entries[crit]["status"] == "OPEN", "criticals cannot be withdrawn"
+        assert stats["withdrawn"] == 1 and stats["remaining"] == 1
+
+    def test_new_findings_ignored(self, monkeypatch):
+        reg = FindingRegistry()
+        _register(reg, "F034", 0.4, "OPEN")
+        n0 = len(reg.entries)
+        resp = ("FINDING_ID: F999\nSEVERITY: 0.9\nDESCRIPTION: brand new claim\n"
+                "WITHDRAW C9999: no such id")
+        stats, _ = self._run(monkeypatch, reg, resp, reverify="ERROR")
+        assert len(reg.entries) == n0, "sweep must register no new findings"
+        assert stats["cleared"] == 0 and stats["withdrawn"] == 0
+
+    def test_bounded_rounds_reports_remaining(self, monkeypatch):
+        reg = FindingRegistry()
+        _register(reg, "F035", 0.4, "OPEN")
+        stats, calls = self._run(monkeypatch, reg, "no compliance at all",
+                                 sweep_rounds=2)
+        assert stats["rounds"] == 2 and stats["remaining"] == 1
+        assert len(calls) == 2  # one model, two bounded rounds
+
+    def test_launcher_passthrough(self):
+        from bench.launcher_core import build_runner_config_from_dict
+        rc = build_runner_config_from_dict(
+            {"experiment_name": "t", "models": ["CC2"], "test_article": "x.py",
+             "post_convergence_sweep_rounds": 2},
+            SimpleNamespace(resume=False))
+        assert rc.post_convergence_sweep_rounds == 2

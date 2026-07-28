@@ -228,6 +228,8 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     # routing-alias gap. Caught by the Exp 44 both-paths pre-flight trace.
     if "max_contested_rounds" in exp_cfg:
         kwargs["max_contested_rounds"] = exp_cfg["max_contested_rounds"]
+    if "post_convergence_sweep_rounds" in exp_cfg:
+        kwargs["post_convergence_sweep_rounds"] = exp_cfg["post_convergence_sweep_rounds"]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}
