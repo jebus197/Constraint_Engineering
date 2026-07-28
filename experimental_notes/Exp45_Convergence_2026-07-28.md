@@ -29,4 +29,9 @@ Standing post-run review (6 OPEN items, specialist verdict quality, ouroboros qu
 
 ---
 
+
+## Postscript — panel sweep smoke test (28 July, morning)
+
+The founder-approved post-convergence sweep was smoke-tested live against this run's six OPEN residuals, with the real five-model panel doing the clearing and the runner's independent falsifier re-execution as sole judge. **Result: 6/6 cleared in ONE sweep round, zero remaining, zero withdrawals** — Codex supplied runnable falsifiers for all six; each was re-executed and CONFIRMED by the runner. Exp 45 therefore now stands at 39/39 findings terminal — everything over the line, matching Exp 44's bar. The founder's hypothesis (with the ghost-issue machinery fixed, ordinary residuals are panel-clearable) is confirmed; the sweep is enabled as a declared delta from Exp 46 onward. Record: `sweep_smoketest_20260728.json` in the run dir.
+
 *Written under CDSFL note standard v1.2 (14 May 2026).*
