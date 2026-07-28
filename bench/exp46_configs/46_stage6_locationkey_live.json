@@ -1,0 +1,88 @@
+{
+  "_comment": "Exp 46 (NEW numbering) \u2014 literature-calibration module review (bench/dm/_shadow_stage6.py, ~29K chars, 748 lines): the Stage-6 calibrator that runs shadow-live in every round and whose novelty/external-corroboration channels are fed by the now-LIVE ouroboros cell. INSTRUMENT identical to Exp 44/45 landmarks (two-sided gamma gate, CONFIRM-only falsifier gate, routing, location key, domain=software) with DECLARED DELTAS: (a) post_convergence_sweep_rounds=2 \u2014 the founder-approved residual-clearing epilogue, smoke-tested 6/6 on Exp 45's residuals; (b) ouroboros query-construction fix (Item 1E.8, backtick/operator sanitisation) live for the first time. Self-referential note: the module under review is the calibrator observing the run \u2014 the designed self-referential probe from the original plan (old Exp 50). gamma is LOAD-BEARING; convergence = gamma_critical >= 0.30 AND 3 consecutive zero-new-critical rounds, plus fail-safes.",
+  "test_article": "bench/dm/_shadow_stage6.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 16,
+  "extension_cap": 16,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp46_stage6_locationkey_live",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds set above the gamma ceiling (1.0) so the stall detector can never fire via gamma \u2014 convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/43.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "max_contested_rounds": 3,
+  "_max_contested_rounds_note": "FIX 4 (declared delta, 2026-07-22): lowered from the code default 5. Five rounds of paid compute to age out a churning residual was both wasteful and, against within-grace churn, ineffective (Exp 43). With FIX 1 in place sub-criticals no longer block, so this threshold now governs only genuinely contested items.",
+  "test_cmd": "python3 -m pytest bench/tests/test_shadow_stage6_calibrator.py -q --tb=line",
+  "_test_cmd_note": "ImmuneMemory regression guard (its tests live in test_dynamic_management.py); informational \u2014 static review.",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled/verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested \u2014 where, per FIX 1, un-demonstrated sub-critical findings are a logged NON-GATING residual queue; AND (5) not churning; AND (6) irreducible queue within bound.",
+    "pass_condition": "gamma_critical >= 0.30 AND 3 consecutive zero-NEW-genuine-critical rounds AND no unverified critical pending AND not contested (FIX-1 semantics) AND not churning AND irreducible queue within bound.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds; OR non-convergence (then assume MECHANICAL, diagnose under cy \u2014 do not demote gamma)."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": false,
+    "_section_10_note": "A4 (12 July 2026): section 10 was established INERT \u2014 the flag never reaches RunnerConfig and no compelled-convergence text reaches dispatch. Recorded false here for documentation accuracy; behaviourally identical to Exp 42/43, whose configs carried a stale 'true'."
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  },
+  "_pre_registration": "Frozen 2026-07-28 before the run. Exp 46 = dm/_shadow_stage6.py under the Exp 44/45 instrument with two declared deltas (post-convergence sweep; ouroboros 1E.8 query fix). PREDICTION: clean two-sided-gate convergence within budget; the sweep drains any residual tail so the run ends with ALL findings terminal (the founder's everything-over-the-line standard, now mechanised); ouroboros queries succeed at materially higher rate than Exp 45's; stage-6 calibration channels (nu_k, c_ext) show non-constant values for the first time (fed by live ouroboros). FAILURE MODES to report honestly: (a) non-convergence -> assume MECHANICAL, diagnose under cy, do NOT demote gamma; (b) sweep leaves residuals -> examine per-item, report; (c) calibration channels still constant -> trace the ouroboros->stage6 feed, fix before Exp 47. No tuning after results.",
+  "_plan_ref": "NEW Exp 46 (compressed arc). Runner: reference_runner_v2.py with the 2026-07-27/28 fix tranches + sweep. Next: Exp 47 = dm/_divergence.py (ImmuneMemory wiring+enable as ITS declared delta, founder-approved).",
+  "take_up_slack_enabled": true,
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "location keys from dm/_memory.py AST symbols; instrument proven on Exp 42/43/44.",
+  "_ouroboros": {
+    "api_access": [
+      "arxiv",
+      "semantic_scholar"
+    ],
+    "max_papers_per_round": 2,
+    "contact_email": "jebus.2504@gmail.com"
+  },
+  "post_convergence_sweep_rounds": 2
+}

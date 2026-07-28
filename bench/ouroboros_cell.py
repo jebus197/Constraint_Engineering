@@ -366,6 +366,20 @@ class OuroborosCell:
         quoted_names = re.findall(r"'([^']*)'", target)
         quoted_terms = ' '.join(n.replace('_', ' ') for n in quoted_names)
 
+        # Item 1E.8 fix (2026-07-28, exposed on the first live Exp 45 round):
+        # finding text carries backtick-quoted code and operator fragments
+        # ("`blended_prior` computes ` * pi_base + rho *`") which academic
+        # search APIs reject (arXiv HTTP 500). Harvest identifier words from
+        # backtick spans, then drop the spans and every non-word operator.
+        code_names = re.findall(r"`([^`]*)`", target)
+        code_terms = ' '.join(
+            w.replace('_', ' ')
+            for span in code_names
+            for w in re.findall(r'[A-Za-z_][A-Za-z_]{2,}', span)
+        )
+        target = re.sub(r"`[^`]*`", ' ', target)
+        target = re.sub(r"[*+=/<>|&^%~@#$\\{}\[\]`]", ' ', target)
+
         # Remove parenthetical noise: (11/12), (0.0002), (21.7x median 0.40s)
         target = re.sub(r'\([^)]*\)', '', target)
 
@@ -379,7 +393,7 @@ class OuroborosCell:
         target = re.sub(r"'[^']*'", '', target)
 
         # Combine: prefix + cleaned target + quoted names
-        combined = f"{prefix} {target} {quoted_terms}"
+        combined = f"{prefix} {target} {quoted_terms} {code_terms}"
 
         # Collapse whitespace
         combined = re.sub(r'\s+', ' ', combined).strip()
