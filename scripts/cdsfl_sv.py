@@ -824,6 +824,44 @@ def _commit_and_push(
     """
     root = root or repo_root()
 
+    # 0a. WORKING BRANCH GUARD (2026-08-15). Founder ruling: main is the only
+    #     branch that gets updated, unless there is a stated reason to open a
+    #     new experimental branch.
+    #
+    #     This exists because the ruling was made once and then silently
+    #     decayed. A milestone merge to main was made on 28 July 2026, and work
+    #     continued on exp39-experimental from 19:11 that same evening, for a
+    #     further 107 commits over 18 days. Nothing was lost — main was brought
+    #     current on 15 August and every path was verified against it — but for
+    #     that fortnight the public repository showed a project 16 days stale
+    #     while the real work sat on a branch nobody outside would think to read.
+    #
+    #     The cause was mechanical: this function pushes to whatever branch is
+    #     checked out and had no concept of main. An agreement nobody wired into
+    #     the tooling is an agreement that lasts until the next distraction.
+    #
+    #     WARNS, never aborts. A deliberate experimental branch is legitimate;
+    #     drifting onto one by accident is not. The distinction is whether
+    #     anyone noticed, so this makes it impossible not to.
+    try:
+        _branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(root), capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+        if _branch and _branch != "main":
+            print()
+            print("=" * 74)
+            print(f"  NOT ON main — committing to '{_branch}'")
+            print("  Founder ruling: main is the only branch that gets updated,")
+            print("  unless there is a stated reason to open an experimental branch.")
+            print("  If this branch is deliberate, carry on. If it is drift, stop:")
+            print("      git checkout main")
+            print("  Drift is what left main 16 days stale in August 2026.")
+            print("=" * 74)
+            print()
+    except (OSError, subprocess.SubprocessError):
+        pass  # never let the guard block a save
+
     # 0. Operational-tracker mirror parity, BEFORE staging (REPAIR S5).
     #    Warn only, never copy. Gated on this being the real CDSFL working
     #    tree — the tracker policy names those two specific files, so the
