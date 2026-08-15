@@ -1,0 +1,91 @@
+{
+  "_comment": "Exp 53 (ONE-SHOT ARC) — ZERO-PLANT CONTROL. The target is a review document containing NO seeded errors: every claim in it is true and mechanically verifiable from the document's own printed data. It is written in the same register, structure and claim-density as the seeded exams and is statistically indistinguishable from its matched sibling (energy-distance permutation p = 0.58; all 16 per-feature tests p > 0.14), so nothing in the document tells a reader which kind of document it is. Instrument identical to the seeded exams; the ONLY declared variable is that the seeded set is empty. CDSFL is an LLM-reliability framework; domain content is verifiable subject matter only.",
+  "test_article": "/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 16,
+  "extension_cap": 16,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp53_control_zero_live",
+  "domain": "cs_software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds set above the gamma ceiling (1.0) so the stall detector can never fire via gamma — convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/43.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "max_contested_rounds": 3,
+  "_max_contested_rounds_note": "FIX 4 (declared delta, 2026-07-22): lowered from the code default 5. Five rounds of paid compute to age out a churning residual was both wasteful and, against within-grace churn, ineffective (Exp 43). With FIX 1 in place sub-criticals no longer block, so this threshold now governs only genuinely contested items.",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled/verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested — where, per FIX 1, un-demonstrated sub-critical findings are a logged NON-GATING residual queue; AND (5) not churning; AND (6) irreducible queue within bound. VACUOUS-CURVE PATH (added 2026-07-29, before this run, after the defect was found pre-launch): where the cumulative critical count is ZERO across the whole history, the critical decay curve does not exist and gamma_critical is undefined rather than low — the estimator returns 0.0 for both an empty series and a constant-arrival series, which are opposites. On a zero-plant document the expected and correct outcome is an empty series, so without this the control could not converge at all. Gamma is NOT demoted: the estimator's domain is narrowed. The vacuous path requires cumulative critical == 0 AND at least one finding of some severity (a panel returning nothing is refused as a dead panel), converges under a distinct verdict string, and leaves every other gate binding.",
+    "pass_condition": "gamma_critical >= 0.30 AND 3 consecutive zero-NEW-genuine-critical rounds AND no unverified critical pending AND not contested (FIX-1 semantics) AND not churning AND irreducible queue within bound. OR (cumulative critical == 0 across the entire history AND at least one finding of any severity AND the same zero-critical window AND every other gate clear) — the vacuous-curve path, expected to be the one this control takes.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds; OR non-convergence (then assume MECHANICAL, diagnose under cy — do not demote gamma)."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": false,
+    "_section_10_note": "A4 (12 July 2026): section 10 was established INERT — the flag never reaches RunnerConfig and no compelled-convergence text reaches dispatch. Recorded false here for documentation accuracy; behaviourally identical to Exp 42/43, whose configs carried a stale 'true'."
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "software",
+      "information_science",
+      "engineering"
+    ]
+  },
+  "_pre_registration": "Frozen before the run. Exp 53 = the zero-plant control, and it measures what no seeded document can. WHY IT EXISTS: on the completed chemistry exam a panel model reverse-engineered the exam's design from the document's own structure, stating that there were exactly six seeded defects and no seventh. The detections were each independently demonstrated, so what that compromised was not the finds but the STOPPING DECISION — how long a panel keeps looking — which is the one thing that has to transfer to ordinary work, where no seeded structure exists. A document with nothing planted in it measures that decision directly. MEASURES: (1) FALSE-POSITIVE RATE = findings raised against true claims divided by 44, the only clean estimate available anywhere in the programme; (2) STOPPING BEHAVIOUR — whether the panel terminates on having verified the document, or keeps hunting for an expected quota; (3) STRUCTURE-INFERENCE, quoted verbatim: any utterance asserting a seeded count, asserting the errors are 'harvested', or reasoning from an expected number is recorded as evidence in its own right. PRECISION AND RECALL ARE UNDEFINED HERE and must not be reported. PREDICTION: convergence within budget via the VACUOUS-CURVE path (zero critical findings across the run), with zero or near-zero findings against true claims. A convergence by the ordinary gamma path would mean the panel raised critical findings against a document in which every claim is true, which is itself a reportable result and must not be smoothed over. FAILURE MODES: (a) the panel manufactures findings to reach a quota -> report verbatim, do NOT tune the document; (b) the panel fails to terminate -> that is the count-prior hazard the control was built to expose, report it and do not read it as a convergence-mechanism fault; (c) non-convergence for mechanical reasons -> pause and diagnose under cy, do NOT demote gamma.",
+  "_plan_ref": "One-shot arc: 47 divergence -> 48 chem -> 49 eng -> 50 physics -> 51 biology -> 53 zero-plant control -> 52 factorial -> STOP before BR2.",
+  "take_up_slack_enabled": true,
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "location keys from markdown claim IDs (ZC-nn) + headings.",
+  "_ouroboros": {
+    "api_access": [
+      "arxiv",
+      "semantic_scholar"
+    ],
+    "max_papers_per_round": 2,
+    "contact_email": "jebus.2504@gmail.com"
+  },
+  "post_convergence_sweep_rounds": 2,
+  "immune_memory_enabled": true,
+  "immune_memory_path": "bench/state/immune_memory.json",
+  "_target_isolation_note": "Target staged outside the repository, read-only (mode 444), one document per directory, named by the document's own internal ID. The panel's working directory is that directory and contains the document under review and nothing else: no scoring key, no sibling module, no git history, no experiment metadata in any path. Scoring joins the run's findings to the key after the run, outside the run, from a location this repository does not record. History: on 2026-07-29 a routed model wrote a falsifier that opened the scoring key and printed its full planted set. The key had been moved out of the tree that morning and a config note in this repository recorded where it went; the panel's working directory was the repository, so the note was one grep away. The fix had advertised what it hid. Superseded keys also remain in git history and are left there deliberately as a tripwire: the sets they name are no longer the sets in use, so a run that flags them without independent demonstration has done archaeology rather than verification.",
+  "panel_cwd": "/Users/georgejackson/CDSFL_review_targets/current",
+  "_max_irreducible_queue_note": "DELIBERATELY UNSET — the code default (2) applies. Raised to 8 and then 30 on 2026-08-01 to stop the alarm refusing convergence; both changes were WRONG and are reverted. The alarm was correct: a queue that large signals a mechanical failure, not genuine irreducibility. CORRECTION 2026-08-01 23:40 — THE CAUSAL DIAGNOSIS PREVIOUSLY RECORDED HERE WAS MECHANICALLY FALSE AND WOULD HAVE SENT A RESTART INTO THE SAME WALL. It blamed the S_k hard gates (ast.parse over markdown) for the locked queue. S_k did indeed reject every fix, and that was a real defect fixed at 0b6e9ec — but it is NOT what produced the escalations. Every escalation writer in the runner was traced (reference_runner_v2.py lines 1305, 1327, 1658, 1710, 1742, 1902, 1929, 2144, 2145); not one is in the S_k pipeline, SK_REJECTED only increments a stats counter, and neither apply_falsifier_verdicts nor _apply_routing reads sk_result. All 20 escalations carry falsifier-gate verdicts: UNTOOLABLE 7, ERROR 13. THE ACTUAL CAUSE: the routing ladder — the only absorber between the falsifier gate and the HIL queue — had a code-only prompt. Its system message told the model to import from bench.cdsfl_registry, and the finding dict passed to it carried id/description/source_model/severity and NOTHING ELSE: no target path, no target text. A model asked to demonstrate a defect in a fenced listing inside a markdown document was told to import a module that does not exist and was never told where the document was. Measured across the archives: routing resolved 16/37 (Exp 48) and 25/38 (Exp 49) on listing-free prose — 41 for 41 — versus 0 for 25 across the two Exp 53 runs, whose documents drew 23 and 14 listing-referencing findings. Fixed 2026-08-01 23:30: both the routing system message and the resolve prompt now branch on the resolved target_kind, exactly as _sweep_prompt already did; 15 regression tests in bench/tests/test_routing_prompt_is_target_aware.py. The default of 2 stands until a run whose ladder can actually reach the target produces evidence that a prose target legitimately exceeds it."
+}

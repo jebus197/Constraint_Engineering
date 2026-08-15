@@ -43,7 +43,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 # Path setup
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -58,6 +58,7 @@ from experiment_11_orchestrator import (
     CircuitBreakerTripped,
     ExperimentConfig,
     ModelConfig,
+    set_panel_cwd,
 )
 from dynamic_management import (
     DynamicManager,
@@ -259,12 +260,181 @@ _S2_PROSE_RE = re.compile(
 )
 
 
-def _gate_falsifier_directive(directive_text: str) -> str:
+def _runnable_falsifier_s2(ask_corrected_copy: bool = False) -> str:
+    """The §2 replacement, assembled at call time.
+
+    The corrected-copy ask is appended here rather than baked into
+    ``_RUNNABLE_FALSIFIER_S2`` so that the literal response form lives in ONE
+    place (``_corrected_copy_instructions``) shared with the routing and sweep
+    prompts. A model that sees three prompts must see one convention.
+
+    GATED, default off (2026-08-12). This previously appended the ask
+    unconditionally, which would have changed what every live run asked the
+    panel for — and, with the discrimination control presence-gated downstream,
+    would have armed that control the first time a model complied. The founder's
+    decision on whether a non-discriminating falsifier may close a critical was
+    still open at the time, so it would have been settled by side effect.
+    Supplying the input is a separate decision from acting on it.
+    """
+    if not ask_corrected_copy:
+        return _RUNNABLE_FALSIFIER_S2
+    return (
+        _RUNNABLE_FALSIFIER_S2 + " "
+        + _CORRECTED_COPY_WHY + " Immediately after the FALSIFIER block, write:\n"
+        + _corrected_copy_instructions() + "\n"
+    )
+
+
+def _gate_falsifier_directive(directive_text: str, ask_corrected_copy: bool = False) -> str:
     """Redefine the operational §2 FALSIFICATION block (prose -> runnable) when the
     falsifier gate is on. No-op if the §2 prose block is absent. Reversible: the
-    directive file is untouched; the substitution happens per-dispatch in memory."""
-    new, n = _S2_PROSE_RE.subn(_RUNNABLE_FALSIFIER_S2, directive_text)
+    directive file is untouched; the substitution happens per-dispatch in memory.
+
+    The replacement is passed as a FUNCTION, not a string: the assembled text now
+    carries sentinel lines, and a bare string replacement would interpret any
+    backslash escape in it. A prompt corrupted by its own escaping is precisely
+    the failure that renders as a confident success."""
+    replacement = _runnable_falsifier_s2(ask_corrected_copy)
+    new, n = _S2_PROSE_RE.subn(lambda _m: replacement, directive_text)
     return new if n else directive_text
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Experimental factor switches (Exp 52 2x2 factorial, 2026-07-29)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# See RunnerConfig for the semantics of "off". This block holds the shared
+# vocabulary and the two helpers the run loop and the dispatch path consult.
+
+DIRECTIVE_OFF_MODES = ("absent", "text_only", "pass_only")
+
+
+class _DivergencePassDisabled(Exception):
+    """Internal sentinel: the divergence runner pass is switched off.
+
+    Raised (and caught) inside the round loop's divergence block so the
+    switch shares one exit path with the block's defensive handler without
+    being mistaken for a parse error in the round telemetry.
+    """
+
+# Factor key -> (enabled field, off-mode field) on RunnerConfig. The factor
+# keys match bench/dm/_directive_sections.FACTOR_SPECS.
+DIRECTIVE_FACTOR_FIELDS: Dict[str, Tuple[str, str]] = {
+    "feedback": ("feedback_channel_enabled", "feedback_off_mode"),
+    "divergence": ("divergence_channel_enabled", "divergence_off_mode"),
+}
+
+# Module mirror of the per-run directive-omission decision, set from
+# RunnerConfig at experiment start (mirrors the _INROUND_REASK / _merge_arb_ctx
+# pattern) so _dispatch_single_model need not have cfg threaded into it.
+# Empty tuple => every factor's directive text ships, i.e. legacy behaviour.
+_DIRECTIVE_OMISSION: Dict[str, Any] = {"factors": ()}
+
+
+def _directive_factor_state(cfg: "RunnerConfig", factor: str) -> Tuple[bool, bool]:
+    """Return ``(directive_text_present, runner_pass_active)`` for `factor`.
+
+    A factor that is ON has both halves. A factor that is OFF loses both
+    halves under the default ``"absent"`` mode, and exactly one half under
+    the narrower modes. Missing attributes read as ON, so a RunnerConfig
+    built by older code behaves exactly as it did before this switch existed.
+    """
+    enabled_field, mode_field = DIRECTIVE_FACTOR_FIELDS[factor]
+    enabled = bool(getattr(cfg, enabled_field, True))
+    if enabled:
+        return True, True
+    mode = getattr(cfg, mode_field, "absent")
+    if mode == "text_only":
+        return False, True
+    if mode == "pass_only":
+        return True, False
+    return False, False  # "absent"
+
+
+def _suppressed_directive_factors(cfg: "RunnerConfig") -> Tuple[str, ...]:
+    """Factor keys whose directive SECTION must be omitted from the prompt."""
+    return tuple(
+        f for f in DIRECTIVE_FACTOR_FIELDS
+        if not _directive_factor_state(cfg, f)[0]
+    )
+
+
+def _apply_directive_omission(model_cdsfl: str) -> str:
+    """Strip suppressed factors' directive text from an assembled prompt.
+
+    Reads the module mirror rather than cfg (see `_DIRECTIVE_OMISSION`).
+    No-op — and therefore byte-identical to the pre-switch runner — when no
+    factor is suppressed, which is every run whose config omits the new keys.
+
+    Strict by construction: if a suppressed factor's section cannot be found
+    the omission raises rather than shipping the mechanism the config said to
+    remove. The same call is made once at experiment start, so a mid-run
+    surprise here would mean the directive file changed under a live run.
+    """
+    factors = _DIRECTIVE_OMISSION.get("factors") or ()
+    if not factors:
+        return model_cdsfl
+    from bench.dm._directive_sections import omit_directive_sections
+    return omit_directive_sections(model_cdsfl, factors, strict=True)
+
+
+def arm_directive_omission(cfg: "RunnerConfig", exp_config=None) -> Tuple[int, int]:
+    """Set the per-run omission mirror, then PROVE it removes something.
+
+    Called once at experiment start, before any paid dispatch. Two jobs:
+
+    1. Publish the suppressed-factor list to the module mirror that
+       :func:`_apply_directive_omission` reads on every dispatch.
+    2. Run the omission against the real assembled prompt — the same
+       composer output plus operational directive the models will receive —
+       and refuse to proceed if it removed nothing.
+
+    The second job is the point. An ablation cell whose prompt is identical
+    to its control is a guaranteed null result wearing the costume of a
+    measurement, and it costs a full experiment to discover. Fail here,
+    loudly and cheaply, or not at all.
+
+    Returns ``(chars_before, chars_after)`` for the probe prompt; ``(0, 0)``
+    when no factor is suppressed (the default, and every pre-2026-07-29 run).
+    """
+    _DIRECTIVE_OMISSION["factors"] = _suppressed_directive_factors(cfg)
+    factors = _DIRECTIVE_OMISSION["factors"]
+    if not factors:
+        return 0, 0
+
+    probe = _OPERATIONAL_DIRECTIVE_TEXT
+    if exp_config is not None:
+        try:
+            wanted = set(getattr(cfg, "models", []) or [])
+            probe_model = next(
+                (mc.label for mc in exp_config.models if mc.label in wanted),
+                None)
+            if probe_model:
+                probe = (
+                    _compose_for_model(
+                        probe_model, cfg.pattern, cfg.domain).rendered_text
+                    + "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
+                )
+        except Exception:
+            pass  # composer unavailable: validate the operational text alone
+
+    before = len(probe)
+    after = len(_apply_directive_omission(probe))
+    if after >= before:
+        raise RuntimeError(
+            f"directive-section omission removed nothing for factors "
+            f"{factors} — refusing to run an ablation cell whose prompt is "
+            f"identical to the control."
+        )
+    for f in factors:
+        text_on, pass_on = _directive_factor_state(cfg, f)
+        _log(f"  §-factor {f}: directive text "
+             f"{'PRESENT' if text_on else 'OMITTED'}, runner pass "
+             f"{'ACTIVE' if pass_on else 'DISABLED'}")
+    _log(f"  directive omission verified: {before} -> {after} chars "
+         f"({before - after} removed)")
+    return before, after
+
 
 FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 
@@ -398,6 +568,30 @@ class RunnerConfig:
     # exists only so the legacy behaviour can be re-enabled for a controlled
     # ablation; do not enable it in the Exp 41+ convergence regime.
     stall_gamma_termination_enabled: bool = False
+    # ── DISCRIMINATION CONTROL (2026-08-12) ─────────────────────────────────
+    # Two switches, both default OFF, because they are two different decisions.
+    #
+    # `_ask` appends the corrected-copy request to the §2 falsification
+    # directive. Off by default so no live run silently changes what the panel
+    # is asked, and no run pays for output nobody ruled on.
+    #
+    # `_blocks` decides whether a non-discriminating falsifier is refused the
+    # right to close a critical. That is a change to the most load-bearing rule
+    # in the system — CONFIRM-only — and it is the founder's open decision, so
+    # it must never arrive as a side effect of wiring the supply side.
+    #
+    # Why separated: with `_ask` on and `_blocks` off, the control runs and
+    # RECORDS its outcome without changing any verdict, which is the evidence
+    # needed to rule on `_blocks` at all. Collapsing them into one flag would
+    # make gathering that evidence require arming the instrument first.
+    #
+    # The 2026-08-12 panel review refuted the blocking design as originally
+    # proposed: the check is satisfied by ACCESS rather than DEPENDENCE, so it
+    # is defeated by `open(TARGET).read()` with the contents discarded — and it
+    # fails GREEN, reporting full coverage while discriminating nothing. Treat
+    # `_blocks` as unsafe to enable until a dependence-based test replaces it.
+    discrimination_control_ask: bool = False
+    discrimination_control_blocks: bool = False
     verification_batch_size: int = 6
     verification_min_round: int = 6
     verification_confidence_threshold: float = 0.7
@@ -416,12 +610,19 @@ class RunnerConfig:
     # Requires falsifier_gate_enabled. Default-off => byte-identical. The legacy config key
     # ``take_up_slack_enabled`` is still accepted (launcher_core back-compat alias).
     routing_enabled: bool = False
-    # Code-location novelty SHADOW (2026-06-08). Telemetry-only: computes a per-round
-    # critical-novelty series keyed by target-file code location (the verified fix for the
-    # cross-round dedup failure) ALONGSIDE the live ID-proxy count, logging both. It NEVER
-    # feeds a convergence gate — live-gating promotion is conditional on the semantic-splitter
-    # + null/seeded calibration + a live confirmation run. Default-on (additive telemetry, no
-    # outcome change); set False for strict byte-identical reports.
+    # Code-location novelty series (2026-06-08). Computes a per-round critical-novelty
+    # series keyed by target-file code location (the verified fix for the cross-round
+    # dedup failure) alongside the ID-proxy count, logging both.
+    #
+    # NOT TELEMETRY WHENEVER ``location_keyed_convergence`` IS ALSO SET. This flag
+    # computes the series; that one promotes it to the COUNT side of the two-sided gate.
+    # Sixteen configs set both, from Exp 42 on. Turning THIS flag off in such a config
+    # therefore does not "disable telemetry" — it silently reverts the convergence gate
+    # to the ID-proxy series, i.e. reinstates the cross-round dedup failure the location
+    # key exists to fix. This comment claimed "It NEVER feeds a convergence gate" until
+    # 2026-08-08, which was false from the first location-keyed live run.
+    #
+    # Default-on. Set False ONLY when location_keyed_convergence is also False.
     location_shadow_enabled: bool = True
     # Promote the code-location key from shadow telemetry to the ACTUAL convergence
     # trigger (2026-06-09, gated default-off). When True, the γ-alt critical-quiescence
@@ -432,6 +633,12 @@ class RunnerConfig:
     # zero-slope (fully-decayed) endpoint for critical findings. Requires
     # location_shadow_enabled (the series it consumes). Default-off => byte-identical.
     location_keyed_convergence: bool = False
+    # HIERARCHICAL NOVELTY (2026-08-04). Location decides the coarse call; only
+    # WITHIN an already-flagged location is the STEM signature asked to split.
+    # Recorded in SHADOW on every run at no cost; this flag promotes it to
+    # GATING and defaults off, so behaviour is unchanged unless set.
+    hierarchical_novelty_convergence: bool = False
+    hierarchical_within_threshold: float = 0.20
     # Severity calibration (over-production bounding, 2026-06-10, gated default-off).
     # Lowers the EFFECTIVE severity of a finding that the falsifier gate CONFIRMED
     # as a REAL defect but that is explicitly flagged LATENT/conditional (it needs a
@@ -444,6 +651,15 @@ class RunnerConfig:
     severity_calibration_enabled: bool = False
     # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
     severity_calibration_floor: float = 0.69
+    # LATENT TAGGER (2026-07-31) — the upstream producer severity calibration has
+    # always been missing. Runs BEFORE the calibration sweep and sets `latent` /
+    # `finding_category` on each registry entry from explicit evidence only (a
+    # panel-emitted REACHABILITY/TRIGGER field, or an explicit prose claim of
+    # unreachability); absent evidence it sets latent=False, so calibration stays
+    # a no-op. See bench/latent_tagger.py. Default OFF => byte-identical. Enabling
+    # this WITHOUT severity_calibration_enabled is safe and purely observational:
+    # the tags are written and logged, nothing reads them.
+    latent_tagger_enabled: bool = False
     gamma_soft_threshold: float = 0.30
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
@@ -453,15 +669,47 @@ class RunnerConfig:
     # rounds whose ONLY duty is clearing residual non-terminal findings
     # (runnable falsifier or reasoned withdrawal). 0 = off (byte-identical).
     post_convergence_sweep_rounds: int = 0
-    # IMMUNE MEMORY (founder-approved 2026-07-28, staged): when enabled the
-    # cross-experiment ImmuneMemory (bench/dm/_memory.py, appendix §1.5) is
-    # LOADED at run start, its blended prior LOGGED per flaw class (advisory
-    # visibility), and the run's per-flaw-class confirmed/rejected tallies
-    # RECORDED + SAVED at run end. The blended prior does NOT yet feed
-    # R_k(0) — that consumption switch is a later declared delta once real
-    # cross-experiment history exists. Default off = byte-identical.
+    # IMMUNE MEMORY (founder-approved 2026-07-28; CONSUMPTION added 2026-07-31).
+    # The cross-experiment ImmuneMemory (bench/dm/_memory.py, appendix §1.5)
+    # has TWO separable jobs, and they are separately switched — see below.
+    #
+    # RECORDING. The run's per-flaw-class confirmed/rejected tallies are written
+    # to the memory at run end. This is what `immune_memory_enabled` has meant
+    # since 2026-07-28, and it is true in eleven shipped configs.
     immune_memory_enabled: bool = False
+    # CONSUMPTION. The memory's blended prior SEEDS R_k(0) — the appendix §1.1
+    # initial condition R_k(0) = π_k — per finding flaw class.
+    #
+    # This is deliberately a SEPARATE switch, defaulting off, and the separation
+    # is load-bearing rather than tidiness. Consumption first shipped gated on
+    # `immune_memory_enabled`, which is already true in all four factorial cells,
+    # the zero-plant control, and the physics and biology exams — none of which
+    # was written with any intention of consuming a prior. Two consequences, both
+    # silent:
+    #   * The memory ACCUMULATES between runs, so cell D's starting estimate
+    #     would depend on cells A-C having already run. The 2x2 factorial's
+    #     entire design rests on its four cells being independent; coupling them
+    #     makes the comparison it exists to draw worthless, and the run would
+    #     complete and produce numbers regardless.
+    #   * The zero-plant control would stop being a control, its starting
+    #     estimate shaped by memory accumulated over three earlier experiments —
+    #     an uncontrolled variable inside the one instrument built to have none.
+    # Recording is harmless everywhere and stays on. Consuming is a measurement
+    # decision and must be made per experiment, deliberately, never inherited.
+    immune_memory_consume_rk0: bool = False
     immune_memory_path: str = "bench/state/immune_memory.json"
+    # ρ (rho) — appendix §1.5 memory blending weight in π(k) = (1-ρ)·π_base +
+    # ρ·π_mem(k). 0.0 = ignore memory entirely (blended prior collapses to
+    # π_base, i.e. byte-identical to consumption-off). Default 0.2 matches
+    # the appendix default and DMConfig.rho_memory.
+    immune_memory_rho: float = 0.2
+    # PANEL WORKING DIRECTORY (2026-07-29, after a confirmed key access in Exp 48).
+    # The shell-bearing routes otherwise inherit the runner's cwd — this repo —
+    # which for an exam run hands the panel a tree that names the scoring key's
+    # location and holds superseded keys in git history. Exam configs point this
+    # at the staged target directory, which contains modules and nothing else.
+    # Empty = inherited (the code-experiment default, byte-identical).
+    panel_cwd: str = ""
     # Static-queue closure (2026-06-09): the automated loop may converge while handing a
     # SMALL queue of ladder-exhausted irreducible criticals to the human. A queue larger
     # than this is treated as a mechanical-failure ALARM (routing/dedup), not genuine
@@ -475,6 +723,16 @@ class RunnerConfig:
     sk_enabled: bool = False
     test_cmd: Optional[str] = None
     sk_s_floor: float = 0.0  # domain-specific minimum S*
+
+    # TARGET TYPE — a DECLARATION OF INTENT ONLY (A1, 2026-08-01).
+    # "" (the default) means "do not declare". Any other value must equal what
+    # ``detect_target_kind`` reads off the actual path and bytes, or the harness
+    # raises TargetKindMismatch and refuses to start. The harness NEVER takes
+    # this field as the answer: enforcement lives in ``resolve_target_kind`` and
+    # in ``compute_sk``, which classify from the target itself. This is
+    # deliberate — the launcher has silently dropped config keys six times, so a
+    # safety property whose enforcement depends on a config flag is not enforced.
+    target_kind: str = ""
 
     # Burst decomposition: "auto" (decide based on fingerprints),
     # "on" (always decompose), "off" (monolithic)
@@ -490,12 +748,48 @@ class RunnerConfig:
     # test-discover-analyse-fix-fold cycle between the operator and CC.
     hil_review: bool = False
 
-    # Feedback channel (cdsfl_operational.md §17, 15 April 2026).
-    # Defaults True — the whole point of CDSFL is corrective feedback, not
-    # measurement for its own sake. Set False for controlled ablation only.
+    # ── Experimental factor switches (Exp 52 2x2 factorial, 2026-07-29) ──
+    #
+    # Two mechanisms, each with TWO halves: a directive-text half (the
+    # section of cdsfl_operational.md that tells the model the mechanism
+    # exists) and a runner-pass half (the code that acts on it). A factor
+    # that is half-present measures nothing coherent, so ONE knob per factor
+    # governs BOTH halves.
+    #
+    # WHAT "OFF" MEANS — the load-bearing judgement.
+    # The factorial asks whether the mechanism AS DEPLOYED causes the recall
+    # improvement. "As deployed" is directive text plus runner pass together;
+    # that pair is the treatment. So the default reading of `False` is THE
+    # MECHANISM ABSENT ENTIRELY: the model receives no directive section for
+    # it, and the runner performs no pass for it — the cell is what CDSFL
+    # would be if the mechanism had never been built. The alternative
+    # readings (suppress only the prompt-level mandate, or only the
+    # machinery) answer narrower questions and are reachable through
+    # *_off_mode, but they are NOT the factorial's default.
+    #
+    #   off_mode = "absent"    (DEFAULT) no directive section, no runner pass
+    #   off_mode = "text_only" no directive section, runner pass still runs
+    #                          — "does the prompt-level mandate matter, given
+    #                            the machinery runs anyway?"
+    #   off_mode = "pass_only" directive section retained, no runner pass
+    #                          — "does the machinery matter, given the model
+    #                            was told the mechanism exists?"
+    #
+    # off_mode is INERT while the corresponding *_enabled is True.
+    #
+    # §17 feedback channel. Defaults True — the whole point of CDSFL is
+    # corrective feedback, not measurement for its own sake.
     feedback_channel_enabled: bool = True
+    feedback_off_mode: str = "absent"
     feedback_top_k: int = 10
     feedback_max_chars_per_model: int = 8000
+
+    # §18 divergence directive. Defaults True — CDSFL's invention-engine arm.
+    # Before 2026-07-29 there was no switch at all: the runner hard-coded
+    # DivergenceConfig(enabled=True) and the §18 text shipped unconditionally,
+    # so the factorial's divergence-off cells were unrunnable.
+    divergence_channel_enabled: bool = True
+    divergence_off_mode: str = "absent"
 
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
@@ -504,6 +798,16 @@ class RunnerConfig:
         # Bug 5 fix: removed silent override of rho_earliest_round.
         # These parameters serve different purposes and must be
         # independently configurable.
+        # Fail loud on a mistyped off_mode: silently falling back to a
+        # default would make an ablation cell measure something other than
+        # what its config declares.
+        for _fname in ("feedback_off_mode", "divergence_off_mode"):
+            _val = getattr(self, _fname)
+            if _val not in DIRECTIVE_OFF_MODES:
+                raise ValueError(
+                    f"{_fname}={_val!r} is not a valid off-mode; "
+                    f"expected one of {sorted(DIRECTIVE_OFF_MODES)}"
+                )
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "RunnerConfig":
@@ -535,8 +839,165 @@ class RunnerConfig:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# TARGET TYPE — the harness decides, the config only declares (A1, 2026-08-01)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# WHY THIS EXISTS. Every mechanism in this runner that treats the target as
+# compilable Python was written when every target WAS a Python module. Targets
+# are now prose documents carrying claims plus fenced Python listings, and each
+# of those mechanisms fails on prose SILENTLY — the S_k hard gates rejected 100%
+# of fixes on the 2026-08-01 control, ruff error-recovered over markdown and
+# reported ~2752 phantom diagnostics as a baseline, and bandit could not parse
+# the file at all so it reported "0 HIGH / 0 MEDIUM" forever at the heaviest
+# weight. Measured end to end, a fix injecting
+# ``subprocess.call("rm -rf ...", shell=True)`` into a fenced listing scored
+# sk=1.0000 ADMISSIBLE while a correct prose fix scored 0.6667: the ranking was
+# inverted and nothing was ever rejected.
+#
+# WHY IT IS NOT A CONFIG FLAG. The launcher has silently dropped config keys six
+# times (routing, max_contested_rounds, feedback_channel_enabled, the gamma/stall
+# trio, and twenty latent fields found by sweep on 2026-08-01). A safety property
+# whose enforcement depends on a key surviving two ingestion paths is not
+# enforced. The config MAY declare `target_kind`; the harness reads the actual
+# path and the actual bytes and DECIDES, and a declaration that disagrees with
+# what is on disk is an error that stops the run.
+
+TARGET_KIND_PYTHON = "python_module"
+TARGET_KIND_PROSE = "prose"
+TARGET_KINDS = (TARGET_KIND_PYTHON, TARGET_KIND_PROSE)
+
+# Suffixes that name a Python module, and suffixes that name a prose document.
+# Anything else is decided on content alone.
+_PY_SUFFIXES = frozenset({".py", ".pyi"})
+_PROSE_SUFFIXES = frozenset({
+    ".md", ".markdown", ".mdown", ".mkd", ".rst", ".txt", ".text", ".org",
+})
+# A fenced block opener at the start of a line. Markdown's most reliable
+# machine-detectable marker, and the one that matters here because a fenced
+# Python listing inside prose is exactly what makes prose look scoreable.
+_FENCE_OPEN_RE = re.compile(r"^[ \t]*(?:```|~~~)", re.M)
+
+
+class TargetKindMismatch(RuntimeError):
+    """The config declared one target kind and the target on disk is another.
+
+    Raised, never logged-and-continued. A mismatch means the person who wrote
+    the config believes the run is doing something other than what it is about
+    to do, and every prose-versus-code mechanism in the runner branches on the
+    answer. There is no safe default for "the two disagree".
+    """
+
+
+def _parses_as_python(text: str) -> bool:
+    """True iff the whole text is syntactically valid Python."""
+    try:
+        ast.parse(text)
+    except (SyntaxError, ValueError, MemoryError, RecursionError):
+        return False
+    return True
+
+
+def detect_target_kind(
+    path: str, text: Optional[str] = None,
+) -> Tuple[str, str]:
+    """Classify a target from its PATH and its CONTENT. Returns (kind, reason).
+
+    The rule is deliberately ASYMMETRIC, and the asymmetry is the whole safety
+    argument. Misreading prose as a Python module is the failure that inverted
+    the fix ranking and admitted a shell-injection fix at sk=1.0. Misreading a
+    Python module as prose only forgoes S_k scoring on that run — degraded, and
+    loudly so, but not dangerous. So every ambiguous case resolves to `prose`.
+
+    Concretely:
+
+    * A ``.py`` / ``.pyi`` suffix means `python_module` — UNLESS the bytes
+      refuse to parse as Python *and* carry fenced blocks, which is a prose
+      document wearing a code extension.
+    * A prose suffix (``.md``, ``.txt``, ``.rst``, …) means `prose`,
+      unconditionally. A markdown file that happens to parse as Python (a short
+      one easily can — ``Hello`` is a valid expression statement) is still
+      prose, because its *fences* are what the panel and the gates will meet.
+    * No recognised suffix: the content decides, and only content that parses
+      as Python AND carries no fences AND is non-empty earns `python_module`.
+    * No content supplied and no recognised suffix: `prose`, the safe side.
+
+    `text` is optional so that a caller holding only a path can still classify;
+    passing the bytes is strictly better and every in-runner caller does.
+    """
+    suffix = Path(path).suffix.lower() if path else ""
+    has_fence = bool(text is not None and _FENCE_OPEN_RE.search(text))
+
+    if suffix in _PY_SUFFIXES:
+        if text is not None and has_fence and not _parses_as_python(text):
+            return TARGET_KIND_PROSE, (
+                f"suffix {suffix} claims Python, but the content does not parse "
+                f"as Python and carries fenced blocks — a prose document under a "
+                f"code extension")
+        return TARGET_KIND_PYTHON, f"suffix {suffix}"
+
+    if suffix in _PROSE_SUFFIXES:
+        return TARGET_KIND_PROSE, f"suffix {suffix}"
+
+    if text is None:
+        return TARGET_KIND_PROSE, (
+            f"unrecognised suffix {suffix or '(none)'} and no content available "
+            f"— classified prose, the side that disables scoring")
+    if not text.strip():
+        return TARGET_KIND_PROSE, "empty target"
+    if has_fence:
+        return TARGET_KIND_PROSE, (
+            f"unrecognised suffix {suffix or '(none)'}; content carries fenced "
+            f"blocks")
+    if _parses_as_python(text):
+        return TARGET_KIND_PYTHON, (
+            f"unrecognised suffix {suffix or '(none)'}; content parses as Python "
+            f"with no fenced blocks")
+    return TARGET_KIND_PROSE, (
+        f"unrecognised suffix {suffix or '(none)'}; content does not parse as "
+        f"Python")
+
+
+def resolve_target_kind(
+    path: str, text: Optional[str] = None, declared: Optional[str] = None,
+) -> Tuple[str, str]:
+    """Detect the target kind and check any declaration against it.
+
+    Returns (kind, reason). Raises :class:`TargetKindMismatch` when `declared`
+    is a value this module does not know, or when it names a kind other than
+    the one detected. The detected kind is what is returned in every case that
+    returns at all — a declaration can veto a run, never redirect it.
+    """
+    kind, reason = detect_target_kind(path, text)
+    if declared in (None, ""):
+        return kind, reason
+    if declared not in TARGET_KINDS:
+        raise TargetKindMismatch(
+            f"config declares target_kind={declared!r}, which is not one of "
+            f"{list(TARGET_KINDS)}. The harness classifies "
+            f"{path!r} as {kind} ({reason})."
+        )
+    if declared != kind:
+        raise TargetKindMismatch(
+            f"REFUSING TO START: config declares target_kind={declared!r} but "
+            f"the harness classifies {path!r} as {kind!r} ({reason}). The "
+            f"harness decides; a declaration exists only so that a disagreement "
+            f"is loud. Fix the config or the target, not this check."
+        )
+    return kind, reason
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # S_k Solution Verification — Data Structures
 # ─────────────────────────────────────────────────────────────────────────────
+
+# S_k outcome values. NO_SCORE is NOT a third grade of admissibility — it is the
+# statement that S_k has no opinion, because the target is not the substrate S_k
+# was defined over. Kept distinct from ADMISSIBLE (a scored pass), REJECTED (a
+# scored fail) and ESCALATE (scoreable, but the evidence gates went silent).
+SK_ADMISSIBLE = "ADMISSIBLE"
+SK_REJECTED = "REJECTED"
+SK_ESCALATE = "ESCALATE"
+SK_NO_SCORE = "NO_SCORE"
 
 
 @dataclass
@@ -553,7 +1014,13 @@ class SkResult:
     sk: float
     A: float  # product of hard gates (binary admissibility)
     E: float  # weighted effect evidence aggregate
-    tristate: str  # ADMISSIBLE, REJECTED, ESCALATE
+    # ADMISSIBLE | REJECTED | ESCALATE | NO_SCORE.
+    # Historically three values, hence the name. NO_SCORE (2026-08-01) is the
+    # fourth and is not a grade: it means S_k did not run because the target is
+    # not Python. Readers that branch on this field MUST handle it explicitly —
+    # folding it into REJECTED slanders a fix that was never assessed, and
+    # folding it into ADMISSIBLE admits one.
+    tristate: str
     gate_details: Dict[str, Any] = field(default_factory=dict)
     blocks_parsed: int = 0
     blocks_applied: int = 0
@@ -575,6 +1042,10 @@ class FindingRegistry:
         self.entries: Dict[str, Dict[str, Any]] = {}
         self._next_id = 1
         self._alias_map: Dict[str, str] = {}
+        # Set once per run by the runner (see `registry.target_kind = ...`).
+        # Defaults to Python so an un-updated caller gets the historical prompt
+        # rather than a wrong one. Read only by build_summary.
+        self.target_kind: str = TARGET_KIND_PYTHON
 
     def register(self, finding: Finding, model_id: str) -> str:
         canonical_id = f"C{self._next_id:04d}"
@@ -815,11 +1286,31 @@ class FindingRegistry:
             "  CLOSED -> REOPENED (only with new evidence via REOPEN verdict)",
             "  DUPLICATE -> MERGED into the canonical entry",
             "",
-            "When a CONFIRMED finding carries a parseable proposed_fix in",
-            "SEARCH/REPLACE format, the runner applies it to a sandbox copy",
-            "of the target file and runs ruff + mypy + bandit + the",
-            "experiment's test suite. On clean pass, the finding transitions",
-            "to CLOSED and is removed from the active discovery pool.",
+            # This paragraph is what the panel is told about how a finding
+            # settles, every model, every round. It described ruff + mypy +
+            # bandit + pytest unconditionally. On a prose target NONE of that
+            # runs — the tri-state repair of 2026-08-01 made a clean parse
+            # return NO_APPLICABLE_CHECKS, which does not close — so the panel
+            # was being briefed on a state machine that no longer exists and
+            # would reasonably conclude a proposed fix was the route to closure.
+            # It is not. On a prose target the route is a runnable falsifier.
+            *([
+                "This target is a PROSE DOCUMENT, not Python source. A proposed",
+                "fix is NOT tool-verified here: ruff/mypy/bandit/pytest have no",
+                "purchase on prose, so a fix alone cannot close a finding. A",
+                "finding settles when it carries a RUNNABLE FALSIFIER that the",
+                "runner re-runs itself and confirms — a test that opens this",
+                "document by path and asserts on its text, or on a value",
+                "recomputed from it, or on a listing extracted from it.",
+                "Propose fixes as usual; they are recorded for the human. But",
+                "the falsifier is what settles the finding.",
+            ] if self.target_kind == TARGET_KIND_PROSE else [
+                "When a CONFIRMED finding carries a parseable proposed_fix in",
+                "SEARCH/REPLACE format, the runner applies it to a sandbox copy",
+                "of the target file and runs ruff + mypy + bandit + the",
+                "experiment's test suite. On clean pass, the finding transitions",
+                "to CLOSED and is removed from the active discovery pool.",
+            ]),
             "Findings already CLOSED below: do not re-describe them.",
             "",
             f"Total: {len(self.entries)} canonical findings",
@@ -849,6 +1340,15 @@ class FindingRegistry:
                     lines.append(f"    Verdicts: {verdict_summary}")
                 if e.get("proposed_fix"):
                     lines.append(f"    Fix: {e['proposed_fix'][:100]}")
+                # A10 (panel-converged MUST list). The machinery rejected 50
+                # proposed fixes across 4 rounds of Exp 53 and told no model
+                # why — so every round the panel re-proposed into a gate it
+                # could not see. This is the founder's own design point: when
+                # the machinery declines something, the claim goes BACK to the
+                # panel rather than being quietly filed. A rejection the panel
+                # can read is a rejection it can answer.
+                for _line in _rejection_lines(e):
+                    lines.append(f"    {_line}")
             lines.append("")
         # Overflow active findings: compact one-line (lower severity)
         if full_detail_overflow:
@@ -1452,6 +1952,826 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                 registry.resolve(canonical_id, "CONFIRMED", round_idx)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DISCRIMINATION CONTROL — the false-CONFIRMED detector (founder ruling, 2026-08-08)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE PROBLEM. A falsifier can be valid, runnable code and still be LOGICALLY
+# WRONG — firing for a reason unconnected to the claim it purports to test. The
+# runner sees it fire, marks the finding CONFIRMED, and closes it AGAINST A CLAIM
+# THAT IS TRUE. C0012 is the archived instance: it fired because it read a file,
+# not because the chemistry was wrong. Nothing in `reverify_falsifier` can catch
+# this, and nothing should be asked to: the re-run is a faithful measurement of
+# "did this code fire", and it answers that question correctly. The unasked
+# question is "did it fire BECAUSE OF THE CLAIM".
+#
+# THE TEST. Run the SAME falsifier a second time against a CORRECTED copy of the
+# target — one in which the claim under test has been fixed. A sound falsifier
+# must now go QUIET. If it still fires, it is not testing that claim at all.
+#
+# WHERE THE CORRECTED COPY COMES FROM. It is ASKED FOR from the panel alongside
+# the falsifier, and read here from ``entry["corrected_copy"]``. It is NEVER
+# synthesised by applying the model's proposed fix: a fix with a bad indent or a
+# missing import makes the falsifier CRASH, the crash reads as "still fires", and
+# a genuine defect is silently un-confirmed. Two independent reviews killed that
+# route on 2026-08-04 and the reasoning is recorded here so it is not re-invented.
+#
+# THE THIRD OUTCOME IS THE ONE THAT MATTERS. "Fires on the corrected copy" is not
+# merely a veto of one finding — it is diagnostic output about the INSTRUMENT, in
+# the founder's framing, verbatim: "Machinery that highlights an established
+# truth as a fault, is something that may indeed warrant our attention." It is
+# recorded as a MECHANICAL FAULT and surfaced as such. "Errors on the corrected
+# copy" is a different thing entirely and renders differently: an error is not
+# evidence, so nothing is concluded and nothing is vetoed. "Fires on both" and
+# "crashed" must never render identically — that distinction is this project's
+# single most repeated lesson.
+#
+# WHY THE APPARATUS PROVES ITSELF BEFORE IT REPORTS. Every step below can fail in
+# the house style — rendering a failure as a confident success. A falsifier that
+# never reads the target through the overlay would run against the ORIGINAL file
+# on both passes, fire twice, and mint a FALSE mechanical fault against a sound
+# instrument. So the control does not trust the overlay; it MEASURES that the
+# overlay is load-bearing (the tripwire probe) and that the falsifier is
+# deterministic (the repeat probe) and that the falsifier still reproduces its
+# CONFIRMED verdict under the control's own apparatus (the baseline check).
+# Any of those failing yields a distinct INDETERMINATE_* outcome and NO verdict.
+#
+# COST AND GATING. The control is PRESENCE-GATED: it runs if and only if the
+# entry carries a corrected copy. There is no config flag, deliberately — a new
+# key in RunnerConfig.from_dict is the exact shape of a defect this project has
+# now shipped three times (routing 2026-07-12, max_contested 2026-07-27, the
+# factorial's primary factor 2026-07-29), where the runner honours a key the
+# launcher silently drops. Nothing supplies a corrected copy today, so this is a
+# strict no-op on every existing config and every archived run.
+
+DISC_TRIPWIRE_TOKEN = "CDSFL_DISCRIMINATION_TRIPWIRE"
+DISC_TRIPWIRE_BODY = (
+    "# " + DISC_TRIPWIRE_TOKEN + "\n"
+    'raise ImportError("' + DISC_TRIPWIRE_TOKEN + ': overlay reached")\n'
+)
+
+# Outcomes. These strings are deliberately NOT collapsible into a boolean: the
+# whole point is that "fired on both" and "crashed" are different findings about
+# different things, and a reader that folds them together has thrown away the
+# distinction the control exists to draw.
+DISC_PASSED = "DISCRIMINATES"                  # quiet on the corrected copy
+DISC_FAILED = "NO_DISCRIMINATION"              # fired on the corrected copy
+DISC_ERROR = "INDETERMINATE_ERROR"             # crashed on the corrected copy
+DISC_NOT_INTERCEPTED = "INDETERMINATE_NOT_INTERCEPTED"   # never read the target
+DISC_NONDETERMINISTIC = "INDETERMINATE_NONDETERMINISTIC"  # unstable output
+DISC_BASELINE = "INDETERMINATE_BASELINE"       # apparatus not faithful
+DISC_COPY_UNCHANGED = "INDETERMINATE_COPY_UNCHANGED"  # nothing was corrected
+DISC_ABSENT = "NO_CONTROL"                     # no corrected copy was supplied
+
+DISC_INDETERMINATE = frozenset({
+    DISC_ERROR, DISC_NOT_INTERCEPTED, DISC_NONDETERMINISTIC, DISC_BASELINE,
+    DISC_COPY_UNCHANGED,
+})
+
+
+def _disc_sha(text: str) -> str:
+    import hashlib as _hashlib
+    return _hashlib.sha256((text or "").encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str) -> None:
+    """Mirror one directory as symlinks, omitting `skip`.
+
+    Symlinks, not copies: the repo is large and the control runs per finding.
+    The links are absolute, so they resolve identically from the sandbox's
+    throwaway cwd. `shutil.rmtree` does not follow symlinks when deleting, so
+    tearing an overlay down cannot reach the real tree.
+    """
+    over_dir.mkdir(parents=True, exist_ok=True)
+    for child in real_dir.iterdir():
+        if child.name == skip:
+            continue
+        link = over_dir / child.name
+        if link.exists() or link.is_symlink():  # pragma: no cover — defensive
+            continue
+        os.symlink(child, link)
+
+
+def _build_discrimination_overlay(repo_root: Path, target_rel: str,
+                                  content: str) -> Path:
+    """A throwaway repo root identical to `repo_root` except for ONE file.
+
+    Returns the overlay root; the caller owns it and must rmtree it. Raises
+    rather than degrading: an overlay that silently failed to replace the target
+    would make every downstream verdict wrong in the confident direction.
+    """
+    rel = (target_rel or "").strip()
+    if not rel:
+        raise ValueError("discrimination control: no target path")
+    if os.path.isabs(rel):
+        raise ValueError(f"discrimination control: target must be repo-relative, got {rel!r}")
+    parts = Path(rel).parts
+    if not parts or ".." in parts:
+        raise ValueError(f"discrimination control: unusable target path {rel!r}")
+    real_target = repo_root / rel
+    if not real_target.is_file():
+        raise FileNotFoundError(f"discrimination control: target not found: {real_target}")
+    root = Path(tempfile.mkdtemp(prefix="cdsfl_disc_"))
+    real_dir, over_dir = repo_root, root
+    for comp in parts[:-1]:
+        _discrimination_mirror_except(real_dir, over_dir, comp)
+        real_dir = real_dir / comp
+        over_dir = over_dir / comp
+    _discrimination_mirror_except(real_dir, over_dir, parts[-1])
+    leaf = over_dir / parts[-1]
+    leaf.write_text(content, encoding="utf-8")
+    if leaf.is_symlink() or leaf.read_text(encoding="utf-8") != content:  # pragma: no cover
+        raise RuntimeError("discrimination control: overlay leaf did not take")
+    return root
+
+
+def _retarget_falsifier(code: str, repo_root: Path, overlay_root: Path) -> Tuple[str, int]:
+    """Point a falsifier's absolute repo references at the overlay.
+
+    A prose falsifier reaches its target by absolute path
+    (``open('/…/Constraint_Engineering/bench/…/SW-21-REF-04.md')``), which
+    PYTHONPATH cannot redirect. Substituting the repo root is a literal
+    string swap between two absolute directory paths — it cannot change the
+    falsifier's syntax or logic. It is never trusted on its own: whether the
+    substitution was load-bearing is MEASURED by the tripwire probe, so a swap
+    that missed produces INDETERMINATE_NOT_INTERCEPTED, not a verdict.
+    """
+    real = str(repo_root)
+    n = (code or "").count(real)
+    if not n:
+        return code or "", 0
+    return (code or "").replace(real, str(overlay_root)), n
+
+
+def _normalise_probe_output(text: str, roots) -> str:
+    """Strip run-to-run noise so two probe outputs are comparable.
+
+    Overlay roots and sandbox temp paths differ by construction on every run;
+    leaving them in would make every comparison report "different" and every
+    falsifier look intercepted.
+    """
+    out = text or ""
+    for r in roots:
+        out = out.replace(str(r), "<ROOT>")
+    out = re.sub(r"/[^\s'\"]*cdsfl_(?:falsifier|reverify|disc)[^\s'\"]*", "<TMP>", out)
+    out = re.sub(r"0x[0-9a-fA-F]+", "<ADDR>", out)
+    return re.sub(r"\s+", " ", out).strip()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CORRECTED-COPY INGEST — the supply side of the control (wired 2026-08-12)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# UNTIL NOW `entry["corrected_copy"]` HAD NO WRITER ANYWHERE OUTSIDE TESTS. The
+# control above is presence-gated on that field, so it was inert in production
+# and had never fired on a real run. The apparatus was built and never connected.
+#
+# THE CONVENTION IS THE FALSIFIER'S CONVENTION. A model already answers a
+# labelled `FALSIFIER: <id>` + payload form in the round directive, the routing
+# prompt and the sweep prompt. The corrected copy uses the same shape —
+# `CORRECTED_COPY: <id>` + payload — so a model faces ONE convention, not two.
+# The payload is sentinel-delimited rather than fence-delimited for the reason
+# recorded in `_sweep_prompt`: a markdown target carries its own ``` fences, so
+# a fence cannot delimit a passage taken out of one.
+#
+# WHAT IS ASKED FOR, AND WHAT IS NEVER READ. The model supplies the PASSAGE as
+# it stands and the SAME PASSAGE with the claim corrected. The runner locates
+# the first inside the target and substitutes the second. The model's
+# `proposed_fix` / FIX SEARCH-REPLACE block is NEVER a source here, and nothing
+# below reads it: two reviews killed that route on 2026-08-04 because a fix with
+# a bad indent or a missing import makes the falsifier CRASH, and a crash that
+# read as "still fires" would silently un-confirm a genuine defect.
+#
+# WHY AN ANCHORED PASSAGE RATHER THAN A PASTED WHOLE DOCUMENT. The field is
+# consumed as the ENTIRE content of the target (`_build_discrimination_overlay`
+# writes it as the file). A pasted whole document is therefore one truncation
+# away from a corrected copy that is missing most of the target — and a
+# falsifier reading a mostly-absent document goes quiet, which renders as
+# DISCRIMINATES. That is this project's house failure mode exactly: a failure
+# arriving as a confident success. A splice CANNOT truncate: everything outside
+# the anchor is the target's own bytes, unread and unretyped. The whole-document
+# form is not lost, it is subsumed — a model may anchor on the whole document,
+# which occurs exactly once in itself.
+#
+# EVERY REFUSAL IS LOUD. A copy that cannot be located, that is ambiguous, that
+# changes nothing, or that does not parse, is REFUSED with a named reason: it is
+# logged, stamped on the finding, and rendered back to the panel so the next
+# attempt can be correct. It is never silently dropped and never half-stored.
+
+_CORRECTED_ORIGINAL_SENTINEL = "<<<CDSFL_ORIGINAL>>>"
+_CORRECTED_CORRECTED_SENTINEL = "<<<CDSFL_CORRECTED>>>"
+_CORRECTED_END_SENTINEL = "<<<CDSFL_END>>>"
+
+# Shortest anchor accepted. A two-character anchor that happens to occur once
+# today is an accident waiting for the next round's rewrite; requiring a real
+# passage makes the "occurs exactly once" check mean what it says.
+_CORRECTED_ANCHOR_MIN = 12
+
+_CORRECTED_COPY_RE = re.compile(
+    r"CORRECTED_COPY\s*:\s*[`*\"' ]*(?P<key>[A-Za-z0-9_.\-]{1,40})[`*\"' ]*[^\S\n]*\n"
+    r"[^\S\n]*" + re.escape(_CORRECTED_ORIGINAL_SENTINEL) + r"[^\S\n]*\n"
+    r"(?P<original>.*?)\n"
+    r"[^\S\n]*" + re.escape(_CORRECTED_CORRECTED_SENTINEL) + r"[^\S\n]*\n"
+    r"(?P<corrected>.*?)\n"
+    r"[^\S\n]*" + re.escape(_CORRECTED_END_SENTINEL),
+    re.S,
+)
+
+
+def _corrected_copy_instructions(indent: str = "") -> str:
+    """The literal response form, rendered identically in every prompt.
+
+    One string, three call sites (round directive, routing, sweep), so the
+    convention cannot drift apart between them — which is how the sweep prompt
+    and the routing prompt came to disagree about prose targets on 2026-08-01.
+    """
+    i = indent
+    return (
+        f"{i}CORRECTED_COPY: <the same id>\n"
+        f"{i}{_CORRECTED_ORIGINAL_SENTINEL}\n"
+        f"{i}<the passage EXACTLY as it stands in the target now, copied "
+        f"character for character, long enough to occur only once>\n"
+        f"{i}{_CORRECTED_CORRECTED_SENTINEL}\n"
+        f"{i}<the same passage with THIS claim, and only this claim, corrected>\n"
+        f"{i}{_CORRECTED_END_SENTINEL}"
+    )
+
+
+_CORRECTED_COPY_WHY = (
+    "A falsifier that fires has proved that it fired -- not that it fired "
+    "BECAUSE OF YOUR CLAIM. So with every falsifier, supply the corrected "
+    "passage: the runner splices it into its own copy of the target and re-runs "
+    "YOUR falsifier against it, and a sound falsifier goes QUIET. Send the "
+    "corrected TEXT ITSELF, not a patch, not a diff, and not your FIX block. Do "
+    "not indent or re-wrap the original passage -- it is located by exact match, "
+    "and if it cannot be found, or occurs more than once, the corrected copy is "
+    "refused and you are told so."
+)
+
+
+def _extract_corrected_copies(text: str) -> Dict[str, Tuple[str, str]]:
+    """Pull every labelled corrected passage out of one model reply.
+
+    Returns ``{key: (original, corrected)}`` with the key AS THE MODEL WROTE IT
+    — a canonical id (``C0007``) or its own finding id (``F002``). Case is
+    preserved because the alias map is case-sensitive; duplicates are collapsed
+    case-insensitively so ``c0007`` and ``C0007`` cannot both be offered.
+    Resolving a key to a canonical id is the caller's job, because only the
+    caller knows which model is speaking. First label wins, mirroring
+    ``extract_falsifiers``. Pure text: nothing is executed and nothing is stored.
+    """
+    out: Dict[str, Tuple[str, str]] = {}
+    if not text or "CORRECTED_COPY" not in text:
+        return out
+    seen = set()
+    for m in _CORRECTED_COPY_RE.finditer(text):
+        key = (m.group("key") or "").strip()
+        if key and key.lower() not in seen:
+            seen.add(key.lower())
+            out[key] = (m.group("original"), m.group("corrected"))
+    return out
+
+
+def _resolve_finding_key(registry, model_id: str, key: str) -> str:
+    """Map whatever id a model wrote onto a canonical id, or return "".
+
+    Models label with the canonical id the registry summary shows them
+    (``C0007``), with their own stable finding id (``F002``), or with the
+    prefixed form the parser records (``codex_F002``). All three resolve here;
+    an id that resolves to nothing is reported, never guessed at.
+    """
+    k = (key or "").strip()
+    if not k:
+        return ""
+    if k.upper() in registry.entries:
+        return k.upper()
+    for cand in (k, k.upper(), k.lower(),
+                 f"{model_id}_{k}", f"{model_id.lower()}_{k}"):
+        cid = registry.lookup_alias(model_id, cand)
+        if cid:
+            return cid
+    return ""
+
+
+def _splice_corrected_copy(
+    target_text: str, original: str, corrected: str, target_rel: str = "",
+) -> Tuple[str, str]:
+    """Build the full corrected copy, or refuse and say why.
+
+    Returns ``(copy, reason)``. ``copy`` is ``""`` if and only if the passage was
+    REFUSED, and ``reason`` is then a sentence naming the refusal. On acceptance
+    ``reason`` describes what was spliced. There is no third state and no silent
+    partial acceptance: the caller stores the field only on a non-empty copy.
+    """
+    if not (target_text or "").strip():
+        return "", ("the target could not be read, so the passage could not be "
+                    "located in it")
+    if len((original or "").strip()) < _CORRECTED_ANCHOR_MIN:
+        return "", (f"the original passage is shorter than "
+                    f"{_CORRECTED_ANCHOR_MIN} characters, which is too short to "
+                    f"locate reliably; quote a whole line or more")
+    if original == corrected:
+        return "", ("the original and corrected passages are identical, so "
+                    "nothing was corrected and the control would decide nothing")
+    n = target_text.count(original)
+    if n == 0:
+        return "", ("the original passage does not occur in the target "
+                    "verbatim, so it could not be located; copy it character "
+                    "for character, without re-indenting or re-wrapping it")
+    if n > 1:
+        return "", (f"the original passage occurs {n} times in the target, so "
+                    f"the runner cannot tell which one this claim is about; "
+                    f"quote more surrounding text so it is unique")
+    copy = target_text.replace(original, corrected, 1)
+    if copy == target_text:  # pragma: no cover — excluded by original != corrected
+        return "", ("splicing the corrected passage changed nothing in the "
+                    "target")
+    if str(target_rel or "").lower().endswith(".py"):
+        # THE FAILURE MODE THIS CLOSES is the one that killed the synthesise-
+        # from-the-fix route: a bad indent makes the falsifier crash rather than
+        # go quiet. A copy that does not parse is refused HERE, before it can be
+        # measured, instead of being read as evidence about the falsifier.
+        import ast as _ast
+        try:
+            _ast.parse(copy)
+        except SyntaxError as exc:
+            return "", (f"the corrected copy does not parse as Python "
+                        f"({type(exc).__name__}: {exc}); a copy that cannot be "
+                        f"imported tells the control nothing about the falsifier")
+    return copy, (f"corrected passage of {len(original)} chars spliced into "
+                  f"{target_rel or 'the target'} ({len(copy)} chars)")
+
+
+def _accept_corrected_copy(
+    entry: dict, original: str, corrected: str, target_text: str,
+    *, target_rel: str = "", by: str = "", cid: str = "",
+) -> bool:
+    """Verify one offered passage and store it, or refuse it loudly.
+
+    The ONLY writer of ``entry["corrected_copy"]`` in production. Returns True
+    if the field was written. A refusal writes ``corrected_copy_rejected`` and
+    logs; it never writes a partial copy, and it never clears a copy that an
+    earlier round accepted.
+    """
+    copy, reason = _splice_corrected_copy(
+        target_text, original, corrected, target_rel)
+    if not copy:
+        entry["corrected_copy_rejected"] = reason
+        _log(f"  corrected copy REFUSED {cid or '?'}"
+             f"{f' from {by}' if by else ''}: {reason}")
+        return False
+    entry["corrected_copy"] = copy
+    entry["corrected_copy_anchor"] = {"original": original, "corrected": corrected}
+    entry["corrected_copy_source"] = by
+    entry["corrected_copy_target_sha"] = _disc_sha(target_text)
+    entry.pop("corrected_copy_rejected", None)
+    return True
+
+
+def _refresh_stale_corrected_copies(
+    registry, target_text: str, *, target_rel: str = "",
+) -> Dict[str, int]:
+    """Re-splice, or drop, a corrected copy taken against an older target.
+
+    `apply_fixes_back_enabled` rewrites the reviewed target between rounds. A
+    corrected copy spliced from the PREVIOUS revision is then a document that no
+    longer exists, and running the control against it would measure the rewrite
+    rather than the claim — while reporting a verdict about the claim. So a copy
+    whose recorded target hash no longer matches is re-spliced from its stored
+    anchor, and DROPPED with a log line if the anchor no longer locates.
+    """
+    stats = {"resplit": 0, "dropped": 0}
+    if not (target_text or "").strip():
+        # A transient read failure is not evidence that a stored copy is stale.
+        # Dropping every copy on an unreadable target would be a failure
+        # rendering as housekeeping.
+        return stats
+    sha = _disc_sha(target_text)
+    for cid, e in registry.entries.items():
+        if not (e.get("corrected_copy") or "").strip():
+            continue
+        if e.get("corrected_copy_target_sha") == sha:
+            continue
+        anchor = e.get("corrected_copy_anchor") or {}
+        copy, reason = _splice_corrected_copy(
+            target_text, anchor.get("original", ""), anchor.get("corrected", ""),
+            target_rel)
+        if copy:
+            e["corrected_copy"] = copy
+            e["corrected_copy_target_sha"] = sha
+            stats["resplit"] += 1
+            continue
+        e.pop("corrected_copy", None)
+        e.pop("corrected_copy_target_sha", None)
+        e["corrected_copy_rejected"] = (
+            f"the target changed after this corrected copy was supplied and it "
+            f"no longer applies: {reason}")
+        stats["dropped"] += 1
+        _log(f"  corrected copy DROPPED {cid}: the target was rewritten and the "
+             f"stored passage no longer applies — {reason}")
+    return stats
+
+
+def _corrected_copy_owner(entry: dict) -> str:
+    """The model whose INSTRUMENT is under control for this finding.
+
+    ADVERSARIAL-PASS REPAIR (2026-08-12). The round ingest originally accepted a
+    corrected copy from ANY model for ANY finding, keyed only on the canonical
+    id, with the last writer in dispatch-completion order silently overwriting an
+    already-verified copy. That is a live cross-model veto, reproduced end to end:
+    with SIM-A's honest passage the control returned DISCRIMINATES and the
+    finding stayed CONFIRMED; with SIM-B's cosmetic passage landing second in the
+    same round it returned NO_DISCRIMINATION and the finding was un-confirmed to
+    OPEN, `verified` False, `mechanical_fault` True — a model rejecting another
+    model's critical, which this project's rules forbid, and the log blamed the
+    instrument. `run_discrimination_control` names the mechanism in its own step
+    0: a copy that "corrects a DIFFERENT claim in the same file" is undetectable
+    from there and mints mechanical faults wholesale.
+
+    It was also NONDETERMINISTIC: `responses` is filled by `as_completed`, so
+    which model won the overwrite varied run to run.
+
+    The rule is the routing ladder's own rule, applied to the round path: the
+    copy and the falsifier it controls must describe the same instrument. The
+    owner is whoever wrote the falsifier now attached — the routing rung that
+    replaced it, else the model that reported the finding. An entry with no
+    recorded owner is not guessed at: anyone may supply, as before.
+    """
+    return str(entry.get("resolved_by_routing") or entry.get("source_model") or "")
+
+
+def _ingest_corrected_copies(
+    registry, responses: dict, round_idx: int, cfg=None,
+    repo_root: Optional[str] = None,
+) -> Dict[str, int]:
+    """Attach this round's corrected passages to their findings.
+
+    Called once per round, immediately before the falsifier gate, so a copy
+    offered in round K is available to the control in round K. Silent on a round
+    where no model offered one — which is every archived round, so this is a
+    strict no-op on the entire archive.
+    """
+    target_rel = (getattr(cfg, "test_article", "") or "") if cfg else ""
+    try:
+        target_text = (Path(repo_root or REPO_ROOT) / target_rel).read_text(
+            encoding="utf-8", errors="replace")
+    except (OSError, ValueError):
+        target_text = ""
+    stats = {"offered": 0, "accepted": 0, "refused": 0, "unmatched": 0}
+    for model_id, raw in (responses or {}).items():
+        offered = _extract_corrected_copies(raw or "")
+        for key, (original, corrected) in offered.items():
+            stats["offered"] += 1
+            cid = _resolve_finding_key(registry, model_id, key)
+            entry = registry.entries.get(cid) if cid else None
+            if entry is None:
+                stats["unmatched"] += 1
+                _log(f"  corrected copy UNMATCHED from {model_id}: no finding "
+                     f"answers to id {key!r}; label it with the canonical id "
+                     f"shown in the registry summary")
+                continue
+            owner = _corrected_copy_owner(entry)
+            if owner and str(model_id) != owner:
+                # Counted as a refusal rather than a new key so the census keeps
+                # one shape; the log line is distinct so it cannot be confused
+                # with a passage that failed to locate.
+                stats["refused"] += 1
+                if not (entry.get("corrected_copy") or "").strip():
+                    entry["corrected_copy_rejected"] = (
+                        f"a corrected copy for this finding was offered by "
+                        f"{model_id}, but the falsifier under control was written "
+                        f"by {owner}, and only {owner} may supply the passage that "
+                        f"decides whether it discriminates. {owner}: send it in "
+                        f"the CORRECTED_COPY form.")
+                _log(f"  corrected copy REFUSED {cid} from {model_id}: not the "
+                     f"owner of the falsifier under control ({owner}); a copy "
+                     f"that corrects a different claim mints a mechanical fault "
+                     f"against a sound instrument")
+                continue
+            if _accept_corrected_copy(
+                    entry, original, corrected, target_text,
+                    target_rel=target_rel, by=model_id, cid=cid):
+                stats["accepted"] += 1
+            else:
+                stats["refused"] += 1
+    stats.update(_refresh_stale_corrected_copies(
+        registry, target_text, target_rel=target_rel))
+    if stats["offered"] or stats.get("dropped"):
+        _log(f"  corrected copies: {stats['accepted']} accepted, "
+             f"{stats['refused']} refused, {stats['unmatched']} unmatched, "
+             f"{stats.get('resplit', 0)} re-spliced after a target rewrite, "
+             f"{stats.get('dropped', 0)} dropped")
+    return stats
+
+
+def run_discrimination_control(
+    entry: dict, *, repo_root: Optional[str] = None,
+    target_rel: str = "", timeout: Optional[int] = None,
+) -> dict:
+    """Re-run a CONFIRMED falsifier against a corrected copy of its target.
+
+    Pure with respect to the registry — it mutates nothing and decides nothing.
+    It returns a record; the caller applies it. Returned keys:
+
+      outcome              one of the DISC_* constants above
+      detail               one sentence a human can act on
+      baseline_verdict     the falsifier's verdict under the control's own
+                           apparatus with the target UNCHANGED (must be
+                           CONFIRMED, else the apparatus is not faithful here)
+      corrected_verdict    the falsifier's verdict against the corrected copy
+      intercepted          True/False/None — did the falsifier actually read the
+                           target through the overlay
+      deterministic        True/False/None — did two identical runs agree
+      retarget_substitutions  how many absolute repo references were redirected
+      falsifier_sha / corrected_sha  identity of what was tested, so the caller
+                           can skip a repeat and a human can tell two runs apart
+    """
+    from bench.falsifier_verify import execute_python, reverify_falsifier
+
+    fcode = (entry.get("falsifier_code") or "").strip()
+    corrected = entry.get("corrected_copy") or ""
+    rec = {
+        "outcome": DISC_ABSENT,
+        "detail": "",
+        "target": target_rel,
+        "falsifier_sha": _disc_sha(fcode),
+        "corrected_sha": _disc_sha(corrected),
+        "baseline_verdict": "",
+        "corrected_verdict": "",
+        "intercepted": None,
+        "deterministic": None,
+        "retarget_substitutions": 0,
+    }
+    if not fcode:
+        rec["detail"] = "no falsifier to control"
+        return rec
+    if not corrected.strip():
+        rec["detail"] = (
+            "no corrected copy was supplied with this falsifier, so the control "
+            "did not run and the CONFIRMED verdict is unchecked for discrimination")
+        return rec
+
+    root = Path(repo_root or REPO_ROOT)
+    kwargs = {} if timeout is None else {"timeout": timeout}
+    overlays = []
+    try:
+        try:
+            real_text = (root / target_rel).read_text(encoding="utf-8", errors="replace")
+        except (OSError, ValueError) as exc:
+            rec["outcome"] = DISC_ERROR
+            rec["detail"] = (f"the target could not be read, so no control was "
+                             f"possible: {type(exc).__name__}: {exc}")
+            return rec
+
+        # 0. IS ANYTHING ACTUALLY CORRECTED? MEASURED 2026-08-08 on the archive:
+        #    with the "corrected" copy set to the target's own unchanged text,
+        #    12 of 12 archived CONFIRMED falsifiers were stamped
+        #    NO_DISCRIMINATION — every one of them a sound instrument. A panel
+        #    that echoes the target back, or corrects a DIFFERENT claim in the
+        #    same file, would therefore mint mechanical faults wholesale. Byte
+        #    equality is the one case that is decidable here and it is the most
+        #    likely lazy failure, so it is refused rather than scored. (A copy
+        #    that differs but fixes the wrong claim is NOT detectable from here
+        #    and remains a real limitation — see the note in the module docs.)
+        if corrected == real_text:
+            rec["outcome"] = DISC_COPY_UNCHANGED
+            rec["detail"] = (
+                "the supplied corrected copy is byte-identical to the target, so "
+                "nothing was corrected and a falsifier that fires on it has "
+                "demonstrated nothing. Nothing is concluded. Supply a copy in "
+                "which THIS claim is fixed.")
+            return rec
+
+        # 1. BASELINE. The same falsifier, the same content, run through the
+        #    control's own apparatus. If it does not reproduce the CONFIRMED
+        #    verdict here, the apparatus is not faithful for this falsifier and
+        #    every later comparison would be measuring the apparatus.
+        try:
+            real_overlay = _build_discrimination_overlay(root, target_rel, real_text)
+        except (OSError, ValueError, RuntimeError) as exc:
+            rec["outcome"] = DISC_ERROR
+            rec["detail"] = (f"the control apparatus could not be built: "
+                             f"{type(exc).__name__}: {exc}")
+            return rec
+        overlays.append(real_overlay)
+        real_code, nsub = _retarget_falsifier(fcode, root, real_overlay)
+        rec["retarget_substitutions"] = nsub
+        rec["baseline_verdict"] = reverify_falsifier(
+            real_code, repo_root=str(real_overlay), **kwargs)
+        if rec["baseline_verdict"] != "CONFIRMED":
+            rec["outcome"] = DISC_BASELINE
+            rec["detail"] = (
+                f"the falsifier does not reproduce its CONFIRMED verdict against "
+                f"an UNCHANGED copy of the target under the control's apparatus "
+                f"(got {rec['baseline_verdict']}). The apparatus is not faithful "
+                f"for this falsifier, so nothing is concluded about it.")
+            return rec
+
+        # 2. DETERMINISM. A comparison-based control is meaningless on a
+        #    falsifier whose output varies between identical runs.
+        probe_a = execute_python(real_code, repo_root=str(real_overlay), **kwargs)
+        probe_a2 = execute_python(real_code, repo_root=str(real_overlay), **kwargs)
+        norm_a = _normalise_probe_output(probe_a, (real_overlay, root))
+        rec["deterministic"] = (
+            norm_a == _normalise_probe_output(probe_a2, (real_overlay, root)))
+        if not rec["deterministic"]:
+            rec["outcome"] = DISC_NONDETERMINISTIC
+            rec["detail"] = (
+                "two identical runs of this falsifier produced different output, "
+                "so comparing its behaviour on two copies of the target decides "
+                "nothing. Nothing is concluded.")
+            return rec
+
+        # 3. INTERCEPTION. Replace the target with a file that cannot be read or
+        #    imported normally. If the falsifier's behaviour is UNCHANGED, it
+        #    never read the target through the overlay — so the corrected-copy
+        #    run would have exercised the ORIGINAL file, and "fires on both"
+        #    would be a false mechanical fault against a sound instrument.
+        try:
+            trip_overlay = _build_discrimination_overlay(
+                root, target_rel, DISC_TRIPWIRE_BODY)
+        except (OSError, ValueError, RuntimeError) as exc:  # pragma: no cover
+            rec["outcome"] = DISC_ERROR
+            rec["detail"] = (f"the interception probe could not be built: "
+                             f"{type(exc).__name__}: {exc}")
+            return rec
+        overlays.append(trip_overlay)
+        trip_code, _ = _retarget_falsifier(fcode, root, trip_overlay)
+        probe_b = execute_python(trip_code, repo_root=str(trip_overlay), **kwargs)
+        norm_b = _normalise_probe_output(probe_b, (trip_overlay, root))
+        rec["intercepted"] = (norm_b != norm_a)
+        if not rec["intercepted"]:
+            rec["outcome"] = DISC_NOT_INTERCEPTED
+            rec["detail"] = (
+                "this falsifier behaves identically when the target file is "
+                "replaced wholesale, so the control cannot reach the target it "
+                "reads and cannot test whether it discriminates. Nothing is "
+                "concluded — this is NOT a finding against the falsifier.")
+            return rec
+
+        # 4. THE CONTROL ITSELF.
+        try:
+            corr_overlay = _build_discrimination_overlay(root, target_rel, corrected)
+        except (OSError, ValueError, RuntimeError) as exc:  # pragma: no cover
+            rec["outcome"] = DISC_ERROR
+            rec["detail"] = (f"the corrected copy could not be staged: "
+                             f"{type(exc).__name__}: {exc}")
+            return rec
+        overlays.append(corr_overlay)
+        corr_code, _ = _retarget_falsifier(fcode, root, corr_overlay)
+        rec["corrected_verdict"] = reverify_falsifier(
+            corr_code, repo_root=str(corr_overlay), **kwargs)
+
+        if rec["corrected_verdict"] == "REFUTED":
+            rec["outcome"] = DISC_PASSED
+            rec["detail"] = (
+                "the falsifier went quiet against a corrected copy of the target, "
+                "so it does test the claim it is attached to.")
+        elif rec["corrected_verdict"] == "CONFIRMED":
+            rec["outcome"] = DISC_FAILED
+            rec["detail"] = (
+                "the falsifier fires just as hard against a CORRECTED copy of the "
+                "target, so it is not testing this claim at all. Machinery that "
+                "highlights an established truth as a fault, is something that "
+                "may indeed warrant our attention.")
+        else:
+            rec["outcome"] = DISC_ERROR
+            rec["detail"] = (
+                f"the falsifier did not run to a verdict against the corrected "
+                f"copy ({rec['corrected_verdict']}). An error is not evidence: "
+                f"nothing is concluded and nothing is vetoed.")
+        return rec
+    finally:
+        for ov in overlays:
+            shutil.rmtree(ov, ignore_errors=True)
+
+
+def _apply_discrimination_control(
+    cid: str, entry: dict, registry: FindingRegistry, round_idx: int,
+    *, cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
+    tally: Optional[dict] = None,
+) -> str:
+    """Run the control on a just-CONFIRMED finding and apply its record.
+
+    SAFETY. A veto ESCALATES, never deletes. CONFIRM-only is the most
+    load-bearing rule in this system and this is the first mechanism that can
+    un-confirm anything, so every branch fails toward the human:
+
+      * DISCRIMINATES     -> the CONFIRMED verdict stands, unchanged.
+      * NO_DISCRIMINATION -> the finding is NOT closed. It returns to the same
+                            state as any un-demonstrated critical (UNCONFIRMED +
+                            escalated), which is the state the routing ladder
+                            already absorbs — a stronger writer gets a chance to
+                            produce a falsifier that DOES discriminate. Nothing
+                            is deleted, no severity is touched, and the
+                            mechanical fault is recorded as instrument
+                            diagnostics in its own right.
+      * INDETERMINATE_*   -> the CONFIRMED verdict stands, unchanged, and the
+                            finding is flagged so a human sees that the control
+                            could not speak. An error is not evidence.
+
+    The record is preserved via `_record_computed_evidence` in ALL outcomes —
+    the same channel the 2026-08-03 ruling built, extended rather than
+    duplicated, so a human reading a finding sees one evidence trail.
+    """
+    fcode = (entry.get("falsifier_code") or "").strip()
+    corrected = entry.get("corrected_copy") or ""
+    if not corrected.strip():
+        if tally is not None:
+            tally["no_control"] = tally.get("no_control", 0) + 1
+        return DISC_ABSENT
+
+    # Idempotence: the gate re-runs every round. Re-running the control on an
+    # unchanged (falsifier, corrected copy, TARGET) triple costs four sandbox
+    # executions and cannot change its own answer. The target belongs in the key
+    # because `apply_fixes_back_enabled` rewrites the reviewed target between
+    # rounds — a cache keyed on the falsifier alone would answer a question
+    # about a file that no longer exists.
+    target_rel = (getattr(cfg, "test_article", "") or "") if cfg else ""
+    try:
+        target_sha = _disc_sha(
+            (Path(repo_root or REPO_ROOT) / target_rel).read_text(
+                encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        target_sha = ""
+    prior = entry.get("discrimination") or {}
+    fresh = not (prior.get("falsifier_sha") == _disc_sha(fcode)
+                 and prior.get("corrected_sha") == _disc_sha(corrected)
+                 and prior.get("target_sha") == target_sha
+                 and prior.get("outcome"))
+
+    if fresh:
+        try:
+            rec = run_discrimination_control(
+                entry, repo_root=repo_root, target_rel=target_rel)
+        except Exception as exc:  # noqa: BLE001
+            # The control must not be able to kill a round — and it must not be
+            # able to go quiet either. A crash here is INDETERMINATE, named and
+            # logged, never a silent pass and never a veto.
+            rec = {"outcome": DISC_ERROR,
+                   "detail": (f"the discrimination control itself crashed: "
+                              f"{type(exc).__name__}: {str(exc)[:200]}. Nothing "
+                              f"is concluded and nothing is vetoed."),
+                   "falsifier_sha": _disc_sha(fcode),
+                   "corrected_sha": _disc_sha(corrected),
+                   "baseline_verdict": "", "corrected_verdict": "",
+                   "intercepted": None, "deterministic": None,
+                   "retarget_substitutions": 0, "target": ""}
+        rec["round"] = round_idx
+        rec["target_sha"] = target_sha
+        entry["discrimination"] = rec
+        _record_computed_evidence(
+            entry, kind=f"discrimination_control:{rec['outcome']}",
+            by="discrimination_control", detail=rec["detail"], falsifier=fcode)
+    else:
+        rec = prior
+
+    outcome = rec["outcome"]
+    if tally is not None:
+        tally[outcome] = tally.get(outcome, 0) + 1
+
+    # The stamps below are re-applied on a cached hit as well as a fresh run.
+    # The gate rewrites `falsifier_verdict` to CONFIRMED at the top of every
+    # round before calling here; an early return on the cache would leave a
+    # non-discriminating falsifier stamped CONFIRMED, which is the stamp routing
+    # reads to decide the finding needs no further work — a quiet regression to
+    # exactly the state this control exists to prevent.
+
+    if outcome == DISC_FAILED:
+        # The founder's third outcome. This is diagnostic output about the
+        # INSTRUMENT, not merely a veto of one finding.
+        entry["falsifier_verdict"] = "NON_DISCRIMINATING"
+        entry["verified"] = False
+        entry["escalated"] = True
+        entry["hil_escalated"] = True
+        entry["mechanical_fault"] = True
+        entry["hil_reason"] = (
+            "MECHANICAL FAULT: the falsifier fires against a CORRECTED copy of "
+            "the target, so it does not test this claim. The finding is NOT "
+            "closed and NOT dropped — it returns to the human, and the "
+            "instrument itself warrants attention.")
+        if entry.get("status") == "CONFIRMED":
+            registry.resolve(cid, "UNCONFIRMED", round_idx)
+        _log(f"  ★ MECHANICAL FAULT {cid}: falsifier fires on a CORRECTED copy "
+             f"— NOT closed, escalated to human. {rec['detail'][:200]}")
+    elif outcome in DISC_INDETERMINATE:
+        # No veto. An error is not evidence, and "fires on both" must never
+        # render the same as "crashed".
+        entry["discrimination_indeterminate"] = True
+        entry["hil_escalated"] = True
+        entry.setdefault(
+            "hil_reason",
+            f"discrimination control {outcome}: {rec['detail']}")
+        if fresh:
+            # Only when the measurement was actually taken. A benign flag
+            # reprinted every round for sixteen rounds buries the one line that
+            # matters; the per-round tally still reports the standing count, and
+            # the panel sees the flag in its own prompt every round regardless.
+            _log(f"  discrimination control {outcome} {cid}: CONFIRMED stands, "
+                 f"flagged for a human. {rec['detail'][:200]}")
+    return outcome
+
+
 def apply_falsifier_verdicts(
     registry: FindingRegistry, round_idx: int,
     cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
@@ -1490,6 +2810,7 @@ def apply_falsifier_verdicts(
     from bench.falsifier_verify import reverify_falsifier
     _HARD_TERMINAL = {"MERGED", "CLOSED", "DUPLICATE"}
     tally = {"CONFIRMED": 0, "REFUTED": 0, "HIL": 0}
+    disc_tally: dict = {}
     for cid, e in list(registry.entries.items()):
         if e.get("status") in _HARD_TERMINAL:
             continue
@@ -1508,6 +2829,30 @@ def apply_falsifier_verdicts(
         verdict = reverify_falsifier(fcode, repo_root=repo_root)
         e["falsifier_verdict"] = verdict
         if verdict == "CONFIRMED":
+            # DISCRIMINATION CONTROL (founder ruling 2026-08-08). "It fired" is
+            # not "it fired because of the claim". Before a CONFIRMED closes a
+            # finding, the same falsifier is re-run against a corrected copy of
+            # the target and must go quiet. Presence-gated: a no-op unless the
+            # panel supplied a corrected copy with the falsifier.
+            disc = _apply_discrimination_control(
+                cid, e, registry, round_idx, cfg=cfg, repo_root=repo_root,
+                tally=disc_tally)
+            if disc == DISC_FAILED and getattr(cfg, "discrimination_control_blocks", False):
+                # Not closed, not dropped, already escalated by the helper.
+                tally["HIL"] += 1
+                continue
+            if disc == DISC_FAILED:
+                # RECORD ONLY (default). The outcome is already in the tally and
+                # the computed-evidence channel; the verdict is left alone.
+                #
+                # Blocking here changes CONFIRM-only, which is the founder's open
+                # decision and not one to make by wiring. The 2026-08-12 panel
+                # refuted the blocking design as proposed: the test is satisfied
+                # by ACCESS rather than DEPENDENCE, so `open(TARGET).read()` with
+                # the contents discarded defeats it — and it fails GREEN, showing
+                # full coverage while discriminating nothing. Recording it costs
+                # nothing and is what makes the decision evidence-based.
+                _log(f"    disc: {cid} did not discriminate (recorded, not blocking)")
             registry.resolve(cid, "CONFIRMED", round_idx)
             e["verified"] = True
             tally["CONFIRMED"] += 1
@@ -1534,6 +2879,13 @@ def apply_falsifier_verdicts(
     if any(tally.values()):
         _log(f"  falsifier gate (tools decide): {tally['CONFIRMED']} CONFIRMED, "
              f"{tally['REFUTED']} REFUTED, {tally['HIL']} -> HIL")
+    if disc_tally:
+        # Printed whenever the gate confirmed anything, INCLUDING the all-
+        # NO_CONTROL case. "0 corrected copies supplied" is the reading that
+        # tells a human the control is silent rather than passing, and a silent
+        # control that looks like a passing one is this project's house defect.
+        _log("  discrimination control: " + ", ".join(
+            f"{k}={v}" for k, v in sorted(disc_tally.items())))
 
 
 # ── Routing: capability-aware falsifier routing (2026-06-07, gated; renamed from
@@ -1543,7 +2895,48 @@ def apply_falsifier_verdicts(
 # the execute_python tool loop before accepting the HIL. Validated out-of-band on
 # the 7 hardest Exp-42 residuals (weak source 0/7; strong+tool-loop 6/7; 2-rung
 # ladder 7/7). Default-off => byte-identical when disabled.
-_ROUTING_SYSTEM = (
+# THE DEFECT (found 2026-08-01 by an 11-agent offline falsification, ~2 months
+# after this ladder shipped; it was on no queue)
+# -----------------------------------------------------------------------------
+# This ladder is the ONLY absorber between the falsifier gate and the HIL queue.
+# Its prompt was code-only: the system message told the model to
+# `from bench.cdsfl_registry import <mod>`, and the finding dict passed to it
+# carried id / description / source_model / severity AND NOTHING ELSE — no target
+# path, no target text. So a model asked to demonstrate a defect in "Listing A"
+# of a markdown document was told to import a module that does not exist, and was
+# never told where the document was. Both rungs failed and _apply_routing stamped
+# `hil_reason = "routing ladder exhausted (no model produced a runnable test)"`.
+# That reason string is FALSE: no model was ever given the target.
+#
+# MEASURED, from the archives:
+#   Exp 48 (chem) + Exp 49 (eng), prose with NO fenced listings, 0 listing-
+#     referencing findings:            routing resolved 16/37 and 25/38 = 41 for 41
+#   Exp 53 control, prose WITH 7 fenced listings, 23 and 14 listing-referencing
+#     findings:                        routing resolved 0 for 25, 25 locked
+#                                      irreducible, run halted R3 of 16
+# A 14-line falsifier that merely opens SW-21-REF-04.md BY PATH, extracts the
+# TokenBucket listing and calls allow(-10) returns CONFIRMED from the runner's own
+# reverify_falsifier — for a finding this ladder had locked as impossible.
+#
+# The asymmetry that made it unambiguous: _sweep_prompt was made prose-aware on
+# 2026-08-01 (A4). This prompt was not. Same run, same target, two prompts, one
+# told the truth about the document and the other did not.
+#
+# Both prompts now branch on the SAME resolved target_kind, and the prose branch
+# reuses _sweep_prompt's non-collidable sentinel — a markdown target carries its
+# own ``` fences, so a fence cannot delimit it.
+def _routing_sentinels(src: str) -> tuple:
+    """Sentinel pair that provably does not occur in `src`. Mirrors _sweep_prompt."""
+    import hashlib as _hashlib
+    nonce = _hashlib.sha256((src or "").encode("utf-8", "replace")).hexdigest()[:12]
+    begin, end = f"<<<CDSFL_TARGET_BEGIN {nonce}>>>", f"<<<CDSFL_TARGET_END {nonce}>>>"
+    while begin in (src or "") or end in (src or ""):  # pragma: no cover
+        nonce += "X"
+        begin, end = f"<<<CDSFL_TARGET_BEGIN {nonce}>>>", f"<<<CDSFL_TARGET_END {nonce}>>>"
+    return begin, end
+
+
+_ROUTING_SYSTEM_PYTHON = (
     "You are a senior engineer resolving a code-review finding by writing a "
     "runnable falsifier. Use the execute_python tool to read the real source "
     "(import inspect; from bench.cdsfl_registry import <mod>; "
@@ -1551,11 +2944,83 @@ _ROUTING_SYSTEM = (
     "answering."
 )
 
+_ROUTING_SYSTEM_PROSE = (
+    "You are a senior engineer resolving a review finding against a PROSE "
+    "DOCUMENT — a technical reference in markdown, NOT Python source. There is "
+    "no module to import. The document is given to you by path and reproduced "
+    "verbatim in the prompt. Your falsifier OPENS THE DOCUMENT BY PATH and "
+    "asserts on its text, or on a value you recompute from it. Where the claim "
+    "concerns a fenced code listing printed inside the document, extract that "
+    "listing from the document text and exercise it. Use the execute_python "
+    "tool to RUN and iterate your falsifier before answering."
+)
 
-def _routing_resolve_prompt(finding: dict) -> str:
+
+def _routing_system(target_kind: str) -> str:
+    return (_ROUTING_SYSTEM_PROSE if target_kind == TARGET_KIND_PROSE
+            else _ROUTING_SYSTEM_PYTHON)
+
+
+# Back-compat alias: several tests and one external caller import this name.
+_ROUTING_SYSTEM = _ROUTING_SYSTEM_PYTHON
+
+_ROUTING_TARGET_LIMIT = 60000
+
+
+def _routing_resolve_prompt(
+    finding: dict,
+    target_rel: str = "",
+    target_src: str = "",
+    target_kind: str = TARGET_KIND_PYTHON,
+) -> str:
+    """Prompt for one rung of the routing ladder.
+
+    `target_rel` / `target_src` / `target_kind` default to the pre-2026-08-01
+    behaviour so that any caller that has not been updated still produces the
+    old code-only prompt rather than a broken one. The runner always passes them.
+    """
     desc = (finding.get("description") or "")[:1200]
+    if target_kind == TARGET_KIND_PROSE:
+        src = target_src or ""
+        truncated = len(src) > _ROUTING_TARGET_LIMIT
+        if truncated:
+            src = src[:_ROUTING_TARGET_LIMIT]
+        begin, end = _routing_sentinels(src)
+        header = (
+            f"TARGET DOCUMENT: {target_rel}\n"
+            f"It is a PROSE DOCUMENT, not Python source — there is NO module to "
+            f"import. It is reproduced verbatim between the two sentinel lines "
+            f"below. It contains its own ``` fenced listings; those fences belong "
+            f"to the document and do NOT end it. Only the closing sentinel ends it."
+        )
+        if truncated:
+            header += (
+                f" TRUNCATED: only the first {_ROUTING_TARGET_LIMIT} characters "
+                f"of {len(target_src)} are shown; open the path for the rest."
+            )
+        return (
+            f"A review finding against the target document:\n\n{desc}\n\n"
+            f"{header}\n{begin}\n{src}\n{end}\n\n"
+            "Resolve it, using execute_python:\n"
+            f"1. Open the document by path: "
+            f"open({target_rel!r}, encoding='utf-8').read().\n"
+            "2. Write a falsifier that asserts on the document's text, or on a "
+            "value you recompute from it. If the claim concerns a fenced listing "
+            "printed in the document, EXTRACT that listing from the text and "
+            "exercise it. Raise AssertionError / print FALSIFIED if and ONLY IF "
+            "the defect is genuinely present (exit clean if absent).\n"
+            "3. RUN it via execute_python; iterate until it correctly tests the "
+            "claim.\n"
+            "Then give your FINAL falsifier as a single fenced ```python block. "
+            "Do NOT put a ``` fence alone on its own line inside it — the block ends at "
+            "fence matching and a nested fence truncates your falsifier.\n\n"
+            + _CORRECTED_COPY_WHY
+            + f" After the block, write:\n{_corrected_copy_instructions()}\n"
+            f"Use the id {finding.get('id', '<id>')!s} on the CORRECTED_COPY line."
+        )
     return (
-        f"A code-review finding against the target module:\n\n{desc}\n\n"
+        f"A code-review finding against the target module"
+        f"{f' ({target_rel})' if target_rel else ''}:\n\n{desc}\n\n"
         "Resolve it, using execute_python:\n"
         "1. Read the real code via inspect (absolute import from the real package).\n"
         "2. Write a falsifier that imports the REAL module by absolute path, sets up "
@@ -1563,15 +3028,82 @@ def _routing_resolve_prompt(finding: dict) -> str:
         "reaches the real buggy path, and raises AssertionError / prints FALSIFIED "
         "if and ONLY IF the defect is genuinely present (exit clean if absent).\n"
         "3. RUN it via execute_python; iterate until it correctly tests the claim.\n"
-        "Then give your FINAL falsifier as a single fenced ```python block."
+        "Then give your FINAL falsifier as a single fenced ```python block. "
+        "Do NOT put a ``` fence alone on its own line inside it — the block ends at fence "
+        "matching and a nested fence truncates your falsifier.\n\n"
+        + _CORRECTED_COPY_WHY
+        + f" After the block, write:\n{_corrected_copy_instructions()}\n"
+        f"Use the id {finding.get('id', '<id>')!s} on the CORRECTED_COPY line."
     )
 
 
 def _extract_routing_falsifier(text: str) -> str:
+    """Pull the model's final runnable falsifier out of a routing reply.
+
+    THE DEFECT (A5, prose-adaptation, 2026-08-01)
+    ---------------------------------------------
+    The old filter was ``"import" in block``. That is a *proxy* for "this block
+    is runnable code", and the proxy holds for a code target, where a falsifier
+    must import the module under review. It does NOT hold for a prose target.
+    The only form a prose falsifier can take is to open the document by path and
+    assert on its text::
+
+        doc = open("/.../SW-21-REF-04.md", encoding="utf-8").read()
+        assert "0.29 mm" not in doc, "the retracted clearance is still stated"
+
+    No import appears anywhere. The block was discarded, this function returned
+    "", and the routing ladder recorded a rung that had genuinely reached a
+    model and produced nothing — minting a false "ladder exhausted".
+
+    WHAT REPLACES IT
+    ----------------
+    The filtering is not dropped; it is turned into a real test of runnability,
+    and the test is *derived from what the runner can actually do with the block
+    downstream* rather than guessed. ``falsifier_verify.reverify_falsifier``
+    returns CONFIRMED on exactly two signals: an ``AssertionError`` reaching
+    stderr, or the literal token ``FALSIFIED`` on stdout. A block able to
+    produce neither can never confirm anything. So a block is kept iff:
+
+      1. it PARSES as Python (``ast.parse``). Prose commentary does not — a far
+         stronger filter than the ``import`` substring ever was; AND
+      2. it can reach a verdict: an ``assert`` or ``raise`` statement anywhere
+         in the tree, or the ``FALSIFIED`` token inside a *string constant*
+         (i.e. something a ``print`` can emit — not a bare word, because
+         ``Result: FALSIFIED`` parses as an annotation and would otherwise
+         sneak a chat line through). ``import`` is retained as a third
+         accepting signal so that nothing the old rule admitted is newly
+         rejected: this change is strictly widening.
+
+    Fenced blocks of every language tag are now considered — the old code looked
+    at bare ``` blocks only when there were no ```python blocks at all — and the
+    LAST qualifying block still wins, matching the prompt's instruction to give
+    the final falsifier last.
+    """
+    import ast as _ast
     import re as _re
-    blocks = (_re.findall(r"```python\s*\n(.*?)```", text or "", _re.S)
-              or _re.findall(r"```\s*\n(.*?)```", text or "", _re.S))
-    cand = [b.strip() for b in blocks if "import" in b]
+    blocks = _re.findall(r"```[^\n]*\n(.*?)```", text or "", _re.S)
+    cand = []
+    for raw in blocks:
+        block = raw.strip()
+        if not block:
+            continue
+        try:
+            tree = _ast.parse(block)
+        except Exception:  # noqa: BLE001 — SyntaxError/ValueError/etc: not code
+            continue
+        runnable = False
+        for node in _ast.walk(tree):
+            if isinstance(node, (_ast.Assert, _ast.Raise,
+                                 _ast.Import, _ast.ImportFrom)):
+                runnable = True
+                break
+            if (isinstance(node, _ast.Constant)
+                    and isinstance(node.value, str)
+                    and "FALSIFIED" in node.value):
+                runnable = True
+                break
+        if runnable:
+            cand.append(block)
     return cand[-1] if cand else ""
 
 
@@ -1607,18 +3139,52 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
 
     _routing_attempts: list = []
 
+    # The target, resolved ONCE per round and handed to every rung. Before
+    # 2026-08-01 no rung received it at all; see the block above _routing_system.
+    _target_rel = getattr(cfg, "test_article", "") or ""
+    try:
+        _target_src = (Path(repo_root or REPO_ROOT) / _target_rel).read_text(
+            encoding="utf-8", errors="replace")
+    except OSError:
+        _target_src = ""
+    try:
+        _target_kind, _ = resolve_target_kind(
+            _target_rel, _target_src or None,
+            getattr(cfg, "target_kind", None),
+        )
+    except TargetKindMismatch:
+        # A declaration/detection conflict is the launch preflight's business,
+        # not this ladder's. Fall back to detection so routing still gets the
+        # right prompt rather than dying inside a round.
+        _target_kind, _ = detect_target_kind(_target_rel, _target_src or None)
+
+    # Corrected passages offered by a rung, keyed by the finding the rung was
+    # asked about. Held here rather than written straight onto the entry because
+    # a rung that FAILS to resolve must not leave a corrected copy attached to a
+    # falsifier that was never adopted — the copy and the falsifier it controls
+    # have to describe the same instrument.
+    _routing_corrected: Dict[str, Tuple[str, str, str]] = {}
+
     def resolve_fn(model_label, finding):
         mc = cfg_by_label.get(model_label)
         if mc is None:
             return ""
         try:
             resp, _ = dispatch_to_model(
-                mc, _routing_resolve_prompt(finding), _ROUTING_SYSTEM,
+                mc,
+                _routing_resolve_prompt(
+                    finding, _target_rel, _target_src, _target_kind),
+                _routing_system(_target_kind),
                 enable_tools=True,
             )
         except Exception:  # noqa: BLE001 — a failed rung just advances the ladder
             return ""
         _routing_attempts.append(model_label)  # a model was genuinely reached
+        offered = _extract_corrected_copies(resp or "")
+        if offered:
+            _orig, _corr = next(iter(offered.values()))
+            _routing_corrected[str(finding.get("id") or "")] = (
+                _orig, _corr, model_label)
         return _extract_routing_falsifier(resp)
 
     tally = {"resolved": 0, "dup": 0, "hil": 0}
@@ -1667,6 +3233,13 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["verified"] = True
             e["escalated"] = False
             e["resolved_by_routing"] = result.model_used
+            # The corrected passage from the rung that actually resolved it,
+            # verified against the target and refused loudly if it does not fit.
+            _rc = _routing_corrected.get(cid)
+            if _rc and _rc[2] == result.model_used:
+                _accept_corrected_copy(
+                    e, _rc[0], _rc[1], _target_src,
+                    target_rel=_target_rel, by=_rc[2], cid=cid)
             # Exp 44 post-run fix (2026-07-27): a later-round success must clear
             # the stale irreducible/HIL stamps from an earlier exhausted ladder,
             # so queue counts and reports read truth (the 6-stale-flags episode).
@@ -1682,9 +3255,14 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # around a SMALL such queue — guarded by the small-queue alarm.
             e["irreducible_escalation"] = True
             e["hil_escalated"] = True
+            # The old text asserted "no model produced a runnable test". Until
+            # 2026-08-01 that was false on every prose target — no model was ever
+            # given the target. Say only what is observed: the ladder ran out.
             e.setdefault(
                 "hil_reason",
-                "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+                f"routing ladder exhausted after {len(_routing_attempts) - _n0} "
+                f"rung(s) reached a model; no rung returned a falsifier the "
+                f"runner could confirm (target_kind={_target_kind}) -> HIL static queue",
             )
             tally["hil"] += 1  # genuinely-hard: handed to the HIL static queue
     if any(tally.values()):
@@ -1703,12 +3281,82 @@ _SWEEP_SYSTEM = (
 
 
 def _sweep_prompt(residuals: dict, target_rel: str, target_src: str) -> str:
+    """Build the post-convergence sweep prompt.
+
+    THE DEFECT (A4, prose-adaptation, 2026-08-01)
+    ---------------------------------------------
+    The target was pasted inside a ```python fence. Correct for a module; fatal
+    for a markdown document, because the document carries its own fences and its
+    FIRST ``` closes the wrapper. Measured on the zero-plant control document
+    (307 lines, 14 fence lines): the first fence opens at line 46, so only 45 of
+    307 lines — 14.7% — were inside the block. Everything after it was loose
+    text the panel had no reason to read as the target at all. Findings were
+    then asked to be cleared against a document the panel had mostly not seen.
+
+    THE FIX
+    -------
+    No markdown fence. The target is delimited by a sentinel pair carrying a
+    nonce derived from the source itself, and the sentinel is *proved* not to
+    collide: while either sentinel occurs in the source it is lengthened, which
+    terminates because a string longer than the source cannot be a substring of
+    it. The label states what the target actually is — prose document or Python
+    module — instead of asserting ``python`` over prose, and for a prose target
+    the response template asks for a falsifier that opens the document by path,
+    which is the only form a prose falsifier can take. Truncation, if it
+    happens, is now declared rather than silent.
+    """
+    src = target_src or ""
+    _LIMIT = 60000
+    truncated = len(src) > _LIMIT
+    if truncated:
+        src = src[:_LIMIT]
+    _suffix = str(target_rel or "").rsplit(".", 1)[-1].lower()
+    is_prose = _suffix in {
+        "md", "markdown", "rst", "txt", "text", "org", "tex", "adoc", "asciidoc",
+    }
+    # Non-collidable delimiter. The nonce makes an accidental clash effectively
+    # impossible; the loop makes a deliberate one impossible, and terminates
+    # because each pass lengthens the sentinel and the source is finite.
+    import hashlib as _hashlib
+    _nonce = _hashlib.sha256(src.encode("utf-8", "replace")).hexdigest()[:12]
+    begin = f"<<<CDSFL_TARGET_BEGIN {_nonce}>>>"
+    end = f"<<<CDSFL_TARGET_END {_nonce}>>>"
+    while begin in src or end in src:  # pragma: no cover — adversarial only
+        _nonce += "X"
+        begin = f"<<<CDSFL_TARGET_BEGIN {_nonce}>>>"
+        end = f"<<<CDSFL_TARGET_END {_nonce}>>>"
+    if is_prose:
+        _header = (
+            f"TARGET DOCUMENT ({target_rel}) — a PROSE DOCUMENT, not Python "
+            f"source. It is reproduced verbatim between the two sentinel lines "
+            f"below. It contains its own ``` fenced listings; those fences "
+            f"belong to the document and do NOT end it. Only the closing "
+            f"sentinel ends it."
+        )
+        _template = (
+            "  # runnable test that OPENS THE TARGET DOCUMENT BY PATH (the path "
+            "named above) and asserts on its text or on a value recomputed from "
+            "it; AssertionError/FALSIFIED"
+        )
+    else:
+        _header = (
+            f"TARGET MODULE ({target_rel}) — Python source, reproduced verbatim "
+            f"between the two sentinel lines below."
+        )
+        _template = (
+            "  # runnable test importing the REAL module; AssertionError/FALSIFIED"
+        )
+    if truncated:
+        _header += (
+            f" TRUNCATED: only the first {_LIMIT} characters of "
+            f"{len(target_src)} are shown."
+        )
     lines = [
         "This is what was found during the run and remains unresolved. "
         "Now clear the residuals.",
         "",
-        f"TARGET MODULE ({target_rel}):",
-        "```python", target_src[:60000], "```", "",
+        _header,
+        begin, src, end, "",
         "RESIDUAL FINDINGS TO CLEAR:",
     ]
     for cid, e in residuals.items():
@@ -1721,14 +3369,62 @@ def _sweep_prompt(residuals: dict, target_rel: str, target_src: str) -> str:
         "For EACH residual above, respond with exactly one of:",
         "  FALSIFIER: <id>",
         "  ```python",
-        "  # runnable test importing the REAL module; AssertionError/FALSIFIED",
+        _template,
         "  # iff the defect is present; clean exit otherwise",
         "  ```",
+        "then, on its own lines and WITHOUT indentation:",
+        _corrected_copy_instructions(),
         "or:",
         "  WITHDRAW <id>: <one-line reason it is not a real/testable defect>",
         "Nothing else counts. New findings are ignored.",
+        "",
+        _CORRECTED_COPY_WHY,
     ]
     return "\n".join(lines)
+
+
+def _settle_confirmed_findings(registry, round_idx):
+    """Apply the CONFIRMED+verified -> CLOSED transition one last time.
+
+    THE DEFECT THIS FIXES. That transition lives in the per-round reconciliation
+    pass (`if entry["status"] == "CONFIRMED" and entry.get("verified")`), which
+    runs at the START of a round. A finding demonstrated in the FINAL round
+    therefore never meets it: the run stops, and the finding is recorded as
+    CONFIRMED when every one of its peers is recorded as CLOSED.
+
+    Measured across the six completed runs: 158 of 160 criticals reached CLOSED.
+    The two that did not — Exp 45 `C0031` and Exp 47 `C0070` — are both
+    CONFIRMED, both `verified`, both with zero unresolved challenges, and both
+    opened at the exact round their run converged. They are one bookkeeping step
+    from settled, and the step never ran.
+
+    This matters beyond tidiness because those two findings were read, from the
+    status field alone, as demonstrated criticals left UNRESOLVED at close. They
+    were not. Nothing escaped. The record was one transition behind, and the
+    difference between "a critical escaped" and "a label lagged" is the
+    difference between an unsafe instrument and an untidy one.
+
+    The condition replicated here is exactly the reconciliation's, unresolved
+    challenges included, so this can never close something the normal path would
+    have held open. Returns the ids it settled, for the run report.
+    """
+    settled = []
+    for cid, e in registry.entries.items():
+        if e.get("status") != "CONFIRMED" or not e.get("verified"):
+            continue
+        confirms = [v for v in e.get("verdicts", []) if v.get("verdict") == "CONFIRM"]
+        challenges = [v for v in e.get("verdicts", []) if v.get("verdict") == "CHALLENGE"]
+        latest_confirm = max((v["round"] for v in confirms), default=-1)
+        if [v for v in challenges if v["round"] >= latest_confirm]:
+            continue  # unresolved challenge — the normal path would hold it open
+        registry.resolve(cid, "CLOSED", round_idx)
+        e["settled_post_convergence"] = True
+        settled.append(cid)
+    if settled:
+        _log(f"  post-convergence settle: {len(settled)} CONFIRMED+verified "
+             f"finding(s) closed that the final round had no successor to close "
+             f"({', '.join(sorted(settled))})")
+    return settled
 
 
 def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None):
@@ -1744,8 +3440,23 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
     if n_rounds <= 0:
         return {}
     from bench.falsifier_verify import reverify_falsifier
-    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    # CONFIRMED is admitted as a residual (2026-07-31), but only the kind that is
+    # genuinely unresolved. `_settle_confirmed_findings` runs immediately before
+    # this and converts every CONFIRMED+verified finding with no unresolved
+    # challenge to CLOSED — those are settled, not residual, and asking the panel
+    # to re-falsify them would just burn dispatch. What survives here is the
+    # CONTESTED-to-CONFIRMED case (reference_runner_v2.py ~1655), which reaches
+    # CONFIRMED without `verified` and therefore never settles on its own.
+    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
     stats = {"cleared": 0, "withdrawn": 0, "rounds": 0, "remaining": 0}
+    # Ids this sweep has already disposed of. Needed because clearing a residual
+    # sets it to CONFIRMED, which is no longer in `_TERMINAL` — so without this
+    # the next sweep round re-offers the same finding to the panel, clears it a
+    # second time, and double-counts `cleared`. Caught 2026-07-31 by
+    # test_exp43_fixes.py::test_falsifier_reattachment_clears_residual, which
+    # went red the moment CONFIRMED left the terminal set. The cost of missing it
+    # would have been a wasted panel dispatch per sweep round, per finding.
+    _handled: set = set()
     try:
         target_src = (Path(repo_root or REPO_ROOT) / cfg.test_article).read_text(
             encoding="utf-8", errors="replace")
@@ -1753,7 +3464,7 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
         target_src = ""
     for _sweep_i in range(n_rounds):
         residuals = {cid: e for cid, e in registry.entries.items()
-                     if e["status"] not in _TERMINAL}
+                     if e["status"] not in _TERMINAL and cid not in _handled}
         if not residuals:
             break
         stats["rounds"] += 1
@@ -1762,7 +3473,8 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
         prompt = _sweep_prompt(residuals, cfg.test_article, target_src)
         for mc in exp_config.models:
             live = {cid: e for cid, e in residuals.items()
-                    if registry.entries[cid]["status"] not in _TERMINAL}
+                    if registry.entries[cid]["status"] not in _TERMINAL
+                    and cid not in _handled}
             if not live:
                 break
             try:
@@ -1770,6 +3482,23 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                                             enable_tools=True)
             except Exception:  # noqa: BLE001 — a dead model just skips its turn
                 continue
+            # (a0) labelled corrected passages, ingested BEFORE the falsifier
+            # blocks below so a finding cleared in this same reply carries its
+            # corrected copy from the moment it is cleared. The sweep runs after
+            # the convergence verdict and clears nothing on the strength of a
+            # corrected copy; this records the supply so the control has it.
+            for _key, (_orig, _corr) in _extract_corrected_copies(resp or "").items():
+                _cid = _key.upper()
+                _e = registry.entries.get(_cid)
+                if _e is None:
+                    _log(f"  corrected copy UNMATCHED in sweep from "
+                         f"{mc.label if hasattr(mc, 'label') else mc}: no "
+                         f"finding answers to id {_key!r}")
+                    continue
+                _accept_corrected_copy(
+                    _e, _orig, _corr, target_src,
+                    target_rel=cfg.test_article,
+                    by=mc.label if hasattr(mc, "label") else str(mc), cid=_cid)
             # (a) labelled falsifier re-attachment
             for m in _re.finditer(
                     r"FALSIFIER:\s*(C\d{4})\s*```(?:python)?\s*\n(.*?)```",
@@ -1786,6 +3515,7 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                     e["resolved_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                     registry.resolve(cid, "CONFIRMED", round_idx)
                     stats["cleared"] += 1
+                    _handled.add(cid)
                     stats.setdefault("items", {})[cid] = {
                         "disposition": "cleared",
                         "by": e.get("resolved_by_sweep")}
@@ -1795,22 +3525,53 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                     e["withdrawn_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                     registry.resolve(cid, "REFUTED", round_idx)
                     stats["withdrawn"] += 1
+                    _handled.add(cid)
                     stats.setdefault("items", {})[cid] = {
                         "disposition": "refuted_by_falsifier",
                         "by": e.get("withdrawn_by_sweep")}
-                # ERROR / critical-REFUTED: leave for the residual report.
+                elif verdict == "REFUTED":
+                    # FOUNDER RULING 2026-08-03. A critical cannot be CLEARED by a
+                    # refutation — CONFIRM-only stands, and the Exp 42 evidence
+                    # behind it (2 of 3 REFUTED criticals were themselves wrong) is
+                    # untouched. But the computation RAN and produced an answer, and
+                    # discarding that answer is the absurdity: the human adjudicating
+                    # a permanent item never saw what the instrument already worked
+                    # out, and a sound fix could be binned for scoring 0.71 rather
+                    # than 0.69. The verdict is now RECORDED and travels to the human
+                    # WITH the fix the panel devised. Nothing is cleared automatically.
+                    _record_computed_evidence(
+                        e, kind="falsifier_refuted",
+                        by=mc.label if hasattr(mc, "label") else str(mc),
+                        detail="a runnable falsifier ran and did NOT demonstrate the "
+                               "defect; the claim may be sound",
+                        falsifier=e.get("falsifier_code", ""))
+                    stats["computed_evidence"] = stats.get("computed_evidence", 0) + 1
+                    stats.setdefault("items", {})[cid] = {
+                        "disposition": "critical_refuted_evidence_recorded",
+                        "by": mc.label if hasattr(mc, "label") else str(mc)}
+                # ERROR: leave for the residual report.
             # (b) reasoned withdrawal — SUB-CRITICAL ONLY
             for m in _re.finditer(r"WITHDRAW\s+(C\d{4})\s*:\s*(.{3,300})",
                                   resp or ""):
                 cid, reason = m.group(1), m.group(2).strip()
                 e = registry.entries.get(cid)
-                if (e is None or e["status"] in _TERMINAL
-                        or float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD):
+                if e is None or e["status"] in _TERMINAL:
+                    continue
+                if float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+                    # Same ruling. A reasoned withdrawal may not RETIRE a critical,
+                    # but the reasoning is evidence a human should see rather than
+                    # something the machine swallows without trace.
+                    _record_computed_evidence(
+                        e, kind="reasoned_withdrawal",
+                        by=mc.label if hasattr(mc, "label") else str(mc),
+                        detail=reason[:200])
+                    stats["computed_evidence"] = stats.get("computed_evidence", 0) + 1
                     continue
                 e["withdrawn_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                 e["withdraw_reason"] = reason[:200]
                 registry.resolve(cid, "REFUTED", round_idx)
                 stats["withdrawn"] += 1
+                _handled.add(cid)
                 stats.setdefault("items", {})[cid] = {
                     "disposition": "withdrawn",
                     "by": e.get("withdrawn_by_sweep"),
@@ -1920,6 +3681,115 @@ def _check_state_convergence(
     return False, f"Gate passed this round but not {cfg.consecutive_rounds_required} consecutive"
 
 
+# A7 (2026-08-01): the irreducible-queue alarm is a HALT, not a veto ──────────
+IRREDUCIBLE_QUEUE_HALT = "HALTED_IRREDUCIBLE_QUEUE_ALARM"
+
+
+def build_irreducible_queue_alarm(
+    registry: "FindingRegistry", cfg: RunnerConfig, round_idx: int,
+) -> Optional[Dict[str, Any]]:
+    """Build the evidence bundle for an over-bound irreducible queue, or None.
+
+    Returns None while the queue is within ``cfg.max_irreducible_queue``.
+
+    WHAT CHANGED AND WHY (A7). The bound itself was CORRECT on 2026-08-01: the
+    zero-plant control locked 13 criticals as irreducible, and the cause was
+    mechanical — the S_k hard gates were parsing prose as Python, so no fix
+    could be admitted, so nothing could close. The alarm named a real
+    instrument failure. It was then SUPPRESSED TWICE, by raising the bound,
+    because of what it *did*: it returned "not converged" from the convergence
+    checker and nothing else. That is the worst available response. It does not
+    say why, it does not stop the run, it does not hand anyone the evidence —
+    it just quietly denies a finish and lets the loop burn its round budget
+    against a fault no further round can fix. An alarm that only obstructs gets
+    turned off, and being turned off is how it lost twice to a real defect.
+
+    So it now HALTS, NOTIFIES, and ATTACHES:
+
+      * HALT — the run stops at this round with
+        ``convergence_reason=HALTED_IRREDUCIBLE_QUEUE_ALARM`` and
+        ``converged=False``. Distinct from convergence AND from a stall: it is
+        neither a finish nor exhaustion, it is an instrument fault called by
+        the instrument. Stopping is also the cheap option — the alternative
+        spends paid dispatch on rounds that cannot close.
+      * NOTIFY — a block-formatted message naming the count, the bound, the
+        round, and what to look at first.
+      * ATTACH — the per-finding evidence below, carried in the run report so
+        the human adjudicating it does not have to reconstruct anything.
+
+    The bound stays at its default of 2. Raising it is how this was suppressed;
+    the answer to a loud alarm is to read the bundle, not to move the line.
+    """
+    count = registry.irreducible_queue_count()
+    bound = int(getattr(cfg, "max_irreducible_queue", 2))
+    if count <= bound:
+        return None
+
+    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    evidence: List[Dict[str, Any]] = []
+    for cid, e in registry.entries.items():
+        if not e.get("irreducible_escalation"):
+            continue
+        if e.get("status") in _TERMINAL:
+            continue
+        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+            continue
+        sk = e.get("sk_result") or {}
+        evidence.append({
+            "canonical_id": cid,
+            "status": e.get("status"),
+            "severity": e.get("severity"),
+            "source_model": e.get("source_model"),
+            "open_since_round": e.get("open_since_round"),
+            "last_status_change_round": e.get("last_status_change_round"),
+            "description": (e.get("description") or "")[:300],
+            # The three things that decide whether this is genuine
+            # irreducibility or a mechanical failure wearing its clothes.
+            "falsifier_present": bool(e.get("falsifier_code")),
+            "falsifier_verdict": e.get("falsifier_verdict") or "",
+            "sk_tristate": sk.get("tristate", ""),
+            "sk_gate_details": sk.get("gate_details", {}),
+            "verdicts": e.get("verdicts", [])[-4:],
+            "routing_history": e.get("routing_history", []),
+        })
+
+    # The single most useful summary for a human opening this: if the whole
+    # queue shares one S_k outcome or one empty-falsifier signature, the cause
+    # is one mechanism, not thirteen independent hard problems.
+    sk_states = sorted({(x["sk_tristate"] or "(none)") for x in evidence})
+    no_falsifier = sum(1 for x in evidence if not x["falsifier_present"])
+
+    notify = (
+        f"IRREDUCIBLE-QUEUE ALARM at round {round_idx}: {count} criticals are "
+        f"locked as irreducible, over the bound of {bound}.\n"
+        f"Genuinely irreducible criticals are rare, so a queue this size is "
+        f"overwhelmingly a MECHANICAL failure — routing, dedup, or a gate that "
+        f"cannot speak to this target — presenting as irreducibility.\n"
+        f"The run is HALTED, not merely blocked from converging. Nothing "
+        f"further can close while the cause stands.\n"
+        f"Evidence for all {len(evidence)} item(s) is attached under "
+        f"'irreducible_queue_alarm' in the run report.\n"
+        f"First things to read: S_k outcomes across the queue are "
+        f"{sk_states or ['(none)']}; {no_falsifier} of {len(evidence)} carry no "
+        f"falsifier at all. A single shared value in either column is the "
+        f"mechanism.\n"
+        f"Do NOT raise max_irreducible_queue to clear this — that is how the "
+        f"same alarm was suppressed twice on 2026-08-01 while it was right."
+    )
+
+    return {
+        "alarm": "IRREDUCIBLE_QUEUE",
+        "action": "halt_notify_attach",
+        "round": round_idx,
+        "count": count,
+        "bound": bound,
+        "sk_states_in_queue": sk_states,
+        "items_without_falsifier": no_falsifier,
+        "notify": notify,
+        "evidence": evidence,
+    }
+
+
 def _check_gamma_alt_convergence(
     round_idx: int,
     gamma: float,
@@ -1930,6 +3800,7 @@ def _check_gamma_alt_convergence(
     rho_churn: bool = False,
     irreducible_queue: int = 0,
     gamma_critical: float = 1.0,
+    total_findings: int = 0,
 ) -> Tuple[bool, str]:
     """Critical-quiescence convergence path (panel redesign 2026-05-23; TWO-SIDED gate
     2026-06-10).
@@ -1999,19 +3870,30 @@ def _check_gamma_alt_convergence(
             f"(novel_crit_recent={recent_tail}). HIL review required."
         )
 
-    # Small-queue alarm (static-queue closure, 2026-06-09): the loop MAY close while
-    # handing a SMALL queue of ladder-exhausted irreducible criticals to the human. But
-    # genuinely-irreducible code defects are rare, so a queue larger than the bound is
-    # overwhelmingly a routing/dedup MECHANICAL FAILURE masquerading as irreducibility.
-    # Refuse convergence and raise the alarm instead of silently handing over a large pile.
+    # Small-queue alarm (static-queue closure, 2026-06-09; RETARGETED A7,
+    # 2026-08-01). The loop MAY close while handing a SMALL queue of
+    # ladder-exhausted irreducible criticals to the human. A queue larger than
+    # the bound is overwhelmingly a routing/dedup MECHANICAL FAILURE
+    # masquerading as irreducibility.
+    #
+    # This function NO LONGER REFUSES CONVERGENCE on that condition, and the
+    # removal is not a weakening. Refusing here was a silent veto: it denied a
+    # finish, gave no evidence, and let the loop keep spending rounds against a
+    # fault no round could fix — which is precisely why the alarm was
+    # suppressed twice on 2026-08-01 by raising the bound, while it was right
+    # both times. The condition is now enforced EARLIER and HARDER, by
+    # ``build_irreducible_queue_alarm`` in the round loop, which halts the run
+    # outright, prints the notification and attaches the per-finding evidence
+    # bundle to the report. The run therefore never reaches this check with an
+    # over-bound queue; the note below exists so that a reader of a reason
+    # string is told the queue size rather than left to infer it.
+    _queue_note = ""
     if irreducible_queue > cfg.max_irreducible_queue:
-        return False, (
-            f"IRREDUCIBLE-QUEUE ALARM: {irreducible_queue} criticals locked as "
-            f"irreducible exceeds max_irreducible_queue ({cfg.max_irreducible_queue}) at "
-            f"round {round_idx}. A queue this large almost certainly signals a "
-            f"routing/dedup mechanical failure, NOT genuine irreducibility. Convergence "
-            f"refused; investigate the routing ladder."
-        )
+        _queue_note = (
+            f" [NOTE: irreducible queue {irreducible_queue} > bound "
+            f"{cfg.max_irreducible_queue} — the run-loop alarm halts on this "
+            f"condition before convergence is assessed; see "
+            f"build_irreducible_queue_alarm]")
 
     # Review-clean gates (c) not contested, (d) not churning. A clean
     # critical tail does not mean convergence while the panel is still
@@ -2044,6 +3926,55 @@ def _check_gamma_alt_convergence(
             # 9 June live run both held first at round 6 (gamma_critical 0.607 >= 0.30, count
             # [0,0,0]) — identical to the count-only result, confirming the two naturally agree.
             theta = cfg.gamma_alt_threshold
+            # VACUOUS-CURVE CASE (2026-07-29, found pre-launch on the zero-plant
+            # control). GAMMA REMAINS AN ACTIVE, LOAD-BEARING CONDITION — this
+            # narrows the estimator's DOMAIN, it does not weaken the gate.
+            #
+            # _estimate_gamma fits a Duane decay to the cumulative critical
+            # series. Where no critical was EVER found, that series is all
+            # zeros: there is no curve to fit, and the estimator returns 0.0 —
+            # numerically identical to the worst possible case, a constant
+            # arrival rate with no decay at all ([2,2,2,2,2,2] also returns
+            # ~0.0). Those two are opposites. Comparing an undefined estimate
+            # against a threshold as though it were a measurement means a panel
+            # that reviewed a genuinely clean document perfectly can never
+            # converge, and would burn its full round budget and report
+            # non-convergence — halting the arc on a document with nothing in it.
+            #
+            # Diminishing returns is satisfied here in the strongest possible
+            # sense: the critical error space was exhausted before round one.
+            # So the gamma side is satisfied by vacuity, under two guards:
+            #   * cumulative critical over the WHOLE history must be zero — a
+            #     constant-rate series has a positive cumulative count and stays
+            #     blocked, which is the case this must never be confused with;
+            #   * the panel must have produced findings of SOME severity, so
+            #     "nothing was critical" is distinguishable from "nothing came
+            #     back" (a dead panel, or severity classification broken such
+            #     that nothing is ever critical).
+            # It is logged distinctly and never silently, and the reason string
+            # carries both counts so a reader can judge the run for themselves.
+            cumulative_critical = sum(novel_critical_history)
+            if cumulative_critical == 0 and gamma_critical < theta:
+                if total_findings > 0:
+                    return True, (
+                        f"CRITICAL_QUIESCENCE_CONVERGED (two-sided gate, VACUOUS CURVE): "
+                        f"zero critical findings across the ENTIRE run "
+                        f"(history={novel_critical_history}) over {total_findings} finding(s) "
+                        f"of some severity, so the critical decay curve does not exist and "
+                        f"gamma_critical={gamma_critical:.3f} is undefined rather than low. "
+                        f"The critical error space was exhausted before round one; the "
+                        f"{window}-round zero-critical condition holds. REVIEW THIS RUN: a "
+                        f"clean target and a broken severity classifier look alike from here."
+                        + _queue_note
+                    )
+                return False, (
+                    f"two-sided gate: gamma_critical={gamma_critical:.3f} < threshold "
+                    f"{theta}, and zero critical findings across the entire run — but the "
+                    f"panel produced NO findings of any severity either. That is a dead "
+                    f"panel or a broken review, not an exhausted error space, so the "
+                    f"vacuous-curve path does NOT apply. Convergence refused at round "
+                    f"{round_idx}; diagnose the dispatch."
+                )
             if gamma_critical < theta:
                 return False, (
                     f"two-sided gate: {window} zero-new-critical rounds met, but "
@@ -2055,12 +3986,14 @@ def _check_gamma_alt_convergence(
                 f"{gamma_critical:.3f} >= {theta} (decay curve flattened) AND {window} "
                 f"consecutive zero-new-critical rounds (history tail={recent}) at round "
                 f"{round_idx} — the two sides of the same diminishing-returns measure agree"
+                + _queue_note
             )
 
     return False, (
         f"two-sided gate not met: novel_crit_recent={recent_tail}, "
         f"gamma_critical={gamma_critical:.3f} (convergence needs gamma_critical >= "
         f"{cfg.gamma_alt_threshold} AND {window} consecutive zero-new-critical rounds)"
+        + _queue_note
     )
 
 
@@ -2214,17 +4147,124 @@ def _settled_novelty_series(
     return all_s, crit_s
 
 
+# Two unlocated criticals are the SAME finding iff their hard-token signatures
+# (numbers, claim IDs, backticked identifiers — the content a model cannot
+# paraphrase away) overlap by at least this Jaccard fraction. 0.20 is the
+# repo's measured within-location cut (convergence_location.WITHIN_LOCATION_THRESHOLD),
+# reused here because it answers the same question: two findings that code
+# location cannot separate — do their hard tokens agree? Held as a LOCAL
+# constant rather than imported so a future recalibration of the within-location
+# cut cannot silently move the convergence gate.
+#
+# HONEST LIMIT: 0.20 was swept against within-location pairs, NOT against
+# unlocated pairs specifically — that sub-population has never been swept, and
+# this number is therefore a reasoned reuse, not a measured optimum for it.
+# What IS measured: over the six faithfully-replayable archived runs
+# (exp42/43/44/45/46/47 location-keyed live), the count-side convergence round is
+# IDENTICAL for every cut in [0.15, 0.40]. At >= 0.50 exp46 loses its
+# convergence. At the degenerate end (identity keying, i.e. no merging at all)
+# exp46 loses it too. The outcome is insensitive across the band; the band's
+# edges are where it stops being.
+_UNLOCATED_MERGE_THRESHOLD = 0.20
+
+# Prefix for the fallback identity of a critical naming no code location.
+# NOT a single shared bucket — see _unlocated_novelty_key.
+_UNLOCATED_KEY_PREFIX = "<unlocated:"
+
+
+def _unlocated_novelty_key(description: str, buckets: List[Tuple[str, Any]]) -> str:
+    """The novelty key for a critical from which NO code location could be extracted.
+
+    THE DEFECT THIS CLOSES (found 2026-08-04, fixed 2026-08-08). This branch used
+    to return the single constant ``"<generic>"`` for every unlocated finding. The
+    first such critical claimed it; every later one was therefore non-novel
+    FOREVER, whatever it said. Reported as 42 of 288 criticals (14.6%) across 9
+    runs of the modern falsifier-live regime; re-measured independently
+    2026-08-08 over all 11 Exp 42-49 runs carrying a registry at 50 of 351
+    (14.2%), and both agree on the worst case, Exp 47 at 11 of 44 (25.0%). A
+    PARSING failure silently promoted to an identity judgement. It is not the
+    co-location trade-off, which is a deliberate conservative choice with a
+    stated rationale; this had none.
+
+    WHY THE PARSE FAILS, measured on Exp 47: ``target_symbols`` extracts only AST
+    function/method/class names, so a finding about a module-level constant (the
+    ``_ALT_HEADER_RE`` / ``_CONTRAST_RE`` / ``_DIM_LINE_RE`` regex family) names
+    no extractable symbol. Ten distinct criticals about four different regexes
+    collapsed to one.
+
+    THE RULE. Fall back to the finding's own STEM signature — numbers, claim IDs
+    and backticked identifiers, the content a model cannot re-word away. A finding
+    joins an existing bucket iff its signature is at least
+    ``_UNLOCATED_MERGE_THRESHOLD`` Jaccard-similar to that bucket's; otherwise it
+    opens a new one. So two DIFFERENT unlocated findings are two keys, and the
+    same finding re-worded is one. A finding with an EMPTY signature falls back to
+    a hash of its own normalised text — never to a shared constant.
+
+    HOW OFTEN THAT FALLBACK FIRES, corrected 2026-08-08 by the adversarial pass.
+    This docstring cited 2.5%, carried over from ``stem_signature``'s own
+    measurement (160 findings, 97.5% carry a hard token). That figure is for a
+    different and smaller population. Re-measured over all 351 critical entries in
+    the Exp 42-49 archive: 5.7% of criticals have an empty signature, and among
+    the UNLOCATED sub-population this branch actually serves it is 12.0% (6 of
+    50) — roughly five times the figure previously stated here. The direction is
+    safe (a per-finding hash splits, so it can only delay), but the hash path
+    carries more of this fix than the old number implied.
+
+    DIRECTION OF ERROR: this errs toward SPLITTING. It can only partition the old
+    single bucket into more keys, and located findings are untouched, so every
+    per-round count is >= the old count. A zero round can therefore only become
+    non-zero: convergence can be DELAYED but never brought forward. Delay costs
+    rounds; the direction it replaces cost a permanently invisible critical.
+    Measured on the archive, no run's convergence outcome changes (see
+    bench/tests/test_generic_location_bucket.py).
+
+    ``buckets`` is the caller's accumulator of ``(key, signature)`` pairs and is
+    APPENDED TO in place when a new bucket opens.
+    """
+    import hashlib
+
+    from bench.convergence_location import signature_similarity, stem_signature
+
+    sig = stem_signature(description or "")
+    if not sig:
+        # No hard token to key on. A per-finding text hash still errs toward
+        # splitting; falling back to a shared constant here would reinstate
+        # exactly the defect above.
+        norm = re.sub(r"\s+", " ", (description or "").strip().lower())
+        digest = hashlib.sha1(norm.encode("utf-8")).hexdigest()[:12]
+        return f"{_UNLOCATED_KEY_PREFIX}text:{digest}>"
+    for key, prev in buckets:
+        if signature_similarity(sig, prev) >= _UNLOCATED_MERGE_THRESHOLD:
+            return key
+    key = f"{_UNLOCATED_KEY_PREFIX}{len(buckets)}>"
+    buckets.append((key, sig))
+    return key
+
+
 def _location_keyed_critical_series(registry, max_round, symbols) -> List[int]:
-    """SHADOW (telemetry-only, NEVER gates): per-round NEW critical count keyed by code
-    LOCATION — the target-file symbol(s) a finding names — instead of the model-chosen
-    finding-id used by the live path. A critical is NEW iff it names a code location not
-    previously flagged (conservative S3 rule; locations accumulate across all criticals).
+    """Per-round NEW critical count keyed by code LOCATION — the target-file
+    symbol(s) a finding names — instead of the model-chosen finding-id used by the
+    legacy path. A critical is NEW iff it names a code location not previously
+    flagged (conservative S3 rule; locations accumulate across all criticals).
+    Criticals naming no extractable location are keyed by content instead — see
+    _unlocated_novelty_key.
 
     Verified 2026-06-08 (four independent computations + adversarial workflow wf_88bbdd46-194)
-    to converge Exp 42 (~round 6) where the ID-proxy series never does. NOT trusted to gate:
-    the exact round is keying-dependent and location-only misses a 2nd distinct defect in an
-    already-flagged function — live promotion is gated on a semantic splitter + null/seeded
-    calibration. See experimental_notes/Convergence_Consolidation_Plan_2026-06-08.md.
+    to converge Exp 42 (~round 6) where the ID-proxy series never does.
+
+    THIS SERIES GATES whenever ``location_keyed_convergence`` is set: the caller
+    overwrites ``novel_critical_history[-1]`` with it, feeding the COUNT side of
+    the two-sided gate (K consecutive zero-new-critical rounds). Sixteen configs
+    set it, starting Exp 42. It does NOT touch gamma_critical, which is computed
+    independently from the settled series. This docstring said "SHADOW
+    (telemetry-only, NEVER gates)" until 2026-08-08 — false since the first
+    location-keyed live run, and precisely the kind of stale safety claim that
+    makes a real gate look like telemetry to a reader.
+
+    KNOWN LIMITATION, unchanged: location-only keying cannot see a SECOND distinct
+    defect in an already-flagged function. That is a deliberate conservative
+    trade-off; see bench/audit_closing_window.py, which reports when it could have
+    bitten. See experimental_notes/Convergence_Consolidation_Plan_2026-06-08.md.
     """
     from bench.convergence_location import finding_locations
     entries = registry.entries if hasattr(registry, "entries") else {}
@@ -2235,6 +4275,7 @@ def _location_keyed_critical_series(registry, max_round, symbols) -> List[int]:
         return (r if r is not None else 1_000_000, str(e.get("canonical_id", "")))
 
     seen: set = set()
+    unlocated_buckets: List[Tuple[str, Any]] = []
     series = [0] * (max_round + 1)
     for e in sorted(vals, key=_ord):
         r = e.get("open_since_round")
@@ -2244,8 +4285,10 @@ def _location_keyed_critical_series(registry, max_round, symbols) -> List[int]:
             continue
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
             continue
-        locs = finding_locations(e.get("description", "") or "", symbols)
-        key = set(locs) if locs else {"<generic>"}
+        desc = e.get("description", "") or ""
+        locs = finding_locations(desc, symbols)
+        key = (set(locs) if locs
+               else {_unlocated_novelty_key(desc, unlocated_buckets)})
         if key - seen:
             series[r] += 1
         seen |= key
@@ -2421,7 +4464,19 @@ def _check_budget_extension(
     registry: FindingRegistry,
     gamma: float,
     gamma_prev: float,
+    cfg: Optional["RunnerConfig"] = None,
 ) -> Tuple[bool, str]:
+    """Decide whether to extend the round budget past ``cfg.max_rounds``.
+
+    ``cfg`` became load-bearing in 1cec60d (27 July 2026), which added the
+    gated sub-critical exclusion to the two ``contested_count`` calls below but
+    did not add the parameter — so both lines read a name that exists in no
+    enclosing scope and this function raised NameError on every call. It was
+    never seen because it is only called at ``round_idx == cfg.max_rounds - 1``
+    with ``extended`` still False, and Exp 44-49 all converged before that.
+    A run that used its whole budget without converging would have died here.
+    Default None keeps the exclusion off, which is the pre-1cec60d behaviour.
+    """
     reasons = []
     if registry.open_crit_high_count() > 0:
         reasons.append(f"open CRIT/HIGH: {registry.open_crit_high_count()}")
@@ -3297,6 +5352,12 @@ def _dispatch_single_model(
     # from prose to a runnable falsifier (the 14-HIL fix). Gate-off => unchanged.
     if enable_tools:
         model_cdsfl = _gate_falsifier_directive(model_cdsfl)
+    # Exp 52 factorial: directive-section selection. Applied LAST, to the fully
+    # assembled prompt (composer phenotype + operational directive + any gate
+    # rewrite), so it has the final say on what text reaches the model and so a
+    # single call covers both the composed and the fallback branch above.
+    # No-op unless a config switched a factor off — see RunnerConfig.
+    model_cdsfl = _apply_directive_omission(model_cdsfl)
 
     pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
 
@@ -3600,6 +5661,12 @@ def _feedback_channel_enabled(cfg: "RunnerConfig") -> bool:
     interpreted as "run with defaults on". The config knob exists so that
     an experimenter can disable the channel for a controlled ablation
     without editing code.
+
+    NOTE (2026-07-29): this reads the RAW switch only. To decide whether the
+    feedback RUNNER PASS should run, use
+    ``_directive_factor_state(cfg, "feedback")[1]`` — it also honours
+    ``feedback_off_mode``, which can suppress the directive text while
+    leaving the pass active (or vice versa). The run loop uses the latter.
 
     See `cdsfl_operational.md` §17 and `bench/dm/_feedback.py`.
     """
@@ -3966,6 +6033,13 @@ def _run_shadow_cells(
                 _shadow_ouroboros = OuroborosCell(
                     shadow=True,
                     allowed_sources=allowed if isinstance(allowed, list) else [allowed],
+                    # New key (2026-07-31). Default "haiku" is the constructor
+                    # default the cell has always used, so configs that do not
+                    # set it behave exactly as before. "none" selects the
+                    # deterministic extractive brief and spends nothing —
+                    # which is what CI and the proof harness use.
+                    reader_backend=str(
+                        ouroboros_config.get("reader_backend", "haiku")),
                 )
 
             # Collect Macrophage anomalies as research targets
@@ -3992,6 +6066,29 @@ def _run_shadow_cells(
                 "candidate_claims": len(shadow_log.candidate_claims),
                 "would_have_injected": shadow_log.would_have_injected,
             }
+
+            # ── Loop-close (2026-07-31): render the brief for the NEXT round's
+            # prompt. OFF unless the experiment's _ouroboros block says
+            # inject_brief: true, so the five archival configs that already
+            # carry an _ouroboros block (Exp 45–49) stay byte-identical.
+            _oc = config.get("_ouroboros", {}) or {}
+            if _oc.get("inject_brief"):
+                from bench.ouroboros_cell import build_brief_prompt_section
+                _section = build_brief_prompt_section(
+                    shadow_log.briefs,
+                    round_idx=round_idx,
+                    max_chars=int(_oc.get("brief_max_chars", 4000)),
+                    min_relevance=str(_oc.get("brief_min_relevance", "LOW")),
+                    require_model_reader=bool(
+                        _oc.get("require_model_reader", True)),
+                )
+                shadow_data.setdefault("_ouroboros_wiring", {})
+                shadow_data["_ouroboros_wiring"]["brief_section"] = _section
+                shadow_data["ouroboros"]["brief_section_chars"] = len(_section)
+                shadow_data["ouroboros"]["briefs_rendered"] = sum(
+                    1 for b in (shadow_log.briefs or [])
+                    if (b.get("relevance") or "").upper() not in ("", "NONE")
+                )
 
             # Write shadow replay log to disk
             if logs_dir:
@@ -4040,6 +6137,43 @@ def _run_shadow_cells(
             "mean_c_ext": round_log.mean_c_ext,
             "mean_delta": round_log.mean_delta,
         }
+
+        # ── Loop-close (2026-07-31): hand the calibrator's (c_ext, nu_k) to the
+        # R_k channel. The calibrator has computed these from real retrieval
+        # since 14 April; nothing consumed them, so the S_k path passed
+        # c_ext=0.0 literal. Consumption is OFF unless the experiment's
+        # _ouroboros block says c_ext_enabled: true.
+        #
+        # c_ext is a property of the SEARCH, not of a finding — the calibrator's
+        # noisy-OR over per-source coverage is identical for every finding in a
+        # round — so one round-level value is exact, not an average. nu_k IS
+        # per-finding, so it is carried per finding_id with the round mean as
+        # the fallback for entries whose alias is not in this round.
+        _oc6 = (config.get("_ouroboros", {}) or {})
+        if _oc6.get("c_ext_enabled") and round_log.findings:
+            _c_ext_vals = {round(f.c_ext, 6) for f in round_log.findings}
+            # Taking findings[0] is only exact while that set is a singleton.
+            # If a future calibration made c_ext per-finding, silently keeping
+            # the first finding's value would apply one finding's search
+            # coverage to every other finding's risk. Fall back to the mean and
+            # say so, rather than be quietly wrong.
+            if len(_c_ext_vals) == 1:
+                _c_ext = round_log.findings[0].c_ext
+            else:
+                _c_ext = round_log.mean_c_ext
+                _log(f"  [ouroboros] WARNING: c_ext is no longer uniform "
+                     f"across findings ({sorted(_c_ext_vals)[:4]}); using the "
+                     f"round mean {_c_ext:.4f}. The per-finding join in "
+                     f"_evaluate_sk_for_findings covers nu_k only.")
+            _w = shadow_data.setdefault("_ouroboros_wiring", {})
+            _w["c_ext"] = float(_c_ext)
+            _w["c_ext_uniform"] = (len(_c_ext_vals) == 1)
+            _w["nu_k_by_finding"] = {
+                f.finding_id: float(f.nu_k_proxy) for f in round_log.findings
+            }
+            _w["nu_k_mean"] = float(round_log.mean_nu_k_proxy)
+            _w["search_status"] = round_log.findings[0].search_status
+            shadow_data["stage6_calibration"]["c_ext_consumed"] = float(_c_ext)
 
         # Write calibration log to disk
         if logs_dir:
@@ -4393,19 +6527,123 @@ def apply_fix_blocks(
     return modified, applied, None
 
 
-def _run_hard_gate_ast(modified_source: str) -> Tuple[int, str]:
-    """g1: AST parse. Returns (score, detail)."""
+
+_MD_PY_FENCE = re.compile(r"```(?:python|py)\n(.*?)```", re.S)
+
+
+def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[str], str]:
+    """The Python the syntax gates should actually check, for any target type.
+
+    THE DEFECT THIS FIXES. g1 (ast.parse) and g2 (py_compile) were handed the
+    WHOLE modified target. For a Python module that is right. For the zero-plant
+    control — a markdown design reference — ast.parse chokes on the prose
+    ("leading zeros in decimal integer literals are not permitted", from a table
+    of offsets) and returns 0. Since A = g1 * g2, EVERY proposed fix scored
+    A=0.0 and was REJECTED. Fifty rejections on the 2026-08-01 run. No fix could
+    be admitted, so no finding could be resolved, so the irreducible queue filled
+    with criticals the machinery was structurally unable to close, and the run
+    could not converge. This is the dominant cause of that halt; the
+    close-the-loop failure found the same hour was the smaller half of it.
+
+    Returns (source_to_gate, reason). A None source means the gates cannot speak
+    to this target and the caller should not treat their silence as a failure.
+    """
+    if source_path.endswith(".py") or not source_path:
+        return modified_source, "python target"
+    blocks = _MD_PY_FENCE.findall(modified_source)
+    if not blocks:
+        # Nothing to break, so nothing for a syntax gate to say. The falsifier
+        # and HIL carry a pure-prose finding; see bugzilla_loop.run_verification,
+        # which refuses such a target rather than passing it silently.
+        return None, "target carries no code; syntax gates not applicable"
+    return "\n\n".join(b.rstrip() for b in blocks) + "\n", (
+        f"gating {len(blocks)} fenced listing(s) extracted from a non-Python target")
+
+
+def _run_hard_gate_ast(modified_source: str, source_path: str = "") -> Tuple[int, str]:
+    """g1: AST parse of the target's CODE. Returns (score, detail)."""
+    src, why = _gateable_source(modified_source, source_path)
+    if src is None:
+        return 1, f"AST parse not applicable ({why})"
     try:
-        ast.parse(modified_source)
-        return 1, "AST parse succeeded"
+        ast.parse(src)
+        return 1, f"AST parse succeeded ({why})"
     except (SyntaxError, ValueError) as e:
-        return 0, f"ParseError: {e}"
+        return 0, f"ParseError: {e} ({why})"
+
+
+_SURROGATE_RE = re.compile(r"[\ud800-\udfff]")
+
+
+def _write_report_json(path: Path, payload: Any) -> None:
+    """Write a run report as UTF-8. A completed run must never fail to record itself.
+
+    Text harvested from a PDF can carry a LONE SURROGATE — the unpaired half of a
+    codepoint that survived extraction on its own. U+D835 is the common one, the
+    high half of the mathematical-alphanumeric block, so it turns up in exactly
+    the papers the retrieval cell fetches. Python holds such a string quite
+    happily and then refuses to encode it, so the write raises UnicodeEncodeError
+    AFTER the experiment has finished: hours of paid dispatch complete, and the
+    report is never written. Found 2026-07-31 while wiring the retrieval cell's
+    brief into the prompt; the brief reaches the report, so the character does too.
+
+    The ordinary path is byte-identical to a plain strict write. Substitution
+    fires only when the strict encode fails, and it announces itself in the log
+    AND inside the report, because a silently scrubbed report is a corrupted
+    record that reads as a clean one.
+    """
+    text = json.dumps(payload, indent=2, ensure_ascii=False, default=str)
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        n = len(_SURROGATE_RE.findall(text))
+        if isinstance(payload, dict):
+            payload = {**payload, "_text_sanitised": {
+                "unpaired_surrogates_replaced": n,
+                "note": "Unpaired surrogate characters — typically from PDF text "
+                        "extraction — were replaced with U+FFFD so this report "
+                        "could be written. Affected strings are degraded; every "
+                        "other value is unchanged. See _write_report_json.",
+            }}
+            text = json.dumps(payload, indent=2, ensure_ascii=False, default=str)
+        text = _SURROGATE_RE.sub("�", text)
+        _log(f"  *** WARNING: {n} unpaired surrogate(s) replaced with U+FFFD to "
+             f"write {path.name} — affected text is degraded ***")
+    path.write_text(text, encoding="utf-8")
+
+
+def _anchor_dir_for(source_path: str) -> Optional[str]:
+    """Directory to place a scratch file in for ruff/bandit/compile checks.
+
+    Anchoring beside the source lets those tools discover the project's config by
+    walking upwards, which is right for a PYTHON target inside this repository.
+
+    It is wrong for an exam target. Those are markdown, staged read-only in a
+    directory deliberately set to refuse new files so a panel cannot drop anything
+    beside the document it is reviewing. Writing a scratch .py there fails with
+    EPERM — which is exactly what happened on the first launch of the zero-plant
+    control, one second in. Both controls were correct; anchoring was simply the
+    wrong default for a target that is not code we own.
+
+    Returns None (system temp) unless the target is a writable .py path. There were
+    four call sites with this logic inlined; a fifth would have been a matter of
+    time, so it lives here now.
+    """
+    if not source_path:
+        return None
+    parent = Path(source_path).parent
+    if source_path.endswith(".py") and os.access(parent, os.W_OK):
+        return str(parent)
+    return None
 
 
 def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
-    """g2: py_compile (replaces import resolution). Returns (score, detail)."""
+    """g2: py_compile of the target's CODE. Returns (score, detail)."""
+    modified_source, why = _gateable_source(modified_source, source_path)
+    if modified_source is None:
+        return 1, f"py_compile not applicable ({why})"
     # Anchor to source directory for context parity with ruff/bandit gates
-    anchor_dir = str(Path(source_path).parent) if source_path else None
+    anchor_dir = _anchor_dir_for(source_path)
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
         dir=anchor_dir,
@@ -4495,7 +6733,7 @@ def _run_effect_ruff(
     if baseline_violations is None:
         return None, "ruff baseline unavailable"
     # Anchor temp file to source directory so ruff picks up pyproject.toml
-    anchor_dir = str(Path(source_path).parent) if source_path else None
+    anchor_dir = _anchor_dir_for(source_path)
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
         dir=anchor_dir,
@@ -4539,7 +6777,7 @@ def _run_effect_bandit(
     if baseline_findings is None:
         return None, "bandit baseline unavailable"
     # Anchor temp file to source directory for config discovery
-    anchor_dir = str(Path(source_path).parent) if source_path else None
+    anchor_dir = _anchor_dir_for(source_path)
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
         dir=anchor_dir,
@@ -4594,8 +6832,17 @@ def _capture_baseline(source: str, source_path: str = "") -> Dict[str, Any]:
         "ruff_violations": None,
         "bandit_findings": None,
     }
-    # Anchor temp files to source directory for config discovery
-    anchor_dir = str(Path(source_path).parent) if source_path else None
+    # Anchor temp files to the source directory so ruff/bandit discover the
+    # project's own config (pyproject.toml, setup.cfg) by walking upwards.
+    #
+    # That only makes sense for a PYTHON target inside this repository. An exam
+    # target is markdown, staged read-only in a directory deliberately set to
+    # refuse new files so a panel cannot drop anything beside the document it is
+    # reviewing — and writing a scratch .py there fails with EPERM before the run
+    # starts. Both controls are correct; anchoring is simply the wrong default
+    # when the target is not code we own. Fall back to the system temp directory,
+    # where there is no config to discover and none is wanted.
+    anchor_dir = _anchor_dir_for(source_path)
 
     # Ruff violations on original source
     with tempfile.NamedTemporaryFile(
@@ -4665,16 +6912,58 @@ def compute_sk(
     source_path: str,
     baseline: Optional[Dict[str, Any]] = None,
     test_cmd: Optional[str] = None,
+    declared_target_kind: Optional[str] = None,
 ) -> SkResult:
     """Full S_k computation pipeline for a proposed fix.
 
     Parses SEARCH/REPLACE blocks, applies them, runs hard gates and
     effect evidence gates. Returns SkResult with tristate.
+
+    PROSE SHORT-CIRCUIT (A2, 2026-08-01). Before anything else, the target is
+    classified from its path and its bytes. If it is prose, S_k returns
+    ``NO_SCORE`` and no gate runs. This is enforced HERE, at the computation,
+    not at the call site and not by a config switch, because every one of the
+    gates below is meaningless-to-actively-inverted on prose:
+
+      * ``e3_ruff`` — ruff error-recovers over markdown and reported ~2752
+        phantom diagnostics as the BASELINE on the 2026-08-01 control, so the
+        delta it scores measures how much English the fix added.
+      * ``e4_bandit`` — bandit cannot parse the file, returns an empty result
+        set, and therefore reports "0 HIGH / 0 MEDIUM" forever, at weight 2.0,
+        the heaviest in the set. It is structurally incapable of failing.
+      * ``e2_regression`` — permanently unavailable: prose targets live outside
+        the repository and no prose config sets ``test_cmd``.
+
+    With the hard gates repaired to look at the fenced listings (A=1), those
+    three combine to a measured sk=1.0000 ADMISSIBLE for a fix that injected
+    ``subprocess.call("rm -rf ...", shell=True)`` into a listing, against
+    0.6667 for a correct prose fix. Findings on prose targets are resolved by
+    FALSIFIERS — runnable code that computes the true value and asserts against
+    the claim — which is how Exp 48 and Exp 49 converged at rounds 5 and 6 with
+    S_k rejecting 100% of fixes. That path is substrate-independent and is
+    untouched by this short-circuit.
     """
+    kind, kind_reason = resolve_target_kind(
+        source_path, source, declared=declared_target_kind)
+    if kind != TARGET_KIND_PYTHON:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate=SK_NO_SCORE,
+            gate_details={
+                "target_kind": kind,
+                "target_kind_reason": kind_reason,
+                "reason": (
+                    "S_k is defined over Python source; this target is "
+                    f"{kind}. No gate was run, so this fix is neither admitted "
+                    "nor rejected — it is unscored. Resolution for this target "
+                    "runs through the falsifier path."),
+            },
+            blocks_parsed=0, blocks_applied=0,
+        )
+
     blocks = parse_search_replace_blocks(fix_text)
     if not blocks:
         return SkResult(
-            sk=0.0, A=0.0, E=0.0, tristate="ESCALATE",
+            sk=0.0, A=0.0, E=0.0, tristate=SK_ESCALATE,
             gate_details={"error": "no SEARCH/REPLACE blocks found"},
             blocks_parsed=0, blocks_applied=0,
         )
@@ -4682,14 +6971,14 @@ def compute_sk(
     modified, applied, apply_error = apply_fix_blocks(source, blocks, source_path)
     if modified is None or applied == 0:
         return SkResult(
-            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            sk=0.0, A=0.0, E=0.0, tristate=SK_REJECTED,
             gate_details={"error": apply_error or "fix_blocks_not_applied"},
             blocks_parsed=len(blocks), blocks_applied=0,
         )
 
     # Hard gates
     details: Dict[str, Any] = {}
-    g1_score, g1_detail = _run_hard_gate_ast(modified)
+    g1_score, g1_detail = _run_hard_gate_ast(modified, source_path)
     details["g1_ast"] = {"score": g1_score, "detail": g1_detail}
 
     g2_score, g2_detail = _run_hard_gate_compile(modified, source_path)
@@ -4699,7 +6988,7 @@ def compute_sk(
 
     if A == 0:
         return SkResult(
-            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            sk=0.0, A=0.0, E=0.0, tristate=SK_REJECTED,
             gate_details=details,
             blocks_parsed=len(blocks), blocks_applied=applied,
         )
@@ -4742,7 +7031,7 @@ def compute_sk(
     if not effect_gates:
         details["_unavailable"] = unavailable_gates
         return SkResult(
-            sk=0.0, A=A, E=0.0, tristate="ESCALATE",
+            sk=0.0, A=A, E=0.0, tristate=SK_ESCALATE,
             gate_details=details,
             blocks_parsed=len(blocks), blocks_applied=applied,
         )
@@ -4761,7 +7050,7 @@ def compute_sk(
         details["_unavailable"] = unavailable_gates
 
     sk = A * E
-    tristate = "ADMISSIBLE" if sk > 0 else "REJECTED"
+    tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
 
     return SkResult(
         sk=round(sk, 4), A=A, E=round(E, 4), tristate=tristate,
@@ -4785,6 +7074,14 @@ class ChannelViolationError(RuntimeError):
       * m_div entering q as an independent factor outside eta_int
       * m_div contributing to nu_k
     """
+
+
+# R_k(0) = π_k (appendix §1.1 initial condition). π_base is the uniform,
+# memory-free prior: a finding of an unseen flaw class is a coin flip. This
+# was an inline literal 0.5 in the S_k pipeline from the start; naming it is
+# what lets appendix §1.5's blended prior substitute for it without the two
+# defaults drifting apart.
+RK0_PI_BASE: float = 0.5
 
 
 def compute_rk(
@@ -4829,6 +7126,41 @@ def compute_rk(
     R_k = R_base * (1.0 - nu_eff) + nu_eff
 
     return max(0.0, min(1.0, R_k))
+
+
+def apply_sk_to_rk(
+    R_old: float, tristate: str, updated: Optional[float] = None,
+) -> Tuple[float, str]:
+    """The single sink where an S_k outcome is allowed to move R_k.
+
+    Returns (R_new, why).
+
+    A2 (2026-08-01). When S_k returns ``NO_SCORE`` — the target is prose, no
+    gate ran — the fix's efficacy must enter R_k as ZERO MOVEMENT. R_k is
+    RESIDUAL RISK, so "no movement" means R_new == R_old exactly.
+
+    THE TRAP THIS AVOIDS. The obvious reading of "efficacy enters as 0" is
+    ``compute_rk(R_old, q, sk=0.0)``. That is wrong, and wrong in the dangerous
+    direction. With sk=0 the resolution phase is a no-op (``R_base = R_old``)
+    but the re-injection phase is NOT: ``nu_eff = 1 - (1-nu_b)(1-(1-sk)nu_f)``
+    is at its MAXIMUM when sk=0, because a worthless fix is modelled as maximally
+    likely to inject a new defect. At the defaults (nu_b=0.05, nu_f=0.20) and
+    R_old=0.5, that path returns 0.62 — risk PUSHED UP by 0.12 as a penalty for
+    a fix nothing ever assessed. Repeat that once per prose finding per round
+    and the run accrues a fabricated risk it can never work off, because on a
+    prose target no S_k evaluation can ever move it back down.
+
+    "Not scored" and "scored zero" are different statements. This function is
+    what keeps them different.
+    """
+    R_old = max(0.0, min(1.0, float(R_old)))
+    if tristate == SK_NO_SCORE:
+        return R_old, (
+            "NO_SCORE: R_k unchanged. The fix was never assessed, so its "
+            "efficacy enters as zero MOVEMENT, not as a zero SCORE.")
+    if updated is None:
+        return R_old, f"{tristate}: no update computed; R_k unchanged"
+    return max(0.0, min(1.0, float(updated))), f"{tristate}: R_k updated"
 
 
 def compute_rk_with_eta_channel(
@@ -5113,14 +7445,39 @@ def _evaluate_sk_for_findings(
     round_idx: int,
     test_cmd: Optional[str] = None,
     s_floor: float = 0.0,
+    c_ext: float = 0.0,
+    nu_k_by_finding: Optional[Dict[str, float]] = None,
+    nu_k_default: float = 0.0,
+    rk0_prior: Optional[Callable[[int], float]] = None,
 ) -> Dict[str, Any]:
     """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
 
     Returns stats dict for round telemetry.
+
+    ``c_ext`` / ``nu_k_*`` (2026-07-31) carry the Ouroboros retrieval into the
+    R_k channel: ``eta_combined = eta_int * (1 - c_ext * (1 - nu_k))``. The
+    defaults (0.0) reproduce the identity path this function used from 21 April
+    to 31 July, so a run without an ``_ouroboros`` block that opts in is
+    byte-identical to before.
+
+    ``rk0_prior`` (2026-07-31) supplies R_k(0) — the appendix §1.1 initial
+    condition ``R_k(0) = π_k`` — from cross-experiment immune memory, keyed on
+    the finding's flaw class. ``None`` (the default, and the state whenever
+    ``immune_memory_enabled`` is off) falls back to the uniform base prior
+    ``RK0_PI_BASE``, the literal 0.5 this function used from the start.
     """
+    nu_k_by_finding = nu_k_by_finding or {}
+    c_ext = max(0.0, min(1.0, float(c_ext)))
     stats: Dict[str, Any] = {
         "round": round_idx, "evaluated": 0, "admissible": 0,
-        "rejected": 0, "escalated": 0, "results": {},
+        "rejected": 0, "escalated": 0,
+        # A2: counted separately from every other outcome. A NO_SCORE tally
+        # folded into "rejected" would read as 38 bad fixes where the truth is
+        # 38 unassessed ones — which is the exact misreading that let the
+        # 2026-08-01 control look like a panel failure rather than an
+        # instrument failure.
+        "no_score": 0,
+        "results": {},
     }
 
     for cid, entry in registry.entries.items():
@@ -5152,10 +7509,40 @@ def _evaluate_sk_for_findings(
         nu_b = meta.get("nu_b", 0.05)
         nu_f = meta.get("nu_f", 0.20)
         q = meta.get("q", 0.5)
-        R_old = meta.get("R", 0.5)
+        # R_k(0) — appendix §1.1 initial condition R_k(0) = π_k. Precedence:
+        #   1. a model-supplied R, which is an ALREADY-UPDATED estimate rather
+        #      than an initial condition, so it outranks any prior;
+        #   2. the §1.5 blended prior π(k) = (1-ρ)·π_base + ρ·π_mem(k) from
+        #      cross-experiment immune memory, when consumption is on;
+        #   3. the uniform base prior — what every run from Exp 37 to Exp 49
+        #      actually used, because model_params is never populated.
+        if "R" in meta:
+            R_old, rk0_source = meta["R"], "model"
+        elif rk0_prior is not None:
+            R_old, rk0_source = rk0_prior(int(entry.get("flaw_class") or 0)), "memory"
+            R_old = max(0.0, min(1.0, float(R_old)))
+        else:
+            R_old, rk0_source = RK0_PI_BASE, "uniform"
+
+        # A2 (2026-08-01): a NO_SCORE result leaves the loop here. No S*
+        # threshold check (S* is a statement about a score that does not
+        # exist), no R_k update (apply_sk_to_rk pins R_new to R_old), and no
+        # contribution to the admissible/rejected tallies. The finding is left
+        # exactly as the falsifier path left it.
+        if sk_result.tristate == SK_NO_SCORE:
+            R_new, why = apply_sk_to_rk(R_old, SK_NO_SCORE)
+            entry["sk_result"]["R_old"] = R_old
+            entry["sk_result"]["R_new"] = R_new
+            entry["sk_result"]["rk_note"] = why
+            stats["no_score"] += 1
+            _log(f"  S_k [{cid}]: NO_SCORE — "
+                 f"{sk_result.gate_details.get('target_kind_reason', 'non-Python target')}"
+                 f"; R_k held at {R_old:.3f}")
+            stats["results"][cid] = entry["sk_result"]
+            continue
 
         # S* threshold check
-        if sk_result.tristate == "ADMISSIBLE":
+        if sk_result.tristate == SK_ADMISSIBLE:
             passes, s_star = check_sk_threshold(
                 sk_result.sk, nu_b=nu_b, nu_f=nu_f,
                 q=q, R=R_old, s_floor=s_floor,
@@ -5174,14 +7561,34 @@ def _evaluate_sk_for_findings(
                 # pre-launch re-audit. Ships under
                 # `eta_int_modulator_wired_into_compute_rk: true` in
                 # bench/exp40_configs/40_gate.json.
+                # Ouroboros loop-close (2026-07-31): c_ext / nu_k are no longer
+                # literal zeros. nu_k is looked up per finding through the
+                # registry's source_aliases (the calibrator keys on the model's
+                # own finding_id, the registry on canonical id), falling back to
+                # the round mean when this entry filed in an earlier round.
+                _nu_k = nu_k_default
+                if nu_k_by_finding:
+                    for _alias in entry.get("source_aliases", []) or []:
+                        if _alias in nu_k_by_finding:
+                            _nu_k = nu_k_by_finding[_alias]
+                            break
+                _nu_k = max(0.0, min(1.0, float(_nu_k)))
                 R_new = compute_rk_with_eta_channel(
                     R_old=R_old, sk=sk_result.sk,
                     eta_int=q, m_div=1.0,
-                    c_ext=0.0, nu_k=0.0,
+                    c_ext=c_ext, nu_k=_nu_k,
                     d=1.0, p=1.0,
                     nu_b=nu_b, nu_f=nu_f,
                 )
-                if os.environ.get("DEBUG_CHANNEL_CHECK"):
+                if c_ext > 0.0:
+                    entry["sk_result"]["c_ext"] = round(c_ext, 4)
+                    entry["sk_result"]["nu_k"] = round(_nu_k, 4)
+                    entry["sk_result"]["eta_combined"] = round(
+                        q * (1.0 - c_ext * (1.0 - _nu_k)), 6)
+                # The wrapper==bare identity holds only at c_ext=0; with a real
+                # retrieval the two are SUPPOSED to differ, so the assert is
+                # scoped to the identity configuration it was written for.
+                if os.environ.get("DEBUG_CHANNEL_CHECK") and c_ext == 0.0:
                     _R_bare = compute_rk(R_old=R_old, q=q, sk=sk_result.sk,
                                          nu_b=nu_b, nu_f=nu_f)
                     assert abs(R_new - _R_bare) < 1e-9, (
@@ -5191,15 +7598,26 @@ def _evaluate_sk_for_findings(
                     )
                 entry["sk_result"]["R_old"] = R_old
                 entry["sk_result"]["R_new"] = R_new
+                # Provenance of R_k(0), written ONLY when memory supplied it,
+                # so the consumption-off report is byte-identical to before.
+                if rk0_source == "memory":
+                    entry["sk_result"]["rk0_source"] = "memory"
+                    entry["sk_result"]["rk0_flaw_class"] = int(
+                        entry.get("flaw_class") or 0)
+                    stats.setdefault("rk0_memory_seeded", 0)
+                    stats["rk0_memory_seeded"] += 1
                 stats["admissible"] += 1
                 _log(f"  S_k [{cid}]: ADMISSIBLE sk={sk_result.sk:.3f} "
-                     f"(S*={s_star:.3f}) R: {R_old:.3f} -> {R_new:.3f}")
+                     f"(S*={s_star:.3f}) R: {R_old:.3f} -> {R_new:.3f}"
+                     + (f" [R_k(0) from immune memory, flaw class "
+                        f"{int(entry.get('flaw_class') or 0)}]"
+                        if rk0_source == "memory" else ""))
             else:
                 stats["rejected"] += 1
-                entry["sk_result"]["tristate"] = "REJECTED"
+                entry["sk_result"]["tristate"] = SK_REJECTED
                 _log(f"  S_k [{cid}]: REJECTED sk={sk_result.sk:.3f} "
                      f"< S*={s_star:.3f} (Valley of Bad Fixes)")
-        elif sk_result.tristate == "REJECTED":
+        elif sk_result.tristate == SK_REJECTED:
             stats["rejected"] += 1
             _log(f"  S_k [{cid}]: REJECTED A={sk_result.A} "
                  f"({sk_result.gate_details})")
@@ -5213,13 +7631,193 @@ def _evaluate_sk_for_findings(
         _log(f"  S_k pipeline: {stats['evaluated']} evaluated, "
              f"{stats['admissible']} ADMISSIBLE, "
              f"{stats['rejected']} REJECTED, "
-             f"{stats['escalated']} ESCALATE")
+             f"{stats['escalated']} ESCALATE, "
+             f"{stats['no_score']} NO_SCORE")
     return stats
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Preflight
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _record_computed_evidence(entry: dict, *, kind: str, by: str, detail: str,
+                              falsifier: str = "") -> None:
+    """Attach a computed answer to a finding that may not be cleared automatically.
+
+    FOUNDER RULING, 2026-08-03. The post-convergence sweep cannot clear a critical
+    and structurally never has: the highest severity it has ever touched is 0.66
+    against a 0.70 line. That much is deliberate — CONFIRM-only exists because on
+    Exp 42 two of three REFUTED verdicts on criticals were themselves wrong, and
+    nothing here weakens it.
+
+    What was NOT deliberate is that when the computation ran and returned "this
+    claim looks sound", the answer was thrown away. The founder's objection is
+    exact: if it can be computed, the models should compute it — and the finding
+    AND the fix they devised should both reach a human. Both, not either. A
+    perfectly good fix was being binned for scoring 0.71 rather than 0.69, on a
+    number assigned once at intake and never recomputed.
+
+    So the finding stays open, stays critical, stays a human decision — and the
+    computed answer, the model that produced it, and the proposed fix travel with
+    it. Genuine human-review categories (safety, legal, core functionality, real
+    irreducibility) are unaffected: this changes what a human SEES, never what
+    the machine decides.
+    """
+    entry.setdefault("computed_evidence", []).append({
+        "kind": kind,
+        "by": by,
+        "detail": detail,
+        "falsifier_code": (falsifier or "")[:4000],
+        "proposed_fix": (entry.get("proposed_fix") or "")[:4000],
+    })
+    entry["hil_has_computed_evidence"] = True
+
+
+def _rejection_lines(entry: dict) -> list:
+    """A10 — render, for the panel, why the machinery declined this fix.
+
+    Returns [] when there is nothing to report, so a healthy finding costs no
+    prompt budget. Kept deliberately terse: the panel needs the reason and the
+    gate, not the whole evidence bundle.
+    """
+    out = []
+    sk = entry.get("sk_result") or {}
+    tri = sk.get("tristate")
+    if tri == SK_REJECTED:
+        details = sk.get("gate_details") or {}
+        failed = [k for k, v in details.items()
+                  if v is False or v == 0 or v == 0.0]
+        why = ", ".join(sorted(failed)) if failed else "hard gate returned 0"
+        # The OUTCOME and the failed gate, never the S_k value. The panel can
+        # act on "the syntax gate rejected it"; it cannot act on "0.0", and a
+        # score in the discovery prompt is a channel from the fix-admission
+        # pipeline into the finding stream for no gain. See the non-distortion
+        # guard in test_immune_memory_consumption.py.
+        out.append(
+            f"FIX REJECTED by fix-admission: {why}. The fix was NOT applied "
+            f"and did not close this finding.")
+    elif tri == SK_ESCALATE:
+        out.append(
+            "FIX NOT SCORED: the evidence gates went silent (no baseline, no "
+            "test command). The fix was not applied.")
+    elif tri == SK_NO_SCORE:
+        out.append(
+            "FIX NOT SCORED: fix-admission is undefined on this target, so a "
+            "fix cannot close this finding. Attach a runnable falsifier "
+            "instead — that is what settles it here.")
+    v = entry.get("falsifier_verdict")
+    if v == "ERROR":
+        out.append(
+            "FALSIFIER ERROR: your test did not run to a verdict (broken "
+            "import, syntax error, truncation, or a setup guard firing). It "
+            "demonstrated nothing. Re-write it so it runs.")
+    elif v == "UNTOOLABLE":
+        out.append(
+            "NO FALSIFIER: nothing runnable was attached, so nothing was "
+            "demonstrated. This finding cannot settle without one.")
+    if entry.get("irreducible_escalation"):
+        out.append(
+            f"ESCALATED TO HUMAN: {entry.get('hil_reason', 'ladder exhausted')}")
+    # Discrimination-control records render on their own terms. The generic
+    # line below says the finding "is not cleared automatically", which is TRUE
+    # of a refutation-on-a-critical and FALSE of a control that passed — and a
+    # line that misdescribes its own evidence is worse than no line.
+    # A refused corrected passage must reach the model that offered it, or the
+    # next attempt repeats the same mistake and the refusal is invisible.
+    if entry.get("corrected_copy_rejected"):
+        out.append(
+            f"CORRECTED COPY REFUSED: {entry['corrected_copy_rejected']}. "
+            f"Re-send it in the CORRECTED_COPY form, copying the original "
+            f"passage from the target character for character.")
+    disc = entry.get("discrimination") or {}
+    _disc_outcome = disc.get("outcome")
+    if _disc_outcome == DISC_PASSED:
+        out.append(
+            "DISCRIMINATION CONTROL PASSED: the same falsifier went QUIET "
+            "against a corrected copy of the target, so it does test this "
+            "claim. The CONFIRMED verdict stands.")
+    elif _disc_outcome == DISC_FAILED:
+        out.append(
+            "MECHANICAL FAULT — the falsifier fires just as hard against a "
+            "CORRECTED copy of the target, so it does not test this claim. The "
+            "finding is NOT closed and NOT dropped: it goes to a human, and so "
+            "does the instrument. Machinery that highlights an established "
+            "truth as a fault, is something that may indeed warrant our "
+            "attention. Attach a falsifier that goes quiet when the claim is "
+            "fixed, and supply the corrected copy with it.")
+    elif _disc_outcome in DISC_INDETERMINATE:
+        out.append(
+            f"DISCRIMINATION CONTROL {_disc_outcome}: "
+            f"{(disc.get('detail') or '')[:200]} The CONFIRMED verdict is "
+            f"UNCHANGED — an error is not evidence and nothing was vetoed.")
+    ce = [c for c in (entry.get("computed_evidence") or [])
+          if not str(c.get("kind", "")).startswith("discrimination_control")]
+    if ce:
+        out.append(
+            f"COMPUTED EVIDENCE ON FILE ({len(ce)}): {ce[-1].get('kind')} by "
+            f"{ce[-1].get('by')} — {(ce[-1].get('detail') or '')[:120]}. This finding "
+            f"is CRITICAL so it is not cleared automatically; it goes to a human "
+            f"WITH this evidence and the proposed fix.")
+    return out
+
+
+class LaunchRefused(RuntimeError):
+    """A9: the run was refused before anything was dispatched."""
+
+
+def preflight_target_machinery(cfg, target_path, target_kind: str) -> list:
+    """A9 — refuse a launch whose machinery contradicts its target.
+
+    Returns a list of REFUSAL strings; empty means launch. The check exists
+    because the cheapest possible discovery of a doomed configuration is before
+    the first paid dispatch, and the alternative has been discovered at round 3
+    of 16 with the money spent.
+
+    It is deliberately SHORT. Everything the harness can correct by itself, it
+    already corrects by itself: `resolve_target_kind` raises on a declaration
+    that disagrees with the file, S_k forces itself off on a non-Python target,
+    and the specialist router bypasses file-based Python tools. A preflight that
+    re-litigates those would be noise. What is left is the class the harness
+    CANNOT correct at runtime — a missing input, or a missing absorber.
+    """
+    refusals = []
+
+    # 1. The target must exist and be non-empty. Five of the six prose targets
+    #    named in the Exp 50/51/52 configs did not exist on disk on 2026-08-01.
+    try:
+        if not Path(target_path).is_file():
+            refusals.append(
+                f"target does not exist: {target_path}. The run would dispatch a "
+                f"panel at a file that is not there.")
+        elif not Path(target_path).read_text(encoding="utf-8", errors="replace").strip():
+            refusals.append(f"target is empty: {target_path}")
+    except OSError as exc:
+        refusals.append(f"target is not readable: {target_path} ({exc})")
+
+    # 2. On a prose target the routing ladder is the ONLY absorber between the
+    #    falsifier gate and the HIL queue. Without it, every finding whose first
+    #    falsifier fails goes straight to the human. Measured on Exp 53: that is
+    #    50% of findings. A prose run with routing off is a run whose output is
+    #    a queue, and it costs the same as one that converges.
+    if target_kind == TARGET_KIND_PROSE and not getattr(cfg, "routing_enabled", False):
+        refusals.append(
+            "routing_enabled is false on a PROSE target. Routing is the only "
+            "absorber between the falsifier gate and the HIL queue; without it "
+            "every finding whose first falsifier fails is escalated to the "
+            "human. Set routing_enabled (or the legacy take_up_slack_enabled).")
+
+    # 3. The falsifier gate IS the settlement path on a prose target, because
+    #    S_k is off and fix-verification cannot close. With the gate off there
+    #    is no route to a terminal state at all.
+    if target_kind == TARGET_KIND_PROSE and not getattr(cfg, "falsifier_gate_enabled", False):
+        refusals.append(
+            "falsifier_gate_enabled is false on a PROSE target. S_k is forced "
+            "off and fix-verification cannot close on prose, so the falsifier "
+            "gate is the ONLY route to a terminal state. The run cannot settle "
+            "anything.")
+
+    return refusals
+
 
 def run_preflight(
     exp_config: ExperimentConfig, cdsfl_text: str, cfg: RunnerConfig,
@@ -5252,6 +7850,58 @@ def run_preflight(
 # ─────────────────────────────────────────────────────────────────────────────
 # Main experiment loop
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _build_rk0_prior(
+    cfg: RunnerConfig,
+) -> Tuple[Optional[Callable[[int], float]], Dict[str, float]]:
+    """Build the R_k(0) seed function from cross-experiment immune memory.
+
+    Returns ``(prior_fn, receipt)``. ``prior_fn`` is ``None`` whenever
+    consumption is off or the memory cannot be loaded — the S_k pipeline then
+    falls back to the uniform base prior and the run is byte-identical to
+    every run before 31 July 2026. ``receipt`` accumulates, per flaw class,
+    the blended prior values the pipeline actually drew, and is written into
+    the run report as ``immune_memory.rk0_consumed``: an empty receipt on an
+    enabled run is the visible signature of a prior that reached nothing.
+
+    Appendix §1.1 gives the initial condition ``R_k(0) = π_k``; appendix §1.5
+    gives ``π(k) = (1-ρ)·π_base + ρ·π_mem(k)``. This is the only place the two
+    are joined.
+
+    Separated from ``run_experiment`` so the seam is reachable without a live
+    panel dispatch — the runner's own call chain is asserted structurally in
+    bench/tests/test_immune_memory_consumption.py.
+    """
+    receipt: Dict[str, float] = {}
+    # Gated on CONSUMPTION, not on recording. See RunnerConfig for why the two
+    # are separate switches: consumption inherited from the recording flag would
+    # couple the factorial's four cells and dissolve the zero-plant control.
+    if not getattr(cfg, "immune_memory_consume_rk0", False):
+        return None, receipt
+    try:
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory.load(str(Path(REPO_ROOT) / cfg.immune_memory_path))
+        rho = max(0.0, min(1.0, float(getattr(cfg, "immune_memory_rho", 0.2))))
+    except Exception as exc:  # noqa: BLE001 — never kill a run over a prior
+        _log(f"  WARNING: immune memory load failed ({exc}); "
+             f"R_k(0) falls back to the uniform prior {RK0_PI_BASE}")
+        return None, receipt
+
+    def prior(flaw_class: int) -> float:
+        pi = mem.blended_prior(flaw_class=flaw_class, pi_base=RK0_PI_BASE,
+                               rho=rho)
+        receipt[str(flaw_class)] = round(pi, 6)
+        return pi
+
+    known = sorted(mem._records)
+    _log(f"  immune memory: loaded for CONSUMPTION (rho={rho}, "
+         f"pi_base={RK0_PI_BASE}); R_k(0) seeded from the blended prior. "
+         f"Known flaw classes {known}; "
+         f"pi_mem={ {k: round(mem.pi_mem(k), 3) for k in known} }; "
+         f"blended R_k(0)="
+         f"{ {k: round(mem.blended_prior(k, RK0_PI_BASE, rho), 3) for k in known} }")
+    return prior, receipt
+
 
 def _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:
     if cfg.resume:
@@ -5299,6 +7949,55 @@ def run_experiment(
     _log(f"  Logs: {logs_dir}")
     _log("=" * 60)
 
+    # Confine the shell-bearing panel routes before the first dispatch. Set for
+    # exam runs to the staged target directory; unset for code runs, where the
+    # panel legitimately needs this repo. set_panel_cwd refuses a missing
+    # directory rather than falling back to the repo — failing open here would
+    # silently reinstate the exposure that let a model read the key in Exp 48.
+    set_panel_cwd(cfg.panel_cwd or None)
+
+    # NO PLAINTEXT SCORING KEY MAY EXIST WHILE AN EXAM RUNS.
+    #
+    # This is the control that actually binds, and it has to live HERE. Panel
+    # confinement, read-only staging and the vault all govern what the PANEL can
+    # reach; none of them touch the two paths that run model-authored code with
+    # the operator's own credentials — reverify_falsifier (falsifier_verify.py)
+    # and the execute_python tool given to the OpenRouter/DeepSeek routes.
+    # Adversarial audit, 2026-07-29: a falsifier read every answer key by
+    # absolute path and wrote the planted sets to /tmp, where any panel model
+    # could collect them on the next round, leaving nothing in the run directory
+    # for the forensics to find. Against that, the only defence is that there is
+    # no plaintext key to read.
+    #
+    # The gate previously existed only in arc_sequencer.sh, so any leg launched
+    # directly — which is how every experiment in this arc has been started at
+    # least once — bypassed it entirely.
+    if cfg.panel_cwd:
+        _vault = Path(REPO_ROOT) / "bench" / "vault_keys.sh"
+        if _vault.exists():
+            try:
+                _vs = subprocess.run(["bash", str(_vault), "status"],
+                                     capture_output=True, text=True, timeout=120)
+                _out = (_vs.stdout or "") + (_vs.stderr or "")
+            except Exception as _e:  # noqa: BLE001
+                raise RuntimeError(
+                    f"cannot verify the scoring keys are vaulted ({type(_e).__name__}); "
+                    f"refusing to start an exam run"
+                ) from _e
+            if not _out.lstrip().startswith("VAULTED"):
+                raise RuntimeError(
+                    "REFUSING TO START: a plaintext scoring key is on disk and this "
+                    "run executes model-authored code with the operator's own "
+                    "credentials.\n" + _out.strip() +
+                    "\nRun 'bash bench/vault_keys.sh vault' first."
+                )
+            _log("  [panel] scoring keys verified vaulted")
+        else:
+            raise RuntimeError(
+                "REFUSING TO START: bench/vault_keys.sh is missing, so the "
+                "no-plaintext-key precondition cannot be checked for an exam run."
+            )
+
     # Load source files
     target_path = Path(cfg.test_article)
     if not target_path.is_absolute():
@@ -5312,6 +8011,42 @@ def run_experiment(
         target_rel = target_path.relative_to(REPO_ROOT)
     except ValueError:
         target_rel = target_path
+
+    # ── A1/A2: classify the target, then FORCE the machinery to match it ──────
+    # Raises TargetKindMismatch and stops the run if the config declared a kind
+    # that disagrees with what is on disk. Runs unconditionally: there is no
+    # switch that turns this off, because the launcher has silently dropped six
+    # config keys and a safety property behind a droppable key is not enforced.
+    target_kind, target_kind_reason = resolve_target_kind(
+        str(target_path), target_text, declared=(cfg.target_kind or None))
+    _log(f"  Target kind: {target_kind} ({target_kind_reason})")
+
+    # A9 (panel-converged MUST list): refuse before the first paid dispatch.
+    _refusals = preflight_target_machinery(cfg, target_path, target_kind)
+    if _refusals:
+        for _r in _refusals:
+            _log(f"  *** LAUNCH REFUSED: {_r}")
+        raise LaunchRefused(
+            f"{len(_refusals)} precondition(s) failed for target {target_path} "
+            f"(kind={target_kind}): " + " | ".join(_refusals))
+    sk_forced_off = False
+    if target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
+        # Not a warning — an override. S_k over prose does not merely fail to
+        # help; it inverts. Measured on the 2026-08-01 control: a fix injecting
+        # a shell-injection call into a fenced listing scored sk=1.0000
+        # ADMISSIBLE while a correct prose fix scored 0.6667, because ruff's
+        # markdown baseline made the delta a measure of added English and
+        # bandit — unable to parse the file at all — reported a clean bill at
+        # the heaviest weight. compute_sk short-circuits to NO_SCORE anyway;
+        # switching the pipeline off here additionally skips the baseline
+        # capture, whose ~2752 phantom ruff diagnostics were the input to that
+        # inversion.
+        sk_forced_off = True
+        cfg = replace(cfg, sk_enabled=False)
+        _log("  *** S_k pipeline FORCED OFF: sk_enabled=true in config, but the "
+             "target is not a Python module. S_k is defined over Python source; "
+             "on prose its gates cannot fail and its ranking inverts. Findings "
+             "on this target resolve through the falsifier path. ***")
 
     context_parts = []
     context_paths = []
@@ -5434,6 +8169,9 @@ def run_experiment(
 
     # Finding registry
     registry = FindingRegistry()
+    # The registry renders the panel's state-machine briefing every round;
+    # what it says about how a finding settles depends on the target.
+    registry.target_kind = target_kind
 
     # Fingerprints
     observed_fingerprints = _load_fingerprints()
@@ -5455,8 +8193,9 @@ def run_experiment(
     stall_history: List[Dict[str, int]] = []
     # Exp 40 fix 1A.3: track novel CRITICAL count per round for γ-alt gate.
     novel_critical_history: List[int] = []
-    # Code-location novelty SHADOW (2026-06-08): per-round critical-novelty keyed by target
-    # code location, computed alongside (never replacing) the ID-proxy series. Telemetry only.
+    # Code-location novelty series (2026-06-08): per-round critical-novelty keyed by target
+    # code location. REPLACES the ID-proxy series in novel_critical_history whenever
+    # cfg.location_keyed_convergence is set; telemetry only when it is not.
     location_crit_history: List[int] = []
     try:
         from bench.convergence_location import target_symbols as _loc_target_symbols
@@ -5603,6 +8342,9 @@ def run_experiment(
         _log(f"  in-round re-ask ENABLED (min_markers="
              f"{_INROUND_REASK['min_markers']})")
 
+    # Exp 52 factorial — directive-section selection (2026-07-29).
+    arm_directive_omission(cfg, exp_config)
+
     _merge_arb_ctx.clear()
     if getattr(cfg, "merge_arbitration_enabled", False):
         def _arb_dispatch(mc, prompt: str):
@@ -5655,6 +8397,13 @@ def run_experiment(
         sk_baseline = _capture_baseline(target_text, source_path=str(target_path))
         _log(f"  S_k baseline: ruff={sk_baseline.get('ruff_violations', '?')}, "
              f"bandit={sk_baseline.get('bandit_findings', '?')}")
+
+    # ── IMMUNE MEMORY consumption (2026-07-31). The memory has RECORDED since
+    # Exp 47 and fed nothing. Loading it HERE — at run start, before any round —
+    # is what makes the appendix §1.5 blended prior available as the §1.1
+    # initial condition R_k(0) = π_k for every finding this run evaluates.
+    # A load failure degrades to the uniform prior and never kills the run.
+    rk0_prior, rk0_priors_used = _build_rk0_prior(cfg)
 
     # Build awareness preamble
     roster_lines = "\n".join(
@@ -5755,15 +8504,77 @@ def run_experiment(
         "pattern": cfg.pattern,
         "models": sorted(baseline),
         "target_file": str(target_rel),
+        # A1: what the harness decided the target IS, why, what the config
+        # claimed, and whether that decision overrode the requested machinery.
+        # In the report because a reader must be able to tell a run that scored
+        # its fixes from one that could not, without re-deriving it.
+        "target_kind": {
+            "kind": target_kind,
+            "reason": target_kind_reason,
+            "declared_in_config": cfg.target_kind or None,
+            "sk_enabled_requested": bool(sk_forced_off) or bool(cfg.sk_enabled),
+            "sk_enabled_effective": bool(cfg.sk_enabled),
+            "sk_forced_off_by_target_kind": sk_forced_off,
+        },
         "context_files": [str(p) for p in cfg.context_files],
         "max_rounds": cfg.max_rounds,
         "extension_cap": cfg.extension_cap,
         "domain": cfg.domain,
+        # A completed report must say WHICH rule closed the run and on WHICH
+        # series. Until 2026-07-31 it recorded four keys, none of them the
+        # counting rule: `convergence_reason` quoted the zero tail but not what
+        # produced it, and the location-keyed series was written under
+        # `location_crit_shadow_history` — still calling itself *shadow* — in
+        # runs where the config had promoted it to gating. Determining which
+        # rule closed a finished experiment meant going back to the launch
+        # config. Every key below is now here so the report is self-describing
+        # on the single most important input to its own verdict.
         "convergence_config": {
             "earliest_stop": cfg.earliest_stop_round,
             "consecutive_required": cfg.consecutive_rounds_required,
             "rho_threshold": cfg.rho_threshold,
             "rho_rolling_window": cfg.rho_rolling_window,
+            # WHICH SERIES the zero-tail was counted on. `location_keyed` counts
+            # a critical as new only if it names a code location not previously
+            # flagged — which cannot see a second distinct defect in an
+            # already-flagged function. `settled_id` is the older per-finding
+            # series. This is the difference between "no new criticals" and "no
+            # new criticals at previously unflagged locations", and a reader
+            # cannot tell them apart without this key.
+            "critical_series": ("location_keyed"
+                               if getattr(cfg, "location_keyed_convergence", False)
+                               else "settled_id"),
+            "location_keyed_convergence": bool(
+                getattr(cfg, "location_keyed_convergence", False)),
+            # The two-sided gate's own parameters (γ side and count side).
+            "gamma_alt_threshold": getattr(cfg, "gamma_alt_threshold", None),
+            "gamma_alt_consecutive_zero_crit": getattr(
+                cfg, "gamma_alt_consecutive_zero_crit", None),
+            "gamma_alt_earliest_round": getattr(cfg, "gamma_alt_earliest_round", None),
+            "hardened_gate_enabled": bool(getattr(cfg, "hardened_gate_enabled", False)),
+            "critical_severity_threshold": CRITICAL_SEVERITY_THRESHOLD,
+            # Named limitation, carried in the record rather than in a note that
+            # travels separately from it.
+            "known_limitation": (
+                "location-keyed counting cannot distinguish a second distinct "
+                "defect in an already-flagged function from a re-find, so a "
+                "zero tail means 'no new criticals at previously unflagged "
+                "locations'. Fired at the closing round in Exp 45 (C0031) and "
+                "Exp 47 (C0070). See bench/audit_closing_window.py."
+                if getattr(cfg, "location_keyed_convergence", False) else None),
+        },
+        # Exp 52 factorial: which experimental factors were on, and — when a
+        # factor was off — which reading of "off" the cell actually used.
+        # Recorded per run so a result file is self-describing and cells can
+        # be compared without re-deriving anything from the config.
+        "directive_factors": {
+            _f: {
+                "enabled": bool(getattr(cfg, DIRECTIVE_FACTOR_FIELDS[_f][0], True)),
+                "off_mode": getattr(cfg, DIRECTIVE_FACTOR_FIELDS[_f][1], "absent"),
+                "directive_text_present": _directive_factor_state(cfg, _f)[0],
+                "runner_pass_active": _directive_factor_state(cfg, _f)[1],
+            }
+            for _f in DIRECTIVE_FACTOR_FIELDS
         },
         "rounds": [],
     }
@@ -5772,13 +8583,28 @@ def run_experiment(
     # of round K+1. cdsfl_operational.md §17. See bench/dm/_feedback.py for
     # the constructor; this variable holds the rendered per-model sections.
     feedback_sections_for_next_round: Dict[str, str] = {}
-    feedback_enabled = _feedback_channel_enabled(cfg)
+    # Runner-pass halves of the two experimental factors. Under the default
+    # "absent" off-mode these follow the *_enabled switch exactly; the
+    # narrower off-modes split text from pass (see RunnerConfig).
+    feedback_enabled = _directive_factor_state(cfg, "feedback")[1]
+    divergence_pass_enabled = _directive_factor_state(cfg, "divergence")[1]
 
     # Exp 40 fix 1D.5 — S_k SEARCH/REPLACE format pre-check.
     # Populated at end of round K with (canonical_id, diagnostic_reason)
     # pairs for findings whose proposed_fix did not parse as an S_k block.
     # Consumed at start of round K+1 as a reformat-request prompt section.
     sk_reformat_requests_for_next_round: List[Tuple[str, str]] = []
+
+    # Ouroboros loop-close (2026-07-31). The cell runs BETWEEN rounds, so the
+    # literature it retrieves after round K is what round K+1 sees — the
+    # one-round lag is the cell's original design, not a compromise. Empty
+    # string means "inject nothing", which is the OFF path and also the
+    # "on, but nothing relevant came back" path: identical bytes either way.
+    ouroboros_brief_section_for_next_round: str = ""
+    # (c_ext, per-finding nu_k) from the Stage 6 calibrator's read of that same
+    # retrieval, consumed by the S_k -> R_k channel later in the SAME round the
+    # shadow cells run (shadow cells at 6666, S_k at 6681).
+    ouroboros_rk_inputs: Dict[str, Any] = {}
 
     # ── Main loop ──
     for round_idx in range(start_round, loop_cap):
@@ -5836,6 +8662,11 @@ def run_experiment(
                 )
                 if _sk_reformat:
                     _relay_prompt = _sk_reformat + "\n\n" + base_prompt
+            # Ouroboros brief from round K-1 rides ahead of the base prompt so
+            # it reaches every relay hop, same slot as the S_k reformat request.
+            if ouroboros_brief_section_for_next_round:
+                _relay_prompt = (
+                    ouroboros_brief_section_for_next_round + _relay_prompt)
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_relay(
                 exp_config, mgr, brain, _relay_prompt, cdsfl_text, full_code,
                 round_idx, cfg, registry=registry,
@@ -5947,6 +8778,12 @@ def run_experiment(
                 )
                 if _sk_reformat:
                     _context_prefix += _sk_reformat + "\n\n"
+            # Ouroboros brief from round K-1. Rides in the same context prefix
+            # as the consolidation/fix-summary/window blocks, which _make_prompt
+            # splices in immediately before "=== ARTIFACT:" — so it lands inside
+            # the dispatched prompt, ahead of the code under review.
+            if ouroboros_brief_section_for_next_round:
+                _context_prefix += ouroboros_brief_section_for_next_round
             if _context_prefix:
                 registry_summary = _context_prefix + registry_summary
 
@@ -6060,6 +8897,12 @@ def run_experiment(
 
         # Status transitions
         _update_finding_statuses(registry, round_idx, cfg=cfg)
+        # Corrected-copy ingest (2026-08-12). Runs BEFORE the gate so a passage
+        # offered this round is available to the discrimination control this
+        # round rather than next. A no-op on any round where no model offered
+        # one — which is every archived round.
+        _ingest_corrected_copies(
+            registry, responses, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
         # "tools decide" override (gated, default-off): the runner re-runs each
         # model-attached falsifier and lets that verdict win over the vote.
         apply_falsifier_verdicts(registry, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
@@ -6125,7 +8968,75 @@ def run_experiment(
         )
 
         # Immune pipeline
+        # TARGET INTEGRITY GUARD (2026-07-29). A frozen target must stay frozen:
+        # apply_fixes_back=false means the module under review is not to change
+        # for the run's duration. Panel models are dispatched with Write/Edit in
+        # their allowed tools (experiment_11_orchestrator.py:693), so a model CAN
+        # mutate the target mid-run — observed 2026-07-29 04:07-04:09 on Exp 47's
+        # target (mutated, then restored, leaving no trace in git or the round
+        # files). Any falsifier re-verified during such a window would have run
+        # against a different module than the one under review. Detective only:
+        # hashes the target each round and logs a LOUD warning on change. It
+        # cannot prevent the write and deliberately does not halt the run —
+        # whether to remove model write access is a founder ruling.
+        try:
+            import hashlib as _hl
+            _tgt_p = Path(REPO_ROOT) / cfg.test_article
+            _tgt_h = _hl.sha256(_tgt_p.read_bytes()).hexdigest()
+            _prev_h = locals().get("_target_hash_prev") or globals().get("_TARGET_HASH_PREV")
+            if _prev_h and _prev_h != _tgt_h:
+                _log(f"  *** TARGET INTEGRITY WARNING: {cfg.test_article} CHANGED "
+                     f"mid-run (round {round_idx}): {_prev_h[:12]} -> {_tgt_h[:12]}. "
+                     f"Findings/falsifiers from this round may reference a different "
+                     f"module than earlier rounds. Review before trusting results. ***")
+                result.setdefault("target_integrity_events", []).append(
+                    {"round": round_idx, "from": _prev_h, "to": _tgt_h})
+            globals()["_TARGET_HASH_PREV"] = _tgt_h
+            result.setdefault("target_hashes", {})[str(round_idx)] = _tgt_h
+        except Exception as _ti_exc:  # noqa: BLE001 — guard must never break a run
+            _log(f"  WARNING: target integrity check failed ({_ti_exc})")
+
         immune_result = brain.run_immune_pipeline(findings)
+
+        # PER-VERDICT SPECIALIST LOG (one-shot arc, 2026-07-29): the ratified
+        # earn-their-keep gate for the exam experiments requires, per verdict,
+        # {classified type, routed tool, verdict, finding id} so that recall,
+        # non-distortion and decision-change can be attributed to the specialist
+        # rather than to the surrounding panel. Ground truth is joined post-run
+        # from the exam answer key. Pure telemetry: never read by the gate.
+        try:
+            _sv_rows = []
+            for _fid, _vlist in (getattr(immune_result, "cell_verdicts", {}) or {}).items():
+                _canon = None
+                for _f in findings:
+                    if _f.finding_id == _fid:
+                        _canon = registry.lookup_alias(_f.model_id, _f.finding_id)
+                        break
+                for _v in (_vlist or []):
+                    _sv_rows.append({
+                        "round": round_idx,
+                        "finding_id": _fid,
+                        "canonical_id": _canon,
+                        "cell_type": str(getattr(_v, "cell_type", "")),
+                        "claim_type": str(getattr(_v, "claim_type", "")),
+                        "tool_used": getattr(_v, "tool_used", ""),
+                        "verdict": getattr(_v, "verdict", ""),
+                        "confidence": getattr(_v, "confidence", None),
+                        "evidence": (getattr(_v, "evidence", "") or "")[:300],
+                    })
+            if _sv_rows:
+                _sv_path = logs_dir / f"specialist_verdicts_r{round_idx:02d}.json"
+                _sv_path.write_text(json.dumps({
+                    "round": round_idx,
+                    "domain": cfg.domain,
+                    "final_verdicts": dict(getattr(immune_result, "final_verdicts", {}) or {}),
+                    "verdicts": _sv_rows,
+                }, indent=2, default=str), encoding="utf-8")
+                _log(f"  specialist verdict log: {len(_sv_rows)} verdicts -> "
+                     f"{_sv_path.name}")
+        except Exception as _sv_exc:  # noqa: BLE001 — telemetry must never break a run
+            _log(f"  WARNING: specialist verdict logging failed ({_sv_exc})")
+
         for f in findings:
             if f.verified:
                 canonical = registry.lookup_alias(f.model_id, f.finding_id)
@@ -6162,6 +9073,29 @@ def run_experiment(
             logs_dir=brain.logs_dir,
         )
 
+        # ── Ouroboros loop-close (2026-07-31): consume what the cell produced.
+        # Both halves stay empty/zero unless the experiment's _ouroboros block
+        # opted in, so a config without the opt-in keys runs the pre-31-July
+        # code path exactly.
+        _ouro_wiring = shadow_cell_data.get("_ouroboros_wiring", {}) or {}
+        ouroboros_brief_section_for_next_round = _ouro_wiring.get(
+            "brief_section", "") or ""
+        ouroboros_rk_inputs = {
+            "c_ext": float(_ouro_wiring.get("c_ext", 0.0) or 0.0),
+            "nu_k_by_finding": _ouro_wiring.get("nu_k_by_finding", {}) or {},
+            "nu_k_mean": float(_ouro_wiring.get("nu_k_mean", 0.0) or 0.0),
+        }
+        if ouroboros_brief_section_for_next_round:
+            _log(f"  [ouroboros] round {round_idx} → round {round_idx + 1}: "
+                 f"brief injected into prompt "
+                 f"({len(ouroboros_brief_section_for_next_round):,} chars, "
+                 f"{shadow_cell_data['ouroboros'].get('briefs_rendered', 0)} "
+                 f"paper(s))")
+        if ouroboros_rk_inputs["c_ext"] > 0.0:
+            _log(f"  [ouroboros] c_ext={ouroboros_rk_inputs['c_ext']:.4f} "
+                 f"(search={_ouro_wiring.get('search_status', '?')}), "
+                 f"ν̄_k={ouroboros_rk_inputs['nu_k_mean']:.4f} → R_k channel")
+
         # CC2v verification (A5)
         verification_stats = _verification_step(
             registry, round_idx, full_code, exp_config.models, cfg)
@@ -6175,6 +9109,10 @@ def run_experiment(
                 round_idx=round_idx,
                 test_cmd=cfg.test_cmd,
                 s_floor=cfg.sk_s_floor,
+                c_ext=ouroboros_rk_inputs.get("c_ext", 0.0),
+                nu_k_by_finding=ouroboros_rk_inputs.get("nu_k_by_finding"),
+                nu_k_default=ouroboros_rk_inputs.get("nu_k_mean", 0.0),
+                rk0_prior=rk0_prior,
             )
 
         # Exp 40 1D.3: compute per-model rho BEFORE the ITC loop so each
@@ -6270,6 +9208,20 @@ def run_experiment(
         # the unverified/open critical counts below, so the demoted finding drops out
         # of every critical-counting channel this same round while staying in the
         # registry. No-op (mutates nothing) when the flag is off.
+        # LATENT TAGGER (2026-07-31, gated default-off). Severity calibration's
+        # condition (3) — entry["latent"] — has never had a producer, so the
+        # calibrator has been inert since it was written. This is that producer.
+        # MUST run here: after apply_falsifier_verdicts (so a tag can never be
+        # read as a verdict) and immediately before the calibration sweep that
+        # consumes it. Sets latent=False on every entry lacking explicit evidence,
+        # so turning the tagger on without the calibrator changes no outcome.
+        if getattr(cfg, "latent_tagger_enabled", False):
+            from bench.latent_tagger import tag_registry
+            _latent_n = tag_registry(
+                registry, skip_statuses={"MERGED", "CLOSED", "DUPLICATE"},
+            )
+            _log(f"  latent-tagger: {_latent_n} finding(s) tagged latent "
+                 f"(explicit evidence only; silence reads as reachable)")
         _sev_calib_n = _apply_severity_calibration(registry, cfg, round_idx)
         if _sev_calib_n:
             _log(f"  severity-calibration: {_sev_calib_n} finding(s) recalibrated "
@@ -6302,17 +9254,26 @@ def run_experiment(
                 _log(f"  novelty (settled/genuine): all={_settled_all[round_idx]} "
                      f"crit={_settled_crit[round_idx]} (raw all={_raw_novel})")
 
-        # Code-location novelty SHADOW (2026-06-08): telemetry-only, NEVER gates. Computes the
-        # critical-novelty series keyed by code location (the verified fix for the cross-round
-        # dedup failure) so the next live run shows it beside the ID-proxy count. Wrapped so a
-        # failure can never break a run. Live-gating is a separate, calibration-gated step.
+        # Code-location novelty series (2026-06-08). Computes the critical-novelty series
+        # keyed by code location (the verified fix for the cross-round dedup failure) and
+        # logs it beside the ID-proxy count. When cfg.location_keyed_convergence is set this
+        # series GATES: it overwrites novel_critical_history[-1] and becomes the COUNT side
+        # of the two-sided gate. This comment said "telemetry-only, NEVER gates" until
+        # 2026-08-08 — false since the first location-keyed live run, three lines above the
+        # promotion it denied.
+        #
+        # Wrapped so a computation failure can never break a run. That swallow is deliberate
+        # and unchanged, but it is NOT free when the series gates: on failure the round's
+        # gate input silently stays at the ID-proxy value set immediately above, so the
+        # handler below must say so rather than report a skipped shadow computation.
+        # _gates is read BEFORE the try so the handler can reach it.
+        _gates = getattr(cfg, "location_keyed_convergence", False)
         try:
             if getattr(cfg, "location_shadow_enabled", True) and _loc_symbols:
                 location_crit_history = _location_keyed_critical_series(
                     registry, round_idx, _loc_symbols)
                 _loc_tail = location_crit_history[-cfg.gamma_alt_consecutive_zero_crit:]
                 _idprox = _settled_crit[round_idx] if round_idx < len(_settled_crit) else "NA"
-                _gates = getattr(cfg, "location_keyed_convergence", False)
                 if _gates and round_idx < len(location_crit_history) and novel_critical_history:
                     # PROMOTED: the location-keyed count is the convergence trigger.
                     novel_critical_history[-1] = location_crit_history[round_idx]
@@ -6321,7 +9282,15 @@ def run_experiment(
                      f"series tail={_loc_tail}; "
                      f"{'FEEDS γ-alt convergence' if _gates else 'telemetry only, never gates'})")
         except Exception as _loc_exc:  # telemetry/gate-feed must never break a run
-            _log(f"  [shadow] location-keyed novelty skipped: {_loc_exc}")
+            if _gates:
+                _log(f"  [GATE] location-keyed novelty FAILED: "
+                     f"{type(_loc_exc).__name__}: {_loc_exc} — the run continues, but the "
+                     f"COUNT side of the two-sided gate silently falls back to the ID-proxy "
+                     f"series for round {round_idx}, which is the cross-round dedup failure "
+                     f"the location key exists to fix. REVIEW THIS ROUND.")
+            else:
+                _log(f"  [shadow] location-keyed novelty skipped: "
+                     f"{type(_loc_exc).__name__}: {_loc_exc} (telemetry only this run)")
 
         # Gamma — REPORTED, NEVER a trigger or blocker (panel redesign
         # 2026-05-23). Telemetry-only in the state gate (config:
@@ -6372,7 +9341,7 @@ def run_experiment(
         _irreducible_q = registry.irreducible_queue_count()
         if _irreducible_q > 0:
             _log(f"  static HIL queue: {_irreducible_q} ladder-exhausted irreducible "
-                 f"critical(s) — excluded from the A4 blocker; convergence ALARM if "
+                 f"critical(s) — excluded from the A4 blocker; HALT ALARM if "
                  f"> {cfg.max_irreducible_queue}")
         if getattr(cfg, "hardened_gate_enabled", False):
             # F4/F6/conjunction hardened gate: settled-registry γ,
@@ -6394,6 +9363,9 @@ def run_experiment(
                     rho_churn=rho_churn,
                     irreducible_queue=_irreducible_q,
                     gamma_critical=gamma_critical,  # TWO-SIDED gate: gamma is an ACTIVE condition
+                    # Distinguishes "clean target, panel worked" from "panel
+                    # returned nothing" when the critical series is all-zero.
+                    total_findings=len(registry.entries),
                 )
             )
         if gamma_alt_converged and not converged:
@@ -6508,15 +9480,31 @@ def run_experiment(
         # objects so we can flag cross-round recidivism — a round K+1
         # alternative that replicates a round K alternative unchanged — and
         # surface the severe 0.60 tier through eta_int_modulator.
+        # Exp 52 factorial (2026-07-29): this whole pass IS the runner half of
+        # the divergence mechanism. Previously it ran unconditionally with a
+        # hard-coded DivergenceConfig(enabled=True); it is now gated on the
+        # config switch, so a divergence-off cell performs no alternative
+        # extraction, computes no cross-model diversity, flags no recidivism,
+        # and carries no alternatives into the next round.
         cross_model_diversity: Optional[Dict[str, Any]] = None
         recidivism_hits: List[Dict[str, Any]] = []
         current_round_alternatives_by_finding: Dict[str, List[Any]] = {}
+        if not divergence_pass_enabled:
+            # Recorded explicitly rather than left as a bare None, so a cell's
+            # round file distinguishes "the pass was switched off" from "the
+            # pass ran and found no alternatives".
+            cross_model_diversity = {"divergence_pass": "disabled"}
         try:
+            if not divergence_pass_enabled:
+                raise _DivergencePassDisabled()
             from bench.dm._divergence import (
                 build_divergence_record as _build_divergence_record,
                 DivergenceConfig as _DivergenceConfig,
             )
-            _div_cfg = _DivergenceConfig(enabled=True)
+            # Honoured at the construction site as well as at the branch guard:
+            # if a later refactor drops the guard, the record builder itself
+            # still returns the disabled no-op record.
+            _div_cfg = _DivergenceConfig(enabled=divergence_pass_enabled)
             per_model_alts: List[Tuple[str, str]] = []
             for f in findings:
                 raw = responses.get(f.model_id, "")
@@ -6552,6 +9540,8 @@ def run_experiment(
                         })
             if per_model_alts:
                 cross_model_diversity = diversity_signal_from_round(per_model_alts)
+        except _DivergencePassDisabled:
+            pass  # switched off by config; cross_model_diversity already set
         except Exception as _e:
             # Logging-only metric — never crash the loop on parse errors.
             cross_model_diversity = {"error": f"{type(_e).__name__}: {_e}"}
@@ -6586,6 +9576,36 @@ def run_experiment(
         }
         result["rounds"].append(round_data)
 
+        # ── A7: irreducible-queue alarm — HALT, NOTIFY, ATTACH ───────────────
+        # Runs after this round's telemetry is recorded (the round record is
+        # part of the evidence) and before EVERY path that can end or continue
+        # a round: before the HIL pause, before the convergence action block,
+        # before any burst phase transition. No gate arrangement — hardened,
+        # γ-alt, burst — can route around it, because it does not consult any
+        # of them.
+        #
+        # This is NOT a convergence verdict. The run stops, `converged` stays
+        # False, `convergence_reason` records a halt distinct from both a
+        # finish and a stall, and the per-finding evidence bundle rides in the
+        # report. See build_irreducible_queue_alarm for why the previous
+        # response — refusing convergence, silently, from inside the γ-alt
+        # checker — was worse than useless and got itself suppressed twice
+        # while it was right.
+        _irq_alarm = build_irreducible_queue_alarm(registry, cfg, round_idx)
+        if _irq_alarm is not None:
+            _log("")
+            for _line in _irq_alarm["notify"].splitlines():
+                _log(f"  *** {_line}")
+            _log("")
+            result["irreducible_queue_alarm"] = _irq_alarm
+            result["halted"] = True
+            result["halted_at_round"] = round_idx
+            result["convergence_reason"] = IRREDUCIBLE_QUEUE_HALT
+            result["registry"] = registry.to_dict()
+            converged = False
+            brain._save_checkpoint()
+            break
+
         # ── HIL review gate (13 April 2026, agreed scope refinement) ──
         # In monolithic mode: pause after every round.
         # In burst mode: pause only at phase transitions (handled below).
@@ -6605,10 +9625,7 @@ def run_experiment(
             result["hil_paused_at_round"] = round_idx
             result["hil_status"] = "paused_for_review"
             partial_report = logs_dir / f"{cfg.experiment_name}_hil_r{round_idx:02d}.json"
-            partial_report.write_text(
-                json.dumps(result, indent=2, ensure_ascii=False, default=str),
-                encoding="utf-8",
-            )
+            _write_report_json(partial_report, result)
             sys.exit(42)
 
         # ── Phase transition or final convergence ──
@@ -6658,10 +9675,7 @@ def run_experiment(
                     result["hil_paused_at_phase"] = current_phase_name
                     result["hil_status"] = "paused_for_review"
                     partial_report = logs_dir / f"{cfg.experiment_name}_hil_phase_{phase_idx}.json"
-                    partial_report.write_text(
-                        json.dumps(result, indent=2, ensure_ascii=False, default=str),
-                        encoding="utf-8",
-                    )
+                    _write_report_json(partial_report, result)
                     sys.exit(42)
 
                 if phase_idx + 1 < len(burst_plan.phases):
@@ -6780,7 +9794,7 @@ def run_experiment(
                 gamma_prev = (gamma_history[-2]
                               if len(gamma_history) >= 2 else 0.0)
                 should_extend, ext_reason = _check_budget_extension(
-                    round_idx, registry, gamma, gamma_prev)
+                    round_idx, registry, gamma, gamma_prev, cfg)
                 if should_extend:
                     effective_max = cfg.extension_cap
                     extended = True
@@ -6822,10 +9836,38 @@ def run_experiment(
     result["gamma_critical_history"] = [
         round(g, 4) for g in gamma_critical_history
     ]
-    # Code-location novelty SHADOW series (2026-06-08): telemetry only, never gated. The
-    # verified-direction fix for the cross-round dedup failure, reported beside the live
-    # ID-proxy counts for side-by-side comparison on the next run.
-    result["location_crit_shadow_history"] = location_crit_history
+    # The location-keyed critical series. Emitted under BOTH names: the honest
+    # one, and the legacy `..._shadow_...` key that every completed report and
+    # every existing reader uses. The legacy name is actively misleading — it
+    # says "shadow" in runs where the config had promoted this series to GATING
+    # — but renaming it outright would silently break readers of six completed
+    # runs, so it is deprecated in place rather than removed.
+    # HIERARCHICAL NOVELTY — SHADOW. Computed from the final registry so it costs
+    # nothing during the run and cannot affect it. Recorded so the two series can
+    # be compared on real evidence before anyone promotes either.
+    try:
+        from bench.convergence_location import hierarchical_novelty_series
+        _hier = hierarchical_novelty_series(
+            registry.entries, round_idx, _loc_symbols or [],
+            within_threshold=float(getattr(cfg, "hierarchical_within_threshold", 0.20)))
+        result["hierarchical_crit_series"] = _hier
+        result["hierarchical_crit_series_is_gating"] = bool(
+            getattr(cfg, "hierarchical_novelty_convergence", False))
+        result["hierarchical_within_threshold"] = float(
+            getattr(cfg, "hierarchical_within_threshold", 0.20))
+        # WHERE the rules disagree, so a human has specific findings to inspect
+        # rather than two number sequences. These are the blind-spot candidates.
+        from bench.convergence_location import novelty_rule_divergence
+        result["novelty_rule_divergence"] = novelty_rule_divergence(
+            registry.entries, _loc_symbols or [],
+            within_threshold=float(getattr(cfg, "hierarchical_within_threshold", 0.20)))
+    except Exception as _hx:  # noqa: BLE001 — shadow telemetry must never kill a run
+        result["hierarchical_crit_series_error"] = f"{type(_hx).__name__}: {_hx}"
+
+    result["location_crit_series"] = location_crit_history
+    result["location_crit_series_is_gating"] = bool(
+        getattr(cfg, "location_keyed_convergence", False))
+    result["location_crit_shadow_history"] = location_crit_history  # DEPRECATED alias
     result["registry"] = registry.to_dict()
     result["hil_flags"] = _itc_hil_flags[:]
     # Secondary-route fallback accumulators (2026-05-22). Surfaced in
@@ -6837,9 +9879,46 @@ def run_experiment(
     result["secondary_route_usage"] = _secondary_route_usage[:]
     result["persistent_empty_flags"] = _persistent_empty_flags[:]
 
-    # POST-CONVERGENCE SWEEP (2026-07-28): verdict already recorded above;
-    # the sweep can only clean the residual ledger, never touch convergence.
-    if converged and getattr(cfg, "post_convergence_sweep_rounds", 0):
+    # POST-CONVERGENCE SETTLE (2026-07-31): a finding demonstrated in the FINAL
+    # round never meets the CONFIRMED+verified -> CLOSED transition, because that
+    # transition runs at the start of a round and there is no next round. Runs
+    # unconditionally — it is bookkeeping, needs no config, costs no dispatch,
+    # and like the sweep it is strictly after the verdict, so it cannot touch
+    # convergence. Must precede the sweep, so the sweep sees only findings that
+    # are genuinely unresolved.
+    if converged:
+        try:
+            _settled = _settle_confirmed_findings(registry, round_idx)
+            if _settled:
+                result["post_convergence_settled"] = _settled
+                result["registry"] = registry.to_dict()  # refresh after the edit
+        except Exception as _st_exc:  # noqa: BLE001 — never lose a run to tidying
+            _log(f"  WARNING: post-convergence settle failed ({_st_exc})")
+
+    # RESIDUAL-CLEARING SWEEP (2026-07-28 as post-convergence; widened 2026-08-01).
+    # The verdict is already recorded above; the sweep can only clean the residual
+    # ledger, never touch convergence.
+    #
+    # WHY IT NOW RUNS ON A HALT TOO
+    # -----------------------------
+    # It was gated on `converged`, so the cleaner was switched off in exactly the
+    # runs whose residual ledger is worst. Exp 53 halted at round 3 of 16 with 20
+    # of 40 findings escalated; `post_convergence_sweep_rounds: 2` was configured
+    # in 53_control_zero_live.json and never executed, because the run did not
+    # converge. The founder is relying on this pass to clear findings the
+    # machinery mis-filed, and it was absent precisely when there were most of
+    # them. It costs a bounded panel dispatch and it is the difference between
+    # shipping a 20-item human queue and shipping whatever survives adjudication.
+    #
+    # It cannot rescue a failed run: it registers no new findings, it runs after
+    # the verdict is written, and criticals remain CONFIRM-only inside it. What it
+    # can do is stop a halt from also being an unswept halt.
+    _sweep_reason = "convergence" if converged else "halt/round-cap exit"
+    if getattr(cfg, "post_convergence_sweep_rounds", 0):
+        if not converged:
+            _log(f"  residual-clearing sweep on {_sweep_reason} "
+                 f"(run did NOT converge — the verdict above stands unchanged)")
+        result["sweep_trigger"] = _sweep_reason
         try:
             result["post_convergence_sweep"] = _post_convergence_sweep(
                 registry, exp_config, cfg, round_idx)
@@ -6890,13 +9969,105 @@ def run_experiment(
         except Exception as _im_exc:  # noqa: BLE001
             _log(f"  WARNING: immune memory recording failed ({_im_exc})")
             result["immune_memory"] = {"recorded": False, "error": str(_im_exc)}
+        # CONSUMPTION receipt (2026-07-31): which R_k(0) values this run actually
+        # drew from memory, keyed by flaw class. Recorded separately from the
+        # consumption SWITCH, because the two failure modes are different and a
+        # reader of the report must be able to tell them apart:
+        #   consumed=False              — this run deliberately did not consume.
+        #   consumed=True, receipt {}   — consumption was on and reached NOTHING,
+        #                                 the "recorded but never consumed" state
+        #                                 this wiring exists to end.
+        _consuming = bool(getattr(cfg, "immune_memory_consume_rk0", False))
+        result["immune_memory"]["rk0_consumed"] = _consuming
+        result["immune_memory"]["rk0_priors_used"] = dict(rk0_priors_used)
+        result["immune_memory"]["rk0_pi_base"] = RK0_PI_BASE
+        result["immune_memory"]["rk0_rho"] = float(
+            getattr(cfg, "immune_memory_rho", 0.2))
+        if _consuming:
+            _log(f"  immune memory: R_k(0) seeded from blended prior for "
+                 f"{len(rk0_priors_used)} flaw class(es): {rk0_priors_used}")
+        else:
+            _log("  immune memory: RECORDING only — R_k(0) used the uniform "
+                 f"prior {RK0_PI_BASE}; consumption is off for this experiment")
+
+    # ── VERIFICATION CHAIN — cryptographic signing of the run record ──────
+    # REINSTATED 2026-07-29 (founder directive). Signing lapsed silently when
+    # the arc moved to runner v2: the last sealed chain on disk is Exp 37
+    # (9 April). Every experiment from Exp 40 onward — the whole modern
+    # programme — ran UNSIGNED, while the project's own documentation presents
+    # tamper-evident provenance as a core property. Faithful to the original
+    # spec in run_exp37_evidence.py: per-round records, per-model-response
+    # records (hash_only, so payloads are not duplicated), a whole-report
+    # record, then an RFC 9162 Merkle epoch seal.
+    try:
+        from bench.verification_chain import VerificationChain
+
+        def _floats_to_strings(obj):
+            """Floats have platform-dependent repr; stringify for deterministic
+            Merkle hashing (original spec, run_exp37_evidence.py)."""
+            if isinstance(obj, float):
+                return f"{obj:.6g}"
+            if isinstance(obj, dict):
+                return {k: _floats_to_strings(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_floats_to_strings(v) for v in obj]
+            return obj
+
+        _chain = VerificationChain()
+        _who = cfg.experiment_name or "reference_runner_v2"
+
+        for _rd in result.get("rounds", []):
+            _chain.append_record(
+                artifact_type="experiment_round",
+                payload=_floats_to_strings(_rd),
+                recorded_by=_who,
+                metadata={"experiment": cfg.experiment_name,
+                          "round": _rd.get("round", "?"),
+                          "models": _rd.get("models_responded", [])},
+            )
+        for _rf in sorted(logs_dir.glob("r*_*.json")):
+            if _rf.name == "runner_state.json":
+                continue
+            try:
+                _chain.append_record(
+                    artifact_type="model_response",
+                    payload=_floats_to_strings(
+                        json.loads(_rf.read_text(encoding="utf-8"))),
+                    recorded_by=_who,
+                    metadata={"source_file": _rf.name,
+                              "experiment": cfg.experiment_name},
+                    storage_mode="hash_only",
+                )
+            except Exception:  # noqa: BLE001 — one unreadable file must not void the chain
+                continue
+        _chain.append_record(
+            artifact_type="experiment_report",
+            payload=_floats_to_strings(result),
+            recorded_by=_who,
+            metadata={"experiment": cfg.experiment_name,
+                      "convergence_reason": result.get("convergence_reason", ""),
+                      "converged_at": result.get("converged_at"),
+                      "total_findings": total_findings,
+                      "registry_entries": len(registry.entries)},
+        )
+        _epoch = _chain.seal_epoch()
+        _chain_path = logs_dir / "experiment_chain.json"
+        _chain.save_json(str(_chain_path))
+        _log(f"  verification chain SEALED: {len(_chain.records)} records, "
+             f"merkle_root={_epoch['merkle_root'][:24]}...")
+        result["merkle_chain"] = {
+            "path": str(_chain_path),
+            "records": len(_chain.records),
+            "merkle_root": _epoch["merkle_root"],
+        }
+    except Exception as _vc_exc:  # noqa: BLE001 — never lose a completed run to signing
+        _log(f"  *** WARNING: verification chain NOT sealed ({_vc_exc}) — "
+             f"this run is UNSIGNED and must be reported as such ***")
+        result["merkle_chain"] = {"sealed": False, "error": str(_vc_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"
-    report_path.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False, default=str),
-        encoding="utf-8",
-    )
+    _write_report_json(report_path, result)
 
     _log(f"\n{'=' * 60}")
     _log(f"EXPERIMENT {cfg.experiment_name} — {len(brain.state.all_findings)} ROUNDS COMPLETE")

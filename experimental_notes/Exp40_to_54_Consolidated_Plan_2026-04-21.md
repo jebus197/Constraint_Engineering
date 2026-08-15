@@ -51,6 +51,8 @@ Pass criteria default to the `40_gate.json` pattern: `γ ≥ 0.30 OR 3 consecuti
 | 14 | **Exp 53 — Engineering Shadow (M)** | Synthesised minimal native engineering module (15–25K chars, purpose-built) — committed 21 April (RQ6 5/5 convergence) | Engineering B-Cell specialist (M, shadow): routes mathematical via `sympy + uncertainty_propagation + dimensional_analysis`; per `domains/immune/engineering.toml` | Prior; M shadow built functional per Item 1E.4 | Prior; safety-factor calculation routing | Synthesised content must embed falsifiable engineering claims (load factors, material tolerances) that exercise safety-factor routing; false positives without structural context remain baseline concern | Engineering shadow logs verdicts |
 | 15 | **Exp 54 — Integration run with 2×2 factorial** | TBC — candidate: `bench/reference_runner_v2.py` itself (runner-tests-runner meta-test) | Full system, factorial attribution | All 40–53 fixes folded; `eta_int_modulator` live since Exp 40 (F2); all thresholds **frozen** per Gate C threshold-freeze; frozen thresholds applied identically across Cells A/B/C/D | All lessons from the 14-experiment arc | Factorial attribution confounded if §17 and §18 co-live for 14 prior experiments (tier calibration settled — mitigated by threshold-freeze); Cell A data quality — not merely integrity but confound-by-runner-evolution (Gemini RQ3 minority position) | All four cells complete under frozen thresholds; attribution via two-way ANOVA or equivalent GLM. Contrasts: §17 main = (B+D)/2 − (A+C)/2; §18 main = (C+D)/2 − (A+B)/2; interaction = (D−C) − (B−A). **Cell A integrity 3-layer strategy:** (1) archive integrity check — γ trajectory from Exp 36–38 archive reproduces within tolerance; (2) Fallback 1 (Gemini): fresh Cell A run at Exp 54 codebase with §17/§18 off; (3) Fallback 2 (DeepSeek): sensitivity analysis bounding via Cell B/C early rounds, report interaction-only |
 
+**[Correction 2026-08-05.]** Row 2 above offers `bench/dm/_suppression.py` as an alternative Exp 41 target. **`bench/dm/_suppression.py` was never created** — not moved, not deleted: no path of that name exists at any commit in this repository's history (`git log --all --name-only --format="" | grep -i suppress` returns nothing), so there is no live path to redirect a reader to. Exp 41 ran against `bench/dm/_convergence.py`; the three Exp 41 configs (`bench/exp41_configs/41_convergence.json`, `41b_first_principles.json`, `41c_first_principles_run.json`) name that module and no suppression module. Suppression logic lives inside existing files (`bench/dm/_convergence.py`, `bench/dm/_immune.py`), never in one of its own. The row is left intact as the record of a target choice still open on 2026-04-21. Separately, `bench/exp54_configs/` in row 17 of §4 (Shadow element status) is correctly marked *(to be created)* / *not present* and remains so — that is a forward-looking item, not a dead reference.
+
 **Exp 54 factorial cells:**
 - **Cell A:** Exp 36–38 baseline archive (§17 off, §18 off) — subject to 3-layer integrity strategy above.
 - **Cell B:** §17 on, §18 off.
@@ -115,6 +117,27 @@ Claim clusters:
 ### Drafting cadence and storage
 
 Each module drafts ahead of its experiment's entry, not at entry. Draft files land under `bench/cdsfl_registry/targets/` (directory created on first module draft): `targets/exp47_biology.md`, `targets/exp51_physics.md`, `targets/exp52_chemistry.md`, `targets/exp53_engineering.md`. Each draft reviewed against Part 3 selection criteria (claim density, falsifiability coverage, no metaphor, one intentional false claim) before insertion into its experiment run.
+
+**[Correction 2026-08-12.]** All four filenames in the sentence above —
+`targets/exp47_biology.md`, `targets/exp51_physics.md`, `targets/exp52_chemistry.md`
+and `targets/exp53_engineering.md` — are dead, and they are dead for two independent
+reasons: the domain-to-experiment mapping moved, and the files that were eventually
+written have since been removed from the tree on a founder ruling. **First, none of
+these four names was ever used.** `git log --all
+--name-only --format="" | grep 'cdsfl_registry/targets/.*\.md'` returns exactly
+seven paths, and the target modules among them are `exp48_chemistry.md`,
+`exp49_engineering.md`, `exp50_physics.md`, `exp51_biology.md`, `exp52_factorial.md`
+and `exp53_zone_controller.md`. Biology landed at Experiment 51, not 47; physics at
+50, not 51; chemistry at 48, not 52; engineering at 49, not 53; Experiment 52 became
+the 2×2 factorial capstone and Experiment 53 the zero-plant control. Experiment 47
+was re-scoped away from an exam article altogether and ran against an in-repository
+module (`bench/exp47_configs/47_divergence_locationkey_live.json`). **Second, the six
+files that did exist were deleted from the working tree** in commit `ddd74bd`
+("Founder ruling: passphrase-sealed keys and targets out of the repository"),
+which replaced them with `bench/cdsfl_registry/targets/MANIFEST.md`. So even a
+reader who corrected the names would find nothing at HEAD. The exposure position for
+those articles is recorded in that MANIFEST, not here. The sentence is left intact
+as the record of the drafting plan as it stood on 2026-04-21.
 
 ---
 

@@ -364,7 +364,9 @@ class DeepSeekChat:
     def send(self, prompt: str) -> str:
         self.history.append({"role": "user", "content": prompt})
         response = self.client.chat.completions.create(
-            model="deepseek-chat", messages=self.history,
+            # was "deepseek-chat" — a different, weaker model than the panel's
+            # DeepSeek (founder directive 2026-07-31).
+            model="deepseek-v4-pro", messages=self.history,
             max_tokens=4096, temperature=0.0,
         )
         if not response.choices:

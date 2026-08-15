@@ -1,0 +1,582 @@
+{
+  "round_idx": 1,
+  "findings": [
+    {
+      "finding_id": "Codex_F001",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 6,
+      "encounter_count": 2,
+      "description_snippet": "`TokenBucket.allow()` in Listing A accepts negative `cost` values and treats them as successful admissions while increas",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Codex_F003",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 7,
+      "encounter_count": 1,
+      "description_snippet": "`backoff_delay()` in Listing C computes `2  attempt` before applying the ceiling. For pathological `attempt` values, thi",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "ChatGPT_F001",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 2,
+      "encounter_count": 2,
+      "description_snippet": "VERDICT: CONFIRM C0001; EXTEND with constructor validation.\n\nListing A, `TokenBucket.allow`, accepts negative `cost` val",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "ChatGPT_F002",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 1,
+      "encounter_count": 4,
+      "description_snippet": "VERDICT: CONFIRM C0003.\n\nListing A, `TokenBucket.allow`, mutates shared admission state without synchronization. ZC-26 a",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "ChatGPT_F003",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 7,
+      "encounter_count": 2,
+      "description_snippet": "VERDICT: CONFIRM C0005.\n\nListing C, `backoff_delay`, computes `2  attempt` before applying the ceiling. Large `attempt` ",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "ChatGPT_F004",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 6,
+      "encounter_count": 3,
+      "description_snippet": "DISCOVERY: new finding.\n\nListing D, `HashRing`, permits construction of an empty ring and then fails at lookup with modu",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "ChatGPT_F005",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 5,
+      "encounter_count": 4,
+      "description_snippet": "VERDICT: CONFIRM C0004.\n\nListing E, `topo_order`, returns a partial rollout order on cyclic input instead of failing clo",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "DeepSeek_F001",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5549,
+      "flaw_class": 4,
+      "encounter_count": 2,
+      "description_snippet": "FINDING_ID: F001  \nSEVERITY: 0.65  \nFLAW_CLASS: 4 (completeness)  \nABSTRACTION_INDEX: 0.50  \n\n### FIND\n\n`WaveTracker` (L",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Gemini_C0003",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 1,
+      "encounter_count": 5,
+      "description_snippet": "`TokenBucket.allow` (Listing A) mutates shared admission state (`self.tokens`, `self.last`) without holding a lock. The ",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Gemini_C0007",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 5,
+      "encounter_count": 5,
+      "description_snippet": "`HashRing.locate` (Listing D) uses `bisect.bisect_right`. In consistent hashing, if a key's hash exactly matches a node'",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Gemini_C0004",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 1,
+      "encounter_count": 6,
+      "description_snippet": "`topo_order` (Listing E) silently returns a partial rollout plan when the graph contains a cycle. While ZC-19 documents ",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Gemini_C0001",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 1,
+      "encounter_count": 7,
+      "description_snippet": "`TokenBucket.allow` (Listing A) accepts negative `cost` values. If `cost` is negative, `self.tokens >= cost` evaluates t",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "Gemini_C0005",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 6,
+      "encounter_count": 4,
+      "description_snippet": "`backoff_delay` (Listing C) computes `base_ms * (2  attempt)`. If `base_ms` is passed as a float (e.g., `250.0`), Python",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "CC2_F002",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6099,
+      "flaw_class": 1,
+      "encounter_count": 8,
+      "description_snippet": "FINDING_ID: F002\nSEVERITY: 0.72\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.55\n\nFIND. `WaveTracker` (Listing F) is a sing",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "CC2_F003",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 2,
+      "encounter_count": 3,
+      "description_snippet": "FINDING_ID: F003\nSEVERITY: 0.50\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.45\n\nFIND. ZC-02's cost bound is derived a",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "CC2_F004",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 6,
+      "encounter_count": 5,
+      "description_snippet": "FINDING_ID: F004\nSEVERITY: 0.62\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.50\n\nFIND. `wait_for_wave` has no timeout ",
+      "epistemic_tag": "SPECULATIVE"
+    },
+    {
+      "finding_id": "CC2_F005",
+      "nu_k_proxy": 0.8,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.3,
+      "search_status": "search_failed",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 0,
+          "status": "shadow_mock",
+          "recall_estimate": 0.4,
+          "query_quality": 0.2,
+          "access_completeness": 0.0,
+          "c_s": 0.0
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 6,
+      "encounter_count": 6,
+      "description_snippet": "FINDING_ID: F005\nSEVERITY: 0.42\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.25\n\nFIND. ZC-36 defines the sidecar's sam",
+      "epistemic_tag": "SPECULATIVE"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "bandit": {
+      "tool_name": "bandit",
+      "passes": 0,
+      "fails": 7,
+      "inconclusive": 0,
+      "total": 7,
+      "fail_fraction": 1.0,
+      "shadow_e_pass": 1.0
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 14,
+      "total": 14,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 18,
+      "total": 18,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "networkx": {
+      "tool_name": "networkx",
+      "passes": 1,
+      "fails": 1,
+      "inconclusive": 12,
+      "total": 14,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 2,
+      "fails": 4,
+      "inconclusive": 1,
+      "total": 7,
+      "fail_fraction": 0.6666666666666666,
+      "shadow_e_pass": 1.5
+    },
+    "dis": {
+      "tool_name": "dis",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 17,
+      "total": 17,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "mypy": {
+      "tool_name": "mypy",
+      "passes": 1,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.8,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 17,
+  "source_cooccurrence": {},
+  "timestamp": 1785553518.9612212
+}

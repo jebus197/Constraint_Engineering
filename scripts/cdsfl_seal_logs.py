@@ -37,7 +37,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from bench.verification_chain import VerificationChain  # noqa: E402
+from bench.verification_chain import (  # noqa: E402
+    VerificationChain,
+    canonical_json,
+    sha256_digest,
+)
 
 
 LOGS_ROOT = REPO_ROOT / "logs"
@@ -139,6 +143,59 @@ def _seal_dir(dir_path: Path, dry_run: bool, force: bool) -> dict | None:
     }
 
 
+def _verify_contents(dir_path: Path, chain: VerificationChain) -> tuple[bool, str]:
+    """Re-read every sealed source file and compare it to the sealed hash.
+
+    `verify_chain()` only proves the seal file is internally self-consistent.
+    Records here are written in `hash_only` mode, so that check never touches
+    the log files at all — a rewritten log verifies OK against an untouched
+    seal. This re-reads each file from disk and recomputes its payload hash
+    exactly as `append_record` did, so content tampering is actually detected.
+
+    A file present in the directory but absent from the seal is NOT reported:
+    directories are sealed once and new logs land in them during normal
+    operation, so flagging additions would be a false positive.
+    """
+    errors: list[str] = []
+    records = chain.records
+
+    # An emptied seal is self-consistent — verify_chain() calls a chain with no
+    # records "empty, nothing to verify". If the directory still holds sealable
+    # files, that seal covers nothing and must not read as OK.
+    if not records:
+        eligible = [
+            f for f in dir_path.iterdir()
+            if f.is_file() and f.name != SEAL_FILENAME
+            and f.suffix in SEALABLE_EXTENSIONS
+        ]
+        if eligible:
+            return False, (
+                f"seal contains 0 records but {len(eligible)} sealable "
+                f"file(s) are present"
+            )
+
+    for record in records:
+        body = record.get("sealed_body", {})
+        seq = body.get("seq", "?")
+        name = (body.get("metadata") or {}).get("source_file")
+        if not name:
+            errors.append(f"record {seq}: no source_file in metadata")
+            continue
+        src = dir_path / name
+        if not src.is_file():
+            errors.append(f"{name}: sealed file is missing from disk")
+            continue
+        actual = sha256_digest(canonical_json(_payload_for(src)).encode("utf-8"))
+        if actual != body.get("payload_hash"):
+            errors.append(
+                f"{name}: content hash mismatch — sealed "
+                f"{body.get('payload_hash')}, on disk {actual}"
+            )
+    if errors:
+        return False, "; ".join(errors)
+    return True, f"{len(records)} sealed file(s) re-read and matched"
+
+
 def _verify_dir(dir_path: Path) -> bool:
     seal_path = dir_path / SEAL_FILENAME
     rel = dir_path.relative_to(LOGS_ROOT)
@@ -147,12 +204,19 @@ def _verify_dir(dir_path: Path) -> bool:
         return False
     try:
         chain = VerificationChain.load_json(str(seal_path))
-        ok = chain.verify_chain()
-        print(f"  {rel}: {'OK' if ok else 'TAMPERED'}")
-        return bool(ok)
+        # verify_chain returns (bool, message). Testing the tuple itself for
+        # truth is always True and silently discards the verdict.
+        ok, msg = chain.verify_chain()
+        if ok:
+            ok, msg = _verify_contents(dir_path, chain)
     except Exception as err:  # noqa: BLE001
         print(f"  {rel}: ERROR — {err}", file=sys.stderr)
         return False
+    if not ok:
+        print(f"  {rel}: TAMPERED — {msg}", file=sys.stderr)
+        return False
+    print(f"  {rel}: OK — {msg}")
+    return True
 
 
 def _discover_dirs() -> list[Path]:

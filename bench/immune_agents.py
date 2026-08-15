@@ -39,6 +39,12 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from bench.dm._types import Finding
 from bench.dm._convergence import _finding_similarity
+from bench.live_dispatch_policy import live_dispatch_allowed
+
+try:  # pragma: no cover - the fallback only fires on a bare-path import
+    from bench.bugzilla_loop import is_python_target
+except ImportError:  # reference_runner_v2 imports siblings without the package
+    from bugzilla_loop import is_python_target  # type: ignore[no-redef]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -110,8 +116,20 @@ def _get_python_tools() -> str:
 
 
 def _get_claude_cli() -> Optional[str]:
-    """Lazy-discovered claude CLI. Retries on failure."""
+    """Lazy-discovered claude CLI. Retries on failure.
+
+    Returns None under pytest unless CDSFL_ALLOW_LIVE_DISPATCH=1 (2026-07-31).
+    Every caller in this module is already written to fail open on None —
+    `if not _get_claude_cli(): return <fallback>` — so this reuses the module's
+    own documented no-CLI branch rather than inventing a new one. It makes the
+    test suite behave the same on a machine with the CLI installed as on one
+    without, instead of silently spending ~1,395 s of Max-subscription model
+    time per suite run and making outcomes depend on the model's reply.
+    See bench/live_dispatch_policy.py for the full rationale and the opt-in.
+    """
     global _CLAUDE_CLI_CACHE, CLAUDE_CLI
+    if not live_dispatch_allowed():
+        return None
     if _CLAUDE_CLI_CACHE is not None:
         return _CLAUDE_CLI_CACHE
     result = _find_claude_cli()
@@ -347,12 +365,25 @@ _DOMAIN_ALIAS = {
 # Supersedes constraint S5 of the Exp 40 plan. Inert for any run whose config
 # does not select these domains (Exp 44 runs domain=software); engages when a
 # synth STEM module or BR2 task selects physics/chemistry/engineering.
+# 2026-07-29 (Exp 52 pre-flight): "cs_software" added. PURELY ADDITIVE — no
+# config in the repository declares that domain string (every software run,
+# including 39_F_cs_software.json, declares domain="software"), so nothing
+# already running or queued changes behaviour. Exp 52 declares it so the
+# software-family specialist runs LIVE against cs_software.toml, whose
+# claim_patterns are reachable from the domain pre-pass and whose
+# verification_tools resolve to runnable verifiers for every claim type. Under
+# domain="software" the code.toml code_behavioral tool list is
+# ["ast_analysis", "test_runner"] — BOTH delegated, hence skipped in
+# _specialist_b_cell_dispatch — so a code_behavioral claim yields no specialist
+# verdict at all. The guard at _classify_claim_v2 (`domain != "software"`)
+# stays exactly as it is: Exp 40-47 behaviour remains byte-identical.
 LIVE_SPECIALIST_DOMAINS: frozenset = frozenset({
     "mathematics",
     "statistics",
     "biology",
     "information_science",
     "software",
+    "cs_software",
     "physics",
     "chemistry",
     "engineering",
@@ -1819,6 +1850,80 @@ except Exception as e:
 
 
 # ── Code Domain Specialist Wrappers ──────────────────────────────────────────
+#
+# Every verifier below takes a PATH and hands it to a tool that assumes the
+# path is Python source. Handed a prose target none of them refuse — they
+# answer. Measured on a 9-line markdown document, 2026-08-01:
+#
+#   * ruff declines to lint a non-.py path ("warning: No Python files found
+#     under the given path(s)" on stderr) and exits 0 with "All checks
+#     passed!" on stdout. _verify_lint_check counts every non-blank stdout
+#     line as a violation, so that success message is read as one, and the
+#     wrapper CONFIRMS every code-quality finding at 0.80 against a file ruff
+#     never opened. (Rename the same bytes to .py and ruff error-recovers
+#     instead, emitting 14 phantom syntax diagnostics from 9 lines — which is
+#     how the S_k effect gate came to measure how much English a fix added.)
+#     NOTE: that same stdout-parsing defect makes _verify_lint_check return
+#     CONFIRMED on a CLEAN Python file too — its LINT_CLEAN branch is
+#     unreachable. That is a SEPARATE defect on the Python path, out of scope
+#     for A6, reported rather than silently changed here.
+#   * bandit cannot parse the file, reports it under "errors", returns
+#     results=[] and exits 0. That empty set is indistinguishable from a clean
+#     scan, so it REJECTS every security finding at 0.75.
+#   * mypy parses the prose as source and reports "Leading zeros in decimal
+#     integer literals are not permitted". The wrapper sees ": error:" and
+#     CONFIRMS the finding at 0.85, on the strength of a paragraph.
+#   * dis cannot compile the document (SyntaxError) -> UNCERTAIN.
+#   * crosshair cannot import it (ModuleNotFoundError, rc=2) -> UNCERTAIN.
+#
+# Three of the five produce a DEFINITIVE verdict — two confirmations and one
+# rejection — on a real finding, from a reading the tool was structurally
+# incapable of making. So the type check happens BEFORE the tool is invoked —
+# in code, at both the router and each verifier, not in a config file that the
+# launcher has silently dropped six times.
+#
+# A6 of the 2026-08-01 panel-converged prose-adaptation list.
+
+#: Verdict string for "this tool cannot read this target at all". Distinct
+#: from UNCERTAIN, which means "the tool looked and could not decide".
+#: Contributes zero weight to every consensus path in this module, exactly as
+#: UNCERTAIN does, so it is safe to emit into `all_verdicts` — but it is
+#: greppable in the logs and it can never be mistaken for a reading.
+NOT_APPLICABLE_VERDICT = "NOT_APPLICABLE"
+
+#: Tools that take a file path and can only read Python. Keyed by the manifest
+#: tool name in bench/cdsfl_registry/tool_manifest.toml.
+_PYTHON_ONLY_FILE_TOOLS: Dict[str, str] = {
+    "type_checker": "mypy",
+    "lint_check": "ruff",
+    "security_scan": "bandit",
+    "bytecode_analysis": "dis",
+    "symbolic_execution": "crosshair",
+}
+
+
+def _not_applicable_verdict(
+    tool: str, file_path: str, finding_id: str = "",
+) -> CellVerdict:
+    """Report that `tool` was BYPASSED because the target is not Python.
+
+    Never CONFIRMED, never REJECTED, and deliberately not UNCERTAIN either:
+    the tool did not look, so there is no reading to be uncertain about.
+    """
+    name = os.path.basename(file_path) if file_path else "<no target>"
+    return CellVerdict(
+        cell_type=CellType.B_CELL,
+        finding_id=finding_id,
+        verdict=NOT_APPLICABLE_VERDICT,
+        confidence=0.0,
+        evidence=(
+            f"{tool}: NOT_APPLICABLE — target {name!r} is not a Python source "
+            f"file, and {tool} can only read Python. The tool was bypassed, "
+            f"not run; this is not a verdict on the finding."
+        ),
+        tool_used=f"{tool}:not_applicable",
+        elapsed_s=0.0,
+    )
 
 
 def _verify_type_check(claim: str, file_path: str = "") -> CellVerdict:
@@ -1833,6 +1938,8 @@ def _verify_type_check(claim: str, file_path: str = "") -> CellVerdict:
             confidence=0.0, evidence="mypy: no valid file_path for type checking",
             tool_used="mypy", elapsed_s=0.0,
         )
+    if not is_python_target(file_path):
+        return _not_applicable_verdict("mypy", file_path)
 
     code = f"""
 import subprocess, json
@@ -1894,6 +2001,8 @@ def _verify_lint_check(claim: str, file_path: str = "") -> CellVerdict:
             confidence=0.0, evidence="ruff: no valid file_path for lint checking",
             tool_used="ruff", elapsed_s=0.0,
         )
+    if not is_python_target(file_path):
+        return _not_applicable_verdict("ruff", file_path)
 
     code = f"""
 import subprocess
@@ -1904,11 +2013,24 @@ result = subprocess.run(
     capture_output=True, text=True, timeout=15,
 )
 
+# B3 (found 2026-08-01, live across the whole arc). ruff with
+# --output-format=concise prints "All checks passed!" on stdout with rc=0 for a
+# CLEAN file. The old filter was `[l for l in lines if l.strip()]`, so ruff's own
+# SUCCESS message counted as a violation: a clean file reported
+# "LINT_VIOLATION: All checks passed!" and the B-Cell CONFIRMED the finding.
+# Every lint-class finding against a Python target has been getting a spurious
+# confirmation. rc==0 IS ruff's statement that the file is clean; stdout is
+# commentary. The success-string filter is belt-and-braces for a non-zero rc.
+_SUCCESS = ("All checks passed!", "All checks passed")
 lines = result.stdout.strip().splitlines() if result.stdout else []
-violations = [l for l in lines if l.strip()]
+violations = [
+    l for l in lines
+    if l.strip() and l.strip() not in _SUCCESS
+    and not l.strip().startswith("Found 0 errors")
+]
 
-if result.returncode == 0 and not violations:
-    print("LINT_CLEAN: no violations found")
+if result.returncode == 0:
+    print("LINT_CLEAN: no violations found (ruff exited 0)")
 elif violations:
     for v in violations[:5]:
         print(f"LINT_VIOLATION: {{v}}")
@@ -1953,6 +2075,14 @@ def _verify_security_scan(claim: str, file_path: str = "") -> CellVerdict:
             confidence=0.0, evidence="bandit: no valid file_path for security scan",
             tool_used="bandit", elapsed_s=0.0,
         )
+    if not is_python_target(file_path):
+        # bandit returns an EMPTY result set on a file it cannot parse (the
+        # failure is filed under "errors", which this wrapper never reads),
+        # and the empty set is indistinguishable from a clean scan — so
+        # without this guard every security finding against a prose target is
+        # REJECTED at confidence 0.75 on the strength of a file bandit never
+        # read. Measured 2026-08-01.
+        return _not_applicable_verdict("bandit", file_path)
 
     code = f"""
 import subprocess, json
@@ -2020,6 +2150,8 @@ def _verify_bytecode_analysis(claim: str, file_path: str = "") -> CellVerdict:
             confidence=0.0, evidence="dis: no valid file_path for bytecode analysis",
             tool_used="dis", elapsed_s=0.0,
         )
+    if not is_python_target(file_path):
+        return _not_applicable_verdict("dis", file_path)
 
     code = f"""
 import ast, dis, io, re
@@ -2107,6 +2239,8 @@ def _verify_symbolic_execution(claim: str, file_path: str = "") -> CellVerdict:
             confidence=0.0, evidence="crosshair: no valid file_path for symbolic execution",
             tool_used="crosshair", elapsed_s=0.0,
         )
+    if not is_python_target(file_path):
+        return _not_applicable_verdict("crosshair", file_path)
 
     code = f"""
 import subprocess, sys
@@ -2814,6 +2948,9 @@ def _specialist_b_cell_dispatch(
       * UNCERTAIN verdicts fall through to the next tool
       * unknown / delegated / missing-verifier tools are skipped silently
       * if all tools return UNCERTAIN, the last UNCERTAIN verdict is kept
+      * a Python-only file tool aimed at a non-Python target is BYPASSED and
+        reported as a NOT_APPLICABLE verdict (A6); it never runs, never
+        breaks the loop, and contributes no weight to any consensus
 
     Phase B4: runs in shadow mode — specialist verdicts are returned to the
     caller but the reference runner does not fold them into ``all_verdicts``.
@@ -2858,6 +2995,9 @@ def _specialist_b_cell_dispatch(
         # File-based verifiers need the target file path.
         target_file = getattr(tf.finding, "target_file", "") or ""
 
+        # A6: bypassed Python-only tools, reported rather than swallowed.
+        not_applicable: List[CellVerdict] = []
+
         for tool_name in specialist_tools:
             entry = manifest.get(tool_name)
             if entry is None or entry.get("delegate"):
@@ -2871,6 +3011,26 @@ def _specialist_b_cell_dispatch(
                 continue
 
             if entry.get("needs_file"):
+                # A6 (panel-converged, 2026-08-01). mypy/ruff/bandit/dis/
+                # crosshair are handed a path and assume it is Python. On a
+                # prose target ruff and mypy CONFIRM anything and bandit
+                # REJECTS anything, all three from a file the tool never
+                # parsed. Check the target type HERE, before dispatch, so the
+                # tool is never invoked rather than invoked-and-second-guessed.
+                #
+                # An EMPTY target_file is left on the old path on purpose: the
+                # verifiers already answer UNCERTAIN with "no valid file_path",
+                # which is the truthful reading of "no target was supplied".
+                # Only a real target of the wrong type is bypassed here.
+                if target_file and not is_python_target(target_file):
+                    not_applicable.append(
+                        _not_applicable_verdict(
+                            _PYTHON_ONLY_FILE_TOOLS.get(tool_name, tool_name),
+                            target_file,
+                            finding_id=fid,
+                        )
+                    )
+                    continue
                 v = verifier_fn(tf.extracted_claim, target_file)
             else:
                 v = verifier_fn(tf.extracted_claim)
@@ -2882,6 +3042,9 @@ def _specialist_b_cell_dispatch(
         if v is not None:
             v.finding_id = fid
             verdicts.append(v)
+        # Appended after any substantive verdict so callers that read
+        # verdicts[0] still see the tool that actually looked.
+        verdicts.extend(not_applicable)
 
     return verdicts
 
@@ -3206,10 +3369,26 @@ _shadow_log = _logging.getLogger("immune.pipeline")
 if not _shadow_log.handlers:
     _shadow_log.setLevel(_logging.INFO)
     import os as _os
+    import sys as _sys
     # Bug#20 fix: removed dead first assignment
     _shadow_log_dir = _os.path.join(
         _os.path.dirname(_os.path.abspath(__file__)), "logs"
     )
+    # bench/logs/ is ARCHIVAL — the record of what the panel actually did, never
+    # edited, corrections filed as sidecars. But every pytest run imports this
+    # module and appends synthetic pipeline output to the same file: 332 lines
+    # of TestModel_F001 fixtures interleaved with real experiment history,
+    # continuously since 2026-05-15. Nobody reading the archive afterwards can
+    # separate the two without checking model names finding by finding. Found
+    # 2026-07-31 when a routine `git status` showed the archive dirty after a
+    # test run that had touched nothing.
+    #
+    # Under pytest the log goes to a scratch directory instead. An explicit
+    # override exists for the case where someone genuinely wants the test output.
+    _shadow_log_dir = _os.environ.get("CDSFL_SHADOW_LOG_DIR") or _shadow_log_dir
+    if "pytest" in _sys.modules and not _os.environ.get("CDSFL_SHADOW_LOG_DIR"):
+        import tempfile as _tempfile
+        _shadow_log_dir = _tempfile.mkdtemp(prefix="cdsfl_test_shadow_logs_")
     _os.makedirs(_shadow_log_dir, exist_ok=True)
     _shadow_fh = _logging.FileHandler(
         _os.path.join(_shadow_log_dir, "immune_pipeline.log"),
@@ -4007,6 +4186,34 @@ def _classify_claim_v2(
     Returns (claim_type, extracted_claim, confidence).
     """
     desc = finding.description
+
+    # 0. DOMAIN claim_patterns pre-pass (one-shot arc, 2026-07-29). The
+    # per-domain TOMLs carry domain-tuned classification regexes that were
+    # previously DORMANT — only the generic hard-coded patterns below ran,
+    # sending most non-software domain claims to UNCATEGORISED and leaving
+    # classification to the fail-open LLM layer (non-deterministic routing,
+    # contra the ratified routing-integrity gate for the exam experiments).
+    # When a non-software domain config defines claim_patterns, consult them
+    # FIRST in the documented priority order; the generic patterns remain the
+    # fallback. domain in ("", "software") is untouched — Exp 40-47 behaviour
+    # byte-identical.
+    if domain and domain != "software":
+        try:
+            _dcfg = load_domain_config(domain)
+            _cpat = (_dcfg.get("immune", {}) or {}).get("claim_patterns", {}) or {}
+            for _ct_name in ("statistical", "logical", "code_structural",
+                             "mathematical", "code_behavioral"):
+                _pats = _cpat.get(_ct_name)
+                if not _pats:
+                    continue
+                for _pat in (_pats if isinstance(_pats, list) else [_pats]):
+                    try:
+                        if re.search(_pat, desc, re.IGNORECASE):
+                            return ClaimType(_ct_name), desc, 0.85
+                    except re.error:
+                        continue
+        except Exception:  # noqa: BLE001 — pre-pass must never break classification
+            pass
 
     # 1. Statistical (narrow, specific — check first)
     if _STAT_PATTERN.search(desc):

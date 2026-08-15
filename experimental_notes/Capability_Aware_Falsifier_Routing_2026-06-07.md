@@ -2,6 +2,8 @@
 
 **2026-06-07 15:31 BST.** When a weak model leaves a critical finding un-confirmed, route falsification to progressively stronger writers rather than re-asking the weak model or escalating to a human. Restores the capability-aware routing that the live runner had collapsed into flat parallel dispatch. Module committed `d383a6e` (validated, unit-tested; not yet wired).
 
+**[Correction 2026-08-05.]** The module path used throughout this note — `bench/take_up_slack.py`, §4 heading and §5 — is dead at the current HEAD. The file was **renamed, not deleted**: `bench/take_up_slack.py` → `bench/routing.py` on 2026-07-12 in commit `349951f` ("A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)"). Verified by `git log --diff-filter=D --name-only -- bench/take_up_slack.py` (one deletion, in `349951f`) and `git log --diff-filter=A --name-only -- bench/routing.py` (added in the same commit). The code is intact at the new path; the `take_up_slack` function and log-prefix names moved with it. The *config key* `take_up_slack_enabled` is **not** dead — it is still accepted as a back-compatible alias for `routing_enabled` on both config-ingestion paths (`bench/launcher_core.py:216`, `bench/reference_runner_v2.py:760`), and the Exp 42–49 configs still carry it. This entry is left intact as historical record; it described the tree correctly on 2026-06-07.
+
 ## 1. The architecture already exists — it was dormant
 
 The capability-aware routing the founder remembered is built but disconnected from the live runner:

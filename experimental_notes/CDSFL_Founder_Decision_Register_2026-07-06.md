@@ -38,6 +38,8 @@ DEEPSEEK_API_KEY=<value>      # DeepSeek direct
 3. **7 June** — **capability routing** (`bench/take_up_slack.py`): an unconfirmed critical climbs a Codex→CC2 ladder of stronger falsifier-writers before any human sees it. Live-proven: the prior 15-finding human pile-up fell to **zero across 16 rounds**.
 4. **8–9 June** — **the convergence root cause**: novelty was keyed on model-invented finding-ids, so re-found defects re-counted as new and the quiescence streak never formed. Fix = the **code-location novelty key** (`bench/convergence_location.py`): a critical is new only if it names a target-file AST symbol not previously flagged. Result: **Exp 42 converged live at round 6, series [10,1,5,1,0,0,0], zero residual HIL** (commit `375236d`). The free-text-similarity alternative was tested and refuted (over-merges; falsely converges at round 2).
 
+**[Correction 2026-08-05.]** The path `bench/take_up_slack.py` in item 3 above is dead at the current HEAD, and item D9 in Part D below records the rename that killed it as still pending. It has since happened. The file was **renamed, not deleted**: `bench/take_up_slack.py` → `bench/routing.py` on 2026-07-12 in commit `349951f` ("A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)"), six days after this register was written; verified by `git log --diff-filter=D --name-only -- bench/take_up_slack.py`, which returns that commit and no other. The config key `take_up_slack_enabled` is still accepted as a back-compatible alias for `routing_enabled` (`bench/launcher_core.py:216`, `bench/reference_runner_v2.py:760`). The entries are left intact as the record of the 2026-07-06 state.
+
 **10 June (overnight)** — the **two-sided gate** (`71b190b`, founder ruling): convergence requires BOTH `gamma_critical >= 0.30` (the critical decay curve has flattened — gamma active, never "reported only"; standing directive in `.claude/CLAUDE.md`) AND 3 consecutive zero-new-critical rounds. Verified on both landmarks (exp41c 1.000, exp42 0.687). Also: a 3-test regression the gate commit had left red was caught and fixed (`633b4c6`, 434-test sweep green); **severity calibration built** (`050f17c`, 17 tests — demotes a falsifier-confirmed-real but explicitly latent critical below 0.7, recording original + reason, never deleting, never touching safety/core/security/data-loss; **inert until a latent-tagger sets `entry["latent"]`**); **Exp 43 config built and pre-flight verified** (`1b5d148`).
 
 **2 July** — full recovery + state assessment after the first hiatus: repository confirmed untouched; the operational tracker's resume pointer (stale at 7 June) advanced; MEMORY.md compacted below its load limit (zero content loss — session entries moved verbatim to topic files).
@@ -77,6 +79,14 @@ were deleted"), a direct masked read of `.env` on 8 July showed **all original k
 `export KEY=value` shell format — plus `SEMANTIC_SCHOLAR_API_KEY` cleanly **appended** (no
 `export` prefix) on 9 June. The file is 11 lines, 843 bytes, born 28 March, modified once on
 9 June: a pure append, exactly as intended.
+
+> **Annotation 2026-08-03 (record, not correction).** The list above was accurate on
+> 8 July. `WOLFRAM_API_KEY` has since been removed from `.env`: Wolfram retired the
+> paid MCP Service, cancelled the billing themselves, and the key stopped functioning
+> after 2026-07-31. Nothing in the codebase ever read it. The credential is archived,
+> not deleted, at `~/CDSFL_retired_credentials/`. Nine keys remain. The finding this
+> entry records — that the keys were present all along — is unaffected.
+
 
 **The root cause of the false incident was a parser bug in the verification instrument itself.**
 Every "keys absent" observation (10 June, 2 July, 6 July) came from checks — a grep pattern and

@@ -173,6 +173,14 @@ Designed but not implemented. Required for Exp 29 integration test.
 - Integration: called by orchestrator between rounds, replaces current monolithic context assembly
 - **Effort:** Medium-high. Design exists. Implementation is the critical path.
 
+**[Correction 2026-08-12.]** Of the two paths offered on that line, the first was
+taken and the second was **never created**. `bench/insect_brain.py` exists and is
+live (69,311 bytes at HEAD). `bench/dm/_brain.py` appears at no commit in this
+repository's history (`git log --all --name-only --format="" | grep '_brain\.py'`
+returns only `bench/insect_brain.py`), so it is a dead alternative rather than a
+moved file, and there is nothing to redirect a reader to. The line is left intact
+as the record of a choice that was still open on 2026-04-04.
+
 ---
 
 ## WP6: V2 Immune Activation + Integration Testing

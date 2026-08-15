@@ -270,6 +270,8 @@ Each of the 14 sub-experiments maps to one experiment (40 through 53) and target
 | 52 | 39-L | Chemistry Shadow | chemistry | a right-sized chemistry claim module | to determine |
 | 53 | 39-M | Engineering Shadow | engineering | a right-sized engineering claim module | to determine |
 
+**[Correction 2026-08-05.]** The Exp 41 row above proposes `bench/dm/_suppression.py` as an alternative to `bench/dm/_convergence.py`. **`bench/dm/_suppression.py` was never created**, and it is not a moved or deleted file: no path of that name exists at any commit in this repository's history (`git log --all --name-only --format="" | grep -i suppress` returns nothing), so there is no live path to redirect to. Exp 41 ran against `bench/dm/_convergence.py` — the three Exp 41 configs (`bench/exp41_configs/41_convergence.json`, `41b_first_principles.json`, `41c_first_principles_run.json`) name that module and no suppression module. Suppression logic lives inside existing files (`bench/dm/_convergence.py`, `bench/dm/_immune.py`), never in one of its own. The row is left intact: on 2026-04-17 it recorded an open target proposal, not a claim that the file existed.
+
 ### Selection criteria
 - Target file under 80,000 characters (LENGTH_THRESHOLD). If the natural unit is larger, select a bounded sub-module
 - Target exercises the cells and directives the sub-experiment is designed to test

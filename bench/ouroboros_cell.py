@@ -132,6 +132,545 @@ class OuroborosShadowLog:
         }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Query construction  (rebuilt 2026-07-31 — Ouroboros defect 1)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The old `_target_to_query` was a chain of deletions ending in `words[:10]`.
+# Three faults, each observed on live runs and each fixed below.
+#
+#   FAULT A — the word cap severed multi-word technical terms. On the loop-close
+#   proof run the finding "…which suffers catastrophic cancellation in floating
+#   point…" hit the cap after "catastrophic". arXiv matched that one word and
+#   returned "Overcoming Catastrophic Forgetting by XAI" — continual learning,
+#   not floating-point cancellation. Two unrelated senses of one word, and the
+#   extractive reader scored it MEDIUM purely on the overlap.
+#
+#   FAULT B — the harness's own label vocabulary was searched. Every query began
+#   "uncertain finding …", and report-shaped descriptions contributed literal
+#   "FINDING_ID: SEVERITY: FLAW_CLASS: ABSTRACTION_INDEX: FIND" (see
+#   bench/logs/exp44_.../report.json, DeepSeek_F302). None of it is topical.
+#
+#   FAULT C — code identifiers were deliberately *harvested* into the query
+#   (`_target_to_query` mined backtick spans). No academic index contains
+#   `streaming_variance` or `EvidenceStore.verify_bundle`.
+#
+# The rebuild keeps a term LIST rather than a word list, so the cap can never
+# fall inside a phrase, and renders it as quoted phrases joined by AND. That
+# render was chosen on measurement, not taste (2026-07-31, live APIs):
+#
+#   'uncertain finding streaming_variance uses naive sum-of-squares formula,
+#    which suffers catastrophic'          → arXiv: "Overcoming Catastrophic
+#                                            Forgetting by XAI"  (the defect)
+#                                           OpenAlex: nothing at all
+#   '"catastrophic cancellation" "numerical stability" variance'   (no AND)
+#                                         → arXiv: generic variance papers
+#   '"catastrophic cancellation" AND "numerical stability" AND Welford'
+#                                         → arXiv AND OpenAlex: "A Tale of
+#                                            Three Algorithms for Streaming:
+#                                            Covariance Estimation after
+#                                            Welford and Chan-Golub-LeVeque"
+#
+# Quoted phrases give the phrase match; AND gives the conjunction that turns a
+# relevance-ranked bag of words into a real constraint. The form is deliberately
+# prefix-free (no `all:`), because the same string is also sent to Semantic
+# Scholar and OpenAlex, and a bare `AND` degrades to a stopword there whereas an
+# arXiv field prefix would degrade to a literal search token.
+
+# The cap is a SPECIFICITY BUDGET, not a term count, because an AND of quoted
+# phrases constrains far harder than an AND of words. Measured against the live
+# arXiv API on 2026-07-31, from real finding text:
+#
+#   3 quoted phrases  '"catastrophic cancellation" AND "numerical stability"
+#                      AND "standard deviation"'                  → 0 results
+#                     '"dichromate oxidation" AND "oxygen unbalanced"
+#                      AND "balanced equation"'                   → 0 results
+#                     '"Euler critical" AND "own inputs"'         → 0 results
+#   1 phrase + words  '"catastrophic cancellation"'  → Laguerre pseudospectral
+#                       differentiation matrices; singularity swap quadrature —
+#                       numerical-analysis cancellation papers, every one
+#                     '"Euler critical"'  → "A buckling question"; "Critical
+#                       Buckling Loads of … Power-law Columns"
+#
+# A phrase costs 2 and a bare word costs 1, against a budget of 3. So the query
+# is either one phrase plus one word, or up to three words — never a conjunction
+# of exact phrases, which is what emptied the result set.
+#
+# A phrase's companion has to earn its place. Measured the same day, same API:
+#   '"Euler critical" AND inputs'                  → 0     '"Euler critical"'
+#                                                   → "A buckling question"
+#   '"dichromate oxidation" AND unbalanced'        → 0
+#   '"cross-round recidivism" AND alternative'     → 0
+#   '"catastrophic cancellation" AND sum-of-squares'
+#       → "BETULA: Numerically Stable CF-Trees for BIRCH Clustering"
+# The difference is not the count, it is the companion: "sum-of-squares" is a
+# recognised technical token, "inputs" is a filler noun. So a single word may
+# only join a phrase if it is itself DISTINCTIVE — a lexicon member, a
+# hyphenated compound, or a capitalised proper noun (Bayesian, Welford,
+# Jaccard). Otherwise the phrase stands alone.
+_QUERY_BUDGET = 3
+_QUERY_PHRASE_COST = 2
+_QUERY_MAX_CHARS = 160
+# `_select_targets` cuts descriptions at 200 characters; only text at that cut
+# can have a severed final word.
+_QUERY_TRUNCATION_FLOOR = 195
+
+# Leading `label:` on a target — `uncertain_finding:`, `round_3_anomalies:`.
+# Stripped, never searched (fault B). Applied repeatedly so a target that
+# carries both a harness prefix and a report label loses both.
+_LABEL_PREFIX_RE = re.compile(r'^\s*"?[A-Za-z_][A-Za-z0-9_]{0,40}"?\s*:\s*')
+
+# CDSFL report step labels. ALL-CAPS in the corpus and always structural, so the
+# colon is optional ("FIND `EvidenceBundle.save_json` …" has none).
+#
+# The labels do more than mark noise: they SEGMENT the finding. A report-shaped
+# description is FIND (the defect) followed by FALSIFIER, CORROBORATION,
+# ADMISSIBILITY, NOVELTY — machinery, and in the FALSIFIER's case usually raw
+# Python. Keeping only the content segments is what stops a query like
+# '"import record" AND crashes AND keys' (bench/logs/exp44_…/DeepSeek_F701,
+# where the FALSIFIER block's `from bench.evidence import EvidenceRecord`
+# outscored the defect itself).
+_STEP_LABELS_CONTENT = ("FIND", "FOLLOW", "ANALYSE", "ANALYZE", "DESCRIPTION",
+                        "SUMMARY", "ISSUE", "RATIONALE", "MECHANISM")
+_STEP_LABELS_MACHINERY = (
+    "FINDING_ID", "SEVERITY", "FLAW_CLASS", "ABSTRACTION_INDEX", "FIX",
+    "FALSIFIER", "FALSIFICATION", "ATTEMPT", "RESULT", "CORROBORATION",
+    "ADMISSIBILITY", "NOVELTY", "DIVERGENCE", "VERIFIED", "LOCATION",
+    "EVIDENCE", "PREMISE", "CONCLUSION", "SEARCH", "REPLACE", "CITATIONS",
+    "RECOMMENDATION", "CLASSIFICATION", "JUSTIFICATION",
+)
+
+# VERDICT HEADERS — a distinction found by measurement, 2026-08-04.
+#
+# These were in the machinery list, and that silently destroyed 6.9% of real
+# findings. Measured over 274 archived descriptions from Exp 45-53: nineteen
+# produced the meaningless fallback query, and every one of them opened
+# "VERDICT: CONFIRM C0019. <the actual defect>". Because CONFIRM was machinery,
+# the segment AFTER it — which is the whole description — was discarded, and
+# _query_strip_labels returned the empty string from a perfectly good sentence.
+#
+# The distinction that matters is what a label INTRODUCES, not whether the label
+# is structural. FALSIFIER is followed by Python and must stay machinery (that is
+# the DeepSeek_F701 case, where a FALSIFIER block's import outscored the defect).
+# A verdict header is followed by the REASONING, which is exactly the content the
+# search wants. So they are kept as content-bearing.
+_STEP_LABELS_VERDICT = ("VERDICT", "CONFIRM", "WITHDRAW", "REFUTE", "DISPUTE",
+                        "RETAIN")
+_STEP_LABEL_RE = re.compile(
+    r'(?:(?<=^)|(?<=[\s"\'{,;(]))"?('
+    + '|'.join(sorted(_STEP_LABELS_CONTENT + _STEP_LABELS_MACHINERY,
+                      key=len, reverse=True))
+    + r')"?\s*:?'
+)
+# Mixed-case labels: a label only when it opens a clause and a colon follows
+# within a short span, so "Evidence from current code:" is recognised while
+# "the impact on the beam" is left alone.
+_FIELD_LABEL_RE = re.compile(
+    r'(?:^|(?<=[.;\n]))\s*'
+    r'(?:Location|Evidence|Mechanism|Impact|Severity|Method|Note|Source|Line'
+    r'|Reference|Fix|Finding)\b[^:.\n]{0,30}:',
+    re.IGNORECASE,
+)
+
+# Code shapes. Removed from the prose, then re-offered as *demoted* natural
+# language terms (fault C): `streaming_variance` is unsearchable, but the words
+# "streaming variance" are not, and dropping them outright would have thrown
+# away the only topical noun in the loop-close finding.
+_FENCE_RE = re.compile(r'```.*?```', re.S)
+_BACKTICK_RE = re.compile(r'`+[^`]*`+')
+_CODE_SHAPES = (
+    re.compile(r'\b[\w./\\-]*\.(?:py|json|md|toml|txt|ya?ml|csv|log|cfg|ini|sh)\b'),
+    re.compile(r'\b[A-Za-z_][A-Za-z0-9_]*\(\s*\)'),                    # foo()
+    re.compile(r'\b[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\b'),  # a.b.c
+    re.compile(r'\b[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]*\b'),             # snake_case
+    re.compile(r'\b[a-z]+[A-Z][A-Za-z0-9]*\b'),                        # camelCase
+    re.compile(r'\b[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+\b'),              # PascalCase
+)
+_CAMEL_SPLIT_RE = re.compile(r'(?<=[a-z0-9])(?=[A-Z])')
+
+# LaTeX / maths fragments the panel writes into findings.
+_MATH_RES = (
+    re.compile(r'\$[^$]*\$'),
+    re.compile(r'\\\(.*?\\\)', re.S),
+    re.compile(r'\\\[.*?\\\]', re.S),
+    re.compile(r'\\[a-zA-Z]+\{[^}]*\}'),
+    re.compile(r'\\[a-zA-Z]+'),
+)
+
+# Document-local tags: CH-11, EN-06, ZC-13, SW-21-REF-04, F302, C4-02.
+# Searchable nowhere; they are coordinates inside the artefact under review.
+# The pattern requires a hyphen (or the bare F-number finding shape) so that
+# chemical formulae — H2O, CO2, NO2 — are left alone.
+_DOC_TAG_RE = re.compile(
+    r'\b(?:[A-Z]{1,4}\d{0,2}[-\u2011\u2013]\d+(?:[-\u2011\u2013][A-Za-z0-9]+)*'
+    r'|F\d{2,4})\b'
+)
+_NUMBER_RE = re.compile(
+    r'(?<![A-Za-z])\d[\d,.]*\s*'
+    r'(?:%|st|nd|rd|th|s|x|ms|kN|kW|kg|km|mm|cm|Hz|MHz|GB|MB|W|V|A|L)?\b'
+)
+_PAREN_RE = re.compile(r'\(([^()]*)\)')
+
+# Function words. Chunk boundaries: a phrase never spans one.
+_QUERY_STOPWORDS = frozenset("""
+a an the this that these those it its it's their them they he she his her our we you your my
+is are was were be been being am has have had having do does did doing done
+of in on at to for from with without within into onto over under above below by via across
+and or nor but so than then thus hence therefore because since while when where which who whom
+whose what how why if unless until after before during between among per about against toward
+not no nor only just also even still yet already again more most less least much many few
+can could may might must shall should will would need needs
+as such like both either neither each any all some other another same one two three
+however moreover therefore thus hence instead meanwhile furthermore additionally
+consequently otherwise nevertheless nonetheless ever never always often sometimes
+here there where whether once twice very quite rather really exactly only own else
+""".split())
+
+# Report/harness vocabulary and near-empty verbs. Present in almost every
+# finding, topical in none of them.
+_QUERY_GENERIC = frozenset("""
+uncertain finding findings anomaly anomalies round rounds severity claim claims verdict
+verdicts flaw class abstraction index target file document section statement text line lines
+uses use used using cause causes caused causing return returns returned returning provide
+provides provided given gives give accept accepts accepted add adds added set sets get gets
+make makes made mean means meant require requires required allow allows allowed contain
+contains contained include includes included appear appears appeared say says said show shows
+shown note notes noted call calls called check checks checked treat treats treated
+current currently prior later earlier every another same different possible likely actually
+simply silently unconditionally explicitly implicitly correct incorrect wrong missing present
+method methods function functions code test tests case cases result results value values
+description descriptions summary rationale justification recommendation issue detail details
+confirm confirmed confirms withdraw withdrawn withdrawing refute refuted refutes dispute
+disputed duplicate duplicates feedback flag flags
+fail fails failed failing crash crashes crashed assume assumes assumed assuming
+skip skips skipped happen happens occur occurs exist exists
+overstate overstates understate understates correspond corresponding correspondingly
+gemini chatgpt deepseek codex cc1 cc2 panel
+""".split())
+# NOTE deliberately absent from the generic list: state, field, key, memory, list,
+# record, logic, store. Each is half of a real technical term somewhere in scope
+# ("limit state", "oxidation state", "public key", "immune memory", "linked
+# list"), and membership here does double duty — it demotes the word AND breaks
+# the phrase chunk around it. Breaking a real phrase costs more than letting a
+# weak single word through, so the list holds only words that are never part of
+# a technical phrase.
+
+# Programming vocabulary. Reachable only through an identifier, and worthless in
+# an academic index even after translation to words.
+_QUERY_CODE_VOCAB = frozenset("""
+json dict dicts tuple str int float bool none null true false self init
+args kwargs def cls attr attrs getattr setattr hasattr param params kwarg config cfg
+url uri http https api sdk cli repo src lib libs util utils impl func fn method py
+dump dumps parse parser serialize deserialize
+assert raise except exception traceback keyerror valueerror typeerror attributeerror
+stderr stdout stdin logger logging debug warn warning
+import export bench elif try finally yield lambda enumerate obj
+""".split())
+# The same trap as the generic list, and it bit once already: "load" sat here for
+# `json.load` and silently deleted the load from "Euler critical load"
+# (bench/logs/exp49_..., ChatGPT_F001). Words pruned back out for that reason --
+# load, path, index, range, module, package, string, list, state, open, close,
+# read, write -- are each half of a real technical term somewhere in scope.
+
+# Report-field words that are demoted in scoring but NOT used as chunk breaks —
+# they may still be the middle of a real phrase ("evidence lower bound").
+_QUERY_LABEL_WORDS = frozenset(
+    "evidence location finding severity impact mechanism note reference source".split()
+)
+
+# Curated multi-word technical terms. Matching one pins it as a quoted phrase
+# and lifts it above the generic scorer. Deliberately small and deliberately
+# not load-bearing: a term absent from this list still survives intact, because
+# the cap is on TERMS, not words. The list only decides ordering.
+_QUERY_PHRASES = frozenset("""
+catastrophic cancellation|numerical stability|floating point|round-off error|rounding error
+loss of significance|significant figures|machine epsilon|online algorithm|streaming algorithm
+standard deviation|sum of squares|least squares|condition number|error propagation
+uncertainty propagation|monte carlo|finite element|order of magnitude|dynamic amplification
+limit state|buckling load|critical load|load path|progressive collapse|factor of safety
+race condition|hash collision|birthday bound|collision probability|constant time
+false positive|false negative|confidence interval|prior distribution|posterior distribution
+bayesian inference|statistical power|cross validation|neural network|language model
+diminishing returns|exponential decay|convergence criterion|reaction stoichiometry
+oxidation state|activation energy|reaction rate|mass balance|dimensional analysis
+""".strip().replace("\n", "|").split("|"))
+
+
+def _query_normalise_phrase(phrase: str) -> str:
+    """Lowercase a phrase and treat hyphens as spaces, so the hyphenated token
+    ``sum-of-squares`` matches the lexicon entry ``sum of squares`` while still
+    being emitted as the single token the panel actually wrote."""
+    return re.sub(r'[\u2010-\u2015-]+', ' ', phrase.lower()).strip()
+
+
+def _query_strip_prefix(text: str) -> str:
+    """Drop leading ``label:`` markers — ``uncertain_finding:``,
+    ``round_3_anomalies:``, ``FINDING_ID:`` — repeatedly, so a target carrying
+    both a harness prefix and a report label loses both."""
+    prev = None
+    while prev != text:
+        prev = text
+        text = _LABEL_PREFIX_RE.sub('', text, count=1)
+    return text
+
+
+def _query_strip_labels(text: str) -> str:
+    """Remove the harness's own label vocabulary (fault B) and keep only the
+    content segments of a report-shaped description."""
+    text = _query_strip_prefix(text)
+
+    # re.split with one capturing group → [seg0, label1, seg1, label2, seg2, …]
+    parts = _STEP_LABEL_RE.split(text)
+    kept = [parts[0]]
+    for i in range(1, len(parts) - 1, 2):
+        if parts[i] in _STEP_LABELS_CONTENT or parts[i] in _STEP_LABELS_VERDICT:
+            kept.append(parts[i + 1])
+    text = ' \x00 '.join(kept)
+
+    text = _FIELD_LABEL_RE.sub(' \x00 ', text)
+    return text
+
+
+def _query_drop_truncated_tail(text: str) -> str:
+    """``_select_targets`` truncates descriptions at 200 characters, which lands
+    mid-word about as often as not — "…the arrangement tolerat", "…which mixi".
+    A fragment is a guaranteed zero-recall search term, so the final token is
+    dropped — but ONLY for text long enough to be sitting on that cut. Without
+    the length guard this fires on every short complete description too, and it
+    ate the "bias" from "…possible systemic bias"."""
+    stripped = text.rstrip()
+    if len(stripped) < _QUERY_TRUNCATION_FLOOR:
+        return text
+    if not stripped or stripped[-1] in '.!?;:"\')]}`':
+        return text
+    head, _, tail = stripped.rpartition(' ')
+    tail = tail.lstrip('`\'"([{')      # "…flags it as `recidivis" — still a fragment
+    if not head or not re.fullmatch(r"[A-Za-z][A-Za-z0-9\-'‐‑]*", tail):
+        return text
+    return head
+
+
+def _query_split_identifier(ident: str) -> List[str]:
+    """``EvidenceStore.verify_bundle`` → ``['evidence', 'store', 'verify',
+    'bundle']``; programming vocabulary and stub words dropped."""
+    parts = re.split(r'[^A-Za-z0-9]+', _CAMEL_SPLIT_RE.sub(' ', ident))
+    words = []
+    for p in parts:
+        w = p.lower()
+        if len(w) < 4 or not w.isalpha():
+            continue
+        if w in _QUERY_CODE_VOCAB or w in _QUERY_GENERIC or w in _QUERY_STOPWORDS:
+            continue
+        words.append(w)
+    return words
+
+
+def _query_extract_code(text: str) -> tuple:
+    """Strip code out of the prose and return ``(prose, identifier_terms)``.
+
+    ``identifier_terms`` are natural-language renderings, ordered longest-first:
+    a two-word identifier becomes a phrase candidate as well as two singles, so
+    ``streaming_variance`` can still contribute "streaming variance" — the only
+    topical noun phrase in the loop-close finding — without ever putting the
+    literal identifier in front of an academic index (fault C).
+    """
+    spans: List[str] = []
+
+    def _grab(m):
+        spans.append(m.group(0))
+        return ' '
+    text = _FENCE_RE.sub(_grab, text)
+    text = _BACKTICK_RE.sub(_grab, text)
+    for pat in _CODE_SHAPES:
+        text = pat.sub(_grab, text)
+
+    terms: List[str] = []
+    seen = set()
+    for span in spans:
+        # A filesystem path carries no topic. Harvesting it gave "users" as a
+        # search term for an Euler-buckling finding, out of the absolute path
+        # /Users/…/exp49_engineering.md (bench/logs/exp49_…, ChatGPT_F001).
+        if '/' in span or '\\' in span:
+            continue
+        for ident in re.findall(r'[A-Za-z_][A-Za-z0-9_.]*', span):
+            words = _query_split_identifier(ident)
+            if len(words) == 2:
+                cand = [' '.join(words)] + words
+            else:
+                cand = words
+            for c in cand:
+                if c not in seen:
+                    seen.add(c)
+                    terms.append(c)
+    return text, terms
+
+
+def _query_scrub(text: str) -> str:
+    """Remove maths, document-local tags, numerics and residual punctuation."""
+    for pat in _MATH_RES:
+        text = pat.sub(' ', text)
+
+    # Parentheticals: keep a short, digit-free aside ("(paracetamol)", "(logic)")
+    # as plain words; drop anything numeric or long ("(11/12)", "(0.0002)",
+    # "(21.7x median 0.40s)"). Never leave a bracket behind.
+    def _paren(m):
+        inner = m.group(1).strip()
+        if inner and not any(ch.isdigit() for ch in inner) and len(inner.split()) <= 3:
+            return ' ' + inner + ' '
+        return ' '
+    prev = None
+    while prev != text:
+        prev = text
+        text = _PAREN_RE.sub(_paren, text)
+    text = re.sub(r'[()\[\]{}]', ' ', text)
+
+    text = _DOC_TAG_RE.sub(' ', text)
+    text = _NUMBER_RE.sub(' ', text)
+    # Clause boundaries become hard chunk breaks; everything else that is not a
+    # letter, an intra-word hyphen or an apostrophe becomes whitespace.
+    text = re.sub(r'[.,;:!?/\\|]+', ' \x00 ', text)
+    text = re.sub(r'[\u2012-\u2015\u2500-\u25ff]+', ' \x00 ', text)
+    text = re.sub(r"[^A-Za-z\u2010\u2011\-'\x00\s]+", ' ', text)
+    return text
+
+
+def _query_chunks(text: str) -> List[List[str]]:
+    """Split scrubbed prose into contiguous runs of content words.
+
+    This is the structural cure for fault A: a chunk is the unit the cap counts,
+    so no cap can ever fall between "catastrophic" and "cancellation".
+    """
+    chunks: List[List[str]] = []
+    for segment in text.split('\x00'):
+        cur: List[str] = []
+        for raw in segment.split():
+            w = raw.strip("-'\u2010\u2011")
+            lw = w.lower()
+            if (len(w) < 3 or not re.fullmatch(r"[A-Za-z][A-Za-z\u2010\u2011\-']*", w)
+                    or lw in _QUERY_STOPWORDS or lw in _QUERY_GENERIC
+                    or lw in _QUERY_CODE_VOCAB):
+                if cur:
+                    chunks.append(cur)
+                    cur = []
+                continue
+            cur.append(w)
+        if cur:
+            chunks.append(cur)
+    return chunks
+
+
+def _query_candidates(chunks: List[List[str]]) -> List[tuple]:
+    """Score every 1- and 2-word window inside each chunk, plus any 3-word
+    window that the lexicon recognises. Returns ``(score, position, term)``."""
+    out: List[tuple] = []
+    pos = 0
+    for chunk in chunks:
+        for width in (3, 2, 1):
+            for i in range(len(chunk) - width + 1):
+                words = chunk[i:i + width]
+                term = ' '.join(words)
+                norm = _query_normalise_phrase(term)
+                in_lex = norm in _QUERY_PHRASES
+                if width == 3 and not in_lex:
+                    continue
+                score = 4.0 if in_lex else 0.0
+                if width == 2:
+                    score += 1.0
+                for w in words:
+                    lw = w.lower()
+                    if lw in _QUERY_LABEL_WORDS:
+                        # Reachable when truncation cuts the description before
+                        # the label's colon ("…Evidence from current c"), so the
+                        # label regex cannot see it. Score it as the label it is.
+                        score -= 1.0
+                        continue
+                    score += 1.0
+                    if len(lw) >= 9:
+                        score += 0.5
+                    if '-' in w or '\u2010' in w or '\u2011' in w:
+                        score += 0.5          # hyphenated compounds are technical
+                    if w[:1].isupper() and not w.isupper() and i > 0:
+                        # Proper noun (Welford, Jaccard, Bayesian). Chunk-initial
+                        # capitals are excluded because chunks break at clause
+                        # boundaries, so position 0 is usually just a sentence
+                        # start — that false bonus was promoting "Independent
+                        # uncertainty" over the real term in a quadrature
+                        # finding (bench/logs/exp48_…, Codex_F004).
+                        score += 1.0
+                out.append((score, pos + i, term))
+        pos += len(chunk)
+    return out
+
+
+def _query_is_distinctive(term: str) -> bool:
+    """Is this term specific enough to narrow an already-quoted phrase?
+
+    True for lexicon members ("sum-of-squares"), hyphenated compounds
+    ("self-assessment", "cross-round"), and proper nouns (Welford, Bayesian,
+    Jaccard). False for filler nouns — "inputs", "alternative", "components" —
+    which is what emptied the result set when they were AND-ed onto a phrase.
+    """
+    if _query_normalise_phrase(term) in _QUERY_PHRASES:
+        return True
+    if any(ch in term for ch in '-‐‑'):
+        return True
+    return bool(term[:1].isupper() and not term.isupper())
+
+
+def _query_select(prose_cands: List[tuple], ident_terms: List[str]) -> List[str]:
+    """Take the highest-scoring non-overlapping terms, prose ahead of code."""
+    ident_cands = [
+        (0.5 + 0.5 * len(t.split()), 10_000 + i, t)
+        for i, t in enumerate(ident_terms)
+    ]
+    ranked = sorted(prose_cands, key=lambda c: (-c[0], c[1]))
+    ranked += sorted(ident_cands, key=lambda c: (-c[0], c[1]))
+
+    def _stem(w: str) -> str:
+        """Crude singular/base form, so "alternative" and "alternatives" are
+        not both spent on the same query."""
+        if len(w) > 4 and w.endswith('s') and not w.endswith('ss'):
+            w = w[:-1]
+        if len(w) > 4 and w.endswith('e'):
+            w = w[:-1]
+        return w
+
+    chosen: List[str] = []
+    used: set = set()
+    budget = _QUERY_BUDGET
+    for score, _pos, term in ranked:
+        if score <= 0 or budget <= 0:
+            continue
+        cost = _QUERY_PHRASE_COST if ' ' in term else 1
+        if cost > budget:
+            continue
+        if any(' ' in c for c in chosen) and not _query_is_distinctive(term):
+            continue
+        words = {_stem(w.lower()) for w in _query_normalise_phrase(term).split()}
+        if words & used:
+            continue
+        chosen.append(term)
+        used |= words
+        budget -= cost
+    return chosen
+
+
+def _query_render(terms: List[str]) -> str:
+    """``['catastrophic cancellation', 'Welford']`` →
+    ``'"catastrophic cancellation" AND Welford'``."""
+    rendered: List[str] = []
+    for t in terms:
+        t = t.replace('"', '').strip()
+        if not t:
+            continue
+        piece = f'"{t}"' if ' ' in t else t
+        candidate = ' AND '.join(rendered + [piece])
+        if len(candidate) > _QUERY_MAX_CHARS and rendered:
+            break
+        rendered.append(piece)
+    return ' AND '.join(rendered)
+
+
 class OuroborosCell:
     """O1 cell: external research and self-improvement engine.
 
@@ -152,6 +691,14 @@ class OuroborosCell:
         # In shadow mode, shadow_log records what O1 would have done
     """
 
+    # Librarian backends. The default is Haiku via the claude CLI, which is on the
+    # Max subscription and therefore free at the margin. These two names exist so a
+    # route's model is stated once rather than inlined at the dispatch site — the
+    # DeepSeek route previously hardcoded `deepseek-chat`, which is not the model
+    # the panel runs.
+    DEEPSEEK_READER_MODEL: str = "deepseek-v4-pro"
+    KIMI_READER_MODEL: str = "moonshotai/kimi-k3"
+
     # Hard caps for Exp 39
     MAX_QUERIES_PER_ROUND: int = 3
     MAX_CANDIDATE_CLAIMS: int = 2
@@ -171,7 +718,10 @@ class OuroborosCell:
         contact_email: str = "cdsfl-ouroboros@constraint-engineering.local",
         enable_scihub_fallback: bool = False,
         scihub_mirror: str = "",
-        reader_backend: str = "haiku",   # "haiku" | "deepseek" | "none"
+        # "haiku" (default, free on the Max subscription) | "deepseek" | "kimi"
+        # (shadow-wired 2026-07-31, opt-in only) | "none" (deterministic
+        # extractive brief; used by CI so tests never depend on a live backend).
+        reader_backend: str = "haiku",
         reader_model: str = "",          # override; default per backend
         enable_fulltext: bool = True,    # download+parse OA full text before reading
     ) -> None:
@@ -327,86 +877,66 @@ class OuroborosCell:
             source_idx = len(queries) % len(self.allowed_sources) if self.allowed_sources else 0
             source = self.allowed_sources[source_idx] if self.allowed_sources else "arxiv"
 
+            _q = self._target_to_query(target)
+            if not _q:
+                # Skip rather than search a phrase unrelated to the finding.
+                # Recorded so the skip is visible instead of looking like a
+                # retrieval that found nothing.
+                self._skipped_unqueryable = getattr(
+                    self, "_skipped_unqueryable", 0) + 1
+                continue
             query = {
                 "target": target,
                 "source": source,
-                "query": self._target_to_query(target),
+                "query": _q,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             queries.append(query)
         return queries
 
     def _target_to_query(self, target: str) -> str:
-        """Convert a target description to a search query.
+        """Convert a target description into an academic search query.
 
-        Strips statistical noise (percentages, counts, decimals, parenthetical
-        details) and extracts the conceptual core suitable for an academic
-        search API. Returns a query of at most 10 keywords.
+        Rebuilt 2026-07-31. See the "Query construction" section above this
+        class for the three faults this replaces and the live-API measurements
+        that chose the output form. In one line: the query is a list of at most
+        three TERMS — quoted where multi-word, joined by ``AND`` — never a
+        truncated list of words.
 
-        Examples:
-            "92% of verdicts are REJECTED (11/12) — possible systemic bias"
-            → "verdicts REJECTED possible systemic bias"
+        The pipeline is: strip the harness's labels; lift code identifiers out
+        of the prose and demote them to natural-language terms; scrub maths,
+        document tags and numerics; cut the remainder into phrase chunks at
+        function-word boundaries; score every 1–2 word window inside each chunk
+        (plus lexicon-recognised 3-word windows); emit the best non-overlapping
+        three.
 
-            "Confidence variance very low (0.0002) with mean 0.85 — models over-confident"
-            → "Confidence variance very low models over-confident uniformly"
+        Example, from the loop-close proof finding:
+
+            "uncertain_finding:streaming_variance uses the naive sum-of-squares
+             formula, which suffers catastrophic cancellation in floating point
+             numerical stability ... Welford online algorithm avoids it."
+            → '"catastrophic cancellation" AND "numerical stability" AND Welford'
+
+        The cap is on terms, so a multi-word technical phrase is never severed
+        (fault A); the label vocabulary is deleted rather than searched (fault
+        B); and no identifier reaches the wire (fault C).
         """
-        import re
-
-        # Expand prefixed labels into searchable terms
-        # "uncertain_finding:f3" → "uncertain finding"
-        # "round_4_anomalies:3" → "round anomalies"
-        prefix = ""
-        if ":" in target:
-            prefix, target = target.split(":", 1)
-            # Convert underscored prefix to words, strip trailing digits
-            prefix = re.sub(r'_\d+$', '', prefix)
-            prefix = prefix.replace("_", " ").strip()
-
-        # Extract quoted names before removing them (e.g. 'b_cell' → b_cell)
-        quoted_names = re.findall(r"'([^']*)'", target)
-        quoted_terms = ' '.join(n.replace('_', ' ') for n in quoted_names)
-
-        # Item 1E.8 fix (2026-07-28, exposed on the first live Exp 45 round):
-        # finding text carries backtick-quoted code and operator fragments
-        # ("`blended_prior` computes ` * pi_base + rho *`") which academic
-        # search APIs reject (arXiv HTTP 500). Harvest identifier words from
-        # backtick spans, then drop the spans and every non-word operator.
-        code_names = re.findall(r"`([^`]*)`", target)
-        code_terms = ' '.join(
-            w.replace('_', ' ')
-            for span in code_names
-            for w in re.findall(r'[A-Za-z_][A-Za-z_]{2,}', span)
-        )
-        target = re.sub(r"`[^`]*`", ' ', target)
-        target = re.sub(r"[*+=/<>|&^%~@#$\\{}\[\]`]", ' ', target)
-
-        # Remove parenthetical noise: (11/12), (0.0002), (21.7x median 0.40s)
-        target = re.sub(r'\([^)]*\)', '', target)
-
-        # Remove numbers with optional units/suffixes: 92%, 8.70s, 3x, 0.85
-        target = re.sub(r'\b\d+\.?\d*[%sx]?\s*', '', target)
-
-        # Remove em-dashes/hyphens used as separators
-        target = re.sub(r'\s*[\u2014\u2013—]+\s*', ' ', target)
-
-        # Remove quoted stage names (already extracted above)
-        target = re.sub(r"'[^']*'", '', target)
-
-        # Combine: prefix + cleaned target + quoted names
-        combined = f"{prefix} {target} {quoted_terms} {code_terms}"
-
-        # Collapse whitespace
-        combined = re.sub(r'\s+', ' ', combined).strip()
-
-        # Remove common noise words that don't help search
-        noise = {'of', 'are', 'is', 'the', 'a', 'an', 'with', 'may', 'be',
-                 'from', 'for', 'in', 'to', 'and', 'or', 'took', 'than',
-                 'mean', 'median'}
-        words = [w for w in combined.split() if w.lower() not in noise]
-
-        # Cap at 10 keywords; fallback if empty
-        result = ' '.join(words[:10])
-        return result if result else "pipeline anomaly detection"
+        # Remove the harness prefix ONLY — one substitution, not the full label
+        # loop — so the 200-character truncation test measures the description
+        # as `_select_targets` cut it. Stripping report labels first shortens
+        # the text below the floor and the severed final word survives.
+        raw = _LABEL_PREFIX_RE.sub('', target or "", count=1)
+        text = _query_drop_truncated_tail(raw)
+        prose, ident_terms = _query_extract_code(_query_strip_labels(text))
+        chunks = _query_chunks(_query_scrub(prose))
+        terms = _query_select(_query_candidates(chunks), ident_terms)
+        result = _query_render(terms)
+        # No usable fallback phrase exists. If nothing survives extraction the
+        # finding is pure code and labels, and a query that CANNOT be about the
+        # finding is worse than no query: it burns a retrieval and risks handing
+        # the panel a paper that has nothing to do with the claim, which the
+        # relevance reader may then over-rate. Return empty; the caller skips it.
+        return result
 
     def _fetch_metadata(
         self,
@@ -820,11 +1350,37 @@ class OuroborosCell:
         elif self.reader_backend == "deepseek":
             try:
                 from bench.experiment_11_orchestrator import call_deepseek
-                model_used = self.reader_model or "deepseek-chat"
+                # deepseek-v4-pro is the panel's DeepSeek. This route defaulted to
+                # `deepseek-chat`, a different and weaker model, so the librarian
+                # would have run on something the panel does not use and nobody
+                # had evaluated. Corrected 2026-07-31 on founder directive.
+                model_used = self.reader_model or self.DEEPSEEK_READER_MODEL
                 raw = self._run_with_timeout(
                     call_deepseek, model_used, None, prompt, timeout_s=75.0) or ""
             except Exception as e:  # noqa: BLE001 — degrade to extractive brief
                 err = f"deepseek:{type(e).__name__}:{str(e)[:80]}"
+        elif self.reader_backend == "kimi":
+            # SHADOW-WIRED 2026-07-31 (founder directive: "wire K3 with an optional
+            # shadow switch for now until we can confirm it is fully working").
+            # Never the default. Selecting it is a deliberate act, and if the route
+            # is unreachable the cell degrades to the extractive brief exactly as
+            # the other two do, so a broken K3 cannot take a run down.
+            #
+            # Measured 2026-07-31 on the 71-candidate relevance benchmark: K3 scored
+            # 0.887 against Haiku's 0.873 under the deployed admission rule, and
+            # recovered 24 of 25 genuinely relevant papers against Haiku's 21. The
+            # difference is not statistically significant (McNemar exact p=1.0), so
+            # this is provisioned, not promoted. Two known constraints: K3 refuses
+            # temperature 0 (only 1 is permitted), so it is NOT reproducible run to
+            # run; and it spends 6-8x more tokens on hidden reasoning than on
+            # visible output, so a small max_tokens returns EMPTY content.
+            try:
+                from bench.experiment_11_orchestrator import call_openrouter
+                model_used = self.reader_model or self.KIMI_READER_MODEL
+                raw = self._run_with_timeout(
+                    call_openrouter, model_used, None, prompt, timeout_s=90.0) or ""
+            except Exception as e:  # noqa: BLE001 — degrade to extractive brief
+                err = f"kimi:{type(e).__name__}:{str(e)[:80]}"
 
         if not raw:  # deterministic extractive fallback — keeps the brief real
             rel, brief = self._extractive_brief(target, body or paper.get("abstract", ""))
@@ -1008,3 +1564,153 @@ class OuroborosCell:
             logger.warning("Failed to sign shadow log for round %d: %s",
                           shadow_log.round_idx, exc)
             return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Loop-close: brief -> round prompt  (2026-07-31)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Everything above this line produces a brief and stops. `run_between_rounds`
+# retrieves, downloads, parses and distils real papers, and `_generate_candidates`
+# turns the distillation into candidate claims — but nothing consumed either.
+# RECOVERY.md recorded the state precisely: "strictly shadow — never reaches a
+# prompt/c_ext/gamma".
+#
+# `build_brief_prompt_section` is the missing consumer. It renders the briefs of
+# round K into a delimited prompt block for round K+1 (the one-round lag is the
+# original between-round design, decision 1 in the module docstring). It is a
+# pure function of the brief records: no network, no model call, no global state,
+# so a test can assert on its exact output and the runner can diff ON/OFF.
+#
+# Design decision 2 (disjoint evidence paths) is carried INTO the prompt: the
+# block tells the panel that a retrieved paper is an external claim which must be
+# verified by a different method, never cited as its own proof.
+
+_BRIEF_BEGIN = "=== EXTERNAL RESEARCH (Ouroboros O1 — retrieved literature) ==="
+_BRIEF_END = "=== END EXTERNAL RESEARCH ==="
+
+_RELEVANCE_RANK = {"NONE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3}
+
+
+def build_brief_prompt_section(
+    briefs: List[Dict[str, Any]],
+    round_idx: int,
+    *,
+    max_chars: int = 4000,
+    min_relevance: str = "LOW",
+    require_model_reader: bool = True,
+) -> str:
+    """Render round ``round_idx`` briefs as a prompt block for round ``round_idx+1``.
+
+    Returns ``""`` when there is nothing worth injecting — no briefs, none at or
+    above ``min_relevance``, or every candidate empty. An empty return is the
+    signal the caller uses to leave the prompt untouched, so the OFF path and the
+    "on but nothing retrieved" path are the same bytes.
+
+    Args:
+        briefs: brief records from ``OuroborosShadowLog.briefs``.
+        round_idx: the round the retrieval observed (labelled in the header).
+        max_chars: hard ceiling on the rendered block.
+        min_relevance: lowest librarian relevance admitted (NONE|LOW|MEDIUM|HIGH).
+        require_model_reader: drop briefs whose relevance was scored by the
+            no-LLM extractive fallback rather than a librarian model. Default
+            True, and it is doing real work: the fallback scores MEDIUM on any
+            three-word overlap, and in the first live proof run it rated
+            "Overcoming Catastrophic Forgetting by XAI" MEDIUM against a
+            floating-point-cancellation finding, purely on the word
+            "catastrophic". A reachable librarian correctly rates such a paper
+            NONE (see the Exp 45 shadow logs, where Haiku rated an unrelated
+            robotics paper NONE). So when no librarian is reachable the block
+            degrades to empty — the pre-31-July behaviour — instead of handing
+            the panel literature that is not about its problem.
+
+    Deterministic: same input, same bytes. No network, no clock, no RNG.
+    """
+    floor = _RELEVANCE_RANK.get((min_relevance or "LOW").upper(), 1)
+    admitted = []
+    # Two panel models filing the same defect give the Ouroboros two identical
+    # targets, which resolve to the same paper — caught in the first live proof
+    # run, where the block listed one arXiv paper twice as [1] and [2]. Dedupe
+    # on the content hash (falling back to the citation) so the block never
+    # inflates its own coverage.
+    seen: set = set()
+    for rec in briefs or []:
+        if not isinstance(rec, dict):
+            continue
+        rel = (rec.get("relevance") or "").upper()
+        if _RELEVANCE_RANK.get(rel, 0) < max(floor, 1):
+            continue
+        if not (rec.get("brief") or "").strip():
+            continue
+        if require_model_reader and (
+                rec.get("reader_model") or "") in ("", "extractive_fallback"):
+            continue
+        key = rec.get("source_hash") or rec.get("source_ref") or rec.get("title")
+        if key in seen:
+            continue
+        seen.add(key)
+        admitted.append(rec)
+
+    if not admitted:
+        return ""
+
+    # Strongest relevance first, stable within a band (retrieval order).
+    admitted.sort(key=lambda r: -_RELEVANCE_RANK.get(
+        (r.get("relevance") or "").upper(), 0))
+
+    head = (
+        f"{_BRIEF_BEGIN}\n"
+        f"Retrieved after round {round_idx} by the Ouroboros cell from the "
+        f"open-access literature, in response to what that round left "
+        f"unresolved. This is EXTERNAL EVIDENCE, not a finding.\n\n"
+        f"HOW TO USE IT (CDSFL disjoint-evidence rule): a paper may point you at "
+        f"a mechanism, a failure mode, or a bound. It may NOT serve as its own "
+        f"verification. If you file a finding that rests on one of these papers, "
+        f"verify it by a different route — computation, execution, or a strictly "
+        f"different data source — and cite the source_ref below in your "
+        f"NOVELTY section.\n\n"
+    )
+    tail = f"{_BRIEF_END}\n\n"
+    budget = max_chars - len(head) - len(tail)
+    if budget <= 0:
+        return ""
+
+    blocks: List[str] = []
+    used = 0
+    for i, rec in enumerate(admitted, start=1):
+        via = rec.get("via") or "unknown"
+        chars = int(rec.get("fulltext_chars") or 0)
+        provenance = (
+            f"full text parsed, {chars:,} chars, sha256 "
+            f"{(rec.get('source_hash') or '')[:16]}"
+            if chars else "abstract only (no open-access full text resolved)"
+        )
+        # Finding text carries newlines; collapsing whitespace keeps one field
+        # per line so the block cannot be misread as prompt structure.
+        target_1l = ' '.join((rec.get('target') or '').split())[:160]
+        # WHO judged the relevance is part of the evidence. "extractive_fallback"
+        # means no librarian model was reachable and the score came from a word
+        # -overlap heuristic, which over-rates (it scored an unrelated paper
+        # MEDIUM in the proof run). The panel should see that, not guess it.
+        reader = rec.get('reader_model') or 'unknown'
+        block = (
+            f"[{i}] {(rec.get('title') or '(untitled)')[:200]}\n"
+            f"    source_ref: {rec.get('source_ref') or '(none)'}\n"
+            f"    retrieval: {via} — {provenance}\n"
+            f"    relevance to \"{target_1l}\": "
+            f"{(rec.get('relevance') or '').upper()} (judged by {reader})\n"
+            f"    brief: {' '.join((rec.get('brief') or '').split())}\n\n"
+        )
+        if used + len(block) > budget:
+            # Truncate the last admitted brief rather than dropping it silently,
+            # so the block never claims coverage it did not deliver.
+            room = budget - used
+            if room > 200:
+                blocks.append(block[:room - 20].rstrip() + "\n    [truncated]\n\n")
+            break
+        blocks.append(block)
+        used += len(block)
+
+    if not blocks:
+        return ""
+    return head + "".join(blocks) + tail

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T014418Z",
+  "phase": "r8",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 800,
+  "response": "FINDING_ID: F014\nSEVERITY: 0.75\nFIND: _ALT_HEADER_RE in bench/dm/_divergence.py (lines 129‑155) includes an optional separator (?:[:\\-—]\\s*)? that can greedily consume an em‑dash, preventing the dash‑alternative dimension tag from matching, causing parse failure for valid §18 headers like \"Alternative — dimension: mechanism\".\nFALSIFIER:\n```python\nimport sys\nfrom bench.dm._divergence import _ALT_HEADER_RE, parse_alternative_block\n\nheader = \"Alternative — dimension: mechanism\"\ntest_text = header + \"\\nDiffers from primary: uses different pathway.\"\nrecords = parse_alternative_block(test_text, \"f014\", \"primary text\")\nassert len(records) == 1, \"unexpected number of alternatives\"\nalt = records[0]\nassert alt.dimension == \"mechanism\", f\"FALSIFIED: dimension not extracted, got {alt.dimension!r}\"\n```",
+  "metadata": {
+    "round": 8,
+    "elapsed": 433.6,
+    "chars": 800,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

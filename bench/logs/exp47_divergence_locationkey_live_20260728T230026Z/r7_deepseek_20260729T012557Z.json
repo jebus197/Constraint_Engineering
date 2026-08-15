@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T012557Z",
+  "phase": "r7",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 623,
+  "response": "FINDING_ID: F013\nSEVERITY: 0.70\nFIND: `_DIM_LINE_RE.match(body)` fails to find the dimension line when the body does not start with it, causing a false‑negative rejection of valid alternative blocks.\nFALSIFIER:\n```python\nfrom bench.dm._divergence import parse_alternative_block, DivergenceConfig\n\ntext = \"Alternative 1\\nWe adopt a broader scope.\\nDimension: scope\\n\\nDetails.\"\nprimary = \"primary text\"\nconfig = DivergenceConfig(enabled=True, min_alternatives=1)\nrecords = parse_alternative_block(text, \"F_TEST\", primary, config)\n\nif records and records[0].dimension is None:\n    print(\"FALSIFIED\")\nelse:\n    print(\"OK\")\n```",
+  "metadata": {
+    "round": 7,
+    "elapsed": 408.5,
+    "chars": 623,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

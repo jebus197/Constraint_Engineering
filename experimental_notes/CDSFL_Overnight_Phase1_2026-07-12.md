@@ -123,7 +123,7 @@ token is refreshed, dispatch launches with `ANTHROPIC_BASE_URL` stripped and no 
 
 ## Test state and one pre-existing defect
 
-Full non-network suite: 1,595 passed, 3 failed. Two failures are the command-line OAuth timeouts
+Full suite: 1,595 passed, 3 failed. [Correction 2026-07-31: this was written as "full non-network suite". It was not a non-network run. The `network` marker deselected three tests out of roughly 1,600 and excluded no live-dispatch path at all, which is why two of the three failures below are Claude command-line authorisation timeouts — a genuinely offline suite could not have produced them. See `resources/RECOVERY.md`.] Two failures are the command-line OAuth timeouts
 above. The third, `test_both_phase1_paths_use_the_constant`, is a pre-existing stale test:
 `decomposed_dispatch.py` was refactored off the `_PHASE1_MAX_TOKENS` constant in commit `fbafff8`
 before this session, and the test was not updated. It is unrelated to Phase 1 and flagged for a

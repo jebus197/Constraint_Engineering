@@ -305,33 +305,61 @@ class TestGeminiJsonFindKey:
 # ── Exp 44 post-run: verdict-reader hygiene (C0025/C0034/C0009) ──────────────
 
 class TestVerdictReaderHygiene:
-    def _fake_run(self, monkeypatch, stdout="", stderr="", rc=0):
-        import subprocess as sp
-        class R: pass
-        r = R(); r.stdout = stdout; r.stderr = stderr; r.returncode = rc
-        monkeypatch.setattr(sp, "run", lambda *a, **k: r)
+    """Verdict-reading logic, exercised at its own boundary.
 
-    def test_not_falsified_is_refuted(self, monkeypatch):
+    Retargeted 2026-08-12. These four previously stubbed ``subprocess.run`` and
+    called ``reverify_falsifier``. That stopped working when the sandbox gained a
+    runtime observer: with no real child process the observer cannot install, so
+    the sandbox correctly refused with INTEGRITY_VIOLATION and the tests went red.
+
+    The refusal was right and the tests were asking the wrong question. What they
+    check is how a verdict is READ from a completed run's output, which is
+    ``_read_verdict`` — pure, no I/O, and the exact unit under test. Stubbing out
+    the process layer to reach it was always indirection; this removes it.
+
+    The end-to-end path is covered separately by tests that run real children, and
+    was independently re-verified across all seven verdict shapes on 2026-08-12.
+    """
+
+    def test_not_falsified_is_refuted(self):
         """C0025/C0034: an honest negative report must never CONFIRM."""
-        from bench.falsifier_verify import reverify_falsifier
-        self._fake_run(monkeypatch, stdout="NOT FALSIFIED: defect absent", rc=0)
-        assert reverify_falsifier("print('x')") == "REFUTED"
+        from bench.falsifier_verify import _read_verdict
+        assert _read_verdict("NOT FALSIFIED: defect absent", "", 0) == "REFUTED"
 
-    def test_setup_guard_assertion_is_error(self, monkeypatch):
+    def test_setup_guard_assertion_is_error(self):
         """C0009: a setup-guard AssertionError is instrument breakage."""
-        from bench.falsifier_verify import reverify_falsifier
-        self._fake_run(monkeypatch, stderr="AssertionError: test setup failed: policy was not mutated", rc=1)
-        assert reverify_falsifier("print('x')") == "ERROR"
+        from bench.falsifier_verify import _read_verdict
+        assert _read_verdict(
+            "", "AssertionError: test setup failed: policy was not mutated", 1) == "ERROR"
 
-    def test_genuine_falsified_still_confirms(self, monkeypatch):
-        from bench.falsifier_verify import reverify_falsifier
-        self._fake_run(monkeypatch, stdout="FALSIFIED: guard skipped on empty hash", rc=0)
-        assert reverify_falsifier("print('x')") == "CONFIRMED"
+    def test_genuine_falsified_still_confirms(self):
+        from bench.falsifier_verify import _read_verdict
+        assert _read_verdict("FALSIFIED: guard skipped on empty hash", "", 0) == "CONFIRMED"
 
-    def test_genuine_assertion_still_confirms(self, monkeypatch):
+    def test_genuine_assertion_still_confirms(self):
+        from bench.falsifier_verify import _read_verdict
+        assert _read_verdict("", "AssertionError: accepted tampered record", 1) == "CONFIRMED"
+
+    def test_the_sandbox_still_refuses_a_run_with_no_observer(self):
+        """Pins the behaviour that made the four above fail.
+
+        A falsifier whose observer never installed ran with no boundary and no
+        measurement, so nothing about it can decide anything. That refusal is the
+        correct outcome and must not be softened to make tests convenient.
+        """
+        import subprocess as sp
         from bench.falsifier_verify import reverify_falsifier
-        self._fake_run(monkeypatch, stderr="AssertionError: accepted tampered record", rc=1)
-        assert reverify_falsifier("print('x')") == "CONFIRMED"
+
+        class _R:
+            stdout, stderr, returncode = "FALSIFIED: x", "", 0
+
+        import pytest as _pytest
+        _mp = _pytest.MonkeyPatch()
+        try:
+            _mp.setattr(sp, "run", lambda *a, **k: _R())
+            assert reverify_falsifier("print('x')") == "INTEGRITY_VIOLATION"
+        finally:
+            _mp.undo()
 
 
 # ── Post-convergence sweep (founder-approved 2026-07-28) ─────────────────────
@@ -446,3 +474,35 @@ class TestImmuneMemoryWiring:
         back = ImmuneMemory.load(str(p))
         assert back.pi_mem(1) > 0.6, "2 confirmed, 0 rejected -> high prior"
         assert back.pi_mem(2) < 0.4, "0 confirmed, 1 rejected -> low prior"
+
+
+class TestDomainClaimPatternsPrePass:
+    """One-shot arc (2026-07-29): domain TOML claim_patterns now classify
+    FIRST for non-software domains — deterministic exam routing."""
+
+    def _classify(self, desc, domain):
+        from bench.immune_agents import _classify_claim_v2
+        from bench.dm._types import Finding
+        f = Finding(finding_id="T1", model_id="X", round_idx=0, flaw_class=1,
+                    severity=0.5, abstraction_index=0.3, description=desc,
+                    verified=False, origin_type="model")
+        ct, _, conf = _classify_claim_v2(f, domain=domain)
+        return ct.value, conf
+
+    def test_chemistry_stoichiometry_claim_deterministic(self):
+        ct, conf = self._classify(
+            "The molar ratio of the stoichiometric coefficients balances at 4.",
+            "chemistry")
+        assert ct == "mathematical" and conf >= 0.85
+
+    def test_chemistry_logical_claim_deterministic(self):
+        ct, _ = self._classify(
+            "If the pressure is increased then the equilibrium implies a shift.",
+            "chemistry")
+        assert ct == "logical"
+
+    def test_software_domain_unchanged(self):
+        ct, _ = self._classify(
+            "If the flag is set then the invariant implies a contradiction.",
+            "software")
+        assert ct == "logical"  # generic pattern path, not the TOML pre-pass

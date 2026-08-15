@@ -82,11 +82,20 @@ class TestLiveSpecialistDomainsConstant:
         # shadow to LIVE so it filters noise and gates genuine novelty.
         assert "software" in LIVE_SPECIALIST_DOMAINS
 
+    def test_cs_software_is_live(self):
+        # Exp 52 pre-flight (2026-07-29): the factorial capstone declares
+        # domain="cs_software" so the software-family specialist reaches
+        # cs_software.toml, whose claim_patterns are visible to the domain
+        # pre-pass and whose verification_tools resolve to a runnable verifier
+        # for every claim type. Additive: no other config declares the string.
+        assert "cs_software" in LIVE_SPECIALIST_DOMAINS
+
     def test_set_size_matches_spec(self):
-        # Eight domains: math/stats/bio/info-sci (1E.3) + software (exp41b) +
+        # Nine domains: math/stats/bio/info-sci (1E.3) + software (exp41b) +
         # physics/chemistry/engineering (founder directive 2026-07-27 —
-        # all specialists live from Exp 44 on). code/cross_domain aliases excluded.
-        assert len(LIVE_SPECIALIST_DOMAINS) == 8
+        # all specialists live from Exp 44 on) + cs_software (Exp 52
+        # pre-flight, 2026-07-29). code/cross_domain aliases excluded.
+        assert len(LIVE_SPECIALIST_DOMAINS) == 9
 
     def test_is_immutable(self):
         # frozenset prevents accidental mutation from test or runtime code.

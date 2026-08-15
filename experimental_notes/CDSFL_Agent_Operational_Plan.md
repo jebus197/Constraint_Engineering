@@ -4,7 +4,195 @@
 
 **Function.** Authoritative operational tracker for the Exp 40–54 arc and the subsequent Bench Run 2 (27 frontier STEM problem sets). First resource to read after any compaction or long break.
 
-**Last updated.** 20 July 2026 11:50 BST. **★ FIRST READ the 20-July CURRENT STATE block in `resources/RECOVERY.md` — it holds the live resume pointer.** In brief: Exp 43 DONE (clean re-run, macrophage_cell.py) — the location-keyed two-sided gate GENERALISED (over-production solved: crit series [0,0,0] R6–11, gamma ~0.57, gate passed R4+R11), but formal 3-consecutive convergence was blocked by ONE mechanical artifact: sub-critical UNCONFIRMED findings (falsifier-error/absent, NOT model disagreement) mis-counted as "contested." FIX designed + sy/z3-verified (FIX 1 → converges R6), NOT yet coded. Arc reorder + renumber CONFIRMED & LOCKED (composition tests old-44/49 DROPPED — every run already tests the whole integrated system): NEW Exp 44 = `dm/_memory.py` (the shake-out / blue-water test), then evidence.py, _shadow_stage6.py, _divergence.py, then 4 synth STEM modules (to draft), then the 2×2 factorial. NEXT ON RESTART: implement FIX 1–5 (FFAFP + regression tests) → build NEW-Exp-44 memory.py config → run under cy. Full sequence in the 20-July RECOVERY block. Founder: finish efficiently, take the financial hit. Full detail: Desktop TTS `Exp43_Overnight_and_Contested_Analysis_2026-07-19` + `Exp44_Fix_Design_and_Forward_Plan_2026-07-19`. Prior gate context: **GAMMA TWO-SIDED GATE LIVE + overnight build banked (10–11 June); ~3-week founder hiatus (external model turbulence); full `rs` on 2 July confirms state intact (HEAD `6ed0adf`, tree clean, 62-test gate suite green).** Two-sided gate `71b190b` (founder ruling 2026-06-10; standing directive "GAMMA IS LOAD-BEARING — DO NOT DEMOTE IT" in project CLAUDE.md): convergence = `gamma_critical >= 0.30` AND 3 consecutive zero-new-critical rounds, BOTH required; tool-verified on both landmarks (exp41c gamma_critical=**1.000**, exp42=**0.687**; the "0.240" in older entries = the ALL-FINDINGS gamma, NOT the gate input). The gate commit left 3 tests red → fixed `633b4c6` (test class renamed from the demotion-asserting `TestGammaIsReportedNeverTriggers`; 434-test sweep green). **Severity calibration BUILT** `050f17c` (gated default-off, 17 tests; INERT until a latent-tagger sets `entry["latent"]` — fail-safe; never demotes safety/core/security/data_loss). **Exp 43 config** `1b5d148` (`bench/exp43_configs/43_macrophage_locationkey_live.json`) pre-flight VERIFIED (all gate flags survive launcher→RunnerConfig; 15 AST symbols extract from raw source — the Exp-42 silent-0-symbol failure mode pre-empted). Records `053e873`; sv `6ed0adf`. **Directive-measurement CORRECTION:** the dispatched system directive is ≈50K chars, of which 43,667 (`cdsfl_operational.md`, 18 sections) is appended UNPRUNED outside the composer prune path (`reference_runner_v2.py:2932`); today's pruner reaches only ≈6% (the domain packet); the "~60K directive" figure was a CONFLATION with the 60,416-char composer.py TARGET ARTICLE (user prompt, not directive). Trim-to-≈27K draft exists; awaits the `pr` panel. **Macrophage:** lives ONLY in `bench/macrophage_cell.py` (immune_agents.py has 0 macrophage code — matrix row corrected 2026-06-10); wired into the runner (instantiated `reference_runner_v2.py:3438`, observed `:3544`) but reaches NO live decision (shadow→shadow via ouroboros); ONBOARDING closure index re-tiered live_operational→shadow_integrated. **Load-balancer** (`dm/_load_balancer.py`): dormant-in-practice (DynamicManager.process_round never called by runner v2); DISTINCT from take_up_slack (planning-time task→model allocator vs reactive falsifier re-router) — KEEP, wire only when BR2 needs differential allocation. **dm consolidation:** Step 0/1 (green test baseline + landmark pin) done via `633b4c6` + `test_two_sided_gate.py`; Steps 2–6 (extract γ-estimator/novelty-series to `convergence_core.py`, collapse dm duplication, guard-test the refuted `ConvergenceDetector` out of the decision path) behind founder `go` — the landmark is fragile, direction is dm→runner, never a blind swap.
+**★ TEST-SUITE FIGURES IN THIS FILE ARE CORRECTED (2026-07-31). READ BEFORE QUOTING ANY PASS COUNT.** Every "non-network" label recorded below is false. `-m "not network"` was never an offline selection: the `network` marker was not registered until 2026-06-09 (`c865bd9`) and tags 3 tests out of ~2089, none of them a model-dispatch path. The 1121 and 907 figures came from hand-curated file-exclusion lists chosen on wall-clock, and those lists omit three files that reach live claude-CLI dispatch — `test_immune_agents.py`, `test_specialist_live_promotion.py`, `test_specialist_shadow_cells.py`. Those runs made billed live model calls. Corrections are appended in-place at the four sites below (Phase E item E1, and the 22 April 02:08 / 02:10 entries, and the 15 May waking-review context) rather than overwriting them, because this file is a record. **Current measured figure:** `python3 -m pytest bench/tests/ -q --netguard-strict` → **2086 passed, 3 skipped, 0 failed in 99.6 s**, 30 outbound attempts all denied, measured 2026-07-31 19:15 BST at HEAD `d4d4d7f` plus working tree. The suite is now offline by default via three mechanisms in `bench/tests/conftest.py`. Full account: `resources/RECOVERY.md`.
+
+**★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
+
+**★ RESUME POINTER (2026-08-05 20:30 BST). SUPERSEDES EVERY POINTER BELOW.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
+every future pointer inherits it.)**
+**THE RECOVERY INSTRUMENTS WERE AUDITED AND MOST OF THEM WERE LYING.** A 15-agent read-only audit
+returned **71 findings, 60 CONFIRMED on independent adversarial reproduction, 0 refuted**, plus 25
+the verifiers found that the auditors missed. Full record: `experimental_notes/Recovery_Resource_Audit_2026-08-05.md`.
+Uniform pattern, and it is this project's own signature failure: **every failure rendered as a
+confident success.** Worst case — `cdsfl_seal_logs.py` tested a `(bool, str)` return for truth, so
+**the tamper detector could never report tampering**; falsified directly (one appended byte → now
+TAMPERED exit 1, at HEAD it was OK exit 0). Four root causes behind most of the rest: CURRENT_STATE
+generated pre-commit; `latest_experiment()` bound to the top experiment number so halted exp53
+blanked all ~60 archives; `git_state()` comparing to origin/main and rendering a FAILED rev-list as
+"up to date"; and `cdsfl_recover.py` hunting markers deleted in April, so pending-work printed
+nothing for **113 days**. `qc` had crashed for **105 days**; `onboard --full` was a no-op for **118**
+with its own self-test reporting OK.
+**OPEN BRAIN WAS UNFED, NOT BROKEN** — `sv` had no capture code; it now captures on every successful
+commit (proven live, `project=CDSFL`). Its MCP entry was pinned to a March fork, so tamper evidence
+was absent since 2026-06-08; unpinned, and `verify` now **exits 1** rather than certifying a
+93%-unverifiable store as OK. **That red light is correct — do not "fix" it.**
+**THE COMPACTION DRILL went 1-of-5 → 4.5-of-5.** Suite **2549 → 2776 passed / 7 skipped / 0 failed**
+offline; OpenBrain 440 → 475.
+**STATE:** do NOT read a hash from this line — it ages the moment the next commit lands, and a
+stale-but-confident state claim is the exact defect this whole audit was about. Run
+`python3 scripts/cdsfl_recover.py --full`; its `## GIT STATE` and `## RUNNING NOW` blocks are
+computed live and label themselves authoritative. Standing facts that do NOT age: both repos
+commit LOCALLY and are **not pushed** without the founder saying so, and OpenBrain
+(`/Users/georgejackson/Developer_Projects/OpenBrain`) is a SECOND dirty tree that is easy to
+forget at commit time.
+**★ 13 FOUNDER RULINGS RAISED (2026-08-05)** — `~/Desktop/CDSFL_tts/Rulings_Needed_2026-08-05.txt` and
+`experimental_notes/Rulings_Needed_2026-08-05.md`. **ALL THIRTEEN WERE RULED ON 2026-08-06.** The
+authoritative status is the `## Disposition` table at the HEAD of that file — ten implemented, one
+reversed (the bridge is fixed, not retired), one answered and folded into the estate audit, one in
+progress (the Open Brain backfill). **Only two things still need the founder:** a spot-check of the
+record classification, and the launchd reload command below.
+The three that carried weight, and how they went: the 106 unlabelled Open Brain rows — RULED classify
+them ALL, and normalise the `CDSFL`/`cdsfl` case split the equality filter treats as two projects;
+which document owns the canonical recovery ordering — NOT a straight ruling, the founder asked instead
+for an audit of the whole estate and a proposal against INDUSTRY STANDARDS rather than invented ones;
+and whether this tracker stays the Desktop canonical — RULED it does not, the repo copy is canonical
+and the Desktop copy is the mirror (see "Canonical anchors" below).
+**★ SEPARATELY, AND UNCHANGED — these predate the recovery audit and are the ARC's decisions, not the
+tooling's:** the DECISIVE form of the false-CONFIRMED discrimination control; the disposition of the
+prose-similarity question the 5-model panel answered on 2026-08-04; and the zero-plant control restart.
+These are what actually gate progress toward Bench Run 2. The recovery-resource work was a necessary
+side track, not the arc.
+**The Open Brain launchd bridge is SAFE to reload — the earlier warning here was FALSE.** It said
+reloading would `sys.exit(1)` and restart-loop; that was written before the registry outbox path was
+corrected and was never re-measured. Measured 2026-08-06, read-only, without starting anything:
+`verify_canonical_install` OK, `load_config` OK, `validate_outboxes` OK — it would START. Founder
+ruling 12 REVERSED the earlier retire recommendation (CW may return during UX design), so the code
+was fixed rather than retired. PID 1406 has held the old code in memory since 2026-06-10; the reload
+is the founder's to run:
+`launchctl bootout gui/$UID/com.openbrain.bridge && launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.openbrain.bridge.plist`
+
+**★ RESUME POINTER (2026-08-05 14:20 BST, post-`rs`). Superseded by the block above; retained as trail.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` FIRST — it is the live queue.** (Standing instruction,
+inherited: it was first stated in the 2026-08-01 and 2026-08-02 pointers and was NOT carried forward when the
+pointer advanced on 2026-08-04 and 2026-08-05, so it survived only inside superseded blocks. Every future
+pointer must copy this line forward.)
+State verified clean after the model point-update and relaunch: HEAD `624b39a`, tree clean, in sync with
+`origin/exp39-experimental` (0/0), nothing running, no stray Wolfram kernels, `WolframCloud` live and
+answering (`$Version` 15.0.0; ζ(3) and eigenvalues {4,2,1} match the recorded landmarks — Wolfram Language).
+The `WolframBridgeLegacy` entry is GONE from `claude_desktop_config.json` (survives only in the two dated
+`.bak` files); the config now holds `WolframCloud` alone, which is the intended end state. The local Engine
+is correctly NOT an MCP server — on-demand via `wolframscript` only. Licence expires **2026-09-11**.
+**PROVENANCE CORRECTION LANDED** (`624b39a`): the 2026-08-04 simulated bench's five reviewers were Claude
+subagents, not the named frontier models, and had been reported under vendor names. Relabelled `SIM-A`…`SIM-E`
+in the evidence JSON, the note, the founder TTS and the harness source, correction at the head of each.
+Every measured result is UNCHANGED — 12/12 stages, five independent demonstrations, zero false positives.
+Standing rule now in project `.claude/CLAUDE.md` and persistent memory: a simulated agent NEVER carries a
+vendor name. The genuine five-model panel review (`bench/logs/pr_semantic_distinctness_2026-08-04/`, ~GBP 3)
+is unaffected and its answers stand.
+**FOUNDER DECISIONS STILL OPEN, unchanged:** (1) the DECISIVE form of the false-CONFIRMED discrimination
+control (the detective form is already covered by ruling 3 and needs nothing); (2) ruling 1 disposition;
+(3) the control restart — the evidence now supports it well.
+
+**★ RESUME POINTER (2026-08-04 03:55 BST, sv). Superseded by the block above; retained as trail.**
+**THE PIPELINE NOW RUNS END TO END** — `bench/tools/simulated_bench.py`, REAL functions in real
+order, target ALG-02-REF-01.md (7 claims, 1 planted defect, 2 executable listings = the shape that
+halted the control), panel = 5 blind agents barred from the fixture module and any answer key, each
+required to WRITE AND RUN a falsifier. No paid dispatch. **12/12 stages; planted defect DETECTED with
+5 independent demonstrations; ZERO false positives confirmed; novelty collapsed 5 findings to [1,0].**
+Found a REAL integration defect on its first run (fixture falsifiers carry a `<<DOC_PATH>>` token;
+fed raw, both falsifier-bearing findings returned ERROR) — every component correct, the SEAM wrong,
+which no unit test catches.
+**HONESTY CHECK justified immediately:** 8 findings claimed their falsifier RAN, the runner confirmed
+7. C0003 = ERROR, an asserted demonstration that is not one. Never accept "the model says it verified".
+**FALSE-CONFIRMED HOLE MAY BE CHEAP:** unprompted, an agent ran its falsifier against a CORRECTED copy
+(`seen = set()`) and recorded "not falsified", exit 0. So ASK THE PANEL for the discrimination control
+rather than synthesising a corrected copy. Detective form already covered by ruling 3; **DECISIVE form
+still needs a founder ruling** (touches CONFIRM-only).
+STILL STANDS: routing proven 6/8 vs null 0/25 (p=2.5e-5); the two-sided gate is NOT what stops most
+runs (STATE_CONVERGED 6, quiescence 6, budget 5; BOTH prose exams closed on STATE_CONVERGED); panel
+answered ruling 1 5/5; the founder's STEM-token idea beat all five and BOTH-hierarchically beats
+either; built SHADOW-ONLY, defaults False, no config sets it. Plan: shadow all four remaining legs
+free, decide before BR2, do NOT promote mid-arc.
+FOUNDER DECISIONS: (1) false-CONFIRMED decisive control; (2) ruling 1 disposition; (3) control restart
+— evidence now strongly supports it.
+
+**★ RESUME POINTER (2026-08-04 02:53 BST, sv). SUPERSEDES EVERY POINTER BELOW.**
+ROUTING REPAIR **PROVEN**: paired replay through the real `_apply_routing`, **6 of 8 resolved** vs a
+measured null of **0 of 25** (Fisher p=2.5e-5; binomial + mpmath agree). 11 dispatches, ~GBP 2.
+**THE FINDING THAT REFRAMES RULING 1:** the two-sided gate is NOT what stops most runs. Across all
+completed runs `STATE_CONVERGED` closed 6, critical-quiescence closed 6, budget/stall closed 5 — and
+BOTH prose exams (48 r5, 49 r6) closed on STATE_CONVERGED, their critical series `[9,0,1,0,1,0]`
+having no three-zero streak. The similarity question feeds a gate that fires on neither prose run.
+**RULING 1 — panel answered 5/5, no compelled convergence.** All five: prose similarity is a dead end.
+3 say no reliable method exists (causal, not textual); 2 say use the falsifier (mutation-response
+equivalence / identity-under-intervention). **The founder's own proposal beat all of them:** hard STEM
+tokens (numbers, claim IDs, identifiers) — duplicates median 0.542, distinct 0.000, p=7.5e-9, 97.5%
+coverage. **And keeping BOTH beats either, but NOT by voting** — AND and OR both fail; HIERARCHICAL
+works (location decides the coarse call; signature splits only WITHIN a flagged location, at 0.20).
+Ground truth proven by execution: repairing D1 leaves D2 standing.
+**BUILT SHADOW-ONLY** (`hierarchical_novelty_convergence` defaults False; no config sets it). Report
+records the series, whether it gated, AND `novelty_rule_divergence` naming the SPECIFIC findings the
+rules disagree on. **PLAN: shadow on all four remaining legs at zero cost, decide before BR2. Do NOT
+promote live during the arc — it would confound the capstone's four-way comparison.**
+LIMITS: two constructed cases, archive merged-pair sample n=14, the 0.20 within-location cut is NOT
+swept against same-location pairs (archive lacks them; needs constructing).
+Suite **2549 passed / 0 failed** offline. Night's spend under GBP 5.
+
+**★ RESUME POINTER (2026-08-02 22:05 BST, sv). SUPERSEDES EVERY POINTER BELOW.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` FIRST — it is the live queue.**
+MUST list A1–A10 **CLOSED**. But the ACTUAL convergence blocker was on no list: the ROUTING LADDER's
+prompt was code-only and never received the target path or text, so on a prose target with fenced
+listings no rung could resolve anything and the recorded reason was factually false. MEASURED
+**41-for-41** routing resolutions on prose WITHOUT listings (Exp 48 chem 16/37, Exp 49 eng 25/38;
+1 HIL in 75) vs **0-for-25** on the control WITH them (halt R3/16). Fixed `1bd7605`, 15 tests.
+Found by offline 11-agent adversarial falsification, NOT review — the MUST list was necessary, not
+sufficient. Convergence itself was never at risk: close-the-loop verified 0/37 and 0/38 in the two
+runs that converged; gamma implicated nowhere.
+ALSO CLOSED: `run_verification` 4th repair (veto semantics — the 3rd shipped `parse → PASS` and closed
+a shell-injection fix); sweep runs on a halt; panel briefing corrected; B3 (ruff's success line counted
+as a violation, live all arc); A9 preflight-that-refuses; A10 rejection reasons to the panel.
+OPEN, NEEDS A RULING: the sweep CANNOT clear a critical (max severity ever touched 0.66 vs 0.70) so a
+false-positive critical is permanent human work; and a valid-but-logically-wrong falsifier can CLOSE a
+finding against a TRUE claim (new hole, not built). 38 sub-criticals stuck with no route to terminal.
+WOLFRAM: paid keys died 2026-07-31. Now local free Engine (`Wolfram`, no ceiling, stateful, curated data
+OK, but SINGLE-KERNEL and licence expires **2026-09-11**) + credential-free hosted (`WolframCloud`,
+identical computation, stateless, hard ~30 s ceiling). Stays OUT of the pipeline.
+WOLFRAM WIRING CORRECTED 22:15 after the restart failed: Claude Desktop rejects a bare `url` (use
+`npx -y mcp-remote <url>`), and the local Engine must NOT be an always-on MCP server — Desktop spawned
+TWO kernels against a SINGLE-KERNEL licence and every kernel request failed, `wolframscript` included.
+Engine is now on-demand via Bash only. If wolframscript claims a licence fault, check `ps` for
+`MacOS/wolfram -run` first. Licence expires 2026-09-11.
+FOUNDER DECISIONS: (1) restart the control, after (2); (2) **free + highest value** — author the five
+unwritten prose targets WITHOUT fenced code listings; (3) critical-severity ceiling; (4) alarm HALT vs
+veto-only; (5) one paid sentinel-check dispatch; (6) push/merge + experimental-branch deletion.
+Suite **2521 passed / 7 skipped / 0 failed**, offline under `--netguard-strict`.
+
+**★ RESUME POINTER (2026-08-01 21:45 BST, HEAD `703041a`, tree clean). THIS SUPERSEDES EVERY POINTER BELOW.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` FIRST — it is the live queue; this file is now history behind it.**
+Arc position: 47 divergence DONE, 48 chem DONE (converged r5, 31/32 falsifier-CONFIRMED), 49 eng DONE (converged r6, 31/31)
+→ **53 zero-plant control PAUSED at round 4** (restart recommended, not resume: 13 findings were locked irreducible by the
+broken S_k hard gate, not by anything real) → 50 physics → 51 biology → 52 factorial (frozen instrument) → HARD STOP → BR2.
+BLOCKING the control: queue items A4/A5/A6/A9/A10 (unpaid, ~1 day) + B2/B3 + a docs sweep. A1/A2/A3/A7/A8 closed at `0a15138`.
+Suite 2461 pass / 0 fail, OFFLINE under `--netguard-strict` (49 attempts, all denied, 3 KNOWN_OUTBOUND keys with written reasons).
+**THE DAY'S GOVERNING LESSON:** `run_verification` was repaired FOUR times; the third shipped `ast.parse → PASS`, which closed a
+finding whose fix injected `subprocess.call(..., shell=True)`. A syntax check speaks about the LISTING, never the FIX, so it may
+only VETO. Outcomes are now FAIL / NO_APPLICABLE_CHECKS / PASS, and `vetoes_run` is kept separate from `checks_run` so a veto that
+passes can never read as a check that ran. Generalise this to extraction-scoped bandit before wiring it. `max_irreducible_queue`
+reverted to the default 2 — raising it to 8 then 30 suppressed a correctly-firing alarm both times.
+FOUNDER DECISIONS OPEN: (1) restart-vs-resume the control; (2) is the queue alarm's new HALT (vs veto-only) intended;
+(3) spend one dispatch confirming a model reads the new sentinel markers before a paid run; (4) push the local commits.
+Notes: `Prose_Acceptance_Stage_2026-08-01` (technical + plain-English + TTS), `State_And_Remaining_Path_Plain_English_2026-08-01`
+(+ Desktop TTS `Where_We_Are_And_What_Is_Left_2026-08-01.txt`).
+
+**★ ONE-SHOT ARC IN FLIGHT (founder go 28 Jul 2026, ~23:55 BST). RESUME POINTER (post-compaction: read RECOVERY.md 28-Jul blocks + this line).** Sequence: 47 divergence (LAUNCHED 00:00 29 Jul, run dir exp47_divergence_locationkey_live_20260728T230026Z, deltas: sweep + FIRST ImmuneMemory recording) → 48 chem exam → 49 eng → 50 physics → 51 biology → 52 factorial (frozen instrument, fixes held out) → HARD STOP before BR2 for founder review. Guardrails: pause+call founder on non-convergence / surviving critical / new fault class / >$80/run / safety. HIL review post-hoc (founder ruling). Exam modules: drafted ahead + tool-verified answer keys (separate files under bench/cdsfl_registry/targets/) + panel draft-review + claim_patterns regex check; pass mark = ratified conjunctive gate (attributed recall 100%, non-distortion, noise-conditioned decision-change, γ-trajectory control; per-verdict logging). Chem draft workflow running. Markdown location-key landed (claim-ID symbols). BR2 rules banked: absolute tools-decide acceptance bar; ≤25%% novel items (tool-verifiable, own axis, promotable); ouroboros sources beyond-training-data material. Balance ~$452.
+
+**★ CORRECTION 2026-08-06 — THE BLOCK BELOW IS HISTORY AND TWO OF ITS INSTRUCTIONS ARE NOW FALSE.**
+It is retained because this file is a record, and its measurements were true when written. But it
+contains live-sounding instructions that a recovering agent could act on, and this is now the
+CANONICAL copy of the tracker, so they are corrected here rather than left to mislead:
+(a) **"FIX designed … NOT yet coded" and "NEXT ON RESTART: implement FIX 1–5" are DONE.** The
+    tranche was coded 2026-07-27 in commit `1cec60d` and shaken out by Exp 44, which converged at
+    round 12 with zero residue — the first formal-endpoint zero-residue convergence in the project.
+    Nothing about FIX 1–5 is outstanding.
+(b) **"FIRST READ the 20-July CURRENT STATE block in `resources/RECOVERY.md`" is SUPERSEDED.** That
+    block is now labelled superseded in RECOVERY.md itself. The live resume pointer is the ★ block
+    at the TOP of this file; the FIRST READ order is this file, then
+    `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`. Exactly one document may say "read this
+    first", and it is this one.
+Everything else below stands as the record of what was known on 2026-08-02.
+
+**Last updated.** 2026-08-02 22:05 BST (sv) (see the resume pointer at the top; the 20-July text below is retained as history). In brief: Exp 43 DONE (clean re-run, macrophage_cell.py) — the location-keyed two-sided gate GENERALISED (over-production solved: crit series [0,0,0] R6–11, gamma ~0.57, gate passed R4+R11), but formal 3-consecutive convergence was blocked by ONE mechanical artifact: sub-critical UNCONFIRMED findings (falsifier-error/absent, NOT model disagreement) mis-counted as "contested." FIX designed + sy/z3-verified (FIX 1 → converges R6), NOT yet coded. Arc reorder + renumber CONFIRMED & LOCKED (composition tests old-44/49 DROPPED — every run already tests the whole integrated system): NEW Exp 44 = `dm/_memory.py` (the shake-out / blue-water test), then evidence.py, _shadow_stage6.py, _divergence.py, then 4 synth STEM modules (to draft), then the 2×2 factorial. NEXT ON RESTART: implement FIX 1–5 (FFAFP + regression tests) → build NEW-Exp-44 memory.py config → run under cy. Full sequence in the 20-July RECOVERY block. Founder: finish efficiently, take the financial hit. Full detail: Desktop TTS `Exp43_Overnight_and_Contested_Analysis_2026-07-19` + `Exp44_Fix_Design_and_Forward_Plan_2026-07-19`. Prior gate context: **GAMMA TWO-SIDED GATE LIVE + overnight build banked (10–11 June); ~3-week founder hiatus (external model turbulence); full `rs` on 2 July confirms state intact (HEAD `6ed0adf`, tree clean, 62-test gate suite green).** Two-sided gate `71b190b` (founder ruling 2026-06-10; standing directive "GAMMA IS LOAD-BEARING — DO NOT DEMOTE IT" in project CLAUDE.md): convergence = `gamma_critical >= 0.30` AND 3 consecutive zero-new-critical rounds, BOTH required; tool-verified on both landmarks (exp41c gamma_critical=**1.000**, exp42=**0.687**; the "0.240" in older entries = the ALL-FINDINGS gamma, NOT the gate input). The gate commit left 3 tests red → fixed `633b4c6` (test class renamed from the demotion-asserting `TestGammaIsReportedNeverTriggers`; 434-test sweep green). **Severity calibration BUILT** `050f17c` (gated default-off, 17 tests; INERT until a latent-tagger sets `entry["latent"]` — fail-safe; never demotes safety/core/security/data_loss). **Exp 43 config** `1b5d148` (`bench/exp43_configs/43_macrophage_locationkey_live.json`) pre-flight VERIFIED (all gate flags survive launcher→RunnerConfig; 15 AST symbols extract from raw source — the Exp-42 silent-0-symbol failure mode pre-empted). Records `053e873`; sv `6ed0adf`. **Directive-measurement CORRECTION:** the dispatched system directive is ≈50K chars, of which 43,667 (`cdsfl_operational.md`, 18 sections) is appended UNPRUNED outside the composer prune path (`reference_runner_v2.py:2932`); today's pruner reaches only ≈6% (the domain packet); the "~60K directive" figure was a CONFLATION with the 60,416-char composer.py TARGET ARTICLE (user prompt, not directive). Trim-to-≈27K draft exists; awaits the `pr` panel. **Macrophage:** lives ONLY in `bench/macrophage_cell.py` (immune_agents.py has 0 macrophage code — matrix row corrected 2026-06-10); wired into the runner (instantiated `reference_runner_v2.py:3438`, observed `:3544`) but reaches NO live decision (shadow→shadow via ouroboros); ONBOARDING closure index re-tiered live_operational→shadow_integrated. **Load-balancer** (`dm/_load_balancer.py`): dormant-in-practice (DynamicManager.process_round never called by runner v2); DISTINCT from take_up_slack (planning-time task→model allocator vs reactive falsifier re-router) — KEEP, wire only when BR2 needs differential allocation. **dm consolidation:** Step 0/1 (green test baseline + landmark pin) done via `633b4c6` + `test_two_sided_gate.py`; Steps 2–6 (extract γ-estimator/novelty-series to `convergence_core.py`, collapse dm duplication, guard-test the refuted `ConvergenceDetector` out of the decision path) behind founder `go` — the landmark is fragile, direction is dm→runner, never a blind swap.
 
 **RESUME POINTER (12 July 2026 02:15 BST, Phase 1 executed overnight) — PAUSED FOR FOUNDER REVIEW BEFORE EXP 43.** Phase 1 (A1–A4) DONE; commits on `exp39-experimental` (pushed at this sv): A1 pruning `pr` panel 4/5 (cc2 blocked by CLI OAuth; unanimous SOUND-WITH-CAVEATS; §18 = top prune; RECOMMENDATION-only, NOT implemented) `ef1fe7b`; A2 ouroboros SHADOW real-work (resolve OA→download→pypdf/pdfplumber parse→cheap-reader brief; proven live on arXiv 1706.03762 = 24k chars parsed/hashed/briefed; strictly shadow — briefs never reach a prompt/c_ext/γ) `df18201`; A3 routing rename `take_up_slack`→`routing` (code-only; ALL configs unchanged; alias in BOTH launcher_core AND RunnerConfig.from_dict) `349951f`; adversarial-pass fixes `b656549`. **A4 §10 = already INERT** (flag never passed to RunnerConfig; no compelled-conv text in dispatch) ⇒ Exp 43 is now FULLY directive-identical to Exp 42 on BOTH launch paths (supersedes the "run without §10 = deviation" framing). **ADVERSARIAL PASS (14 agents, 5 confirmed/5 refuted) caught + FIXED a real A3 regression:** the routing alias was ONLY in launcher_core, NOT RunnerConfig.from_dict → the runner's own `--config` CLI ran routing SILENTLY OFF for Exp 43 (my earlier "verified" tested only the launcher path). Fixed in both paths + regression test; 4 LOW shadow-ouroboros findings also fixed. **BLOCKER (founder morning action):** claude CLI (CC2) OAuth session EXPIRED (macOS Keychain; the generic 401 was masked by inherited `ANTHROPIC_BASE_URL`). Force re-login: run `claude` → `/login` (or `claude logout`/`claude login`); VERIFY `claude -p --model opus "PONG"` in a PLAIN terminal (must print PONG, no OAuth-expired). Needed so Exp 43's 5-model panel is byte-identical to Exp 42 (call_claude_cli uses `--system-prompt`=full CDSFL directive, which subagents can't replace). Once fresh, dispatch launches with `env -u ANTHROPIC_BASE_URL` (no code change). **Full suite 1595 pass / 3 fail:** 2 = CLI-OAuth timeout; 1 = PRE-EXISTING stale test `test_both_phase1_paths_use_the_constant` (decomposed_dispatch.py refactored off `_PHASE1_MAX_TOKENS` in `fbafff8`, unrelated — flag/fix separately). Report: `experimental_notes/CDSFL_Overnight_Phase1_2026-07-12.md` (+ `_Plain_English_` + Desktop TTS). **NEXT (Phase 2, on founder review + CLI re-login):** launch Exp 43 `python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"` under full cy; ouroboros studies in shadow (NB: frozen Exp 43 config has NO `_ouroboros` block → the cell will NOT run in 43; enabling it = a pre-registration amendment needing founder sign-off). **OPEN founder decisions:** (a) set `hasTrustDialogAccepted` flag in `~/.claude.json`? (b) optional post-43 Exp-43-config-key rename to `routing_enabled`; (c) fix the pre-existing stale phase1 test; (d) A1 pruning cuts (implement + ablation, post-43); (e) complete A1 panel to 5/5 via cc2 once the CLI is up.
 
@@ -23,6 +211,8 @@
 **RESUME POINTER (7 June 21:16 BST) — POST-PAUSE PLAN (founder-directed, audit-FIRST):** The 4.6-false-report-of-active-load-balancing proves the project's "what's active" record is UNTRUSTWORTHY (an un-falsified "X is active" claim — exactly what CDSFL exists to distrust). **(A) GROUND-TRUTH AUDIT (tool-grounded: git/grep/call-site-trace, NOT docs):** a ledger — proposed / genuinely-active / falsely-reported-active / useful-now — across churn detection-prevention-mitigation, the directive reframe (diminishing-returns / build-to-PoC), model behavioural feedback ("tell models what they're doing"), directive PRUNING (the operational directive is STILL ~60,416 chars in this run's dispatch logs → if pruning was reported done, that's another false-active), and the load-balancing/fingerprinting family. Cross-check ONBOARDING/RECOVERY/this-tracker vs code. **(B) RESOLVE THE CHURN DIAGNOSIS:** the 1-2/round are REAL (gate-CONFIRMED) but real-but-LATENT, over-rated ≥0.7; locate WHY nothing bounds them — is the diminishing-returns directive LIVE, is severity calibration LIVE or dormant? **(C) THEN:** apply the reframe (build-to-PoC, not endless bugs) + severity calibration + the separate-runner / load-balancing EVIDENCE test (founder: test everything, let evidence decide) — now on a trusted record. **(D) RENAME (first fresh-session task, deliberately NOT done at hour-11):** `take_up_slack`→`routing` (the ROUTING facet of the load-balancing/fingerprinting mechanism — "different sides of one coin", cross-ref `dm/_load_balancer.py` + `runner_core.py:66-72`): module `routing.py`, `route()`, `RoutingResult`, `routing_enabled`, `_apply_routing`, log `routing:`, tests `test_routing*`, launcher backward-compat for the old flag. No Bench Run 2.
 
 **Prior update.** 7 June 2026 15:31 BST. **CAPABILITY-AWARE FALSIFIER ROUTING ("take-up-slack") BUILT + VALIDATED + UNIT-TESTED (`d383a6e`).** Founder directive: give weak models a fair chance, but when they demonstrably can't falsify, the STRONGER models "take up the slack" rather than endless re-asking; this is the capability-fingerprint / load-balancing work (which exists but was COLLAPSED to flat parallel dispatch — `DynamicManager`/`LoadBalancer`/`RoleAssignment`/`cc2_manager.py` all instantiated but DORMANT; fingerprints in `runner_core.py:66–72` already rank CC2 strongest→DeepSeek weakest). **Primary offender = DeepSeek** (data: 28% confirm rate, 10/15 residuals, 5/7 hardest; CC2+Codex = 0 residuals each). **Three tests run first:** (1) teaching the weak model (founder's "demand it checks its work") = 1/3 on fresh findings vs 0/5 untaught — marginal booster NOT a cure (no cross-call learning); keep the finder-agreement loop only as a confidence cross-check vs C0019-style re-scope. (2) take-up-slack = strong model (gpt-5.5) + execute_python tool loop on the 7 hardest residuals (weak source 0/7) → **6/7 CONFIRMED**. (3) C0063 (7th) = gpt-5.5 trips 2/2 on a markdown-code-block string-embedding trap; strongest rung handles it → **2-rung ladder = 7/7**. **Module `bench/take_up_slack.py`** (committed): dedup (defect already CONFIRMED elsewhere → never escalate) → ladder of progressively stronger writers (exclude failed source) with tool loop, reverify decides → HIL only if strongest can't. Runner-agnostic, side-effect-free, **10 unit tests pass**. CONFIRM-only still holds (REFUTED at any rung never drops the critical). Notes: `Capability_Aware_Falsifier_Routing_2026-06-07.md` + `_Plain_English_` + TTS. **RESUME POINTER (7 June 15:31 BST):** WIRE `take_up_slack` into the round loop at the single call site after `apply_falsifier_verdicts` (`reference_runner_v2.py:5396`), gated — provide `resolve_fn = dispatch(strong_cfg, prompt, enable_tools=True)` + falsifier extraction, `similarity_fn = _finding_similarity`; (deliberately NOT done at session end — touches the core round loop). THEN the convergence test: resume Exp 42 with take-up-slack ON → converge with zero residual-HIL? Behind founder gate (review Exp 40–54 contents first). Broader: role-specialise the panel (DeepSeek = finder not falsifier); full DynamicManager/LoadBalancer revival is a larger separate piece. No Bench Run 2.
+
+**[Correction 2026-08-05.]** The module path `bench/take_up_slack.py` in the 7-June entry above is dead at the current HEAD. It was **renamed, not deleted**: `bench/take_up_slack.py` → `bench/routing.py` on 2026-07-12 in commit `349951f` ("A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)"). Verified by `git log --diff-filter=D --name-only -- bench/take_up_slack.py` (returns `349951f` alone) and `git log --diff-filter=A --name-only -- bench/routing.py` (added in the same commit). The 12-July resume pointer above already records this rename; the 7-June entry is left intact as the record of that date. The *config key* `take_up_slack_enabled` is NOT dead — it is still accepted as a back-compatible alias for `routing_enabled` on both ingestion paths (`bench/launcher_core.py:216`, `bench/reference_runner_v2.py:760`), and the Exp 42–49 configs still carry it, so `42_composer_takeupslack.json` still loads.
 
 **Prior update.** 7 June 2026 12:19 BST. **CLEAN NO-FAKING RUNNER BUILT — CONFIRM-only falsifier gate.** Verdict-correctness audit of the 15 Exp-42 residuals showed a one-sided error profile: **CONFIRMED 7/7 correct, REFUTED 1/3** (C0028/C0040 = real defects falsely REFUTED by clean-exiting broken falsifiers — false-REFUTED masking). **The first proposed fix (independent-falsifier scrutiny) FAILED its own test** — gpt-5.5 also refuted the real defects single-shot; a lone falsifier falls into the same traps. **Shipped fix = CONFIRM-only** (`0a4d8ce`, `apply_falsifier_verdicts`, gated): a critical is resolved ONLY by a CONFIRMED demonstration (active AssertionError/FALSIFIED, unfakeable); REFUTED on a critical → HIL, NEVER dropped; REFUTED on a non-critical still trusted. Eliminates false-REFUTED masking **structurally**. 141 falsifier/gate tests pass. **Validation (CONFIRM-only + max-3 honest retry on the 15 residuals): 8 CONFIRMED (real defects, incl. C0019 which the OLD `REFUTED→drop` gate would have MASKED — sy-verified real over-classification defect, same class as audit-CONFIRMED C0029/C0031), 7 → HIL (genuine exceptions; C0028/C0040 sy-verified real). NO false REFUTED, NO false CONFIRMED (both checked).** **Honest convergence verdict — 2 gates:** (1) no unverified critical pending — 8 CONFIRMED clear it, the 7 HIL'd BLOCK it until the human adjudicates; (2) panel quiescence (3 zero-new-critical rounds) — SEPARATE, Exp-42 `novel_this_round` 15→1 (approaching, never zero). **CORRECTION (12:50 BST) — the "7 → HIL" floor was WRONG; the HIL floor on this target is ZERO.** Founder challenged it; a 14-agent workflow (`wf_f046bc18`) had a CAPABLE writer investigate each of the 7 (read real `composer.py`, write + RUN a correct falsifier via `reverify_falsifier`, adversarially re-check): **ALL 7 → CONFIRMED real defects, 0 genuinely un-resolvable** (re-run independently: 7/7 CONFIRMED). HIL categories: **2 DUPLICATE** (C0028↔CONFIRMED C0003 in-place-mutation comparison; C0015↔CONFIRMED C0001 hallucinated import) + **5 none_resolvable** (model-capability gaps: C0040/C0036/C0054 wrote NO falsifier, C0063 truncated at 97 chars, C0034 hallucinated API). **0 genuinely_hard_to_falsify, 0 safety, 0 core_functionality, 0 uncertain, 0 contested.** Why the max-3 retry got 1/8 but this got 7/7: the retry RE-ASKED THE SAME WEAK SOURCE MODELS; fix = **route un-confirmed criticals to a CAPABLE falsifier-writer (not the source model) + iterate**, plus **deduplication** (a residual whose defect is already CONFIRMED elsewhere is never escalated). With those, gate 1 clears with **zero HIL** on this target; gate 2 (quiescence) still needs severity calibration. Genuine-HIL categories are real but live in OTHER targets (concurrency/timing, safety, authority), not these 7. Notes: `Falsifier_CONFIRM_Only_Design_2026-06-07.md` §6 (corrected) + `_Plain_English_` + TTS. Commits `0a4d8ce` gate, `3545da8` notes, `9381980` harness. **RESUME POINTER (7 June 12:50 BST):** (a) **retry-ROUTING fix** — re-dispatch un-confirmed criticals to a capable writer (strongest model / iterative agent), NOT the source model (validated out-of-band 7/7; wire into runner round loop); (b) **deduplication** of residuals against already-CONFIRMED findings; (c) severity calibration (help gate 2); (d) optional Exp 42 resume to watch gates close live. Founder still gates reviewing what Exp 40–54 entail before further full runs. No Bench Run 2.
 
@@ -46,21 +236,40 @@ After compaction or a long break, read in this order:
 1. **This file, end to end.**
 2. `git log --oneline -10 && git status` in `Constraint_Engineering/`.
 3. `python3 -m open_brain.cli session-context --agent cc`.
-4. The "Active work queue" section below — top item is the resume point.
-5. The "Completed in current window" log — most recent entry identifies what just landed.
+4. **The ★ RESUME POINTER block at the top of this file — that is the resume point.** The FIRST one is current; every pointer below it is trail. Do not take the resume point from any section further down: the "Active work queue" section is a closed 22 April 2026 shift, and the "Completed in current window" log is ordered newest-near-top, so its tail is stale — the log's last entry is 15 May 2026, not the newest.
+5. **READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` FIRST — it is the live queue.** This file carries state; the queue carries what is open. Neither substitutes for the other.
+
+**Standing instructions are inherited, not left behind.** When the resume pointer is advanced, every standing instruction in the pointer it supersedes must be copied into the new one. An agent that correctly treats everything below the current pointer as trail will never see an instruction stranded in an older block. The live-queue line above was stranded exactly that way on 2026-08-04 and again on 2026-08-05.
 
 Do **not** re-read the consolidated plan before this file; the consolidated plan is for detail, this file is for state.
 
 ---
 
+## Open items carried forward from the 22 April work queue
+
+Lifted from "Active work queue (22 April 2026 overnight shift)" further down this file, which is
+otherwise fully checked off and therefore easy to skip. **Phase F is the only part of that 22 April 2026
+shift still open.** It is not the current resume point — it is the Bench Run 2 consolidation work to do
+whenever the Exp 40–54 arc and the founder review release it. This copy is the live one; the copy in the
+closed shift below is trail. Founder has not ruled on the shift section itself, so nothing there is deleted.
+
+- [ ] **F1.** Read `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` Section XI end-to-end.
+- [ ] **F2.** Consolidate the 27 frontier STEM problem sets into this file.
+- [ ] **F3.** Nail down per-task: domain, claim-cluster, expected tool routing, falsifiability criterion.
+
+---
+
 ## Canonical anchors
+
+> **Canonicality of this tracker flipped to the repo copy (founder ruling, 2026-08-06).** The repo copy wins because the tracker carries the recovery path, and an unversioned file on one machine's Desktop is a single point of failure. Both copies stay byte-identical; the Desktop copy is still the convenient one to open, but it is no longer the authority.
 
 | Resource | Path |
 |---|---|
-| This file (self-consumption tracker) | `~/Desktop/CDSFL_Agent_Operational_Plan.md` |
-| Repo mirror of this file | `Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md` |
+| This file — **CANONICAL** (self-consumption tracker) | `Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md` |
+| Desktop mirror of this file (byte-identical; convenient, not the authority) | `~/Desktop/CDSFL_Agent_Operational_Plan.md` |
 | Detail plan (prose, for human + mixed audience) | `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and `Constraint_Engineering/experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` (byte-identical) |
-| Note standard (locked 21 April 2026) | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_note_standard_v1.md` |
+| Note standard — CURRENT (v1.2, locked 14 May 2026) | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_note_standard_v1.2.md` |
+| Note standard — archival (v1 locked 21 April 2026, v1.1 locked 10 May 2026; superseded, do not write to these) | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_note_standard_v1.md` and `cdsfl_note_standard_v1.1.md` |
 | Global CLAUDE.md (user-level directives) | `~/.claude/CLAUDE.md` |
 | Project CLAUDE.md | `Constraint_Engineering/.claude/CLAUDE.md` |
 | MEMORY.md index | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md` |
@@ -76,10 +285,12 @@ Do **not** re-read the consolidated plan before this file; the consolidated plan
 
 ---
 
-## Current state snapshot (update at each commit)
+## Superseded resume pointer (2026-05-23 state snapshot — retained for trail)
+
+> **NOT CURRENT — do not act on this section.** It was the state snapshot on 2026-05-23 and it says Exp 42 is next; the arc has since been renumbered and run well past that. Live state is the ★ RESUME POINTER block at the top of this file: the FIRST one is current, everything below it is trail. Live work queue is `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`.
 
 - **Branch.** `exp39-experimental`
-- **CURRENT (2026-05-23, post-Exp-41 convergence — AUTHORITATIVE; the HEAD / RESUME-POINTER bullets below are pre-launch history, superseded by this entry).** HEAD `4b97be0` (about to be pushed by this sv; 15 commits ahead of origin). **Exp 41 CONVERGED cleanly** — `exp41c_first_principles` reached `GAMMA_ALT_CONVERGED` at round 6 (zero-novel-critical count path; gamma 0.000→0.240 load-bearing; 22 canonical, 4 CLOSED, no empties, no secondary route). Detector fixed (`0901fd5`), first-principles runner gate (`86587f4`), gamma restored load-bearing (`4b97be0`). **RESUME POINTER:** (1) optional founder-gated gamma-unification implementation — headline gamma on the genuine-critical series, keep the count as the OR guard, threshold 0.30 unchanged, no gamma-only gate; (2) founder HIL on C0015 / C0017 materiality; (3) **Exp 42** next (`bench/cdsfl_registry/composer.py`, S_k expert encodings), now unblocked. Full detail: RECOVERY.md "Current Pending Work (22–23 May 2026)".
+- **SUPERSEDED (2026-05-23, post-Exp-41 convergence — retained for trail; the HEAD / RESUME-POINTER bullets below are pre-launch history, superseded by this entry).** HEAD `4b97be0` (about to be pushed by this sv; 15 commits ahead of origin). **Exp 41 CONVERGED cleanly** — `exp41c_first_principles` reached `GAMMA_ALT_CONVERGED` at round 6 (zero-novel-critical count path; gamma 0.000→0.240 load-bearing; 22 canonical, 4 CLOSED, no empties, no secondary route). Detector fixed (`0901fd5`), first-principles runner gate (`86587f4`), gamma restored load-bearing (`4b97be0`). **RESUME POINTER:** (1) optional founder-gated gamma-unification implementation — headline gamma on the genuine-critical series, keep the count as the OR guard, threshold 0.30 unchanged, no gamma-only gate; (2) founder HIL on C0015 / C0017 materiality; (3) **Exp 42** next (`bench/cdsfl_registry/composer.py`, S_k expert encodings), now unblocked. Full detail: RECOVERY.md "Current Pending Work (22–23 May 2026)".
 - **HEAD (2026-05-22, pre-launch — SUPERSEDED 23 May, see CURRENT above).** *About-to-commit*: 15 Exp 40 fixes harvested into `bench/dm/_feedback.py` (full-suite-gated, +854 chars); 3 Exp 40 hardened configs flipped to `apply_fixes_back_enabled: false` (static target); `cdsfl_core_formal.md` §10 added (compelled-convergence sufficiency assessment); `bench/exp41_configs/41_convergence.json` + `bench/launch_exp41.py` created. Predecessors: `86234b3` (Exp 40 campaign synthesis), `5fe9101` (B→C seam fixes), `86470a5` (reconstruction-bypass removal + DeepSeek direct), `e0272c6` (primary/secondary route fallback architecture). Not yet pushed to origin (sv not invoked this window).
 - **RESUME POINTER (SUPERSEDED 23 May — Exp 41 has since CONVERGED; see CURRENT bullet above).** Original pre-launch pointer: **EXPERIMENT 41 IS READY TO LAUNCH.** Target: `bench/dm/_convergence.py` (437 lines, ConvergenceDetector — bounded-mathematics module). Launch command: `python3 bench/launch_exp41.py --config 41_convergence.json` (dry-run first if desired: append `--dry-run`). Methodology: STATIC TARGET (apply-fixes-back-during-review off, per founder direction 2026-05-22); COMPELLED CONVERGENCE (§10 of `cdsfl_core_formal.md`); PRIMARY/SECONDARY ROUTE FALLBACK on every model (no benching); RECONSTRUCTION BYPASSES REMOVED; HARDENED GATE with frozen pre-registered defaults identical to Exp 40. Exp 41 is the first experiment under the corrected methodology and serves as the cleanest methodology-validation test — bounded mathematics has a naturally exhaustible solution space, in contrast to Exp 40's open-ended parser slice.
 - **RESUME POINTER.** Exp 40 plan-D hardened-gate campaign **COMPLETE** (all 3 faithful units run + synthesised + paired-noted). Faithful decomposition = 3 natural units (AST-verified, not 7 atomic fragments). Authoritative outcomes (`report.json` per unit): **Unit B `detect_finding_id_collisions` CONVERGED** (`HARDENED_CONVERGED at R3`, sparsity-fallback, cum_critical=4<8, γ_crit reported-not-gated; 4 apply-back). **Unit A `parse_admissibility_block` NOT converged** (hardened re-run; full mode cum_critical→18; loo_min flat 0.0 R3–R11; 7 apply-back; 12 rounds; supersedes prior un-hardened/falsified plan-F runs). **Unit C cluster NOT converged** (1st run outage-terminated R5 = infrastructure not verdict; clean re-run 12 rounds, full mode cum_critical 14–15, loo_min 0→0.20 never 0.25; conjunction empirically vindicated R8/R9→R10; 8 apply-back). **Central result: the hardened conjunction is empirically anti-cooking** — a legacy γ-alt OR gate would have converged all 3; the conjunction converged only the genuinely-exhaustible unit and refused A/C where γ_crit decay is not leave-one-round-out robust; Unit C's R8/R9→R10 sequence directly refutes the OR-gate convergence. Paired notes: `experimental_notes/Exp40_Hardened_Gate_Campaign_2026-05-18.md` (+ `_Plain_English_`) + TTS `~/Desktop/CDSFL_tts/Exp40_Hardened_Gate_Campaign_2026-05-18.txt`. **NEXT: Exp 41 recommendation = PROCEED** (hardened gate validated; non-blocking follow-ups carried forward, not blockers).
@@ -90,8 +301,7 @@ Do **not** re-read the consolidated plan before this file; the consolidated plan
 
 ## Standing rules (non-negotiable, every turn)
 
-1. **sq — strictly sequential tool use.** One tool call per message. No parallel batches. Sub-agents inherit.
-2. **Multi-tool cross-verification.** Every computational claim verified with at least two relevant tools where available. Pairings:
+1. **Multi-tool cross-verification.** Every computational claim verified with at least two relevant tools where available. Pairings:
    - Math: **SymPy + Wolfram** (Wolfram via MCP, local-only, not part of CDSFL infrastructure).
    - Stats: **scipy.stats + statsmodels**.
    - Symbolic / constraint logic: **SymPy + z3**.
@@ -102,18 +312,53 @@ Do **not** re-read the consolidated plan before this file; the consolidated plan
    - Behavioural code: **crosshair + pytest**.
    - Numerical precision: **NumPy + mpmath** (for precision cross-check).
    - Code structure: **AST + inspect + dis** (stdlib).
-3. **1E.10 catch (standing).** "1E.10" in the CDSFL plan is **Plan Item 1.E.10**, NOT scientific notation `1e10`. A 21 April 2026 misreading propagated "ten billion" language through multiple notes. Treat every "1E.n" token as an item reference unless proven otherwise.
-4. **Scientific notation in plain-English notes.** When a genuine large number appears, use `1×10^N (number-words)` format, e.g. `1×10^10 (ten billion)`. Verify exponent–word correspondence before writing (10^7 = ten million, 10^10 = ten billion).
-5. **Note standard v1.2 (current working version, locked 14 May 2026; v1/v1.1 archival).** Every TTS and experimental-notes markdown ends with the foot-line `Written under CDSFL note standard v1.2 (14 May 2026).` Rule 12: substantive technical notes carry a technical markdown PLUS a plain-English companion PLUS the TTS mirror. 12 rules summarised in project CLAUDE.md; full text in `cdsfl_note_standard_v1.2.md`. (Rule reference updated 2 July 2026; was stale at v1.)
-6. **FFAFP for any untested claim.** Find → Follow → Analyse (with available tools) → Fix → P-pass. Applies to every proposed fold-in of an Exp 39 / confer-round outstanding item.
-7. **Multi-tool is for computational claims specifically.** Rhetorical or stylistic choices do not get tool-verified; aesthetic fitness review, prose precision review, or design review applies (per user CLAUDE.md `rigour-universal`).
-8. **`cy` monitoring contract (standing directive 2026-05-18).** `cy` is no longer bare "continue". It means: continue the work AND, whenever an experiment/process is running, monitor it at ~60-second cadence; on anything screwy or off, pause the process, FFAFP it (analyse fully with all available/relevant tools), apply the fix, then resume; and always keep a terminal window open pointing to the full current tail output of the running experiment for the founder to review. Recorded in global CLAUDE.md, project CLAUDE.md MC table, MEMORY.md shorthand.
+2. **1E.10 catch (standing).** "1E.10" in the CDSFL plan is **Plan Item 1.E.10**, NOT scientific notation `1e10`. A 21 April 2026 misreading propagated "ten billion" language through multiple notes. Treat every "1E.n" token as an item reference unless proven otherwise.
+3. **Scientific notation in plain-English notes.** When a genuine large number appears, use `1×10^N (number-words)` format, e.g. `1×10^10 (ten billion)`. Verify exponent–word correspondence before writing (10^7 = ten million, 10^10 = ten billion).
+4. **Note standard v1.2 (current working version, locked 14 May 2026; v1/v1.1 archival).** Every TTS and experimental-notes markdown ends with the foot-line `Written under CDSFL note standard v1.2 (14 May 2026).` Rule 12: substantive technical notes carry a technical markdown PLUS a plain-English companion PLUS the TTS mirror. 12 rules summarised in project CLAUDE.md; full text in `cdsfl_note_standard_v1.2.md`. (Rule reference updated 2 July 2026; was stale at v1.)
+5. **FFAFP for any untested claim.** Find → Follow → Analyse (with available tools) → Fix → P-pass. Applies to every proposed fold-in of an Exp 39 / confer-round outstanding item.
+6. **Multi-tool is for computational claims specifically.** Rhetorical or stylistic choices do not get tool-verified; aesthetic fitness review, prose precision review, or design review applies (per user CLAUDE.md `rigour-universal`).
+7. **`cy` monitoring contract (standing directive 2026-05-18).** `cy` is no longer bare "continue". It means: continue the work AND, whenever an experiment/process is running, monitor it at ~60-second cadence; on anything screwy or off, pause the process, FFAFP it (analyse fully with all available/relevant tools), apply the fix, then resume; and always keep a terminal window open pointing to the full current tail output of the running experiment for the founder to review. Recorded in global CLAUDE.md, project CLAUDE.md MC table, MEMORY.md shorthand.
+
+---
+
+## Founder-invocable modes (NOT standing — off unless the founder says otherwise)
+
+- **`sq` — strictly sequential tool use.** One tool call per message, no parallel batches; sub-agents dispatched while it is in force inherit the same constraint. **It is manually invoked by the founder on an as-needed basis and is NOT in force by default.** It was listed as standing rule 1 here until 2026-08-06, which made every post-compaction agent adopt one-call-per-message permanently and impose it on its sub-agents. **Founder ruling 2026-08-06:** the aim was to prevent Anthropic server overloads, but experience has shown there is probably very little that can be done about these — it is a matter of Anthropic server capacity (and other issues) upstream, and is unlikely to be the result of anything done here. In those cases the only option is usually to wait for Anthropic to fix it. That finding is recorded rather than deleted so the rule is not re-derived from first principles in six months.
 
 ---
 
 ## Per-experiment target-article matrix (nailed down)
 
-> **★ NUMBERING SUPERSEDED (20 July 2026) — this table uses the ORIGINAL Exp 40–54 scheme.** The arc was RENUMBERED + LOCKED on 20 July: the two composition/interface tests (old 44 + old 49) were DROPPED (redundant — every run already exercises the whole integrated system), and the numbering closed up. **Authoritative current sequence: the 20-July CURRENT STATE block in `resources/RECOVERY.md` and the header of this file.** Map (new# = [old matrix#]): NEW 44 = `dm/_memory.py` [old 45, the shake-out] · NEW 45 = `evidence.py` [old 48] · NEW 46 = `dm/_shadow_stage6.py` [old 50] · NEW 47 = `dm/_divergence.py` [old 46] · NEW 48–51 = biology/physics/chemistry/engineering synth modules, TO DRAFT [old 47/51/52/53] · NEW 52 = 2×2 factorial [old 54]. The rows below are retained for their file-location / size / routing detail only; read the numbers via this map.
+> **★★ THE 20-JULY MAP BELOW IS ITSELF WRONG — CORRECTED 13 August 2026 against the run record.**
+> Founder-flagged. The renumbering notice below was written to stop exactly this confusion and
+> has been propagating a different version of it since 20 July. **Ground truth is the set of run
+> directories under `bench/logs/`, because those are what actually executed.** Measured today:
+>
+> | Exp | What actually ran | 20-July map said | Verdict |
+> |---|---|---|---|
+> | 44 | `exp44_evidence_locationkey_live` (`evidence.py`) | `dm/_memory.py` | **WRONG — 44/45 swapped** |
+> | 45 | `exp45_memory_statistics_live` (`dm/_memory.py`) | `evidence.py` | **WRONG — 44/45 swapped** |
+> | 46 | `exp46_stage6_locationkey_live` | `dm/_shadow_stage6.py` | correct |
+> | 47 | `exp47_divergence_locationkey_live` | `dm/_divergence.py` | correct |
+> | 48 | `exp48_chemistry_exam_live` | biology | **WRONG** |
+> | 49 | `exp49_engineering_exam_live` | physics | **WRONG** |
+> | 50 | not started — **physics** | chemistry | **WRONG** |
+> | 51 | not started — **biology** | engineering | **WRONG** |
+> | 52 | not started — 2×2 factorial capstone | 2×2 factorial | correct |
+> | 53 | `exp53_control_zero_live` — **zero-plant control**, paused | absent from the map | **MISSING** |
+>
+> **The authoritative sequence is `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` section C**,
+> which matches the run record on every row it covers. The two notices below are retained as the
+> trail, not as guidance. Consequence had this gone unnoticed: an agent following either the table
+> or the 20-July map would re-run three completed experiments and would run an engineering
+> configuration in the slot the control occupies.
+>
+> Also corrected: Stage 6 is NOT a future experiment 50. It ran as experiment 46. Any plan text
+> describing a forthcoming Stage 6 calibrator study is stale by that fact.
+>
+> *(Desktop mirror re-syncs at next `sv`.)*
+>
+> **★ NUMBERING SUPERSEDED (20 July 2026) — this table uses the ORIGINAL Exp 40–54 scheme.** The arc was RENUMBERED + LOCKED on 20 July: the two composition/interface tests (old 44 + old 49) were DROPPED (redundant — every run already exercises the whole integrated system), and the numbering closed up. **Authoritative current sequence: the 20-July CURRENT STATE block in `resources/RECOVERY.md` and the header of this file.** Map (new# = [old matrix#]): NEW 44 = `dm/_memory.py` [old 45, the shake-out] · NEW 45 = `evidence.py` [old 48] · NEW 46 = `dm/_shadow_stage6.py` [old 50] · NEW 47 = `dm/_divergence.py` [old 46] · NEW 48–51 = biology/physics/chemistry/engineering synth modules, TO DRAFT [old 47/51/52/53] · NEW 52 = 2×2 factorial [old 54]. The rows below are retained for their file-location / size / routing detail only; read the numbers via this map. (Repo mirror re-syncs to this at next commit.)
 
 Status legend: FIXED (specific, stable, ready) | PROVISIONAL (specified, scope TBC) | UNDECIDED (no target yet).
 
@@ -135,7 +380,11 @@ Status legend: FIXED (specific, stable, ready) | PROVISIONAL (specified, scope T
 | 53 | Synthesised native engineering module (M, shadow) | To be drafted; ~15–25K chars | FIXED target-strategy (panel 21 April) | **Scope brief below.** Engineering B-Cell (M, shadow) routes: `sympy + uncertainty_propagation + dimensional_analysis`. Per `domains/immune/engineering.toml`. |
 | 54 | Integration run with 2×2 factorial | Candidate: `bench/reference_runner_v2.py` self-test (runner-tests-runner meta) | PROVISIONAL | 2×2 factorial design locked. Cells A/B/C/D defined: A = §17 off + §18 off (Exp 36–38 baseline archive); B = §17 on + §18 off; C = §17 off + §18 on; D = both on. Cell A entry-method decision open (RQ3, 3–2 split persists; founder decides at Exp 54 entry). |
 
+**[Correction 2026-08-05.]** The Exp 41 row above offers `_suppression.py` as an alternative target to `bench/dm/_convergence.py`. **`bench/dm/_suppression.py` was never created** — this is a deletion-free dead reference: no file of that name exists at any commit in this repository's history (`git log --all --name-only --format="" | grep -i suppress` returns nothing), so there is no replacement path to redirect a reader to. Exp 41 in fact ran against `bench/dm/_convergence.py`, the option that was taken — the three Exp 41 configs (`bench/exp41_configs/41_convergence.json`, `41b_first_principles.json`, `41c_first_principles_run.json`) name `bench/dm/_convergence.py` and no suppression module. Suppression logic in this codebase lives inside existing modules (`bench/dm/_immune.py`, `bench/dm/_convergence.py`), not in a file of its own. The row is left intact as the record of a target choice that was still open at the time.
+
 ### Target-article scope briefs (Exp 47, 51, 52, 53)
+
+> **★ STALE — superseded by the consolidated plan §2a.** These briefs predate the Round 2 (2026-05-10) and Round 3 (2026-05-13) corrections (biology z3 cluster, codon category-error fix, `stoichiometric_balance`, engineering LP cluster + astropy removal). **The authoritative briefs live in `Exp40_to_54_Consolidated_Plan_2026-04-21.md` §2a** — brief any panel from there, never from this section (the Round-3 stale-anchor failure mode).
 
 Each of the four synthesised native modules must embed **falsifiable** claims that exercise the routed tools. The 15–25K character budget allows 4–6 distinct claim clusters per module.
 
@@ -189,9 +438,13 @@ Eight gap items carried forward from Exp 38/39 and subsequent confer rounds. Eac
 
 ---
 
-## Active work queue (overnight shift, 22 April)
+## Active work queue (22 April 2026 overnight shift) — COMPLETED HISTORICAL SHIFT, NOT THE RESUME POINT
 
-Top item = resume point after compaction.
+> **This shift closed on 22 April 2026 and is retained for trail.** Its top item, A1, is "Create this file" —
+> completed and checked off. **The resume point is the ★ RESUME POINTER block at the top of this file**
+> (first one is current, everything below it is trail), and the live work queue is
+> `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`. Every item below is checked off except Phase F, which is
+> lifted to "Open items carried forward from the 22 April work queue" near the top of this file.
 
 ### Phase A — Plan and memory infrastructure
 - [x] **A1.** Create this file at `~/Desktop/CDSFL_Agent_Operational_Plan.md`.
@@ -226,13 +479,13 @@ Top item = resume point after compaction.
 - [x] **D7.** G6, G7, G8 scheduled-close trigger specifications — added new section `## 6b. Scheduled trigger specifications (G6, G7, G8)` to the consolidated plan (repo + Desktop mirror, byte-identical post-edit) immediately after §6a's post-launch path paragraph. Each gap now carries (a) explicit entry trigger with migration path if the primary trigger produces no qualifying evidence, (b) multi-tool pairings to apply on activation, (c) minimum evidence threshold for the close verdict. Table status-column updates: G1/G2/G3/G4/G5/G9 flipped from `Pending` to `CLOSED` in the same pass; G6/G7/G8 remain `Scheduled`. Section closes with a Popperian note that the arbitration rules are deliberately left unspecified — they must emerge from post-mortem evidence rather than being pre-registered.
 
 ### Phase E — Commit and continuation
-- [x] **E1.** Full pytest regression run post-changes. **Result:** 56 new tests pass in 2.33 s (standalone run of the five new files); fast non-network sweep excluding five long-running or CLI-blocking files (`test_openrouter_tools.py`, `test_deepseek_specialist.py`, `test_dynamic_management.py`, `test_ouroboros_query_quality.py`, `test_exp29_integration.py`) returns 907/907 pass in 342.12 s. Zero regressions. `test_exp29_integration.py::test_three_round_flow` confirmed hanging on Claude CLI Haiku LLM classifier (14.4 s per call, pre-existing, unrelated to overnight edits — `bench/logs/immune_pipeline.log` at 02:05:51 BST shows the overnight `finding_id`/`confidence` rename emitting correctly). Longer non-ignore sweep deferred to daylight window.
+- [x] **E1.** Full pytest regression run post-changes. **Result:** 56 new tests pass in 2.33 s (standalone run of the five new files); fast wall-clock-limited sweep excluding five long-running or CLI-blocking files (`test_openrouter_tools.py`, `test_deepseek_specialist.py`, `test_dynamic_management.py`, `test_ouroboros_query_quality.py`, `test_exp29_integration.py`) returns 907/907 pass in 342.12 s. Zero regressions. `test_exp29_integration.py::test_three_round_flow` confirmed hanging on Claude CLI Haiku LLM classifier (14.4 s per call, pre-existing, unrelated to overnight edits — `bench/logs/immune_pipeline.log` at 02:05:51 BST shows the overnight `finding_id`/`confidence` rename emitting correctly). Longer non-ignore sweep deferred to daylight window. [Correction 2026-07-31: this item originally called the 907 sweep "fast non-network". It was not a non-network run. The exclusion criterion was wall-clock cost, not network use, and three unmarked live-dispatch files — `test_immune_agents.py`, `test_specialist_live_promotion.py`, `test_specialist_shadow_cells.py` — were inside the 907 and made live claude-CLI Haiku calls. The 907/907 pass count stands as a record of what passed; the offline label does not, and this figure must not be quoted as reproducibility evidence. See `resources/RECOVERY.md`.]
 - [x] **E2.** Update `ce_state.md` with the overnight shift results. Line 16 updated with final pass counts + pre-existing-hang provenance note.
 - [x] **E3.** Update `ONBOARDING.md` and `RECOVERY.md` with the 22 April session block. Both files updated with final pass counts replacing the "TBD at sv" placeholder.
 - [x] **E4.** `sv` with descriptive commit message; push to origin. Committed 991cde0 on `exp39-experimental`; 17 files committed via `scripts/cdsfl_sv.py --commit --push`, atomic push to origin succeeded at 02:14 BST.
 - [x] **E5.** Final pass on this file — mark all completed items, set next resume point for morning review.
 
-### Phase F — Bench Run 2 (deferred until Exp 40–54 complete)
+### Phase F — Bench Run 2 (deferred until Exp 40–54 complete) — STILL OPEN; live copy is "Open items carried forward from the 22 April work queue" near the top of this file
 - [ ] **F1.** Read `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` Section XI end-to-end.
 - [ ] **F2.** Consolidate the 27 frontier STEM problem sets into this file.
 - [ ] **F3.** Nail down per-task: domain, claim-cluster, expected tool routing, falsifiability criterion.
@@ -241,7 +494,9 @@ Top item = resume point after compaction.
 
 ## Completed in current window (append at each task close)
 
-- **2 July 2026, 23:35 BST.** Full `rs` after ~3-week hiatus + forced compaction + model turbulence: recover script, git (HEAD `6ed0adf` clean/in-sync — repo untouched across the gap), OB/IM, MEMORY.md read from disk in full (loader truncates its tail — index is 26,298 bytes vs the ~24.4KB load limit; restructure proposed to founder), THIS FILE read end-to-end (668 lines — surfaced the stale 7-June resume pointer, now advanced, and the sq standing rule), RECOVERY.md verified from disk, ACTION_QUEUE/QWERTY confirmed not-CDSFL-artifacts, 62-test gate suite green. Full state assessment written: `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` (+ `_Plain_English_` + TTS). Blocker status: model API keys STILL absent from `.env` (Exp 43 + full `pr` gated); codex CLI restored (quota block expired 11 June). Note-standard reference in standing rule 5 updated v1→v1.2.
+- **2026-08-05 14:18 BST.** Full `rs` after the model point-update and relaunch. Verified: HEAD `624b39a`, tree clean, in sync with origin (0/0), no runners and no stray Wolfram kernels, `WolframCloud` live and matching its recorded landmarks, `WolframBridgeLegacy` absent from the live config. Read end-to-end: this tracker, `OUTSTANDING_QUEUE_to_BR2.md`, the RECOVERY head block, project and global CLAUDE.md. IM and Open Brain are both Genesis-era and carry nothing for CDSFL — the last Open Brain capture is 2026-08-02, so the 08-04/08-05 sessions are recorded in git and the notes only. Resume pointer advanced to carry the provenance correction, which the 2026-08-04 pointer predated.
+- **29 July 2026, 08:52 BST.** BI-39 routing fragility RESOLVED (`342d37a`) — the item recorded-not-repaired in the Exp 51 biology exam repair `8500037`. Founder ruling: repair approved; BI-39's closing clause hyphenated so the control-cluster claim carries a routing trigger independent of its own BI-nn tag. Re-verified 43/43 under biopython/sympy/scipy/statsmodels/pint/z3, zero key mismatches, six planted falses byte-identical by SHA-256, routing 43/43 at 0.85 in BOTH tagged and bare form (was 42/43 bare). Applied while the arc sequencer sat on the Exp 49 leg at round 3 — Exp 50 and 51 unstarted, so no run saw a mid-flight target change. Three measured corrections to the original caveat, all in the key notes + commit body: twelve OTHER claims are equally hyphen-dependent (so BI-39 was the extreme of a 13-claim family, not an outlier); the live classifier never sees claim text, only the reviewing model's prose; and models emit NON-ASCII hyphens in ~12% of tag citations (chiefly U+2011), which match no pattern — so the tag was never a dependable trigger. A stronger-looking alternative (`61 + 3 = 64`) was falsified and rejected on tell hygiene: it would have been the module's only inline arithmetic identity, resolving to one claim at precision 1.00, planted on a control record. **Residual for a separate ruling: the arc-wide `[+\-*/^]` class question — narrowing it invalidates four validated keys mid-arc, widening it routes em-dash punctuation to the mathematical specialist. Not taken while the arc runs.**
+- **2 July 2026, 23:35 BST.** Full `rs` after ~3-week hiatus + forced compaction + model turbulence: recover script, git (HEAD `6ed0adf` clean/in-sync — repo untouched across the gap), OB/IM, MEMORY.md read from disk in full (loader truncates its tail — index is 26,298 bytes vs the ~24.4KB load limit; restructure proposed to founder), THIS FILE read end-to-end (668 lines — surfaced the stale 7-June resume pointer, now advanced, and the sq standing rule), RECOVERY.md verified from disk, ACTION_QUEUE/QWERTY confirmed not-CDSFL-artifacts, 62-test gate suite green. Full state assessment written: `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` (+ `_Plain_English_` + TTS). Blocker status: model API keys STILL absent from `.env` (Exp 43 + full `pr` gated); codex CLI restored (quota block expired 11 June). Note-standard reference in the note-standard standing rule (numbered 5 at the time; renumbered to 4 on 2026-08-06 when `sq` left the list) updated v1→v1.2.
 - **10–11 June 2026, 01:00–04:17 BST.** (Logged here retroactively 2 July — this file's log was not advanced that night, a tracker-policy violation now corrected.) Two-sided gamma gate `71b190b` + regression fix `633b4c6` + severity calibration `050f17c` + Exp 43 config `1b5d148` + records `053e873` + sv `6ed0adf`; 434-test sweep green; matrix Exp-43 row corrected to `bench/macrophage_cell.py`; ONBOARDING macrophage re-tiered; four read-only investigations (severity spec, directive measurement, macrophage/load-balancer, dm consolidation) delivered with file:line evidence.
 - **22 April 2026, 00:17 BST.** A1 — created `~/Desktop/CDSFL_Agent_Operational_Plan.md`. First version of the self-consumption operational tracker. Scope: Exp 40–54 + Bench Run 2. Includes recovery-first card, canonical anchors, standing rules, per-experiment target-article matrix with scope briefs for Exp 47/51/52/53, Exp 39 gap-closure list, active work queue, multi-tool cross-verification pairings.
 - **22 April 2026, 00:24 BST.** A2 — mirrored the operational plan at `Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md` (byte-identical to the Desktop copy at write time). Canonical copy is the Desktop file; the repo copy exists for version-controlled recoverability and for agents whose first action on recovery is `git status`.
@@ -268,8 +523,8 @@ Top item = resume point after compaction.
 - **22 April 2026, 01:28 BST.** D5 (G3 Stage 6 calibrator test harness) — wrote `bench/tests/test_shadow_stage6_calibrator.py` (18 tests, 6 classes, all passing). FFAFP outcome: **no fix needed** — the 14 April two-dimensional design at `bench/dm/_shadow_stage6.py` is intact, identities hold, HARD 6 preserved. Pins landed: (i) four public-API — class instantiable without args, `observe_round` signature stable, returns `ShadowStage6RoundLog`, empty-findings clean; (ii) two triple invariants — `nu_k_proxy`/`c_ext`/`h_ratio` are distinct dataclass fields on `PerFindingNoveltyLog`, each ∈ [0, 1]; (iii) two SymPy delta identities — symbolic `sp.simplify(delta_code − delta_closed) == 0` proof that `δ = η · c_ext · (1 − ν_k)`, concrete anchor at known finding matching to 1e-4; (iv) two noisy-OR — SymPy value 0.65 at (c_s1=0.5, c_s2=0.3), unit-interval bounds at c_s=0 and c_s=1; (v) two frequency-scaling — c_freq monotone non-decreasing in encounter count N, bounded at C_MAX=0.95 under saturation (100 repeats); (vi) two epistemic tagging — no-search (ν_k=0.5) NOT tagged, searched-empty (ν_k=0.8, c_ext≈0.224) tagged SPECULATIVE; (vii) four source-truth — GAMMA_SRC=0.7, ALPHA_FREQ=0.1, C_MAX=0.95, module docstring retains two-dimensional HARD 6 framing. Wolfram cross-check skipped (local-only per plan standing rules; SymPy closed-form identity is the load-bearing proof). Multi-tool: pytest + sympy + inspect + ast + dataclasses. 18 pass in 0.76 s. **G3 CLOSED.**
 - **22 April 2026, 01:33 BST.** D6 (G9 ONBOARDING closure-state label sweep) — added `## Closure-State Lexicon (F4, locked 21 April 2026)` section to `resources/ONBOARDING.md` between the Standing Rules and Current State blocks, naming `library_complete` / `shadow_integrated` / `live_operational` with one-clause examples for each, promotion-order rule, and pointer to the shadow-promotion-now non-distortion bounding condition. In the same pass, corrected the most load-bearing stale factual description on ONBOARDING line 51: the K/L/M shadow-audit entry previously described the pre-compaction bug (`claim_id` + `severity`) as the live schema. It now reads the real `CellVerdict` field set (`finding_id, verdict, confidence, tool_used, evidence`), carries an explicit "22 April 2026 correction" note pointing at `bench/immune_agents.py:5411-5421` for the fix and `bench/tests/test_shadow_audit_klm.py` for the 11-test regression pin, and wears the `shadow_integrated` closure label inline. A full retroactive labelling of the remaining ~40 shadow mentions in ONBOARDING is NOT attempted — the decision (documented in-row and here) is that defining the lexicon once + fixing the one outright-stale description is both higher value and lower risk than a large search-and-replace across settled prose. Forward-going discipline is: new ONBOARDING additions wear the label at write time; existing mentions retain the earlier phrasing but the glossary is in reach. **G9 CLOSED (documentation-only).**
 - **22 April 2026, 01:37 BST.** D7 (G6/G7/G8 scheduled-close trigger specifications) — added new `## 6b. Scheduled trigger specifications (G6, G7, G8)` subsection to the consolidated plan (both repo and Desktop mirror, byte-identical post-edit per `diff -q`). Each of the three gaps now carries an entry trigger with automatic migration path (Exp 44 → Exp 49 → Exp 54 for G6/G7; external authorisation for G8), the multi-tool cross-verification pairings that apply on activation (pytest + AST + inspect + trace-log parsing), and the minimum evidence threshold for a close verdict. In the same edit pass, updated the §6a status column for G1/G2/G3/G4/G5/G9 from `Pending` to `CLOSED` via a single `replace_all=true` on the distinctive `| Pending |` cell pattern (safely non-overlapping with the `Pending activation` string on line 18 used by the S3 shadow-element entry). Added a paragraph under §6a acknowledging the overnight-shift closures with explicit test-file references. Popperian framing preserved: the §6b section closes by noting that the arbitration rules for G6 and G7 are deliberately unspecified — they must emerge from post-mortem evidence rather than being pre-registered. Phase D closed. Next: Phase E (regression run → state-file updates → sv → final pass).
-- **22 April 2026, 02:08 BST.** E1 (regression run) — two-part pytest evidence captured. Part one: standalone run of the five new test files (`bench/tests/test_launch_exp40.py` + `test_shadow_audit_klm.py` + `test_shadow_stage6_calibrator.py` + `test_open_crit_high_count_v2.py` + `test_contested_count_v2.py`), 56 collected, **56/56 pass in 2.33 s**. Part two: fast non-network regression sweep excluding five long-running or CLI-blocking files (`test_openrouter_tools.py` 36, `test_deepseek_specialist.py` 29, `test_dynamic_management.py` 283, `test_ouroboros_query_quality.py` 11 non-network, `test_exp29_integration.py` 44), 907 collected, **907/907 pass in 342.12 s** (5m 42s), exit code 0, zero failures. The test_exp29_integration.py::test_three_round_flow hang reproduced under a dedicated 120 s run — confirmed hanging on `Claude CLI Haiku` LLM classifier invocations (14.4 s per call, 3 rounds × N findings per round) plus the fact that it sits on the non-network code path despite doing real CLI dispatch. Log evidence at `bench/logs/immune_pipeline.log` 02:05:51 BST shows the overnight `finding_id`/`confidence` rename emitting correctly under the live path: `detail=[{"finding_id": "sf1", "verdict": "CONFIRMED", "confidence": 0.85, "tool_used": "rdkit", ...}]`. The hang is therefore pre-existing (pre-compaction), unrelated to overnight edits, and the overnight fix is demonstrably working in production pipeline traces. A longer non-ignore sweep is deferred to the daylight review window.
-- **22 April 2026, 02:10 BST.** E2 (ce_state update) — `memory/ce_state.md` line 16 updated with the final pass counts (56/56 new, 907/907 fast non-network) and the pre-existing-hang provenance note replacing the "TBD at sv" placeholder.
+- **22 April 2026, 02:08 BST.** E1 (regression run) — two-part pytest evidence captured. Part one: standalone run of the five new test files (`bench/tests/test_launch_exp40.py` + `test_shadow_audit_klm.py` + `test_shadow_stage6_calibrator.py` + `test_open_crit_high_count_v2.py` + `test_contested_count_v2.py`), 56 collected, **56/56 pass in 2.33 s**. Part two: fast non-network regression sweep excluding five long-running or CLI-blocking files (`test_openrouter_tools.py` 36, `test_deepseek_specialist.py` 29, `test_dynamic_management.py` 283, `test_ouroboros_query_quality.py` 11 non-network, `test_exp29_integration.py` 44), 907 collected, **907/907 pass in 342.12 s** (5m 42s), exit code 0, zero failures. The test_exp29_integration.py::test_three_round_flow hang reproduced under a dedicated 120 s run — confirmed hanging on `Claude CLI Haiku` LLM classifier invocations (14.4 s per call, 3 rounds × N findings per round) plus the fact that it sits on the non-network code path despite doing real CLI dispatch. Log evidence at `bench/logs/immune_pipeline.log` 02:05:51 BST shows the overnight `finding_id`/`confidence` rename emitting correctly under the live path: `detail=[{"finding_id": "sf1", "verdict": "CONFIRMED", "confidence": 0.85, "tool_used": "rdkit", ...}]`. The hang is therefore pre-existing (pre-compaction), unrelated to overnight edits, and the overnight fix is demonstrably working in production pipeline traces. A longer non-ignore sweep is deferred to the daylight review window. [Correction 2026-07-31: the entry above is preserved verbatim because its closing observation — that `test_three_round_flow` "sits on the non-network code path despite doing real CLI dispatch" — is the project's own contemporaneous sighting of the defect, recorded 22 April 2026 02:08 BST. It named the exact contradiction and nothing was done with it: no `pytest.mark.network` was added in response, and the "non-network" label went on being applied to sweeps for a further 99 days. Two consequences for reading this entry. First, the 907 sweep it reports was itself not offline — the five-file exclusion list was chosen on wall-clock, and three unmarked live-dispatch files (`test_immune_agents.py`, `test_specialist_live_promotion.py`, `test_specialist_shadow_cells.py`) were inside the 907. Second, the "hang" was not a deadlock: it was roughly 44 serialised 15 s live claude-CLI dispatches under `_CLAUDE_CLI_LOCK`, which is the designed behaviour of an undeclared network dependency. With outbound calls denied the entire suite now finishes in 99.6 s (`python3 -m pytest bench/tests/ -q --netguard-strict` → 2086 passed, 3 skipped, 0 failed, 2026-07-31 19:15 BST, HEAD `d4d4d7f` plus working tree). See `resources/RECOVERY.md`.]
+- **22 April 2026, 02:10 BST.** E2 (ce_state update) — `memory/ce_state.md` line 16 updated with the final pass counts (56/56 new, 907/907 fast wall-clock-limited sweep — not offline, see the 2026-07-31 correction on the 02:08 entry above) and the pre-existing-hang provenance note replacing the "TBD at sv" placeholder.
 - **22 April 2026, 02:12 BST.** E3 (ONBOARDING + RECOVERY updates) — both files' 22 April 2026 session blocks updated with the final pass counts replacing the "TBD at sv" placeholder. The `bench/logs/immune_pipeline.log` at 02:05:51 BST evidence line is now cross-referenced in both files as proof that the overnight rename is operational under the real pipeline, not only under unit tests.
 - **22 April 2026, 02:14 BST.** E4 (sv commit + push) — `python3 scripts/cdsfl_sv.py --commit --push -m "<long descriptive message>"` succeeded. Commit **991cde0** on `exp39-experimental` (previous HEAD `be6d13a`). Seventeen files committed in total: seven modified and ten staged-from-untracked (five new test files + operational plan repo mirror + four new experimental notes). `docs/CURRENT_STATE.md` auto-regenerated by the sv script. Atomic push to `origin/exp39-experimental` succeeded in the same subprocess invocation. Working tree clean post-commit.
 - **22 April 2026, 02:18 BST.** E5 (final operational-plan pass) — Current-State-Snapshot HEAD updated `be6d13a → 991cde0`, working-tree-status note updated from "Dirty, 2M + 2U" to "Clean post-commit, 17 files committed", test-count line updated with the 56/56 new + 907/907 fast-sweep figures, shift-level description updated to reflect six-of-nine gap closure. Morning-review resume pointer set: the next action is a waking review of this shift's paired output + founder decision on Exp 40 launch approval; no outstanding automated task remains. Phase E closed.
@@ -285,7 +540,104 @@ Top item = resume point after compaction.
 
 ---
 
-## Resume point (update after each task)
+## Superseded resume pointer (2026-07-29 chain-halt state — retained for trail)
+
+> **NOT CURRENT — do not act on this section.** Live state is the ★ RESUME POINTER block at the top of this file: the FIRST one is current, everything below it is trail. Live work queue is `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`.
+
+**SUPERSEDED — 2026-07-29 12:45 BST. Retained for trail. Everything below this block is older trail still.**
+
+**Chain state: HALTED, deliberately, mid-repair. Nothing is running. Balance ~$364.**
+
+**Completed and unaffected:** Exp 44 (clean convergence, zero residue), 45, 46, 47
+(converged R13, two genuine HIL residuals), 48 chemistry (converged R5, 6/6 — see
+retraction below), 49 engineering (converged R6, 6/6, forensics clean).
+
+**What halted the chain.** Two integrity failures found during the Exp 50 pre-flight,
+both self-inflicted, both now closed forward:
+
+1. **A panel model read the scoring key during Exp 48.** At round 1 a routed model
+   wrote a falsifier that opened the key and printed the entire planted set
+   (preserved at `registry.entries.C0012.falsifier_code`). Three conditions had to
+   hold together: the panel's working directory was the repository; a config note
+   *inside* the repository named where the key had been moved to, committed 76
+   minutes before the run; and superseded keys sat in git history. The fix had
+   advertised what it hid. **Exp 48's 6/6 is retracted as a blind detection rate**
+   and must be reported as detection by a panel that knew the seeded set. The six
+   demonstrations remain individually sound; what is lost is the stopping decision.
+   Errata: `bench/logs/exp48_chemistry_exam_live_20260729T044134Z.errata`.
+   Exp 49 is clean by the same scan and stands.
+2. **The factorial's key was recoverable from git history with all 12 planted IDs
+   identical to the live key** — a total compromise of a capstone that had not yet
+   run. The module is being reseeded so the historical key is void, and the old
+   key is left in history deliberately as a tripwire.
+
+**Instrument changes, forward only (no completed record altered):**
+- `panel_cwd` confines the shell-bearing routes to the staged target's own
+  directory; refuses a missing directory rather than failing open; threaded
+  through BOTH config-ingestion paths and pinned by `test_panel_isolation.py`.
+- Targets staged one per directory under their own internal Document ID
+  (`bench/stage_targets.sh`), mode 444 files inside mode 555 directories — both
+  enforcements empirically proven, and a directory listing no longer enumerates
+  the exam series.
+- `bench/vault_keys.sh` holds the keys as a single opaque archive during runs, so
+  no key file name or plaintext key content is on disk for a filesystem search to
+  find. Obfuscation, not encryption — the third layer, not a substitute.
+- Every reference to the key's location removed from the repository.
+- Key-access forensics scans every file in a run directory (it had caught the
+  Exp 48 incident only by luck — `r*_*.json` happens to match `runner_state.json`;
+  the run report, holding the same evidence, would never have been scanned).
+- `bench/arc_sequencer.sh` rewritten: asserts keys vaulted, asserts one file in
+  the panel's working directory, runs forensics after every leg and HALTS on
+  key-access evidence.
+
+**Exam redesign (the reason the arc paused before Exp 50).** CC2 had
+reverse-engineered the chemistry exam's design from its sibling-pair structure.
+Physics and biology rebuilt with true/true pairing and plant counts that are not
+one-per-cluster; a **zero-plant control** (`exp53`, Document ID SW-21-REF-04,
+44 claims, none seeded) added as the direct measure of the stopping decision.
+Independent audit: biology CLEAN, control CLEAN and statistically
+indistinguishable from its seeded sibling; **physics SIGNAL-REMAINS** (seeded
+claims sat beside near-duplicate twins, neighbour-Jaccard p=0.017, the only
+finding to survive multiplicity correction) — under repair. Audit also found a
+cross-target count prior, "seeded count = sections − 1", which held on 48, 49 and
+50; being broken everywhere it can still be broken.
+
+**Third defect, found pre-launch on the control (commit `2887106`).** The two-sided
+gate could not tell "no curve" from "a flat curve". `_estimate_gamma` fits a Duane
+decay to the cumulative critical series, and two OPPOSITE series both drive it to
+~0.0: `[0,0,0,0,0,0]` (no critical ever found — no curve to fit) and
+`[2,2,2,2,2,2]` (constant arrival, no decay at all). The first is the best possible
+outcome, the second the worst. A panel reviewing a genuinely clean document
+perfectly could therefore never converge — it would burn its full budget, report
+non-convergence, and halt the arc on a document with nothing in it. The zero-plant
+control, whose whole purpose is to be clean, could not have produced its own
+headline result. **Gamma was NOT demoted**: the estimator's DOMAIN was narrowed, the
+vacuous case converges under a distinct verdict carrying both counts and an explicit
+"REVIEW THIS RUN", a constant-rate series still stays blocked, a panel returning
+nothing at all is refused as a dead panel, and every other gate still binds.
+Verified inert on all six completed runs (Exp 44–49 carry 34/12/12/44/32/31
+criticals, so the branch cannot fire). Churn was checked for the same degeneracy and
+is not affected — `rho_earliest_round` is 12 and the control converges well before.
+
+**RESUME ORDER once the repair audit returns CLEAN:** stage → clear → vault keys →
+`bench/arc_sequencer.sh` → Exp 50 physics → 51 biology → **53 zero-plant control** →
+52 factorial cells A–D (instrument frozen at cell A) → STOP before BR2.
+
+**Open founder rulings (none blocking the above):**
+- Whether to re-run Exp 48 (and 49) under the new design, or report both with the
+  contamination stated. Re-running gains nothing if the new design does not
+  eliminate recognition, which the control will show.
+- Residual exposure: this assistant's own session store under
+  `~/Library/Application Support/` contains key content and is reachable by an
+  absolute-path read. Closing it properly needs an OS-level sandbox for the panel
+  (`sandbox-exec` or a separate user), which is a real change mid-arc. Currently
+  mitigated by confinement + de-pointering + vaulting + detection, not eliminated.
+- Materiality review: 11 Exp 49 findings against TRUE claims, 6 similar in Exp 48,
+  and Exp 47's two genuine HIL residuals.
+
+---
+
+### Superseded resume pointer (definitional confer — retained for trail)
 
 **Next action — FOUNDER DECISION on the definitional confer outcome (advisory), then Week-1 of the scoped PoC plan.**
 
@@ -660,7 +1012,7 @@ coherent regression-clean changeset ready to commit (new module
 
 **Blocker on autonomous advance.** Founder decisions a–d above. The post-mortem captures all data needed for those decisions; no further automated work is outstanding.
 
-**Context for the waking review.** HEAD `3bbf2c7` on `exp39-experimental` (pushed to origin pre-continuation). Working tree dirty: three new post-mortem documents (two markdown + one TTS), one updated tracker (this file + repo mirror not yet synced), many untracked per-round model output JSON files under `bench/logs/exp40_gate_20260514T020550Z/`, run log at `bench/logs/exp40_continuation_20260515T021531Z.log`, runner state + final report. Pre-continuation test count was 1255 (1121 non-network pass); the continuation did not run additional tests. The runner exited cleanly (exit code 0) at 05:20:26 BST after 7,478 seconds. No FFAFP-grade halts triggered across approximately eighty monitor events captured during the run.
+**Context for the waking review.** HEAD `3bbf2c7` on `exp39-experimental` (pushed to origin pre-continuation). Working tree dirty: three new post-mortem documents (two markdown + one TTS), one updated tracker (this file + repo mirror not yet synced), many untracked per-round model output JSON files under `bench/logs/exp40_gate_20260514T020550Z/`, run log at `bench/logs/exp40_continuation_20260515T021531Z.log`, runner state + final report. Pre-continuation test count was 1255 (1121 non-network pass); the continuation did not run additional tests. [Correction 2026-07-31: read that as 1255 collected and 1121 passing in a hand-curated subset that was NOT offline. `-m "not network"` was not the selector, the six excluded files were chosen by hand and never named anywhere in the record, and test files reaching live claude-CLI dispatch were inside the 1121. The figure is therefore unreproducible and is not offline evidence. See `resources/RECOVERY.md`.] The runner exited cleanly (exit code 0) at 05:20:26 BST after 7,478 seconds. No FFAFP-grade halts triggered across approximately eighty monitor events captured during the run.
 
 **Phase E closed. Phase F remains gated on Exp 40–54 completion. Exp 40 is in a clean stopping state but neither γ-alt nor max-rounds convergence was reached; the founder's decision on resume-vs-advance determines whether Phase F advances to Exp 41 immediately or after a brief Exp 40 R17–R18 leg.**
 

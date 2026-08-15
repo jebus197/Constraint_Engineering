@@ -1,0 +1,143 @@
+{
+  "round": 3,
+  "domain": "engineering",
+  "final_verdicts": {
+    "Gemini_F010": "DUPLICATE",
+    "DeepSeek_F006": "DUPLICATE",
+    "Gemini_F011": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 3,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "CONFIRMED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_CONSISTENT: all quantities share dimension [mass] / [time] ** 2 [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.7236915111541748,
+      "evidence": "[NK_v2] Duplicate of Gemini_F007 (sim=0.724)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0035",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0035",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0035",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pulp",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pulp: LP_NO_STRUCTURE: no optimisation structure found in claim"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0035",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6923731422424317,
+      "evidence": "[NK_v2] Duplicate of Gemini_F008 (sim=0.692)"
+    },
+    {
+      "round": 3,
+      "finding_id": "DeepSeek_F006",
+      "canonical_id": "C0036",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "DeepSeek_F006",
+      "canonical_id": "C0036",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "DeepSeek_F006",
+      "canonical_id": "C0036",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pulp",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pulp: LP_NO_STRUCTURE: no optimisation structure found in claim"
+    },
+    {
+      "round": 3,
+      "finding_id": "DeepSeek_F006",
+      "canonical_id": "C0036",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6522393941879273,
+      "evidence": "[NK_v2] Duplicate of DeepSeek_F005 (sim=0.652)"
+    }
+  ]
+}

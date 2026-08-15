@@ -123,13 +123,38 @@ class TestGammaCriticalIsActiveCondition:
     demote it." The full two-sided matrix is in test_two_sided_gate.py."""
 
     def test_gamma_critical_below_threshold_blocks_despite_zero_tail(self):
+        """The directive's guard: a low gamma blocks even on a clean count.
+
+        The history carries a REAL curve (cumulative critical > 0), which is what
+        this must pin. A history of all zeros is a different situation — there is
+        no curve to fit and gamma is undefined rather than low — and is covered
+        separately in test_vacuous_gamma_curve.py.
+        """
         cfg = _default_cfg(gamma_alt_threshold=0.30)
         converged, reason = _check_gamma_alt_convergence(
-            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
+            round_idx=6, gamma=0.10, novel_critical_history=[2, 1, 0, 0, 0], cfg=cfg,
             gamma_critical=0.20,  # below 0.30 — decay curve not yet flattened
+            total_findings=15,
         )
         assert converged is False
         assert "gamma_critical" in reason
+        assert "VACUOUS" not in reason, (
+            "a real decay curve exists here; the vacuous-curve path must not apply")
+
+    def test_low_gamma_still_blocks_when_the_panel_returned_nothing(self):
+        """All-zero history AND no findings is a dead panel, not an exhausted space.
+
+        It must still block, and the reason must still name gamma_critical so this
+        class's guarantee — gamma is an active condition — remains visible.
+        """
+        cfg = _default_cfg(gamma_alt_threshold=0.30)
+        converged, reason = _check_gamma_alt_convergence(
+            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
+            gamma_critical=0.20, total_findings=0,
+        )
+        assert converged is False
+        assert "gamma_critical" in reason
+        assert "dead panel" in reason.lower()
 
     def test_gamma_critical_above_threshold_with_zero_tail_converges(self):
         cfg = _default_cfg(gamma_alt_threshold=0.30)

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T003041Z",
+  "phase": "r5",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1951,
+  "response": "FINDING_ID: F008\nSEVERITY: 0.80\nFIND: The character‑limit check on `alternative_text` ignores content moved into the contrast statement, allowing a model output to bypass `max_chars_per_alternative`.\nFALSIFIER:\n```python\nimport os\nfrom bench.dm._divergence import parse_alternative_block, validate_alternative\n\n# force a tiny limit so the bypass is obvious\nos.environ[\"DM_MAX_ALT_CHARS\"] = \"50\"\n\n# synthetic model text: alternative with a short body, then a long contrast\n# that holds the rest of the alternative – the split is recognised by the parser\nraw_text = (\n    \"Alternative (dim: x): This is under limit \"\n    \"[CONTAINS: A very long sequence that should push the total over the limit, \"\n    \"but it is disguised as a contrast statement.] \"\n    \"(contrast) padding to exceed max_chars_per_alternative when not checked on contrast\"\n)\nprimary_text = \"The primary claim\"\n\nrecords = parse_alternative_block(raw_text, \"F008\", primary_text)\nif records:\n    alt = records[0]                # only one alternative expected\n    try:\n        validate_alternative(alt, \"F008\", primary_text)\n        # If we reach here, the length check did NOT fire → defect present\n        print(\"FALSIFIED\")\n    except ValueError:\n        # Validation correctly rejected the alternative → fix applied\n        pass\n```\n\nFINDING_ID: DeepSeek_F010\nSEVERITY: 0.72\nFIND: `_ALT_HEADER_RE` allows lines containing only the keyword and a trailing separator (no dimension tag) to match as alternative headers, falsely setting `has_any_alt = True` and awarding the soft η modulator.\nFALSIFIER:\n```python\nfrom bench.dm._divergence import parse_alternative_block\n\n# A line that says \"Alternative:\" with a colon but no dimension tag\nraw = \"Alternative: this is just prose, not a divergence header\"\nprimary = \"some primary text\"\n\nrecords = parse_alternative_block(raw, \"F010\", primary)\nif records:\n    # defect present – a false-positive header was parsed\n    print(\"FALSIFIED\")\n```",
+  "metadata": {
+    "round": 5,
+    "elapsed": 513.0,
+    "chars": 1951,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

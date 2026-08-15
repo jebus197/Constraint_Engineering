@@ -972,15 +972,34 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
 # The runner re-runs each block independently (see bench/falsifier_verify.py);
 # the re-run result, not the model's prose, decides the verdict. Extraction is
 # additive: a response with no FALSIFIER block leaves findings byte-identical.
+# ── Closing fence must be ON ITS OWN LINE (fix, 12 August 2026) ──────────────
+# The terminator was a bare ``` with a non-greedy capture, so extraction stopped
+# at the FIRST triple-backtick anywhere in the block — including one inside the
+# falsifier's own source. A falsifier that opens a markdown target and parses its
+# fenced code blocks MUST mention the fence delimiter, so it truncated itself.
+#
+# Measured on the 2026-08-01 control run: five criticals (C0013-C0017) each
+# carried a falsifier cut to exactly 134 characters, ending mid-literal at
+# `re.findall(r'`, every one failing with "unterminated string literal" and
+# recorded as ERROR. That is 5 of 22 criticals, 23%, silently lost.
+#
+# The selection pressure is the wrong way round: a falsifier that correctly opens
+# and parses the target is destroyed, while one that pastes an inline copy of the
+# code survives. The Exp 48-54 targets are all markdown, so this bites hardest
+# exactly where the arc is going.
+#
+# Requiring the closing fence to sit alone on its line distinguishes a real fence
+# from one quoted mid-line inside a string. Non-greedy is retained so that a
+# response containing several FALSIFIER blocks still splits at the right places.
 _FALSIFIER_BLOCK_RE = re.compile(
-    r"FALSIFIER:\s*```(?:python|py)?\s*\n(.*?)```",
+    r"FALSIFIER:\s*```(?:python|py)?[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
     re.DOTALL | re.IGNORECASE,
 )
 # Captures the finding key (id or description text) that precedes a falsifier,
 # so multiple falsifiers in one response can be matched to the right finding.
 _FALSIFIER_LABELLED_RE = re.compile(
     r"(?:FINDING_ID|FINDING)\s*[:=]\s*(?P<key>.+?)\s*?\n"
-    r".*?FALSIFIER:\s*```(?:python|py)?\s*\n(?P<code>.*?)```",
+    r".*?FALSIFIER:\s*```(?:python|py)?[ \t]*\n(?P<code>.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
     re.DOTALL | re.IGNORECASE,
 )
 
@@ -1053,6 +1072,50 @@ def _attach_falsifiers(findings: List[Finding], response: str) -> List[Finding]:
     return out
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Field-label normalisation before parsing
+#
+# A model that emits `**FINDING_ID:** F001` instead of `FINDING_ID: F001`, or a
+# word severity instead of a number, does not fail to parse — it parses as
+# UNSTRUCTURED and silently takes the fallback defaults (severity 0.3, flaw
+# class 1). That is worse than failing: a finding the model called CRITICAL is
+# recorded at 0.3, below the 0.7 critical threshold, so it never enters the
+# critical series that drives convergence. The finding is kept; its weight is
+# lost, and nothing announces it.
+#
+# Measured 2026-07-31: 2 of 293 findings across the six completed experiments
+# took that path, so historical impact is negligible. But Kimi K3 took it in one
+# of two test dispatches, which is the concrete cost of a model that cannot be
+# pinned to temperature 0 — the answer is stable, the FORMAT of the answer is not.
+#
+# Normalising here rather than widening every field regex keeps one place to
+# look, and helps every model rather than one.
+# Two orderings occur in the wild: `**LABEL:**` (colon inside the emphasis, which
+# is what Kimi K3 produced) and `**LABEL**:` (colon outside). Match either.
+_MD_LABEL = re.compile(r"^[ \t]*\*{1,3}[ \t]*([A-Z][A-Z_]{2,19})[ \t]*:?[ \t]*\*{1,3}[ \t]*:?[ \t]*",
+                       re.MULTILINE)
+_WORD_SEVERITY = {
+    "critical": "0.9", "severe": "0.9", "high": "0.75", "major": "0.75",
+    "medium": "0.5", "moderate": "0.5", "low": "0.25", "minor": "0.2",
+    "trivial": "0.1", "informational": "0.1", "info": "0.1", "none": "0.0",
+}
+_SEV_LINE = re.compile(r"(?im)^(\s*SEVERITY\s*:\s*)([A-Za-z]+)\s*$")
+
+
+def _normalise_field_labels(response: str) -> str:
+    """Strip markdown emphasis from field labels and map word severities.
+
+    Idempotent, and a no-op on a response that already uses the plain form, so
+    every previously-parsed response parses byte-identically.
+    """
+    if not response:
+        return response
+    out = _MD_LABEL.sub(lambda m: f"{m.group(1)}: ", response)
+    return _SEV_LINE.sub(
+        lambda m: m.group(1) + _WORD_SEVERITY.get(m.group(2).lower(), m.group(2)),
+        out)
+
+
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Public finding parser: structured extraction plus falsifier attachment.
 
@@ -1062,6 +1125,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     is byte-identical to the core parser when the response carries no falsifier
     blocks, so existing experiments are unaffected.
     """
+    response = _normalise_field_labels(response)
     findings = _parse_findings_core(model_id, round_idx, response)
     return _attach_falsifiers(findings, response)
 

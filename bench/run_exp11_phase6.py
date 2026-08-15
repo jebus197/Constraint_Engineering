@@ -152,6 +152,10 @@ Produce `dynamic_management.py` now.
 
 
 def main():
+    # Refuse a paid run on `--help` or a typo. Must be the FIRST thing
+    # main() does: everything below this line can reach a paid model.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv([], 'python3 bench/run_exp11_phase6.py (takes no arguments)')
     repo_root = Path(__file__).resolve().parent.parent
     logs_dir = repo_root / "bench" / "logs" / "experiment_11"
 

@@ -18,6 +18,16 @@ A forensic audit of the planning record (both April plans, both panel-review rou
 
 ## 2. The un-wired specialist layer (new structural finding)
 
+> **★ CORRECTION (2026-07-27, annotated 2026-07-28): this section's central claim was REFUTED.**
+> The specialist dispatch IS wired into the live runner — the chain runs
+> `reference_runner_v2.py` → `insect_brain.py` → `immune_agents._specialist_b_cell_dispatch`
+> via `cfg.domain`; five domains were live at the time of writing and all eight are live as of
+> commit `db29e76`. The grep behind this section searched only the runner file and missed the
+> chain. Consequently the §5 roadmap's 4→1 synth-module compression argument ("specialist
+> isolation is void") loses its premise — the 1-vs-4 question was REOPENED for founder ruling
+> (see RECOVERY.md 27–28 July blocks). Retained unedited below as the falsification record.
+
+
 The April plan's tail is organised around **domain B-Cell specialists**: statistics (old 45), CS/software (old 46), biology (old 47), information science (old 48), physics/chemistry/engineering shadow-flips (old 51/52/53). Verified today: `bench/cdsfl_registry/domains/immune/*.toml` exist, but **no specialist dispatch is instantiated anywhere in live code** — `grep` across `bench/` finds zero non-test instantiation, and `reference_runner_v2.py` (the active runner) contains two passing comment mentions of "specialist" and never reads the domain TOMLs. The 12 April "Phase 6: Specialist B-Cell dispatch wiring (shadow mode)" commit wired the older orchestrator, not runner v2.
 
 Consequences:

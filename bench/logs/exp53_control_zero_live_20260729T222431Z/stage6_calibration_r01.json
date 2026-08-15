@@ -1,0 +1,313 @@
+{
+  "round_idx": 1,
+  "findings": [
+    {
+      "finding_id": "Codex_F003",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 6,
+      "encounter_count": 4,
+      "description_snippet": "`HashRing.locate` crashes for empty rings. Location: Listing D, `HashRing.__init__` and `HashRing.locate`; dependent cla"
+    },
+    {
+      "finding_id": "Codex_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5347,
+      "flaw_class": 7,
+      "encounter_count": 1,
+      "description_snippet": "`backoff_delay` caps the returned value but not the cost of computing it. Location: Listing C, `backoff_delay`; dependen"
+    },
+    {
+      "finding_id": "ChatGPT_F003",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 6,
+      "encounter_count": 5,
+      "description_snippet": "Listing C, `backoff_delay`, accepts invalid retry attempts and trusts injectable `rand`, invalidating ZC-20\u2019s interval p"
+    },
+    {
+      "finding_id": "ChatGPT_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 5,
+      "encounter_count": 3,
+      "description_snippet": "Listing E, `topo_order`, fails open on cyclic graphs by returning a partial rollout plan instead of rejecting invalid de"
+    },
+    {
+      "finding_id": "ChatGPT_F005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 8,
+      "encounter_count": 3,
+      "description_snippet": "ZC-06 understates Monte Carlo sampling error. The expected retry wait is correct, but the statement that a 200,000-sched"
+    },
+    {
+      "finding_id": "Gemini_F003",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 1,
+      "encounter_count": 4,
+      "description_snippet": "The `HashRing.locate` method in Listing D contains an off-by-one boundary condition bug when a key's hash exactly matche"
+    },
+    {
+      "finding_id": "CC2_F006",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 5,
+      "encounter_count": 4,
+      "description_snippet": "ZC-06 (\u00a73) closes with: *\"A Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, whic"
+    },
+    {
+      "finding_id": "CC2_F007",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 5,
+      "encounter_count": 5,
+      "description_snippet": "ZC-13 (\u00a74) states: *\"the exact form 1 - exp(-F (F - 1) / (2 x 2^128)) agrees to three figures.\"* Evaluated in binary64 \u2014"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "bandit": {
+      "tool_name": "bandit",
+      "passes": 0,
+      "fails": 3,
+      "inconclusive": 1,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 10,
+      "total": 10,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 14,
+      "total": 14,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "networkx": {
+      "tool_name": "networkx",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 10,
+      "total": 10,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 2,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "dis": {
+      "tool_name": "dis",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 8,
+      "total": 8,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785368697.764749
+}

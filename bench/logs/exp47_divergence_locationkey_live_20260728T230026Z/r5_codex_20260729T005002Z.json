@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T005002Z",
+  "phase": "r5",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1916,
+  "response": "NO NEW DISCOVERY FINDINGS.\n\nThe three independently drafted findings are not admissible as new Round 5 discoveries because they duplicate settled registry entries:\n\n- Local Finding 1 — alternative body consumes later sections → duplicate of settled `C0001` / `C0004`.\n- Local Finding 2 — null-alternative accepts length-only filler → duplicate of settled `C0002` / `C0003`.\n- Local Finding 3 — `divergence_config_from_dict({\"enabled\": \"false\"})` enables divergence → duplicate of settled `C0022`.\n\nPer the registry instruction, I am not re-reporting or reopening those settled findings.\n\nCONFIRM C0028 | Evidence: disabled-mode behavior is not neutral for public parse/validate helpers. With `DivergenceConfig(enabled=False)`, `validate_alternative()` still returns rejection reasons and `parse_alternative_block()` still parses alternatives.\n\nTool-backed receipt:\n\n```text\nvalidate_alternative(AlternativeRecord('F','',None), DivergenceConfig(enabled=False))\n=> (False, ['empty_alternative_body', 'missing_or_invalid_dimension', 'missing_contrast_statement'])\n\nparse_alternative_block(..., config=DivergenceConfig(enabled=False))\n=> [AlternativeRecord(...)]\n```\n\nThis confirms the active C0028 root cause: disabled mode is only neutral through `build_divergence_record()`, not through the public helper functions despite the module-level disabled-mode contract.\n\nGlobal P-pass result:\n\n1. Checked local findings against settled registry: all three are duplicates, so they are suppressed.\n2. Checked whether any duplicate contains new reopening evidence: none. The observed behavior matches already-settled root causes.\n3. Checked active registry entries for corroborable evidence: C0028 is independently confirmed by direct execution.\n4. No additional CRITICAL/HIGH novel defects survived novelty screening against the registry.\n\nVERIFIED: TRUE — no new discovery findings filed; C0028 confirmed with tool evidence.",
+  "metadata": {
+    "round": 5,
+    "elapsed": 139.8,
+    "chars": 1916,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -21,9 +21,12 @@ design:
 
   1. Extract proposed_fix text from CONFIRMED findings.
   2. Apply to a sandbox copy of the target file.
-  3. Run verification: ruff + mypy + bandit + the experiment's test_cmd.
-  4. On pass: mark CLOSED. CLOSED findings appear in registry summaries
-     with "do not re-describe" instruction.
+  3. Run verification: ruff + mypy + bandit + the experiment's test_cmd,
+     yielding a tri-state PASS / FAIL / NO_APPLICABLE_CHECKS.
+  4. On PASS and only on PASS: mark CLOSED. CLOSED findings appear in
+     registry summaries with "do not re-describe" instruction. FAIL means
+     the fix is bad; NO_APPLICABLE_CHECKS means nothing could be checked and
+     the finding belongs with the falsifier or with HIL.
 
 The module is intentionally standalone (not yet wired into the runner's
 per-round loop) so it can be tested on the existing Exp 40 finding
@@ -39,6 +42,8 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from enum import Enum
+import re as _re_mod
 from pathlib import Path
 from typing import Any
 
@@ -47,8 +52,66 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
+# Target type
+# ---------------------------------------------------------------------------
+
+# Canonical definition of "this target is Python source". Kept here, in code,
+# and imported by the B-Cell specialist router in immune_agents.py, so the two
+# call sites cannot drift apart. It is deliberately NOT a config value: the
+# launcher has silently dropped config keys six times, and a target-type
+# mis-declaration would put mypy back on a markdown document.
+PYTHON_TARGET_SUFFIXES: frozenset[str] = frozenset({".py"})
+
+
+def is_python_target(path: Path | str) -> bool:
+    """True when `path` names a Python source file.
+
+    A target that is not Python cannot be read by ruff, mypy, bandit, dis or
+    crosshair, and none of them fail loudly about it. Measured on a markdown
+    document, 2026-08-01: ruff declines the path and exits 0 ("No Python files
+    found" on stderr, "All checks passed!" on stdout), or, if the same bytes
+    are renamed .py, error-recovers and emits phantom syntax diagnostics by
+    the hundred; bandit files the parse failure under "errors", returns an
+    empty result set and exits 0, which is indistinguishable from a clean
+    scan; mypy parses the prose as source and reports "Leading zeros in
+    decimal integer literals".
+    Every one of those readings is noise presented as signal, so the type
+    check has to happen before the tool is invoked, not inside it.
+    """
+    return Path(path).suffix.lower() in PYTHON_TARGET_SUFFIXES
+
+
+# ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------
+
+class VerificationOutcome(str, Enum):
+    """Tri-state result of a verification run.
+
+    The two-state boolean it replaces conflated two entirely different things:
+
+      * PASS — at least one applicable check ran, and every check that ran
+        was satisfied. This is the ONLY outcome that may close a finding.
+      * FAIL — at least one applicable check ran and reported a defect. This
+        is a statement ABOUT THE FIX: the fix is bad.
+      * NO_APPLICABLE_CHECKS — nothing could be checked. This is a statement
+        about the INSTRUMENT, not about the fix. It must never look like a
+        failure of the fix, and it must never close a finding.
+
+    Expressed as `passed=False`, the third case was indistinguishable from the
+    second: a prose target with no fenced code read as "this fix is bad" in
+    every log and every report. Expressed as `passed=True` — the repair that
+    was attempted first on 2026-08-01 and rejected — it would have closed
+    every finding with nothing checked at all.
+
+    str-valued so it serialises to a plain string in report JSON without a
+    custom encoder.
+    """
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    NO_APPLICABLE_CHECKS = "NO_APPLICABLE_CHECKS"
+
 
 @dataclass
 class FixExtractResult:
@@ -63,16 +126,59 @@ class FixExtractResult:
 
 @dataclass
 class VerificationResult:
-    """Outcome of running verification tools on a sandbox file."""
+    """Outcome of running verification tools on a sandbox file.
 
-    passed: bool
+    `outcome` is the authority. `passed` is a read-only property derived from
+    it, so no caller can construct a result that claims success without saying
+    which outcome it means. `checks_run` names the checks that actually
+    produced a verdict; a PASS with an empty `checks_run` is rejected at
+    construction, because that is precisely the shape of "nothing was checked,
+    call it verified".
+    """
+
+    outcome: VerificationOutcome
     ruff_passed: bool = False
     mypy_passed: bool = False
     bandit_passed: bool = False
     test_passed: bool = False
     test_skipped: bool = False  # true if test_cmd was None / not run
+    checks_run: list[str] = field(default_factory=list)  # checks that ran
+    # Checks that can only REJECT. A veto that passes is not evidence the fix
+    # is sound, so it must never appear in `checks_run` and never license a
+    # close. Recorded separately so the record still shows what was run.
+    vetoes_run: list[str] = field(default_factory=list)
     failures: list[str] = field(default_factory=list)  # human-readable reasons
     elapsed_s: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.outcome, VerificationOutcome):
+            self.outcome = VerificationOutcome(self.outcome)
+        if self.outcome is VerificationOutcome.PASS and not self.checks_run:
+            raise ValueError(
+                "VerificationResult(PASS) with no checks_run: a verification "
+                "that ran nothing cannot report success. Use "
+                "NO_APPLICABLE_CHECKS."
+            )
+        if self.outcome is VerificationOutcome.NO_APPLICABLE_CHECKS and self.checks_run:
+            raise ValueError(
+                "VerificationResult(NO_APPLICABLE_CHECKS) lists checks_run="
+                f"{self.checks_run}: checks ran, so the outcome is PASS or FAIL."
+            )
+
+    @property
+    def passed(self) -> bool:
+        """True only on PASS. Retained so existing call sites keep working.
+
+        NO_APPLICABLE_CHECKS reads False here — the safe direction, and the
+        behaviour that was already relied upon: a no-code target does not
+        close. Callers that need to tell "bad fix" from "nothing checkable"
+        must read `outcome`, not this.
+        """
+        return self.outcome is VerificationOutcome.PASS
+
+    @property
+    def no_applicable_checks(self) -> bool:
+        return self.outcome is VerificationOutcome.NO_APPLICABLE_CHECKS
 
 
 @dataclass
@@ -84,6 +190,16 @@ class CloseAttempt:
     extract: FixExtractResult
     verification: VerificationResult | None = None
     reason: str = ""  # human-readable summary
+    outcome: VerificationOutcome = VerificationOutcome.FAIL
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.outcome, VerificationOutcome):
+            self.outcome = VerificationOutcome(self.outcome)
+        if self.closed and self.outcome is not VerificationOutcome.PASS:
+            raise ValueError(
+                f"CloseAttempt(closed=True) with outcome={self.outcome.value}: "
+                "a finding closes on PASS and on nothing else."
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -232,14 +348,46 @@ def _run_tool(cmd: list[str], timeout: int = 60) -> tuple[bool, str]:
         return False, f"tool not installed: {e}"
 
 
+
+_PY_FENCE = _re_mod.compile(r"```(?:python|py)\n(.*?)```", _re_mod.S)
+
+
+
+def _extract_python(path: Path) -> Path | None:
+    """Write a target's fenced Python listings to a real .py file beside it.
+
+    A target need not be a .py file for its CODE to be checkable. The zero-plant
+    control is a markdown design reference carrying seven Python listings, and
+    every finding against it is about those listings. Returns None when the
+    target holds no code at all.
+    """
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    blocks = _PY_FENCE.findall(text)
+    if not blocks:
+        return None
+    out = path.with_suffix(".extracted.py")
+    out.write_text("\n\n".join(b.rstrip() for b in blocks) + "\n", encoding="utf-8")
+    return out
+
+
 def run_verification(
     sandbox_path: Path,
     test_cmd: str | None,
     *,
     timeout: int = 120,
+    baseline_path: Path | None = None,
 ) -> VerificationResult:
     """Run ruff, mypy, bandit, and the experiment's test_cmd against the
-    sandbox file. Returns aggregated VerificationResult.
+    sandbox file. Returns an aggregated VerificationResult carrying a
+    tri-state `outcome`: PASS, FAIL, or NO_APPLICABLE_CHECKS.
+
+    NO_APPLICABLE_CHECKS is returned when the target is not Python AND holds
+    no fenced Python listing — nothing was read, so nothing can be said about
+    the fix either way. It is not a FAIL, and `attempt_close` does not close
+    on it.
 
     For static tools (ruff/mypy/bandit), only the sandbox file itself
     is checked, not the whole repo — the goal is to validate that the
@@ -259,6 +407,114 @@ def run_verification(
     import time as _time
     t0 = _time.monotonic()
     failures: list[str] = []
+
+    # ruff, mypy and bandit are PYTHON tools. Running them on a target that is
+    # not Python is meaningless, and it does not fail quietly: on the zero-plant
+    # control (a markdown design reference) mypy parsed the prose as source and
+    # reported "Leading zeros in decimal integer", which close-the-loop then
+    # recorded as a verification FAILURE. Every close-the-loop attempt on that
+    # run failed for that reason — the fix could never be validated, so the
+    # finding could never be closed, and the irreducible queue filled with
+    # criticals the machinery was structurally unable to resolve.
+    #
+    # Same class as the _anchor_dir_for defect (2026-07-29): a code-review
+    # mechanism misfiring on a prose target. Found 2026-08-01 six hours into the
+    # control relaunch.
+    # NON-PYTHON TARGET — check that its CODE still parses, and check nothing else.
+    #
+    # Three wrong answers were tried first, all 2026-08-01, and each is worth
+    # recording because each failed differently:
+    #   1. Run ruff/mypy/bandit on the markdown itself. mypy parses prose as
+    #      source ("Leading zeros in decimal integer"), so EVERY close-the-loop
+    #      attempt failed, nothing could be validated, nothing could close, and
+    #      the irreducible queue filled with criticals the machinery could not
+    #      resolve. This is what halted the control run.
+    #   2. Skip the tools when the suffix is not .py. WORSE: `if verify.passed`
+    #      CLOSES the finding, so skipping turned "cannot verify" into "verified"
+    #      and every finding would have closed with nothing checked at all.
+    #   3. Extract the listings and compare tool DIAGNOSTIC COUNTS against the
+    #      unmodified target. Right idea, but `_run_tool` truncates its output,
+    #      so a fix that introduced a fresh syntax error counted the same as the
+    #      baseline and was waved through. Measuring on a truncated measurement.
+    #
+    # What is actually verifiable here is narrow, and saying so is better than
+    # inventing signal. The listings reference imports the document declares in
+    # PROSE, so ruff and mypy report undefined names on any extracted fragment no
+    # matter what the fix did — those tools cannot speak to this target. What can
+    # be said, deterministically and without a baseline, is whether the code still
+    # PARSES. That catches the failure that matters: a fix that mangles a listing.
+    # Anything subtler about a prose claim is not a static-analysis question and
+    # belongs with the falsifier or with HIL.
+    if not is_python_target(sandbox_path):
+        import ast as _ast
+        try:
+            _text = sandbox_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            _text = ""
+        _blocks = _PY_FENCE.findall(_text)
+        if not _blocks:
+            # NO_APPLICABLE_CHECKS, not FAIL. Nothing here is a statement about
+            # the fix — there was simply nothing a static checker could read.
+            # `passed` still reads False, so the finding still does not close;
+            # what changes is that the log no longer accuses the fix.
+            return VerificationResult(
+                outcome=VerificationOutcome.NO_APPLICABLE_CHECKS,
+                ruff_passed=False, mypy_passed=False, bandit_passed=False,
+                test_passed=False, test_skipped=True,
+                checks_run=[],
+                failures=[f"no verifiable code: {sandbox_path.name} is not Python and "
+                          f"carries no fenced Python listing — this finding cannot be "
+                          f"closed by static verification and belongs with HIL"],
+                elapsed_s=_time.monotonic() - t0,
+            )
+        _bad = []
+        for _i, _b in enumerate(_blocks, 1):
+            try:
+                _ast.parse(_b)
+            except SyntaxError as _se:
+                _bad.append(f"listing {_i}: {_se.msg} (line {_se.lineno})")
+        # The tool booleans stay False on this path: ruff, mypy and bandit were
+        # never invoked. Reporting mypy_passed=True for a run in which mypy did
+        # not execute is the same category of untruth the tri-state exists to
+        # remove. What DID run is named in checks_run.
+        # A SYNTAX CHECK IS A VETO, NOT A PASS. It is a statement about the
+        # LISTING, not about the FIX. Every harmful fix is syntactically valid
+        # Python, so `parses -> PASS` closes a finding on a fix nothing assessed:
+        # measured 2026-08-01 against the real control document, a fix injecting
+        # subprocess.call(..., shell=True) returned closed=True, outcome=PASS,
+        # reason "verified by ast.parse of 7 fenced Python listing(s)".
+        #
+        # That is the THIRD time this function turned "cannot verify" into
+        # "verified" — first by skipping the tools and returning passed=True,
+        # then by counting truncated diagnostics, now by promoting a parse. The
+        # general case was fixed and this narrower one left standing. So the
+        # veto is recorded in `vetoes_run`, never in `checks_run`, and a clean
+        # parse yields NO_APPLICABLE_CHECKS: nothing applicable to the FIX ran.
+        # `attempt_close` closes only on PASS, so a prose finding never closes
+        # by this route — which is correct, because nothing was verified.
+        _veto = f"ast.parse of {len(_blocks)} fenced Python listing(s)"
+        if not _bad:
+            return VerificationResult(
+                outcome=VerificationOutcome.NO_APPLICABLE_CHECKS,
+                ruff_passed=False, mypy_passed=False, bandit_passed=False,
+                test_passed=False, test_skipped=True,
+                checks_run=[],
+                vetoes_run=[_veto],
+                failures=[],
+                elapsed_s=_time.monotonic() - t0,
+            )
+        return VerificationResult(
+            outcome=VerificationOutcome.FAIL,
+            ruff_passed=False, mypy_passed=False, bandit_passed=False,
+            test_passed=False, test_skipped=True,
+            checks_run=[_veto],
+            vetoes_run=[_veto],
+            failures=([f"the fix leaves {len(_bad)} of {len(_blocks)} listing(s) "
+                       f"unparseable — " + "; ".join(_bad[:3])] if _bad else []),
+            elapsed_s=_time.monotonic() - t0,
+        )
+
+    checks_run: list[str] = ["ruff", "mypy", "bandit"]
 
     ruff_ok, ruff_out = _run_tool(
         ["python3", "-m", "ruff", "check", str(sandbox_path), "--no-cache"],
@@ -295,19 +551,27 @@ def run_verification(
             timeout=timeout,
         )
         test_skipped = False
+        checks_run.append("test_cmd")
         if not test_ok:
             failures.append(f"test_cmd: {test_out[:300]}")
 
     passed = ruff_ok and mypy_ok and bandit_ok and (test_ok or test_skipped)
     elapsed = _time.monotonic() - t0
 
+    # A Python target always has applicable checks — ruff, mypy and bandit can
+    # all read it. A tool that is missing or times out is recorded as a check
+    # that ran and FAILED, deliberately: demoting an unavailable tool to
+    # "not applicable" would let a finding close on the remaining two, which is
+    # a weakening of the path that already works. NO_APPLICABLE_CHECKS is
+    # reserved for "nothing could be read at all".
     return VerificationResult(
-        passed=passed,
+        outcome=(VerificationOutcome.PASS if passed else VerificationOutcome.FAIL),
         ruff_passed=ruff_ok,
         mypy_passed=mypy_ok,
         bandit_passed=bandit_ok,
         test_passed=test_ok,
         test_skipped=test_skipped,
+        checks_run=checks_run,
         failures=failures,
         elapsed_s=round(elapsed, 2),
     )
@@ -329,6 +593,10 @@ def attempt_close(
 
     `finding` is expected to be a dict-like with at least `finding_id`
     and `proposed_fix`. `target_path` is the file under review.
+
+    Closes ONLY on VerificationOutcome.PASS. A NO_APPLICABLE_CHECKS
+    verification leaves the finding open and says so in `reason`, so the run
+    log distinguishes "the fix is bad" from "the instrument could not look".
     """
     fid = finding.get("finding_id") or finding.get("canonical_id") or "?"
     proposed_fix = finding.get("proposed_fix", "")
@@ -354,7 +622,8 @@ def attempt_close(
         )
 
     try:
-        verify = run_verification(sandbox, test_cmd, timeout=timeout)
+        verify = run_verification(sandbox, test_cmd, timeout=timeout,
+                                  baseline_path=target_path)
     finally:
         # Always clean up the sandbox file. Verification result captures
         # whatever signal we needed; the file is disposable.
@@ -363,17 +632,30 @@ def attempt_close(
         except OSError:
             pass
 
-    if verify.passed:
+    # THE line. A finding closes on PASS and on nothing else. NO_APPLICABLE_
+    # CHECKS is not a near-miss to be waved through — it is the instrument
+    # saying it could not look, and a finding it could not look at stays open
+    # for the falsifier or for HIL.
+    if verify.outcome is VerificationOutcome.PASS:
         return CloseAttempt(
             finding_id=fid,
             closed=True,
             extract=extract,
             verification=verify,
+            outcome=VerificationOutcome.PASS,
+            reason="verified by " + ", ".join(verify.checks_run),
+        )
+
+    if verify.outcome is VerificationOutcome.NO_APPLICABLE_CHECKS:
+        return CloseAttempt(
+            finding_id=fid,
+            closed=False,
+            extract=extract,
+            verification=verify,
+            outcome=VerificationOutcome.NO_APPLICABLE_CHECKS,
             reason=(
-                f"verified: ruff={verify.ruff_passed} "
-                f"mypy={verify.mypy_passed} "
-                f"bandit={verify.bandit_passed} "
-                f"test={verify.test_passed or 'skipped' if verify.test_skipped else verify.test_passed}"
+                "not verifiable (no applicable checks, this is not a fault in "
+                "the fix): " + "; ".join(verify.failures)
             ),
         )
 
@@ -382,6 +664,7 @@ def attempt_close(
         closed=False,
         extract=extract,
         verification=verify,
+        outcome=VerificationOutcome.FAIL,
         reason="verification failed: " + "; ".join(verify.failures),
     )
 
@@ -479,11 +762,21 @@ def _main(argv: list[str]) -> int:
     )
 
     closed = sum(1 for a in attempts if a.closed)
-    print(f"\nResults: {closed}/{len(attempts)} findings CLOSED")
+    not_applicable = sum(
+        1 for a in attempts
+        if a.outcome is VerificationOutcome.NO_APPLICABLE_CHECKS
+    )
+    print(f"\nResults: {closed}/{len(attempts)} findings CLOSED; "
+          f"{not_applicable} had no applicable checks (instrument could not "
+          f"look — not a verdict on the fix)")
     print()
+    _MARKER = {
+        VerificationOutcome.PASS: "[CLOSED]",
+        VerificationOutcome.FAIL: "[OPEN  ]",
+        VerificationOutcome.NO_APPLICABLE_CHECKS: "[N/A   ]",
+    }
     for a in attempts:
-        marker = "[CLOSED]" if a.closed else "[OPEN  ]"
-        print(f"  {marker} {a.finding_id}: {a.reason[:200]}")
+        print(f"  {_MARKER[a.outcome]} {a.finding_id}: {a.reason[:200]}")
 
     return 0
 

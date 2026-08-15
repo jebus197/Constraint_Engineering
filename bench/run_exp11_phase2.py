@@ -21,6 +21,10 @@ from experiment_11_orchestrator import (
 
 
 def main():
+    # Refuse a paid run on `--help` or a typo. Must be the FIRST thing
+    # main() does: everything below this line can reach a paid model.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv([], 'python3 bench/run_exp11_phase2.py (takes no arguments)')
     # Source .env
     env_path = Path(__file__).resolve().parent.parent / ".env"
     if env_path.exists():

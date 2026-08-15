@@ -8,11 +8,56 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
+## Accounting (counted 2026-08-08 07:40 BST)
+
 The source index lives privately at
-`~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`
-and contains 65 individual memory files. Of those, 11 are excluded
-below, 2 are cross-project, and the remainder are mirrored (in
-summarised form) in `MEMORY.md`.
+`~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+Every figure below was counted from that directory on the date in this
+heading, not carried forward from a previous version of this file.
+The directory holds **103 files**, of which one is `MEMORY.md` itself
+(the index), leaving **102 individual memory files**. They partition as:
+
+| bucket | count |
+|---|---|
+| Mirrored (in summarised form) in `MEMORY.md` | 48 |
+| Named as excluded, with a reason, below | 15 |
+| Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+| **Unclassified — neither mirrored nor previously declared** | **39** |
+| total | 105 |
+
+> **[Correction 2026-08-13.]** Mirrored 45 → 48 and total 102 → 105. Three memory files
+> were written on 12–13 August and each carries an index line in `MEMORY.md`, so all three
+> land in the mirrored bucket: `cdsfl_session_2026-08-12.md`,
+> `cdsfl_note_standard_v1.3.md` and `cdsfl_note_standard_v1.4.md`. The accounting check in
+> `bench/tests/test_recovery_memory_doc_repairs.py` went red on the mismatch, which is the
+> check working: memory files were added without the ledger being updated, and it said so
+> rather than drifting. Same failure the `sv` completeness check caught the day before.
+
+**[Recount 2026-08-08.]** `feedback_help_must_never_cost_money.md` was added on
+2026-08-07 — the rule that a `--help` must never bill the reader. Mirrored, so 44
+becomes 45 and the total 101 becomes 102. This is the SECOND time this check has
+gone red for the same reason: a memory written, correctly, by an agent that then
+did not recount the ledger. The check is doing its job; the habit is the defect.
+
+**[Recount 2026-08-06.]** One file was added since the previous count:
+`cdsfl_session_2026-08-05.md`, the record of the recovery-resource audit. It
+is mirrored in `MEMORY.md`, so it joins the first bucket — 43 becomes 44 and
+the total 100 becomes 101. This recount exists because the accounting test
+went RED the moment the file landed, which is the behaviour that document and
+test were built for: a memory added without being classified stops the buckets
+summing, and the document whose whole purpose is honesty about what is withheld
+does not get to drift silently.
+
+The 39 unclassified files are listed in their own section near the end of
+this document. By this document's own Verification rule they are omission
+faults, and they are named here rather than left silent. **No exclusion
+reason has been assigned to any of them** — assigning one is a founder
+decision, not a documentation decision.
+
+The counts this file previously carried — "65 individual memory files",
+"11 are excluded below, 2 are cross-project" — were wrong on both halves.
+The directory had grown to 100 files, and the section below names 15
+entries (13 of them non-cross-project), not 11 plus 2.
 
 ## Filter Criteria
 
@@ -37,6 +82,10 @@ hold:
    These are internal working-style guidance, not methodology.
 
 ## Excluded Entries
+
+Fifteen entries, counted from the four subsections below on 2026-08-05:
+2 cross-project, 4 personal/accessibility, 2 founder-personal, 7
+operational-feedback.
 
 ### Cross-project scope
 
@@ -123,6 +172,60 @@ operating procedure. They are recorded here for transparency:
   convention itself is personal. Decision: exclude the entry; the
   effect is observable in the prose.
 
+## Unclassified — awaiting review
+
+**These 39 files exist in the private memory directory and are neither
+mirrored in `MEMORY.md` nor excluded under any criterion above.** Under
+the Verification rule at the foot of this document, each is an omission
+fault. They are named rather than left silent; none has been assigned an
+exclusion reason, because none of the four criteria above demonstrably
+applies to them and inventing a reason would defeat the purpose of this
+document. Each needs a publication ruling: mirror it, or exclude it under
+a stated criterion.
+
+Listed alphabetically, exactly as they appear on disk (counted
+2026-08-05 18:00 BST):
+
+- `cdsfl_note_standard_v1.1.md`
+- `cdsfl_note_standard_v1.2.md`
+- `cdsfl_note_standard_v1.md`
+- `cdsfl_session_2026-06-07.md`
+- `cdsfl_session_2026-06-08.md`
+- `cdsfl_session_2026-06-10.md`
+- `cdsfl_session_2026-07-02.md`
+- `cdsfl_session_2026-07-12.md`
+- `cdsfl_session_2026-07-19.md`
+- `cdsfl_session_2026-07-22.md`
+- `cdsfl_session_2026-07-27.md`
+- `cdsfl_session_2026-07-28.md`
+- `cdsfl_session_2026-08-01.md`
+- `feedback_15_experiments.md`
+- `feedback_1e10_catch.md`
+- `feedback_ask_for_founder_held_evidence.md`
+- `feedback_bcell_not_tool.md`
+- `feedback_communication_density.md`
+- `feedback_compelled_convergence.md`
+- `feedback_complete_task_lists.md`
+- `feedback_fault_severity_convention.md`
+- `feedback_fix_all_scope_split.md`
+- `feedback_launcher_config_drop.md`
+- `feedback_no_fake_model_labels.md`
+- `feedback_no_mechanical_tts.md`
+- `feedback_no_session_deferral.md`
+- `feedback_notes_paired_output.md`
+- `feedback_object_of_study.md`
+- `feedback_read_the_clock.md`
+- `feedback_runner_v1_v2.md`
+- `feedback_shadow_promotion_now.md`
+- `feedback_simplest_sufficient.md`
+- `founder_hil_is_by_design.md`
+- `mc_commands_nonoptional.md`
+- `multi_tool_crossverify.md`
+- `project_exp29_plan.md`
+- `project_outreach_plan.md`
+- `project_run12_gemini_customtools.md`
+- `project_three_layer_schema.md`
+
 ## Verification
 
 This exclusion log can be re-derived by comparing entries in
@@ -130,3 +233,12 @@ This exclusion log can be re-derived by comparing entries in
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 If an entry is in the source index but neither in `MEMORY.md` nor in
 this exclusion log, that is an omission bug — please report it.
+
+The check is mechanical and is pinned by a test:
+`bench/tests/test_recovery_memory_doc_repairs.py` counts the files on
+disk, reads the buckets out of this document, and fails loudly if the
+four buckets do not partition the directory exactly — if a file is in no
+bucket, in two buckets, or if the totals stated above stop matching the
+count. A silently drifting accounting is the failure this document exists
+to prevent, so the test asserts the arithmetic rather than trusting the
+prose.

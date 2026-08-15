@@ -1,0 +1,53 @@
+{
+  "round": 2,
+  "domain": "chemistry",
+  "final_verdicts": {
+    "Gemini_F012": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 2,
+      "finding_id": "Gemini_F012",
+      "canonical_id": "C0033",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 2,
+      "finding_id": "Gemini_F012",
+      "canonical_id": "C0033",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 2,
+      "finding_id": "Gemini_F012",
+      "canonical_id": "C0033",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "CONFIRMED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_CONSISTENT: all 2 quantities have dimension [mass] [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 2,
+      "finding_id": "Gemini_F012",
+      "canonical_id": "C0033",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.620337209701538,
+      "evidence": "[NK_v2] Duplicate of DeepSeek_F002 (sim=0.620)"
+    }
+  ]
+}

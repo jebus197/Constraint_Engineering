@@ -1963,7 +1963,9 @@ class DeepSeekReviewChat:
             t0 = time.monotonic()
             try:
                 response = self.client.chat.completions.create(
-                    model="deepseek-chat",
+                    # deepseek-v4-pro is the panel's DeepSeek; `deepseek-chat` is a
+                    # different, weaker model (founder directive 2026-07-31).
+                    model="deepseek-v4-pro",
                     messages=self.messages,
                     max_tokens=8192,
                     temperature=0.0,

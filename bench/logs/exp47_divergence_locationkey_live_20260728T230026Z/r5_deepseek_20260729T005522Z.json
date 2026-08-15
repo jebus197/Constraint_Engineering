@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T005522Z",
+  "phase": "r5",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1124,
+  "response": "FINDING_ID: F010\nSEVERITY: 0.80\nFIND: `build_divergence_record` uses `record.compliant = has_enough_alts or null_ok`, allowing a null‑justification to override failed alternatives and bypass §18’s exclusivity.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, '.')\nfrom bench.dm._divergence import build_divergence_record, DivergenceConfig\n\n# Raw output with one invalid alternative (no dimension, no contrast) and a valid 60+ char null block\nraw = (\n    \"## Alternative 1\\n\"\n    \"This is a cosmetic rewrite.\\n\\n\"\n    \"## No alternative found\\n\"\n    \"The search space included all mechanism, assumption, scope, \"\n    \"timescale, and tradeoff dimensions but no distinct alternative emerged.\"\n)\nconfig = DivergenceConfig(enabled=True, min_alternatives=1)\nrecord = build_divergence_record(\"F-010\", \"primary claim\", raw, config)\n\n# Without the fix, null_ok = True overwrites has_enough_alts = False, making record.compliant = True.\n# The correct behaviour is to block the null fallback when any alternative block was produced.\nassert record.compliant == False, f\"FALSIFIED: expected compliant=False, got {record.compliant}\"\n```",
+  "metadata": {
+    "round": 5,
+    "elapsed": 460.1,
+    "chars": 1124,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

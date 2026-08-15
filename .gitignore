@@ -7,3 +7,15 @@
 bench/results/
 PRIVATE_NOTES.md
 docs/SPEC_single_model_integration.md
+
+# Exam answer keys MUST NOT live in the repo: reviewing panels are dispatched
+# with Bash/Read/Grep/Glob, so a key co-located with its target is discoverable
+# by a single ls (precision 1.0, recall 1.0). Keys live outside the working
+# tree at a location outside this tree (2026-07-29).
+*_answer_key.json
+
+# Exam review targets are NOT version-controlled — see targets/MANIFEST.md.
+# A target under version control leaks itself: repairing a seeded claim touches
+# only seeded claims, so `git diff` returns the planted set at precision 1.000
+# with no key and nothing for a detector to catch. Hashes are committed instead.
+bench/cdsfl_registry/targets/exp*.md

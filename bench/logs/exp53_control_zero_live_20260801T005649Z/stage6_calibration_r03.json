@@ -1,0 +1,403 @@
+{
+  "round_idx": 3,
+  "findings": [
+    {
+      "finding_id": "Codex_F009",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6151,
+      "flaw_class": 5,
+      "encounter_count": 9,
+      "description_snippet": "VERDICT: CONFIRM C0013.\n\n`TokenBucket.allow` in Listing A mutates shared admission state without synchronization.\n\nLocat"
+    },
+    {
+      "finding_id": "Codex_F010",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6282,
+      "flaw_class": 1,
+      "encounter_count": 12,
+      "description_snippet": "VERDICT: CONFIRM C0015.\n\n`topo_order` in Listing E silently returns a partial rollout plan when the graph contains a cyc"
+    },
+    {
+      "finding_id": "ChatGPT_F004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6354,
+      "flaw_class": 6,
+      "encounter_count": 14,
+      "description_snippet": "`TokenBucket.__init__` in Listing A accepts invalid constructor parameters: negative or non-finite `capacity` and negati"
+    },
+    {
+      "finding_id": "Gemini_V001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.632,
+      "flaw_class": 1,
+      "encounter_count": 13,
+      "description_snippet": "VERDICT: CONFIRM C0014. `HashRing.locate` uses `bisect.bisect_right`. If a key's hash exactly matches a node's hash, it "
+    },
+    {
+      "finding_id": "Gemini_V002",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6354,
+      "flaw_class": 1,
+      "encounter_count": 14,
+      "description_snippet": "VERDICT: CONFIRM C0013. `TokenBucket.allow` mutates shared state (`self.tokens`, `self.last`) without a lock, causing ra"
+    },
+    {
+      "finding_id": "Gemini_V003",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6386,
+      "flaw_class": 1,
+      "encounter_count": 15,
+      "description_snippet": "VERDICT: CONFIRM C0015. `topo_order` silently returns a partial rollout plan when the graph contains a cycle."
+    },
+    {
+      "finding_id": "Gemini_V004",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6417,
+      "flaw_class": 1,
+      "encounter_count": 16,
+      "description_snippet": "VERDICT: CONFIRM C0017. `backoff_delay` computes `base_ms * (2  attempt)`. If `base_ms` is a float, large `attempt` valu"
+    },
+    {
+      "finding_id": "Gemini_V005",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5896,
+      "flaw_class": 4,
+      "encounter_count": 5,
+      "description_snippet": "VERDICT: CONFIRM C0009. `WaveTracker.wait_for_wave` has no timeout parameter, causing it to block forever if the wave si"
+    },
+    {
+      "finding_id": "CC2_F009",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6445,
+      "flaw_class": 1,
+      "encounter_count": 17,
+      "description_snippet": "FINDING_ID: F009\n\nSEVERITY: 0.78\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.55\n\nFIND. `WaveTracker.record` (Listing F) i"
+    },
+    {
+      "finding_id": "CC2_F010",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5973,
+      "flaw_class": 2,
+      "encounter_count": 6,
+      "description_snippet": "FINDING_ID: F010\n\nSEVERITY: 0.55\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.30\n\nFIND. ZC-36 states the sample varian"
+    },
+    {
+      "finding_id": "CC2_F011",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6199,
+      "flaw_class": 5,
+      "encounter_count": 10,
+      "description_snippet": "FINDING_ID: F011\n\nSEVERITY: 0.68\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.45\n\nFIND. ZC-26 characterises the admi"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 18,
+      "total": 18,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "bandit": {
+      "tool_name": "bandit",
+      "passes": 0,
+      "fails": 15,
+      "inconclusive": 0,
+      "total": 15,
+      "fail_fraction": 1.0,
+      "shadow_e_pass": 1.0
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 29,
+      "total": 29,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 37,
+      "total": 37,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "networkx": {
+      "tool_name": "networkx",
+      "passes": 3,
+      "fails": 1,
+      "inconclusive": 25,
+      "total": 29,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 4,
+      "fails": 4,
+      "inconclusive": 4,
+      "total": 12,
+      "fail_fraction": 0.5,
+      "shadow_e_pass": 2.0
+    },
+    "dis": {
+      "tool_name": "dis",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 46,
+      "total": 46,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "mypy": {
+      "tool_name": "mypy",
+      "passes": 3,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785563358.566993
+}

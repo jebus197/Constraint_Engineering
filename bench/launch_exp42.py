@@ -142,11 +142,16 @@ def main() -> int:
     if converged:
         reason = result.get("convergence_reason", "") or "converged"
         at = result.get("converged_at")
-        print(f"\nExperiment 42 reached a terminal verdict"
+        # The launcher is shared across the whole arc, so the label must come
+        # from the config — a hardcoded "Experiment 42" mislabels every other
+        # run's terminal line in its own log (founder-reported 2026-07-29).
+        _label = exp_cfg.get("experiment_name", "Experiment")
+        print(f"\n{_label} reached a terminal verdict"
               f"{f' at round {at}' if at is not None else ''}: {reason}")
         return 0
 
-    print("\nExperiment 42 ended without convergence (likely wall-clock).")
+    print(f"\n{exp_cfg.get('experiment_name', 'Experiment')} ended without "
+          f"convergence (likely wall-clock).")
     return 1
 
 

@@ -230,9 +230,73 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         kwargs["max_contested_rounds"] = exp_cfg["max_contested_rounds"]
     if "post_convergence_sweep_rounds" in exp_cfg:
         kwargs["post_convergence_sweep_rounds"] = exp_cfg["post_convergence_sweep_rounds"]
-    for imf in ("immune_memory_enabled", "immune_memory_path"):
+    for imf in ("immune_memory_enabled", "immune_memory_consume_rk0",
+                "immune_memory_path", "immune_memory_rho"):
         if imf in exp_cfg:
             kwargs[imf] = exp_cfg[imf]
+    # Severity calibration + its latent-tagger producer — 5th launcher-config-drop
+    # instance (found 2026-07-31). severity_calibration_enabled has been honoured by
+    # RunnerConfig.from_dict since 050f17c (2026-06-10) but was never listed here, so
+    # a config enabling calibration would have silently run it OFF on the launcher
+    # path — the launch path every Exp 40+ experiment actually uses. No completed run
+    # was affected: the flag is off in every config to date and the mechanism was
+    # inert anyway for want of a producer. Both keys are passed through together so
+    # the producer and its consumer can never diverge across the two boundaries.
+    for scf in ("severity_calibration_enabled", "severity_calibration_floor",
+                "latent_tagger_enabled"):
+        if scf in exp_cfg:
+            kwargs[scf] = exp_cfg[scf]
+    # Gamma/stall fields — 4th launcher-config-drop instance (2026-07-29).
+    # Honoured by RunnerConfig.from_dict, absent here, so every config from
+    # Exp 42 on silently ran these at code defaults on the launcher path.
+    # gamma_telemetry_only_until has teeth: configs set 20, the launcher ran 14,
+    # so from round 15 a legacy gamma threshold applied that the config meant to
+    # suppress. No completed run was affected (all converged before round 15);
+    # the 16-round factorial cells are the runs at risk. Fixed before the
+    # factorial, after the completed exams — so Exp 48/49 remain comparable to
+    # the runs that preceded them.
+    for gsf in ("stall_gamma_terminate", "stall_gamma_advisory",
+                "gamma_telemetry_only_until", "divergence_channel_enabled",
+                "feedback_off_mode", "divergence_off_mode",
+                "panel_cwd"):
+        if gsf in exp_cfg:
+            kwargs[gsf] = exp_cfg[gsf]
+    # Feedback-channel ablation switch (Exp 52 pre-flight, 2026-07-29). The
+    # runner's own --config path already honoured this key (RunnerConfig.from_dict
+    # copies any key matching a dataclass field), but the launcher path — the one
+    # the arc sequencer uses — dropped it, so a config declaring
+    # feedback_channel_enabled=false would have run with the channel ON and the
+    # ablation would have measured nothing. Same silent-divergence class as the
+    # routing alias (12 July) and max_contested_rounds (22 July). Gated on key
+    # presence: no config in the repository carries it, so every existing run is
+    # byte-identical.
+    # Exp 52 2x2 factorial switches (2026-07-29). FOUR keys, one pair per
+    # factor: the on/off switch and the reading of "off" it uses.
+    #
+    #   feedback_channel_enabled   / feedback_off_mode      — §17
+    #   divergence_channel_enabled / divergence_off_mode    — §18
+    #
+    # Each switch governs BOTH halves of its mechanism (the directive section
+    # sent to models AND the runner pass), because a half-present mechanism
+    # measures nothing coherent. off_mode selects the reading: "absent"
+    # (default — no text, no pass), "text_only", or "pass_only". See
+    # RunnerConfig in bench/reference_runner_v2.py for the full semantics.
+    #
+    # All four are gated on key presence, so every config in the repository
+    # — none of which carries any of them — is byte-identical. The
+    # passthrough ships in the SAME commit as the RunnerConfig fields:
+    # feedback_channel_enabled reached the runner's own --config path months
+    # before it reached this one, and that gap would have run the factorial's
+    # primary factor ON in all four cells. Third occurrence of that failure
+    # class; see the launcher-config-drop note.
+    for _factor_key in (
+        "feedback_channel_enabled",
+        "feedback_off_mode",
+        "divergence_channel_enabled",
+        "divergence_off_mode",
+    ):
+        if _factor_key in exp_cfg:
+            kwargs[_factor_key] = exp_cfg[_factor_key]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}
@@ -242,6 +306,36 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         shadow["_ouroboros"] = exp_cfg["_ouroboros"]
     if shadow:
         kwargs["shadow_cell_config"] = shadow
+
+    # ── CATCH-ALL: every remaining RunnerConfig field the JSON names ──────────
+    #
+    # THE FAILURE CLASS THIS ENDS. Everything above maps by explicit whitelist,
+    # so a field added to RunnerConfig is DROPPED by this path unless someone
+    # remembers to add a line here. Nobody reliably does. It has bitten six
+    # times: routing (2026-07-12), max_contested_rounds (2026-07-27),
+    # feedback_channel_enabled and the gamma/stall trio (2026-07-29 — that one
+    # meant the 2x2 factorial's PRIMARY FACTOR would have run ON in every cell),
+    # severity_calibration_enabled (2026-07-31), and max_irreducible_queue
+    # (2026-08-01, the setting that halted the zero-plant control).
+    #
+    # A systematic sweep on 2026-08-01 compared every RunnerConfig field across
+    # both ingestion paths and found TWENTY still latent, including
+    # `max_open_crit_high`, `gamma_hard_threshold`, `gamma_soft_threshold`,
+    # `min_rounds_for_gamma`, `stall_window` and `rho_earliest_round` — all
+    # convergence-critical. No shipped config set any of them, so no completed
+    # experiment was affected; the gap was latent, and would have fired the
+    # moment one was set.
+    #
+    # Whitelisting is the wrong default for this job: the runner's own
+    # `RunnerConfig.from_dict` accepts any field, so the two paths could only
+    # ever agree by a human keeping a list in sync with a dataclass. This makes
+    # them agree by construction. Explicit mappings above still win, because
+    # several rename or transform a key; this only fills what they left behind.
+    import dataclasses as _dc
+    _fields = {f.name for f in _dc.fields(RunnerConfig)}
+    for _k, _v in exp_cfg.items():
+        if _k in _fields and _k not in kwargs:
+            kwargs[_k] = _v
 
     return RunnerConfig(**kwargs)
 

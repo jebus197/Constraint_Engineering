@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T234339Z",
+  "phase": "r2",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 704,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.65\nFIND: Alternative with contrast statement not naming the declared dimension is wrongly admitted as admissible.\nFALSIFIER:\n```python\nimport sys\nfrom bench.dm._divergence import build_divergence_record, DivergenceConfig\n\nconfig = DivergenceConfig(enabled=True, min_contrast_chars=20)\nraw = (\n    \"### Alternative (dimension: mechanism)\\n\"\n    \"Differs from primary: the approach is clever and novel.\\n\"\n)\nprimary = \"Original solution.\"\nrecord = build_divergence_record(\"F99\", primary, raw, config=config)\nif any(alt.admissible for alt in record.alternatives):\n    raise AssertionError(\"Defect present: alternative admitted without dimension-linked contrast\")\nsys.exit(0)\n```",
+  "metadata": {
+    "round": 2,
+    "elapsed": 357.0,
+    "chars": 704,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

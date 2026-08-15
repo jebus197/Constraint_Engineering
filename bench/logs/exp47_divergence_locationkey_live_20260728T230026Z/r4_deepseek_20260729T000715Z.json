@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T000715Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 815,
+  "response": "FINDING_ID: F008\nSEVERITY: 0.70\nFIND: Character‑limit enforcement can be circumvented via the contrast statement – `validate_alternative` checks only the stripped body, not the full block length.\nFALSIFIER:\n```python\nimport sys\nfrom bench.dm._divergence import parse_alternative_block, validate_alternative, DivergenceConfig\n\nconfig = DivergenceConfig(max_chars_per_alternative=2000)\nraw = (\n    \"Alternative (dimension: mechanism)\\n\"\n    + \"short body\\n\"\n    + \"Differs from primary: \" + \"X\" * 1990 + \"\\n\"\n)\nalts = parse_alternative_block(raw, \"test_finding\", \"primary content\", config)\nif not alts:\n    sys.exit(0)\nalt = alts[0]\nadmissible, _ = validate_alternative(alt, config)\nif admissible:\n    print(\"FALSIFIED: alternative with long contrast but short body passed char limit\")\n    sys.exit(0)\nsys.exit(0)\n```",
+  "metadata": {
+    "round": 4,
+    "elapsed": 304.7,
+    "chars": 815,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

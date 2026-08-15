@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T062954Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2387,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.75\nFIND: EN‑06 states Euler critical load for column C4‑02 as 587 kN, but recalc gives ~573 kN.\nFALSIFIER:\n```python\nimport os\n\ndef check_defect():\n    filepath = os.path.join(os.path.dirname(__file__), \"exp49_engineering.md\")\n    with open(filepath, \"r\", encoding=\"utf-8\") as f:\n        content = f.read()\n    # The defect is the presence of the erroneous value 587 kN\n    if \"evaluates to 587 kN\" in content:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    check_defect()\n```\n\nFINDING_ID: F002\nSEVERITY: 0.75\nFIND: EN‑19 claims bearing factor of safety = R_d / p_Ed = 125 as dimensionless, but force/pressure yields area.\nFALSIFIER:\n```python\nimport os\n\ndef check_defect():\n    filepath = os.path.join(os.path.dirname(__file__), \"exp49_engineering.md\")\n    with open(filepath, \"r\", encoding=\"utf-8\") as f:\n        content = f.read()\n    # Defect is present if the dimensionless '125' claim is found\n    if \"The bearing factor of safety = R_d / p_Ed = 125\" in content and \"dimensionless ratio\" in content:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    check_defect()\n```\n\nFINDING_ID: F003\nSEVERITY: 0.90\nFIND: EN‑30 incorrectly claims two-out-of-three pump arrangement tolerates two simultaneous failures, but one unit only delivers 55% duty.\nFALSIFIER:\n```python\nimport os\n\ndef check_defect():\n    filepath = os.path.join(os.path.dirname(__file__), \"exp49_engineering.md\")\n    with open(filepath, \"r\", encoding=\"utf-8\") as f:\n        content = f.read()\n    # Defect present if the false redundancy claim is in the document\n    if \"if any two of the three units are lost then the surviving unit continues to meet the duty requirement\" in content:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    check_defect()\n```\n\nFINDING_ID: F004\nSEVERITY: 0.95\nFIND: EN‑36 claims optimal vertex (120,40,80) with obj 248.0 but violates x₃ ≤ 0.5x₁; real optimum is (120,60,60) obj 258.0.\nFALSIFIER:\n```python\nimport os\n\ndef check_defect():\n    filepath = os.path.join(os.path.dirname(__file__), \"exp49_engineering.md\")\n    with open(filepath, \"r\", encoding=\"utf-8\") as f:\n        content = f.read()\n    # Defect is present if the infeasible vertex claim appears\n    if \"(x₁=120, x₂=40, x₃=80)\" in content and \"248.0\" in content and \"optimal vertex\" in content:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    check_defect()\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 392.9,
+    "chars": 2387,
+    "findings_count": 4,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

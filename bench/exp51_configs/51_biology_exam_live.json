@@ -1,0 +1,90 @@
+{
+  "_comment": "Exp 51 (ONE-SHOT ARC) — BIOLOGY SPECIALIST EXAM. Target is a ground-truthed review document (exp51_biology.md, claims BI-01...), drafted to the locked spec, tool-verified claim-by-claim, panel draft-reviewed key-blind, with a SEPARATE answer key the reviewing panel never sees. Purpose: measure the biology specialist checkpoint against an answer key — the only recall measurement in the programme. Instrument identical to Exp 44-47 (two-sided gamma gate, CONFIRM-only falsifier gate, routing, location key on claim IDs, sweep, ImmuneMemory recording) with domain=biology as the declared variable. CDSFL is an LLM-reliability framework; domain content is verifiable subject matter only.",
+  "test_article": "/Users/georgejackson/CDSFL_review_targets/current/BX-14-REF-04.md",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 16,
+  "extension_cap": 16,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp51_biology_exam_live",
+  "domain": "biology",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds set above the gamma ceiling (1.0) so the stall detector can never fire via gamma — convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/43.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "max_contested_rounds": 3,
+  "_max_contested_rounds_note": "FIX 4 (declared delta, 2026-07-22): lowered from the code default 5. Five rounds of paid compute to age out a churning residual was both wasteful and, against within-grace churn, ineffective (Exp 43). With FIX 1 in place sub-criticals no longer block, so this threshold now governs only genuinely contested items.",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled/verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested — where, per FIX 1, un-demonstrated sub-critical findings are a logged NON-GATING residual queue; AND (5) not churning; AND (6) irreducible queue within bound.",
+    "pass_condition": "gamma_critical >= 0.30 AND 3 consecutive zero-NEW-genuine-critical rounds AND no unverified critical pending AND not contested (FIX-1 semantics) AND not churning AND irreducible queue within bound.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds; OR non-convergence (then assume MECHANICAL, diagnose under cy — do not demote gamma)."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": false,
+    "_section_10_note": "A4 (12 July 2026): section 10 was established INERT — the flag never reaches RunnerConfig and no compelled-convergence text reaches dispatch. Recorded false here for documentation accuracy; behaviourally identical to Exp 42/43, whose configs carried a stale 'true'."
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  },
+  "_pre_registration": "Frozen before the run. Exp 51 = biology exam. RATIFIED PASS MARK (founder 28 Jul, conjunctive, per domain): (1) attributed planted-false recall 100% — every planted false caught, credited to the routed specialist not the surrounding panel; (2) non-distortion — zero false refutations of planted-TRUE claims, and no finding raised against the clean control cluster; (3) decision-change tally, conditioned on baseline noise existing (an accurate panel with nothing to filter is NOT a specialist failure); (4) convergence non-distortion — the two-sided gate closes normally. Scoring joins the per-round specialist_verdicts_r*.json telemetry to the answer key post-run. PREDICTION: convergence within budget; recall measurable; sweep drains the tail. FAILURE MODES: non-convergence -> MECHANICAL, pause and diagnose, do NOT demote gamma; recall < 100% -> report per-claim with the routing trace, do not tune the exam. BUDGET NOTE: the specialist-off paired run (the decision-change counterfactual) is sequenced AFTER all four primary exams, subject to remaining budget — declared deviation for founder review, not silent omission.",
+  "_plan_ref": "One-shot arc: 47 divergence -> 48 chem -> 49 eng -> 50 physics -> 51 biology -> 52 factorial -> STOP before BR2.",
+  "take_up_slack_enabled": true,
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "location keys from dm/_memory.py AST symbols; instrument proven on Exp 42/43/44.",
+  "_ouroboros": {
+    "api_access": [
+      "arxiv",
+      "semantic_scholar"
+    ],
+    "max_papers_per_round": 2,
+    "contact_email": "jebus.2504@gmail.com"
+  },
+  "post_convergence_sweep_rounds": 2,
+  "immune_memory_enabled": true,
+  "immune_memory_path": "bench/state/immune_memory.json",
+  "_target_isolation_note": "Target staged outside the repository, read-only (mode 444), one document per directory, named by the document's own internal ID. The panel's working directory is that directory and contains the document under review and nothing else: no scoring key, no sibling module, no git history, no experiment metadata in any path. Scoring joins the run's findings to the key after the run, outside the run, from a location this repository does not record. History: on 2026-07-29 a routed model wrote a falsifier that opened the scoring key and printed its full planted set. The key had been moved out of the tree that morning and a config note in this repository recorded where it went; the panel's working directory was the repository, so the note was one grep away. The fix had advertised what it hid. Superseded keys also remain in git history and are left there deliberately as a tripwire: the sets they name are no longer the sets in use, so a run that flags them without independent demonstration has done archaeology rather than verification.",
+  "panel_cwd": "/Users/georgejackson/CDSFL_review_targets/current"
+}

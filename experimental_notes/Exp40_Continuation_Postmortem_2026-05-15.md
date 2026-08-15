@@ -247,6 +247,31 @@ rounding tolerance that the log does not display. Worth a one-line audit
 of `bench/dm/llm_classifier.py` (or wherever the threshold check lives) to
 confirm intended behaviour and adjust the log message.
 
+**[Correction 2026-08-05.] Dead path, and the anomaly it points at is already closed.**
+The audit target named above, `bench/dm/llm_classifier.py`, does not exist and never
+has: no file at that path appears at any commit in this repository's history
+(`git log --all --name-only --format="" | grep -i llm_classifier` returns only
+`bench/tests/test_llm_classifier_log_honesty.py`). It is neither a rename nor a
+deletion — it was a wrong guess, which the note's own hedge "(or wherever the
+threshold check lives)" flagged at the time. The classifier lives in
+`bench/immune_agents.py`: `typed_llm_classifier(...)` at line 4868, the
+`override_threshold: float = 0.70` default at line 4871, `llm_primary = (domain ==
+"software")` at line 4905, and the override/skip branches from line 4988.
+
+Anomaly 3 was **diagnosed and fixed the same day this note was written**, in the
+2026-05-15 fix tranche (`7ecbf26`, "fix 1b"), and the root cause was not a threshold
+bug. In software domain — Exp 40's config sets `"domain": "software"`
+(`bench/exp40_configs/40_gate.json:21`) — `llm_primary` is true and
+`override_threshold` is *not consulted at all*: any valid disagreeing classification
+wins, because regex agreement on code findings is around 15%. So the overrides at
+conf 0.68 and 0.65 were correct behaviour; only the log line was dishonest, printing
+a threshold it was not applying. The override logic was left alone and the four
+decision branches now state their actual gating reason ("llm-primary [software]:
+threshold N/A", "threshold=0.70 cleared", "llm=uncategorised: no valid reclass
+target", "below threshold 0.70"). Pinned by `bench/tests/test_llm_classifier_log_honesty.py`
+— 10 tests, all passing offline under `--netguard-strict` as of 2026-08-05. No audit
+is outstanding; item 3 of "Path Forward" below is discharged for this anomaly.
+
 ### Anomaly 4 — RT v2 autoimmune flag at constant 100% Gemini rejection
 
 RT v2 flagged AUTOIMMUNE bias against Gemini in every continuation round

@@ -162,3 +162,14 @@ The required logic change is small. The conceptual change is not. It moves CDSFL
 - `anti_deference.null_find_requires_scoped_justification` — template for the null-alternative protocol
 - `bench/dm/_novelty.py` (if exists) / `nu_k` metric — validates whether divergence actually delivers novelty uplift
 - Lance McLane (John Ridgway, Daily Record, ~1976-1982) — the unresolved source material
+
+**[Correction 2026-08-12.]** The hedge "(if exists)" on the `bench/dm/_novelty.py`
+line resolves in the negative: it does not, and never did. No path of that name
+appears at any commit in this repository's history (`git log --all --name-only
+--format="" | grep -i _novelty` returns only the unrelated
+`bench/confer_novelty_extension.py` and its confer logs), so this is a dead
+alternative rather than a moved file. The ν_k (nu_k) novelty metric named on the
+same line was built, and it lives in `bench/dm/_shadow_stage6.py` as the shadow
+calibrator, with `bench/reference_runner_v2.py` as its consumer — the wiring
+`resources/ONBOARDING.md` records against 2026-04-14. The line is left intact as
+the record of an open question on 2026-04-15.

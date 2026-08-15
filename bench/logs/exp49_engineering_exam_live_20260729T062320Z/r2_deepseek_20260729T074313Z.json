@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T074313Z",
+  "phase": "r2",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1140,
+  "response": "FINDING_ID: F005\nSEVERITY: 0.60\nFIND: EN-34 claims LP-1 optimum A2=13.09, but the stated strength constraint is A2>=13.091; the reported vertex is infeasible.\nFALSIFIER:\n```python\n# standalone script for F005 - infeasible LP-1 optimum\nA1, A2, A3 = 14.36, 13.09, 6.55   # claimed optimum from EN-34\n\n# LP-1 strength bounds as defined in the document (section 7)\nA1_min = 9.818    # 1.5 * 180 / 27.5\nA2_min = 13.091   # 1.5 * 240 / 27.5\nA3_min = 6.545    # 1.5 * 120 / 27.5\naggregate_min = 34.0\n\nfeasible = (\n    A1 >= A1_min and\n    A2 >= A2_min and\n    A3 >= A3_min and\n    A1 + A2 + A3 >= aggregate_min\n)\n\nif not feasible:\n    violations = []\n    if A1 < A1_min:\n        violations.append(f\"A1={A1} < {A1_min}\")\n    if A2 < A2_min:\n        violations.append(f\"A2={A2} < {A2_min}\")\n    if A3 < A3_min:\n        violations.append(f\"A3={A3} < {A3_min}\")\n    if A1 + A2 + A3 < aggregate_min:\n        violations.append(f\"sum={A1+A2+A3} < {aggregate_min}\")\n    msg = \"FALSIFIED: Claimed LP-1 optimum is infeasible.\\n  \" + \"\\n  \".join(violations)\n    print(msg)\n    raise AssertionError(msg)\nelse:\n    # exit cleanly with returncode 0\n    pass\n```",
+  "metadata": {
+    "round": 2,
+    "elapsed": 674.0,
+    "chars": 1140,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,1416 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.78,
+        "description": "Listing A `TokenBucket.allow(cost=1.0)` accepts costs below one token, including zero, fractional, and negative costs. This contradicts the request-count ceiling in ZC-12 and the token-range invariant in ZC-14.\n\nPremises and evidence:\n\n1. ZC-12 states: \u201cOver any window of t seconds the limiter of Listing A admits at most B_tok + R_tok x t requests whatever the arrival pattern.\u201d\n2. Listing A subtracts `cost` from `self.tokens` after checking `self.tokens >= cost`.\n3. No precondition or runtime ch",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        if cost < 1.0:\n            raise ValueError(\"cost must be at least one token\")\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`TokenBucket.allow` accepts zero/fractional/negative/non-finite costs and invalidates the limiter/invariant claims. I reran a Python falsifier over the verbatim Listing A implementation: `allow(-1)` r"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Tool execution against the embedded current Listing A showed `TokenBucket(1, 0).allow(-1)` returns `True` and increases `tokens` from `1.0` to `2.0`, confirming invalid-cost token creation."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "reproduced both halves against the extracted listing. Zero cost: `TokenBucket(1,0)` admitted **1000 of 1000** requests with no refill. Negative cost: `allow(-1.0)` on a full bucket returned True and s"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Negative costs increase tokens above capacity, violating ZC-14. (Fix provided below in Gemini_F004)."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0010"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Gemini_F004** | Providing verified fix and falsifier for C0001."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpykzx96ti.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.55,
+        "description": "ZC-20 says \u201cthe schedule never shortens\u201d after describing the jittered return value of Listing C. That is false for actual returned delays: the cap is non-decreasing, but independent jitter draws can make a later attempt\u2019s returned delay smaller than an earlier attempt\u2019s returned delay.\n\nPremises and evidence:\n\n1. Listing C returns `rand() * capped`.\n2. `capped = min(ceiling_ms, base_ms * (2  attempt))` is non-decreasing in `attempt`.\n3. The random multiplier is independently supplied per call a",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-20. The postcondition of Listing C is a value in the half-open interval [0, min(d_max, d_0 x 2^attempt)), so every delay is non-negative and none reaches d_max = 32 000 ms. The unjittered cap is non-decreasing in the attempt index and constant from index 7 onward, so the schedule never shortens. Sampling 48 000 delays across attempt indices 0 through 15 places every draw inside that interval.\n==== REPLACE\nZC-20. The postcondition of Listing C is a value in the half-open interval [0, min(d_max, d_0 x 2^attempt)), so every delay is non-negative and none reaches d_max = 32 000 ms. The unjittered cap is non-decreasing in the attempt index and constant from index 7 onward, but the jittered delay returned by an individual call can be smaller than a delay returned for an earlier attempt because each call multiplies the cap by a fresh draw. Sampling 48 000 delays across attempt indices 0 through 15 places every draw inside that interval.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "ZC\u201120 incorrectly states that the retry schedule never shortens; the jittered values can exceed the previous cap. The correction to the statement is accurate."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "ZC-20 explicitly states \"The unjittered cap... never shortens\", which is true. It does not claim the jittered schedule never shortens."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "ZC-20\u2019s \u201cschedule never shortens\u201d wording is false for jittered returned delays."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.85,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.85\nFIND: TokenBucket.allow is not thread-safe: the read-modify-write check-decrement sequence lacks synchronisation, allowing concurrent threads to exceed capacity, violat",
+        "proposed_fix": "",
+        "falsifier_code": "import threading, time\n\n# TokenBucket from Listing A (real target module)\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\nbucket = TokenBucket(capacity=1, refill_per_sec=0)   # only one token, no refill\nresults = []\nbarrier = threading.Barrier(2)\n\ndef worker():\n    barrier.wait()               # start both threads together\n    res = bucket.allow(cost=1)\n    results.append(res)\n\nt1 = threading.Thread(target=worker)\nt2 = threading.Thread(target=worker)\nt1.start(); t2.start()\nt1.join(); t2.join()\n\nif sum(results) > 1 or bucket.tokens < 0:\n    print(\"FALSIFIED\")\nelse:\n    print(\"OK\")",
+        "falsifier_verdict": "REFUTED",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Listing A has no lock around refill/check/subtract; the sequence is a shared-state read-modify-write and can over-admit under concurrent callers."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "reproduced deterministically. Two threads against a one-token bucket, instrumented with a barrier at the switch point between the test and the subtraction: `results = [True, True], tokens = -1.0`. Thi"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue"
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.4,
+        "description": "FINDING_ID: F002\nSEVERITY: 0.40\nFIND: find_block(offsets, pos) does not validate the precondition pos >= offsets[0]; if called with pos < offsets[0], it returns an index that violates the postconditio",
+        "proposed_fix": "",
+        "falsifier_code": "def find_block(offsets, pos):\n    lo, hi = 0, len(offsets) - 1\n    while lo < hi:\n        mid = (lo + hi + 1) // 2\n        if offsets[mid] <= pos:\n            lo = mid\n        else:\n            hi = mid - 1\n    return lo\n\noffsets = [100, 200, 300]\npos = 50\ntry:\n    idx = find_block(offsets, pos)\n    if offsets[idx] <= pos:\n        print(\"OK\")\n    else:\n        print(\"FALSIFIED\")\nexcept ValueError:\n    print(\"FALSIFIED (expected error)\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.78,
+        "description": "ZC-20 incorrectly states that the retry \u201cschedule never shortens.\u201d Location: section 5, ZC-20. Evidence: Listing C returns `rand() * capped`; although `capped` is non-decreasing by attempt index, independent jitter draws make realised delays non-monotone. Concrete execution: with `rand()` values `0.9` then `0.1`, attempt 0 returns `0.9 * 250 = 225 ms`, while attempt 1 returns `0.1 * 500 = 50 ms`. The later realised delay is shorter than the earlier realised delay, contradicting the stated schedu",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-20. The postcondition of Listing C is a value in the half-open interval [0, min(d_max, d_0 x 2^attempt)), so every delay is non-negative and none reaches d_max = 32 000 ms. The unjittered cap is non-decreasing in the attempt index and constant from index 7 onward, so the schedule never shortens. Sampling 48 000 delays across attempt indices 0 through 15 places every draw inside that interval.\n==== REPLACE\nZC-20. The postcondition of Listing C is a value in the half-open interval [0, min(d_max, d_0 x 2^attempt)), so every delay is non-negative and none reaches d_max = 32 000 ms. The unjittered cap is non-decreasing in the attempt index and constant from index 7 onward, but the realised jittered delays are not monotone: independent draws can make a later attempt shorter than an earlier one. For example, rand values 0.9 then 0.1 give 225 ms at attempt 0 and 50 ms at attempt 1. Sampling 48 000 delays across attempt indices 0 through 15 places every draw inside its stated interval.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.66,
+        "description": "ZC-16 states an unconditional invariant that Listing G maintains `m2 >= 0` after every update. Location: section 5, ZC-16. Evidence: under Python binary64 semantics, finite but extremely large inputs can overflow intermediate arithmetic and make `m2` negative infinity or NaN. Concrete execution with `xs = [1e308, -1e308]`: after the second update, `delta = -inf`, the updated mean is `-inf`, `delta2 = inf`, `delta * delta2 = -inf`, and `m2` becomes `-inf`, violating `m2 >= 0`.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-16. Listing G maintains the invariant m2 >= 0 after every update, because delta is the deviation of the new value from the previous mean and delta2 its deviation from the updated mean; the update moves the mean towards the new value, so the two deviations carry the same sign and their product is non-negative. Two thousand randomised streams produce no negative intermediate.\n==== REPLACE\nZC-16. For finite inputs whose intermediate additions, divisions and products stay finite, Listing G maintains the invariant m2 >= 0 after every update, because delta is the deviation of the new value from the previous mean and delta2 its deviation from the updated mean; the update moves the mean towards the new value, so the two deviations carry the same sign and their product is non-negative. Listing G does not enforce that arithmetic precondition itself: extremely large but finite binary64 inputs can overflow an intermediate mean or product and produce -inf or nan. The randomised streams used for this reference are bounded to the accounting ranges discussed in section 8, and within that finite non-overflowing range they produce no negative intermediate.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "Tool execution against the embedded current Listing G showed `welford([1e308, -1e308]) == (2, -inf, -inf)`, so the unconditional `m2 >= 0` claim also fails for finite inputs through binary64 overflow."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "I could not break ZC-16's invariant with any **finite** input, and the boundary matters for the fix. 400 000 adversarial streams across six generators \u2014 subnormals (5e-324, 1e-320), full dynamic range"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.0,
+        "description": "No critical or high severity flaws found in the reference implementations or assertions.",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Withdrawing finding due to admissibility failure (\u03c3_measured not applicable to a null finding)."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Gemini's *\"No critical or high severity flaws found\"* is refuted by the registry's own settled state: C0004 is already **CONFIRMED**. It is independently refuted by my reproductions above \u2014 C0001 (100"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.6,
+        "description": "ZC-12 (\u00a74) asserts an admission ceiling with an explicit universal quantifier over arrival patterns and no execution model: *\"Over any window of t seconds the limiter of Listing A admits at most B_tok + R_tok x t requests whatever the arrival pattern.\"* ZC-26 (\u00a76) establishes, of the same listing, that `allow` is not thread-safe and that concurrent callers drive `self.tokens` negative. Those two statements cannot both be true as written. Evidence \u2014 Listing A extracted verbatim, instrumented at e",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-12. Over any window of t seconds the limiter of Listing A admits at most B_tok + R_tok x t requests whatever the arrival pattern, that being the whole token supply available in the window; at t = 10 s the ceiling is 840.\n==== REPLACE\nZC-12. Under single-threaded use of Listing A, over any window of t seconds the limiter admits at most B_tok + R_tok x t requests whatever the arrival pattern, that being the whole token supply available in the window; at t = 10 s the ceiling is 840. The bound is asserted of that execution model alone: under the concurrent use of ZC-26 the unsynchronised test-then-subtract admits more than the token supply the window holds, so the ceiling does not hold there, and a caller that needs it must serialise allow.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.5,
+        "description": "Listing F's `WaveTracker` is a single-use barrier \u2014 `self.done` is never reset and `self.wave_size` is fixed at construction \u2014 but no statement in the document records that precondition, and the design requires 64 barriers. \u00a71 and ZC-07 both assert V = 64 waves in a full fleet rollout (\"exclusive of stage barriers\"). \u00a75 is the section dedicated to preconditions and gives an explicit precondition list for Listing B (ZC-15), so the omission is not a stylistic choice \u2014 it is a gap in a section that",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nThe predicate is monotone, done being only ever incremented, so once satisfied it stays satisfied and a late waiter arriving after the wave completed returns without blocking.\n==== REPLACE\nThe predicate is monotone, done being only ever incremented, so once satisfied it stays satisfied and a late waiter arriving after the wave completed returns without blocking. That monotonicity is also the precondition on reuse: done is never reset and wave_size is fixed at construction, so one WaveTracker instance is a single-use barrier and the V = 64 waves of ZC-07 require 64 instances. Reusing one instance leaves the predicate already satisfied when the next wave opens, so wait_for_wave returns wave_size immediately with no node of that wave having recorded and the barrier is skipped rather than enforced; the equality test in record, done == wave_size, likewise fires exactly once per instance and not again once the counter has walked past wave_size.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "WaveTracker is explicitly designed as a monotone, single-use barrier per wave, as confirmed by ZC-23 (\"The predicate is monotone... once satisfied it stays satisfied\")."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "`WaveTracker` is instantiated per wave, so it does not need to be reusable."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmphq0qzicw.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.35,
+        "description": "ZC-14 asserts that Listing A \"maintains the invariant 0 <= tokens <= capacity across every call\" and reports a sweep of \"120 000 calls with mixed costs and gaps\" with no violation. The invariant does not hold for negative `cost`, and `allow` carries no guard on the parameter. ZC-15 states a full precondition list for Listing B, so the absence of one for `allow`'s `cost` is a gap, not a convention. Evidence:\ntokens after allow(cost=-5.0): 15.0 | capacity 10.0 -> invariant held: False\n`if self.tok",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-14. Under single-threaded use Listing A maintains the invariant 0 <= tokens <= capacity across every call. The refill is clamped by min against the capacity and the subtraction is guarded by the test tokens >= cost, so neither can push the count outside that interval. A randomised sweep of 120 000 calls with mixed costs and gaps records no violation.\n==== REPLACE\nZC-14. Under single-threaded use, and given the precondition cost >= 0 of ZC-41, Listing A maintains the invariant 0 <= tokens <= capacity across every call. The refill is clamped by min against the capacity and the subtraction is guarded by the test tokens >= cost, so under that precondition neither can push the count outside that interval. The precondition is load-bearing rather than decorative: a negative cost satisfies the guard for any non-negative token count and then adds tokens past the clamp, so a single call of allow(-5.0) on a bucket of capacity 10 leaves tokens at 15.0. A randomised sweep of 120 000 calls with non-negative mixed costs and gaps records no violation.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.25,
+        "description": "\u00a71.1 establishes a three-way taxonomy and makes it binding: *\"the statement names whether it is a worst-case bound, an expectation over a stated distribution, or a figure realised on the data printed here; that distinction is part of the claim, not a wording preference.\"* \u00a73's closing sentence collapses that to two categories and mislabels: *\"The costs above are worst-case except ZC-04 and ZC-06, which are expectations under the distributions stated with them.\"* Three counts against it, all chec",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nThe costs above are worst-case except ZC-04 and ZC-06, which are expectations under the distributions stated with them.\n==== REPLACE\nThe costs above fall into all three categories of section 1.1. ZC-02, ZC-03 and ZC-05 are worst-case bounds. The 4 per cent of ZC-04 and the 31.875 s of ZC-06 are expectations under the distributions stated with them. The instrumented counts of ZC-01, the 11 524 relocations of ZC-04 and the Monte Carlo mean of ZC-06 are figures realised on the data printed here. Individual statements therefore mix the categories, and each figure is labelled where it appears rather than by tag.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "ZC-05 is a \"figure realised on the data printed here\", which is one of the three allowed categories in \u00a71.1."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmparcgtm6m.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.6,
+        "description": "`HashRing.locate` crashes for empty rings. Location: Listing D, `HashRing.__init__` and `HashRing.locate`; dependent claim: ZC-17.\n\nThe constructor permits a ring with zero points, either from `members=[]` or `vnodes=0`. `locate` then executes `idx % len(self.points)`, which becomes modulo by zero.\n\nRelevant target code:\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.appen",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\nclass HashRing:\n    def __init__(self, members, vnodes):\n        if vnodes <= 0:\n            raise ValueError(\"vnodes must be positive\")\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        if not self.points:\n            raise ValueError(\"members must be non-empty\")\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`HashRing` permits empty rings and later crashes in `locate`; the registry fix rejecting empty members and non-positive `vnodes` is the simplest sufficient correction."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`HashRing.locate` crashes for empty rings. The fix (guard against empty `points`) is correct and sufficient."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The ring is instantiated with 24 members in the service context, so it is never empty."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "empty or zero-vnode `HashRing` constructs successfully and crashes in `locate`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpts6vlt5x.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.68,
+        "description": "`backoff_delay` caps the returned value but not the cost of computing it. Location: Listing C, `backoff_delay`; dependent claims: ZC-05 and ZC-20.\n\nCurrent code:\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\nThe cap is applied only after Python evaluates `base_ms * (2  attempt)`. For very large `attempt`, Python constructs a huge integer before `min` can discard it. Under defaults the",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if type(attempt) is not int or attempt < 0:\n        raise ValueError(\"attempt must be a non-negative integer\")\n    if not (base_ms > 0 and ceiling_ms > 0):\n        raise ValueError(\"base_ms and ceiling_ms must be positive\")\n    capped = min(base_ms, ceiling_ms)\n    for _ in range(attempt):\n        if capped >= ceiling_ms / 2:\n            capped = ceiling_ms\n            break\n        capped *= 2\n    return rand() * capped\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`backoff_delay` caps the returned delay but not the cost of computing `2 ** attempt`; the fix should validate attempts and avoid unbounded exponentiation before capping."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The `attempt` parameter is an internal retry counter. Reaching an attempt large enough to cause O(N^2) performance degradation would take days of continuous retries, making it unreachable in practice."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 7,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.72,
+        "description": "Listing C, `backoff_delay`, accepts invalid retry attempts and trusts injectable `rand`, invalidating ZC-20\u2019s interval postcondition and creating an avoidable huge-exponent path.\n\nEvidence from current code:\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\nConcrete tool-observed traces from the current artifact:\nbackoff_delay(-1, rand=lambda: 1.0) == 125.0\nbackoff_delay(0, rand=lambda: 2",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if type(attempt) is not int or attempt < 0:\n        raise ValueError(\"attempt must be a non-negative integer\")\n    base_ms = float(base_ms)\n    ceiling_ms = float(ceiling_ms)\n    if not (0.0 < base_ms <= ceiling_ms < float(\"inf\")):\n        raise ValueError(\"base_ms and ceiling_ms must be finite positive values with base_ms <= ceiling_ms\")\n\n    capped = base_ms\n    for _ in range(attempt):\n        if capped >= ceiling_ms / 2.0:\n            capped = ceiling_ms\n            break\n        capped *= 2.0\n\n    draw = float(rand())\n    if not (0.0 <= draw < 1.0):\n        raise ValueError(\"rand() must return a value in [0, 1)\")\n    return draw * capped\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`backoff_delay` accepts invalid retry attempts (negative `attempt`) and trusts injectable `rand`. Both defects are real and the fix (adding guards) is appropriate."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Negative attempts and injected `rand` are caller responsibilities. The function behaves correctly for valid internal inputs."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.68,
+        "description": "Listing E, `topo_order`, fails open on cyclic graphs by returning a partial rollout plan instead of rejecting invalid dependency graphs. It also raises an incidental `KeyError` for unknown edge endpoints rather than a contract-level validation error.\n\nCurrent code:\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    if len(indeg) != len(nodes):\n        raise ValueError(\"nodes must be unique\")\n    for a, b in edges:\n        if a not in succ or b not in indeg:\n            raise ValueError(\"edge endpoint is not present in nodes\")\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    if len(order) != len(indeg):\n        raise ValueError(\"graph contains a cycle\")\n    return order\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`topo_order` returns partial plans on cycles instead of failing closed; raising on cycles is appropriate for rollout planning."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`topo_order` fails open on cyclic graphs by returning a partial order instead of rejecting. The fix (cycle detection) is the correct minimal correction."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Returning a partial list on cyclic graphs is explicitly documented as the intended behavior in ZC-19."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`topo_order` fails open on cyclic graphs by returning a partial rollout plan."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpnffd4euf.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.3,
+        "description": "ZC-06 understates Monte Carlo sampling error. The expected retry wait is correct, but the statement that a 200,000-schedule Monte Carlo mean within `0.1 s` is \u201cwell inside the sampling error\u201d is mathematically wrong if sampling error means one standard error.\n\nCurrent text:\nA Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, which is well inside the sampling error of the estimate.\nCalculation:\n- Caps in milliseconds for attempts 0 through 7:\n  - `250, 500, 1",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-06. The returned delay is a uniform draw on [0, capped), whose expectation is capped / 2, so by linearity the expected accumulated wait over the same eight attempts is 63.75 / 2 = 31.875 s. A Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, which is well inside the sampling error of the estimate.\n==== REPLACE\nZC-06. The returned delay is a uniform draw on [0, capped), whose expectation is capped / 2, so by linearity the expected accumulated wait over the same eight attempts is 63.75 / 2 = 31.875 s. The standard deviation of one eight-attempt schedule is about 10.67 s, so a Monte Carlo estimate over 200 000 schedules has a standard error of about 0.024 s. A mean within 0.1 s of 31.875 s is therefore a loose roughly 4.2-standard-error check, consistent with the expectation but not well inside a one-standard-error sampling band.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.75,
+        "description": "The `HashRing.locate` method in Listing D contains an off-by-one boundary condition bug when a key's hash exactly matches the hash of a virtual node. It uses `bisect.bisect_right`, which returns the insertion point *after* any existing identical entries.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\ndef locate(self, key):\n        idx = bisect.bisect_left(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "import bisect, hashlib\n\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\n\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\nring = HashRing([\"dist-00\", \"dist-01\"], 1)\nexact_key_hash = ring.keys[0]\nexact_node = ring.points[0][1]\n\n# Simulate locate() for a key that hashes exactly to exact_key_hash\nidx = bisect.bisect_right(ring.keys, exact_key_hash)\nrouted_node = ring.points[idx % len(ring.points)][1]\n\nif routed_node != exact_node:\n    print(\"FALSIFIED\")\n    raise AssertionError(f\"Defect present: exact hash routed to {routed_node} instead of {exact_node}\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp7w_ddqjy.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.58,
+        "description": "ZC-06 (\u00a73) closes with: *\"A Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, which is well inside the sampling error of the estimate.\"* The relation is inverted. The per-schedule total is a sum of eight independent uniforms on [0, c\u2096) with c\u2096 = [250, 500, 1000, 2000, 4000, 8000, 16000, 32000] ms. Per-schedule SD = \u221a(\u03a3c\u2096\u00b2/12) = 10 666.6 ms. Standard error at N = 200 000 = 10666.6/\u221a200000 = 23.85 ms = 0.0239 s. Empirical check (200 independent replications, r",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nA Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, which is well inside the sampling error of the estimate.\n==== REPLACE\nA Monte Carlo estimate over 200 000 schedules returns a mean within 0.05 s of that figure. The standard error of that estimate is 0.024 s, the per-schedule standard deviation being sqrt(sum of c^2 / 12) = 10.67 s over the eight caps, so 0.05 s is about two standard errors and a deviation of 0.1 s would instead be evidence of a defect.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "The standard error for 200,000 schedules is 0.024s. A deviation of 0.1s is >4 sigma, which is not \"well inside the sampling error\". (Fix provided below in Gemini_F005)."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0016"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Gemini_F005** | Providing verified fix and falsifier for C0018."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp9xa26nj8.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.55,
+        "description": "ZC-13 (\u00a74) states: *\"the exact form 1 - exp(-F (F - 1) / (2 x 2^128)) agrees to three figures.\"* Evaluated in binary64 \u2014 the only numeric format this document ever names (u = 2\u207b\u2075\u00b3 in \u00a71; all of \u00a78) \u2014 that expression returns exactly 0.0, not 1.01 \u00d7 10\u207b\u00b2\u2078. Measured: x = F(F\u22121)/(2\u00b72\u00b9\u00b2\u2078) = 1.0097381068230063e-28; `math.exp(-x)` returns exactly 1.0 (x is far below the smallest perturbation of 1.0); `1 - 1.0` = 0.0. The mathematically exact value, computed at 60 decimal digits with mpmath, is 1.00974e",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nand the exact form 1 - exp(-F (F - 1) / (2 x 2^128)) agrees to three figures.\n==== REPLACE\nand the closed form 1 - exp(-F (F - 1) / (2 x 2^128)) agrees to three figures when evaluated exactly or with expm1. Evaluated as written in binary64 it returns 0, because exp of a quantity near 10^-28 rounds to exactly 1.0 and the subtraction annihilates the result; this is the cancellation of ZC-35, and -expm1(-F (F - 1) / (2 x 2^128)) is the form that recovers 1.0097 x 10^-28 in that format.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The statement \"the exact form... agrees to three figures\" is mathematically true. The document does not claim it is evaluated naively in binary64."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpdrfvc25u.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.62,
+        "description": "Listing F, `WaveTracker.__init__`, accepts invalid `wave_size` values. The constructor stores `wave_size` without validating that it is a positive integer:\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\nThis creates two concrete defects:\n\n1. `WaveTracker(0)` and `WaveTracker(-1)` make `wait_for_wave()` return immediately with `done == 0`, falsel",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n\n    def record(self):\n        with self.lock:\n            self.done += 1\n            if self.done == self.wave_size:\n                self.ready.notify_all()\n\n    def wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n==== REPLACE\nclass WaveTracker:\n    def __init__(self, wave_size):\n        if type(wave_size) is not int or wave_size <= 0:\n            raise ValueError(\"wave_size must be a positive integer\")\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n\n    def record(self):\n        with self.lock:\n            self.done += 1\n            if self.done == self.wave_size:\n                self.ready.notify_all()\n\n    def wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpuevy2g7m.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.75,
+        "description": "`TokenBucket.allow` accepts negative costs, which increases the token count above `capacity`, violating the invariant stated in ZC-14.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef allow(self, cost=1.0):\n        now = time.monotonic()\n==== REPLACE\ndef allow(self, cost=1.0):\n        if cost < 0:\n            return False\n        now = time.monotonic()\n>>>>",
+        "falsifier_code": "import re\n\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    content = f.read()\n\nmatch = re.search(r'(class TokenBucket:.*?return False)', content, re.DOTALL)\ncode = \"import time\\n\" + match.group(1)\nnamespace = {}\nexec(code, namespace)\nTokenBucket = namespace['TokenBucket']\n\ntb = TokenBucket(240, 60)\ntb.allow(-10)\nassert tb.tokens > tb.capacity, \"defect present: tokens exceeded capacity\"\nprint(\"FALSIFIED: tokens exceeded capacity\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpkyms7gno.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 0.5,
+        "description": "ZC-06 incorrectly claims that a 0.1s deviation in a 200,000-sample Monte Carlo estimate is \"well inside the sampling error\". The actual standard error is ~0.024s.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nA Monte Carlo estimate over 200 000 schedules returns a mean within 0.1 s of that figure, which is well inside the sampling error of the estimate.\n==== REPLACE\nA Monte Carlo estimate over 200 000 schedules returns a mean within 0.02 s of that figure, which is well inside the sampling error of 0.024 s.\n>>>>",
+        "falsifier_code": "import math\nc = [250 * 2**i for i in range(7)] + [32000]\nv = sum(x**2 / 12 for x in c)\nstd_dev = math.sqrt(v)\nse = std_dev / math.sqrt(200000)\nassert se < 0.025, \"defect present: standard error is less than 0.025s\"\nprint(\"FALSIFIED: standard error is ~0.024s, making 0.1s a >4 sigma deviation\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp92lj1so1.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F008"
+        ],
+        "severity": 0.74,
+        "description": "FINDING_ID: CC2_F008\nSEVERITY: 0.74\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.55\n\nFIND\n\n`topo_order` (Listing E, target lines 112\u2013117) builds `indeg` and `succ` as *dicts keyed by* `nodes` \u2014 which collapses ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n==== REPLACE\ndef topo_order(nodes, edges):\n    if len(set(nodes)) != len(nodes):\n        raise ValueError(\"duplicate stage in node list\")\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        if a not in indeg or b not in indeg:\n            raise ValueError(f\"edge {(a, b)} names an unknown stage\")\n        succ[a].append(b)\n        indeg[b] += 1\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpsx8nbx0s.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      }
+    },
+    "next_id": 24,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "Codex:Codex_F002": "C0002",
+      "DeepSeek:DeepSeek_F001": "C0003",
+      "DeepSeek:DeepSeek_F002": "C0004",
+      "ChatGPT:ChatGPT_F001": "C0005",
+      "ChatGPT:ChatGPT_F002": "C0006",
+      "Gemini:Gemini_F001": "C0007",
+      "CC2:CC2_F001": "C0008",
+      "CC2:CC2_F002": "C0009",
+      "CC2:CC2_F003": "C0010",
+      "CC2:CC2_F005": "C0011",
+      "Codex:Codex_F003": "C0012",
+      "Codex:Codex_F004": "C0013",
+      "ChatGPT:ChatGPT_F003": "C0014",
+      "ChatGPT:ChatGPT_F004": "C0015",
+      "ChatGPT:ChatGPT_F005": "C0016",
+      "Gemini:Gemini_F003": "C0017",
+      "CC2:CC2_F006": "C0018",
+      "CC2:CC2_F007": "C0019",
+      "Codex:Codex_F005": "C0020",
+      "Gemini:Gemini_F004": "C0021",
+      "Gemini:Gemini_F005": "C0022",
+      "CC2:CC2_F008": "C0023"
+    }
+  },
+  "novelty_counts": [
+    11,
+    8,
+    4
+  ],
+  "raw_counts": [
+    11,
+    8,
+    11
+  ],
+  "novelty_counts_per_model": {
+    "Gemini": [
+      1,
+      1,
+      2
+    ],
+    "CC2": [
+      4,
+      2,
+      1
+    ],
+    "ChatGPT": [
+      2,
+      3,
+      0
+    ],
+    "Codex": [
+      2,
+      2,
+      1
+    ],
+    "DeepSeek": [
+      2,
+      0,
+      0
+    ]
+  },
+  "raw_counts_per_model": {
+    "Gemini": [
+      1,
+      1,
+      2
+    ],
+    "CC2": [
+      4,
+      2,
+      2
+    ],
+    "ChatGPT": [
+      2,
+      3,
+      4
+    ],
+    "Codex": [
+      2,
+      2,
+      1
+    ],
+    "DeepSeek": [
+      2,
+      0,
+      2
+    ]
+  },
+  "rho_history": [
+    1.0,
+    1.0,
+    0.363636
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.148086
+  ],
+  "gate_history": [
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 3,
+      "contested": 0
+    },
+    {
+      "open_ch": 1,
+      "contested": 3
+    },
+    {
+      "open_ch": 2,
+      "contested": 3
+    }
+  ],
+  "novel_critical_history": [
+    3,
+    2,
+    1
+  ],
+  "cumulative_context_chars": 259620,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "CC2": {
+      "history": [
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.8,
+        2.3333333333333335,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "ChatGPT": {
+      "history": [
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        2.0,
+        2.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        2.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 1,
+          "classification": "TRANSIENT_FAILURE",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.5
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Gemini": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        8.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

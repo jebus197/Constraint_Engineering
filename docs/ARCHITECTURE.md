@@ -14,9 +14,13 @@ Two orthogonal Popperian arms sit at the centre of the design. The **severe-test
 
 ## Components
 
-### Runner (`bench/reference_runner.py`, experiment-specific `bench/run_exp*.py`)
+### Runner (`bench/reference_runner_v2.py`, launched by `bench/launch_exp42.py`)
 
-Each experiment has its own runner script; a shared reference runner consolidates the common loop. The runner orchestrates a multi-round analysis session: it composes prompts, dispatches them to models, parses responses, feeds findings through the immune pipeline, updates the registry, evaluates convergence, and manages checkpoints. Common infrastructure lives in `runner_core.py` and `experiment_11_orchestrator.py`. As of Experiment 40 scaffolding (17 April 2026), a `reference_runner_v2.py` sits alongside the frozen `reference_runner.py` pending founder promotion.
+The runner orchestrates a multi-round analysis session: it composes prompts, dispatches them to models, parses responses, feeds findings through the immune pipeline, updates the registry, evaluates convergence, and manages checkpoints. Common infrastructure lives in `runner_core.py` and `experiment_11_orchestrator.py`.
+
+`reference_runner_v2.py` (9,097 lines) has been the active runner for the Experiment 40–54 arc since 17 April 2026 and has driven every result from Experiment 40 onward. `reference_runner.py` (4,344 lines) is the frozen Experiment 38/39 baseline and is retained unchanged as a reference. Runs are launched through `bench/launch_exp42.py --config <config>` — a shared launcher for the whole arc whose name is historical, not Experiment-42-specific — which resolves the config, loads `.env`, and dispatches through `bench/launcher_core.py`. `bench/detached_launch.sh` wraps that in `nohup … & disown` for runs that must survive the terminal.
+
+Experiments 29–37 have their own standalone `bench/run_exp*.py` scripts. Those are the pre-April-2026 harnesses, retained as records; they hand-parse `sys.argv`, silently ignore unrecognised flags, and dispatch live on launch.
 
 ### Model Dispatch (`bench/experiment_11_orchestrator.py`)
 
@@ -25,8 +29,10 @@ Central dispatch layer. Defines `ModelConfig` for each model (API endpoint, mode
 - **CC2**: Claude CLI (`claude -p`), system prompt via `--system-prompt` flag. Max subscription; never OpenRouter.
 - **Codex / CX**: OpenRouter API, CDSFL as system role message
 - **ChatGPT**: OpenRouter API, CDSFL as system role message
-- **Gemini**: Google GenAI SDK, CDSFL as `system_instruction`
+- **Gemini**: OpenRouter API (`google/gemini-3.1-pro-preview`), CDSFL as system role message; the direct Google GenAI SDK is retained as the secondary route only, since 2026-05-10 (`bench/experiment_11_orchestrator.py:166-177`)
 - **DeepSeek**: DeepSeek API, CDSFL as system role message
+
+Those are five dispatch paths over **four** distinct model identifiers. The Codex and ChatGPT seats both carry `model_id="openai/gpt-5.5"` on OpenRouter, with the same system prompt, the same role, and the same secondary route (`bench/experiment_11_orchestrator.py:139-164`). They differ by label and by the conversation history each accumulates, not by weights — so the panel is five seats over four models from four independent vendors.
 
 OpenRouter function-calling tool-use is wired for cx, ge, cgpt, and ds (Experiment 40 Phase B, 1E.11). DeepSeek R1 also runs as a formal-verification specialist with confidence capped at 0.5 (1E.12).
 
@@ -88,7 +94,7 @@ Shadow (v1) and active (v2) pipelines run in parallel. v2 activation includes th
 
 ### B-Cell Complex — Specialist Dispatch
 
-The B-Cell is a composition of tool-specific verifiers, each a thin subprocess wrapper around an open-source tool. Dispatch is manifest-driven (`bench/cdsfl_registry/tool_manifest.toml`, 18 active entries + 2 delegated, as of Tranche C, 14 April 2026). Semantics: first-definitive-verdict wins; `[specialist:<tool>]` evidence suffix is preserved; `finding_id` is stamped on every verdict. Adding a new specialist is a TOML-only edit.
+The B-Cell is a composition of tool-specific verifiers, each a thin subprocess wrapper around an open-source tool. Dispatch is manifest-driven (`bench/cdsfl_registry/tool_manifest.toml` — 21 entries, of which 19 are direct and 2 are delegated; recounted with `tomllib` on 2026-08-07). Semantics: first-definitive-verdict wins; `[specialist:<tool>]` evidence suffix is preserved; `finding_id` is stamped on every verdict. Adding a new specialist is a TOML-only edit.
 
 Active specialists (live domains):
 
@@ -115,7 +121,22 @@ Two independent mechanisms run every round:
 
 **Stall detector**: Secondary signal. Checks static open / contested counts plus γ threshold. Two tiers: advisory (γ ≥ 0.30, log only) and terminate (γ ≥ 0.45, fires STALL_CONVERGED).
 
-Four possible termination states: STATE_CONVERGED, STALL_CONVERGED, EXTENSION_STALLED, BUDGET_EXHAUSTED.
+**Two-sided critical-quiescence gate (the current terminal condition).** Since the Experiment 40 arc, the runner also evaluates a conjunctive gate over CRITICAL findings only. It fires when BOTH sides of the same diminishing-returns measure agree: `gamma_critical >= gamma_alt_threshold` (default 0.30 — the decay curve has flattened) AND a run of `gamma_alt_consecutive_zero_crit` consecutive rounds (default 3) in which no new genuine CRITICAL finding appeared, with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Both conditions are required; either alone is insufficient. Implemented at `bench/reference_runner_v2.py:2833-3035`. The exact pass condition for any run is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
+
+One narrowing applies: where the cumulative critical count over the whole run is zero, the critical decay curve does not exist and `gamma_critical` returns 0.0 — numerically identical to the worst case, a constant arrival rate. That case converges on the count side alone, guarded by a requirement that the panel produced findings of *some* severity, and it is logged distinctly as `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate, VACUOUS CURVE)`. This narrows the estimator's domain; it does not weaken the gate.
+
+Termination states emitted by `reference_runner_v2.py`, verified 2026-08-07:
+
+| State | When |
+|---|---|
+| `STATE_CONVERGED` | primary five-condition gate held for the sustained window |
+| `CRITICAL_QUIESCENCE_CONVERGED` | two-sided gate above (incl. the vacuous-curve variant) |
+| `HARDENED_CONVERGED` | hardened gate — **opt-in only**, `hardened_gate_enabled` |
+| `STALL_CONVERGED` | stall detector terminate tier |
+| `EXTENSION_STALLED` | extension budget consumed without progress |
+| `BUDGET_EXHAUSTED` | round or wall-clock cap reached |
+
+The label `GAMMA_ALT_CONVERGED` appears in run records from before the two-sided gate was named; it is emitted by neither runner today.
 
 ### CC2v Verification Agent
 
@@ -187,6 +208,46 @@ Every code component in the pipeline carries one of four maturity labels (the F4
 
 Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional; most components flow directly through shadow to live. The Component Closure-State Index at the F4 lexicon section in `resources/ONBOARDING.md` is the canonical source for each component's current label.
 
+## Target Kind: the prose path
+
+The harness was built to review Python modules and now also reviews technical
+PROSE documents — exam modules and design references whose claims are argued in
+text, tables and equations. The target kind (`python` or `prose`) is resolved by
+the harness from the target itself; a configuration may declare it, and a
+disagreement vetoes the run, but a declaration can never redirect the
+classification.
+
+**Prose is fully reviewable. What changes is which mechanisms apply, not whether
+the target is computable.** Specialist routing keys on CLAIM TYPE — mathematical,
+logical, statistical, code-structural, code-behavioural — not on document type,
+and 14 of the 21 tools in `tool_manifest.toml` are claim tools indifferent to
+whether a claim arrived in prose or in a comment. Only file-based Python-source
+tools are affected, because ruff, mypy and bandit cannot read a markdown file;
+they are bypassed and reported NOT_APPLICABLE rather than run and believed.
+
+Four mechanisms differ on a prose target:
+
+| mechanism | on a Python target | on a prose target |
+|---|---|---|
+| Fix admission (S_k) | scored | **NO_SCORE** — undefined over this substrate; on prose it inverts |
+| Fix verification | ruff/mypy/bandit/tests → PASS closes | **NO_APPLICABLE_CHECKS** — a syntax veto may reject, never close |
+| Routing-ladder prompt | "import the real module" | the document's **path and text**, "open it by path" |
+| Panel round briefing | fixes are linted, tested and CLOSED | a fix cannot close; a **runnable falsifier** settles it |
+
+The settlement route on a prose target is therefore the falsifier gate alone: a
+test that opens the document by path and asserts on its text, or on a value
+recomputed from it, or on a listing extracted from it — re-executed by the runner,
+never taken on the model's word.
+
+**The routing ladder is the only absorber between the falsifier gate and the human
+queue**, which is why the launch preflight refuses to start a prose run with it
+disabled. Its prompt was code-only until 2026-08-01: it received neither the
+target's path nor its text, so on a document containing fenced code listings no
+rung could resolve anything and the recorded reason — "no model produced a
+runnable test" — was false, because no model was ever given the target. Measured
+after the repair on the same findings: 6 of 8 resolved against a prior null of 0
+of 25 (Fisher exact p = 2.5×10⁻⁵).
+
 ## Data Flow (One Round)
 
 ```
@@ -240,7 +301,7 @@ The shared verification infrastructure (finding registry, convergence gate, immu
 
 ## Mathematical Framework
 
-The full mathematical framework is in [`docs/MATHEMATICAL_APPENDIX.md`](MATHEMATICAL_APPENDIX.md) (1,991 lines). Three canonical stages:
+The full mathematical framework is in [`docs/MATHEMATICAL_APPENDIX.md`](MATHEMATICAL_APPENDIX.md). Three canonical stages:
 
 **Stage 1 — Reference (C(n)):** Simple corroboration as the baseline mathematical object. Geometric form. Referenced but not used operationally.
 

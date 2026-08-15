@@ -15,8 +15,10 @@ The Constraint Engineering Experiment 40 pre-launch state is unchanged across a 
 | Working tree | clean |
 | Origin | up to date |
 | Test count | 1311 collected |
-| Fast non-network sweep | 907/907 pass in 342.12 s |
+| Fast wall-clock-limited sweep (NOT offline — included live claude-CLI dispatch) | 907/907 pass in 342.12 s |
 | Overnight new tests | 56/56 pass in 2.33 s |
+
+Correction, 2026-07-31: the sweep row above was originally labelled "Fast non-network sweep". That label was false. The five files it excluded were excluded on wall-clock cost, not on network use, and three files that reach live Claude command-line dispatch — `test_immune_agents.py`, `test_specialist_live_promotion.py`, `test_specialist_shadow_cells.py` — were inside the 907 and made billed model calls. The 907/907 pass count is left standing as a record of what passed on this date; it is not evidence of an offline run. The suite was made offline on 2026-07-31, and the measured figure at that point was 2086 passed, 3 skipped, 0 failed in 99.6 s under `python3 -m pytest bench/tests/ -q --netguard-strict` at HEAD `d4d4d7f` plus working tree, with all 30 outbound attempts denied. See `resources/RECOVERY.md`.
 
 Most recent commit `7cdf846` is an operational-plan date-correction landed during the post-compaction resume on 23 April 2026 at 05:01 BST. The substantive prior commit is `7c9df2b`, the documentary save-state landing the founder oversight question-and-answer debrief from 22 April. Earlier in the same window, `991cde0` closed five of nine residual gap-closure items (G1 through G5) and added trigger specifications for G6, G7, and G8. Earlier still, `2fbedcd` landed the three pre-launch fix items F1, F2, and F3, and enriched the K, L, M shadow-audit logging.
 

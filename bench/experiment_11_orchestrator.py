@@ -278,6 +278,50 @@ EXECUTE_PYTHON_TOOL = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Panel working directory
+#
+# The shell-bearing routes (claude_cli, codex_exec) inherit the runner's cwd.
+# For code experiments that is correct — the panel reviews code in this repo and
+# needs to reach it. For the exam experiments it is not: the target is staged
+# outside the tree precisely so the panel cannot reach the scoring key, and a cwd
+# of the repo hands back a filesystem that names the key's location (config
+# notes), holds superseded keys in git history, and sits one `cd` from anything.
+#
+# Confirmed live on 2026-07-29: during Exp 48 a routed model wrote a falsifier
+# that opened the answer key and printed the full planted set. The key had been
+# moved out of the repo that morning; the note recording WHERE it moved to was
+# committed inside the repo 76 minutes before the run. The fix advertised what
+# it hid, and the panel's cwd is what made the note reachable.
+#
+# Exam configs set panel_cwd to the staged target directory. Unset (None) keeps
+# the previous behaviour exactly, so code experiments are unaffected.
+_PANEL_CWD: str | None = None
+
+
+def set_panel_cwd(path: str | None) -> None:
+    """Set the working directory for shell-bearing panel dispatches.
+
+    None restores inheritance of the runner's cwd (the code-experiment default).
+    A non-existent path is refused rather than silently ignored: failing open
+    here would put the panel back in the repo, which is the exposure this
+    exists to close.
+    """
+    global _PANEL_CWD
+    if path is not None:
+        p = Path(path).expanduser()
+        if not p.is_dir():
+            raise NotADirectoryError(f"panel_cwd is not a directory: {path}")
+        path = str(p.resolve())
+    _PANEL_CWD = path
+    _log(f"[panel] working directory: {path or '(inherited — repo)'}")
+
+
+def get_panel_cwd() -> str | None:
+    """Current panel working directory, or None if inherited."""
+    return _PANEL_CWD
+
+
 def default_tool_executor(name: str, args: dict) -> str:
     """Default dispatcher for tool calls: maps the execute_python tool to the
     sandboxed executor in bench/falsifier_verify. Returns the tool result text.
@@ -669,7 +713,8 @@ def call_claude_cli(
 ) -> str:
     """Call Claude via claude CLI (Max subscription — no API credits needed).
 
-    Uses --bare for minimal overhead (no hooks, LSP, auto-memory, CLAUDE.md).
+    Does NOT use --bare: that flag skips keychain reads and demands an API key,
+    which breaks OAuth outright (2026-07-29). See the note in the cmd list.
     Uses --system-prompt for native CDSFL delivery (unlike Codex which embeds
     in prompt body). Uses stdin piping for large prompts.
 
@@ -687,10 +732,45 @@ def call_claude_cli(
         )
     cmd = [
         cli, "-p",
+        # --bare WAS ADDED HERE AND HAS BEEN REMOVED. 2026-07-29, same evening.
+        #
+        # It was added because an adversarial audit confirmed the operator's
+        # auto-loaded ~/.claude/CLAUDE.md reaches every panel model, and that file
+        # names this project's operational tracker as the first resource to
+        # consult. The flag's stated purpose is to skip CLAUDE.md auto-discovery.
+        #
+        # But its help also says it skips KEYCHAIN READS and that "Anthropic auth
+        # is strictly ANTHROPIC_API_KEY or apiKeyHelper". This operator is on a Max
+        # subscription with OAuth and no API key, so --bare could never
+        # authenticate: CC2 returned "Not logged in" for every headless dispatch
+        # while interactive sessions worked perfectly. The flag did not break a
+        # session, it selected an auth mode the account does not have. Adding a
+        # confinement control switched off the credential store it depended on.
+        #
+        # The residual it was meant to close is smaller than it looked, and is
+        # covered: ~/.claude/CLAUDE.md contains ZERO references to answer keys,
+        # planted claims or the key store — verified by grep. All it does is NAME a
+        # tracker at a Desktop path. To learn anything from that the panel must
+        # READ that path, which is a home path outside the staged corpus, which
+        # key_access_forensics scores as an out-of-scope open and which halts the
+        # chain. Pointer in context, detected on use, exactly the layered position
+        # taken everywhere else.
         "--model", model_id,
         "--output-format", "text",
         "--no-session-persistence",
-        "--allowedTools", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch",  # CC2 full STEM tool access: SymPy/z3/numpy/scipy via Bash, source via Read/Grep/Glob, research via WebFetch/WebSearch, modification via Edit/Write.
+        # Write/Edit REMOVED 2026-07-29 (founder directive). A reviewing model
+        # must not be able to modify the artefact it is reviewing: on 2026-07-29
+        # Exp 47's frozen target was edited on disk and restored inside ~2 min,
+        # leaving no trace in git or the round files. This also restores the
+        # standing rule that fixes are SUGGESTED to HIL and never auto-applied
+        # (feedback_fixes_hil_only) — fixes arrive as SEARCH/REPLACE text, which
+        # the runner applies under its own control, not the model's.
+        # NOTE: this alone is not sufficient — Bash can still write via shell
+        # redirection, and Bash is required for the falsifier tool loop. The
+        # enforcing control is the read-only staged target (stage_targets.sh);
+        # the detecting control is the per-round target hash guard in
+        # reference_runner_v2.py. Three layers, none of them relied on alone.
+        "--allowedTools", "Bash", "Read", "Grep", "Glob", "WebFetch", "WebSearch",  # STEM tools via Bash (SymPy/z3/numpy/scipy); source via Read/Grep/Glob; research via WebFetch/WebSearch. No file modification.
     ]
     if system_prompt:
         cmd.extend(["--system-prompt", system_prompt])
@@ -707,6 +787,7 @@ def call_claude_cli(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                cwd=_PANEL_CWD,
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
@@ -798,6 +879,7 @@ def call_codex(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                cwd=_PANEL_CWD,
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()

@@ -3562,6 +3562,10 @@ def run_experiment(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
+    # Refuse a paid run on `--help` or a typo. Must be the FIRST thing
+    # main() does: everything below this line can reach a paid model.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv(['--pattern', '--relay-mode', '--resume', '--topology', 'preflight', 'run'], 'python3 bench/run_exp37_evidence.py run')
     global LOGS_DIR
     source_env()
 

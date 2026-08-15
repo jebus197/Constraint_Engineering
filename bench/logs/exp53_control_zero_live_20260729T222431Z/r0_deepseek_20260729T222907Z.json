@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T222907Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2002,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.85\nFIND: TokenBucket.allow is not thread-safe: the read-modify-write check-decrement sequence lacks synchronisation, allowing concurrent threads to exceed capacity, violating the 0 ≤ tokens ≤ capacity invariant.\nFALSIFIER:\n```python\nimport threading, time\n\n# TokenBucket from Listing A (real target module)\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\nbucket = TokenBucket(capacity=1, refill_per_sec=0)   # only one token, no refill\nresults = []\nbarrier = threading.Barrier(2)\n\ndef worker():\n    barrier.wait()               # start both threads together\n    res = bucket.allow(cost=1)\n    results.append(res)\n\nt1 = threading.Thread(target=worker)\nt2 = threading.Thread(target=worker)\nt1.start(); t2.start()\nt1.join(); t2.join()\n\nif sum(results) > 1 or bucket.tokens < 0:\n    print(\"FALSIFIED\")\nelse:\n    print(\"OK\")\n```\n\nFINDING_ID: F002\nSEVERITY: 0.40\nFIND: find_block(offsets, pos) does not validate the precondition pos >= offsets[0]; if called with pos < offsets[0], it returns an index that violates the postcondition offsets[lo] <= pos.\nFALSIFIER:\n```python\ndef find_block(offsets, pos):\n    lo, hi = 0, len(offsets) - 1\n    while lo < hi:\n        mid = (lo + hi + 1) // 2\n        if offsets[mid] <= pos:\n            lo = mid\n        else:\n            hi = mid - 1\n    return lo\n\noffsets = [100, 200, 300]\npos = 50\ntry:\n    idx = find_block(offsets, pos)\n    if offsets[idx] <= pos:\n        print(\"OK\")\n    else:\n        print(\"FALSIFIED\")\nexcept ValueError:\n    print(\"FALSIFIED (expected error)\")\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 275.5,
+    "chars": 2002,
+    "findings_count": 2,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

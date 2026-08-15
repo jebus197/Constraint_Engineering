@@ -113,7 +113,24 @@ def test_location_keyed_series_makes_real_gate_converge():
     loc = rr._location_keyed_critical_series(reg, 15, syms)
     idp = [Counter(e["open_since_round"] for e in entries.values()
                    if (e.get("severity") or 0) >= 0.7).get(r, 0) for r in range(16)]
-    assert loc == [10, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    # SNAPSHOT UPDATED 2026-08-08, and the reason is the point of the test.
+    # Was [10, 2, 2, 1, 0...]. The `<generic>` bucket fix landed: findings from
+    # which no location could be extracted used to share ONE key, so the first
+    # claimed it and every later one was non-novel forever. They now key on their
+    # own content. That surfaces 3 criticals in this run that were permanently
+    # invisible, all in the first four rounds.
+    #
+    # The direction is the safe one and it is asserted below rather than assumed:
+    # the new series is >= the old at every index. Splitting only. Convergence can
+    # therefore be DELAYED but never ADVANCED, which is why the gate outcome is
+    # unchanged — verified across all 8 archived runs carrying a registry.
+    OLD_SERIES = [10, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert loc == [11, 3, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert all(n >= o for n, o in zip(loc, OLD_SERIES)), (
+        "the generic-bucket fix must only ever SPLIT, never merge — a series that "
+        "dips below the old one means findings are being lost, not surfaced"
+    )
+    assert sum(loc) - sum(OLD_SERIES) == 3
 
     cfg = rr.RunnerConfig()
 
@@ -128,3 +145,28 @@ def test_location_keyed_series_makes_real_gate_converge():
 
     assert first_converge(idp) is None, "ID-proxy series must NOT converge (the bug)"
     assert first_converge(loc) == 6, "location-keyed series must converge at round 6"
+
+
+class TestMarkdownTargets:
+    """One-shot arc (2026-07-29): exam modules are markdown claim documents."""
+
+    def test_claim_ids_and_headings_extracted(self):
+        from bench.convergence_location import target_symbols
+        md = ("# Analytical Chemistry Reference\n\n"
+              "## Stoichiometry Claims\n\n"
+              "CH-01: The combustion of methane balances as CH4 + 2O2 -> CO2 + 2H2O.\n"
+              "CH-02: The reaction has a coefficient sum of 6.\n")
+        syms = target_symbols(md)
+        assert "CH-01" in syms and "CH-02" in syms
+        assert any("stoichiometry" in s for s in syms)
+
+    def test_python_targets_unchanged(self):
+        from bench.convergence_location import target_symbols
+        syms = target_symbols("def compute_ratio(a, b):\n    return a / b\n")
+        assert syms == frozenset({"compute_ratio"})
+
+    def test_markdown_finding_locations_match(self):
+        from bench.convergence_location import target_symbols, finding_locations
+        md = "## Kinetics\nCH-07: rate doubles per 10K rise.\n"
+        syms = target_symbols(md)
+        assert "CH-07" in finding_locations("The claim CH-07 misstates Arrhenius scaling", syms)

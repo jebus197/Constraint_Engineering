@@ -1,0 +1,143 @@
+{
+  "round": 4,
+  "domain": "engineering",
+  "final_verdicts": {
+    "ChatGPT_F008": "DUPLICATE",
+    "Gemini_F001": "DUPLICATE",
+    "Codex_F007": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 4,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 4,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 4,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pulp",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pulp: LP_NO_STRUCTURE: no optimisation structure found in claim"
+    },
+    {
+      "round": 4,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.7145827627182006,
+      "evidence": "[NK_v2] Duplicate of DeepSeek_F002 (sim=0.715)"
+    },
+    {
+      "round": 4,
+      "finding_id": "Codex_F007",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: ('unexpected character after line continuation character', (3, 3))"
+    },
+    {
+      "round": 4,
+      "finding_id": "Codex_F007",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 4,
+      "finding_id": "Codex_F007",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pulp",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pulp: LP_NO_STRUCTURE: no optimisation structure found in claim"
+    },
+    {
+      "round": 4,
+      "finding_id": "Codex_F007",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.7129196882247926,
+      "evidence": "[NK_v2] Duplicate of Gemini_F011 (sim=0.713)"
+    },
+    {
+      "round": 4,
+      "finding_id": "ChatGPT_F008",
+      "canonical_id": "C0037",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: ('unexpected character after line continuation character', (27, 3))"
+    },
+    {
+      "round": 4,
+      "finding_id": "ChatGPT_F008",
+      "canonical_id": "C0037",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 4,
+      "finding_id": "ChatGPT_F008",
+      "canonical_id": "C0037",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "REJECTED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_INCONSISTENT: dimensions differ: ['[time]', '[mass] / [length] / [time] ** 2', '[mass] / [length] / [time] ** 2', '[mass] / [length] / [time] ** 2', '[mass] / [time] ** 2', '[mass] / [time] ** 2', '[mass] / [length] / [time] ** 2', '[mass] / [length] / [time] ** 2'] [specialist:dimensional"
+    },
+    {
+      "round": 4,
+      "finding_id": "ChatGPT_F008",
+      "canonical_id": "C0037",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.7047004461288453,
+      "evidence": "[NK_v2] Duplicate of Gemini_F011 (sim=0.705)"
+    }
+  ]
+}

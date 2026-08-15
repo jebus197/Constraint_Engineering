@@ -1013,6 +1013,10 @@ def run_experiment() -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
+    # Refuse a paid run on `--help` or a typo. Must be the FIRST thing
+    # main() does: everything below this line can reach a paid model.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv([], 'python3 bench/run_exp19_fff.py [preflight|canary|run]')
     source_env()
 
     mode = sys.argv[1] if len(sys.argv) > 1 else "run"

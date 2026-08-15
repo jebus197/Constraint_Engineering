@@ -30,10 +30,22 @@ reproduce or refute the results.
 
 ## For Reviewers
 
-Everything needed to reproduce the bench test results is in this repository.
-The methodology, the task corpus, the evaluation pipeline, the domain expert
-configurations, and the Constraint Editor policy engine are all here. If you
-get different results, that is data. If you get the same results, that is
+Everything needed to reproduce the **code-target** experiments is in this
+repository: the methodology, the task corpus, the evaluation pipeline, the
+domain-expert configurations, the Constraint Editor policy engine, every
+committed experiment config, and the committed run records under `bench/logs/`.
+
+Experiments 42 through 47 review files that are in this tree and reproduce end to
+end from a clone — **start with Experiment 46**, and follow
+[`docs/REPRODUCING.md`](../docs/REPRODUCING.md) § Running an Experiment.
+
+Experiments 48 through 53 review withheld exam articles and **cannot** be
+reproduced from a clone. `bench/cdsfl_registry/targets/MANIFEST.md` explains why,
+with the measured leakage rate that forced the decision, and carries the SHA-256
+of each document so a result can still be tied to the exact article that produced
+it.
+
+If you get different results, that is data. If you get the same results, that is
 replication. Either outcome advances the work.
 
 ## For Contributors

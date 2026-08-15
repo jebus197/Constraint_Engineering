@@ -209,8 +209,9 @@ line) and the voice/TTS rendering. Wolfram MCP is already live this session rega
   settled-novelty block, wrapped in try/except so it can never break a run); round-record field
   `location_crit_shadow` (`:5982`-area); report field `location_crit_shadow_history`. Verified:
   runner `py_compile` OK; wired helper reproduces the offline series `[10,2,2,1,0,…]` → round 6
-  on the Exp 42 registry; **199 runner/convergence/config tests pass; full non-network suite
-  running.** The next live run will log the location series beside the ID-proxy count for
+  on the Exp 42 registry; **199 runner/convergence/config tests pass; full suite running (NOT
+  offline — the "non-network" label originally written here was false; see the 2026-07-31
+  test-suite offline correction in `resources/RECOVERY.md`).** The next live run will log the location series beside the ID-proxy count for
   side-by-side proof. **Live-GATING remains future work** (semantic splitter for 2nd-defect-same
   -function + a live confirmation run), per the adversarial verdict.
 

@@ -1,0 +1,205 @@
+{
+  "round_idx": 3,
+  "findings": [
+    {
+      "finding_id": "Codex_F006",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6666,
+      "flaw_class": 5,
+      "encounter_count": 27,
+      "description_snippet": "Section 9, first paragraph, states:\n\n> \u201cBecause the activation energy is moderate, the model is sensitive to storage tem"
+    },
+    {
+      "finding_id": "ChatGPT_F007",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6684,
+      "flaw_class": 5,
+      "encounter_count": 28,
+      "description_snippet": "The Section 9 application note understates the temperature sensitivity implied by CH-35.\n\nLocation: `/Users/georgejackso"
+    },
+    {
+      "finding_id": "Gemini_F001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6099,
+      "flaw_class": 1,
+      "encounter_count": 8,
+      "description_snippet": "CH-28 claims the mass audit passes because the recorded output masses (45.02 g) do not exceed the input mass (46.60 g). "
+    },
+    {
+      "finding_id": "Gemini_F002",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.5,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6701,
+      "flaw_class": 5,
+      "encounter_count": 29,
+      "description_snippet": "The application notes claim that a 10 K excursion above 298 K \"roughly doubles\" the degradation rate. However, with an a"
+    }
+  ],
+  "tool_fpr": {
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 38,
+      "total": 38,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 38,
+      "total": 38,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "pint": {
+      "tool_name": "pint",
+      "passes": 7,
+      "fails": 1,
+      "inconclusive": 11,
+      "total": 19,
+      "fail_fraction": 0.125,
+      "shadow_e_pass": 8.0
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 23,
+      "total": 23,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "rdkit": {
+      "tool_name": "rdkit",
+      "passes": 0,
+      "fails": 9,
+      "inconclusive": 0,
+      "total": 9,
+      "fail_fraction": 1.0,
+      "shadow_e_pass": 1.0
+    },
+    "v2_false_positive_db": {
+      "tool_name": "v2_false_positive_db",
+      "passes": 0,
+      "fails": 2,
+      "inconclusive": 0,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "stoichiometric_balance": {
+      "tool_name": "stoichiometric_balance",
+      "passes": 0,
+      "fails": 9,
+      "inconclusive": 0,
+      "total": 9,
+      "fail_fraction": 1.0,
+      "shadow_e_pass": 1.0
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 11,
+      "total": 11,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785304883.864467
+}

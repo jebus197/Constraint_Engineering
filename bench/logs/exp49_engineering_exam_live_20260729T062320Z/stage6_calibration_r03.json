@@ -1,0 +1,169 @@
+{
+  "round_idx": 3,
+  "findings": [
+    {
+      "finding_id": "Gemini_F010",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6417,
+      "flaw_class": 1,
+      "encounter_count": 16,
+      "description_snippet": "EN-04 calculates the midspan deflection using the factored design load `w_Ed = 14.67 kN/m` instead of the characteristic"
+    },
+    {
+      "finding_id": "Gemini_F011",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6445,
+      "flaw_class": 1,
+      "encounter_count": 17,
+      "description_snippet": "EN-16 calculates the global bending factor of safety by dividing the nominal yield strength `f_y` by the factored design"
+    },
+    {
+      "finding_id": "DeepSeek_F006",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6417,
+      "flaw_class": 5,
+      "encounter_count": 16,
+      "description_snippet": "FINDING_ID: F006  \nSEVERITY: 0.55  \nFLAW_CLASS: 5 (correctness)  \nABSTRACTION_INDEX: 0.15  \n\nFIND  \nIn the fatigue data "
+    }
+  ],
+  "tool_fpr": {
+    "sympy": {
+      "tool_name": "sympy",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 30,
+      "total": 30,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 33,
+      "total": 33,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "pulp": {
+      "tool_name": "pulp",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 16,
+      "total": 16,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "pint": {
+      "tool_name": "pint",
+      "passes": 10,
+      "fails": 7,
+      "inconclusive": 0,
+      "total": 17,
+      "fail_fraction": 0.4117647058823529,
+      "shadow_e_pass": 2.428571428571429
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 25,
+      "total": 25,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "statsmodels": {
+      "tool_name": "statsmodels",
+      "passes": 6,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 6,
+      "fail_fraction": 0.0,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 3,
+      "fails": 0,
+      "inconclusive": 0,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 9,
+      "total": 9,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4000000000000001,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785312198.8610408
+}

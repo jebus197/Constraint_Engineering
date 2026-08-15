@@ -1,0 +1,49 @@
+{
+  "round_idx": 13,
+  "mode": "patrol",
+  "anomaly_count": 3,
+  "pipeline_modified": false,
+  "verdicts_received": 9,
+  "observations": [
+    {
+      "observation_id": "macro_0021",
+      "mode": "patrol",
+      "category": "timing_spike",
+      "description": "Stage 'llm_classifier' took 48.95s (69925.3x median 0.00s)",
+      "severity": "1.0",
+      "evidence": {
+        "stage": "llm_classifier",
+        "time": "48.9477",
+        "median": "0.0007"
+      },
+      "is_anomaly": true,
+      "timestamp": "1785299467.9576352"
+    },
+    {
+      "observation_id": "macro_0022",
+      "mode": "patrol",
+      "category": "timing_spike",
+      "description": "Stage 'parallel_verification' took 121.96s (174224.3x median 0.00s)",
+      "severity": "1.0",
+      "evidence": {
+        "stage": "parallel_verification",
+        "time": "121.957",
+        "median": "0.0007"
+      },
+      "is_anomaly": true,
+      "timestamp": "1785299467.957644"
+    },
+    {
+      "observation_id": "macro_0023",
+      "mode": "patrol",
+      "category": "source_monoculture",
+      "description": "Ouroboros source diversity score 0.12 (below 0.3 threshold) \u2014 research may be too narrow",
+      "severity": "0.6",
+      "evidence": {
+        "diversity_score": "0.125"
+      },
+      "is_anomaly": true,
+      "timestamp": "1785299467.957679"
+    }
+  ]
+}

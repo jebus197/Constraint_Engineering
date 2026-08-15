@@ -800,6 +800,11 @@ def run_experiment() -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    # Refuse a paid run on `--help` or a typo, BEFORE source_env() and
+    # before any model is contacted. This runner has no main(), so the
+    # guard sits at the top of the __main__ block instead.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv(['canary', 'preflight', 'resume'], "python3 bench/run_exp20_confer.py [canary | preflight | resume]")
     source_env()
 
     mode = sys.argv[1] if len(sys.argv) > 1 else "run"

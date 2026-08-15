@@ -1,0 +1,2375 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.85,
+        "description": "Listing A, `TokenBucket.allow`, accepts negative `cost` values and treats them as successful admissions while increasing the bucket balance above capacity. Evidence: with `capacity=1`, consuming the single token leaves `tokens=0`; calling `allow(-10)` satisfies `self.tokens >= cost` because `0 >= -10`, then executes `self.tokens -= cost`, producing `tokens=10`. That violates the token-bucket capacity invariant and permits later requests to bypass the limiter.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\ndef allow(self, cost=1.0):\n        if cost < 0:\n            raise ValueError(\"cost must be non-negative\")\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "prior `Codex_F001` R_k was malformed. I reran a Python falsifier against the real target file and recomputed `R_k = 0.3658`. `bandit: SEC_CLEAN` does not refute this logic/invariant defect; Bandit is "
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "reproduced: `TokenBucket(240,60)` with `tokens=0.0`, `allow(-100.0)` returns `True` and leaves `tokens=100.00003`. It mints tokens from an empty bucket, so a negative cost is both admitted and rewarde"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`allow(cost=\u2026)` should reject negative cost."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0016"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0016"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpq0waw_e7.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.55,
+        "description": "Listing C, `backoff_delay`, exposes `rand` as a parameter but ZC-20 states an unconditional postcondition that the returned delay is in `[0, min(d_max, d_0 \u00d7 2^attempt))`. That postcondition is false for public callers passing a non-default `rand`. Evidence: `backoff_delay(7, rand=lambda: 1.0)` returns `32000`, reaching `d_max` even though ZC-20 says none reaches `d_max`; `backoff_delay(0, rand=lambda: -0.1)` returns a negative delay.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if not isinstance(attempt, int) or attempt < 0:\n        raise ValueError(\"attempt must be a non-negative integer\")\n    capped = base_ms\n    for _ in range(attempt):\n        capped = min(ceiling_ms, capped * 2)\n        if capped == ceiling_ms:\n            break\n    jitter = rand()\n    if not 0.0 <= jitter < 1.0:\n        raise ValueError(\"rand must return a value in [0.0, 1.0)\")\n    return jitter * capped\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "I withdraw my prior Round 0 `Codex_F002` as filed because its reported R_k was invalid and it is not part of this combined section analysis. I do not resubmit it unchanged."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "if a caller supplies a `rand` that returns values \u2265 1, the postcondition `[0, capped)` is violated.  Documenting the requirement or clamping is a valid minimal fix."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.86,
+        "description": "Listing A, `TokenBucket.allow`, mutates shared admission state (`tokens`, `last`) without holding a lock. The document itself later states this in ZC-26, but the implementation remains unsafe for the stated zone-controller admission limiter if used concurrently. Evidence: `allow` performs refill, comparison, subtraction and write-back as separate operations. Two callers can both observe enough tokens and both return `True`, admitting more work than the bucket contains.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n        self.lock = threading.Lock()\n\n    def allow(self, cost=1.0):\n        with self.lock:\n            now = time.monotonic()\n            self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n            self.last = now\n            if self.tokens >= cost:\n                self.tokens -= cost\n                return True\n            return False\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "reproduced deterministically, not statistically. A naive 2000-trial race found 0 hits (the GIL window is too narrow); parking both threads between the guard test and the subtraction via `sys.settrace`"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Listing A is not thread\u2011safe; the race is real and documented in ZC\u201126."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0013"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0013"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpc4977w25.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.78,
+        "description": "Listing E, `topo_order`, silently returns a partial rollout plan when the graph contains a cycle. ZC-19 documents that a cycle produces a list shorter than the node count, but the implementation does not raise or otherwise force the caller to treat that as failure. For a rollout planner, silently returning only the acyclic prefix can execute an incomplete rollout plan.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    if len(order) != len(nodes):\n        raise ValueError(\"cycle detected in rollout graph\")\n    return order\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`topo_order([\"A\",\"B\",\"C\"], [(\"A\",\"B\"),(\"B\",\"C\"),(\"C\",\"B\")])` returns `['A']` with no exception. The caller cannot distinguish a cycle from a completed plan."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "silently returning a partial order on cycle is a correctness defect."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0015"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0012"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0015"
+          }
+        ],
+        "verified": true,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmph_m6hn4q.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        },
+        "merge_defer_count": 2,
+        "merged_into": "C0015"
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.64,
+        "description": "Listing C, `backoff_delay`, computes `base_ms * (2  attempt)` before applying the ceiling. For very large `attempt`, Python must construct an enormous integer even though the result will be capped at `ceiling_ms`. This can turn a retry-scheduling call into a CPU/memory failure instead of an O(1) capped delay calculation.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if attempt < 0:\n        raise ValueError(\"attempt must be non-negative\")\n    capped = base_ms\n    for _ in range(attempt):\n        if capped >= ceiling_ms:\n            capped = ceiling_ms\n            break\n        capped = min(ceiling_ms, capped * 2)\n    return rand() * capped\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "no incorrect output and no exception exists.** Python ints are arbitrary precision, so `250 * (2 ** attempt)` never overflows and `min()` still selects the ceiling. Measured with `rand=lambda:0.5`: `b"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`2 ** attempt` can overflow for large `attempt` in pathological use; the ceiling guard should be applied first."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0010"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0010"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.9,
+        "description": "The design\u2011load constant r = 400 pushes/s (section 1) is contradicted by the admission limiter\u2019s refill rate R_tok = 60 tokens/s (same table). The document states that configuration pushes are \u201cadmitted through a token\u2011bucket limiter\u201d, so the effective sustained push rate is bounded by R_tok = 60/s, not 400/s. Every calculation that assumes r = 400 (ZC\u201107 wave time, ZC\u201109 bandwidth, rollout\u2011time estimates) is therefore unrealistic when the limiter is active. The token bucket implementation in Li",
+        "proposed_fix": "<<<< SEARCH SW-21-REF-04.md\n| R_tok  | 60 | token-bucket refill rate, tokens per second |\n==== REPLACE\n| R_tok  | 400 | token-bucket refill rate, tokens per second |\n>>>>",
+        "falsifier_code": "import time\nfrom collections import deque\n\n# Copy the exact TokenBucket from Listing A\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\n# Demonstrate that the original limiter cannot sustain 400 pushes/s\nbucket = TokenBucket(240, 60)\nsim_time = 10.0           # seconds\ninterval = 1.0 / 400.0    # 400 pushes/s demand\nstart = time.monotonic()\nnext_push = start\naccepted = 0\nwhile time.monotonic() - start < sim_time:\n    now = time.monotonic()\n    if now >= next_push:\n        if bucket.allow(1.0):\n            accepted += 1\n        next_push += interval\n\n# With a 400/s demand, the limiter can at best admit ~600 in 10 s, far below 4000.\nif accepted < 2000:       # clearly below 4000\n    print(\"FALSIFIED\")\nelse:\n    raise AssertionError(\"Limiter unexpectedly sustained high throughput\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpoh6t5_jx.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.8,
+        "description": "The `HashRing.locate` method uses `bisect.bisect_right` instead of `bisect.bisect_left`. In consistent hashing, a key should be assigned to the first node whose hash is greater than OR EQUAL TO the key's hash. By using `bisect_right`, if a key's hash exactly matches a virtual node's hash, it is incorrectly assigned to the NEXT node on the ring, violating the consistent hashing contract.",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "severity 0.80 is not supportable.** `bisect_right` and `bisect_left` differ only when a key's hash exactly equals a published point. Measured over the document's own key space: **0 of 262 144 keys rou"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`bisect_right` shifts ownership when a key hash exactly matches a ring point; the documented semantics of consistent hashing demand `bisect_left`."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0014"
+          }
+        ],
+        "verified": true,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue"
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.6,
+        "description": "FINDING_ID: F001\n\nSEVERITY: 0.60\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.60\n\n### FIND\n\nThe design-input table declares `r = 400` configuration pushes per second as \"the sustained design load\"",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-12. Under single-threaded use, over any window of t seconds the limiter of Listing A admits at most B_tok + R_tok x t unit-cost requests whatever the arrival pattern, that being the whole token supply available in the window; at t = 10 s the ceiling is 840. In the fluid model a demand of 300 per second drains the full bucket after B_tok / (300 - R_tok) = 240 / 240 = 1.0 s, after which the admitted rate settles at R_tok = 60 per second.\n==== REPLACE\nZC-12. Under single-threaded use, over any window of t seconds the limiter of Listing A admits at most B_tok + R_tok x t unit-cost requests whatever the arrival pattern, that being the whole token supply available in the window; at t = 10 s the ceiling is 840. In the fluid model a demand of 300 per second drains the full bucket after B_tok / (300 - R_tok) = 240 / 240 = 1.0 s, after which the admitted rate settles at R_tok = 60 per second.\n\nZC-12a. The design load r = 400 per second exceeds that sustained rate by a factor of 400 / 60 = 6.67, so r is not admissible through one service-wide instance of Listing A at unit cost. An instrumented fluid run offering 24 000 unit-cost requests over 60 s admits 3 839 of them, that is 63.98 per second, the excess over R_tok being the amortised initial burst B_tok. The scope over which B_tok and R_tok are provisioned \u2014 service-wide, per distribution member, or per agent node \u2014 and the token cost of one push are not fixed by this reference; both must be stated before r = 400 and R_tok = 60 can be read as one consistent set.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "the claimed admission ceiling of 840 at t=10\u202fs is inconsistent with the token\u2011bucket parameters; the correction is a documentation fix."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.65,
+        "description": "FINDING_ID: F002\n\nSEVERITY: 0.65\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.50\n\n### FIND\n\n`WaveTracker` (Listing F) never resets `done`, and `record` signals on the equality test `if self.done ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nso once satisfied it stays satisfied and a late waiter arriving after the wave completed returns without blocking.\n==== REPLACE\nso once satisfied it stays satisfied and a late waiter arriving after the wave completed returns without blocking. That monotonicity scopes the listing to exactly one wave: done is never reset, and record signals on the equality done == wave_size, so the condition is signalled once in an instance's lifetime and every call to wait_for_wave after the first wave closes returns immediately, whatever the state of a later wave. A rollout of V = 64 waves therefore requires one instance per wave; reusing a single instance leaves waves 2 through V unbarriered and fails silently, since wait_for_wave still returns a plausible completion count. An instrumented four-node wave confirms it: after the first wave closes, a waiter entered with none of the second wave's four nodes recorded returns 4 without blocking.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "WaveTracker is indeed a single\u2011use wave coordinator (no reset, `done` never resets).  This is a design limitation, not a correctness bug, but it is a genuine completeness issue that deserves a note.  "
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "Quantified consequence for the ZC-23 monotonicity claim: with V = 64 waves (ZC-07), the \"once satisfied it stays satisfied\" property means **63 of 64 wave barriers are no-ops** \u2014 measured at 0.003 ms "
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpyb0hj55x.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.64,
+        "description": "`backoff_delay()` in Listing C computes `2  attempt` before applying the ceiling. For pathological `attempt` values, this causes avoidable CPU/memory work even though the capped result is already known.\n\nLocation:\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\nEvidence from the real target file was executed by extracting Listing C from `/Users/georgejackson/CDSFL_review_targets/current",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if not isinstance(attempt, int) or attempt < 0:\n        raise ValueError(\"attempt must be a non-negative integer\")\n    if base_ms < 0 or ceiling_ms < 0:\n        raise ValueError(\"base_ms and ceiling_ms must be non-negative\")\n    if base_ms == 0 or ceiling_ms == 0:\n        return 0.0\n\n    capped = min(base_ms, ceiling_ms)\n    for _ in range(attempt):\n        if capped >= ceiling_ms:\n            break\n        if capped >= ceiling_ms / 2:\n            capped = ceiling_ms\n            break\n        capped *= 2\n\n    return rand() * capped\n>>>>",
+        "falsifier_code": "from pathlib import Path\nimport re\nimport random\n\ntext = Path('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md').read_text()\ncode = re.search(r'Listing C.*?",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 7,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.62,
+        "description": "DISCOVERY: new finding.\n\nListing D, `HashRing`, permits construction of an empty ring and then fails at lookup with modulo by zero.\n\nLocation:\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ri",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\n\n\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\n\n\nclass HashRing:\n    def __init__(self, members, vnodes):\n        members = list(members)\n        if not members:\n            raise ValueError(\"members must be non-empty\")\n        if vnodes <= 0:\n            raise ValueError(\"vnodes must be positive\")\n\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "constructing a ring with no members leads to a crash at `locate`; a defensive check is warranted."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "** `HashRing([], T)` builds `points == []`; `locate` then evaluates `idx % 0` \u2192 `ZeroDivisionError`. Verified. ZC-17's postcondition is explicitly conditioned on \"a non-empty ring\" with no constructor"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpcxw5eqab.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.78,
+        "description": "VERDICT: CONFIRM C0004.\n\nListing E, `topo_order`, returns a partial rollout order on cyclic input instead of failing closed.\n\nLocation:\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n      ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\ndef topo_order(nodes, edges):\n    nodes = list(nodes)\n    if len(set(nodes)) != len(nodes):\n        raise ValueError(\"nodes must be unique\")\n\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        if a not in indeg or b not in indeg:\n            raise ValueError(\"edge endpoints must be present in nodes\")\n        succ[a].append(b)\n        indeg[b] += 1\n\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n\n    if len(order) != len(nodes):\n        raise ValueError(\"cycle in dependency graph\")\n    return order\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "I agree with the verdict confirming C0004.  The topo_order silent\u2011cycle behaviour should be explicitly reported."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpr79ff660.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0003"
+        ],
+        "severity": 1.0,
+        "description": "`TokenBucket.allow` (Listing A) mutates shared admission state (`self.tokens`, `self.last`) without holding a lock. The document explicitly acknowledges this in ZC-26, stating it is not thread-safe. However, as a reference implementation for a service component (an admission limiter), thread safety is a hard operational requirement.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n        self.lock = threading.Lock()\n\n    def allow(self, cost=1.0):\n        with self.lock:\n            now = time.monotonic()\n            self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n            self.last = now\n            if self.tokens >= cost:\n                self.tokens -= cost\n                return True\n            return False\n>>>>",
+        "falsifier_code": "import re\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    code = \"\\n\".join(re.findall(r'",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "over-admission reproduced with real threads against the extracted listing, no monkeypatching: 16 threads, 1-token zero-refill bucket, 4 000 trials \u2192 37 over-admissions; 6 000 trials \u2192 75. The absence "
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "The failure is **count-conserving**, not count-negative. In 75 of 75 observed over-admissions the final token count was `0.0`, inside the ZC-14 interval. Two consequences for C0013's patch: (i) the lo"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpchy_nmxz.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0007"
+        ],
+        "severity": 0.95,
+        "description": "`HashRing.locate` (Listing D) uses `bisect.bisect_right`. In consistent hashing, if a key's hash exactly matches a node's hash, it should map to that node. `bisect_right` returns the index *after* the match, shifting exact matches to the next node in the ring.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\ndef locate(self, key):\n        idx = bisect.bisect_left(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "import re\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    code = \"\\n\".join(re.findall(r'",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "measured receipt.** The `bisect_right` vs `bisect_left` claim asserts a correctness defect in consistent hashing. It is not one. Both are self-consistent conventions, ZC-17 explicitly documents the `b"
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "The `bisect_right` \u2192 `bisect_left` patch must carry a matching edit to **ZC-17**, which names `bisect.bisect_right` explicitly. Two riders: (a) `bisect_left` still returns `len(points)` when the key h"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpkegbfhsj.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0004"
+        ],
+        "severity": 0.85,
+        "description": "`topo_order` (Listing E) silently returns a partial rollout plan when the graph contains a cycle. While ZC-19 documents this behavior, silently returning a partial plan in a deployment controller is a severe operational hazard.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nwhile queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\nwhile queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    if len(order) != len(nodes):\n        raise ValueError(\"Cycle detected in rollout graph\")\n    return order\n>>>>",
+        "falsifier_code": "import re\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    code = \"\\n\".join(re.findall(r'",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpbm4vjxbh.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0001"
+        ],
+        "severity": 0.85,
+        "description": "`TokenBucket.allow` (Listing A) accepts negative `cost` values. If `cost` is negative, `self.tokens >= cost` evaluates to True, and `self.tokens -= cost` increases the token count, potentially exceeding `self.capacity`.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\ndef allow(self, cost=1.0):\n        if cost < 0:\n            raise ValueError(\"cost must be non-negative\")\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n>>>>",
+        "falsifier_code": "import re\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    code = \"\\n\".join(re.findall(r'",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "Negative `cost` is one half of an unvalidated parameter; the other half is `cost > capacity`, which starves permanently. Verified against the extracted listing: `TokenBucket(240, 60).allow(241.0)` ret"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmps9ow21j3.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0005"
+        ],
+        "severity": 0.8,
+        "description": "`backoff_delay` (Listing C) computes `base_ms * (2  attempt)`. If `base_ms` is passed as a float (e.g., `250.0`), Python attempts to convert the arbitrarily large integer `2  attempt` to a float. For `attempt >= 1024`, this raises `OverflowError`.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = ceiling_ms if attempt >= 30 else min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n>>>>",
+        "falsifier_code": "import re\nwith open('/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md', 'r') as f:\n    code = \"\\n\".join(re.findall(r'",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "passing `base_ms` as a float causes the exponent to be computed in floating\u2011point, introducing unnecessary representation error.  The fix should convert `base_ms` to int inside the function."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The finding that `backoff_delay` using `base_ms * (2 ** attempt)` with a float `base_ms` may produce slight imprecision at large attempt indices is technically correct.  Severity is low (the ceiling c"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.5,
+        "description": "FINDING_ID: F003\nSEVERITY: 0.50\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.45\n\nFIND. ZC-02's cost bound is derived at the wrong granularity for the function it describes. Listing B is introduced a",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-02. Listing B halves the residual span [lo, hi] on each pass, beginning at P / E - 1 = 255 on a full manifest block. Sweeping every position a block covers measures a worst case of ceil(log2 256) = 8 passes, and no position needs a ninth.\n==== REPLACE\nZC-02. Listing B halves the residual span [lo, hi] on each pass. The bound depends on which index it is applied to, and the reader uses two. Over the entry offsets of one full manifest block the span begins at P / E - 1 = 255, and sweeping every position a block covers measures a worst case of ceil(log2 256) = 8 passes, with no position needing a ninth. Over the 1 024-block index of ZC-08 \u2014 the search the name find_block denotes \u2014 the span begins at 1 023 and the measured worst case is ceil(log2 1 024) = 10 passes. A reader locating a byte position in the manifest performs both, so its worst case is 18 passes, not 8.\n>>>>",
+        "falsifier_code": "import re\nfrom pathlib import Path\nsrc = Path(\"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\").read_text()\nns = {}\nexec(compile(\"import bisect, hashlib, random, threading, time\\nfrom collections import deque\\n\"\n             + \"\\n\".join(re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "the bound derivation uses a slight off\u2011by\u2011one in the argument to `ceil(log2(256))`; the correction is minor but makes the document accurate."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.62,
+        "description": "FINDING_ID: F004\nSEVERITY: 0.62\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.50\n\nFIND. `wait_for_wave` has no timeout and no failure path. A wave that permanently loses a node \u2014 the document's own r",
+        "proposed_fix": "`wait_for(pred, None)` still blocks forever when the caller passes no timeout, so the patch enables recovery rather than enforcing it; I considered mandating a non-`None` default and rejected it as a behaviour change the document does not license. Negative control on the patched sandbox: exit 0 / clean.",
+        "falsifier_code": "import re, inspect, threading\nfrom pathlib import Path\nsrc = Path(\"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\").read_text()\nns = {}\nexec(compile(\"import bisect, hashlib, random, threading, time\\nfrom collections import deque\\n\"\n             + \"\\n\".join(re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Wait\u2011for\u2011wave without a timeout is a real problem for resilience.  C0022 already confirmed this, and I concur."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0021"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue"
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.42,
+        "description": "FINDING_ID: F005\nSEVERITY: 0.42\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.25\n\nFIND. ZC-36 defines the sidecar's sample variance as `m2 / (n - 1)`. Listing G returns `n = 1` for a single-reading w",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nZC-36. Listing G on the same three readings returns m2 = 2.0 and therefore a sample variance of m2 / (n - 1) = 1.0, matching the exact rational result.\n==== REPLACE\nZC-36. Listing G on the same three readings returns m2 = 2.0 and therefore a sample variance of m2 / (n - 1) = 1.0, matching the exact rational result. That quotient is defined only for n >= 2, and Listing G returns n unguarded, so a reporting window holding one reading raises ZeroDivisionError and one holding none reports a mean of 0.0 rather than no mean at all; the sidecar tests n >= 2 before forming the quotient and publishes no variance below that.\n>>>>",
+        "falsifier_code": "import re\nfrom pathlib import Path\nsrc = Path(\"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\").read_text()\nns = {}\nexec(compile(\"import bisect, hashlib, random, threading, time\\nfrom collections import deque\\n\"\n             + \"\\n\".join(re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "the sidecar counter is held in Python `int` (unbounded), so the float\u2011overflow issue does not apply; this is a documentation note, not a code defect."
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.62,
+        "description": "Listing F, `WaveTracker.wait_for_wave`, has no bounded-wait option. A caller waiting for a wave that never reaches `wave_size` can block forever.\n\nPremises:\n\n1. `wait_for_wave` accepts only `self`.\n2. It loops while `self.done < self.wave_size`.\n3. Inside the loop, it calls `self.ready.wait()` with no timeout.\n4. If no future `record()` calls bring `done` to `wave_size`, the predicate never becomes false.\n\nConcrete trace:\nwt = WaveTracker(wave_size=1)\nwt.done = 0\ncall wt.wait_for_wave()\nconditio",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n==== REPLACE\ndef wait_for_wave(self, timeout=None):\n        with self.ready:\n            if timeout is None:\n                while self.done < self.wave_size:\n                    self.ready.wait()\n            else:\n                deadline = time.monotonic() + timeout\n                while self.done < self.wave_size:\n                    remaining = deadline - time.monotonic()\n                    if remaining <= 0:\n                        raise TimeoutError(\"wave did not complete before timeout\")\n                    self.ready.wait(remaining)\n            return self.done\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpanemkh1x.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F006"
+        ],
+        "severity": 0.62,
+        "description": "VERDICT: CONFIRM C0019. `wait_for_wave` has no timeout parameter, causing it to block forever if the wave size is never reached.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n==== REPLACE\ndef wait_for_wave(self, timeout=None):\n        with self.ready:\n            start = time.monotonic()\n            while self.done < self.wave_size:\n                if timeout is not None:\n                    rem = timeout - (time.monotonic() - start)\n                    if rem <= 0:\n                        return self.done\n                    self.ready.wait(rem)\n                else:\n                    self.ready.wait()\n            return self.done\n>>>>",
+        "falsifier_code": "import threading, time\n\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n    def wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n\ndef test_timeout():\n    wt = WaveTracker(2)\n    try:\n        wt.wait_for_wave(timeout=0.1)\n    except TypeError:\n        print(\"FALSIFIED: wait_for_wave does not accept timeout\")\n        return\n    assert False, \"Defect not present\"\n\ntest_timeout()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp7plowi3h.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F007"
+        ],
+        "severity": 0.85,
+        "description": "VERDICT: CONFIRM C0001. `TokenBucket.allow` accepts negative `cost` values, which increases the token count.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\ndef allow(self, cost=1.0):\n        if cost < 0:\n            raise ValueError(\"cost must be non-negative\")\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n>>>>",
+        "falsifier_code": "import time\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\ntb = TokenBucket(10, 1)\ntb.tokens = 5\ntb.allow(-5)\nassert tb.tokens == 10, \"Defect not present\"\nprint(\"FALSIFIED: Negative cost increases tokens\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpdj3at1gn.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F008"
+        ],
+        "severity": 0.86,
+        "description": "VERDICT: CONFIRM C0003. `TokenBucket.allow` mutates shared state (`self.tokens`, `self.last`) without a lock.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nimport threading\nimport time\n\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n        self.lock = threading.Lock()\n\n    def allow(self, cost=1.0):\n        with self.lock:\n            now = time.monotonic()\n            self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n            self.last = now\n            if self.tokens >= cost:\n                self.tokens -= cost\n                return True\n            return False\n>>>>",
+        "falsifier_code": "import threading, time\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\nimport ast, inspect\nsource = inspect.getsource(TokenBucket.allow)\ntree = ast.parse(source)\nhas_lock = any(isinstance(node, ast.With) for node in ast.walk(tree))\nassert not has_lock, \"Defect not present\"\nprint(\"FALSIFIED: TokenBucket.allow has no lock\")",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "I agree with the verdict that C0003 is a valid finding.  TokenBucket\u2019s lack of thread safety is real; the code should be guarded if concurrent access is intended.  (Severity may be downgraded, but the"
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpph_dlu6f.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F009"
+        ],
+        "severity": 0.64,
+        "description": "VERDICT: CONFIRM C0005. `backoff_delay` computes `2  attempt` before applying the ceiling.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (1 << min(attempt, 30)))\n    return rand() * capped\n>>>>",
+        "falsifier_code": "import time\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000):\n    return min(ceiling_ms, base_ms * (2 ** attempt))\n\nstart = time.time()\nbackoff_delay(1000000)\nelapsed = time.time() - start\nassert elapsed > 0.05, \"Defect not present\"\nprint(\"FALSIFIED: Unbounded exponentiation takes significant time\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F010"
+        ],
+        "severity": 0.62,
+        "description": "VERDICT: CONFIRM C0011. `HashRing` permits construction with an empty `members` list or `vnodes=0`, leading to an empty `self.points`.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\nclass HashRing:\n    def __init__(self, members, vnodes):\n        if not members or vnodes < 1:\n            raise ValueError(\"HashRing requires at least one point\")\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "import hashlib, bisect\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n\nring = HashRing([], 128)\ntry:\n    ring.locate(\"test\")\nexcept ZeroDivisionError:\n    print(\"FALSIFIED: ZeroDivisionError on empty ring\")\n    import sys; sys.exit(0)\nassert False, \"Defect not present\"",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpe8beytzh.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F011"
+        ],
+        "severity": 0.95,
+        "description": "VERDICT: CONFIRM C0014. `HashRing.locate` uses `bisect.bisect_right`. If a key's hash exactly matches a node's hash, it maps to the *next* node instead of the matching node.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\ndef locate(self, key):\n        idx = bisect.bisect_left(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "import hashlib, bisect\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n\nring = HashRing([\"A\", \"B\"], 1)\nexact_hash = ring.keys[0]\noriginal_ring_hash = ring_hash\ndef mock_ring_hash(s):\n    if s == \"exact\": return exact_hash\n    return original_ring_hash(s)\n\nglobals()['ring_hash'] = mock_ring_hash\nidx = bisect.bisect_right(ring.keys, exact_hash)\nassert idx == 1, \"Defect not present\"\nprint(\"FALSIFIED: bisect_right skips exact match\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0014"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0007"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpa2ymnih8.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        },
+        "merge_defer_count": 1
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: F006\nSEVERITY: 0.72\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.55\n\nFIND. `topo_order` (Listing E) builds `indeg` and `succ` as dicts keyed by node, which deduplicates, but seeds its queue ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n==== REPLACE\ndef topo_order(nodes, edges):\n    if len(set(nodes)) != len(nodes):\n        raise ValueError(\"duplicate stage in nodes\")\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n>>>>",
+        "falsifier_code": "import re, types\nTARGET = \"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\"\n_src = open(TARGET, encoding=\"utf-8\").read()\n_F = chr(96) * 3\n_blocks = [b.split(_F)[0] for b in _src.split(_F + \"python\\n\")[1:]]\nhelios = types.ModuleType(\"helios\")\nexec(compile(\"import bisect, hashlib, random, threading, time\\n\"\n             \"from collections import deque\\n\" + \"\\n\".join(_blocks), TARGET, \"exec\"),\n     helios.__dict__)\nnodes = [\"A\", \"A\", \"X\", \"B\", \"C\"]\nedges = [(\"A\", \"C\"), (\"B\", \"C\"), (\"X\", \"B\")]\norder = helios.topo_order(nodes, edges)\npos = {}\nfor i, n in enumerate(order):\n    pos.setdefault(n, i)\nviolated = [(a, b) for a, b in edges if pos[a] > pos[b]]\nassert len(order) == len(nodes), \"ZC-19 cycle alarm fired; claim false\"\nassert violated, \"returned order respects every edge; claim false\"\nprint(\"FALSIFIED: topo_order returned\", order, \"violating\", violated,\n      \"with len(order)==len(nodes) so ZC-19 raises no alarm\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpxc16ub7_.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.58,
+        "description": "FINDING_ID: F007\nSEVERITY: 0.58\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.35\n\nFIND. ZC-15 states `find_block`'s postcondition as: the returned index lies in `[0, len(offsets)-1]`, `offsets[index]",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef find_block(offsets, pos):\n    lo, hi = 0, len(offsets) - 1\n==== REPLACE\ndef find_block(offsets, pos):\n    if not offsets or pos < offsets[0]:\n        raise ValueError(\"pos precedes the first block offset\")\n    lo, hi = 0, len(offsets) - 1\n>>>>",
+        "falsifier_code": "import re, types\nTARGET = \"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\"\n_src = open(TARGET, encoding=\"utf-8\").read()\n_F = chr(96) * 3\n_blocks = [b.split(_F)[0] for b in _src.split(_F + \"python\\n\")[1:]]\nhelios = types.ModuleType(\"helios\")\nexec(compile(\"import bisect, hashlib, random, threading, time\\n\"\n             \"from collections import deque\\n\" + \"\\n\".join(_blocks), TARGET, \"exec\"),\n     helios.__dict__)\noffsets = [1000, 2000, 3000, 4000]\npos = 999\nidx = helios.find_block(offsets, pos)\nassert 0 <= idx <= len(offsets) - 1, \"index out of range; different defect\"\nassert not (offsets[idx] <= pos), \"ZC-15 postcondition holds; claim false\"\nprint(\"FALSIFIED: find_block(%r, %d) returned %d but offsets[%d]=%d > pos\"\n      % (offsets, pos, idx, idx, offsets[idx]))",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpxz5ibqjc.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F008"
+        ],
+        "severity": 0.46,
+        "description": "FINDING_ID: F008\nSEVERITY: 0.46\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.70\n\nFIND. Section 1.1 states \"Every figure below is re-derivable from those constants, the listings of section 2 and t",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nSections 3 to 9 draw on three inputs and no others: the constants of section 1, the reference implementations of section 2, and the edge list of section 7. Every figure here is derived from those three and re-derivable by the same route \u2014 take the input, take the listing, evaluate.\n==== REPLACE\nSections 3 to 9 draw on three inputs: the constants of section 1, the reference implementations of section 2, and the edge list of section 7. Every figure derived from those three is re-derivable by the same route \u2014 take the input, take the listing, evaluate. Three statements are outside that closure and are marked as such: ZC-10 assumes a descriptor cache whose shard index is the low bits of the key hash, ZC-38 assumes the sidecar's push counter is held in a format wider than binary32, and ZC-39 assumes byte totals are accumulated as Python integers. Section 2 prints no listing for the descriptor cache, the sidecar counter or the accounting path, so the arithmetic of those three statements is checkable here but the behaviour they assume is not.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The incomplete sentence in Section 1.1 is a documentation defect; fixing it improves clarity.  I confirm the finding at the given severity of 0.46."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpt3eg3ec4.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F009"
+        ],
+        "severity": 0.8,
+        "description": "VERDICT: CONFIRM C0013.\n\n`TokenBucket.allow` in Listing A mutates shared admission state without synchronization.\n\nLocation:\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n        self.lock = threading.Lock()\n\n    def allow(self, cost=1.0):\n        with self.lock:\n            now = time.monotonic()\n            self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n            self.last = now\n            if self.tokens >= cost:\n                self.tokens -= cost\n                return True\n            return False\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpuh1ugbcg.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F010"
+        ],
+        "severity": 0.85,
+        "description": "VERDICT: CONFIRM C0015.\n\n`topo_order` in Listing E silently returns a partial rollout plan when the graph contains a cycle.\n\nLocation:\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n       ",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\ndef topo_order(nodes, edges):\n    nodes = list(nodes)\n    if len(set(nodes)) != len(nodes):\n        raise ValueError(\"nodes must be unique\")\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        if a not in indeg or b not in indeg:\n            raise ValueError(\"edge endpoint is not present in nodes\")\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    if len(order) != len(nodes):\n        raise ValueError(\"graph contains a cycle\")\n    return order\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpnptau4dz.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V001"
+        ],
+        "severity": 0.95,
+        "description": "VERDICT: CONFIRM C0014. `HashRing.locate` uses `bisect.bisect_right`. If a key's hash exactly matches a node's hash, it maps to the next node instead of the matching node.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n==== REPLACE\ndef locate(self, key):\n        if not self.keys:\n            raise ValueError(\"Empty ring\")\n        idx = bisect.bisect_left(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n>>>>",
+        "falsifier_code": "import bisect\nimport hashlib\n\ndef ring_hash(s):\n    return int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), \"big\")\n\nclass HashRing:\n    def __init__(self, members, vnodes):\n        self.points = []\n        for m in members:\n            for j in range(vnodes):\n                self.points.append((ring_hash(f\"{m}#{j}\"), m))\n        self.points.sort()\n        self.keys = [p[0] for p in self.points]\n\n    def locate(self, key):\n        idx = bisect.bisect_right(self.keys, ring_hash(key))\n        return self.points[idx % len(self.points)][1]\n\nring = HashRing([\"nodeA\", \"nodeB\"], 1)\nexact_hash = ring.keys[0]\nidx = bisect.bisect_right(ring.keys, exact_hash)\nassert idx == 1, \"defect present: bisect_right skips exact match\"\nprint('FALSIFIED: bisect_right skips exact match')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpd8brhug_.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V002"
+        ],
+        "severity": 1.0,
+        "description": "VERDICT: CONFIRM C0013. `TokenBucket.allow` mutates shared state (`self.tokens`, `self.last`) without a lock, causing race conditions under concurrent access.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n==== REPLACE\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n        self.lock = threading.Lock()\n\n    def allow(self, cost=1.0):\n        if cost < 0:\n            return False\n        with self.lock:\n            now = time.monotonic()\n            self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n            self.last = now\n            if self.tokens >= cost:\n                self.tokens -= cost\n                return True\n            return False\n>>>>",
+        "falsifier_code": "import time\nimport threading\n\nclass TokenBucket:\n    def __init__(self, capacity, refill_per_sec):\n        self.capacity = float(capacity)\n        self.rate = float(refill_per_sec)\n        self.tokens = float(capacity)\n        self.last = time.monotonic()\n\n    def allow(self, cost=1.0):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)\n        self.last = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\ntb = TokenBucket(1, 0)\nassert not hasattr(tb, 'lock'), 'defect present: no lock attribute found'\nprint('FALSIFIED: TokenBucket lacks synchronization primitives')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpmhix4fxj.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V003"
+        ],
+        "severity": 0.85,
+        "description": "VERDICT: CONFIRM C0015. `topo_order` silently returns a partial rollout plan when the graph contains a cycle.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nwhile queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n==== REPLACE\nwhile queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    if len(order) < len(nodes):\n        raise ValueError(\"Cycle detected in rollout graph\")\n    return order\n>>>>",
+        "falsifier_code": "from collections import deque\n\ndef topo_order(nodes, edges):\n    indeg = {n: 0 for n in nodes}\n    succ = {n: [] for n in nodes}\n    for a, b in edges:\n        succ[a].append(b)\n        indeg[b] += 1\n    queue = deque(n for n in nodes if indeg[n] == 0)\n    order = []\n    while queue:\n        n = queue.popleft()\n        order.append(n)\n        for s in succ[n]:\n            indeg[s] -= 1\n            if indeg[s] == 0:\n                queue.append(s)\n    return order\n\nnodes = [\"A\", \"B\", \"C\"]\nedges = [(\"A\", \"B\"), (\"B\", \"C\"), (\"C\", \"A\")]\norder = topo_order(nodes, edges)\nassert len(order) < len(nodes), \"defect present: returns partial order on cycle\"\nprint('FALSIFIED: topo_order silently returns partial order on cycle')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpn1czgg2m.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V004"
+        ],
+        "severity": 0.8,
+        "description": "VERDICT: CONFIRM C0017. `backoff_delay` computes `base_ms * (2  attempt)`. If `base_ms` is a float, large `attempt` values cause `OverflowError`.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n==== REPLACE\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    if attempt >= 30:\n        capped = ceiling_ms\n    else:\n        capped = min(ceiling_ms, base_ms * (2  attempt))\n    return rand() * capped\n>>>>",
+        "falsifier_code": "import random\n\ndef backoff_delay(attempt, base_ms=250, ceiling_ms=32000, rand=random.random):\n    capped = min(ceiling_ms, base_ms * (2 ** attempt))\n    return rand() * capped\n\ntry:\n    backoff_delay(1024, base_ms=250.0)\nexcept OverflowError:\n    print('FALSIFIED: OverflowError on large attempt with float base_ms')\n    assert True, \"defect present: OverflowError\"\nelse:\n    assert False, \"defect not present\"",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V005"
+        ],
+        "severity": 0.65,
+        "description": "VERDICT: CONFIRM C0009. `WaveTracker.wait_for_wave` has no timeout parameter, causing it to block forever if the wave size is never reached.",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\ndef wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n==== REPLACE\ndef wait_for_wave(self, timeout=None):\n        with self.ready:\n            while self.done < self.wave_size:\n                if not self.ready.wait(timeout):\n                    break\n            return self.done\n>>>>",
+        "falsifier_code": "import threading\n\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n\n    def wait_for_wave(self):\n        with self.ready:\n            while self.done < self.wave_size:\n                self.ready.wait()\n            return self.done\n\nimport inspect\nsig = inspect.signature(WaveTracker.wait_for_wave)\nassert 'timeout' not in sig.parameters, \"defect present: no timeout parameter\"\nprint('FALSIFIED: wait_for_wave lacks timeout parameter')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmph55h8yvu.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F009"
+        ],
+        "severity": 0.78,
+        "description": "FINDING_ID: F009\n\nSEVERITY: 0.78\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.55\n\nFIND. `WaveTracker.record` (Listing F) is an identity-free counter with no reset. It records *that* an acknowledgement a",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n\n    def record(self):\n        with self.lock:\n            self.done += 1\n            if self.done == self.wave_size:\n                self.ready.notify_all()\n==== REPLACE\nclass WaveTracker:\n    def __init__(self, wave_size):\n        self.wave_size = wave_size\n        self.done = 0\n        self.seen = set()\n        self.lock = threading.Lock()\n        self.ready = threading.Condition(self.lock)\n\n    def record(self, node_id):\n        with self.lock:\n            if node_id not in self.seen:\n                self.seen.add(node_id)\n                self.done += 1\n                if self.done == self.wave_size:\n                    self.ready.notify_all()\n\n    def reset(self):\n        with self.lock:\n            self.done = 0\n            self.seen.clear()\n>>>>",
+        "falsifier_code": "import re, threading, time, bisect, hashlib, random\nfrom collections import deque\nSRC = \"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\"\nns = {\"bisect\": bisect, \"hashlib\": hashlib, \"random\": random,\n      \"threading\": threading, \"time\": time, \"deque\": deque}\nfor b in re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpkea7eviz.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F010"
+        ],
+        "severity": 0.55,
+        "description": "FINDING_ID: F010\n\nSEVERITY: 0.55\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.30\n\nFIND. ZC-36 states the sample variance as `m2 / (n - 1)` with no precondition on n, and `welford` (Listing G) accept",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nm2 += delta * delta2\n    return n, mean, m2\n==== REPLACE\nm2 += delta * delta2\n    return n, mean, m2\n\n\ndef sample_variance(n, m2):\n    if n < 2:\n        raise ValueError(\"sample variance is undefined for fewer than two readings\")\n    return m2 / (n - 1)\n>>>>",
+        "falsifier_code": "import re, bisect, hashlib, random, threading, time\nfrom collections import deque\nSRC = \"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\"\nns = {\"bisect\": bisect, \"hashlib\": hashlib, \"random\": random,\n      \"threading\": threading, \"time\": time, \"deque\": deque}\nfor b in re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpqvtws7p5.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F011"
+        ],
+        "severity": 0.68,
+        "description": "FINDING_ID: F011\n\nSEVERITY: 0.68\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.45\n\nFIND. ZC-26 characterises the admission race with a single window and a single signature: \"*instrumented at the sw",
+        "proposed_fix": "<<<< SEARCH /Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\nWith two concurrent callers, an interleaving where each reads the count and clears the test before either subtracts admits one request more than the bucket holds; instrumented at the switch point between test and subtraction, two threads against a one-token bucket both return True and leave the count at -1.0.\n==== REPLACE\nTwo distinct windows admit more than the bucket holds. In the first, each caller reads the count and clears the test before either subtracts; instrumented at the switch point between test and subtraction, two threads against a one-token bucket both return True and leave the count at -1.0. In the second, the refill assignment itself is a read-modify-write: one caller loads the count, is pre-empted while another completes a whole call, then stores its stale value back, resurrecting a token already spent. The second window is the one uninstrumented execution produces \u2014 75 of 6 000 trials at sixteen threads over-admitted, and in all 75 the count finished at 0.0. It therefore never violates the ZC-14 interval, so an assertion of 0 <= tokens <= capacity detects the first window and not the second.\n>>>>",
+        "falsifier_code": "import re, threading, bisect, hashlib, random, time\nfrom collections import deque\nSRC = \"/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md\"\nns = {\"bisect\": bisect, \"hashlib\": hashlib, \"random\": random,\n      \"threading\": threading, \"time\": time, \"deque\": deque}\nfor b in re.findall(r\"",
+        "falsifier_verdict": "ERROR",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 0,
+              "detail": "ParseError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers (<unknown>, line 3)"
+            },
+            "g2_compile": {
+              "score": 0,
+              "detail": "CompileError:   File \"/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmpvizfyzcw.py\", line 3\n    **Document ID:** SW-21-REF-04\n                               ^\nSyntaxError: leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers\n"
+            }
+          }
+        }
+      }
+    },
+    "next_id": 41,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "Codex:Codex_F002": "C0002",
+      "ChatGPT:ChatGPT_F001": "C0003",
+      "ChatGPT:ChatGPT_F002": "C0004",
+      "ChatGPT:ChatGPT_F003": "C0005",
+      "DeepSeek:DeepSeek_F001": "C0006",
+      "Gemini:Gemini_F001": "C0007",
+      "CC2:CC2_F001": "C0008",
+      "CC2:CC2_F002": "C0009",
+      "Codex:Codex_F003": "C0010",
+      "ChatGPT:ChatGPT_F004": "C0011",
+      "ChatGPT:ChatGPT_F005": "C0012",
+      "Gemini:Gemini_C0003": "C0013",
+      "Gemini:Gemini_C0007": "C0014",
+      "Gemini:Gemini_C0004": "C0015",
+      "Gemini:Gemini_C0001": "C0016",
+      "Gemini:Gemini_C0005": "C0017",
+      "CC2:CC2_F003": "C0018",
+      "CC2:CC2_F004": "C0019",
+      "CC2:CC2_F005": "C0020",
+      "Codex:Codex_F004": "C0021",
+      "Gemini:Gemini_F006": "C0022",
+      "Gemini:Gemini_F007": "C0023",
+      "Gemini:Gemini_F008": "C0024",
+      "Gemini:Gemini_F009": "C0025",
+      "Gemini:Gemini_F010": "C0026",
+      "Gemini:Gemini_F011": "C0027",
+      "CC2:CC2_F006": "C0028",
+      "CC2:CC2_F007": "C0029",
+      "CC2:CC2_F008": "C0030",
+      "Codex:Codex_F009": "C0031",
+      "Codex:Codex_F010": "C0032",
+      "Gemini:Gemini_V001": "C0033",
+      "Gemini:Gemini_V002": "C0034",
+      "Gemini:Gemini_V003": "C0035",
+      "Gemini:Gemini_V004": "C0036",
+      "Gemini:Gemini_V005": "C0037",
+      "CC2:CC2_F009": "C0038",
+      "CC2:CC2_F010": "C0039",
+      "CC2:CC2_F011": "C0040"
+    }
+  },
+  "novelty_counts": [
+    9,
+    11,
+    10,
+    10
+  ],
+  "raw_counts": [
+    9,
+    17,
+    18,
+    11
+  ],
+  "novelty_counts_per_model": {
+    "ChatGPT": [
+      3,
+      2,
+      0,
+      0
+    ],
+    "Codex": [
+      2,
+      1,
+      1,
+      2
+    ],
+    "DeepSeek": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "Gemini": [
+      1,
+      5,
+      6,
+      5
+    ],
+    "CC2": [
+      2,
+      3,
+      3,
+      3
+    ]
+  },
+  "raw_counts_per_model": {
+    "ChatGPT": [
+      3,
+      5,
+      3,
+      1
+    ],
+    "Codex": [
+      2,
+      2,
+      3,
+      2
+    ],
+    "DeepSeek": [
+      1,
+      1,
+      0,
+      0
+    ],
+    "Gemini": [
+      1,
+      5,
+      6,
+      5
+    ],
+    "CC2": [
+      2,
+      4,
+      6,
+      3
+    ]
+  },
+  "rho_history": [
+    1.0,
+    0.647059,
+    0.555556,
+    0.909091
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [
+    11
+  ],
+  "stall_history": [
+    {
+      "open_ch": 4,
+      "contested": 0
+    },
+    {
+      "open_ch": 10,
+      "contested": 0
+    },
+    {
+      "open_ch": 8,
+      "contested": 3
+    },
+    {
+      "open_ch": 11,
+      "contested": 2
+    }
+  ],
+  "novel_critical_history": [
+    3,
+    0,
+    0,
+    0
+  ],
+  "cumulative_context_chars": 386139,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "ChatGPT": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        3.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 1.4166666666666667
+    },
+    "CC2": {
+      "history": [
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        2.25,
+        1.5,
+        2.6666666666666665
+      ],
+      "last_adaptive_threshold": 1.8888888888888888
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0
+    },
+    "Gemini": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

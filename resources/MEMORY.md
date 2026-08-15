@@ -24,7 +24,10 @@ remembers, not a second canonical copy.
 
 ## Project State
 
-- **Current state** — 1250 tests passing. Experiment 40 Stage 3
+- **Current state** — bench suite runs offline by default since 31 July 2026;
+  counts live in `docs/CURRENT_STATE.md`, bound to a commit. (Was "1250 tests
+  passing" — a figure from a run that included live model dispatch, and stale by
+  ~850 tests when corrected on 31 July 2026.) Experiment 40 Stage 3
   substantially closed (Phase A + Phase B + docs sync). Residual:
   1E.3 flip (gated) and 1E.10 runtime assertion (Experiment 54).
   Anchored in `resources/RECOVERY.md`.
@@ -87,8 +90,13 @@ remembers, not a second canonical copy.
 - **Semantic novelty** — γ/ρ fed by `_finding_similarity()` content
   comparison, not an ID proxy. Added 9 April 2026.
 - **ν_k novelty metric** — designed 14 April 2026. Two-dimensional
-  (ν_k, c_ext). 2 confer rounds, 12 corrections. Shadow calibrator
-  hooked.
+  (ν_k, c_ext). Two confer rounds: round 1 applied 7 corrections
+  (3 hard, 4 soft), round 2 applied 8 (5 hard, 3 soft) — 15 in total.
+  Shadow calibrator hooked. (The private memory entry's own summary
+  line says "12 corrections", which matches neither round nor their
+  sum; the per-round figures above are the ones the body of that same
+  entry records, and `resources/RECOVERY.md` records the same 7 and
+  5+3, itemised.)
 
 ## Methodology Feedback (applies to all work in the project)
 
@@ -119,8 +127,11 @@ intent is visible methodology, not internal policy.
 - **Tool constraint box** — agents must operate within defined tools;
   the LLM interprets tool output, never substitutes for it.
 - **Falsification gate** — P-pass is structurally enforced. Findings
-  without P-pass are rejected. The target range for successful
-  falsification is 0–13%.
+  without P-pass are rejected. The 0–13% figure is a MEASURED FAILURE
+  rate, not a target: models complied with the letter of the directive
+  (FIND / FOLLOW / FIX sections present in 86–98% of outputs) while the
+  observed P-pass rate across all models was 0–13%. That gap is the
+  reason the gate exists.
 - **No qualitative escape** — never give models a qualitative opt-out
   when the task is quantitative. The equation *is* the constraint
   box.
@@ -153,9 +164,13 @@ that the memory records:
 - `sy` — use all available STEM tools (SymPy, Wolfram, SciPy, NumPy,
   z3, uncertainties, mpmath) in analysis.
 - `ext` — external research (shorter alias for `re`).
-- `cc2`, `cx`, `ge`, `cgpt`, `ds` — confer routing (Claude Opus 4.6
-  CLI, Codex via OpenRouter, Gemini 3.1 Pro via Google GenAI,
-  ChatGPT via OpenRouter, DeepSeek via DeepSeek API).
+- `cc2`, `cx`, `ge`, `cgpt`, `ds` — confer routing. Current panel per
+  the project `.claude/CLAUDE.md` (rotated 2026-05-10): `cc2` Claude
+  Opus 4.7 via CLI piped mode on the Max subscription; `cx` Codex
+  GPT-5.5 via OpenRouter; `ge` Gemini 3.1 Pro Preview via OpenRouter
+  (moved off the direct Google route on 2026-05-10); `cgpt` ChatGPT
+  GPT-5.5 via OpenRouter; `ds` DeepSeek V4 Pro via the DeepSeek direct
+  API.
 - `ag` — use sub-agents to parallelise independent tasks.
 - `rg` — regain full context on a named topic: re-read anchoring
   memory files, canonical docs, and experimental notes before
@@ -163,6 +178,16 @@ that the memory records:
 - `sq` — sequential: strictly one tool call at a time, no parallel
   batches. Avoids stressing upstream API servers during long
   autonomous runs. Sub-agents inherit the same constraint.
+- `cy` — continue the work AND apply live-experiment monitoring
+  discipline (standing directive 2026-05-18): while any experiment or
+  process runs, monitor at roughly 60-second cadence; on anything off,
+  pause it, analyse with all available tools, fix, then resume; keep a
+  terminal tailing the running experiment's current output.
+- `pr` — panel review (2026-06-03): dispatch the full model panel on a
+  completed analysis or design question, run WITHOUT compelled
+  convergence so each model returns an independent verdict and its
+  strongest falsification, and preserve disagreement as information
+  rather than smoothing it to consensus.
 
 Commands are combinable, e.g. `cx ge cc2` = confer with all three
 routes; `ag` parallelises dispatch.

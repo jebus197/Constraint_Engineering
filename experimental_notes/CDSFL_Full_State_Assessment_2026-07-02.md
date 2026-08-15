@@ -2,6 +2,8 @@
 
 2026-07-02 23:35 BST · branch `exp39-experimental` · HEAD `6ed0adf` (clean, in sync with origin)
 
+**[Correction 2026-08-05.]** One file path in this assessment has since moved. `bench/take_up_slack.py` (§3, "Weak-model dead-ends") was **renamed, not deleted**: it became `bench/routing.py` on 2026-07-12 in commit `349951f` ("A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)"), ten days after this assessment was written. `git log --diff-filter=D --name-only -- bench/take_up_slack.py` returns that commit and no other, and `bench/routing.py` was added in the same commit. The config key `take_up_slack_enabled` is unaffected — it is still accepted as a back-compatible alias for `routing_enabled` on both config-ingestion paths (`bench/launcher_core.py:216`, `bench/reference_runner_v2.py:760`). The assessment text is left intact: it was accurate at HEAD `6ed0adf`.
+
 A complete state-of-the-project assessment, written after a roughly three-week pause in active work (11 June to 2 July 2026) and a full state recovery. It consolidates what the project has proven, what is built, what is dormant, what remains, and what gates the next step. It is written to stand alone: a reader with no session context should be able to reconstruct the project's position from this document plus the referenced records.
 
 ## 1. What the project is

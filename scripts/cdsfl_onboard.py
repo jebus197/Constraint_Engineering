@@ -3,8 +3,12 @@
 
 Usage:
   python3 scripts/cdsfl_onboard.py              # Default overview + env checks
-  python3 scripts/cdsfl_onboard.py --full       # Include full ONBOARDING.md content
+  python3 scripts/cdsfl_onboard.py --full       # Splice in the sv-written state block
   python3 scripts/cdsfl_onboard.py --dry-run    # Self-test only; exits 0 on success
+
+`--full` exits non-zero if the state block could not be spliced. A `--full`
+run that silently returns the default view is the defect this script carried
+for 118 days; it must never come back.
 
 Dual purpose. First, this script is a researcher's first contact with the
 project: it checks environment, offers to install missing dependencies
@@ -33,6 +37,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -77,15 +82,42 @@ OPTIONAL_PACKAGES = [
     ("PIL", "Pillow", "Image processing"),
 ]
 
+# Panel roster of record: `.claude/CLAUDE.md` § Model Confer Dispatch, and the
+# peer preflight `scripts/check_model_keys.py`. Corrected 2026-08-06 — the
+# previous table still described the pre-2026-05-10 routing (Gemini on the
+# direct Google API, required) and named DeepSeek Reasoner, a model DeepSeek no
+# longer lists.
 API_KEYS = {
-    "OPENROUTER_API_KEY": ("Required", "Model dispatch for Codex and ChatGPT via OpenRouter"),
-    "GEMINI_API_KEY": ("Required", "Gemini 3.1 Pro dispatch via Google GenAI API"),
-    "DEEPSEEK_API_KEY": ("Required", "DeepSeek Reasoner dispatch via DeepSeek API"),
-    "GOOGLE_API_KEY": ("Optional", "Alternative to GEMINI_API_KEY for Google API access"),
+    "OPENROUTER_API_KEY": (
+        "Required",
+        "Codex GPT-5.5, ChatGPT GPT-5.5 and Gemini 3.1 Pro Preview panel routes",
+    ),
+    "DEEPSEEK_API_KEY": (
+        "Required",
+        "DeepSeek V4 Pro (deepseek-v4-pro) via the DeepSeek direct API",
+    ),
+    "GEMINI_API_KEY": (
+        "Optional",
+        "Legacy direct-Google fallback — the panel has routed Gemini via "
+        "OpenRouter since 2026-05-10",
+    ),
+    "GOOGLE_API_KEY": (
+        "Optional",
+        "Legacy direct-Google fallback under its alternate name",
+    ),
     "OPENAI_API_KEY": ("Optional", "Direct OpenAI API access (not used by default runners)"),
-    "WOLFRAM_API_KEY": ("Optional", "Wolfram Alpha for mathematical verification"),
     "GITHUB_TOKEN": ("Optional", "Push access to repository"),
 }
+
+# Credentialed routes are not the whole panel. Claude Opus (cc2) dispatches
+# through the `claude` CLI on the Max subscription, and Wolfram now runs
+# credential-free. Named here so a reader does not conclude those routes are
+# broken merely because no key stands for them above.
+UNCREDENTIALED_ROUTES = [
+    "Claude Opus (cc2) — `claude` CLI piped mode on the Max subscription; no API key.",
+    "Wolfram — hosted MCP endpoint plus local `wolframscript`; no API key "
+    "(the key-authenticated bridge was retired 2026-08-03).",
+]
 
 SYSTEM_TOOLS = [
     ("git", "git", "Version control"),
@@ -260,15 +292,35 @@ def check_claude_code() -> bool:
 
 
 def check_wolfram_mcp() -> bool:
-    """Check for Wolfram MCP Bridge."""
-    print("  Wolfram MCP Bridge:")
-    wolfram_app = Path("/Applications/WolframLocalMCPBridge.app")
-    if wolfram_app.exists():
-        print("    [FOUND] Wolfram Local MCP Bridge")
+    """Report the Wolfram route.
+
+    The key-authenticated Wolfram Local MCP Bridge was RETIRED on 2026-08-03
+    and its credential archived; the current route is the credential-free
+    hosted MCP endpoint plus the local Wolfram Engine driven on demand through
+    `wolframscript`. Reporting the retired bridge as "[MISSING] ... download
+    from wolfram.com" told a reader to go and re-acquire a component the
+    project has deliberately dropped. Returns True if a local `wolframscript`
+    is on PATH — the only part of this route that is checkable from here.
+    """
+    print("  Wolfram:")
+    print("    [RETIRED] Wolfram Local MCP Bridge (key-authenticated) — retired")
+    print("              2026-08-03, credential archived. No key is needed and")
+    print("              none should be supplied. Not a missing dependency.")
+
+    bridge_app = Path("/Applications/WolframLocalMCPBridge.app")
+    if bridge_app.exists():
+        print(f"    [LEFTOVER] {bridge_app} is still on disk. It is not the")
+        print("               live route and nothing in this project calls it.")
+
+    print("    [INFO] Live route: hosted MCP endpoint (agenttools.wolfram.com,")
+    print("           no credential), plus local Wolfram Engine on demand.")
+
+    script = shutil.which("wolframscript")
+    if script:
+        print(f"    [FOUND] wolframscript at {script} — on-demand local engine")
         return True
-    print("    [MISSING] Wolfram Local MCP Bridge")
-    print("             Optional — provides Wolfram computational engine via MCP")
-    print("             Download from https://www.wolfram.com/")
+    print("    [ABSENT] wolframscript not on PATH — the on-demand local engine")
+    print("             is unavailable; the hosted endpoint is unaffected.")
     return False
 
 
@@ -293,6 +345,10 @@ def check_api_keys() -> None:
         marker = "  " if found else ("!!" if level == "Required" else "  ")
         print(f"  {marker}[{status}] {key} ({level})")
         print(f"           {desc}")
+    print()
+    print("  Routes that need no key:")
+    for route in UNCREDENTIALED_ROUTES:
+        print(f"    - {route}")
 
 
 # ---------------------------------------------------------------------------
@@ -339,22 +395,165 @@ def install_system_tools(missing: list[str]) -> None:
 # Dynamic content readers
 # ---------------------------------------------------------------------------
 
-def read_onboarding_what_is(root: Path, strip_sv: bool = True) -> str:
+class SVBlock(NamedTuple):
+    """The sv-written state block, and — when absent — WHY it is absent.
+
+    ``status`` is "ok" or one of the failure reasons below. An empty ``text``
+    with no reason attached is exactly the shape of defect this type exists to
+    prevent: a caller must never be able to mistake "could not find it" for
+    "there is nothing to show".
+    """
+
+    text: str      # marker pair included; "" unless status == SV_OK
+    status: str    # SV_OK | unreadable | no-markers | no-start | no-end
+                   # | duplicate | inverted | empty
+    detail: str
+
+
+SV_OK = "ok"
+
+
+def find_sv_block(root: Path) -> SVBlock:
+    """Locate the SV:LATEST_EXP block ANYWHERE in resources/ONBOARDING.md.
+
+    THE DEFECT THIS CLOSES (founder ruling, 2026-08-05: "take the search
+    route"). This search used to run against the extracted
+    '## What This Project Is' section only, while `cdsfl_sv.py` writes the
+    marker pair into '## Current State'. `find()` returned -1, the guard
+    silently fell through, and `--full` was a byte-for-byte no-op for 118
+    days — 884 characters either way, with nothing to tell the reader that
+    ~80,000 characters of project state had been dropped.
+
+    Searching the whole file rather than moving what sv writes is deliberate:
+    it survives any future reorganisation of ONBOARDING.md, and it moves no
+    content out from under readers who know where to find it. Nothing here
+    depends on section ordering, section names, or line numbers — only on the
+    marker pair itself.
+    """
+    path = root / "resources" / "ONBOARDING.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return SVBlock("", "unreadable", f"{path}: {exc}")
+
+    start = text.find(SV_START_MARKER)
+    end = text.find(SV_END_MARKER)
+
+    if start == -1 and end == -1:
+        return SVBlock(
+            "", "no-markers",
+            f"neither {SV_START_MARKER} nor {SV_END_MARKER} appears in {path}",
+        )
+    if start == -1:
+        return SVBlock("", "no-start", f"{SV_START_MARKER} is absent from {path}")
+    if end == -1:
+        return SVBlock("", "no-end", f"{SV_END_MARKER} is absent from {path}")
+
+    # More than one pair: the search route has to CHOOSE, and choosing quietly
+    # is how this script came to be audited. Two pairs means `--full` would
+    # print the FIRST — potentially the stale one — and drop the rest without
+    # a word, which is the same defect class as the 118-day no-op wearing a
+    # different hat. `cdsfl_sv.py` never writes a second pair (it re-substitutes
+    # in place), so this state can only arrive by hand-editing ONBOARDING.md,
+    # which is exactly what is happening to that file. Refuse and say so.
+    starts = text.count(SV_START_MARKER)
+    ends = text.count(SV_END_MARKER)
+    if starts > 1 or ends > 1:
+        return SVBlock(
+            "", "duplicate",
+            f"{starts} {SV_START_MARKER} and {ends} {SV_END_MARKER} in {path} "
+            f"— exactly one of each is expected; splicing would silently print "
+            f"the first and drop the rest. Delete the surplus pair(s) or re-run "
+            f"`python3 scripts/cdsfl_sv.py`.",
+        )
+
+    if end < start:
+        return SVBlock(
+            "", "inverted",
+            f"{SV_END_MARKER} (offset {end}) precedes {SV_START_MARKER} "
+            f"(offset {start}) in {path}",
+        )
+
+    inner = text[start + len(SV_START_MARKER):end]
+    if not inner.strip():
+        return SVBlock(
+            "", "empty",
+            f"the marker pair is present in {path} but there is nothing "
+            f"between the markers",
+        )
+
+    block = text[start:end + len(SV_END_MARKER)]
+    return SVBlock(
+        block, SV_OK,
+        f"{len(inner.strip())} chars between the markers, "
+        f"at offsets {start}-{end + len(SV_END_MARKER)} of {len(text)}",
+    )
+
+
+def read_onboarding_what_is(root: Path) -> str:
     """Read the 'What This Project Is' section from resources/ONBOARDING.md.
 
-    If strip_sv is True (default), removes the SV:LATEST_EXP content block
-    so the default overview stays short. --full includes it.
+    The SV:LATEST_EXP block is always stripped here, wherever it happens to
+    fall. `--full` re-attaches it once, from `find_sv_block`, so the block is
+    printed exactly once no matter which section ONBOARDING.md keeps it in.
+    The old `strip_sv=False` path is gone: it promised the caller a block this
+    function never had, which is how `--full` came to be a no-op.
     """
     path = root / "resources" / "ONBOARDING.md"
     content = read_section(path, "## What This Project Is", "\n## ")
     if not content:
         return ""
-    if strip_sv:
-        start = content.find(SV_START_MARKER)
-        end = content.find(SV_END_MARKER)
-        if start != -1 and end != -1:
-            content = content[:start].rstrip() + "\n" + content[end + len(SV_END_MARKER):].lstrip()
+    start = content.find(SV_START_MARKER)
+    end = content.find(SV_END_MARKER)
+    if start != -1 and end > start:
+        # Whole block inside this section: excise it.
+        content = content[:start].rstrip() + "\n" + content[end + len(SV_END_MARKER):].lstrip()
+    elif start != -1:
+        # Block STARTS here and runs past the section boundary. Cut at the
+        # marker: keeping the opening lines would both leak a fragment into
+        # the default view and duplicate it under --full, which re-attaches
+        # the whole block.
+        content = content[:start]
+    elif end != -1:
+        # Mirror case — the block started in an earlier section and ends here.
+        content = content[end + len(SV_END_MARKER):]
     return content.strip()
+
+
+def build_project_summary(root: Path, full: bool = False) -> tuple[str, list[str]]:
+    """Assemble the summary text. Returns (text, problems).
+
+    `problems` is never discarded silently by any caller: `print_project_summary`
+    prints each one on stdout AND stderr and refuses to report success, and
+    `dry_run` fails on any of them. When `--full` cannot deliver the state
+    block the caller gets the default text *and* a problem saying so — not the
+    default text alone.
+    """
+    problems: list[str] = []
+
+    what = read_onboarding_what_is(root)
+    if not what:
+        problems.append(
+            "resources/ONBOARDING.md '## What This Project Is' read as EMPTY. "
+            "Canonical project prose is sourced from that section; the summary "
+            "shown is not it."
+        )
+
+    if not full:
+        return what, problems
+
+    block = find_sv_block(root)
+    if block.status != SV_OK:
+        problems.append(
+            f"--full was requested but the SV:LATEST_EXP state block could NOT "
+            f"be spliced ({block.status}: {block.detail}). What follows is the "
+            f"DEFAULT view — nothing was added to it. That block is written by "
+            f"`python3 scripts/cdsfl_sv.py`; repair the marker pair in "
+            f"resources/ONBOARDING.md or re-run sv."
+        )
+        return what, problems
+
+    return (f"{what}\n\n{block.text}" if what else block.text), problems
 
 
 def read_reproducing_mc(root: Path) -> str:
@@ -367,14 +566,23 @@ def read_reproducing_mc(root: Path) -> str:
 # Info display (driven from canonical documents at runtime)
 # ---------------------------------------------------------------------------
 
-def print_project_summary(root: Path, full: bool = False) -> None:
+def print_project_summary(root: Path, full: bool = False) -> bool:
     """Print the project summary, sourced from resources/ONBOARDING.md.
 
-    Default mode strips the SV:LATEST_EXP block. `full=True` includes it.
+    Returns True only if the requested view was delivered in full. A False
+    return must reach the exit code — a `--full` run that quietly prints the
+    default view and exits 0 is the 118-day defect.
     """
-    what = read_onboarding_what_is(root, strip_sv=not full)
-    if what:
-        for line in what.split("\n"):
+    text, problems = build_project_summary(root, full=full)
+
+    for problem in problems:
+        print(f"  [ERROR] {problem}")
+        print(f"cdsfl_onboard: {problem}", file=sys.stderr)
+    if problems:
+        print()
+
+    if text:
+        for line in text.split("\n"):
             print(f"  {line}" if line.strip() else "")
     else:
         print("  [WARNING] Could not read resources/ONBOARDING.md.")
@@ -392,6 +600,8 @@ def print_project_summary(root: Path, full: bool = False) -> None:
     tests = test_count()
     if tests:
         print(f"  Test suite: {tests} tests")
+
+    return not problems
 
 
 def print_structure(root: Path) -> None:
@@ -446,48 +656,151 @@ def print_mc_commands(root: Path) -> None:
 # Dry-run mode (used by sv / qc sanity checks)
 # ---------------------------------------------------------------------------
 
-def dry_run(root: Path) -> int:
-    """Verify canonical documents exist and expected markers are present.
+def _read_or_none(path: Path) -> str | None:
+    """File text, or None if it cannot be read. Never raises."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return None
 
-    Exit 0 on success. Produces minimal output so it can be embedded in
-    the sv post-commit sanity step and the qc staleness sweep.
+
+def dry_run(root: Path) -> int:
+    """Self-test the canonical-document wiring. Exit 0 only if every check passed.
+
+    WHAT CHANGED AND WHY (2026-08-06). This self-test printed a bare "OK" over
+    a `--full` mode that had been a byte-for-byte no-op since the day it was
+    written. It could not have caught that, because it only checked that the
+    markers existed *somewhere in the file* and that the reader returned a
+    non-empty string — never that `--full` produced anything different from
+    the default. A self-test that cannot fail on the defect it exists to catch
+    is not a test.
+
+    So the last check here asserts the OBSERVABLE PROPERTY: `--full` output
+    differs from the default, strictly contains it, and the difference is a
+    non-empty marker-delimited block. And every check now prints its name and
+    its result, because a bare "OK" is not auditable.
+
+    Consumers (`scripts/cdsfl_sv.py` step 7, `scripts/cdsfl_qc.py`
+    `check_onboard_script`) gate on the return code and read stderr, so the
+    expanded stdout is safe; failing lines are still mirrored to stderr.
     """
-    errors: list[str] = []
+    checks: list[tuple[str, bool, str]] = []
+
+    def record(name: str, ok: bool, detail: str) -> None:
+        checks.append((name, bool(ok), detail))
 
     onboarding = root / "resources" / "ONBOARDING.md"
     reproducing = root / "docs" / "REPRODUCING.md"
 
-    if not onboarding.exists():
-        errors.append(f"MISSING: {onboarding}")
+    onboarding_text = _read_or_none(onboarding)
+    record(
+        "ONBOARDING.md readable",
+        onboarding_text is not None,
+        f"{onboarding}"
+        + (f" ({len(onboarding_text)} chars)" if onboarding_text is not None
+           else " — missing or unreadable"),
+    )
+
+    record(
+        'ONBOARDING.md has "## What This Project Is"',
+        onboarding_text is not None and "## What This Project Is" in onboarding_text,
+        "section heading present" if onboarding_text is not None
+        and "## What This Project Is" in onboarding_text
+        else "section heading ABSENT — the default summary has no source",
+    )
+
+    block = find_sv_block(root)
+    record(
+        "SV:LATEST_EXP marker pair locatable anywhere in ONBOARDING.md",
+        block.status == SV_OK,
+        f"{block.status}: {block.detail}",
+    )
+
+    reproducing_text = _read_or_none(reproducing)
+    record(
+        "REPRODUCING.md readable",
+        reproducing_text is not None,
+        f"{reproducing}"
+        + (f" ({len(reproducing_text)} chars)" if reproducing_text is not None
+           else " — missing or unreadable"),
+    )
+
+    mc_heading = "## Metacognitive Commands (MC)"
+    record(
+        f'REPRODUCING.md has "{mc_heading}"',
+        reproducing_text is not None and mc_heading in reproducing_text,
+        "section heading present" if reproducing_text is not None
+        and mc_heading in reproducing_text
+        else "section heading ABSENT — the MC table has no source",
+    )
+
+    what = read_onboarding_what_is(root)
+    record(
+        "read_onboarding_what_is returns content",
+        bool(what),
+        f"{len(what)} chars" if what else "EMPTY — the dynamic summary would be blank",
+    )
+
+    mc = read_reproducing_mc(root)
+    record(
+        "read_reproducing_mc returns content",
+        bool(mc),
+        f"{len(mc)} chars" if mc else "EMPTY — the dynamic MC table would be blank",
+    )
+
+    # THE CHECK THAT WOULD HAVE CAUGHT THE 118-DAY NO-OP.
+    # Not "the code path ran" — the observable difference between the two views.
+    default_text, default_problems = build_project_summary(root, full=False)
+    full_text, full_problems = build_project_summary(root, full=True)
+    delta = full_text[len(default_text):] if full_text.startswith(default_text) else ""
+    spliced = delta.replace(SV_START_MARKER, "").replace(SV_END_MARKER, "").strip()
+    splice_ok = (
+        not default_problems
+        and not full_problems
+        and bool(default_text)
+        and full_text != default_text
+        and default_text in full_text
+        and SV_START_MARKER in delta
+        and SV_END_MARKER in delta
+        and bool(spliced)
+    )
+    if splice_ok:
+        splice_detail = (
+            f"--full is {len(full_text)} chars vs default {len(default_text)}; "
+            f"it contains the default view and adds a {len(spliced)}-char "
+            f"marker-delimited block"
+        )
     else:
-        text = onboarding.read_text(encoding="utf-8")
-        if SV_START_MARKER not in text:
-            errors.append(f"MISSING MARKER in ONBOARDING.md: {SV_START_MARKER}")
-        if SV_END_MARKER not in text:
-            errors.append(f"MISSING MARKER in ONBOARDING.md: {SV_END_MARKER}")
-        if "## What This Project Is" not in text:
-            errors.append("MISSING SECTION in ONBOARDING.md: ## What This Project Is")
+        reasons = list(default_problems) + list(full_problems)
+        if not reasons:
+            reasons.append(
+                f"--full produced {len(full_text)} chars against a default of "
+                f"{len(default_text)}; spliced block {len(spliced)} chars, "
+                f"start marker in delta={SV_START_MARKER in delta}, "
+                f"end marker in delta={SV_END_MARKER in delta}, "
+                f"default contained in full={default_text in full_text}"
+            )
+        splice_detail = " | ".join(reasons)
+    record("--full differs from, and contains, the default view", splice_ok, splice_detail)
 
-    if not reproducing.exists():
-        errors.append(f"MISSING: {reproducing}")
-    else:
-        text = reproducing.read_text(encoding="utf-8")
-        if "## Metacognitive Commands (MC)" not in text:
-            errors.append("MISSING SECTION in REPRODUCING.md: ## Metacognitive Commands (MC)")
+    failed = [c for c in checks if not c[1]]
 
-    if not read_onboarding_what_is(root):
-        errors.append("read_onboarding_what_is returned empty — dynamic summary would be blank")
+    print(f"cdsfl_onboard --dry-run: {len(checks)} checks against {root}")
+    for name, ok, detail in checks:
+        print(f"  [{'PASS' if ok else 'FAIL'}] {name} — {detail}")
 
-    if not read_reproducing_mc(root):
-        errors.append("read_reproducing_mc returned empty — dynamic MC table would be blank")
-
-    if errors:
-        print("cdsfl_onboard --dry-run: FAIL", file=sys.stderr)
-        for err in errors:
-            print(f"  {err}", file=sys.stderr)
+    if failed:
+        print(
+            f"cdsfl_onboard --dry-run: FAIL "
+            f"({len(failed)} of {len(checks)} checks failed)",
+            file=sys.stderr,
+        )
+        for name, _, detail in failed:
+            print(f"  {name}: {detail}", file=sys.stderr)
+        print(f"cdsfl_onboard --dry-run: FAIL ({len(failed)} of {len(checks)} failed)")
         return 1
 
-    print("cdsfl_onboard --dry-run: OK")
+    print(f"cdsfl_onboard --dry-run: OK ({len(checks)} of {len(checks)} checks passed)")
     return 0
 
 
@@ -506,7 +819,11 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--full",
         action="store_true",
-        help="Include the SV:LATEST_EXP block in the project summary (full ONBOARDING state).",
+        help=(
+            "Splice the SV:LATEST_EXP state block into the project summary, "
+            "from wherever the marker pair sits in ONBOARDING.md. Exits 1 if "
+            "the block could not be spliced."
+        ),
     )
     ap.add_argument(
         "--dry-run",
@@ -530,7 +847,7 @@ def main() -> int:
 
     # --- PROJECT SUMMARY ---
     print_header("PROJECT SUMMARY")
-    print_project_summary(root, full=args.full)
+    summary_ok = print_project_summary(root, full=args.full)
 
     # --- PYTHON VERSION ---
     print_header("PYTHON VERSION")
@@ -614,6 +931,15 @@ def main() -> int:
     print("  Canonical source: docs/REPRODUCING.md § Metacognitive Commands")
     print("  Model config:     .claude/CLAUDE.md")
     print()
+
+    if not summary_ok:
+        # Repeated here because the error scrolled off the top hundreds of
+        # lines ago, and carried into the exit code because a run that could
+        # not deliver what was asked for must not report success.
+        print("  [ERROR] The PROJECT SUMMARY above was INCOMPLETE — see the")
+        print("          error printed under that heading. Exiting 1.")
+        print()
+        return 1
     return 0
 
 

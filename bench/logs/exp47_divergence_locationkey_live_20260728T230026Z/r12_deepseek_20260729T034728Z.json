@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T034728Z",
+  "phase": "r12",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1416,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.7\nFIND: The fix for C0054 (_ALT_HEADER_RE separator blocking tag capture) is missing; dimension extraction fails on headers like \"Alternative - dimension: mechanism\".\nFALSIFIER:\n```python\nimport re\nfrom bench.dm._divergence import _ALT_HEADER_RE\n\nline = \"Alternative - dimension: mechanism\"\nm = _ALT_HEADER_RE.match(line)\nassert m is not None, \"Header not matched\"\ndim_inline = m.group(\"dim_inline\")\ndim_dash = m.group(\"dim_dash\")\nassert dim_inline or dim_dash, \"No dimension captured\"\n```\n\nFINDING_ID: F002\nSEVERITY: 0.8\nFIND: _CONTRAST_RE does not capture multi‑line contrast content; only the first line is captured, causing contrast truncation.\nFALSIFIER:\n```python\nimport re\nfrom bench.dm._divergence import _CONTRAST_RE\n\ntest_str = \"Contrast: first line\\nsecond line\"\nm = _CONTRAST_RE.match(test_str)\nassert m is not None, \"_CONTRAST_RE failed to match\"\nassert \"second line\" in m.group(\"contrast\"), \"Multiline contrast not captured (defect present)\"\n```\n\nFINDING_ID: F018\nSEVERITY: 0.65\nFIND: `_tokenise` drops single‑character tokens (`len(t) >= 2`), inflating isomorphism scores for texts differing only in one‑letter identifiers.\nFALSIFIER:\n```python\nfrom bench.dm._divergence import score_isomorphism\n\na = \"return cached value from x\"\nb = \"return cached value from y\"\ns = score_isomorphism(a, b)\nassert s < 0.95, f\"Inflated similarity {s} due to dropped single‑char tokens\"\n```",
+  "metadata": {
+    "round": 12,
+    "elapsed": 604.0,
+    "chars": 1416,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

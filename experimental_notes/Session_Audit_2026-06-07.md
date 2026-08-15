@@ -18,6 +18,8 @@
 | `a9b2366` | 21:17 | Tracker: Exp-42 clean-rerun verdict + audit-first plan. |
 | `c9dcf51` | 23:15 | Tracker: DEFINITIVE root cause = cross-round dedup failure + panel review. |
 
+**[Correction 2026-08-05.]** The path `bench/take_up_slack.py` in the `d383a6e` row above is dead at the current HEAD. The file was **renamed, not deleted**: `bench/take_up_slack.py` → `bench/routing.py` on 2026-07-12 in commit `349951f` ("A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)"), confirmed by `git log --diff-filter=D --name-only -- bench/take_up_slack.py` returning exactly that one commit. The row is left intact: `d383a6e` did add the file at that path. The config key `take_up_slack_enabled` remains live as a back-compatible alias for `routing_enabled` (`bench/launcher_core.py:216`, `bench/reference_runner_v2.py:760`), so `42_composer_takeupslack.json` below still loads.
+
 **Also done (not commits):** the clean Exp-42 rerun (`42_composer_takeupslack.json`, ~4.4h, 0 HIL, did-not-converge); 4 investigation workflows (residual resolvability `wf_f046bc18`; strategic audit `wf_6dff2643`; gamma/PoC `wf_10157160`; this active-vs-dormant audit `wf_a559aaad`); the 5-model panel review (`/tmp/panel_results.json`).
 
 ## 2. ESTABLISHED FACTS (looked-at, tool-verified)

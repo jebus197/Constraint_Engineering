@@ -128,7 +128,10 @@ def main() -> int:
     if converged:
         reason = result.get("convergence_reason", "") or "converged"
         at = result.get("converged_at")
-        print(f"\nExperiment 41 reached a terminal verdict"
+        # Label from config: this launcher is reused across experiments,
+        # so a hardcoded number mislabels other runs (2026-07-29).
+        _label = exp_cfg.get("experiment_name", "Experiment")
+        print(f"\n{_label} reached a terminal verdict"
               f"{f' at round {at}' if at is not None else ''}: {reason}")
         return 0
 

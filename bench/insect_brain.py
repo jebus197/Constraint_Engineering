@@ -950,6 +950,12 @@ class InsectBrain:
                     "retrieved_at": f.retrieved_at,
                     "source_hash": f.source_hash,
                     "source_diversity": f.source_diversity,
+                    # Falsifier round-trip fix (12 August 2026) — see the note
+                    # in _save_checkpoint. Written here too so the per-round
+                    # JSON is a complete record on its own.
+                    "falsifier_code": f.falsifier_code,
+                    "falsifier_verdict": f.falsifier_verdict,
+                    "corroboration_present": getattr(f, "corroboration_present", False),
                 }
                 for f in record.findings
             ],
@@ -996,6 +1002,38 @@ class InsectBrain:
                     "retrieved_at": f.retrieved_at,
                     "source_hash": f.source_hash,
                     "source_diversity": f.source_diversity,
+                    # Falsifier round-trip fix (12 August 2026). Same class as the
+                    # April provenance fix above: declared on Finding, never
+                    # serialised here. Measured across all 56 archived runs and
+                    # 8500+ findings — not one checkpoint carried a falsifier.
+                    #
+                    # SCOPE, stated precisely because the first reading of this was
+                    # wrong. It is NOT true that resumed runs lost their falsifiers.
+                    # reference_runner_v2 keeps its own checkpoint, runner_state.json,
+                    # which persists the registry INCLUDING falsifier source and
+                    # verdict, and restores it on resume. Exp 47 was resumed from
+                    # round 5 and its post-resume registry still holds 58 falsifiers
+                    # with 55 CONFIRMED. So convergence was never affected, and this
+                    # is a redundancy gap rather than an active defect.
+                    #
+                    # It is still worth closing. runner_state.json is currently a
+                    # single point of failure for the one artefact CONFIRM-only
+                    # depends on, and the loader at reference_runner_v2.py:8178
+                    # already contemplates finding it corrupted. When that happens
+                    # the falsifiers should be recoverable from the other checkpoint
+                    # rather than gone. Anything reading findings from checkpoint.json
+                    # — replay and analysis tooling — also sees them now.
+                    #
+                    # Stored WHOLE and deliberately not truncated: a clipped
+                    # falsifier still looks present and then fails to execute,
+                    # which is the more expensive failure of the two.
+                    # falsifier_verdict rides along because a restored falsifier
+                    # with no verdict would be re-executed needlessly.
+                    # corroboration_present is NOT a dataclass field — runner_core
+                    # attaches it dynamically — so it is read defensively.
+                    "falsifier_code": f.falsifier_code,
+                    "falsifier_verdict": f.falsifier_verdict,
+                    "corroboration_present": getattr(f, "corroboration_present", False),
                 }
                 for f in rnd
             ])
@@ -1434,7 +1472,23 @@ class InsectBrain:
                     retrieved_at=fd.get("retrieved_at", ""),
                     source_hash=fd.get("source_hash", ""),
                     source_diversity=fd.get("source_diversity", 0.0),
+                    # Falsifier round-trip fix (12 August 2026). Without this the
+                    # write side is pointless — a Finding rebuilt here would come
+                    # back with an empty falsifier regardless of what was stored.
+                    # See the scope note in _save_checkpoint: v2 runs were NOT
+                    # affected, because runner_state.json carried the registry.
+                    # Defaults keep the 56 pre-fix checkpoints loadable; they carry
+                    # nothing to restore, which is the honest report of their state.
+                    falsifier_code=fd.get("falsifier_code", ""),
+                    falsifier_verdict=fd.get("falsifier_verdict", ""),
                 ))
+                # corroboration_present is attached dynamically by runner_core
+                # rather than declared on Finding, so it cannot be passed to the
+                # constructor and is restored here instead.
+                object.__setattr__(
+                    findings[-1], "corroboration_present",
+                    fd.get("corroboration_present", False),
+                )
             self.state.all_findings.append(findings)
 
         self.state.current_round = data.get("completed_round", 0)

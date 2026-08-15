@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260728T232534Z",
+  "phase": "r1",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 603,
+  "response": "MERGE C0011 <- DeepSeek_F001, DeepSeek_F002\n- C0011 captures the missing `re.MULTILINE` on `_CONTRAST_RE`.\n- `_NULL_HEADER_RE` in the current code already carries `re.MULTILINE`, so F002 is redundant and merged into C0011.\n- No new evidence for separate findings; merge avoids registry duplication.\n\nWITHDRAW DeepSeek_F003\n- The tokenisation behaviour is by design: the lexical near‑duplicate heuristic intentionally drops numbers‑only tokens and uses a minimal stopword list.  No bug; withdraw.\n\nNo new findings discovered in this round.  All flagged Round‑0 items are resolved via merge or withdrawal.",
+  "metadata": {
+    "round": 1,
+    "elapsed": 289.8,
+    "chars": 603,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

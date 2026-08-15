@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260801T074508Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1971,
+  "response": "**Verdicts on open findings**\n\n`CONFIRM C0014`. The `bisect_right` bug is real — a key whose hash lands exactly on a ring point maps to the next member, not the owning member. `EXTEND`: the bug also produces an erroneous wrap when the hash equals the **last** ring point: `bisect_right` returns `len(points)`, the modulo maps to index 0, and the key is assigned to the first member instead of the last. The proposed fix (replace `bisect_right` with `bisect_left`) corrects both cases.\n\n`CONFIRM C0013`. `TokenBucket.allow` mutates shared state without synchronisation under concurrent use — this is a clear race condition. The fix (add a threading lock) is correct.\n\n`CONFIRM C0015`. `topo_order` silently returns a partial order on cyclic graphs; the fix that raises an exception is appropriate given the function’s dependence on a DAG input.\n\n`CONFIRM C0017`. `backoff_delay` computes `base_ms * (2 ** attempt)` before the ceiling, risking overflow on large `attempt`. The fix (apply the ceiling early or use an integer-safe cap) is necessary.\n\n`CONFIRM C0016`. `TokenBucket.allow` accepts negative `cost` values, breaking the admission invariant. The fix (early rejection of non‑positive cost) is correct.\n\n`CONFIRM C0010`. This is a duplicate of C0017 — `backoff_delay` overflow — and is resolved by the same fix.\n\n`CONFIRM C0021`. `WaveTracker.wait_for_wave` blocks indefinitely; a timeout parameter is required for robustness. The proposed fix (optional timeout) is sufficient.\n\n`CONFIRM C0040`. The demonstration of unsafety in ZC‑26 is accurate — `TokenBucket` without a lock allows two threads to over‑admit. The fix (lock insertion) resolves it.\n\n`CONFIRM C0038`. `WaveTracker.record` increments `done` inside the lock but the condition notification is correct; if there is a residual issue it is mild. However, I confirm that the described bug (an off‑by‑one or missing reset) is not present in the current code — the increment and notification logic is sound.",
+  "metadata": {
+    "round": 4,
+    "elapsed": 424.0,
+    "chars": 1971,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

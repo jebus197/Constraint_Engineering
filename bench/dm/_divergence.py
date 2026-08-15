@@ -309,6 +309,23 @@ def _tokenise(text: str) -> set:
     return {t for t in tokens if t not in _STOPWORDS and len(t) >= 2}
 
 
+def _recidivism_text(record: "AlternativeRecord") -> str:
+    """Full-submission text for cross-round recidivism comparison.
+
+    ``alternative_text`` has the contrast statement stripped (so meta-text
+    does not inflate the primary-isomorphism gate). Cross-round recidivism,
+    however, is about whether the *whole submission* was resubmitted, and the
+    contrast statement is part of that submission. Fold it back in so that a
+    model which supplies a previously-missing (or materially changed) contrast
+    statement is not mis-scored as a verbatim near-copy of the prior round.
+    """
+    body = getattr(record, "alternative_text", "") or ""
+    contrast = getattr(record, "contrast_statement", "") or ""
+    if contrast:
+        return f"{body} {contrast}".strip()
+    return body
+
+
 def score_isomorphism(primary: str, alternative: str) -> float:
     """Jaccard similarity between primary and alternative token sets.
 
@@ -610,11 +627,20 @@ def check_sibling_admissibility(
         if prior_round_alternatives:
             max_prior = 0.0
             worst_prior_idx: Optional[int] = None
+            # Recidivism asks "did the model resubmit the same *submission*",
+            # so the comparison must span the full submission — body plus its
+            # contrast statement. The contrast is stripped from
+            # ``alternative_text`` only to keep meta-text from inflating the
+            # primary-Jaccard gate; excluding it here would make adding a
+            # previously-missing contrast (the exact fix a contrast-rejected
+            # alternative needs) invisible and mis-score a genuine fix as a
+            # 1.0 near-copy. Fold the contrast back in for this comparison.
+            cur_text = _recidivism_text(alt)
             for k, prior in enumerate(prior_round_alternatives):
-                prior_text = getattr(prior, "alternative_text", "") or ""
+                prior_text = _recidivism_text(prior)
                 if not prior_text:
                     continue
-                prior_iso = score_isomorphism(prior_text, alt.alternative_text)
+                prior_iso = score_isomorphism(prior_text, cur_text)
                 if prior_iso > max_prior:
                     max_prior = prior_iso
                     worst_prior_idx = k

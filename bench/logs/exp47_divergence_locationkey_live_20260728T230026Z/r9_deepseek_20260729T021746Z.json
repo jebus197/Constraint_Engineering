@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260729T021746Z",
+  "phase": "r9",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 791,
+  "response": "FINDING_ID: F015\nSEVERITY: 0.30\nFIND: Failure-reason aggregation drops rejection reasons of inadmissible alternatives when admissible count < min_alternatives.\nFALSIFIER:\n```python\nfrom bench.dm._divergence import build_divergence_record, DivergenceConfig\n\nconfig = DivergenceConfig(min_alternatives=2)\nprimary = \"the main solution\"\nraw = \"\"\"Alternative 1 (dimension: scope)\nDiffers from primary: broader scope applies.\n\nAlternative 2 (dimension: mechanism)\nNo contrast line here.\n\"\"\"\nrecord = build_divergence_record(\"Fxxx\", primary, raw, config)\n\n# The bug causes the rejection reason for Alternative 2 to be omitted.\nif not any(\"missing_contrast_statement\" in r for r in record.failure_reasons):\n    raise AssertionError(\"FALSIFIED: missing_contrast_statement not in failure_reasons\")\n```",
+  "metadata": {
+    "round": 9,
+    "elapsed": 496.7,
+    "chars": 791,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

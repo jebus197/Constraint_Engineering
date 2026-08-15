@@ -1,0 +1,188 @@
+{
+  "round": 3,
+  "domain": "chemistry",
+  "final_verdicts": {
+    "ChatGPT_F007": "DUPLICATE",
+    "Codex_F006": "DUPLICATE",
+    "Gemini_F001": "DUPLICATE",
+    "Gemini_F002": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 3,
+      "finding_id": "Codex_F006",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Codex_F006",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "Codex_F006",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "REJECTED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_INCONSISTENT: dimensions differ: ['[temperature]', '[temperature]', '[mass] * [length] ** 2 / [time] ** 2 / [substance]', '[temperature]', '[temperature]', '[temperature]'] [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 3,
+      "finding_id": "Codex_F006",
+      "canonical_id": "C0017",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6773782825469972,
+      "evidence": "[NK_v2] Duplicate of Codex_F005 (sim=0.677)"
+    },
+    {
+      "round": 3,
+      "finding_id": "ChatGPT_F007",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: ('unexpected character after line continuation character', (9, 3))"
+    },
+    {
+      "round": 3,
+      "finding_id": "ChatGPT_F007",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "ChatGPT_F007",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "rdkit",
+      "verdict": "REJECTED",
+      "confidence": 0.85,
+      "evidence": "rdkit: CHEM_INVALID_SMILES: none of ['/Users/georgejackson/CDSFL_review_targets/exp48_chemistry.md', '2.68'] parsed [specialist:chemistry_structure]"
+    },
+    {
+      "round": 3,
+      "finding_id": "ChatGPT_F007",
+      "canonical_id": "C0034",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6830984926223755,
+      "evidence": "[NK_v2] Duplicate of Codex_F005 (sim=0.683)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] numeric claim references no known source constant \u2014 not SMT-groundable"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "CONFIRMED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_CONSISTENT: all 2 quantities have dimension [mass] [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8469429588317872,
+      "evidence": "[NK_v2] Duplicate of Gemini_F012 (sim=0.847)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pint: DIM_MIXED: 3 quantities, 2 distinct dimensions: ['[temperature]', '[temperature]', '[mass] * [length] ** 2 / [time] ** 2 / [substance]']"
+    },
+    {
+      "round": 3,
+      "finding_id": "Gemini_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.605684289932251,
+      "evidence": "[NK_v2] Duplicate of Codex_F005 (sim=0.606)"
+    }
+  ]
+}

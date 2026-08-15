@@ -101,12 +101,41 @@ class TestPhase1CapRetained:
         )
 
     def test_both_phase1_paths_use_the_constant(self):
+        """Both Phase-1 loops must derive their budget from the constant.
+
+        This asserted a source substring (`max_tokens=_PHASE1_MAX_TOKENS`,
+        twice) until the falsifier-gate work routed both call sites through
+        `_gate_turn_budget`, which returns the constant when the gate is off.
+        The invariant held; the string test broke. Rewritten to check the
+        behaviour and the call sites via the AST, so a future refactor that
+        preserves the cap does not fail and one that drops it does.
+        """
+        import ast
+
         src = Path(decomposed_dispatch.__file__).read_text()
-        assert src.count("max_tokens=_PHASE1_MAX_TOKENS") >= 2, (
-            "both the OpenRouter and DeepSeek Phase-1 loops must use "
-            "_PHASE1_MAX_TOKENS"
+
+        # Gate OFF must still yield exactly the legacy per-turn cap.
+        assert decomposed_dispatch._gate_turn_budget(8192, False) == _PHASE1_MAX_TOKENS
+        assert decomposed_dispatch._gate_turn_budget(999999, False) == _PHASE1_MAX_TOKENS
+        # Gate ON must never drop BELOW the caller's own budget.
+        assert decomposed_dispatch._gate_turn_budget(65536, True) >= 65536
+
+        # Both Phase-1 dispatch sites must take their budget from the helper
+        # (or the constant directly) — not from an inlined literal.
+        tree = ast.parse(src)
+        derived = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.keyword) or node.arg != "max_tokens":
+                continue
+            text = ast.unparse(node.value)
+            if "_gate_turn_budget" in text or "_PHASE1_MAX_TOKENS" in text:
+                derived += 1
+        assert derived >= 2, (
+            "both the OpenRouter and DeepSeek Phase-1 loops must derive "
+            f"max_tokens from _gate_turn_budget/_PHASE1_MAX_TOKENS; found {derived}"
         )
-        # No LIVE dispatch call may still hardcode 4096 as a kwarg.
+
+        # No LIVE dispatch call may still hardcode the starving 4096 budget.
         assert "max_tokens=4096," not in src
 
     def test_both_paths_still_use_extract_helper(self):

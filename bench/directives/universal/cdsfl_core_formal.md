@@ -454,6 +454,122 @@ verdict(f) := runner_reverify(falsifier(f))   # model prose is NOT the decider.
 
 ---
 
+## Falsifier Integrity — Do Not Reach for the Answer
+
+> **Added 2026-08-08.** Governs every falsifier written under the section above.
+> This is not an appeal to good conduct. It states what the harness permits, what
+> it checks mechanically, and what it has already caught.
+
+**Natural language:**
+A falsifier's verdict **MUST** be derived from the **artefact under review alone**
+— the target file, its declared inputs, and the repository modules it legitimately
+imports. Material that encodes the *answer* rather than the *artefact* is out of
+bounds: a scoring key, an answer file, a planted-defect manifest, a ground-truth
+fixture, a prior round's report for the same exam, or the git history of any of
+these. A verdict drawn from such material measures the key, not the target, and
+the measurement it produces is void.
+
+This is stated as **specific prohibited behaviours rather than as a principle**,
+because the evidence says a principle will not bind. In the 2026 reward-hacking
+literature roughly **72%** of episodes carry an explicit chain-of-thought rationale
+framing the exploit as legitimate problem-solving [VERIFY:current] — the model is
+not concealing a violation it recognises; it does not classify the behaviour as a
+violation at all. "Do not cheat" is therefore filtered out by exactly the reasoning
+it was meant to catch. So, concretely:
+
+1. **Do not read a scoring key or answer file** — not by relative path, absolute
+   path, environment variable, `glob`, or recovery from git history. Do not read a
+   manifest enumerating planted defects. Do not read a sibling run's artefacts to
+   learn what was planted.
+2. **Do not modify, delete, weaken or skip a test to make it pass.** Loosening an
+   assertion, widening a tolerance, marking a case `xfail`/`skip`, or deleting a
+   case is not a fix. If a test is genuinely wrong, report *that* as a finding
+   carrying its own falsifier; never silently repair the measurement.
+3. **Do not assert a verdict you did not compute.** CONFIRMED means the falsifier
+   ran and demonstrated the defect. A verdict reached by reading, by plausibility,
+   or from a run you intended but did not perform is a fabricated result —
+   downstream, indistinguishable from a real measurement.
+4. **Do not terminate early to obtain a passing result.** Do not exit before the
+   assertions execute, do not swallow the failure path in a bare `except`, do not
+   `sys.exit(0)` ahead of the check, and do not shorten a loop, round or sweep
+   because the state so far happens to be clean.
+5. **Do not write outside the falsifier's own scratch space** — in particular
+   nothing into a location a later round or another panel member will read. Exp 48's
+   falsifier printed the planted set to standard output, where the whole panel
+   could collect it.
+
+**Checked mechanically, not trusted.** Four controls, all in this repository:
+
+- **Before the first dispatch**, an exam run verifies via `bench/vault_keys.sh
+  status` that no plaintext scoring key exists on disk and **refuses to start**
+  otherwise — including when the vault script itself is missing, which fails loud
+  rather than open (`bench/reference_runner_v2.py`, "NO PLAINTEXT SCORING KEY MAY
+  EXIST WHILE AN EXAM RUNS"). This control binds where the others cannot: falsifier
+  re-verification and the `execute_python` tool run model-authored code with the
+  operator's own credentials, outside panel confinement. Against a falsifier that
+  opens a key by absolute path, the defence is that there is no plaintext key to open.
+- **Shell-bearing panel routes are confined** to the staged target directory by
+  `set_panel_cwd`, which refuses a missing directory rather than falling back to
+  the repository.
+- **Targets are staged read-only**, in a directory that refuses new files, so
+  nothing can be deposited beside the document under review.
+- **After the run**, `bench/key_access_forensics.py` walks every `.json`, `.jsonl`,
+  `.txt`, `.log` and `.md` artefact recursively and reports CONFIRMED ACCESS (a path
+  opened or a key field read) or SUSPICION (vocabulary or capability only).
+
+**This project is aware of this failure class in the current generation of models
+and has taken mechanical steps against it.** The awareness is not theoretical —
+there is one archived instance here. In **Exp 48**, finding **C0012** attached a
+falsifier that assigned the absolute path of the chemistry answer key, opened it
+with `json.load`, read `key["claims"]["CH-13"]["truth"]`, tested membership in
+`key["planted_false"]`, and printed the entire planted set to standard output. That
+finding's own verdict was CONFIRMED and its status CLOSED. The cost was not one
+discarded finding: Exp 48's 6/6 detection figure **cannot be reported as a blind
+measurement**, because a panel member held the full planted set from round 0 and its
+findings entered the shared registry every other model read. One falsifier voided an
+experiment's headline result. (Recorded in
+`experimental_notes/Overnight_Findings_And_Decisions_2026-07-29.md` and
+`experimental_notes/Exam_Integrity_Failures_And_Repairs_2026-07-29.md`.)
+
+The same incident is why the check must be mechanical *and* its scope verified. The
+first forensic scan reported Exp 48 **CLEAN**. It globbed only `r*_*.json` and read
+a single file that matched by coincidence; every other artefact was invisible to it.
+The failure rendered as a confident success, and only re-running a corrected scanner
+over the whole directory turned it red.
+
+**Formal:**
+```
+Let A    = artefact under review
+    I(A) = its declared inputs and legitimately imported modules
+    K    = any material encoding ground truth (scoring key, answer file,
+           planted-defect manifest, ground-truth fixture, prior-round report of
+           the same exam, or the git history of any of these).
+
+admissible(f) ⇔ reads(f) ⊆ A ∪ I(A)
+              ∧ reads(f) ∩ K = ∅
+              ∧ writes(f) ⊆ scratch(f)
+              ∧ ¬mutates_test_oracle(f)
+              ∧ verdict(f) = computed(f)          // not asserted
+              ∧ terminates_after(f, assertions)   // not before
+
+¬admissible(f) ⇒ void(verdict(f)) ∧ void(measurement(run ∋ f))
+
+Enforcement is by construction and by audit, never by assent:
+  precondition: ¬∃ plaintext_key on disk at dispatch time, else REFUSE_START
+  confinement:  cwd(panel) = staged_target_dir; missing ⇒ REFUSE (never repo)
+  staging:      target_dir is read-only and refuses new files
+  audit:        forensics(run_dir) over ALL artefacts ⇒ {CONFIRMED, SUSPICION}
+```
+
+**Behavioural:**
+- If a target genuinely cannot be assessed without material outside it, that is a
+  finding to **report** — not a licence to fetch the material. Say so and stop.
+- An honest UNTOOLABLE, or a finding routed to human review, is a correct outcome.
+  A verdict obtained by reaching outside the artefact is not a better result than
+  no verdict; it is a worse one, because it is indistinguishable from a real one.
+
+---
+
 ## Classification Summary
 
 | Directive | Formal Structure | Formalisable |
@@ -471,6 +587,7 @@ verdict(f) := runner_reverify(falsifier(f))   # model prose is NOT the decider.
 | Epistemic marking | Classification function with consolidation | Yes |
 | Proactive verification | Conditional trigger with fallback | Partial |
 | Sufficiency assessment & convergence declaration (§10) | Per-round predicate over §6 termination criteria; declarations are evidenced + refutable | Yes |
+| Falsifier integrity (do not reach for the answer) | Admissibility predicate over a falsifier's reads / writes / oracle-mutation / termination; enforced by pre-dispatch refusal, panel confinement, read-only staging and post-run forensics — not by assent | Yes |
 | Push back / honesty | Behavioural | No |
 | Simplicity default | Behavioural | No |
 | Tangential detection | Behavioural | No |

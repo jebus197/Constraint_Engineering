@@ -1604,6 +1604,10 @@ def _record_telemetry(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
+    # Refuse a paid run on `--help` or a typo. Must be the FIRST thing
+    # main() does: everything below this line can reach a paid model.
+    from bench.runner_argv_guard import guard_argv
+    guard_argv([], 'python3 bench/run_exp17_immune.py [preflight|canary|run]')
     global RESUME_MODE
     source_env()
 

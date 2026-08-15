@@ -115,6 +115,17 @@ A qualified domain expert should deliver **one** artefact — an encoding bundle
 
 This is a panel question for Round 1 of Experiment 40. It is not a closed design.
 
+**[Correction 2026-08-12.]** `bench/cdsfl_registry/encoding_loader.py` was **never
+created**, and it is not a moved or deleted file: no path of that name exists at any
+commit in this repository's history (`git log --all --name-only --format="" | grep
+-i encoding_loader` returns nothing), so there is no live path to redirect a reader
+to. The section itself already says the design is not closed; the loader remained a
+proposal. The three runtime locations it would have populated are still populated by
+hand — `bench/cdsfl_registry/domains/<domain>.toml`,
+`bench/cdsfl_registry/domains/immune/<domain>.toml`, and the directive text under
+`bench/directives/`. The bullet is left intact as the record of a proposal that was
+open on 2026-04-17.
+
 ---
 
 ## Part 7. Topology (panel question)

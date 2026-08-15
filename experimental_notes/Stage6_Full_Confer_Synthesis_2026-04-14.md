@@ -446,6 +446,16 @@ Items that are accepted limitations for Exp 39 shadow mode but must be resolved 
 | R2 Codex | `bench/logs/confer_stage6_r2/codex_20260414T101259Z.json` |
 | R3 logs | Pending consolidation into `bench/logs/confer_stage6_r3/` |
 
+**[Correction 2026-08-12.]** The consolidation recorded as pending in the last row
+never happened, and `bench/logs/confer_stage6_r3/` was **never created** — no path
+under that name appears at any commit in this repository's history (`git log --all
+--name-only --format="" | grep confer_stage6` returns only the `_full`, `_model` and
+`_r2` scripts and log directories). The Round-3 material is therefore not recoverable
+from a directory of its own; what survives of Round 3 is the synthesis in this
+document and the `bench/logs/confer_stage6_full/` directory, whose logs carry the
+2026-04-14T11:18:54Z timestamp of the full five-model round. The row is left intact
+as the record of an intention held on 2026-04-14.
+
 ---
 
 ## Status

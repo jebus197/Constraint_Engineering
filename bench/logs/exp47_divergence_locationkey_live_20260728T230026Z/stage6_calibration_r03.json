@@ -1,0 +1,214 @@
+{
+  "round_idx": 3,
+  "findings": [
+    {
+      "finding_id": "Codex_F007",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5805,
+      "flaw_class": 2,
+      "encounter_count": 4,
+      "description_snippet": "`bench/dm/_divergence.py`, `_ALT_HEADER_RE` / `parse_alternative_block()`: the parser rejects the shorthand alternative "
+    },
+    {
+      "finding_id": "DeepSeek_F007",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.3,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6242,
+      "flaw_class": 1,
+      "encounter_count": 11,
+      "description_snippet": "FINDING_ID: F007  \nSEVERITY: 0.75 (HIGH \u2014 silently wrong results; the severe penalty tier is never reached)  \nFLAW_CLASS"
+    },
+    {
+      "finding_id": "ChatGPT_F007",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.5693,
+      "flaw_class": 4,
+      "encounter_count": 3,
+      "description_snippet": "`parse_null_justification_block()` in `bench/dm/_divergence.py` fails to parse an inline null-alternative justification "
+    },
+    {
+      "finding_id": "CC2_F001",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6099,
+      "flaw_class": 5,
+      "encounter_count": 8,
+      "description_snippet": "`_ALT_HEADER_RE` (`bench/dm/_divergence.py:104\u2013122`) only recognises a dimension tag when it is introduced by the litera"
+    },
+    {
+      "finding_id": "Gemini_F008",
+      "nu_k_proxy": 0.4,
+      "c_ext_raw": 0.4,
+      "c_ext": 0.28,
+      "h_ratio": 0.7,
+      "search_status": "searched",
+      "sources": [
+        {
+          "source_name": "arxiv",
+          "results_count": 3,
+          "status": "live",
+          "recall_estimate": 0.4,
+          "query_quality": 1.0,
+          "access_completeness": 1.0,
+          "c_s": 0.4
+        }
+      ],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.7488,
+      "delta": 0.1512,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6282,
+      "flaw_class": 1,
+      "encounter_count": 12,
+      "description_snippet": "The regexes `_CONTRAST_RE`, `_NULL_HEADER_RE`, and `_DIM_LINE_RE` are highly brittle to standard markdown formatting, an"
+    }
+  ],
+  "tool_fpr": {
+    "ct_mechanical": {
+      "tool_name": "ct_mechanical",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 26,
+      "total": 26,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_intra_round_dedup": {
+      "tool_name": "v2_intra_round_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 10,
+      "total": 10,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_similarity_dedup": {
+      "tool_name": "v2_similarity_dedup",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 16,
+      "total": 16,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "v2_bug_closed": {
+      "tool_name": "v2_bug_closed",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 1,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3": {
+      "tool_name": "z3",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "z3_v2_smt2": {
+      "tool_name": "z3_v2_smt2",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "mypy": {
+      "tool_name": "mypy",
+      "passes": 0,
+      "fails": 1,
+      "inconclusive": 0,
+      "total": 1,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.4,
+  "mean_c_ext": 0.28,
+  "mean_delta": 0.1512,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1785283317.8741682
+}

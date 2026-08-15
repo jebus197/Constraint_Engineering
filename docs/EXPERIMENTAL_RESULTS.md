@@ -2,7 +2,9 @@
 
 **Status:** Active — results recorded as experiments complete.
 
-This document is the canonical record of all empirical testing of the CDSFL methodology. Each experiment is recorded with full methodology, raw data references, and findings — including null results and failures. Nothing is omitted. For detailed test coverage of the management layer, see [bench/TEST_COVERAGE.md](../bench/TEST_COVERAGE.md).
+This document is the canonical record of empirical testing of the CDSFL methodology. Each experiment is recorded with its methodology, raw data references, and findings — including null results and failures. **What "canonical" does and does not guarantee is stated exactly, and enforced by a test, in [Scope of This Record](#scope-of-this-record) at the foot of the document. Read that section before quoting this document as complete.** For detailed test coverage of the management layer, see [bench/TEST_COVERAGE.md](../bench/TEST_COVERAGE.md).
+
+**[Correction 2026-08-08.]** This paragraph previously read "…the canonical record of all empirical testing… Nothing is omitted." That claim was false from 2026-04-19, the date of the last entry written before this correction, until 2026-08-08. Across those 111 days, Experiments 30–35 and 37–49 each had at least one run directory under `bench/logs/` holding a machine-written `*_report.json`, and not one of those runs was recorded here. Measured occurrence by occurrence on 2026-08-08: Experiments 30–35, 38, 39 and 42–49 were not named anywhere in the file at all; Experiment 37 was named once, as a forward reference at the end of the Experiment 36 entry; Experiment 40 was named twice, under a planning-and-closure heading and in a documentation to-do list, neither of which records a run; and Experiment 41 was named once, inside the forward-looking phrase "Experiments 41–54". Not one of those mentions carries a result. The claim was also unfalsifiable as written: this file was referenced nowhere in `scripts/cdsfl_sv.py` and nowhere in `scripts/cdsfl_qc.py`, so no mechanism existed that could ever have contradicted it. An unverifiable completeness claim in a canonical record is worse than no claim, because it stops the reader looking. It is replaced by a bounded claim with a check behind it — see Scope of This Record.
 
 ---
 
@@ -1637,7 +1639,420 @@ Scope of the sweep:
 6. `docs/EXPERIMENTAL_RESULTS.md` — this section and the preceding Experiment 29–40 entries.
 7. `PAPER.md` — update pass for §17, §18, Stage 6, Exp 40 results, B-Cell Complex, Tranche refactor.
 
+**[Correction 2026-08-08.]** Item 6 above says the sweep produced "the preceding Experiment 29–40 entries". Measured against this file on 2026-08-08: entries existed for Experiments 29, 36 and a planning-and-closure entry headed "Experiment 40 Stage 3 Closure", and for nothing else in that range. Experiments 30, 31, 32, 33, 34, 35, 37, 38 and 39 had run directories with machine-written reports under `bench/logs/` on the date of the sweep and received no entry. Item 6 therefore overstates what was written. This entry is left intact as the historical record of what was claimed at the time; the runs it skipped are recorded below under Back-Filled Experimental Runs.
+
 **TTS and experimental_notes mirrors:** Each substantive batch produced a `.txt` mirror at `~/Desktop/CDSFL_tts/` and a `.md` mirror at `experimental_notes/`, per the unification directive that TTS notes are the same artefact as experimental notes in two formats.
+
+---
+
+## Back-Filled Experimental Runs
+
+Covering the experiments numbered thirty to forty-nine, each with its own entry below. The heading of this section deliberately names no number range: `bench/tests/test_results_doc_currency.py` requires every experiment to be named singly in a heading of its own, so that deleting one entry cannot be masked by a range in a heading above it.
+
+**Back-filled 2026-08-08.** Every entry in this section was written from the runner's own end-of-run `*_report.json` and from nothing else. No session summary, note, memory file or commit message was used as a source, including where such a source exists and disagrees. Where a report does not carry a field, the entry says so rather than filling the gap from elsewhere.
+
+### How to read these entries
+
+**Scale.** This section records **29 runs** across 20 experiment numbers. Experiments 39, 40, 41 and 42 each ran more than once and each run is recorded separately. Experiments 29 and 36 already have entries above and are not repeated here, which is why the 31 report-bearing run directories for Experiments 29 through 49 yield 29 entries below rather than 31.
+
+**The panel.** Every run recorded in this section dispatched the same five-model panel, read from each report's `models` field: CC2, ChatGPT, Codex, DeepSeek, Gemini. This was verified individually across all 31 numbered runs that carry a report, including the two already documented above; there is no exception. These are live model dispatches, not simulated agents.
+
+**Two gamma series, and only one of them is the gate.** This project has twice confused these two numbers, so every figure below is labelled with the series it came from:
+
+- **γ_all** — the last value of `gamma_history`. Computed over **all** findings regardless of severity. It is telemetry. It is **not** the convergence gate's input, and several convergence-reason strings in these reports say so explicitly ("reported only", "telemetry").
+- **γ_crit** — the last value of `gamma_critical_history`. Computed over **critical** findings only, critical meaning severity ≥ 0.70 (`CRITICAL_SEVERITY_THRESHOLD` in `bench/reference_runner_v2.py`). This is the series the two-sided convergence gate reads.
+
+`gamma_critical_history` **does not exist in any report before Experiment 42.** Where it is absent, the entry below says `ABSENT` and quotes no substitute. Substituting γ_all for γ_crit is precisely the error this labelling exists to prevent: in Experiment 45 the two differ by an order of magnitude and sit on opposite sides of the gate threshold.
+
+`gamma_all_history` appears from Experiment 42 onward and is element-for-element identical to `gamma_history` in every run where both exist, with one exception recorded under Experiment 47.
+
+**Convergence.** A run converged if and only if its report carries a `convergence_reason` describing a met condition. Several reports carry no `convergence_reason` at all; those runs did not converge and are labelled `DID NOT CONVERGE`. Two further reports carry a reason that names budget exhaustion rather than a met condition (`max_rounds_reached`, `BUDGET_EXHAUSTED`); those did not converge either. The `converged_at` field is **not** used as evidence of convergence anywhere below: measured across these reports it holds the index of the terminal round whether or not the run converged, so on its own it would report every run as a success.
+
+**Finding counts.** Two different counts appear and are labelled separately. *Raw* is the report's `total_findings` — every finding emitted by every model in every round, before deduplication. *Canonical* is the number of entries in the report's finding registry after cross-model merging. *Critical* is the subset of canonical entries with severity ≥ 0.70. Reports before Experiment 33 carry no registry at all, so for those the canonical and critical counts are not available rather than zero.
+
+**HIL** is the length of the report's `hil_flags` list: escalations to the human falsifier. A non-zero count is the designed behaviour, not a fault. **The `hil_flags` field does not exist in any report before Experiment 36.** Where it is absent the entry says `not recorded` and quotes no number: an absent field is not a measured zero, and rendering it as one would claim that those runs needed no human escalation when the truth is that the report format of the time did not record whether they did.
+
+---
+
+### Experiment 30: Endocrine Layer Under Load
+
+**Run directory:** `bench/logs/exp30_endocrine_20260404T235135Z` · **Report:** `exp30_report.json`
+**Window (from report):** 2026-04-05 00:16 → 01:43 UTC, 1.45 h wall clock
+**Target:** not recorded — this report carries no `target_file` field
+**Rounds:** 15 of a 15-round budget
+
+**Outcome: DID NOT CONVERGE.** `convergence_reason` = `max_rounds_reached(15)`. The run stopped because it exhausted its round budget, not because any convergence condition was met.
+
+**Findings:** 378 raw. No finding registry in this report, so canonical and critical counts are unavailable. HIL escalations: not recorded — this report carries no `hil_flags` field.
+
+**[Correction 2026-08-08, adversarial verification.]** This entry first read "340 raw". `exp30_report.json` carries `total_findings` = 378; 340 is Experiment 29's figure, transcribed from the adjacent report. Corrected against the primary evidence.
+**Gamma:** γ_all ABSENT, γ_crit ABSENT — neither series is recorded in this report.
+
+### Experiment 31: Post-Fix Re-Run
+
+**Run directory:** `bench/logs/exp31_postfix_20260405T041753Z` · **Report:** `exp31_report.json`
+**Window:** 2026-04-05 04:18 → 06:38 UTC, 2.33 h
+**Target:** not recorded · **Rounds:** 15 of 15
+
+**Outcome: DID NOT CONVERGE.** `convergence_reason` = `BUDGET_EXHAUSTED(15)`.
+
+**Findings:** 360 raw. No registry; canonical and critical unavailable. HIL: not recorded (no `hil_flags` field).
+**Gamma:** γ_all ABSENT, γ_crit ABSENT.
+
+### Experiment 32: Meta Run
+
+**Run directory:** `bench/logs/exp32_meta_20260405T085629Z` · **Report:** `exp32_report.json`
+**Window:** 2026-04-05 08:56 → 09:26 UTC, 0.49 h
+**Target:** not recorded · **Rounds:** 10 of 10
+
+**Outcome: DID NOT CONVERGE.** `convergence_reason` = `BUDGET_EXHAUSTED(10)`.
+
+**Findings:** 200 raw. No registry; canonical and critical unavailable. HIL: not recorded (no `hil_flags` field).
+**Gamma:** γ_all ABSENT, γ_crit ABSENT.
+
+### Experiment 33: Endocrine Module, First Registry Run
+
+**Run directory:** `bench/logs/exp33_endocrine_20260405T110345Z` · **Report:** `exp33_report.json`
+**Window:** 2026-04-05 11:04 → 12:37 UTC, 1.55 h
+**Target:** `bench/endocrine.py` · **Rounds:** 24, against a 21-round budget with a 24-round extension cap — the extension was taken in full
+
+**Outcome: DID NOT CONVERGE.** The report carries no `convergence_reason` field at all.
+
+**Findings:** 84 raw, 32 canonical, of which 18 critical. Every one of the 32 canonical findings has status `OPEN` — no finding in this run reached a terminal state. That is consistent with a run that used its whole extended budget without settling.
+**Gamma:** γ_all 0.4129. γ_crit ABSENT.
+
+**Second artefact.** This directory also holds `reprocessed_report.json`, a later re-analysis of the same run. It carries no `experiment` field and no round or finding totals, and it is not treated as a run report here.
+
+### Experiment 34: Endocrine Module, Second Run
+
+**Run directory:** `bench/logs/exp34_endocrine_20260405T225218Z` · **Report:** `exp34_report.json`
+**Window:** 2026-04-06 01:33 → 03:17 UTC, 1.74 h
+**Target:** `bench/endocrine.py` · **Rounds:** 24 of a 21-round budget, extension cap 24, taken in full
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason` recorded.
+
+**Findings:** 390 raw, 81 canonical, of which 58 critical. Critical statuses: 45 CONFIRMED, 12 UNCONFIRMED, 1 MERGED. HIL: not recorded (no `hil_flags` field).
+**Gamma:** γ_all 0.7134. γ_crit ABSENT.
+
+### Experiment 35: Policy Engine
+
+**Run directory:** `bench/logs/exp35_pe_20260406T152126Z` · **Report:** `exp35_report.json`
+**Window:** 2026-04-06 15:21 → 18:12 UTC, 2.84 h
+**Target:** `bench/cdsfl_registry/engine.py` · **Rounds:** 23 of a 21-round budget, extension cap 24
+
+**Outcome: DID NOT CONVERGE.** `convergence_reason` = `EXTENSION_STALLED` — the run entered its extension and stopped making progress there.
+
+**Findings:** 533 raw, 79 canonical, of which 40 critical. Critical statuses: 9 CONFIRMED, 31 UNCONFIRMED. HIL: not recorded (no `hil_flags` field).
+**Gamma:** γ_all 0.6496. γ_crit ABSENT.
+
+### Experiment 37: Evidence Module
+
+**Run directory:** `bench/logs/exp37_evidence_20260409T050932Z` · **Report:** `exp37_report.json`
+**Window:** 2026-04-09 08:55 → 09:17 UTC, 0.37 h
+**Target:** `bench/evidence.py` · **Rounds:** 16 of a 21-round budget
+
+**Outcome: CONVERGED**, under the rule in force at the time. `convergence_reason`, verbatim: `STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory).`
+
+**Read that reason carefully.** It records `open_ch=51` — fifty-one open critical findings outstanding at the moment the run was declared converged — and it treats a γ of 0.467 as a *soft* condition and 10 novel findings in the final round as *advisory*. The rule that produced this verdict is not the two-sided gate now in force, which requires both a flattened critical decay curve and consecutive zero-new-critical rounds. This entry is recorded as the report states it; it is not evidence for the current gate.
+
+**Findings:** 257 raw, 222 canonical, of which 143 critical. Critical statuses: 73 CONFIRMED, 53 UNCONFIRMED, 16 MERGED, 1 CLOSED. HIL: 0.
+**Gamma:** γ_all 0.4667 (the 0.467 quoted in the reason string is this series). γ_crit ABSENT.
+
+### Experiment 38: Ouroboros Cell Against the Runner
+
+**Run directory:** `bench/logs/exp38_ouroboros_20260411T041938Z` · **Report:** `exp38_ouroboros_report.json`
+**Window:** 2026-04-11 05:21 → 13:33 UTC, 8.20 h — the longest run in this section
+**Target:** `bench/reference_runner.py` · **Domain:** software · **Rounds:** 24 of a 21-round budget, extension cap 24
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason` recorded.
+
+**Findings:** 545 raw, 169 canonical, of which 81 critical. Critical statuses: 36 CLOSED, 29 CONFIRMED, 12 UNCONFIRMED, 3 MERGED, 1 REFUTED. **HIL: 59** — by a wide margin the heaviest human-falsifier load in the record, and the clearest single signal that this run was not self-sufficient.
+**Gamma:** γ_all 0.5097. γ_crit ABSENT.
+
+### Experiment 39: Zero-Gate, Two Runs
+
+Two runs on 2026-04-13, against different targets. Both are recorded; neither converged.
+
+| | Run A | Run B |
+|---|---|---|
+| Directory | `exp39_0_gate_20260413T054642Z` | `exp39_0_gate_20260413T193320Z` |
+| Window (UTC) | 14:12 → 15:36, 1.39 h | 22:20 → 23:34, 1.22 h |
+| Target | `bench/reference_runner.py` | `bench/runner_core.py` |
+| Rounds | 4 of 8 (extension cap 10) | 6 of 8 (extension cap 10) |
+| Outcome | **DID NOT CONVERGE** — no `convergence_reason` | **DID NOT CONVERGE** — no `convergence_reason` |
+| Raw findings | 78 | 111 |
+| Canonical | 35 | 41 |
+| Critical (≥ 0.70) | 14 | 22 |
+| Critical statuses | 10 UNCONFIRMED, 3 MERGED, 1 CONFIRMED | 13 UNCONFIRMED, 5 CLOSED, 3 CONFIRMED, 1 MERGED |
+| HIL | 0 | 7 |
+| γ_all | 0.7980 | 0.4612 |
+| γ_crit | ABSENT | ABSENT |
+
+Both runs stopped short of their 8-round budget without recording a reason.
+
+### Experiment 40: Feedback Channel — Full Module and Four Slices
+
+Experiment 40 is six runs, not one. The full `bench/dm/_feedback.py` module was run once; the module was then cut into three slices, each run separately, with one slice re-run after an outage and the admissibility slice re-run in a hardened configuration. Directory timestamps and report `start_time` values disagree for several of these runs; the report times are used below and the directory names are given verbatim so both are recoverable.
+
+**Panel:** the same five models throughout. **Domain:** software throughout.
+
+#### 40a — Full module
+
+**Directory:** `bench/logs/exp40_gate_20260514T020550Z` · **Target:** `bench/dm/_feedback.py`
+**Window:** 2026-05-16 16:56 → 18:28 UTC, 1.54 h · **Rounds:** 29 of 29
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason` recorded; the run used its entire 29-round budget.
+
+**Findings:** 417 raw, 296 canonical, of which 116 critical (21 CLOSED, 36 MERGED, 32 CONFIRMED, 27 UNCONFIRMED). HIL: 33.
+**Gamma:** γ_all 0.0507 — effectively flat-lined at zero, against a run that produced 296 canonical findings. γ_crit ABSENT. This pairing is the reason the slices were cut.
+
+#### 40b — Admissibility slice
+
+**Directory:** `bench/logs/exp40_slice_admissibility_20260516T223952Z` · **Target:** `working/_feedback_slice.py` inside that directory
+**Window:** 2026-05-18 00:06 → 00:31 UTC, 0.43 h · **Rounds:** 8 of 20
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `GAMMA_ALT_CONVERGED: gamma=0.305 >= 0.3 at round 7`.
+
+**This is the historically important detail.** The 0.305 quoted in that reason is the **all-findings** series: the report's γ_all is 0.3047, and no `gamma_critical_history` exists in this report at all. At this date the gamma-alternative gate was reading the all-findings curve. The critical-only series, and the two-sided gate that reads it, arrived later. Do not read this run as an instance of the current gate.
+
+**Findings:** 62 raw, 42 canonical, of which 13 critical (8 CLOSED, 5 UNCONFIRMED). HIL: 0.
+**Gamma:** γ_all 0.3047. γ_crit ABSENT.
+
+#### 40c — Collision slice
+
+**Directory:** `bench/logs/exp40_slice_collision_20260518T130744Z` · **Target:** `working/_feedback_collision_slice.py`
+**Window:** 2026-05-18 13:07 → 13:47 UTC, 0.66 h · **Rounds:** 4 of 12
+
+**Outcome: CONVERGED, by a sparsity fallback rather than by the ordinary gate.** `convergence_reason`, verbatim: `HARDENED_CONVERGED (sparsity fallback): cum_critical=4 < 8; γ_crit=1.000 reported-not-gated; 3 consecutive settled zero-novel-critical rounds met at R3 [γ_all diag=0.536]`.
+
+**A discrepancy worth naming.** That reason string quotes a γ_crit of 1.000, but this report contains **no** `gamma_critical_history` series. The value was computed and named in prose at the moment of the verdict and never persisted. It is therefore not independently recoverable from this report, and it is recorded here as a quotation from the reason string, not as a measured series value. The `γ_all diag=0.536` in the same string does match the persisted series (0.5365).
+
+**Findings:** 33 raw, 17 canonical, of which 4 critical (2 UNCONFIRMED, 2 CLOSED) — the sparsity the fallback names. HIL: 0.
+**Gamma:** γ_all 0.5365. γ_crit ABSENT as a series; see above.
+
+#### 40d — Records slice, terminated by an outage
+
+**Directory:** `bench/logs/exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5` · **Target:** `working/_feedback_records_slice.py`
+**Window:** 2026-05-18 13:55 → 15:33 UTC · **Rounds:** 5 of 12
+
+**Outcome: DID NOT CONVERGE — terminated by an external outage at round 5**, as the directory suffix records. No `convergence_reason`.
+
+**Findings:** 32 raw, 24 canonical, of which 13 critical (8 UNCONFIRMED, 3 CONFIRMED, 2 CLOSED). HIL: 0.
+**Gamma:** γ_all 0.4944. γ_crit ABSENT.
+
+#### 40e — Records slice, re-run
+
+**Directory:** `bench/logs/exp40_slice_records_20260518T160503Z` · **Target:** `working/_feedback_records_slice.py`
+**Window:** 2026-05-18 16:05 → 18:57 UTC, 2.87 h · **Rounds:** 12 of 12
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason`; full budget used.
+
+**Findings:** 87 raw, 55 canonical, of which 17 critical (11 CONFIRMED, 3 MERGED, 2 UNCONFIRMED, 1 CLOSED). HIL: 1.
+**Gamma:** γ_all 0.3689. γ_crit ABSENT.
+
+#### 40f — Admissibility slice, hardened
+
+**Directory:** `bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z` · **Target:** `working/_feedback_slice.py`
+**Window:** 2026-05-18 19:01 → 21:25 UTC, 2.40 h · **Rounds:** 12 of 12
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason`; full budget used. The hardened configuration did not reproduce 40b's convergence on the same slice.
+
+**Findings:** 81 raw, 53 canonical, of which 24 critical (12 CLOSED, 6 CONFIRMED, 4 UNCONFIRMED, 2 MERGED). HIL: 0.
+**Gamma:** γ_all 0.3631. γ_crit ABSENT.
+
+### Experiment 41: Convergence Detector, Two Runs
+
+Both runs targeted `bench/dm/_convergence.py`, domain software, on 2026-05-22.
+
+#### 41a — First run
+
+**Directory:** `bench/logs/exp41_convergence_20260522T021030Z`
+**Window:** 2026-05-22 02:10 → 06:36 UTC, 4.43 h · **Rounds:** 12 of 12
+
+**Outcome: DID NOT CONVERGE.** No `convergence_reason`; full budget used.
+
+**Findings:** 115 raw, 79 canonical, of which 39 critical (24 CONFIRMED, 10 UNCONFIRMED, 5 MERGED). HIL: 0.
+**Gamma:** γ_all 0.0000 — the all-findings curve terminated at exactly zero. γ_crit ABSENT.
+
+#### 41c — First-principles re-run
+
+**Directory:** `bench/logs/exp41c_first_principles_20260522T194836Z`
+**Window:** 2026-05-22 19:48 → 21:17 UTC, 1.47 h · **Rounds:** 7 of 12
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `GAMMA_ALT_CONVERGED: 3 consecutive rounds with zero novel CRITICAL (history tail=[0, 0, 0]) at round 6`.
+
+This is the zero-new-critical side of the diminishing-returns measure firing on its own; the reason string names no gamma value.
+
+**Findings:** 31 raw, 22 canonical, of which 7 critical (3 UNCONFIRMED, 2 CLOSED, 1 CONFIRMED, 1 MERGED). HIL: 0.
+**Gamma:** γ_all 0.2397. **γ_crit ABSENT** — this report persists no `gamma_critical_history`. Any γ_crit figure quoted for Experiment 41c elsewhere in the project record is not sourced from this report and cannot be confirmed against it.
+
+### Experiment 42: Composer — Four Runs
+
+All four targeted `bench/cdsfl_registry/composer.py`, domain software. Experiment 42 is the first experiment whose reports carry `gamma_critical_history`, so it is the first for which γ_crit can be quoted from a persisted series.
+
+| | 42a confirm | 42b main | 42c take-up-slack | 42d location-key live |
+|---|---|---|---|---|
+| Directory | `exp42_composer_confirm_20260606T184941Z` | `exp42_composer_20260606T202037Z` | `exp42_composer_takeupslack_20260607T154745Z` | `exp42_composer_locationkey_live_20260609T183659Z` |
+| Window (UTC) | 06-06 18:49 → 19:25, 0.60 h | 06-06 20:20 → 23:48, 3.46 h | 06-07 15:47 → 20:12, 4.41 h | 06-09 18:36 → 21:11, 2.58 h |
+| Rounds | 2 of 2 | 12 of 12 | 16 of 16 | 7 of 16 |
+| Outcome | **DID NOT CONVERGE** (no reason; 2-round confirmation run) | **DID NOT CONVERGE** (no reason) | **DID NOT CONVERGE** (no reason) | **CONVERGED** |
+| Raw findings | 29 | 94 | 150 | 80 |
+| Canonical | 23 | 67 | 80 | 52 |
+| Critical (≥ 0.70) | 19 | 56 | 52 | 40 |
+| Critical statuses | 14 CLOSED, 3 CONFIRMED, 2 UNCONFIRMED | 39 CLOSED, 14 UNCONFIRMED, 2 CONFIRMED, 1 REFUTED | 52 CLOSED | 40 CLOSED |
+| HIL | 0 | 0 | 0 | 0 |
+| **γ_all** | 0.0000 | 0.4776 | 0.4741 | 0.5327 |
+| **γ_crit** | 0.0000 | 0.4943 | 0.6372 | 0.6068 |
+
+**42d convergence reason, verbatim:** `CRITICAL_QUIESCENCE_CONVERGED: 3 consecutive rounds with zero novel CRITICAL (history tail=[0, 0, 0]) at round 6 [gamma=0.533, reported only]`.
+
+The `gamma=0.533` in that string is γ_all, and the string itself marks it "reported only". The critical-only series for the same run ended at **0.6068**, comfortably above the 0.30 threshold the two-sided gate uses. Both sides of the diminishing-returns measure agreed on this run, which is why it is the landmark it is — but the two numbers are different numbers and the reason string is quoting the one that does not gate.
+
+Note also that 42c reached γ_crit 0.6372 — above threshold — and still did not converge, because the zero-new-critical side never held for three consecutive rounds. That is the two-sided gate behaving as designed: one side alone is not sufficient.
+
+### Experiment 43: Macrophage Cell
+
+**Run directory:** `bench/logs/exp43_macrophage_locationkey_live_20260719T014326Z`
+**Report:** `exp43_macrophage_locationkey_live_report.json`
+**Window:** 2026-07-19 01:43 → 08:03 UTC, 6.33 h
+**Target:** `bench/macrophage_cell.py` · **Domain:** software · **Rounds:** 14 of 16
+
+**Outcome: DID NOT CONVERGE.** The report carries no `convergence_reason` field. The run stopped two rounds short of its budget without recording a met condition.
+
+**Findings:** 95 raw, 51 canonical, of which 19 critical — 18 CLOSED and 1 CONFIRMED. HIL: 2.
+**Gamma:** γ_all 0.3874, **γ_crit 0.5659**.
+
+γ_crit of 0.566 is well above the 0.30 threshold, and only one critical finding remained un-terminal. The run nonetheless recorded no convergence. Whatever prevented it is not visible in the summary fields of this report; it is a mechanical question about the run, not a question about the decay curve.
+
+### Experiment 44: Evidence Module
+
+**Run directory:** `bench/logs/exp44_evidence_locationkey_live_20260727T002705Z`
+**Window:** 2026-07-27 00:27 → 04:08 UTC, 3.69 h
+**Target:** `bench/evidence.py` · **Domain:** software · **Rounds:** 13 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `STATE_CONVERGED at round 12 (3 consecutive passes): All conditions met: open_ch=0 (stable), novel=2, contested=0, gamma=0.253 (telemetry)`.
+
+Contrast with Experiment 37: `open_ch=0` here, against `open_ch=51` there. No open critical finding remained.
+
+**Findings:** 104 raw, 82 canonical, of which 34 critical — **all 34 CLOSED**, no critical finding left in a non-terminal state. Full canonical status spread: 63 CLOSED, 13 CONFIRMED, 5 REFUTED, 1 MERGED. HIL: 3.
+**Gamma:** γ_all 0.2533 (the `gamma=0.253` in the reason string, explicitly marked "telemetry"), **γ_crit 0.4532**.
+
+Note that γ_all 0.253 is *below* the 0.30 threshold while γ_crit 0.453 is above it. A reader who took the number quoted in the reason string as the gate input would conclude this run should not have converged.
+
+### Experiment 45: Persistent Immune Memory, Statistics Domain
+
+**Run directory:** `bench/logs/exp45_memory_statistics_live_20260727T225640Z`
+**Window:** 2026-07-27 22:56 → 23:42 UTC, 0.76 h
+**Target:** `bench/dm/_memory.py` · **Domain:** statistics — the first non-software domain in this section · **Rounds:** 4 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical=0.621 >= 0.3 (decay curve flattened) AND 3 consecutive zero-new-critical rounds (history tail=[0, 0, 0]) at round 3 — the two sides of the same diminishing-returns measure agree`.
+
+**Findings:** 41 raw, 39 canonical, of which 12 critical (11 CLOSED, 1 CONFIRMED). Full canonical spread: 15 CLOSED, 13 CONFIRMED, 6 UNCONFIRMED, 3 REFUTED, 2 MERGED. HIL: 0.
+**Gamma:** γ_all **0.0516**, γ_crit **0.6213**.
+
+**This run is the reason the two series are labelled separately throughout this document.** γ_all is 0.0516 and γ_crit is 0.6213 — a factor of twelve apart, on opposite sides of the 0.30 threshold. Had the gate read the all-findings curve, this run would not have converged. Had a reader quoted γ_all as "the gamma at convergence", the record would carry a convergence at 0.05 against a stated threshold of 0.30, which is unintelligible. The gate reads the critical-only curve; the figure that matters here is 0.6213.
+
+### Experiment 46: Stage 6 Shadow Extension
+
+**Run directory:** `bench/logs/exp46_stage6_locationkey_live_20260728T103151Z`
+**Window:** 2026-07-28 10:31 → 12:12 UTC, 1.67 h
+**Target:** `bench/dm/_shadow_stage6.py` · **Domain:** software · **Rounds:** 6 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical=0.336 >= 0.3 (decay curve flattened) AND 3 consecutive zero-new-critical rounds (history tail=[0, 0, 0]) at round 5 — the two sides of the same diminishing-returns measure agree`.
+
+**Findings:** 48 raw, 27 canonical, of which 12 critical — all 12 CLOSED. Full canonical spread: 17 CLOSED, 6 CONFIRMED, 4 REFUTED. HIL: 0.
+**Gamma:** γ_all 0.3040, **γ_crit 0.3357**.
+
+This is the narrowest margin in the record: γ_crit 0.3357 against a threshold of 0.30. Both series happen to sit close together here, which is why this run is a poor one to reason about the difference from — Experiment 45 is the instructive case.
+
+### Experiment 47: Divergence Directive
+
+**Run directory:** `bench/logs/exp47_divergence_locationkey_live_20260728T230026Z`
+**Window (from report):** 2026-07-29 00:47 → 04:31 UTC, 3.73 h — note the directory timestamp reads 2026-07-28
+**Target:** `bench/dm/_divergence.py` · **Domain:** software · **Rounds:** 14 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical=0.367 >= 0.3 (decay curve flattened) AND 3 consecutive zero-new-critical rounds (history tail=[0, 0, 0]) at round 13 — the two sides of the same diminishing-returns measure agree`.
+
+**Findings:** 92 raw, 70 canonical, of which 44 critical (41 CLOSED, 2 UNCONFIRMED, 1 CONFIRMED). HIL: 4.
+**Gamma:** γ_all 0.2957, **γ_crit 0.3668**. As in Experiment 44, the all-findings curve is below the threshold and the critical-only curve is above it.
+
+**Series-length anomaly, recorded because it is the single exception to the identity stated at the top of this section.** In this report `gamma_history` has 14 entries — one per round — while `gamma_all_history` and `gamma_critical_history` have 9 each. The 9-element series align exactly with the last 9 elements of `gamma_history`: `gamma_history[5:]` is element-for-element equal to `gamma_all_history`. The two shorter series therefore begin recording at round 6 rather than round 1. The terminal values are unaffected, so nothing quoted above changes, but a reader indexing these three series against each other by position will misalign them by five rounds. In every other run in this section, `gamma_history` and `gamma_all_history` are identical in both length and content.
+
+### Experiment 48: Chemistry Examination
+
+**Run directory:** `bench/logs/exp48_chemistry_exam_live_20260729T044134Z`
+**Window:** 2026-07-29 04:41 → 06:22 UTC, 1.68 h
+**Target:** `/Users/georgejackson/CDSFL_review_targets/exp48_chemistry.md` · **Domain:** chemistry · **Rounds:** 6 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `STATE_CONVERGED at round 5 (3 consecutive passes): All conditions met: open_ch=0 (stable), novel=1, contested=0, gamma=0.858 (telemetry)`.
+
+**Findings:** 44 raw, 37 canonical, of which 32 critical (31 CLOSED, 1 MERGED). Full canonical spread: 32 CLOSED, 2 MERGED, 2 REFUTED, 1 CONFIRMED. HIL: 0.
+**Gamma:** γ_all 0.8581, **γ_crit 0.8847** — the highest pair in the record, and the two series agree closely here.
+
+**Reproducibility limitation, stated because it is a real one.** The target of this experiment is an absolute path outside the repository. A reader with only a clone of this repository cannot obtain the article that was reviewed, and therefore cannot reproduce this run. The same applies to Experiment 49.
+
+### Experiment 49: Engineering Examination
+
+**Run directory:** `bench/logs/exp49_engineering_exam_live_20260729T062320Z`
+**Window:** 2026-07-29 06:23 → 08:39 UTC, 2.27 h
+**Target:** `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md` · **Domain:** engineering · **Rounds:** 7 of 16
+
+**Outcome: CONVERGED.** `convergence_reason`, verbatim: `STATE_CONVERGED at round 6 (3 consecutive passes): All conditions met: open_ch=0 (stable), novel=0, contested=0, gamma=0.774 (telemetry)`.
+
+**Findings:** 40 raw, 38 canonical, of which 31 critical (30 CLOSED, 1 MERGED). Full canonical spread: 32 CLOSED, 5 MERGED, 1 CONFIRMED. HIL: 3.
+**Gamma:** γ_all 0.7738, **γ_crit 0.8293**.
+
+Same reproducibility limitation as Experiment 48: the target lives outside the repository.
+
+### What the back-fill shows, taken together
+
+Of the 29 runs recorded in this section, **11 converged and 18 did not.** A record that had listed only the convergences would have described a very different system from the one that ran.
+
+The eleven convergences did not all happen under the same rule, and lumping them together would be its own kind of omission:
+
+| Rule that produced the verdict | Runs | γ_crit persisted? |
+|---|---|---|
+| Two-sided gate, named as such in the reason string | 45, 46, 47 | Yes — 0.6213, 0.3357, 0.3668 |
+| Critical-quiescence, pre-two-sided wording | 42d | Yes — 0.6068 |
+| State-convergence, three consecutive passes | 44, 48, 49 | Yes — 0.4532, 0.8847, 0.8293 |
+| Zero-novel-critical alone, no gamma named | 41c | No |
+| All-findings gamma ≥ 0.30 — superseded | 40b | No |
+| Sparsity fallback, critical count below the floor | 40c | No, though the reason string quotes one |
+| Soft gamma, converged with 51 open criticals — superseded | 37 | No |
+
+Only seven of the eleven have a critical-only gamma recoverable from the report. For the other four, any γ_crit figure is a quotation from prose or from another document, not a measurement from the run.
+
+The single most useful thing in this section for a future reader is the γ_all against γ_crit column in Experiments 44, 45 and 47, where the two curves sit on opposite sides of the gate threshold. Any statement of the form "gamma at convergence was X" is ambiguous and, in those three runs, materially wrong half the time.
+
+---
+
+## Scope of This Record
+
+**Decision, 2026-08-08: the "Nothing is omitted" claim is re-scoped, not restored.** It is replaced by a bounded claim that a machine can check, and that machine now runs.
+
+### What this document guarantees
+
+**Every experiment that has a run directory under `bench/logs/` containing a parseable machine-written report has an entry in this document.** That is the whole of the guarantee, and it is enforced, not asserted:
+
+- `bench/tests/test_results_doc_currency.py` derives the required set from the filesystem — it walks `bench/logs/`, takes every directory whose name carries an experiment number, keeps those holding at least one `*_report.json` that parses, and fails if any of those numbers has no entry heading here. It names the missing numbers in the failure message. It hardcodes no list of experiments; adding a run directory with a report is sufficient to make the test demand an entry for it.
+- `scripts/cdsfl_qc.py` runs the same check and reports it in the `qc` sweep.
+- A report file that exists but cannot be parsed is reported by name rather than skipped. A check that quietly drops the evidence it cannot read is the failure mode this project has been bitten by repeatedly, and it is not repeated here.
+
+### What this document does not guarantee, and why
+
+**Directories in `bench/logs/` that carry no experiment number are outside the check.** These are confer transcripts, smoke tests, the C5 condition runs, the baseline confer runs, and ad-hoc analysis directories. Measured on 2026-08-08 by iterating the directory: **332 entries at the top level, of which 71 carry an experiment number and 36 of those hold at least one `*_report.json`** — one of the 36 being a `…_latest` symlink onto another, so 35 distinct report-bearing directories, covering 24 distinct experiment numbers. The rest is working material, and several pieces of it are already described in this document under their own headings, but no automated rule can decide which of them constitutes "an experiment", so no rule pretends to.
+
+**A run that produced no report is invisible to this check, and that is not a hypothetical.** Thirty-five of the 71 numbered directories hold no `*_report.json` at all: aborted launches, restarts seconds apart, and at least one deliberate halt. `bench/logs/exp53_control_zero_live_20260729T222431Z` and `bench/logs/exp53_control_zero_live_20260801T005649Z` are the zero-plant control, halted on purpose; neither wrote a report, so neither this document nor the test that guards it will ever demand an entry for Experiment 53. The absence of an Experiment 53 entry below therefore means "no machine-written report exists to write one from" — it does not mean the experiment did not run. Anyone reasoning about coverage from this document must read that sentence before concluding anything from a gap in the numbering.
+
+**Pre-runner data in `bench/results/` is outside the check.** Experiments 0 through 18 predate the machine-written report format; their entries above are reconstructions and are labelled as such where they appear.
+
+**Depth of an entry is not checked, only presence.** The test can tell that Experiment 43 has an entry. It cannot tell whether that entry is accurate or complete. Accuracy remains a human obligation; the check exists only to make total absence impossible.
+
+**Experiment numbering has gaps and variants that the check tolerates.** Runs suffixed with a letter (41c) are counted under their base number (41). An experiment with six run directories (40) needs one entry mentioning it, not six — the entries above nonetheless record all six runs individually, because a record that collapsed them would hide the four that did not converge.
+
+### Why the boundary is stated rather than the claim widened
+
+The original claim failed for 111 days and nothing noticed, because nothing could. A completeness claim over a set that no rule can enumerate is unfalsifiable, and an unfalsifiable claim in a canonical record does active harm: it tells the reader to stop looking. A narrower claim that a test can contradict is worth more than a broad one that nothing can.
 
 ---
 

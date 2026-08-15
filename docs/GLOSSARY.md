@@ -19,11 +19,11 @@ Communication topology where models share state through a central FindingRegistr
 
 ### CC1
 
-Claude Code Opus 4.6 running in UX (interactive) mode. The operator instance — runs the conversation, coordinates work. Not a panel participant. Uses the Max subscription.
+Claude Code running in UX (interactive) mode, currently Opus 4.7. The operator instance — runs the conversation, coordinates work. Not a panel participant. Uses the Max subscription. The model version is rotated; the roster of record is `docs/REPRODUCING.md` § Model Confer Dispatch.
 
 ### CC2
 
-Claude Code Opus 4.6 running in piped mode (`claude -p`). Headless CLI instance dispatched via the Claude binary. Used as verification agent (CC2v) in runners and available for confer. Same Max subscription as CC1.
+Claude Code running in piped mode (`claude -p`), currently Opus 4.7. Headless CLI instance dispatched via the Claude binary. Used as verification agent (CC2v) in runners and available for confer. Same Max subscription as CC1. Version rotates with CC1; same roster of record.
 
 ### CC2v
 
@@ -57,6 +57,16 @@ Multi-model protocol. Confer: models review each other's findings iteratively, s
 ### Convergence Gate
 
 Primary termination mechanism. Five boolean conditions evaluated per round, tracked in gate_history. Fires when all five conditions are simultaneously true for a sustained window. Conditions include gamma threshold, open findings stability, inter-rater agreement, and others. Defined in topology spec T4.
+
+### Computed Evidence
+
+A record attached to a CRITICAL finding that the machinery may not clear
+automatically, carrying the answer it nevertheless worked out: the verdict, the
+model that produced it, the falsifier that ran, and the panel's proposed fix. A
+critical is never retired by a refutation — CONFIRM-only stands, because on
+Exp 42 two of three REFUTED verdicts on criticals were themselves wrong — but the
+computation is no longer discarded. The finding and the evidence reach the human
+together. Founder ruling, 2026-08-03. See `_record_computed_evidence`.
 
 ### CT Cell (Cytotoxic T Cell)
 
@@ -94,6 +104,19 @@ When multiple agents work under structured falsification, the composite system's
 
 Health monitoring subsystem (`bench/endocrine.py`). Runs periodic health cycles computing diagnostics across security, dead code, type safety, null deref, and style categories. Provides pacing signals and fix evaluation sandbox.
 
+### Falsifier, and the falsifier gate
+
+A falsifier is a runnable program attached to a finding that imports the real target (or opens the real document) and demonstrates the defect. Under the falsifier gate (`falsifier_gate_enabled`) the runner independently re-executes it, and **that** verdict — never the model's prose — decides the finding. Four outcomes, defined at `bench/falsifier_verify.py:120-150`:
+
+- **CONFIRMED** — the re-run actively demonstrated the defect: it raised an `AssertionError` or printed the literal token `FALSIFIED`.
+- **REFUTED** — the falsifier ran to a clean exit and demonstrated nothing.
+- **UNTOOLABLE** — no falsifier code was supplied.
+- **ERROR** — timeout, harness failure, or a non-zero exit that is not a genuine demonstration (a broken falsifier: bad import, typo, raw exception).
+
+The asymmetry is deliberate. A CONFIRMED requires an active demonstration, which is hard to fake; a clean exit is never promoted to a confirmation. On a CRITICAL finding the gate is CONFIRM-only: REFUTED, ERROR, UNTOOLABLE, or a critical with no falsifier all escalate to the human rather than being auto-resolved, because a logically broken falsifier exits cleanly and would otherwise mask a real defect.
+
+The falsifier source and its verdict are both preserved in a run's report, under `registry.entries[<id>].falsifier_code` and `.falsifier_verdict`.
+
 ### f_del (Delivery Feasibility)
 
 Parameter modelling the probability that a model can successfully deliver findings given its current context state. Degrades with context size but currently modelled as a constant (Gap 4 in the model audit).
@@ -118,6 +141,10 @@ Four-dimensional capability profile per model: (D, v-bar, A, C). D equals decay 
 
 Duane NHPP convergence parameter. Estimated from cumulative novel findings via log-log regression. Gamma greater than 0 indicates discovery rate depletion (convergence). Gamma approximately 0 indicates churn. Gamma less than 0 indicates divergence. Gap 1 in the model audit: gamma misclassifies system-level churn because it only sees novel rate, not raw-to-novel divergence.
 
+### Gamma_critical (gamma_critical)
+
+The Duane NHPP decay parameter computed over CRITICAL findings only, as distinct from `gamma`, which is computed over all findings. **`gamma_critical` is the input to the two-sided convergence gate; `gamma` is telemetry** — the runner's own terminal reason string labels it so. Both series are recorded per run as `gamma_critical_history` and `gamma_history` (a third, `gamma_all_history`, also appears in reports). Quoting one under a bare label "Gamma" is ambiguous; always name the series.
+
 ### HARD/SOFT Classification
 
 Constraints classified as non-negotiable (HARD) or preference-based (SOFT). HARD constraints include physics, mathematics, law, safety, and explicit absolutes. SOFT constraints include economic, preference, and convenience. Ambiguous defaults to HARD.
@@ -129,6 +156,15 @@ Founder review. Findings escalated to HIL when models cannot resolve disagreemen
 ### HT Cell (Helper T Cell)
 
 Immune pipeline cell type. Duplicate detection. HT v2 flags approximate duplicates per round using similarity matching. Helps reduce churn by identifying when models are re-describing known issues.
+
+### Irreducible-Queue Alarm
+
+Fires when the number of findings locked in an unresolvable state exceeds a bound
+(default 2). Its premise is that a large pile of genuinely irreducible findings
+almost always indicates broken machinery rather than an unusually hard document —
+vindicated on 2026-08-01, when the pile was caused by a routing ladder that never
+received the target and raising the bound twice was wrong both times. Since
+2026-08-02 it HALTS the run rather than merely refusing to declare convergence.
 
 ### Immune Pipeline
 
@@ -149,6 +185,16 @@ Inter-rater agreement metric. Measures the degree of consensus among models on f
 ### Merkle Tree
 
 RFC 9162 (CDSFL) and RFC 6962 (OpenBrain, Genesis) hash tree structure providing cryptographic verification. Each finding is hashed and incorporated into a tree. Inclusion proofs demonstrate that a specific finding was part of a sealed epoch. Implemented in `bench/verification_chain.py`.
+
+### Launch Preflight (A9)
+
+Three checks that REFUSE to start a run whose machinery contradicts its target:
+the target exists and is non-empty; routing is enabled on a prose target (it is
+the only absorber between the falsifier gate and the human queue); and the
+falsifier gate is enabled on a prose target (with S_k off and fix-verification
+unable to close, it is the only route to a terminal state). Deliberately short —
+everything the harness can correct at runtime it corrects at runtime, and a
+preflight that re-litigated those would be noise. It raises; it does not warn.
 
 ### NK Cell (Natural Killer Cell)
 
@@ -180,7 +226,17 @@ Immune pipeline cell type. Stage 6 reconciliation. Final gate that ensures consi
 
 ### Runner
 
-Experiment-specific Python script that orchestrates a multi-model analysis session. Each experiment has its own runner (e.g. `run_exp36_evidence.py`) that configures topology, target file, round budget, and extension rules. All runners share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
+The Python program that orchestrates a multi-model analysis session. Since Experiment 40 there is one active runner, `bench/reference_runner_v2.py`, driven by the shared launcher `bench/launch_exp42.py` and selected per experiment by a committed config under `bench/expNN_configs/`; the launcher's name is historical, not Experiment-42-specific. `bench/reference_runner.py` is the frozen Experiment 38/39 baseline. Experiments 29–37 each have their own standalone script (e.g. `run_exp36_evidence.py`), retained as records. All share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
+
+### S_k Tristate, and NO_SCORE
+
+The fix-admission score reports ADMISSIBLE, REJECTED, ESCALATE or **NO_SCORE**.
+NO_SCORE is not a third grade of admissibility: it is the statement that S_k has
+no opinion, because the target is not the substrate S_k is defined over. On a
+prose target S_k does not merely fail to help, it inverts — measured 2026-08-01,
+a fix injecting a shell-injection call into a fenced listing scored 1.0000
+ADMISSIBLE while a correct prose fix scored 0.6667. Fix efficacy then enters the
+residual-risk term as zero rather than as a misleading number.
 
 ### Second-Order Cognition
 
@@ -189,6 +245,15 @@ System that analyses problems (first-order), monitors its own analytical perform
 ### Skin Barrier
 
 Immune pipeline front-gate filter. Pre-filters obviously malformed or garbage findings before they enter the full pipeline. Reduces processing load on downstream cells.
+
+### Target Kind
+
+`python` or `prose`, resolved by the harness from the target itself rather than
+declared in configuration; a config declaration may veto a run on disagreement
+but can never redirect it. It governs which mechanisms apply — not whether the
+target is computable. Prose is fully reviewable; what changes is that file-based
+Python tools (ruff, mypy, bandit) cannot read a markdown file, so they are
+bypassed and reported NOT_APPLICABLE rather than run and believed.
 
 ### Stall Detector
 
@@ -206,9 +271,26 @@ Design principle: none of the mathematical formulas reference substrate-specific
 
 The architecture amplifies existing competence but cannot create competence from nothing. A panel of models that cannot analyse code will not produce valid code analysis regardless of the protocol.
 
+### Two-sided gate (critical quiescence)
+
+The runner's terminal convergence condition since the Experiment 40 arc. It fires only when both sides of the same diminishing-returns measure agree: `gamma_critical` at or above threshold (default 0.30) **AND** a run of consecutive rounds (default 3) producing no new genuine CRITICAL finding — with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Either side alone is insufficient. Reported in a run's `convergence_reason` as `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate)`. Implemented at `bench/reference_runner_v2.py:2833-3035`; the pass condition for any given config is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
+
+Where the cumulative critical count over the whole run is zero, the decay curve does not exist and `gamma_critical` returns 0.0 — indistinguishable, numerically, from the worst case. That run converges on the count side alone, guarded by a requirement that the panel produced findings of some severity, and is labelled `(two-sided gate, VACUOUS CURVE)` so a reader can judge it.
+
 ### V-hat (V-hat)
 
 Value-based termination criterion in the Mathematical Appendix. The runner's convergence gate uses a state-based approach instead. Gap 5 in the model audit: runner gate conditions do not match appendix termination criteria.
+
+### Veto, and NO_APPLICABLE_CHECKS
+
+A veto is a check that may only REJECT, never license a close. `ast.parse` on a
+document's fenced listings is the canonical case: it is a statement about the
+LISTING, never about the FIX. Every harmful fix is syntactically valid, so a clean
+parse returning PASS closed a fix injecting `subprocess.call(..., shell=True)`
+(measured, 2026-08-01). Verification is therefore tri-state — FAIL /
+NO_APPLICABLE_CHECKS / PASS — and vetoes are recorded in `vetoes_run`, kept
+separate from `checks_run`, because a veto that passes must never read as a check
+that ran.
 
 ### Verification Chain
 

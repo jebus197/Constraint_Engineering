@@ -132,6 +132,14 @@ Exp 30 was diverging. Exp 31 is converging — but too slowly. The 39 applied fi
 - Basename match fires before partial path match. Citation `src/test.py` incorrectly resolves to `lib/test.py` via basename match when only bare filenames should use basename fallback.
 - Models: Gemini (R0).
 
+**[Correction 2026-08-12.]** `src/test.py` and `lib/test.py` in the line above are
+**illustrative example paths, not repository files** — the minimal pair that
+demonstrates the ordering defect in `skin_barrier_check()`. Neither has ever
+existed here: `git log --all --name-only --format="" | grep -E '^(src|lib)/'`
+returns nothing, and this repository has no top-level `src/` or `lib/` directory at
+any commit. They are recorded here so that an automated reference check reads them
+as the worked example they are rather than as two dead pointers.
+
 ### Medium — Persistence
 
 **E31-13: Immune pipeline mutations not persisted (sev 0.75)**

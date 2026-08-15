@@ -1,0 +1,278 @@
+{
+  "round": 1,
+  "domain": "chemistry",
+  "final_verdicts": {
+    "Gemini_F008": "DUPLICATE",
+    "Gemini_F007": "DUPLICATE",
+    "Gemini_F010": "DUPLICATE",
+    "Gemini_F001": "DUPLICATE",
+    "Gemini_F011": "DUPLICATE",
+    "Gemini_F009": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 1,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "CONFIRMED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_CONSISTENT: all 2 quantities have dimension [mass] * [length] ** 2 / [time] ** 2 / [current] ** 2 [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8335763311386108,
+      "evidence": "[NK_v2] Duplicate of Gemini_F001 (sim=0.834)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F007",
+      "canonical_id": "C0028",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F007",
+      "canonical_id": "C0028",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F007",
+      "canonical_id": "C0028",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "CONFIRMED",
+      "confidence": 0.85,
+      "evidence": "pint: DIM_CONSISTENT: all 2 quantities have dimension [mass] / [substance] [specialist:dimensional_analysis]"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F007",
+      "canonical_id": "C0028",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8600000000000001,
+      "evidence": "[NK_v2] Duplicate of Gemini_F002 (sim=0.860)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F008",
+      "canonical_id": "C0029",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F008",
+      "canonical_id": "C0029",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F008",
+      "canonical_id": "C0029",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "rdkit",
+      "verdict": "REJECTED",
+      "confidence": 0.85,
+      "evidence": "rdkit: CHEM_INVALID_SMILES: none of ['[CX3](=O)[OX2H1]'] parsed [specialist:chemistry_structure]"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F008",
+      "canonical_id": "C0029",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8279974794387819,
+      "evidence": "[NK_v2] Duplicate of Gemini_F003 (sim=0.828)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F009",
+      "canonical_id": "C0030",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "z3: Z3_SINGLE_VALUE: -27.0"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F009",
+      "canonical_id": "C0030",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F009",
+      "canonical_id": "C0030",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F009",
+      "canonical_id": "C0030",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.809304723739624,
+      "evidence": "[NK_v2] Duplicate of Codex_F003 (sim=0.809)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0031",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: cannot assign to expression here. Maybe you meant '==' instead of '='? (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0031",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0031",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pint: DIM_PARSE_FAIL: could not parse any units: [('-29', 'incorrectly')]"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F010",
+      "canonical_id": "C0031",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8014597749710084,
+      "evidence": "[NK_v2] Duplicate of Gemini_F005 (sim=0.801)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0032",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "sympy",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.3,
+      "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0032",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "z3_v2_smt2",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.15,
+      "evidence": "[B_v2] not a numeric/SMT-verifiable claim \u2014 deferred to falsifier gate / HIL"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0032",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "pint",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.2,
+      "evidence": "pint: DIM_PARSE_FAIL: could not parse any units: [('-37', 'states'), ('0.126', 's**')]"
+    },
+    {
+      "round": 1,
+      "finding_id": "Gemini_F011",
+      "canonical_id": "C0032",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_similarity_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8131798601150513,
+      "evidence": "[NK_v2] Duplicate of Gemini_F006 (sim=0.813)"
+    }
+  ]
+}

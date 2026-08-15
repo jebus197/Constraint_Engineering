@@ -112,6 +112,19 @@ Architecture:
 - Schema-owned tool registry, authentication, logging, receipts
 - Integrates with R_k as a "tool-observed" corroboration signal
 
+**[Correction 2026-08-12.]** `bench/dm/_verification_endpoint.py`, named here and
+again in the References section below, was **never created**. It is not a moved or
+deleted file: no path of that name exists at any commit in this repository's
+history (`git log --all --name-only --format="" | grep -i _verification_endpoint`
+returns nothing), so there is no live path to redirect a reader to. Option A was a
+proposal, and the References line already marks it *speculative*. What was built
+instead, in June 2026, is the runnable-falsifier mechanism: models attach a
+falsifier to each critical finding and the runner re-executes it independently in
+`bench/falsifier_verify.py`, with the gate in `bench/reference_runner_v2.py`. That
+delivers the same "tools decide, not votes" property Option A was reaching for,
+without a hosted service. Both mentions are left intact as the record of a design
+option that was open on 2026-04-15.
+
 ### Option B: Sequential per-finding submission
 Models submit one finding, receive flag-or-confirm, submit next. Major change to round architecture. **High effort.** Would enable intra-round cross-model signals too, at the cost of much slower rounds.
 
