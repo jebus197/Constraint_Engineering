@@ -19,3 +19,26 @@ docs/SPEC_single_model_integration.md
 # only seeded claims, so `git diff` returns the planted set at precision 1.000
 # with no key and nothing for a detector to catch. Hashes are committed instead.
 bench/cdsfl_registry/targets/exp*.md
+
+# ── Run logs: bulk model output is archived separately (2026-08-13) ──────────
+# Measured on main before this rule: bench/logs was 353 MB across 5,840 files,
+# 96.8% of the repository by size and 86% of its files. The project itself is
+# ~11 MB in ~900 files. That imbalance is why external readers and crawlers
+# could not navigate the repository: an unauthenticated GitHub API caller gets
+# 60 requests per hour and exhausts them inside bench/logs.
+#
+# The split is by role, not by size:
+#   KEPT   — final reports and runner_state.json. These carry the registries,
+#            falsifiers and verdicts: the evidence a reader needs to check any
+#            claim the project makes. 13.4 MB in 76 files.
+#   DROPPED— raw per-model responses, checkpoints, debug logs, shadow traces.
+#            The raw responses are primary source material and are preserved in
+#            the separate archive, not discarded.
+#
+# This rule stops FUTURE growth only. Files already tracked stay tracked until
+# the archive is published; nothing is removed from the repository before its
+# replacement exists.
+bench/logs/**
+!bench/logs/**/
+!bench/logs/**/*report*.json
+!bench/logs/**/runner_state.json
