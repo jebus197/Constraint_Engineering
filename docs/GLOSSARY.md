@@ -242,6 +242,22 @@ residual-risk term as zero rather than as a misleading number.
 
 System that analyses problems (first-order), monitors its own analytical performance (computes gamma, rho, verification rates from its own output), and adjusts behaviour based on that monitoring (metacognitive feedback protocol). Meets the formal definition in Mathematical Appendix Section 8.3. Substrate-agnostic.
 
+### Similarity Function
+
+The rule that decides whether two critical findings describe the SAME defect or different ones. Named by the founder on 2026-08-16; the code had been calling it "the combined identity rule", and this assistant had been calling it several invented things, which is why it is fixed here. Deciding this correctly is load-bearing: a run ends when no new critical findings appear, so mistaking two defects for one can end a review early.
+
+Three tiers, none of which asks a model to judge:
+
+**Tier 1, location.** A critical naming a symbol or heading that nothing has flagged before is new. Free.
+
+**Tier 2, stem signature** (`signature_similarity`, `bench/convergence_location.py`). Jaccard overlap of the HARD TOKENS in two findings — numbers, units, claim identifiers, symbols, formulae — not their wording. Measured on 6 completed runs, 165 criticals: coverage 161/165 (97.6%); same-defect pairs median 0.559 (n=28), different-defect pairs median 0.000 (n=290), Mann-Whitney p = 1.9e-25. This tier carries the rule.
+
+**Tier 3, computed outcome** (`outcome_agreement`). The founder's second criterion: one narrow question per pair — do these two findings assert the same computed VALUE? Returns SAME, DIFFERENT or UNKNOWN. Coverage 94/165 (57.0%); Fisher exact p = 1.4e-07; in the whole sample it never once called a same-defect pair DIFFERENT. It can only MERGE findings, never grant novelty — so a wrong answer costs a finding and can never fake a convergence.
+
+The premise is that STEM prose is dense with quantities, constants, units and identifiers, so identity is decidable WITHOUT understanding or recomputing the content. A rival tier built to a model panel's design (perturb the target, compare how two falsifiers respond) scored Fisher p = 0.71 on the same archive — no association at all — and was removed on 2026-08-12.
+
+Not to be confused with the NK cell's Jaccard deduplication (`tau_sim`), which is a different mechanism at a different stage.
+
 ### Skin Barrier
 
 Immune pipeline front-gate filter. Pre-filters obviously malformed or garbage findings before they enter the full pipeline. Reduces processing load on downstream cells.

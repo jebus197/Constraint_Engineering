@@ -157,6 +157,14 @@ class LocationNoveltyTracker:
 # location: it merges the two by construction. This section is what looks inside
 # a flagged location.
 #
+# ── THE SIMILARITY FUNCTION ──────────────────────────────────────────────────
+# The founder named this rule on 2026-08-16. Use that name. Earlier text called it
+# "the combined identity rule", which is a committee name nobody remembers, and the
+# assistant had separately been inventing others in conversation — the founder did
+# not recognise his own criterion when it was described back to him under one of
+# them. The three tiers keep their own names beneath it: signature_similarity is
+# tier 2, outcome_agreement is tier 3.
+#
 # TIER 1, LOCATION. A critical naming a never-flagged location is NEW. Free.
 #
 # TIER 2, STEM SIGNATURE — OPERATIVE within an already-flagged location as of
