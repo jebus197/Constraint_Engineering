@@ -2,11 +2,18 @@
 
 Where the raw experimental material lives, and how to cite it.
 
-**Status as of 2026-08-13: PREPARED, NOT YET PUBLISHED.** The split described below is
-decided and the repository is configured for it. The archive itself has not been
-uploaded, because that requires the repository owner's account. Nothing has been
-removed from this repository and nothing will be until the archive is live and linked
-from this file.
+**Status as of 2026-08-16: UPLOADED AS A DRAFT, NOT PUBLISHED.**
+
+The archive is on Zenodo as deposition **21959922**, 84.4 MB compressed from roughly
+340 MB, 6,725 files, checksum recorded on upload. It is a draft: it has no DOI, it is
+not publicly visible, and it can still be replaced or deleted.
+
+**Publishing is deliberately left to the repository owner**, because publication mints
+a permanent DOI and cannot be undone. Review the draft at
+`zenodo.org/deposit/21959922`, check the metadata reads correctly, then press Publish.
+
+Nothing has been removed from this repository and nothing will be until the archive is
+published and its DOI recorded below.
 
 ---
 
@@ -74,20 +81,25 @@ paper would have nothing stable to cite.
 
 ---
 
-## Steps to publish it
+## Remaining steps
 
-These require the repository owner's Zenodo account and are not automated here.
+Steps 1 to 3 are done. The rest need the repository owner.
 
-1. Create the archive from a clean checkout:
-   `tar -czf cdsfl-experimental-archive-2026-08.tar.gz bench/logs/`
-2. Create a new Zenodo upload, type **Dataset**, and attach the archive.
-3. Use the metadata in `.zenodo.json` in this repository as the basis for the record.
-4. Publish, and record the resulting DOI in this file.
-5. Only then remove the archived material from repository tracking. The `.gitignore`
-   rules are already in place to prevent new material accumulating.
+1. ~~Build the archive~~ — done. 84.4 MB compressed, 6,725 files, excluding the
+   per-run reports and `runner_state.json`, which stay in this repository as the record.
+2. ~~Create the Zenodo deposition~~ — done, id 21959922, metadata from `.zenodo.json`.
+3. ~~Upload~~ — done, checksum verified on receipt.
+4. **Review and publish.** Open `zenodo.org/deposit/21959922`, check the description,
+   creator and licence, then press Publish. This mints the DOI and is irreversible,
+   which is why it is not automated.
+5. **Record the DOI** in the citation section below.
+6. **Only then untrack the archived material.** The `.gitignore` rules already prevent
+   new accumulation; this step removes the existing 353 MB from the working tree. It
+   is what finally fixes the file-count problem that made the repository unreadable to
+   automated readers.
 
-Step 5 is deliberately last. Nothing leaves this repository before its replacement
-exists and is citable.
+Step 6 is deliberately last. Nothing leaves this repository before its replacement is
+published and citable.
 
 ---
 
