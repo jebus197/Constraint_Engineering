@@ -2,6 +2,12 @@
 
 *A Metacognitive Framework For Multi-Vendor LLM Co-ordination.*
 
+> **New here?** This page is the project's full argument and it is long.
+> **[START_HERE.md](START_HERE.md)** is a one-page map: what the project is, which
+> document answers which question, and what to skip. Automated readers should fetch
+> named files directly rather than walking the tree — `bench/logs/` is machine output
+> and will exhaust an API rate limit before reaching anything meaningful.
+
 ---
 
 ## 1. Popperian Falsification, and the Architecture of Scientific Cognition
