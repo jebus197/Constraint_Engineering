@@ -48,7 +48,7 @@ The measurement: a Fisher exact probability of zero point seven one, meaning no 
 
 The reason it failed is recorded in the code and is worth stating, because it is a property of the material rather than of the implementation. Seventy four of one hundred and one falsifiers shared a single identical response vector: confirmed on the original document and confirmed on every mutation. Seventy three percent of falsifiers responded the same way to every change, so the vector carried no information to distinguish anything.
 
-There is a further detail in that code worth noting. An early version of the mutation engine spent most of its budget mutating docstrings, which are no operation changes that look like real mutations, and reported a confident and meaningless result. That bug was found and fixed, and the mechanism still did not work after the fix. The failure was not an implementation error.
+There is a further detail in that code worth noting. An early version of that syntax tree mutation engine spent most of its budget mutating docstrings, which are no operation changes that look like real mutations, and reported a confident and meaningless result. That bug was found and fixed, and the mechanism still did not work after the fix. The failure was not an implementation error.
 
 So Gemini's recommendation, translated to this project's actual problem, is a thing already built, already measured, and already discarded on evidence.
 
@@ -99,7 +99,7 @@ Three observations, offered as hypotheses.
 
 The first is that a model reasoning about a repository it has read at surface level will propose the standard architecture for the problem it assumes, and the assumed problem is often adjacent rather than identical. The founder's own challenge, that the first repository answer smelled wrong and lacked rigour, produced a much better answer, and that better answer is still aimed slightly to one side of the real question.
 
-The second is that the value of an external opinion here was not the architecture. It was the reversal. A source that recommends an approach and then, when pressed, recommends against the same approach has told you something about the confidence of both recommendations.
+The second is that the value of an external opinion here was not the architecture. It was the reversal. A source that recommends an approach and then, when pressed, recommends against the same approach has thereby disclosed how much confidence to place in either.
 
 The third is a testable prediction. If structured value emission is built, the third tier's coverage should rise from its current fifty seven percent toward the proportion of findings that assert any quantity at all, because the tier would no longer depend on a pattern matcher recovering the number from prose. That prediction can be checked against the archive without any live run, by measuring how many findings state a quantity that the current extractor misses.
 
