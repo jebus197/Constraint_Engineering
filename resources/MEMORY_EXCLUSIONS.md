@@ -19,11 +19,21 @@ The directory holds **103 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 48 |
+| Mirrored (in summarised form) in `MEMORY.md` | 49 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 105 |
+| total | 106 |
+
+> **[Correction 2026-08-16.]** Mirrored 48 → 49 and total 105 → 106.
+> `cdsfl_session_2026-08-16.md` was written this session and carries an index line in
+> `MEMORY.md`, so it lands in the mirrored bucket. The accounting check went red on the
+> mismatch again, which is again the check working rather than drifting. Noting the
+> pattern rather than only the instance: this ledger has now been corrected on 2026-08-08,
+> 2026-08-13 and 2026-08-16, always in the same direction — a memory file is written and
+> the ledger is not updated in the same action. The check catches it every time, so
+> nothing is lost, but the repetition says the ledger update belongs in the `sv` path
+> rather than in the author's memory.
 
 > **[Correction 2026-08-13.]** Mirrored 45 → 48 and total 102 → 105. Three memory files
 > were written on 12–13 August and each carries an index line in `MEMORY.md`, so all three

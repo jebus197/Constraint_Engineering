@@ -1,0 +1,1969 @@
+{
+ "question": "Do these two findings describe THE SAME DEFECT? Set SAME_DEFECT to true or false. Leave null if genuinely undecidable and say why in `note`.",
+ "why": "These 120 pairs sit in the band the automated labelling refused to call either way (embedding strictly between 0.70 and 0.90). The recorded measurement dropped them silently. They are 27% of the data and they are the hard 27%.",
+ "count": 120,
+ "pairs": [
+  {
+   "id": "ADJ-001",
+   "run": "exp48",
+   "a": "C0004",
+   "b": "C0014",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.8988,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "In CH-27, it is claimed that injecting argon at constant volume and temperature shifts the equilibrium toward ammonia. Adding an inert gas at constant volume increases total pressure but does not change the partial pressures of the reacting gases, so there is no equilibrium shift.",
+   "finding_b": "CH-27 states that injecting argon into the ammonia converter at constant volume and constant temperature shifts equilibrium toward ammonia because total pressure rises. This is wrong for an inert gas at constant V and T. The reactive species partial pressures are unchanged, so the reaction quotient is unchanged; total pressure increase from inert gas alone does not drive the equilibrium toward fewer reactive gas moles.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-002",
+   "run": "exp48",
+   "a": "C0008",
+   "b": "C0013",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8979,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring. This is chemically and substructurally wrong. N-(4-hydroxyphenyl)acetamide has a phenolic hydroxyl and an amide carbonyl, but no carboxylic acid group. RDKit substructure matching gives zero matches for `[CX3](=O)[OX2H1]` on `CC(=O)Nc1ccc(O)cc1`.",
+   "finding_b": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, \u201carising from the hydroxyl on the aromatic ring.\u201d This is chemically and substructure-wise false. A phenolic hydroxyl is not a carboxylic acid; the molecule has an amide carbonyl and a phenolic OH, but no carboxylic acid group.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-003",
+   "run": "exp49",
+   "a": "C0010",
+   "b": "C0015",
+   "shared_locations": [
+    "EN-36"
+   ],
+   "embedding": 0.8931,
+   "tier2_jaccard": 0.6923,
+   "tier3": "SAME",
+   "finding_a": "Logic error in the constrained-design optimisation in EN-36. The reported optimal vertex for LP-2 is `x1 = 120, x2 = 40, x3 = 80 kN`. This vertex is infeasible because it violates the outboard-share bound constraint `x3 <= 0.5 x1` (80 is not <= 60). The true optimal vertex is `x1 = 120, x2 = 60, x3 = 60 kN` with an objective value of 258.0.",
+   "finding_b": "EN-36 reports an infeasible optimum for LP-2. The stated vertex `x1=120, x2=40, x3=80` violates the outboard-share bound `x3 <= 0.5 x1`, because `80 <= 60` is false. Location: section 7, EN-36. Tool check with `scipy.optimize.linprog` gives the feasible optimum `x=(120, 60, 60)` with objective `258.0`, matching the feasibility point already cited in EN-37.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-004",
+   "run": "exp48",
+   "a": "C0005",
+   "b": "C0015",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8913,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "In CH-29, independent relative measurement uncertainties (0.42%, 0.28%, 0.15%) are combined by arithmetic addition to give 0.85%. Independent uncertainties must be combined by root-sum-square (RSS), which gives 0.53%.",
+   "finding_b": "CH-29 says independent relative uncertainty components 0.42%, 0.28%, and 0.15% are combined by arithmetic addition to give 0.85%. Independent uncertainty components should be combined in quadrature/root-sum-square, not by simple addition, unless a conservative worst-case bound is explicitly intended. The RSS value is about 0.53%, not 0.85%.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-005",
+   "run": "exp49",
+   "a": "C0010",
+   "b": "C0020",
+   "shared_locations": [
+    "EN-36"
+   ],
+   "embedding": 0.8893,
+   "tier2_jaccard": 0.75,
+   "tier3": "SAME",
+   "finding_a": "Logic error in the constrained-design optimisation in EN-36. The reported optimal vertex for LP-2 is `x1 = 120, x2 = 40, x3 = 80 kN`. This vertex is infeasible because it violates the outboard-share bound constraint `x3 <= 0.5 x1` (80 is not <= 60). The true optimal vertex is `x1 = 120, x2 = 60, x3 = 60 kN` with an objective value of 258.0.",
+   "finding_b": "EN-36 reports the LP-2 optimum as x=(120, 40, 80) kN with objective 248.0. That point is infeasible: the outboard-share constraint x3 \u2264 0.5\u00b7x1 requires 80 \u2264 60, which is false. The true optimum (linprog) is x=(120, 60, 60), objective 258.0. The reported vertex violates a stated constraint and the reported objective (248) is below the true minimum (258).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-006",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0026",
+   "shared_locations": [
+    "EvidenceStore",
+    "record",
+    "verify_bundle"
+   ],
+   "embedding": 0.8891,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-007",
+   "run": "exp44",
+   "a": "C0015",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8861,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-008",
+   "run": "exp47",
+   "a": "C0002",
+   "b": "C0003",
+   "shared_locations": [
+    "validate_null_justification"
+   ],
+   "embedding": 0.8831,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`validate_null_justification()` in `bench/dm/_divergence.py` accepts generic filler that violates \u00a718 Structure B.\n\nCurrent implementation:\nif justification is None or not justification.strip():\n    reasons.append(\"missing_null_justification\")\n    return False, reasons\n\ncleaned = justification.strip()\nif len(cleaned) < config.null_justification_min_chars:\n    reasons.append(\n        f\"null_justification_too_short ({len(cleaned)} < \"\n        f\"{config.null_justification_min_chars})\"\n    )\n\nreturn",
+   "finding_b": "`validate_null_justification()` admits bare filler text on length alone.\n\nLocation: `bench/dm/_divergence.py`, function `validate_null_justification`.\n\nEvidence from current code:\ncleaned = justification.strip()\nif len(cleaned) < config.null_justification_min_chars:\n    reasons.append(...)\nreturn not reasons, reasons\nThe function does not check that the null-alternative justification names:\n\n1. the search space considered;\n2. rejected candidate alternatives;\n3. why each rejected candidate collap",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-009",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0026",
+   "shared_locations": [
+    "EvidenceStore",
+    "record",
+    "verify_bundle"
+   ],
+   "embedding": 0.8789,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-010",
+   "run": "exp47",
+   "a": "C0005",
+   "b": "C0040",
+   "shared_locations": [
+    "eta_int_modulator"
+   ],
+   "embedding": 0.8785,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F003\n\nSEVERITY: 0.70\n\nFLAW_CLASS: 2\n\nABSTRACTION_INDEX: 0.30\n\nFIND: `eta_int_modulator()` ignores `DivergenceConfig.mode=\"advisory\"`.\n\nLocation: `bench/dm/_divergence.py`, function `eta_in",
+   "finding_b": "FINDING_ID: F011\n\nSEVERITY: 0.72\n\nFLAW_CLASS: 1\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `bench/dm/_divergence.py`, `eta_int_modulator()` returns `1.0` immediately when `record.compliant` is true:\nif not confi",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-011",
+   "run": "exp45",
+   "a": "C0003",
+   "b": "C0022",
+   "shared_locations": [
+    "FlawClassRecord",
+    "ImmuneMemory",
+    "from_dict",
+    "record_experiment"
+   ],
+   "embedding": 0.874,
+   "tier2_jaccard": 0.1667,
+   "tier3": "SAME",
+   "finding_a": "`ImmuneMemory` accepts negative confirmed/rejected counts from both the public ingestion API and persisted JSON records, allowing impossible Beta-Binomial state and invalid priors.\n\nLocations:\n1. `bench/dm/_memory.py`, `ImmuneMemory.record_experiment()`:\nfor fc, (confirmed, rejected) in flaw_counts.items():\n       ...\n       rec.confirmed += confirmed\n       rec.rejected += rejected\n2. `bench/dm/_memory.py`, `FlawClassRecord.from_dict()`:\nconfirmed=d.get(\"confirmed\", 0.0),\n   rejected=d.get(\"rej",
+   "finding_b": "`ImmuneMemory` accepts negative confirmed/rejected counts from both the public ingestion API (`record_experiment`) and persisted JSON records (`FlawClassRecord.from_dict`).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-012",
+   "run": "exp49",
+   "a": "C0005",
+   "b": "C0015",
+   "shared_locations": [
+    "EN-36"
+   ],
+   "embedding": 0.8735,
+   "tier2_jaccard": 0.5,
+   "tier3": "SAME",
+   "finding_a": "EN-36 gives an infeasible and non-optimal LP-2 vertex. Location: section 7, EN-36. Evidence: the stated vertex \\(x=(120,40,80)\\) satisfies the load equality but violates the outboard-share bound \\(x_3\\le0.5x_1\\), because \\(80\\le60\\) is false. Solving the stated LP gives \\(x=(120,60,60)\\) with objective \\(120+1.4(60)+0.9(60)=258.0\\), not 248.0.",
+   "finding_b": "EN-36 reports an infeasible optimum for LP-2. The stated vertex `x1=120, x2=40, x3=80` violates the outboard-share bound `x3 <= 0.5 x1`, because `80 <= 60` is false. Location: section 7, EN-36. Tool check with `scipy.optimize.linprog` gives the feasible optimum `x=(120, 60, 60)` with objective `258.0`, matching the feasibility point already cited in EN-37.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-013",
+   "run": "exp48",
+   "a": "C0014",
+   "b": "C0030",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.8733,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "CH-27 states that injecting argon into the ammonia converter at constant volume and constant temperature shifts equilibrium toward ammonia because total pressure rises. This is wrong for an inert gas at constant V and T. The reactive species partial pressures are unchanged, so the reaction quotient is unchanged; total pressure increase from inert gas alone does not drive the equilibrium toward fewer reactive gas moles.",
+   "finding_b": "CH-27 incorrectly claims that injecting argon at constant volume and temperature produces an equilibrium shift toward ammonia because it raises the total pressure.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-014",
+   "run": "exp48",
+   "a": "C0008",
+   "b": "C0018",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.873,
+   "tier2_jaccard": 0.5,
+   "tier3": "SAME",
+   "finding_a": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring. This is chemically and substructurally wrong. N-(4-hydroxyphenyl)acetamide has a phenolic hydroxyl and an amide carbonyl, but no carboxylic acid group. RDKit substructure matching gives zero matches for `[CX3](=O)[OX2H1]` on `CC(=O)Nc1ccc(O)cc1`.",
+   "finding_b": "CH-22 claims N-(4-hydroxyphenyl)acetamide (paracetamol) \"returns exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring.\" Paracetamol (`CC(=O)Nc1ccc(O)cc1`) contains no carboxylic acid. Its carbonyl is an amide (C(=O)N), and the ring hydroxyl is a phenol (c\u2013OH), neither of which matches `[CX3](=O)[OX2H1]`. rdkit `GetSubstructMatches` returns 0, not 1. The stated rationale (\"arising from the hydroxyl\") is chemically incoherent \u2014 a phenol",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-015",
+   "run": "exp49",
+   "a": "C0016",
+   "b": "C0019",
+   "shared_locations": [
+    "EN-41"
+   ],
+   "embedding": 0.8722,
+   "tier2_jaccard": 0.2083,
+   "tier3": "SAME",
+   "finding_a": "EN-41 reports `p = 0.021` for a two-sample t-test comparing the two weld hardness sets, but the stated data give approximately `p = 0.090`, not significant at the 0.05 level. Location: section 8, EN-41. Evidence from Python/SciPy: procedure A mean = 320.17 HV10, procedure B mean = 313.33 HV10; two-sample t-test gives statistic \u2248 1.876 and p-value \u2248 0.0902, for both equal-variance and Welch variants.",
+   "finding_b": "EN-41 claims a two-sample t-test on the procedure-A vs procedure-B hardness sets gives p=0.021, \"significant at the 0.05 level,\" and specifies procedure A for load-bearing welds on that basis. Recomputed with the printed data (A=[318,325,311,329,316,322], B=[309,314,322,305,318,312]): Student two-sample p=0.0902, Welch p=0.0903 \u2014 NOT significant at 0.05. No test variant reaches 0.021: one-sided Student=0.045, paired=0.223. The reported p is wrong and the significance conclusion is false.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-016",
+   "run": "exp48",
+   "a": "C0005",
+   "b": "C0010",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8712,
+   "tier2_jaccard": 0.875,
+   "tier3": "SAME",
+   "finding_a": "In CH-29, independent relative measurement uncertainties (0.42%, 0.28%, 0.15%) are combined by arithmetic addition to give 0.85%. Independent uncertainties must be combined by root-sum-square (RSS), which gives 0.53%.",
+   "finding_b": "CH-29 states that three independent relative uncertainty components, 0.42%, 0.28%, and 0.15%, are combined by arithmetic addition to give 0.85%. Independent standard uncertainty components should be combined by root-sum-square, not arithmetic addition. The correct combined relative uncertainty is `sqrt(0.42\u00b2 + 0.28\u00b2 + 0.15\u00b2) = 0.5266%`, i.e. 0.53%, not 0.85%.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-017",
+   "run": "exp44",
+   "a": "C0026",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "record",
+    "verify_bundle"
+   ],
+   "embedding": 0.866,
+   "tier2_jaccard": 0.5,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-018",
+   "run": "exp48",
+   "a": "C0009",
+   "b": "C0030",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.8651,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "CH-27 claims that injecting argon into the ammonia converter at constant volume and constant temperature shifts equilibrium toward ammonia because total pressure rises. This is wrong for an ideal gas mixture at constant V and T. Adding inert gas at constant volume changes total pressure but leaves the partial pressures of N2, H2, and NH3 unchanged, so the reaction quotient is unchanged and no equilibrium shift occurs.",
+   "finding_b": "CH-27 incorrectly claims that injecting argon at constant volume and temperature produces an equilibrium shift toward ammonia because it raises the total pressure.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-019",
+   "run": "exp49",
+   "a": "C0005",
+   "b": "C0020",
+   "shared_locations": [
+    "EN-36"
+   ],
+   "embedding": 0.8648,
+   "tier2_jaccard": 0.5294,
+   "tier3": "SAME",
+   "finding_a": "EN-36 gives an infeasible and non-optimal LP-2 vertex. Location: section 7, EN-36. Evidence: the stated vertex \\(x=(120,40,80)\\) satisfies the load equality but violates the outboard-share bound \\(x_3\\le0.5x_1\\), because \\(80\\le60\\) is false. Solving the stated LP gives \\(x=(120,60,60)\\) with objective \\(120+1.4(60)+0.9(60)=258.0\\), not 248.0.",
+   "finding_b": "EN-36 reports the LP-2 optimum as x=(120, 40, 80) kN with objective 248.0. That point is infeasible: the outboard-share constraint x3 \u2264 0.5\u00b7x1 requires 80 \u2264 60, which is false. The true optimum (linprog) is x=(120, 60, 60), objective 258.0. The reported vertex violates a stated constraint and the reported objective (248) is below the true minimum (258).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-020",
+   "run": "exp44",
+   "a": "C0028",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8647,
+   "tier2_jaccard": 0.5,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-021",
+   "run": "exp48",
+   "a": "C0010",
+   "b": "C0015",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8632,
+   "tier2_jaccard": 0.875,
+   "tier3": "SAME",
+   "finding_a": "CH-29 states that three independent relative uncertainty components, 0.42%, 0.28%, and 0.15%, are combined by arithmetic addition to give 0.85%. Independent standard uncertainty components should be combined by root-sum-square, not arithmetic addition. The correct combined relative uncertainty is `sqrt(0.42\u00b2 + 0.28\u00b2 + 0.15\u00b2) = 0.5266%`, i.e. 0.53%, not 0.85%.",
+   "finding_b": "CH-29 says independent relative uncertainty components 0.42%, 0.28%, and 0.15% are combined by arithmetic addition to give 0.85%. Independent uncertainty components should be combined in quadrature/root-sum-square, not by simple addition, unless a conservative worst-case bound is explicitly intended. The RSS value is about 0.53%, not 0.85%.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-022",
+   "run": "exp48",
+   "a": "C0008",
+   "b": "C0029",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8628,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring. This is chemically and substructurally wrong. N-(4-hydroxyphenyl)acetamide has a phenolic hydroxyl and an amide carbonyl, but no carboxylic acid group. RDKit substructure matching gives zero matches for `[CX3](=O)[OX2H1]` on `CC(=O)Nc1ccc(O)cc1`.",
+   "finding_b": "CH-22 incorrectly states that N-(4-hydroxyphenyl)acetamide (paracetamol) returns exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`, attributing this to the hydroxyl on the aromatic ring.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-023",
+   "run": "exp44",
+   "a": "C0015",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8604,
+   "tier2_jaccard": 0.25,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-024",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "record",
+    "verify_bundle"
+   ],
+   "embedding": 0.8589,
+   "tier2_jaccard": 0.25,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-025",
+   "run": "exp48",
+   "a": "C0005",
+   "b": "C0031",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8536,
+   "tier2_jaccard": 0.8571,
+   "tier3": "SAME",
+   "finding_a": "In CH-29, independent relative measurement uncertainties (0.42%, 0.28%, 0.15%) are combined by arithmetic addition to give 0.85%. Independent uncertainties must be combined by root-sum-square (RSS), which gives 0.53%.",
+   "finding_b": "CH-29 incorrectly combines independent relative measurement uncertainties by arithmetic addition (0.42 + 0.28 + 0.15 = 0.85%).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-026",
+   "run": "exp49",
+   "a": "C0005",
+   "b": "C0010",
+   "shared_locations": [
+    "EN-36"
+   ],
+   "embedding": 0.8526,
+   "tier2_jaccard": 0.5333,
+   "tier3": "SAME",
+   "finding_a": "EN-36 gives an infeasible and non-optimal LP-2 vertex. Location: section 7, EN-36. Evidence: the stated vertex \\(x=(120,40,80)\\) satisfies the load equality but violates the outboard-share bound \\(x_3\\le0.5x_1\\), because \\(80\\le60\\) is false. Solving the stated LP gives \\(x=(120,60,60)\\) with objective \\(120+1.4(60)+0.9(60)=258.0\\), not 248.0.",
+   "finding_b": "Logic error in the constrained-design optimisation in EN-36. The reported optimal vertex for LP-2 is `x1 = 120, x2 = 40, x3 = 80 kN`. This vertex is infeasible because it violates the outboard-share bound constraint `x3 <= 0.5 x1` (80 is not <= 60). The true optimal vertex is `x1 = 120, x2 = 60, x3 = 60 kN` with an objective value of 258.0.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-027",
+   "run": "exp44",
+   "a": "C0028",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8502,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-028",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0012",
+   "shared_locations": [
+    "EvidenceStore",
+    "record",
+    "verify_bundle"
+   ],
+   "embedding": 0.8482,
+   "tier2_jaccard": 0.2,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-029",
+   "run": "exp44",
+   "a": "C0004",
+   "b": "C0055",
+   "shared_locations": [
+    "_classify_event"
+   ],
+   "embedding": 0.8445,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F012\nSEVERITY: 0.70\nFIND: `_classify_event` in `bench/evidence.py` uses `json.dumps` on payload dicts and substring matching (`in`) to identify verdict commands. A finding ID like \"C0001\" ",
+   "finding_b": "FINDING_ID: F601\nSEVERITY: 0.75  \nFLAW_CLASS: 6 (edge\u2011case / robustness)  \nABSTRACTION_INDEX: 0.30  \n\n### FIND\nIn `bench/evidence.py`, `_classify_event()` (line ~487) calls `json.dumps(rec.payload)` w",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-030",
+   "run": "exp47",
+   "a": "C0047",
+   "b": "C0053",
+   "shared_locations": [
+    "check_sibling_admissibility"
+   ],
+   "embedding": 0.8432,
+   "tier2_jaccard": 0.1111,
+   "tier3": "DIFFERENT",
+   "finding_a": "`check_sibling_admissibility` falsely penalizes valid alternatives in two ways: 1) It compares against INADMISSIBLE earlier siblings, causing a valid alternative to be rejected if it resembles a malformed prior attempt in the same output. 2) The cross-round recidivism check strips the contrast statement before comparing. If a model fixes a `missing_contrast_statement` rejection by adding one, the stripped text remains identical to the prior round, falsely triggering the severe 0.60 `recidivism_n",
+   "finding_b": "The cross-round recidivism check in `check_sibling_admissibility` falsely penalizes models for fixing previously rejected alternatives. When a model adds a missing contrast statement to a prior alternative, `parse_contrast_statement` strips the new contrast statement from the body. The resulting `alternative_text` is identical to the prior round's `alternative_text`. The recidivism check then scores them as 1.0 isomorphic and rejects the fixed alternative with `recidivism_near_copy`, triggering ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-031",
+   "run": "exp48",
+   "a": "C0010",
+   "b": "C0031",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8428,
+   "tier2_jaccard": 0.75,
+   "tier3": "SAME",
+   "finding_a": "CH-29 states that three independent relative uncertainty components, 0.42%, 0.28%, and 0.15%, are combined by arithmetic addition to give 0.85%. Independent standard uncertainty components should be combined by root-sum-square, not arithmetic addition. The correct combined relative uncertainty is `sqrt(0.42\u00b2 + 0.28\u00b2 + 0.15\u00b2) = 0.5266%`, i.e. 0.53%, not 0.85%.",
+   "finding_b": "CH-29 incorrectly combines independent relative measurement uncertainties by arithmetic addition (0.42 + 0.28 + 0.15 = 0.85%).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-032",
+   "run": "exp48",
+   "a": "C0010",
+   "b": "C0020",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.8424,
+   "tier2_jaccard": 0.7,
+   "tier3": "SAME",
+   "finding_a": "CH-29 states that three independent relative uncertainty components, 0.42%, 0.28%, and 0.15%, are combined by arithmetic addition to give 0.85%. Independent standard uncertainty components should be combined by root-sum-square, not arithmetic addition. The correct combined relative uncertainty is `sqrt(0.42\u00b2 + 0.28\u00b2 + 0.15\u00b2) = 0.5266%`, i.e. 0.53%, not 0.85%.",
+   "finding_b": "CH-29 states three independent uncertainty components (0.42%, 0.28%, 0.15%) \"because the components are independent they are combined by arithmetic addition, giving 0.85 per cent.\" This inverts the correct rule: independent components combine in quadrature (root-sum-of-squares), per GUM/ICH. \u221a(0.42\u00b2+0.28\u00b2+0.15\u00b2) = 0.53%, not 0.85%. Arithmetic addition (0.85%) is the rule for fully correlated components. The document contradicts itself: CH-30 correctly combines its independent components in quadr",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-033",
+   "run": "exp44",
+   "a": "C0032",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8413,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-034",
+   "run": "exp48",
+   "a": "C0003",
+   "b": "C0008",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8398,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "In CH-22, N-(4-hydroxyphenyl)acetamide (paracetamol) is claimed to return exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`. Paracetamol does not contain a carboxylic acid; the hydroxyl on the aromatic ring is a phenol.",
+   "finding_b": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring. This is chemically and substructurally wrong. N-(4-hydroxyphenyl)acetamide has a phenolic hydroxyl and an amide carbonyl, but no carboxylic acid group. RDKit substructure matching gives zero matches for `[CX3](=O)[OX2H1]` on `CC(=O)Nc1ccc(O)cc1`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-035",
+   "run": "exp44",
+   "a": "C0026",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8389,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-036",
+   "run": "exp45",
+   "a": "C0001",
+   "b": "C0020",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.8375,
+   "tier2_jaccard": 0.2222,
+   "tier3": "UNKNOWN",
+   "finding_a": "The `ImmuneMemory.load` method fails to initialize `source_hash` when returning a fresh instance (either because the file doesn't exist or due to a load error), and also fails to adopt `expected_hash` when loading a file that lacks a stored hash. This causes `source_hash` to permanently remain `None`, silently disabling the memory invalidation mechanism for all future loads.",
+   "finding_b": "`ImmuneMemory.load` fails to initialize `source_hash` when returning a fresh instance (C0001), fails to invalidate when `stored_hash` is missing (C0002, C0006), and crashes with `AttributeError` if the JSON root is not a dictionary (e.g., `[]`).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-037",
+   "run": "exp45",
+   "a": "C0001",
+   "b": "C0006",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.8355,
+   "tier2_jaccard": 0.1429,
+   "tier3": "UNKNOWN",
+   "finding_a": "The `ImmuneMemory.load` method fails to initialize `source_hash` when returning a fresh instance (either because the file doesn't exist or due to a load error), and also fails to adopt `expected_hash` when loading a file that lacks a stored hash. This causes `source_hash` to permanently remain `None`, silently disabling the memory invalidation mechanism for all future loads.",
+   "finding_b": "`ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when `expected_hash` is supplied but the persisted JSON has no `\"source_hash\"`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises and evidence:\n\n1. The file docstring promises \u201cJSON persistence with file-hash grounding for invalidation\u201d.\n2. `expected_hash` is the current source hash supplied by the caller.\n3. A",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-038",
+   "run": "exp44",
+   "a": "C0025",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.8351,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-039",
+   "run": "exp47",
+   "a": "C0016",
+   "b": "C0032",
+   "shared_locations": [
+    "build_divergence_record"
+   ],
+   "embedding": 0.8318,
+   "tier2_jaccard": 0.3333,
+   "tier3": "DIFFERENT",
+   "finding_a": "In `build_divergence_record`, the logic that aggregates `failure_reasons` only appends `alt.rejection_reasons` if `not admissible_alts` (i.e., ALL alternatives failed). If at least one alternative passes, but the total number of admissible alternatives is less than `config.min_alternatives`, the rejection reasons for the failed alternatives are silently dropped.",
+   "finding_b": "In `build_divergence_record`, if `0 < len(admissible_alts) < config.min_alternatives`, the pipeline appends `insufficient_admissible_alternatives` to `failure_reasons` but FAILS to append the specific rejection reasons for the alternatives that were deemed inadmissible.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-040",
+   "run": "exp47",
+   "a": "C0001",
+   "b": "C0004",
+   "shared_locations": [
+    "parse_alternative_block"
+   ],
+   "embedding": 0.8318,
+   "tier2_jaccard": 0.2,
+   "tier3": "SAME",
+   "finding_a": "`parse_alternative_block()` in `bench/dm/_divergence.py` lets an alternative block consume later top-level review sections.\n\nLocation:\nbody_start = m.end()\nbody_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)\nbody = text[body_start:body_end].strip()\nBug mechanism: the parser terminates an alternative body only at the next alternative/conjecture header or end-of-text. It does not stop at mandatory review sections such as `FALSIFICATION`, `CORROBORATION`, `ADMISSIBILITY`, or `N",
+   "finding_b": "`parse_alternative_block()` lets alternative bodies bleed into following CDSFL sections.\n\nLocation: `bench/dm/_divergence.py`, function `parse_alternative_block`.\n\nEvidence from current code:\nbody_start = m.end()\nbody_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)\nbody = text[body_start:body_end].strip()\nThe parser terminates an alternative body only at the next alternative header or EOF. It does not stop at later section headers such as `FALSIFICATION:`, `CORROBORATION:`, `",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-041",
+   "run": "exp46",
+   "a": "C0003",
+   "b": "C0005",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.8293,
+   "tier2_jaccard": 0.1111,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\n\nSEVERITY: 0.78\n\nFLAW_CLASS: 1\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `_compute_shadow_e_values()` still interprets `immune_response.cell_verdicts` outer keys as tool names, but `_track_tool",
+   "finding_b": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: In `_compute_shadow_e_values`, loop iterates over finding\u2011ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-042",
+   "run": "exp45",
+   "a": "C0006",
+   "b": "C0020",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.8283,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when `expected_hash` is supplied but the persisted JSON has no `\"source_hash\"`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises and evidence:\n\n1. The file docstring promises \u201cJSON persistence with file-hash grounding for invalidation\u201d.\n2. `expected_hash` is the current source hash supplied by the caller.\n3. A",
+   "finding_b": "`ImmuneMemory.load` fails to initialize `source_hash` when returning a fresh instance (C0001), fails to invalidate when `stored_hash` is missing (C0002, C0006), and crashes with `AttributeError` if the JSON root is not a dictionary (e.g., `[]`).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-043",
+   "run": "exp47",
+   "a": "C0032",
+   "b": "C0037",
+   "shared_locations": [
+    "build_divergence_record"
+   ],
+   "embedding": 0.8266,
+   "tier2_jaccard": 0.5,
+   "tier3": "SAME",
+   "finding_a": "In `build_divergence_record`, if `0 < len(admissible_alts) < config.min_alternatives`, the pipeline appends `insufficient_admissible_alternatives` to `failure_reasons` but FAILS to append the specific rejection reasons for the alternatives that were deemed inadmissible.",
+   "finding_b": "The prior fix for C0032 was incomplete or reverted. In `build_divergence_record`, when `0 < len(admissible_alts) < config.min_alternatives`, the pipeline still only appends `insufficient_admissible_alternatives` and skips appending the specific `rejection_reasons` for the inadmissible alternatives.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-044",
+   "run": "exp46",
+   "a": "C0005",
+   "b": "C0010",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.8256,
+   "tier2_jaccard": 0.2222,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: In `_compute_shadow_e_values`, loop iterates over finding\u2011ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_",
+   "finding_b": "In `_compute_shadow_e_values`, the code iterates over `cell_verdicts.items()` assuming the keys are tool names (`cell_name`). However, as explicitly noted in the `_track_tool_fpr` method's comments, `cell_verdicts` is keyed by finding ID, not tool name. Consequently, `tracker = self._cumulative_tool_fpr.get(cell_name)` will always return `None` (since finding IDs do not match tool names), causing the loop to `continue` without ever computing shadow e-values.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-045",
+   "run": "exp48",
+   "a": "C0003",
+   "b": "C0013",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8238,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "In CH-22, N-(4-hydroxyphenyl)acetamide (paracetamol) is claimed to return exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`. Paracetamol does not contain a carboxylic acid; the hydroxyl on the aromatic ring is a phenol.",
+   "finding_b": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, \u201carising from the hydroxyl on the aromatic ring.\u201d This is chemically and substructure-wise false. A phenolic hydroxyl is not a carboxylic acid; the molecule has an amide carbonyl and a phenolic OH, but no carboxylic acid group.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-046",
+   "run": "exp45",
+   "a": "C0001",
+   "b": "C0002",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.8237,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "The `ImmuneMemory.load` method fails to initialize `source_hash` when returning a fresh instance (either because the file doesn't exist or due to a load error), and also fails to adopt `expected_hash` when loading a file that lacks a stored hash. This causes `source_hash` to permanently remain `None`, silently disabling the memory invalidation mechanism for all future loads.",
+   "finding_b": "`ImmuneMemory.load()` in `bench/dm/_memory.py` accepts persisted memory with no `source_hash` even when the caller supplies `expected_hash`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`, hash invalidation branch:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises:\n1. The module states that JSON persistence is \u201cfile-hash grounded for invalidation\u201d.\n2. `load(path, expected_hash=...)` is the interface that enforces that groun",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-047",
+   "run": "exp44",
+   "a": "C0025",
+   "b": "C0026",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.8225,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "finding_b": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-048",
+   "run": "exp48",
+   "a": "C0013",
+   "b": "C0018",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8204,
+   "tier2_jaccard": 0.5,
+   "tier3": "SAME",
+   "finding_a": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, \u201carising from the hydroxyl on the aromatic ring.\u201d This is chemically and substructure-wise false. A phenolic hydroxyl is not a carboxylic acid; the molecule has an amide carbonyl and a phenolic OH, but no carboxylic acid group.",
+   "finding_b": "CH-22 claims N-(4-hydroxyphenyl)acetamide (paracetamol) \"returns exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring.\" Paracetamol (`CC(=O)Nc1ccc(O)cc1`) contains no carboxylic acid. Its carbonyl is an amide (C(=O)N), and the ring hydroxyl is a phenol (c\u2013OH), neither of which matches `[CX3](=O)[OX2H1]`. rdkit `GetSubstructMatches` returns 0, not 1. The stated rationale (\"arising from the hydroxyl\") is chemically incoherent \u2014 a phenol",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-049",
+   "run": "exp44",
+   "a": "C0037",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.82,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-050",
+   "run": "exp44",
+   "a": "C0001",
+   "b": "C0003",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify"
+   ],
+   "embedding": 0.8191,
+   "tier2_jaccard": 0.0,
+   "tier3": "DIFFERENT",
+   "finding_a": "`EvidenceStore.verify()` caches only \u201cverifier was ever supplied\u201d, not which verifier/configuration was supplied. Location: `bench/evidence.py`, method `EvidenceStore.verify`.\n\nEvidence from current code:\nneeds_verify = (\n    self._verified is None\n    or (verifier is not None and self._verified_with_verifier is False)\n)\n...\nif verifier is not None:\n    self._verified_with_verifier = True\nreturn self._verified, self._verify_message\nPremises:\n1. A verifier is part of the trust decision; two diffe",
+   "finding_b": "`bench/evidence.py`, `EvidenceStore.verify()`, caches verification results only by \u201cwhether any verifier was supplied\u201d, not by verifier identity or verification mode. Evidence: once a store has been verified successfully with one Ed25519 public key, a later call with a different verifier returns the cached success without re-running signature verification. This silently reports an authenticated chain as valid under the wrong public key.\n\nPremises:\n- `VerificationChain.verify_chain(verifier=...)`",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-051",
+   "run": "exp49",
+   "a": "C0006",
+   "b": "C0016",
+   "shared_locations": [
+    "EN-41"
+   ],
+   "embedding": 0.8189,
+   "tier2_jaccard": 0.3333,
+   "tier3": "SAME",
+   "finding_a": "EN-41 reports an incorrect two-sample t-test p-value and an unsupported significance conclusion. Location: section 8, EN-41. Evidence: for procedure A hardness [318,325,311,329,316,322] and B [309,314,322,305,318,312], two-sample t-test gives \\(t=1.876\\), p\u22480.090, not p=0.021. The difference is not significant at the 0.05 level.",
+   "finding_b": "EN-41 reports `p = 0.021` for a two-sample t-test comparing the two weld hardness sets, but the stated data give approximately `p = 0.090`, not significant at the 0.05 level. Location: section 8, EN-41. Evidence from Python/SciPy: procedure A mean = 320.17 HV10, procedure B mean = 313.33 HV10; two-sample t-test gives statistic \u2248 1.876 and p-value \u2248 0.0902, for both equal-variance and Welch variants.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-052",
+   "run": "exp48",
+   "a": "C0014",
+   "b": "C0022",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.8188,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "CH-27 states that injecting argon into the ammonia converter at constant volume and constant temperature shifts equilibrium toward ammonia because total pressure rises. This is wrong for an inert gas at constant V and T. The reactive species partial pressures are unchanged, so the reaction quotient is unchanged; total pressure increase from inert gas alone does not drive the equilibrium toward fewer reactive gas moles.",
+   "finding_b": "CH-27 claims that \"Injecting argon into the converter at constant volume and constant temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is therefore used as a fine trim on converter yield.\" This is a classic Le Chatelier error. Adding an inert gas at constant volume raises total pressure but leaves the partial pressures (and concentrations) of N\u2082, H\u2082, NH\u2083 unchanged, so the reaction quotient Q is unchanged and there is no shift. Le Chatelier's \"move to fewer moles ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-053",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8166,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-054",
+   "run": "exp46",
+   "a": "C0010",
+   "b": "C0026",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.8154,
+   "tier2_jaccard": 0.1905,
+   "tier3": "UNKNOWN",
+   "finding_a": "In `_compute_shadow_e_values`, the code iterates over `cell_verdicts.items()` assuming the keys are tool names (`cell_name`). However, as explicitly noted in the `_track_tool_fpr` method's comments, `cell_verdicts` is keyed by finding ID, not tool name. Consequently, `tracker = self._cumulative_tool_fpr.get(cell_name)` will always return `None` (since finding IDs do not match tool names), causing the loop to `continue` without ever computing shadow e-values.",
+   "finding_b": "`_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in cell_verdicts.items()` and looks up `tracker = self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526). A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` \u2192 `continue` (line 580-581) \u2192 t",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-055",
+   "run": "exp49",
+   "a": "C0030",
+   "b": "C0034",
+   "shared_locations": [
+    "EN-04"
+   ],
+   "embedding": 0.8092,
+   "tier2_jaccard": 0.4444,
+   "tier3": "SAME",
+   "finding_a": "In section 2, statement EN-04, the midspan deflection of beam B4-01 is calculated as 4.01 mm using the factored design load $w_{Ed} = 14.67 \\text{ kN/m}$. Deflection is a Serviceability Limit State (SLS) and must be checked using the characteristic (unfactored) load, which is $w_k = 4.20 + 6.00 = 10.20 \\text{ kN/m}$.",
+   "finding_b": "EN-04 calculates the midspan deflection using the factored design load `w_Ed = 14.67 kN/m` instead of the characteristic (unfactored) load `w_k = 10.20 kN/m`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-056",
+   "run": "exp48",
+   "a": "C0013",
+   "b": "C0029",
+   "shared_locations": [
+    "CH-22"
+   ],
+   "embedding": 0.8089,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, \u201carising from the hydroxyl on the aromatic ring.\u201d This is chemically and substructure-wise false. A phenolic hydroxyl is not a carboxylic acid; the molecule has an amide carbonyl and a phenolic OH, but no carboxylic acid group.",
+   "finding_b": "CH-22 incorrectly states that N-(4-hydroxyphenyl)acetamide (paracetamol) returns exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`, attributing this to the hydroxyl on the aromatic ring.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-057",
+   "run": "exp47",
+   "a": "C0041",
+   "b": "C0057",
+   "shared_locations": [
+    "eta_int_modulator"
+   ],
+   "embedding": 0.807,
+   "tier2_jaccard": 0.5714,
+   "tier3": "SAME",
+   "finding_a": "In `eta_int_modulator`, the severe penalty tier (0.60) for near-copies and recidivism is bypassed if the finding is otherwise compliant. The function returns `1.0` immediately if `record.compliant` is True, skipping the `any_near_copy` check entirely.",
+   "finding_b": "`eta_int_modulator` incorrectly short-circuits and returns `1.0` if `record.compliant` is True, completely bypassing the severe `0.60` penalty for near-copies and the `0.85` soft penalty for mixed-admissibility alternatives.\nEvidence: At the top of `eta_int_modulator`, the code executes `if not config.enabled or record.compliant: return 1.0`. If a model submits one valid alternative and one near-copy alternative, `record.compliant` evaluates to True (assuming `min_alternatives=1`). The function ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-058",
+   "run": "exp44",
+   "a": "C0025",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.8051,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-059",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.8046,
+   "tier2_jaccard": 0.25,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-060",
+   "run": "exp47",
+   "a": "C0053",
+   "b": "C0070",
+   "shared_locations": [
+    "check_sibling_admissibility"
+   ],
+   "embedding": 0.8037,
+   "tier2_jaccard": 0.2857,
+   "tier3": "UNKNOWN",
+   "finding_a": "The cross-round recidivism check in `check_sibling_admissibility` falsely penalizes models for fixing previously rejected alternatives. When a model adds a missing contrast statement to a prior alternative, `parse_contrast_statement` strips the new contrast statement from the body. The resulting `alternative_text` is identical to the prior round's `alternative_text`. The recidivism check then scores them as 1.0 isomorphic and rejects the fixed alternative with `recidivism_near_copy`, triggering ",
+   "finding_b": "`check_sibling_admissibility` strips contrast statements before checking sibling and cross-round recidivism isomorphism. Because `parse_alternative_block` removes the contrast statement from `alternative_text`, comparing `alt.alternative_text` against siblings or prior-round alternatives compares ONLY the body.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-061",
+   "run": "exp46",
+   "a": "C0005",
+   "b": "C0026",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.7997,
+   "tier2_jaccard": 0.0909,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: In `_compute_shadow_e_values`, loop iterates over finding\u2011ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_",
+   "finding_b": "`_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in cell_verdicts.items()` and looks up `tracker = self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526). A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` \u2192 `continue` (line 580-581) \u2192 t",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-062",
+   "run": "exp48",
+   "a": "C0009",
+   "b": "C0022",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.7991,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "CH-27 claims that injecting argon into the ammonia converter at constant volume and constant temperature shifts equilibrium toward ammonia because total pressure rises. This is wrong for an ideal gas mixture at constant V and T. Adding inert gas at constant volume changes total pressure but leaves the partial pressures of N2, H2, and NH3 unchanged, so the reaction quotient is unchanged and no equilibrium shift occurs.",
+   "finding_b": "CH-27 claims that \"Injecting argon into the converter at constant volume and constant temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is therefore used as a fine trim on converter yield.\" This is a classic Le Chatelier error. Adding an inert gas at constant volume raises total pressure but leaves the partial pressures (and concentrations) of N\u2082, H\u2082, NH\u2083 unchanged, so the reaction quotient Q is unchanged and there is no shift. Le Chatelier's \"move to fewer moles ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-063",
+   "run": "exp48",
+   "a": "C0001",
+   "b": "C0017",
+   "shared_locations": [
+    "CH-11"
+   ],
+   "embedding": 0.7988,
+   "tier2_jaccard": 0.625,
+   "tier3": "SAME",
+   "finding_a": "In CH-11, the balanced equation for the dichromate oxidation of ethanol produces 8 H2O, which leaves hydrogen and oxygen unbalanced (34 H on the left vs 28 H on the right). The correct number of water molecules is 11.",
+   "finding_b": "CH-11 claims the dichromate oxidation equation is balanced with `8 H2O` on the product side and coefficient sum 28. The equation is not balanced: the left side has H=34 and O=49, while the right side with 8 H2O has H=28 and O=46. The balanced equation requires 11 H2O, not 8 H2O, and the coefficient sum becomes 31.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-064",
+   "run": "exp49",
+   "a": "C0007",
+   "b": "C0018",
+   "shared_locations": [
+    "EN-06"
+   ],
+   "embedding": 0.7978,
+   "tier2_jaccard": 0.4444,
+   "tier3": "SAME",
+   "finding_a": "Calculation error in the Euler critical load for column C4-02 in EN-06. The document states `P_cr = 587 kN`, but evaluating `pi^2 E I_min / L^2` with the provided values (`E = 210 GPa`, `I_min = 5.60 x 10^-6 m^4`, `L = 4.50 m`) yields `573.17 kN`.",
+   "finding_b": "EN-06 states the Euler critical load for column C4-02 (pinned-pinned, L=4.50 m, I_min=5.60\u00d710\u207b\u2076 m\u2074, E=210 GPa) as P_cr = \u03c0\u00b2EI/L\u00b2 = 587 kN. Direct evaluation gives 573.2 kN. The claimed 587 kN is 2.4 % high and is not a rounding artefact (recovering 587 would need I=5.735\u00d710\u207b\u2076 m\u2074 or L=4.447 m \u2014 neither matches the stated inputs, which are re-used consistently and correctly in EN-09).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-065",
+   "run": "exp49",
+   "a": "C0007",
+   "b": "C0011",
+   "shared_locations": [
+    "EN-06"
+   ],
+   "embedding": 0.7978,
+   "tier2_jaccard": 0.7143,
+   "tier3": "SAME",
+   "finding_a": "Calculation error in the Euler critical load for column C4-02 in EN-06. The document states `P_cr = 587 kN`, but evaluating `pi^2 E I_min / L^2` with the provided values (`E = 210 GPa`, `I_min = 5.60 x 10^-6 m^4`, `L = 4.50 m`) yields `573.17 kN`.",
+   "finding_b": "EN-06 reports the Euler critical load for C4-02 as 587 kN, but the stated inputs give approximately 573 kN. Location: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, section 2, EN-06. Evidence: using the document\u2019s own formula and inputs, `P_cr = pi^2 E I_min / L^2 = pi^2 \u00d7 210e9 \u00d7 5.60e-6 / 4.50^2 = 573.17 kN`, not 587 kN.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-066",
+   "run": "exp46",
+   "a": "C0005",
+   "b": "C0006",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.7967,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: In `_compute_shadow_e_values`, loop iterates over finding\u2011ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_",
+   "finding_b": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()` treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but the same module\u2019s `_track_tool_fpr()` documents and handles the actual shape as finding-ID keyed.\n\nEvidence from target code:\n# _track_tool_fpr()\nfor _fid, verdicts in cell_verdicts.items():\n    for verdict in verdicts:\n        tool = (getattr(verdict, \"tool_used\", \"\") or\n                str(getattr(verdict, \"cell_type\", \"unknown\")",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-067",
+   "run": "exp44",
+   "a": "C0015",
+   "b": "C0026",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7959,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "finding_b": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-068",
+   "run": "exp44",
+   "a": "C0004",
+   "b": "C0049",
+   "shared_locations": [
+    "_classify_event"
+   ],
+   "embedding": 0.7932,
+   "tier2_jaccard": 0.1667,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F012\nSEVERITY: 0.70\nFIND: `_classify_event` in `bench/evidence.py` uses `json.dumps` on payload dicts and substring matching (`in`) to identify verdict commands. A finding ID like \"C0001\" ",
+   "finding_b": "`_classify_event` returns the generic string `\"verdict\"` for `artifact_type == \"verdict\"`, failing to parse whether the verdict was a CONFIRM, CHALLENGE, EXTEND, or MERGE. `_describe_event` has no handler for `\"verdict\"`, so it falls back to `\"Finding {id} referenced in verdict record\"`.\nLocation: `bench/evidence.py`, `_classify_event()` and `_describe_event()`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-069",
+   "run": "exp47",
+   "a": "C0006",
+   "b": "C0063",
+   "shared_locations": [
+    "eta_int_modulator"
+   ],
+   "embedding": 0.7903,
+   "tier2_jaccard": 0.0,
+   "tier3": "DIFFERENT",
+   "finding_a": "FINDING_ID: F001  \nSEVERITY: 0.90  \nFLAW_CLASS: 1 (logic)  \nABSTRACTION_INDEX: 0.35  \n\nFIND  \nIn `eta_int_modulator` (lines 623\u2011627 of the provided source), the `all_isomorphic` check is:\nall_isomorph",
+   "finding_b": "FINDING_ID: F006\nSEVERITY: 0.80\nFIND: eta_int_modulator's severe-tier 'all_isomorphic' gate ignores sibling_cosmetic_isomorphism reasons, allowing compliance-theatre alternatives to escape the 0.60 do",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-070",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0037",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7874,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.verify_bundle` verifies the inclusion proofs against `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this root matches the trusted chain's root.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-071",
+   "run": "exp48",
+   "a": "C0022",
+   "b": "C0030",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.7868,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "CH-27 claims that \"Injecting argon into the converter at constant volume and constant temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is therefore used as a fine trim on converter yield.\" This is a classic Le Chatelier error. Adding an inert gas at constant volume raises total pressure but leaves the partial pressures (and concentrations) of N\u2082, H\u2082, NH\u2083 unchanged, so the reaction quotient Q is unchanged and there is no shift. Le Chatelier's \"move to fewer moles ",
+   "finding_b": "CH-27 incorrectly claims that injecting argon at constant volume and temperature produces an equilibrium shift toward ammonia because it raises the total pressure.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-072",
+   "run": "exp49",
+   "a": "C0003",
+   "b": "C0012",
+   "shared_locations": [
+    "EN-19"
+   ],
+   "embedding": 0.7838,
+   "tier2_jaccard": 0.75,
+   "tier3": "SAME",
+   "finding_a": "EN-19 forms a \u201cdimensionless\u201d factor of safety by dividing a force by a pressure. Location: section 4, EN-19. Evidence: \\(R_d=450\\text{ kN}\\), \\(p_{Ed}=3.60\\text{ MPa}=3.60\\text{ N/mm}^2\\). \\(R_d/p_{Ed}\\) has units of area, not a pure number: \\(450\\text{ kN}/3.60\\text{ MPa}=125{,}000\\text{ mm}^2=0.125\\text{ m}^2\\).",
+   "finding_b": "EN-19 labels `R_d / p_Ed` as a dimensionless bearing factor of safety, but it divides a force by a pressure. Location: section 4, EN-19. Evidence: `450 kN / 3.60 MPa` has dimensions of area, not a pure number. Numerically, `450,000 N / 3,600,000 N/m^2 = 0.125 m^2 = 125,000 mm^2`; the reported \u201c125\u201d is only obtained by mixing `kN` and `MPa` without dimensional reduction.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-073",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0025",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7836,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-074",
+   "run": "exp44",
+   "a": "C0025",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7833,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-075",
+   "run": "exp49",
+   "a": "C0001",
+   "b": "C0007",
+   "shared_locations": [
+    "EN-06"
+   ],
+   "embedding": 0.7807,
+   "tier2_jaccard": 0.7143,
+   "tier3": "SAME",
+   "finding_a": "EN-06 overstates the Euler critical load for C4-02. Location: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, section 2, EN-06. Evidence: using the document\u2019s own inputs, \\(P_{cr}=\\pi^2 E I/L^2=\\pi^2(210\\times10^9)(5.60\\times10^{-6})/4.50^2=573.17\\text{ kN}\\), not 587 kN.",
+   "finding_b": "Calculation error in the Euler critical load for column C4-02 in EN-06. The document states `P_cr = 587 kN`, but evaluating `pi^2 E I_min / L^2` with the provided values (`E = 210 GPa`, `I_min = 5.60 x 10^-6 m^4`, `L = 4.50 m`) yields `573.17 kN`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-076",
+   "run": "exp49",
+   "a": "C0006",
+   "b": "C0019",
+   "shared_locations": [
+    "EN-41"
+   ],
+   "embedding": 0.7802,
+   "tier2_jaccard": 0.6667,
+   "tier3": "SAME",
+   "finding_a": "EN-41 reports an incorrect two-sample t-test p-value and an unsupported significance conclusion. Location: section 8, EN-41. Evidence: for procedure A hardness [318,325,311,329,316,322] and B [309,314,322,305,318,312], two-sample t-test gives \\(t=1.876\\), p\u22480.090, not p=0.021. The difference is not significant at the 0.05 level.",
+   "finding_b": "EN-41 claims a two-sample t-test on the procedure-A vs procedure-B hardness sets gives p=0.021, \"significant at the 0.05 level,\" and specifies procedure A for load-bearing welds on that basis. Recomputed with the printed data (A=[318,325,311,329,316,322], B=[309,314,322,305,318,312]): Student two-sample p=0.0902, Welch p=0.0903 \u2014 NOT significant at 0.05. No test variant reaches 0.021: one-sided Student=0.045, paired=0.223. The reported p is wrong and the significance conclusion is false.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-077",
+   "run": "exp44",
+   "a": "C0021",
+   "b": "C0040",
+   "shared_locations": [
+    "EvidenceRecord",
+    "EvidenceStore",
+    "get_record",
+    "query"
+   ],
+   "embedding": 0.7792,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.query()` and `EvidenceStore.get_record()` return mutable internal `EvidenceRecord` objects directly, despite the module contract saying the evidence layer is read-only and cannot diverge from the chain.\n\nLocation: `bench/evidence.py`\ndef query(... ) -> List[EvidenceRecord]:\n        ...\n        return [self._records[i] for i in indices]\n\n    def get_record(self, index: int) -> EvidenceRecord:\n        ...\n        return self._records[index]\nEvidence:\n\n- `EvidenceRecord` is a mutable",
+   "finding_b": "`EvidenceStore.query()` and `EvidenceStore.get_record()` return references to the internal `EvidenceRecord` objects. Because `EvidenceRecord` is a mutable dataclass containing mutable dicts (`metadata`, `payload`), callers can accidentally or maliciously modify the store's internal state.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-078",
+   "run": "exp45",
+   "a": "C0002",
+   "b": "C0020",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.7788,
+   "tier2_jaccard": 0.1,
+   "tier3": "UNKNOWN",
+   "finding_a": "`ImmuneMemory.load()` in `bench/dm/_memory.py` accepts persisted memory with no `source_hash` even when the caller supplies `expected_hash`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`, hash invalidation branch:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises:\n1. The module states that JSON persistence is \u201cfile-hash grounded for invalidation\u201d.\n2. `load(path, expected_hash=...)` is the interface that enforces that groun",
+   "finding_b": "`ImmuneMemory.load` fails to initialize `source_hash` when returning a fresh instance (C0001), fails to invalidate when `stored_hash` is missing (C0002, C0006), and crashes with `AttributeError` if the JSON root is not a dictionary (e.g., `[]`).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-079",
+   "run": "exp46",
+   "a": "C0003",
+   "b": "C0006",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.7773,
+   "tier2_jaccard": 0.2,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\n\nSEVERITY: 0.78\n\nFLAW_CLASS: 1\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `_compute_shadow_e_values()` still interprets `immune_response.cell_verdicts` outer keys as tool names, but `_track_tool",
+   "finding_b": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()` treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but the same module\u2019s `_track_tool_fpr()` documents and handles the actual shape as finding-ID keyed.\n\nEvidence from target code:\n# _track_tool_fpr()\nfor _fid, verdicts in cell_verdicts.items():\n    for verdict in verdicts:\n        tool = (getattr(verdict, \"tool_used\", \"\") or\n                str(getattr(verdict, \"cell_type\", \"unknown\")",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-080",
+   "run": "exp46",
+   "a": "C0006",
+   "b": "C0026",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.7754,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()` treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but the same module\u2019s `_track_tool_fpr()` documents and handles the actual shape as finding-ID keyed.\n\nEvidence from target code:\n# _track_tool_fpr()\nfor _fid, verdicts in cell_verdicts.items():\n    for verdict in verdicts:\n        tool = (getattr(verdict, \"tool_used\", \"\") or\n                str(getattr(verdict, \"cell_type\", \"unknown\")",
+   "finding_b": "`_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in cell_verdicts.items()` and looks up `tracker = self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526). A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` \u2192 `continue` (line 580-581) \u2192 t",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-081",
+   "run": "exp44",
+   "a": "C0014",
+   "b": "C0039",
+   "shared_locations": [
+    "_classify_event"
+   ],
+   "embedding": 0.7742,
+   "tier2_jaccard": 0.2857,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F004\nSEVERITY: 0.80\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.2\nFIND: `_classify_event` uses a simple substring match (`in`) which incorrectly matches prefix finding IDs. For example, a payload c",
+   "finding_b": "`_classify_event` uses `in` for substring matching (e.g., `f\"CONFIRM {finding_id}\" in payload_str`). This incorrectly matches `C004` when the payload contains `CONFIRM C0042`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-082",
+   "run": "exp44",
+   "a": "C0018",
+   "b": "C0031",
+   "shared_locations": [
+    "EvidenceStore",
+    "trace_finding"
+   ],
+   "embedding": 0.7736,
+   "tier2_jaccard": 0.3333,
+   "tier3": "SAME",
+   "finding_a": "FINDING_ID: DeepSeek_F001\nSEVERITY: 0.85\nFIND: EvidenceStore.trace_finding() sorts events by raw ISO\u202f8601 UTC string timestamp lexicographically instead of chronologically, causing reverse order for m",
+   "finding_b": "`EvidenceStore.trace_finding()` sorts events by raw ISO 8601 UTC string timestamp lexicographically instead of chronologically.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-083",
+   "run": "exp47",
+   "a": "C0047",
+   "b": "C0070",
+   "shared_locations": [
+    "check_sibling_admissibility"
+   ],
+   "embedding": 0.7728,
+   "tier2_jaccard": 0.125,
+   "tier3": "UNKNOWN",
+   "finding_a": "`check_sibling_admissibility` falsely penalizes valid alternatives in two ways: 1) It compares against INADMISSIBLE earlier siblings, causing a valid alternative to be rejected if it resembles a malformed prior attempt in the same output. 2) The cross-round recidivism check strips the contrast statement before comparing. If a model fixes a `missing_contrast_statement` rejection by adding one, the stripped text remains identical to the prior round, falsely triggering the severe 0.60 `recidivism_n",
+   "finding_b": "`check_sibling_admissibility` strips contrast statements before checking sibling and cross-round recidivism isomorphism. Because `parse_alternative_block` removes the contrast statement from `alternative_text`, comparing `alt.alternative_text` against siblings or prior-round alternatives compares ONLY the body.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-084",
+   "run": "exp44",
+   "a": "C0026",
+   "b": "C0028",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.772,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-085",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0015",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7719,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-086",
+   "run": "exp49",
+   "a": "C0011",
+   "b": "C0018",
+   "shared_locations": [
+    "EN-06"
+   ],
+   "embedding": 0.7688,
+   "tier2_jaccard": 0.3684,
+   "tier3": "SAME",
+   "finding_a": "EN-06 reports the Euler critical load for C4-02 as 587 kN, but the stated inputs give approximately 573 kN. Location: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, section 2, EN-06. Evidence: using the document\u2019s own formula and inputs, `P_cr = pi^2 E I_min / L^2 = pi^2 \u00d7 210e9 \u00d7 5.60e-6 / 4.50^2 = 573.17 kN`, not 587 kN.",
+   "finding_b": "EN-06 states the Euler critical load for column C4-02 (pinned-pinned, L=4.50 m, I_min=5.60\u00d710\u207b\u2076 m\u2074, E=210 GPa) as P_cr = \u03c0\u00b2EI/L\u00b2 = 587 kN. Direct evaluation gives 573.2 kN. The claimed 587 kN is 2.4 % high and is not a rounding artefact (recovering 587 would need I=5.735\u00d710\u207b\u2076 m\u2074 or L=4.447 m \u2014 neither matches the stated inputs, which are re-used consistently and correctly in EN-09).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-087",
+   "run": "exp44",
+   "a": "C0026",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7682,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof. But it does not verify that the record's `chain_hash` actually matches the record's contents.",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-088",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0025",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7671,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-089",
+   "run": "exp48",
+   "a": "C0004",
+   "b": "C0022",
+   "shared_locations": [
+    "CH-27"
+   ],
+   "embedding": 0.7649,
+   "tier2_jaccard": 1.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "In CH-27, it is claimed that injecting argon at constant volume and temperature shifts the equilibrium toward ammonia. Adding an inert gas at constant volume increases total pressure but does not change the partial pressures of the reacting gases, so there is no equilibrium shift.",
+   "finding_b": "CH-27 claims that \"Injecting argon into the converter at constant volume and constant temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is therefore used as a fine trim on converter yield.\" This is a classic Le Chatelier error. Adding an inert gas at constant volume raises total pressure but leaves the partial pressures (and concentrations) of N\u2082, H\u2082, NH\u2083 unchanged, so the reaction quotient Q is unchanged and there is no shift. Le Chatelier's \"move to fewer moles ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-090",
+   "run": "exp49",
+   "a": "C0035",
+   "b": "C0037",
+   "shared_locations": [
+    "EN-16"
+   ],
+   "embedding": 0.7634,
+   "tier2_jaccard": 0.1818,
+   "tier3": "UNKNOWN",
+   "finding_a": "EN-16 calculates the global bending factor of safety by dividing the nominal yield strength `f_y` by the factored design stress `sigma_Ed`.",
+   "finding_b": "EN-16 reports a \u201cglobal bending factor of safety\u201d for B4-01 as:\n\n> `f_y / sigma_Ed = 275 / 50.78 = 5.42`\n\nLocation: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, Section 4, EN-16.\n\nThe arithmetic `275 / 50.78 = 5.42` is dimensionally valid, but the factor convention is wrong. It divides an unfactored nominal resistance value, `f_y = 275 MPa`, by a factored design-action stress, `sigma_Ed = 50.78 MPa`. That hybrid ratio is neither:\n\n1. a code partial-factor utilisation/reserve",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-091",
+   "run": "exp47",
+   "a": "C0001",
+   "b": "C0042",
+   "shared_locations": [
+    "parse_alternative_block"
+   ],
+   "embedding": 0.7622,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`parse_alternative_block()` in `bench/dm/_divergence.py` lets an alternative block consume later top-level review sections.\n\nLocation:\nbody_start = m.end()\nbody_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)\nbody = text[body_start:body_end].strip()\nBug mechanism: the parser terminates an alternative body only at the next alternative/conjecture header or end-of-text. It does not stop at mandatory review sections such as `FALSIFICATION`, `CORROBORATION`, `ADMISSIBILITY`, or `N",
+   "finding_b": "`parse_alternative_block()` in `bench/dm/_divergence.py` uses a header regex `_ALT_HEADER_RE` that matches any line beginning with `alternative` or `alt` (or `conjecture`) optionally preceded by markdown heading/emphasis, without requiring structural block\u2011start context. This causes false\u2011positive matching inside an existing alternative\u2019s body, splitting a legitimate alternative into multiple parsed records.\n\nEvidence:  \nThe regex pattern `(alt(?:ernative)?|conjecture)` is so permissive that a l",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-092",
+   "run": "exp44",
+   "a": "C0001",
+   "b": "C0005",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify"
+   ],
+   "embedding": 0.7602,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify()` caches only \u201cverifier was ever supplied\u201d, not which verifier/configuration was supplied. Location: `bench/evidence.py`, method `EvidenceStore.verify`.\n\nEvidence from current code:\nneeds_verify = (\n    self._verified is None\n    or (verifier is not None and self._verified_with_verifier is False)\n)\n...\nif verifier is not None:\n    self._verified_with_verifier = True\nreturn self._verified, self._verify_message\nPremises:\n1. A verifier is part of the trust decision; two diffe",
+   "finding_b": "FINDING_ID: F013\nSEVERITY: 0.80\nFIND: `EvidenceStore.verify()` caches the result of the first verifier and does not recompute when a different, stricter verifier is supplied later. The caching logic u",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-093",
+   "run": "exp44",
+   "a": "C0018",
+   "b": "C0038",
+   "shared_locations": [
+    "EvidenceStore",
+    "trace_finding"
+   ],
+   "embedding": 0.76,
+   "tier2_jaccard": 0.1429,
+   "tier3": "SAME",
+   "finding_a": "FINDING_ID: DeepSeek_F001\nSEVERITY: 0.85\nFIND: EvidenceStore.trace_finding() sorts events by raw ISO\u202f8601 UTC string timestamp lexicographically instead of chronologically, causing reverse order for m",
+   "finding_b": "`EvidenceStore.trace_finding()` sorts events by raw ISO 8601 UTC string timestamp lexicographically. Because `.` (ASCII 46) is less than `Z` (ASCII 90), a timestamp with fractional seconds (e.g., `00.123Z`) will be sorted BEFORE a timestamp without them (e.g., `00Z`), violating chronological order.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-094",
+   "run": "exp46",
+   "a": "C0006",
+   "b": "C0010",
+   "shared_locations": [
+    "_compute_shadow_e_values",
+    "_track_tool_fpr"
+   ],
+   "embedding": 0.7588,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()` treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but the same module\u2019s `_track_tool_fpr()` documents and handles the actual shape as finding-ID keyed.\n\nEvidence from target code:\n# _track_tool_fpr()\nfor _fid, verdicts in cell_verdicts.items():\n    for verdict in verdicts:\n        tool = (getattr(verdict, \"tool_used\", \"\") or\n                str(getattr(verdict, \"cell_type\", \"unknown\")",
+   "finding_b": "In `_compute_shadow_e_values`, the code iterates over `cell_verdicts.items()` assuming the keys are tool names (`cell_name`). However, as explicitly noted in the `_track_tool_fpr` method's comments, `cell_verdicts` is keyed by finding ID, not tool name. Consequently, `tracker = self._cumulative_tool_fpr.get(cell_name)` will always return `None` (since finding IDs do not match tool names), causing the loop to `continue` without ever computing shadow e-values.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-095",
+   "run": "exp49",
+   "a": "C0001",
+   "b": "C0018",
+   "shared_locations": [
+    "EN-06"
+   ],
+   "embedding": 0.7579,
+   "tier2_jaccard": 0.3684,
+   "tier3": "SAME",
+   "finding_a": "EN-06 overstates the Euler critical load for C4-02. Location: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, section 2, EN-06. Evidence: using the document\u2019s own inputs, \\(P_{cr}=\\pi^2 E I/L^2=\\pi^2(210\\times10^9)(5.60\\times10^{-6})/4.50^2=573.17\\text{ kN}\\), not 587 kN.",
+   "finding_b": "EN-06 states the Euler critical load for column C4-02 (pinned-pinned, L=4.50 m, I_min=5.60\u00d710\u207b\u2076 m\u2074, E=210 GPa) as P_cr = \u03c0\u00b2EI/L\u00b2 = 587 kN. Direct evaluation gives 573.2 kN. The claimed 587 kN is 2.4 % high and is not a rounding artefact (recovering 587 would need I=5.735\u00d710\u207b\u2076 m\u2074 or L=4.447 m \u2014 neither matches the stated inputs, which are re-used consistently and correctly in EN-09).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-096",
+   "run": "exp48",
+   "a": "C0020",
+   "b": "C0031",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.7575,
+   "tier2_jaccard": 0.6667,
+   "tier3": "SAME",
+   "finding_a": "CH-29 states three independent uncertainty components (0.42%, 0.28%, 0.15%) \"because the components are independent they are combined by arithmetic addition, giving 0.85 per cent.\" This inverts the correct rule: independent components combine in quadrature (root-sum-of-squares), per GUM/ICH. \u221a(0.42\u00b2+0.28\u00b2+0.15\u00b2) = 0.53%, not 0.85%. Arithmetic addition (0.85%) is the rule for fully correlated components. The document contradicts itself: CH-30 correctly combines its independent components in quadr",
+   "finding_b": "CH-29 incorrectly combines independent relative measurement uncertainties by arithmetic addition (0.42 + 0.28 + 0.15 = 0.85%).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-097",
+   "run": "exp47",
+   "a": "C0047",
+   "b": "C0060",
+   "shared_locations": [
+    "check_sibling_admissibility"
+   ],
+   "embedding": 0.7558,
+   "tier2_jaccard": 0.2,
+   "tier3": "UNKNOWN",
+   "finding_a": "`check_sibling_admissibility` falsely penalizes valid alternatives in two ways: 1) It compares against INADMISSIBLE earlier siblings, causing a valid alternative to be rejected if it resembles a malformed prior attempt in the same output. 2) The cross-round recidivism check strips the contrast statement before comparing. If a model fixes a `missing_contrast_statement` rejection by adding one, the stripped text remains identical to the prior round, falsely triggering the severe 0.60 `recidivism_n",
+   "finding_b": "`check_sibling_admissibility` penalizes resubmission of ADMISSIBLE prior alternatives, violating the directive.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-098",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0028",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7549,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-099",
+   "run": "exp48",
+   "a": "C0015",
+   "b": "C0020",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.7502,
+   "tier2_jaccard": 0.7778,
+   "tier3": "SAME",
+   "finding_a": "CH-29 says independent relative uncertainty components 0.42%, 0.28%, and 0.15% are combined by arithmetic addition to give 0.85%. Independent uncertainty components should be combined in quadrature/root-sum-square, not by simple addition, unless a conservative worst-case bound is explicitly intended. The RSS value is about 0.53%, not 0.85%.",
+   "finding_b": "CH-29 states three independent uncertainty components (0.42%, 0.28%, 0.15%) \"because the components are independent they are combined by arithmetic addition, giving 0.85 per cent.\" This inverts the correct rule: independent components combine in quadrature (root-sum-of-squares), per GUM/ICH. \u221a(0.42\u00b2+0.28\u00b2+0.15\u00b2) = 0.53%, not 0.85%. Arithmetic addition (0.85%) is the rule for fully correlated components. The document contradicts itself: CH-30 correctly combines its independent components in quadr",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-100",
+   "run": "exp44",
+   "a": "C0012",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7477,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` verifies only that the record\u2019s stored `chain_hash` matches the proof\u2019s `chain_hash`, then verifies the Merkle inclusion proof for that hash. It does not recompute `entry_hash` from `record[\"sealed_body\"]`, and it does not recompute `chain_hash` from `prev_hash` and `entry_hash`. Therefore an exported bundle record body can be modified while leaving the stale `entry_hash`, `prev_hash`, and `chain_hash` fields unchanged; `verify_bundle()` still returns success.\n\nLo",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-101",
+   "run": "exp44",
+   "a": "C0015",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7475,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-102",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0015",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7443,
+   "tier2_jaccard": 0.25,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-103",
+   "run": "exp45",
+   "a": "C0004",
+   "b": "C0020",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.7428,
+   "tier2_jaccard": 0.2,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-supplied `expected_hash` does not invalidate memory, allowing stale data to ",
+   "finding_b": "`ImmuneMemory.load` fails to initialize `source_hash` when returning a fresh instance (C0001), fails to invalidate when `stored_hash` is missing (C0002, C0006), and crashes with `AttributeError` if the JSON root is not a dictionary (e.g., `[]`).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-104",
+   "run": "exp44",
+   "a": "C0015",
+   "b": "C0025",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7421,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor. It only verifies that the inclusion proofs match the `bundle.merkle_root` provided within the bundle itself.",
+   "finding_b": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-105",
+   "run": "exp44",
+   "a": "C0014",
+   "b": "C0055",
+   "shared_locations": [
+    "_classify_event"
+   ],
+   "embedding": 0.7383,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F004\nSEVERITY: 0.80\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.2\nFIND: `_classify_event` uses a simple substring match (`in`) which incorrectly matches prefix finding IDs. For example, a payload c",
+   "finding_b": "FINDING_ID: F601\nSEVERITY: 0.75  \nFLAW_CLASS: 6 (edge\u2011case / robustness)  \nABSTRACTION_INDEX: 0.30  \n\n### FIND\nIn `bench/evidence.py`, `_classify_event()` (line ~487) calls `json.dumps(rec.payload)` w",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-106",
+   "run": "exp44",
+   "a": "C0028",
+   "b": "C0080",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7372,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "finding_b": "`EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a `chain_hash`, but does not bind the supplied bundled record body to the local chain record at the exported index.\n\nLocation:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe function checks only:\n\n1. bundled",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-107",
+   "run": "exp44",
+   "a": "C0002",
+   "b": "C0028",
+   "shared_locations": [
+    "EvidenceStore",
+    "verify_bundle"
+   ],
+   "embedding": 0.7323,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing, as long as the supplied proof verifies. Location: `bench/evidence.py`, method `EvidenceStore.verify_bundle`.\n\nCurrent code:\nrecord_hash = record.get(\"chain_hash\", \"\")\nproof_hash = proof.get(\"chain_hash\", \"\")\nif record_hash and proof_hash and record_hash != proof_hash:\n    errors.append(...)\n    continue\n\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nPremises:\n1. The bundle record must b",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-108",
+   "run": "exp48",
+   "a": "C0005",
+   "b": "C0020",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.7293,
+   "tier2_jaccard": 0.7778,
+   "tier3": "SAME",
+   "finding_a": "In CH-29, independent relative measurement uncertainties (0.42%, 0.28%, 0.15%) are combined by arithmetic addition to give 0.85%. Independent uncertainties must be combined by root-sum-square (RSS), which gives 0.53%.",
+   "finding_b": "CH-29 states three independent uncertainty components (0.42%, 0.28%, 0.15%) \"because the components are independent they are combined by arithmetic addition, giving 0.85 per cent.\" This inverts the correct rule: independent components combine in quadrature (root-sum-of-squares), per GUM/ICH. \u221a(0.42\u00b2+0.28\u00b2+0.15\u00b2) = 0.53%, not 0.85%. Arithmetic addition (0.85%) is the rule for fully correlated components. The document contradicts itself: CH-30 correctly combines its independent components in quadr",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-109",
+   "run": "exp44",
+   "a": "C0005",
+   "b": "C0078",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7291,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F013\nSEVERITY: 0.80\nFIND: `EvidenceStore.verify()` caches the result of the first verifier and does not recompute when a different, stricter verifier is supplied later. The caching logic u",
+   "finding_b": "FINDING_ID: CC1_F901\nSEVERITY: 0.85\nFLAW_CLASS: 5 (correctness \u2014 defeats the module's stated tamper-evidence guarantee)\nABSTRACTION_INDEX: 0.60\n\nFIND.\n`EvidenceStore.verify_bundle()` (`bench/evidence.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-110",
+   "run": "exp44",
+   "a": "C0001",
+   "b": "C0032",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7263,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.verify()` caches only \u201cverifier was ever supplied\u201d, not which verifier/configuration was supplied. Location: `bench/evidence.py`, method `EvidenceStore.verify`.\n\nEvidence from current code:\nneeds_verify = (\n    self._verified is None\n    or (verifier is not None and self._verified_with_verifier is False)\n)\n...\nif verifier is not None:\n    self._verified_with_verifier = True\nreturn self._verified, self._verify_message\nPremises:\n1. A verifier is part of the trust decision; two diffe",
+   "finding_b": "`CONFIRM C0028` \u2014 `EvidenceStore.verify_bundle()` verifies inclusion proofs against the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate that root against the local/trusted `EvidenceStore` chain.\n\nLocation: `bench/evidence.py`, `EvidenceStore.verify_bundle()`.\n\nEvidence from current code:\nvalid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\nThe verifier accepts `bundle.merkle_root` as the trust anchor. The method never compares `bundle.merkle_root",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-111",
+   "run": "exp48",
+   "a": "C0011",
+   "b": "C0016",
+   "shared_locations": [
+    "CH-36",
+    "CH-37"
+   ],
+   "embedding": 0.7233,
+   "tier2_jaccard": 1.0,
+   "tier3": "SAME",
+   "finding_a": "CH-37 states that the second-order rate constant for the titrimetric back-assay is `k = 0.126 s^-1` and is carried directly into the hold-time model without conversion. This contradicts CH-36, which correctly derives that a second-order rate constant for `rate = k[ester][OH-]` must have units `L mol^-1 s^-1`. A second-order constant cannot have first-order units `s^-1` unless one reactant concentration has been absorbed into a pseudo-first-order observed constant, which CH-36 explicitly says is ",
+   "finding_b": "CH-37 gives the second-order rate constant for alkaline hydrolysis as `k = 0.126 s^-1` and says it is carried directly into the hold-time model without conversion. This directly contradicts CH-36, which correctly states that for `rate = k[ester][OH-]`, k must have units `L mol^-1 s^-1`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-112",
+   "run": "exp46",
+   "a": "C0003",
+   "b": "C0026",
+   "shared_locations": [
+    "_compute_shadow_e_values"
+   ],
+   "embedding": 0.7214,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\n\nSEVERITY: 0.78\n\nFLAW_CLASS: 1\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `_compute_shadow_e_values()` still interprets `immune_response.cell_verdicts` outer keys as tool names, but `_track_tool",
+   "finding_b": "`_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in cell_verdicts.items()` and looks up `tracker = self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526). A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` \u2192 `continue` (line 580-581) \u2192 t",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-113",
+   "run": "exp48",
+   "a": "C0011",
+   "b": "C0032",
+   "shared_locations": [
+    "CH-37"
+   ],
+   "embedding": 0.7213,
+   "tier2_jaccard": 0.6667,
+   "tier3": "SAME",
+   "finding_a": "CH-37 states that the second-order rate constant for the titrimetric back-assay is `k = 0.126 s^-1` and is carried directly into the hold-time model without conversion. This contradicts CH-36, which correctly derives that a second-order rate constant for `rate = k[ester][OH-]` must have units `L mol^-1 s^-1`. A second-order constant cannot have first-order units `s^-1` unless one reactant concentration has been absorbed into a pseudo-first-order observed constant, which CH-36 explicitly says is ",
+   "finding_b": "CH-37 states the measured second-order rate constant is \"k = 0.126 s^-1\".",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-114",
+   "run": "exp45",
+   "a": "C0004",
+   "b": "C0006",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.7198,
+   "tier2_jaccard": 0.125,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-supplied `expected_hash` does not invalidate memory, allowing stale data to ",
+   "finding_b": "`ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when `expected_hash` is supplied but the persisted JSON has no `\"source_hash\"`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises and evidence:\n\n1. The file docstring promises \u201cJSON persistence with file-hash grounding for invalidation\u201d.\n2. `expected_hash` is the current source hash supplied by the caller.\n3. A",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-115",
+   "run": "exp44",
+   "a": "C0013",
+   "b": "C0078",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7164,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F004\n\n## SEVERITY: 0.74\n\n## FLAW_CLASS: 4\n\n## ABSTRACTION_INDEX: 0.35\n\n## FIND\n\n`EvidenceStore.__init__()` eagerly converts every raw chain record into an `EvidenceRecord` before the calle",
+   "finding_b": "FINDING_ID: CC1_F901\nSEVERITY: 0.85\nFLAW_CLASS: 5 (correctness \u2014 defeats the module's stated tamper-evidence guarantee)\nABSTRACTION_INDEX: 0.60\n\nFIND.\n`EvidenceStore.verify_bundle()` (`bench/evidence.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-116",
+   "run": "exp48",
+   "a": "C0015",
+   "b": "C0031",
+   "shared_locations": [
+    "CH-29"
+   ],
+   "embedding": 0.7159,
+   "tier2_jaccard": 0.8571,
+   "tier3": "SAME",
+   "finding_a": "CH-29 says independent relative uncertainty components 0.42%, 0.28%, and 0.15% are combined by arithmetic addition to give 0.85%. Independent uncertainty components should be combined in quadrature/root-sum-square, not by simple addition, unless a conservative worst-case bound is explicitly intended. The RSS value is about 0.53%, not 0.85%.",
+   "finding_b": "CH-29 incorrectly combines independent relative measurement uncertainties by arithmetic addition (0.42 + 0.28 + 0.15 = 0.85%).",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-117",
+   "run": "exp44",
+   "a": "C0047",
+   "b": "C0078",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7127,
+   "tier2_jaccard": 0.125,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: CC2_F501\nSEVERITY: 0.70\nFLAW_CLASS: 2 (interface \u2014 producer/consumer contract mismatch)\nABSTRACTION_INDEX: 0.65\n\nFIND.\nOn the real ingestion path, `EvidenceStore` cannot index, query, or t",
+   "finding_b": "FINDING_ID: CC1_F901\nSEVERITY: 0.85\nFLAW_CLASS: 5 (correctness \u2014 defeats the module's stated tamper-evidence guarantee)\nABSTRACTION_INDEX: 0.60\n\nFIND.\n`EvidenceStore.verify_bundle()` (`bench/evidence.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-118",
+   "run": "exp45",
+   "a": "C0001",
+   "b": "C0004",
+   "shared_locations": [
+    "ImmuneMemory"
+   ],
+   "embedding": 0.7106,
+   "tier2_jaccard": 0.5,
+   "tier3": "UNKNOWN",
+   "finding_a": "The `ImmuneMemory.load` method fails to initialize `source_hash` when returning a fresh instance (either because the file doesn't exist or due to a load error), and also fails to adopt `expected_hash` when loading a file that lacks a stored hash. This causes `source_hash` to permanently remain `None`, silently disabling the memory invalidation mechanism for all future loads.",
+   "finding_b": "FINDING_ID: F001\nSEVERITY: 0.70\nFIND: In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-supplied `expected_hash` does not invalidate memory, allowing stale data to ",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-119",
+   "run": "exp44",
+   "a": "C0025",
+   "b": "C0028",
+   "shared_locations": [
+    "EvidenceStore"
+   ],
+   "embedding": 0.7087,
+   "tier2_jaccard": 0.0,
+   "tier3": "UNKNOWN",
+   "finding_a": "`EvidenceStore.export_bundle()` (lines \u2248231\u2011266) computes the bundle\u2019s `merkle_root` by hashing *all* raw chain records into a single RFC\u202f9162 tree, asserting that this tree is \u201calways\u201d the one used by `build_inclusion_proof()`. The comment (`# must match \u2026`) acknowledges the dependency but does not enforce it.  \nIf the underlying `VerificationChain` implementation builds inclusion proofs from a per\u2011epoch Merkle tree (or any tree other than the full\u2011records tree), every exported bundle will cont",
+   "finding_b": "`EvidenceStore.verify_bundle` provides no cryptographic authentication because it does not validate the bundle's Merkle root against any trusted anchor.",
+   "SAME_DEFECT": null,
+   "note": ""
+  },
+  {
+   "id": "ADJ-120",
+   "run": "exp44",
+   "a": "C0014",
+   "b": "C0027",
+   "shared_locations": [
+    "_classify_event"
+   ],
+   "embedding": 0.7074,
+   "tier2_jaccard": 0.3333,
+   "tier3": "UNKNOWN",
+   "finding_a": "FINDING_ID: F004\nSEVERITY: 0.80\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.2\nFIND: `_classify_event` uses a simple substring match (`in`) which incorrectly matches prefix finding IDs. For example, a payload c",
+   "finding_b": "`_classify_event` uses a simple substring match (`in`) which incorrectly matches substrings like `CONFIRM C004` in `CONFIRM C0042`.",
+   "SAME_DEFECT": null,
+   "note": ""
+  }
+ ]
+}

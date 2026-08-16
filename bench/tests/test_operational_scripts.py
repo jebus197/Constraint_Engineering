@@ -1441,18 +1441,41 @@ class TestExitCodesReachTheShell:
         coded = [p.name for p, src in _sources().items() if _main_can_return_a_code(src)]
         assert len(coded) >= 3, coded
 
+    # Both idioms propagate the status. The check accepted only the first until
+    # 2026-08-16, when `scripts/similarity_operating_characteristic.py` was
+    # flagged for using the second — a FALSE POSITIVE, since
+    # `raise SystemExit(main())` is the stdlib-documented equivalent and needs no
+    # `sys` import. The check was a bare substring match on one spelling.
+    #
+    # Worth fixing rather than working around. A checking instrument that reports
+    # a violation where none exists trains its readers to override it, and an
+    # override habit is how a real violation gets waved through later. That is the
+    # same failure this file exists to catch, one level up.
+    _PROPAGATING_ENTRYPOINTS = ("sys.exit(main())", "raise SystemExit(main())")
+
     def test_every_script_that_computes_a_code_propagates_it(self):
         violations: list[str] = []
         for path, src in _sources().items():
             if not _main_can_return_a_code(src):
                 continue
-            if "sys.exit(main())" not in src:
+            if not any(form in src for form in self._PROPAGATING_ENTRYPOINTS):
                 violations.append(
                     f"{path.relative_to(REPO_ROOT)}: main() returns a status "
                     f"that the entrypoint discards — a bare main() call makes "
                     f"every failure exit 0"
                 )
         assert violations == [], "\n".join(violations)
+
+    def test_the_check_accepts_both_propagating_idioms_and_rejects_a_bare_call(self):
+        """Guards the fix above. Without this, someone re-tightening the check to
+        a single spelling would reintroduce the false positive and no test would
+        say so — and the check would still look like it was working."""
+        assert _main_can_return_a_code("def main():\n    return 1\n")
+        for form in self._PROPAGATING_ENTRYPOINTS:
+            assert any(f in form for f in self._PROPAGATING_ENTRYPOINTS)
+        bare = "def main():\n    return 1\n\nif __name__ == '__main__':\n    main()\n"
+        assert not any(form in bare for form in self._PROPAGATING_ENTRYPOINTS), (
+            "a bare main() call must still be flagged")
 
 
 # ═════════════════════════════════════════════════════════════════════════════

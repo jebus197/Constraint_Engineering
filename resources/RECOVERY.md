@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 August 2026 15:27 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 16 August 2026 23:55 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -126,7 +126,94 @@ tamper-evident provenance as a core property. Standing rule added to
 
 ---
 
-## SESSION STATE — 2026-08-12 04:23 BST (READ THIS FIRST)
+## SESSION STATE — 2026-08-16 23:42 BST (READ THIS FIRST)
+
+### THE SIMILARITY FUNCTION'S EVIDENCE WAS NEVER STORED, AND MEASURING IT PROPERLY FOUND TWO DEFECTS
+
+The founder approved the evaluation fix on 2026-08-16 ("I approve. Do this."). Built.
+Suite **3517 passed, 14 skipped, 1 failed → then 0 failed**, qc **8 checks, 1 warning,
+0 broken refs, 0 missing, 0 stale**.
+
+**The justifying measurement existed ONLY as prose comments** in
+`bench/convergence_location.py` — 438 pairs, medians 0.559 vs 0.000, p = 1.9e-25. No
+stored dataset, no script, no test. `scripts/similarity_operating_characteristic.py`
+now rebuilds it from the six archived reports and **every recorded figure reproduces
+exactly** (165 / 161 / 94 / 438 / 28 / 290), pinned by
+`bench/tests/test_operating_characteristic.py`.
+
+**Population trap, now pinned by a test.** The 438 uses EVERY critical, not
+`_gate_population` (added 2026-08-12, after the figure was recorded). Through the gate
+population it is 423. Anyone re-deriving will reach for the gate population, get 423,
+and wrongly conclude 438 was an error.
+
+### [FIXED] THE ANCHORLESS WILDCARD IN `quantities_agree`
+
+`if a1 and a2 and a1 != a2` skipped the guard entirely when EITHER anchor was empty,
+so a bare number matched any number of equal value. Tier 3 may only MERGE, so a
+permissive match always costs a real second defect.
+
+**It was tier 3's ENTIRE operative error: 3 of 318 labelled pairs changed, all 3
+wrong** (exp47 C0020/C0041/C0057 vs C0063, all labelled DIFFERENT). Fix cost NOTHING:
+same-defect answers identical (19/0/9), false SAME 14 → 10, Fisher **1.4e-07 →
+3.3e-09** (cross-verified scipy + hand-rolled hypergeometric + exact SymPy). Operative
+errors **3 → 0**. TESTED at 13 in `bench/tests/test_anchorless_outcome_guard.py`.
+
+`_distinctive` is NOT the fix — `_distinctive(0.6)` is True, and 0.6 is a penalty-tier
+config constant recurring across findings at the same location.
+
+**Consequence traced before acceptance:** exp47's series moves at round 11, 0 → 1
+(C0063 now counted). Five of six runs byte-identical. **No convergence conclusion
+moves** — exp47's tail already ended non-zero, so the K=3 zero-run was False both
+before and after. C0063's true-defect status is marked **PENDING** in a named set,
+not folded into `true_defects`.
+
+### THE METHOD LESSON, and it is the transferable one
+
+**An answer distribution is not an operating characteristic.** Tier 3's justification
+(Fisher p = 1.4e-07, never called a same-defect pair DIFFERENT) describes what it
+SAYS. What it DOES was never measured and was 0 for 3. The p-value was not wrong; it
+answered a different question from the one being relied on. Governing failure mode in
+new costume: every failure renders as a confident success.
+
+### [NEEDS A RULING] DESCRIPTIONS ARE TRUNCATED AT SCALE
+
+Of **2187** archived descriptions: **714 exactly 200 chars** (`runner_core.py:814`
+parser fallback `block[:200]`), **661 exactly 500** (`reference_runner_v2.py:1059`),
+**1284 end mid-word**. ~63% of the archive. 81 of the 165 similarity criticals (49%).
+
+C0063 ends `"...escape the 0.60 do"` — the anchor was cut off by the cap.
+
+**The causal claim is NOT established.** Pooled OR 10.5, p = 2.07e-05, but it
+**REVERSES on exp48/exp49** — Simpson's-paradox signature. What survives: truncation
+shrinks the signature (median 4 vs 5, p = 0.0104), and **15 of 318 pairs sit EXACTLY
+on the 0.20 threshold** (1 shared of 3 and 3 = 0.200 exactly).
+
+Ruling needed: fixing `block[:200]` changes parsing for every future run mid-arc and
+would break comparability of Exp 50+ with Exp 40–49 on signature-derived measures.
+
+### [NEEDS A RULING] THE 120 DROPPED PAIRS
+
+The recorded measurement labels SAME at embedding ≥ 0.90, DIFFERENT at ≤ 0.70, and
+**silently drops the 120 between**. 27.4% of the data, and the HARD 27%. No version of
+the comment says so. Extracted unanswered to
+`bench/results/similarity_adjudication_pack.json`. **Deliberately not pre-answered** —
+labelling them here reproduces the machine-grading-machine defect the exercise removes.
+Every operating point is provisional until they return.
+
+### THE OPERATING CHARACTERISTIC ITSELF
+
+AUC **0.9864**, 95% CI [0.9569, 1.0000] by **finding-level** bootstrap (438 pairs come
+from 139 findings; resampling pairs would treat correlated observations as
+independent). At the live 0.20 threshold P(merge | different) = **14.48%**.
+
+Merge precision 38.4% sounds broken and is not: location keying alone merges ALL 318
+(290 false). The rule merges 73 (45 false) — **84% fewer, with ZERO false splits**.
+Low precision is the 8.8% base rate, not a weak discriminator. Both readings are in
+the note; neither alone is honest.
+
+---
+
+## SESSION STATE — 2026-08-12 04:23 BST (superseded 2026-08-16)
 
 ### THE FALSE-POSITIVE ALARM WAS REFUTED BY READING THE DOCUMENT
 

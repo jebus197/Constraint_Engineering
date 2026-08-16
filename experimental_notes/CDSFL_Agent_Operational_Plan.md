@@ -8,7 +8,49 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
-**★ RESUME POINTER (2026-08-05 20:30 BST). SUPERSEDES EVERY POINTER BELOW.**
+**★ RESUME POINTER (2026-08-16 23:42 BST). SUPERSEDES EVERY POINTER BELOW.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
+every future pointer inherits it.)**
+
+**THE SIMILARITY FUNCTION'S EVIDENCE WAS NEVER STORED, AND MEASURING IT PROPERLY FOUND TWO
+DEFECTS.** The founder-approved evaluation fix is BUILT. `scripts/similarity_operating_characteristic.py`
+rebuilds the 438-pair dataset from the six archived reports; every recorded figure reproduces
+exactly (165 / 161 / 94 / 438 / 28 / 290), pinned by `bench/tests/test_operating_characteristic.py`.
+Suite **3517 passed, 14 skipped, 0 failed**; qc **8 checks, 0 broken refs, 0 missing, 0 stale**.
+
+**[FIXED] `quantities_agree` treated a MISSING anchor as a wildcard** — a bare number matched any
+number of equal value. This was tier 3's ENTIRE operative error: routed through
+`identity_decision` it changed **3 of 318 labelled pairs and all 3 were wrong**. Fix costs nothing
+(same-defect answers identical 19/0/9; false SAME 14 → 10; Fisher **1.4e-07 → 3.3e-09**,
+cross-verified three ways; operative errors **3 → 0**). TESTED at 13 in
+`bench/tests/test_anchorless_outcome_guard.py`. exp47's series moves at round 11 (0 → 1, C0063 now
+counted); five of six runs byte-identical; **no convergence conclusion moves**.
+
+**THE METHOD LESSON, and it generalises: an answer distribution is not an operating
+characteristic.** Tier 3's justification described what it SAYS (Fisher p = 1.4e-07, never called a
+same-defect pair DIFFERENT — both true). What it DOES was never measured and was 0 for 3. Whenever a
+component is justified by a statistic, measure separately how often it changes a decision and how
+often those changes are right.
+
+**TWO ITEMS NEED A FOUNDER RULING BEFORE THE NEXT RUN.**
+1. **Descriptions are truncated archive-wide.** 2187 descriptions: 714 exactly 200 chars
+   (`runner_core.py:814` parser fallback `block[:200]`), 661 exactly 500
+   (`reference_runner_v2.py:1059`), 1284 end mid-word — ~63%. Fixing `block[:200]` changes parsing
+   for every future run mid-arc and breaks Exp 50+ comparability with Exp 40–49 on any
+   signature-derived measure. **Do NOT overclaim the harm**: pooled OR 10.5 (p = 2.07e-05) REVERSES
+   on exp48/exp49 — Simpson's paradox, causal claim NOT established. What survives: signatures
+   shrink (median 4 vs 5, p = 0.0104) and **15 of 318 pairs sit EXACTLY on the 0.20 threshold**.
+2. **The 120 dropped pairs.** The recorded measurement silently discards pairs between embedding
+   0.70 and 0.90 — 27.4% of the data and the hard 27%. Extracted unanswered to
+   `bench/results/similarity_adjudication_pack.json`. Deliberately NOT pre-answered. Every operating
+   point is provisional until they return.
+
+Full record: `experimental_notes/Similarity_Function_Operating_Characteristic_2026-08-16.md`
+(+ `_Plain_English_` + Desktop TTS).
+
+---
+
+**★ RESUME POINTER (2026-08-05 20:30 BST). Superseded by the block above; retained as trail.**
 **READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
 every future pointer inherits it.)**
 **THE RECOVERY INSTRUMENTS WERE AUDITED AND MOST OF THEM WERE LYING.** A 15-agent read-only audit

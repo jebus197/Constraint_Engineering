@@ -492,7 +492,17 @@ EXPECTED_TAILS = {
     "exp44": ([0, 0, 0], [0, 0, 0]),      # (location-only, promoted rule)
     "exp45": ([0, 0, 0], [1, 0, 1]),
     "exp46": ([0, 0, 0], [0, 1, 0]),
-    "exp47": ([0, 0, 0], [0, 0, 1]),
+    # exp47 moved [0, 0, 1] -> [1, 0, 1] on 2026-08-16, when `quantities_agree`
+    # stopped letting a MISSING anchor act as a wildcard. C0063's sole outcome is
+    # an anchorless `(0.6, '')`, which had been matching the penalty-tier 0.6 in
+    # three neighbouring exp47 findings and merging it away. All three of those
+    # pairs are labelled DIFFERENT defects, so counting C0063 at round 11 is the
+    # correct answer and the previous 0 was a lost finding. Verified not to move
+    # any convergence conclusion: the run's tail already ended in a non-zero
+    # before the change, so the K=3 zero-run was False both before and after, and
+    # the other five runs' series are byte-identical. Evidence:
+    # `scripts/similarity_operating_characteristic.py`.
+    "exp47": ([0, 0, 0], [1, 0, 1]),
     "exp48": ([0, 1, 0], [0, 1, 0]),      # already non-zero under location keying
     "exp49": ([0, 0, 0], [1, 0, 0]),
 }
@@ -556,7 +566,18 @@ def test_the_findings_that_break_each_tail_are_named():
             breaks[run] = ids
     assert breaks == {"exp45": ["C0014", "C0031"],   # both TRUE second defects
                       "exp46": ["C0026"],            # FALSE: re-find of C0005/C0006
-                      "exp47": ["C0070"],            # TRUE: the named blind-spot case
+                      # C0063 appeared here on 2026-08-16 when `quantities_agree`
+                      # stopped treating a missing anchor as a wildcard. It had
+                      # been merged into three neighbours by an anchorless 0.60.
+                      # Its TRUE/FALSE status is NOT ADJUDICATED — the only
+                      # evidence is the sentence-embedding backend calling all
+                      # three pairs different (0.479, 0.526, 0.570), which is a
+                      # machine grading a machine and is exactly what
+                      # `scripts/similarity_operating_characteristic.py
+                      # --adjudication-pack` exists to replace. Listed here as a
+                      # fact about what the rule does, not as a ruling on whether
+                      # it is right.
+                      "exp47": ["C0063", "C0070"],   # C0070 TRUE; C0063 PENDING
                       "exp49": ["C0037"]}, breaks    # FALSE: re-find of C0035
 
 
@@ -575,10 +596,20 @@ def test_which_breaks_carry_a_second_witness():
     assert corroborated == {"exp45/C0014": True,    # TRUE second defect
                             "exp45/C0031": False,   # TRUE second defect
                             "exp46/C0026": False,   # FALSE split
+                            "exp47/C0063": True,    # PENDING adjudication
                             "exp47/C0070": False,   # TRUE second defect
                             "exp49/C0037": False}   # FALSE split
     true_defects = {"exp45/C0014", "exp45/C0031", "exp47/C0070"}
-    assert all(cid in true_defects for cid, ok in corroborated.items() if ok), (
+    # Splits whose TRUE/FALSE status no human has ruled on. Kept as a NAMED set
+    # rather than folded into `true_defects`, because folding it in would record
+    # an assistant's guess as an adjudication and the distinction between those
+    # two things is the point of this whole exercise. When the adjudication pack
+    # comes back, each entry moves into `true_defects` or becomes a known
+    # re-find — and if it becomes a re-find, that IS the regression this test is
+    # written to catch, so it must move deliberately rather than by editing here.
+    pending = {"exp47/C0063"}
+    assert all(cid in true_defects or cid in pending
+               for cid, ok in corroborated.items() if ok), (
         "a corroborated split is now a known re-find — the second witness has "
         "started agreeing with the wrong answer, and that is a real regression")
 

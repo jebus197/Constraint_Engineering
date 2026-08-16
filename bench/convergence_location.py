@@ -473,10 +473,29 @@ def signature_similarity(a: FrozenSet[str], b: FrozenSet[str]) -> float:
 #     labelled SAME defect (embedding >= 0.90), n = 28:
 #         SAME 19 (68%)   DIFFERENT  0 ( 0%)   UNKNOWN   9 (32%)
 #     labelled DIFF defect (embedding <= 0.70), n = 290:
-#         SAME 14 ( 5%)   DIFFERENT 30 (10%)   UNKNOWN 246 (85%)
+#         SAME 10 ( 3%)   DIFFERENT 34 (12%)   UNKNOWN 246 (85%)
 #
-#     decided pairs only, 2x2 [[0, 19], [30, 14]]
-#     Fisher exact: p = 1.4e-07 (the odds ratio is degenerate — one cell is zero)
+#     decided pairs only, 2x2 [[0, 19], [34, 10]]
+#     Fisher exact: p = 3.3e-09 (the odds ratio is degenerate — one cell is zero)
+#
+# REVISED 2026-08-16 from SAME 14 / DIFFERENT 30 / p = 1.4e-07, when
+# `quantities_agree` stopped letting a MISSING anchor match anything. The
+# same-defect row is unchanged; four false SAME answers became correct DIFFERENT
+# ones. Both p-values cross-verified three ways (scipy, hand-rolled
+# hypergeometric, exact SymPy rational). The original figures were correct for
+# the code as it then stood and are recorded here rather than overwritten.
+#
+# ── AND THE MEASUREMENT THAT MATTERS MORE, added 2026-08-16 ──────────────────
+# Everything above describes tier 3's ANSWERS. It does not describe its EFFECT,
+# and the two came apart badly. Routed through `identity_decision` over all 318
+# labelled pairs (`scripts/similarity_operating_characteristic.py`), tier 3
+# changed the outcome on THREE of them — and before the anchor fix all three
+# were wrong. A tier justified by p = 1.4e-07 was, in operation, 0 for 3.
+#
+# That is not an argument against the tier; n = 3 supports no such argument. It
+# is an argument against the KIND of evidence used to justify it. An answer
+# distribution is not an operating characteristic, and this project had been
+# reading one as the other.
 #
 # Read that against the measurement it replaces. FELM — the mutation-vector tier,
 # built to the panel's design and removed from this module on 2026-08-12 — scored
@@ -490,8 +509,9 @@ def signature_similarity(a: FrozenSet[str], b: FrozenSet[str]) -> float:
 # the criterion said it would earn its keep.
 #
 # THE AUTHORITY IS BOUNDED TO MATCH THE MEASUREMENT. It may MERGE — a SAME answer
-# overrides a tier-2 split — and it may never grant novelty. So its 4.8%
-# false-SAME rate (14 of 290) costs a missed second defect, which is the failure
+# overrides a tier-2 split — and it may never grant novelty. So its 3.4%
+# false-SAME rate (10 of 290, was 4.8% before the 2026-08-16 anchor fix) costs a
+# missed second defect, which is the failure
 # this project already accepts from location keying; and a false DIFFERENT — none
 # observed in 19 same-defect pairs, but the rate is not zero — costs nothing at
 # all, because DIFFERENT is recorded as corroboration and changes no count. That
@@ -660,10 +680,36 @@ def quantities_agree(q1: Quantity, q2: Quantity,
                      tolerance: float = _OUTCOME_TOLERANCE) -> bool:
     """Do two extracted quantities name the same computed value?
 
-    Relative tolerance, so `109.128` and `109.13` agree. Anchors must match
-    unless one is missing or the value is distinctive on its own — `64
-    comparisons` and `64 inputs` are the same computation described from two
-    sides, while `2 inputs` and `2 rounds` are not.
+    Relative tolerance, so `109.128` and `109.13` agree. Two DIFFERENT anchors
+    still agree when the value identifies itself — `64 comparisons` and `64
+    inputs` are one computation described from two sides, while `2 inputs` and
+    `2 rounds` are not.
+
+    A MISSING ANCHOR NOW BLOCKS AGREEMENT — corrected 2026-08-16, and the reason
+    is measured rather than stylistic. The previous form was
+    `if a1 and a2 and a1 != a2`, so an anchorless quantity skipped the guard
+    entirely and matched ANY quantity of equal value. That is a wildcard, and it
+    inverted this module's own governing safety property: absence of evidence was
+    being read as evidence of sameness, in the single direction that costs a real
+    defect, because tier 3 may only MERGE.
+
+    OBSERVED, and it was the tier's entire operative error on the archive.
+    `scripts/similarity_operating_characteristic.py` routes all 318 labelled
+    pairs through `identity_decision` and finds tier 3 changes the outcome on
+    exactly 3 of them — exp47 C0020/C0063, C0041/C0063, C0057/C0063 — all three
+    labelled DIFFERENT, all three merged, and all three caused by C0063 whose one
+    outcome is `(0.6, '')`. An anchorless 0.6, wildcard-matching the penalty-tier
+    0.6 in every neighbouring finding. Note `_distinctive(0.6)` is True, so a
+    distinctiveness fallback does NOT catch this: 0.6 is a configuration constant
+    that recurs across findings about the same module, which is precisely the
+    coincidental agreement the anchor exists to prevent.
+
+    MEASURED COST OF THE FIX: none. Same-defect pairs answer identically
+    (SAME 19, DIFFERENT 0, UNKNOWN 9 before and after). Different-defect pairs
+    improve: false SAME 14 -> 10, DIFFERENT 30 -> 34. Fisher exact on the decided
+    2x2 moves from p = 1.4e-07 to p = 3.3e-09, cross-verified three ways (scipy,
+    a hand-rolled hypergeometric sum, and an exact SymPy rational). Operative
+    errors 3 -> 0.
     """
     v1, a1 = q1
     v2, a2 = q2
@@ -672,7 +718,9 @@ def quantities_agree(q1: Quantity, q2: Quantity,
             return False
         if abs(v1 - v2) / max(abs(v1), abs(v2)) > tolerance:
             return False
-    if a1 and a2 and a1 != a2:
+    if not a1 or not a2:
+        return False
+    if a1 != a2:
         return _distinctive(v1)
     return True
 
