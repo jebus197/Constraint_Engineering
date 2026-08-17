@@ -1,0 +1,471 @@
+CDSFL — Similarity Adjudication Sheet
+
+20 pairs, spread evenly across the uncertain band.
+
+Question for each: are these two findings describing THE SAME DEFECT, or two different ones?
+
+Reply with the number and one letter:   S = same   D = different   ? = cannot tell
+Example:  1S 2D 3D 4? 5S ...
+
+'?' is a real answer, not a failure. It is useful data.
+Only the accusation is shown. Derivations, evidence blocks and premises are stripped,
+because the judgement is about what each finding ACCUSES, not how it argues it.
+
+==============================================================================
+
+PAIR 1   (exp47, C0020 vs C0053)
+
+A:  `check_sibling_admissibility` penalizes models for carrying forward valid alternatives
+    across rounds. When `prior_round_alternatives` is provided, it scores the current
+    alternative against ALL prior-round alternatives. If the Jaccard similarity is `>=
+    near_copy_threshold`, it rejects the alternative with `recidivism_near_copy` and
+    triggers the severe 0.60 penalty tier in `eta_int_modulator`. However, it does not
+    check if the prior-round alternative was actually rejected. If a model correctly
+    supplies an ADMISSIBLE alternative in Round 1, and the finding remains open in Round
+    2, the model will naturally resubmit the same valid alternative. The current logic
+    punishes this correct behavior as "recidivism".
+
+B:  The cross-round recidivism check in `check_sibling_admissibility` falsely penalizes
+    models for fixing previously rejected alternatives. When a model adds a missing
+    contrast statement to a prior alternative, `parse_contrast_statement` strips the new
+    contrast statement from the body. The resulting `alternative_text` is identical to the
+    prior round's `alternative_text`. The recidivism check then scores them as 1.0
+    isomorphic and rejects the fixed alternative with `recidivism_near_copy`, triggering
+    the severe 0.60 penalty.
+
+    ANSWER 1:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 2   (exp44, C0013 vs C0080)
+
+A:  `EvidenceStore.__init__()` eagerly converts every raw chain record into an
+    `EvidenceRecord` before the caller can invoke `EvidenceStore.verify()`. The conversion
+    path assumes inner `sealed_body` fields exist and raises `KeyError` on malformed
+    records: @dataclass class EvidenceRecord: ... @classmethod def from_chain_record(cls,
+    index: int, record: dict) -> "EvidenceRecord": """Build an EvidenceRecord from a raw
+    VerificationChain record.""" body = record["sealed_body"] meta = body.get("metadata")
+    or {} er = cls( index=index, artifact_type=body["artifact_type"],
+    recorded_by=body["recorded_by"], timestamp_utc=body["timestamp_utc"],
+    storage_mode=body["storage_mode"], payload_hash=body["payload_hash"], metadata=meta,
+    chain_hash=record["chain_hash"], payload=body.get("payload"), ) Concrete failing input
+    shape: record = { "sealed_body": { # artifact_type / recorded_by / timestamp_utc /
+    storage_mode / payload_hash missing "metadata": {"experiment": "exp1"} },
+    "entry_hash": "sha256:...", "prev_hash": "sha256:...", "chain_hash": "sha256:...", }
+    Execution trace: 1. `EvidenceStore.__init__()` obtains `raw_records = chain.records`.
+    2. It evaluates: self._records = [ EvidenceRecord.from_chain_record(i, r) for i, r in
+    enumerate(raw_records) ] 3. `EvidenceRecord.from_chain_record(0, record)` executes:
+    body = record["sealed_body"] This succeeds. 4. It then executes:
+    artifact_type=body["artifact_type"] 5. Because `"artifact_type"` is absent, Python
+    raises: KeyError: 'artifact_type' Expected behavior for an evidence/audit loader: a
+    malformed chain should remain loadable enough for `verify()` to return `(False,
+    diagnostic)` rather than crashing during index construction. Formal conclusion: -
+    Premise P1: `EvidenceStore` is documented as a chain management/query layer that can
+    load, verify, and query chains. - Premise P2: malformed or tampered chain records are
+    exactly what `verify()` is supposed to diagnose. - Premise P3:
+    `EvidenceStore.__init__()` calls `EvidenceRecord.from_chain_record()` before any call
+    to `verify()`. - Premise P4: `from_chain_record()` directly indexes required inner
+    fields with `body[...]`. - Premise P5: missing inner fields raise `KeyError`. -
+    Therefore C1: malformed chain records can prevent construction of `EvidenceStore`. -
+    Therefore C2: callers cannot reach `verify()` to obtain a structured invalid-chain
+    result. ## FOLLOW The failure crosses the boundary between the evidence layer and the
+    cryptographic verification layer. Downstream consequence chain: 1.
+    `EvidenceStore.from_chain_file(path)` - Loads a `VerificationChain`. - Calls
+    `EvidenceStore(chain, experiment)`. 2. `EvidenceStore.__init__()` - Eagerly builds
+    typed records and indexes. - Crashes if a record’s `sealed_body` is incomplete. 3.
+    `EvidenceStore.verify()` - Never becomes callable. - The lower-level
+    `VerificationChain.verify_chain()` cannot report a structured verification error
+    through the evidence API. 4. CLI/export/audit consumers - Cannot distinguish “chain
+    invalid” from “tool crashed”. - Cannot produce an audit report explaining the
+    malformed record. 5. `summary()`, `query()`, `trace_finding()`, `export_bundle()` -
+    All become inaccessible because store construction fails. What breaks downstream: -
+    Invalid evidence cannot be inspected through the semantic interface. - A malformed
+    chain becomes a denial-of-service against the evidence layer. - The verification
+    workflow fails open operationally in the sense that it aborts before producing a
+    negative verification verdict. This is distinct from settled verifier-cache and
+    bundle-proof bugs: the root cause here is eager schema-assuming record projection
+    before verification. ## ANALYSE Constraint classification: HARD — audit correctness
+    and failure-mode handling. Evidence tooling must fail closed and diagnostically on
+    malformed evidence, not crash before verification. Status: CONFIRMED by source-level
+    control-flow inspection. Structured certificate: - P1: `EvidenceStore.__init__()`
+    constructs `EvidenceRecord` objects immediately. - P2:
+    `EvidenceRecord.from_chain_record()` uses direct dictionary indexing for inner
+    `sealed_body` fields. - P3: Direct dictionary indexing raises `KeyError` when a key is
+    absent. - P4: `verify()` is an instance method and cannot be called if `__init__()`
+    fails. - C1: malformed records can prevent construction of the object needed to call
+    `verify()`. - C2: the evidence layer loses the ability to report invalid-chain
+    diagnostics for this malformed-record class. This is confirmed for records whose top-
+    level shape is present enough to reach `from_chain_record()` but whose inner
+    `sealed_body` is incomplete or non-dict. ## FIX Make
+    `EvidenceRecord.from_chain_record()` tolerant of malformed record bodies so the store
+    can be constructed and `verify()` can report the invalid chain. Use sentinel/default
+    values for indexing only; do not mark the chain valid. <<<< SEARCH bench/evidence.py
+    @classmethod def from_chain_record(cls, index: int, record: dict) -> "EvidenceRecord":
+    """Build an EvidenceRecord from a raw VerificationChain record.""" body =
+    record["sealed_body"] meta = body.get("metadata") or {} er = cls( index=index,
+    artifact_type=body["artifact_type"], recorded_by=body["recorded_by"],
+    timestamp_utc=body["timestamp_utc"], storage_mode=body["storage_mode"],
+    payload_hash=body["payload_hash"], metadata=meta, chain_hash=record["chain_hash"],
+    payload=body.get("payload"), ) ==== @classmethod def from_chain_record(cls, index:
+    int, record: dict) -> "EvidenceRecord": """Build an EvidenceRecord from a raw
+    VerificationChain record. Malformed records are represented with placeholder fields so
+    that EvidenceStore.verify() can report the chain error instead of store construction
+    failing before verification is possible. """ if not isinstance(record, dict): record =
+    {} body = record.get("sealed_body") if not isinstance(body, dict): body = {} raw_meta
+    = body.get("metadata") meta = raw_meta if isinstance(raw_meta, dict) else {} er = cls(
+    index=index, artifact_type=str(body.get("artifact_type", "<invalid>")),
+    recorded_by=str(body.get("recorded_by", "")),
+    timestamp_utc=str(body.get("timestamp_utc", "")),
+    storage_mode=str(body.get("storage_mode", "")),
+    payload_hash=str(body.get("payload_hash", "")), metadata=meta,
+    chain_hash=str(record.get("chain_hash", "")), payload=body.get("payload"), ) >>>>
+    REPLACE P-pass against the fix: - Does this make malformed records appear valid? No.
+    It only affects the
+
+B:  `EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a
+    `chain_hash`, but does not bind the supplied bundled record body to the local chain
+    record at the exported index. Location: record_hash = record.get("chain_hash", "")
+    proof_hash = proof.get("chain_hash", "") if record_hash and proof_hash and record_hash
+    != proof_hash: errors.append(...) continue valid =
+    self._chain.verify_inclusion_proof(proof, bundle.merkle_root) The function checks
+    only: 1. bundled record’s `chain_hash` equals proof’s `chain_hash`, if both are
+    present; 2. inclusion proof verifies against the supplied Merkle root. It does not
+    check that `bundle.records[i]` equals `self._chain.records[bundle_indices[i]]`.
+    Concrete tampering trace: Original local chain record: { "chain_hash":
+    "sha256:original", "sealed_body": { "payload": {"finding": "C0042", "verdict":
+    "CHALLENGE"} } } Tampered bundle record: { "chain_hash": "sha256:original",
+    "sealed_body": { "payload": {"finding": "C0042", "verdict": "CONFIRM"} } } The current
+    verifier accepts the tampered bundle if the proof verifies for `sha256:original`.
+    Expected: reject, because displayed record content differs from the authenticated
+    local record. Actual: accepts, because only the old digest/proof is checked.
+
+    ANSWER 2:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 3   (exp47, C0027 vs C0043)
+
+A:  Character‑limit enforcement can be circumvented via the contrast statement –
+    `validate_alternative` checks only the stripped body, not the full block length.
+
+B:  `validate_alternative()` enforces `max_chars_per_alternative` on `alternative_text`
+    (the body after contrast‑statement removal), but the contrast statement itself is not
+    counted toward the per‑alternative length limit. A model can supply a trivially short
+    alternative body (e.g., “X”) together with an arbitrarily long contrast statement
+    (“Differs from primary: …” × 10,000 chars), and the alternative passes the
+    character‑length gate, effectively circumventing the rendering‑boundary cap.
+
+    ANSWER 3:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 4   (exp47, C0032 vs C0035)
+
+A:  In `build_divergence_record`, if `0 < len(admissible_alts) < config.min_alternatives`,
+    the pipeline appends `insufficient_admissible_alternatives` to `failure_reasons` but
+    FAILS to append the specific rejection reasons for the alternatives that were deemed
+    inadmissible.
+
+B:  `build_divergence_record` uses `record.compliant = has_enough_alts or null_ok`,
+    allowing a null‑justification to override failed alternatives and bypass §18’s
+    exclusivity.
+
+    ANSWER 4:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 5   (exp44, C0004 vs C0039)
+
+A:  `_classify_event` in `bench/evidence.py` uses `json.dumps` on payload dicts and
+    substring matching (`in`) to identify verdict commands. A finding ID like "C0001" will
+    also match "CONFIRM C00010" because `"CONFIRM C0001"` is a substring of `"CONFIRM
+    C00010"`. This produces false-positive event types (e.g., `"confirmed"` when the
+    actual target is a different ID). The same holds for CHALLENGE, EXTEND, and MERGE
+    checks. Location: lines 428-443 (`_classify_event` function), specifically the `if
+    f"CONFIRM {finding_id}" in payload_str` pattern.
+
+B:  `_classify_event` uses `in` for substring matching (e.g., `f"CONFIRM {finding_id}" in
+    payload_str`). This incorrectly matches `C004` when the payload contains `CONFIRM
+    C0042`.
+
+    ANSWER 5:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 6   (exp44, C0026 vs C0032)
+
+A:  `EvidenceStore.verify_bundle()` verifies only that the record’s stored `chain_hash`
+    matches the proof’s `chain_hash`, then verifies the Merkle inclusion proof. But it
+    does not verify that the record's `chain_hash` actually matches the record's contents.
+
+B:  `CONFIRM C0028` — `EvidenceStore.verify_bundle()` verifies inclusion proofs against
+    the `bundle.merkle_root` supplied by the bundle itself, but it does not authenticate
+    that root against the local/trusted `EvidenceStore` chain. Location:
+    `bench/evidence.py`, `EvidenceStore.verify_bundle()`.
+
+    ANSWER 6:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 7   (exp45, C0006 vs C0020)
+
+A:  `ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when
+    `expected_hash` is supplied but the persisted JSON has no `"source_hash"`. Location:
+    `bench/dm/_memory.py`, `ImmuneMemory.load()`: stored_hash = data.get("source_hash") if
+    expected_hash and stored_hash and stored_hash != expected_hash: Premises and
+
+B:  `ImmuneMemory.load` fails to initialize `source_hash` when returning a fresh instance
+    (C0001), fails to invalidate when `stored_hash` is missing (C0002, C0006), and crashes
+    with `AttributeError` if the JSON root is not a dictionary (e.g., `[]`).
+
+    ANSWER 7:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 8   (exp45, C0004 vs C0006)
+
+A:  In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-
+    supplied `expected_hash` does not invalidate memory, allowing stale data to be loaded.
+
+B:  `ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when
+    `expected_hash` is supplied but the persisted JSON has no `"source_hash"`. Location:
+    `bench/dm/_memory.py`, `ImmuneMemory.load()`: stored_hash = data.get("source_hash") if
+    expected_hash and stored_hash and stored_hash != expected_hash: Premises and
+
+    ANSWER 8:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 9   (exp48, C0022 vs C0030)
+
+A:  CH-27 claims that "Injecting argon into the converter at constant volume and constant
+    temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is
+    therefore used as a fine trim on converter yield." This is a classic Le Chatelier
+    error. Adding an inert gas at constant volume raises total pressure but leaves the
+    partial pressures (and concentrations) of N₂, H₂, NH₃ unchanged, so the reaction
+    quotient Q is unchanged and there is no shift. Le Chatelier's "move to fewer moles
+    under raised pressure" applies only when the pressure rise comes from volume reduction
+    (which does change partial pressures) — as correctly described in CH-26.
+
+B:  CH-27 incorrectly claims that injecting argon at constant volume and temperature
+    produces an equilibrium shift toward ammonia because it raises the total pressure.
+
+    ANSWER 9:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 10   (exp46, C0005 vs C0026)
+
+A:  In `_compute_shadow_e_values`, loop iterates over finding‑ID keys from `cell_verdicts`
+    but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_combined`
+    always `None`.
+
+B:  `_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in
+    cell_verdicts.items()` and looks up `tracker =
+    self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID
+    (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas
+    `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526).
+    A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` →
+    `continue` (line 580-581) → the loop body never executes → `has_any_evidence` stays
+    `False` → `shadow_e_combined` and `shadow_d_eff` are never set.
+
+    ANSWER 10:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 11   (exp44, C0025 vs C0080)
+
+A:  `EvidenceStore.export_bundle()` (lines ≈231‑266) computes the bundle’s `merkle_root`
+    by hashing *all* raw chain records into a single RFC 9162 tree, asserting that this
+    tree is “always” the one used by `build_inclusion_proof()`. The comment (`# must match
+    …`) acknowledges the dependency but does not enforce it. If the underlying
+    `VerificationChain` implementation builds inclusion proofs from a per‑epoch Merkle
+    tree (or any tree other than the full‑records tree), every exported bundle will
+    contain a root that mismatches the proof root, causing `verify_bundle` to report every
+    valid bundle as invalid (false‑negative). The current code has no query mechanism to
+    obtain the actual proof root from the chain; it blindly computes a root that may be
+    incorrect.
+
+B:  `EvidenceStore.verify_bundle()` in `bench/evidence.py` verifies proof inclusion for a
+    `chain_hash`, but does not bind the supplied bundled record body to the local chain
+    record at the exported index. Location: record_hash = record.get("chain_hash", "")
+    proof_hash = proof.get("chain_hash", "") if record_hash and proof_hash and record_hash
+    != proof_hash: errors.append(...) continue valid =
+    self._chain.verify_inclusion_proof(proof, bundle.merkle_root) The function checks
+    only: 1. bundled record’s `chain_hash` equals proof’s `chain_hash`, if both are
+    present; 2. inclusion proof verifies against the supplied Merkle root. It does not
+    check that `bundle.records[i]` equals `self._chain.records[bundle_indices[i]]`.
+    Concrete tampering trace: Original local chain record: { "chain_hash":
+    "sha256:original", "sealed_body": { "payload": {"finding": "C0042", "verdict":
+    "CHALLENGE"} } } Tampered bundle record: { "chain_hash": "sha256:original",
+    "sealed_body": { "payload": {"finding": "C0042", "verdict": "CONFIRM"} } } The current
+    verifier accepts the tampered bundle if the proof verifies for `sha256:original`.
+    Expected: reject, because displayed record content differs from the authenticated
+    local record. Actual: accepts, because only the old digest/proof is checked.
+
+    ANSWER 11:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 12   (exp46, C0006 vs C0026)
+
+A:  `bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()`
+    treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but
+    the same module’s `_track_tool_fpr()` documents and handles the actual shape as
+    finding-ID keyed. Evidence from target code: # _track_tool_fpr() for _fid, verdicts in
+    cell_verdicts.items(): for verdict in verdicts: tool = (getattr(verdict, "tool_used",
+    "") or str(getattr(verdict, "cell_type", "unknown"))) but later: #
+    _compute_shadow_e_values() for cell_name, verdicts in cell_verdicts.items(): tracker =
+    self._cumulative_tool_fpr.get(cell_name) if tracker is None: continue Concrete
+    reproduced input: cell_verdicts = { "p0": [Verdict(tool_used="sympy",
+    verdict="CONFIRMED")], ... "f0": [Verdict(tool_used="sympy", verdict="REJECTED")], }
+    `_track_tool_fpr()` creates `_cumulative_tool_fpr["sympy"]`, but
+    `_compute_shadow_e_values()` looks for `"p0"`, `"f0"`, etc. No tracker is found, so
+    `shadow_e_combined` and `shadow_d_eff` remain `None` despite determinate tool
+    evidence.
+
+B:  `_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in
+    cell_verdicts.items()` and looks up `tracker =
+    self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID
+    (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas
+    `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526).
+    A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` →
+    `continue` (line 580-581) → the loop body never executes → `has_any_evidence` stays
+    `False` → `shadow_e_combined` and `shadow_d_eff` are never set.
+
+    ANSWER 12:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 13   (exp48, C0003 vs C0013)
+
+A:  In CH-22, N-(4-hydroxyphenyl)acetamide (paracetamol) is claimed to return exactly one
+    match for the carboxylic-acid query `[CX3](=O)[OX2H1]`. Paracetamol does not contain a
+    carboxylic acid; the hydroxyl on the aromatic ring is a phenol.
+
+B:  CH-22 states that N-(4-hydroxyphenyl)acetamide returns exactly one match for the
+    carboxylic-acid SMARTS `[CX3](=O)[OX2H1]`, “arising from the hydroxyl on the aromatic
+    ring.” This is chemically and substructure-wise false. A phenolic hydroxyl is not a
+    carboxylic acid; the molecule has an amide carbonyl and a phenolic OH, but no
+    carboxylic acid group.
+
+    ANSWER 13:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 14   (exp47, C0041 vs C0057)
+
+A:  In `eta_int_modulator`, the severe penalty tier (0.60) for near-copies and recidivism
+    is bypassed if the finding is otherwise compliant. The function returns `1.0`
+    immediately if `record.compliant` is True, skipping the `any_near_copy` check
+    entirely.
+
+B:  `eta_int_modulator` incorrectly short-circuits and returns `1.0` if `record.compliant`
+    is True, completely bypassing the severe `0.60` penalty for near-copies and the `0.85`
+    soft penalty for mixed-admissibility alternatives.
+
+    ANSWER 14:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 15   (exp44, C0002 vs C0026)
+
+A:  `EvidenceStore.verify_bundle()` accepts a bundle record whose `chain_hash` is missing,
+    as long as the supplied proof verifies. Location: `bench/evidence.py`, method
+    `EvidenceStore.verify_bundle`. Current code: record_hash = record.get("chain_hash",
+    "") proof_hash = proof.get("chain_hash", "") if record_hash and proof_hash and
+    record_hash != proof_hash: errors.append(...) continue valid =
+    self._chain.verify_inclusion_proof(proof, bundle.merkle_root)
+
+B:  `EvidenceStore.verify_bundle()` verifies only that the record’s stored `chain_hash`
+    matches the proof’s `chain_hash`, then verifies the Merkle inclusion proof. But it
+    does not verify that the record's `chain_hash` actually matches the record's contents.
+
+    ANSWER 15:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 16   (exp46, C0010 vs C0026)
+
+A:  In `_compute_shadow_e_values`, the code iterates over `cell_verdicts.items()` assuming
+    the keys are tool names (`cell_name`). However, as explicitly noted in the
+    `_track_tool_fpr` method's comments, `cell_verdicts` is keyed by finding ID, not tool
+    name. Consequently, `tracker = self._cumulative_tool_fpr.get(cell_name)` will always
+    return `None` (since finding IDs do not match tool names), causing the loop to
+    `continue` without ever computing shadow e-values.
+
+B:  `_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in
+    cell_verdicts.items()` and looks up `tracker =
+    self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID
+    (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas
+    `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526).
+    A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` →
+    `continue` (line 580-581) → the loop body never executes → `has_any_evidence` stays
+    `False` → `shadow_e_combined` and `shadow_d_eff` are never set.
+
+    ANSWER 16:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 17   (exp49, C0005 vs C0020)
+
+A:  EN-36 gives an infeasible and non-optimal LP-2 vertex. Location: section 7, EN-36.
+
+B:  EN-36 reports the LP-2 optimum as x=(120, 40, 80) kN with objective 248.0. That point
+    is infeasible: the outboard-share constraint x3 ≤ 0.5·x1 requires 80 ≤ 60, which is
+    false. The true optimum (linprog) is x=(120, 60, 60), objective 258.0. The reported
+    vertex violates a stated constraint and the reported objective (248) is below the true
+    minimum (258).
+
+    ANSWER 17:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 18   (exp48, C0014 vs C0030)
+
+A:  CH-27 states that injecting argon into the ammonia converter at constant volume and
+    constant temperature shifts equilibrium toward ammonia because total pressure rises.
+    This is wrong for an inert gas at constant V and T. The reactive species partial
+    pressures are unchanged, so the reaction quotient is unchanged; total pressure
+    increase from inert gas alone does not drive the equilibrium toward fewer reactive gas
+    moles.
+
+B:  CH-27 incorrectly claims that injecting argon at constant volume and temperature
+    produces an equilibrium shift toward ammonia because it raises the total pressure.
+
+    ANSWER 18:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 19   (exp44, C0015 vs C0037)
+
+A:  `EvidenceStore.verify_bundle` provides no cryptographic authentication because it does
+    not validate the bundle's Merkle root against any trusted anchor. It only verifies
+    that the inclusion proofs match the `bundle.merkle_root` provided within the bundle
+    itself.
+
+B:  `EvidenceStore.verify_bundle` verifies the inclusion proofs against
+    `bundle.merkle_root`, which is provided by the bundle itself. It never checks if this
+    root matches the trusted chain's root.
+
+    ANSWER 19:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
+
+PAIR 20   (exp48, C0004 vs C0014)
+
+A:  In CH-27, it is claimed that injecting argon at constant volume and temperature shifts
+    the equilibrium toward ammonia. Adding an inert gas at constant volume increases total
+    pressure but does not change the partial pressures of the reacting gases, so there is
+    no equilibrium shift.
+
+B:  CH-27 states that injecting argon into the ammonia converter at constant volume and
+    constant temperature shifts equilibrium toward ammonia because total pressure rises.
+    This is wrong for an inert gas at constant V and T. The reactive species partial
+    pressures are unchanged, so the reaction quotient is unchanged; total pressure
+    increase from inert gas alone does not drive the equilibrium toward fewer reactive gas
+    moles.
+
+    ANSWER 20:   S  /  D  /  ?
+
+------------------------------------------------------------------------------
