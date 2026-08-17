@@ -231,8 +231,26 @@ degradation) remains the release requirement; the free endpoint substantially an
 
 1. **Restart or resume Exp 53.** Recommendation: restart (see C).
 2. **`origin/exp39-experimental`** — carries the answer keys publicly. Founder:
-   do not delete until the merge to main is manually confirmed. Deleting is
-   lossless (zero commits not held locally).
+   do not delete until the merge to main is manually confirmed.
+
+   **[CORRECTION 2026-08-17.] "Deleting is lossless (zero commits not held
+   locally)" was WRONG and is withdrawn.** That phrasing conflated two different
+   things: the local clone does mirror the remote, so nothing would be lost that
+   is not already on this machine — but MAIN DOES NOT HOLD THE BRANCH'S HISTORY.
+   Measured: `git rev-list --count main..exp39-experimental` = **107 commits on
+   the branch that are not in main**, because the milestone merge `043a0a8`
+   squashed them. `326c43b` (29 July) is one example reachable from the branch
+   and from nowhere else.
+
+   Why it matters beyond tidiness: those 107 commits are the only record of the
+   per-run target states. Counterfactual-repair adjudication needs the file as it
+   was when a finding was raised, and 20 of 21 falsifiers that fail against
+   today's file reproduce against some earlier stored version. Deleting the
+   branch would not lose the findings, but it would remove the intermediate
+   states that let a finding be re-tested at all.
+
+   **DO NOT DELETE until the 107 commits are either merged non-destructively or
+   deliberately declared redundant.** Neither has happened.
 3. **Reseed the three exams** whose keys are public — founder judged the exposure
    overstated and elected to move on. Recorded as a deliberate decision, not an
    oversight.
