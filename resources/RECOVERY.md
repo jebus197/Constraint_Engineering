@@ -128,6 +128,37 @@ tamper-evident provenance as a core property. Standing rule added to
 
 ## SESSION STATE — 2026-08-17 01:45 BST (READ THIS FIRST)
 
+### ★ WHERE THE exp39-experimental ARCHIVE LIVES (recorded 2026-08-17)
+
+    /Users/georgejackson/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle
+
+A complete `git bundle` of the branch: 676 commits, of which **107 are not in main**
+because the milestone merge `043a0a8` squashed them. Restore-tested twice; `git bundle
+verify` reports "records a complete history".
+
+**WHY IT IS KEPT.** Those 107 commits are the only record of the per-run TARGET STATES.
+Counterfactual-repair adjudication needs the file as it was when a finding was raised,
+and searching all refs for a version where both falsifiers reproduce cut the
+unreproducible set from 22 pairs to 7. Delete this and that capability goes.
+
+**WHY THE REMOTE BRANCH MUST GO.** 17 answer-key blobs are reachable from
+`origin/exp39-experimental` and ZERO from `origin/main` — including keys for exp50,
+exp51 and exp52, which HAVE NOT BEEN RUN. That is live exposure for experiments still
+ahead, not history.
+
+**MAIN IS NOT IN DEFICIT AND NEVER WAS.** Measured 2026-08-17: zero files exist only on
+the branch; main holds more content in 61 of the 63 files that differ; the sole exception
+is `docs/CURRENT_STATE.md`, which `sv` regenerates. Every branch-only LINE is superseded
+text — the old anchorless-wildcard `if a1 and a2 and a1 != a2:`, the pre-fix Fisher
+figures, the old description regex with its unreachable `$` branch. All corrected on main.
+An earlier claim in this session that main carried an unrecoverable deficit was WRONG.
+
+The bundle contains answer keys and is to be encrypted at rest. Restore with:
+
+    git clone --bare <bundle> <dir>
+
+
+
 ### THE TRUNCATION ALARM WAS WRONG. THREE FIXES LANDED. NO EXPERIMENT IS INVALIDATED.
 
 Suite **3540 passed, 14 skipped, 0 failed**. Three defects fixed; the claim that

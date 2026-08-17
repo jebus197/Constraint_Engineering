@@ -9,6 +9,12 @@
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
 **★ RESUME POINTER (2026-08-17 01:45 BST). SUPERSEDES EVERY POINTER BELOW.**
+**★ exp39-experimental ARCHIVE: `~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle`**
+**(676 commits, 107 not in main, restore-tested). Holds the per-run TARGET STATES that
+counterfactual-repair adjudication needs. The REMOTE branch exposes 17 answer-key blobs
+including exp50/51/52 which are UNRUN — remote deletion pending founder confirmation that
+the encrypted archive verifies. MAIN IS NOT IN DEFICIT; that earlier claim was wrong.**
+
 **READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
 every future pointer inherits it.)**
 
