@@ -3,6 +3,30 @@
 2026-08-16, 23:42 BST. Technical version. A plain-English companion and a TTS
 file accompany this note.
 
+> **[Correction 2026-08-17.]** Two claims below were superseded within 24 hours by
+> `Description_Truncation_Three_Fixes_2026-08-17.md`. They are left standing rather
+> than edited, because a note that quietly rewrites its own refuted claims is worth
+> less as a record than one that carries them.
+>
+> 1. **Section 4's truncation-harm association is WITHDRAWN.** The pooled odds ratio
+>    of 10.5 at Fisher p = 2.07 x 10^-5 was flagged here as NOT ESTABLISHED because it
+>    reversed under stratification by run. That hedge was right: on repaired text the
+>    same measurement gives **p = 0.272**. The pooled figure was an artefact of the
+>    degraded text it was computed on.
+> 2. **Section 4's framing of the two caps is INCOMPLETE, and section 2's operating
+>    points were computed on damaged input.** The `[:500]` registry cap is not
+>    storage-only — it is read by the location-keyed convergence count and by the CC2
+>    verification pass. Re-derived on repaired text the figures move: pairs 438 → 460,
+>    tier-3 coverage 94 → 110, AUC 0.986 → 0.976. What does NOT move is every
+>    load-bearing conclusion: P(merge | genuinely different) 14.5% → 14.9%, zero false
+>    splits, an 84% reduction against location keying alone, and tier 3 wrong on all
+>    three of the decisions it changes.
+>
+> The anchorless-wildcard fix in section 3 stands, and its root cause is now known: the
+> anchorless `(0.6, '')` existed because the parser had substituted a schema header for
+> C0063's claim, cutting off the word `double-penalty`. With the parser repaired the
+> same finding parses to 175 characters and yields `(0.6, 'double')`.
+
 ## Summary
 
 The similarity function's justifying measurement was rebuilt from the archive and
@@ -256,7 +280,7 @@ precisely the pairs where the question is hard. Excluding them makes any
 separation look cleaner than it is. This is the single largest weakness in the
 evidence base for the rule.
 
-`bench/results/similarity_adjudication_pack.json` now holds all 120, unanswered,
+`experimental_notes/data/similarity_adjudication_pack.json` now holds all 120, unanswered,
 sorted by embedding score descending, each with both finding texts, the shared
 location, and the two tiers' scores.
 
