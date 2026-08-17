@@ -1056,7 +1056,25 @@ class FindingRegistry:
             "source_model": model_id,
             "source_aliases": [finding.finding_id],
             "severity": finding.severity,
-            "description": finding.description[:500],
+            # RAISED 500 -> 2000 on 2026-08-17. The 500 had been in place since
+            # commit 54d956e (2026-04-17) and clipped 661 of 2247 archived
+            # descriptions, 29% of the corpus.
+            #
+            # This is the STORED value, and three live consumers read it: the
+            # location-keyed convergence count (:4288), the CC2 verification pass
+            # where a model casts CONFIRM/REFUTE/DUPLICATE/ESCALATE (:6271), and
+            # the routing ladder (:2982). The ladder asks for [:1200] and, with a
+            # 500-char store, could never receive more than 500 — it requested
+            # more than the system was capable of holding and got no signal that
+            # it had been short-changed.
+            #
+            # 2000 rather than unbounded: it clears the largest downstream request
+            # with headroom, and worst-case archive growth is about 1 MB. Nothing
+            # keys off the value 500 — the other two occurrences in this file
+            # (:6271, :9466) are each a consumer's own prompt/report budget and
+            # are deliberately left alone, since those are separate decisions
+            # about what to SHOW, not about what to KEEP.
+            "description": finding.description[:2000],
             "proposed_fix": finding.proposed_fix[:5000] if finding.proposed_fix else "",
             # "tools decide" gate: the model-attached runnable falsifier + the
             # runner's independent re-run verdict (see apply_falsifier_verdicts).

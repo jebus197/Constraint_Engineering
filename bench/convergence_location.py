@@ -541,7 +541,18 @@ def signature_similarity(a: FrozenSet[str], b: FrozenSet[str]) -> float:
 # damaged in two ways discovered on 2026-08-17: `runner_core.parse_findings` fell
 # through to `block[:200]` on 15.1% of blocks — substituting the schema header for
 # the claim — and `FindingRegistry.register` clipped a further 29% at 500 chars.
-# Both are now fixed, and `scripts/backfill_descriptions.py` recovers the real
+#
+# [CORRECTION 2026-08-17.] An earlier version of this block said "Both are now
+# fixed". That was FALSE for the second one and stayed false for a day: commit
+# 1e5de9a repaired the parser in `runner_core.py` and never touched
+# `reference_runner_v2.py`, so `finding.description[:500]` remained live while
+# this comment asserted otherwise. Found by an independent sweep of the dedup
+# record, not by re-reading the code. The store cap is now 2000
+# (`reference_runner_v2.py:1059`); the parser fix stands. Recording the error
+# rather than editing it away, because a comment claiming a fix that does not
+# exist is the exact defect class this file documents.
+#
+# `scripts/backfill_descriptions.py` recovers the real
 # text from the archived raw model responses (531 repairs, each join verified
 # against the stored value; nothing unverifiable was touched, and no archived
 # report was modified).
