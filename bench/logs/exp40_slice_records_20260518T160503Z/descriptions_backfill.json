@@ -1,0 +1,146 @@
+{
+ "run": "exp40_slice_records_20260518T160503Z",
+ "stats": {
+  "entries": 55,
+  "prefix": 16,
+  "fallback": 6,
+  "unverified": 7,
+  "no_join": 5,
+  "unchanged": 21,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 576,
+   "description": "`FindingFeedback.priority_score()` under-scores findings whose `final_verdict == \"REJECTED\"` when there are no specialist `refutations`.\n\nLocation: `FindingFeedback.priority_score`.\n\nEvidence: `action` treats either `self.refutations` or `self.final_verdict == \"REJECTED\"` as the highest-precedence corrective action:\nif self.refutations or self.final_verdict == \"REJECTED\":\n    return \"RECALCULATE\"\nBut `priority_score()` only gives the +3.0 highest-priority score when `self.refutations` is non-empty:\nif self.refutations:\n    score += 3.0\nConcrete trace:\n\n- Record A:\n  - `"
+  },
+  "C0003": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 369,
+   "description": "The `finding_by_id` dictionary comprehension in `build_feedback_records` uses `f.finding_id` as the key, which silently overwrites earlier findings if multiple models use the same `finding_id` in a round. Additionally, the loop over `cell_verdicts.items()` misses findings that have a `final_verdict` of \"REJECTED\" but no `cell_verdicts`. Evidence: `finding_by_id = {f."
+  },
+  "C0005": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 837,
+   "description": "`build_feedback_records()` can omit findings whose final immune verdict is `\"REJECTED\"` when the finding has no corresponding `cell_verdicts` entry.\n\nLocation: `build_feedback_records()`, section:\nfor fid, verdict_list in cell_verdicts.items():\n    ...\n    final_v = final_verdicts.get(fid, \"UNCERTAIN\")\n\n    if refutations or final_v == \"REJECTED\":\n        records_by_id[fid] = FindingFeedback(...)\nThe loop iterates only over `cell_verdicts.items()`. Therefore `final_verdicts` entries are only considered for finding IDs that also appear in `cell_verdicts`.\n\nConcrete trace:\ncell_verdicts = {}\nfinal_verdicts = {\"F009\": \"REJECTED\"}\nCurrent execution:\n\n- The `for fid, verdict_list in cell_verdicts.items()` loop does not run.\n- `final_verdicts[\"F009\"]` is never inspected.\n- No feedback record is produced for rejected finding `F009`."
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 726,
+   "description": "`FindingFeedback.priority_score()` does not prioritize findings whose `final_verdict` is `\"REJECTED\"` unless `refutations` is non-empty.\n\nLocation:\nif self.refutations:\n    score += 3.0\nBut `action` treats either condition as top-precedence recalculation:\nif self.refutations or self.final_verdict == \"REJECTED\":\n    return \"RECALCULATE\"\nConcrete trace:\n\n- Record A:\n  - `final_verdict=\"REJECTED\"`\n  - `refutations=[]`\n  - `severity_claimed=1.0`\n  - current priority = `0.1`\n- Record B:\n  - `final_verdict=\"UNCERTAIN\"`\n  - `admissibility_failures=[\"S_min\"]`\n  - `severity_claimed=0.1`\n  - current priority = `0.8 + 0.01 = 0.81`\n\nCurrent sorting places B above A, even though A\u2019s action is `\"RECALCULATE\"` for a rejected claim."
+  },
+  "C0013": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 692,
+   "description": "C0009 is confirmed. In `build_feedback_sections`, the docstring promises `max_chars_per_model` is a hard cap, but the fallback placeholder can exceed the cap when `max_chars_per_model` is smaller than the placeholder length. Premises: (1) the loop exits immediately after assigning the placeholder; (2) no final clamp is applied before `sections[model_id] = section`; (3) callers can pass small or zero budgets. Concrete trace: with one feedback record and `max_chars_per_model=10`, the loop drops all `top_items`, assigns a multi-line placeholder longer than 10 characters, breaks, and stores it. Expected: `len(sections[model_id]) <= 10`. Actual: returned section length is greater than 10."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 906,
+   "description": "`build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed it.\n\nLocation: `build_feedback_sections()`.\n\nRelevant current code:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== END SCHEMA FEEDBACK ===\\n\"\n        )\n        break\nPremises:\n\n1. The docstring says `max_chars_per_model` is a \u201cHard cap on section length\u201d.\n2. The fallback placeholder has fixed text length.\n3. The code assigns the placeholder and immediately breaks.\n4. No final postcondition slices the placeholder to the cap.\n\nConcrete trace:\nbuild_feedback_sections(\n    records=["
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 628,
+   "description": "In `build_feedback_records`, step 3 (near-duplicate handling, lines 217-231), `duplicate_pairs` is iterated as `(fid_a, fid_b, sim)` but only `fid_a` is looked up in `finding_by_id` and only `fid_a` receives a feedback record. The `fid_b` side of the pair receives no duplicate notification. The `duplicate_pairs` docstring (line 146-148) says \"Pairs of findings flagged as near-duplicates\" \u2014 symmetric language \u2014 but the processing is asymmetric. If the caller provides only one direction per pair (the common case for similarity-based dedup), the second finding in each pair gets zero feedback about its near-duplicate status."
+  },
+  "C0018": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 705,
+   "description": "`FindingFeedback.priority_score()` documents an admissibility-priority cap of `4.0`, but the implementation does not enforce that cap.\n\nLocation:\nscore += 0.8 * len(self.admissibility_failures)\nEvidence:\n\nThe method docstring says:\n* Admissibility failure count: +0.8 per failed gate (max 4.0)\nPremises:\n\n1. `admissibility_failures` is a public dataclass field of type `List[str]`.\n2. `build_feedback_records()` copies caller-supplied gate names directly:\nrec.admissibility_failures = list(failed_gates)\n3. `priority_score()` multiplies the list length by `0.8` without bounding it.\n4. Therefore any list with more than five entries violates the documented maximum.\n\nConcrete trace:\nrec = FindingFeedback("
+  },
+  "C0024": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 649,
+   "description": "`_render_single_record()` renders untrusted finding/tool text directly into future model prompts without quoting or escaping it as data.\n\nLocation: `bench/logs/exp40_slice_records_20260518T160503Z/working/_feedback_records_slice.py`, function `_render_single_record`.\n\nEvidence:\n\nThe function interpolates dynamic fields directly into instruction-bearing prompt text:\n\n- `rec.finding_id` in the header\n- `rec.final_verdict` in the header\n- `tool` in refutation lines\n- `evidence` in refutation lines\n- `rec.admissibility_failures` in the admissibility line\n- `top_dup[0]` in the near-duplicate line\n\nConcrete trace:\n\nPremises:\nrec = FindingFeedback("
+  },
+  "C0028": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 705,
+   "description": "`build_feedback_records()` documents `immune_result` as containing `cell_verdicts`, `final_verdicts`, and `rejected_findings`, but the implementation never reads `immune_result.rejected_findings`.\n\nLocation:\n\n`bench/logs/exp40_slice_records_20260518T160503Z/working/_feedback_records_slice.py`, inside `build_feedback_records()`:\nfinal_verdicts = getattr(immune_result, \"final_verdicts\", {}) or {}\ncell_verdicts = getattr(immune_result, \"cell_verdicts\", {}) or {}\nThe function then iterates only:\nfor fid, verdict_list in cell_verdicts.items():\nand later uses `final_verdicts.get(...)`, but there is no `getattr(immune_result, \"rejected_findings\", ...)` anywhere in the function.\n\nConcrete counterexample:"
+  },
+  "C0031": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 852,
+   "description": "In `build_feedback_records`, step 4 (R_k discrepancies, lines ~235-253), `rec.rk_discrepancy` is assigned via simple overwrite: `rec.rk_discrepancy = (claimed, aggregate)`. If `rk_validation` contains multiple WARN/FAIL entries for the same `(model_id, finding_id)` pair, only the last one survives. The earlier discrepancy data is silently lost.\n\nConcrete trace:\nrk_validation = {\n    \"model_A\": [\n        (\"F1\", \"FAIL\", \"0.30\", \"0.50\"),   # \u0394=0.20 \u2014 LOST\n        (\"F1\", \"WARN\", \"0.35\", \"0.40\"),    # \u0394=0.05 \u2014 KEPT\n    ]\n}\nAfter step 4, `rec.rk_discrepancy = (0.35, 0.40)`, \u0394=0.05. The more severe FAIL record (\u0394=0.20) is silently discarded. Downstream, `priority_score()` adds `min(1.0, 0.05) = 0.05` instead of `min(1.0, 0.20) = 0.20`, potentially dropping the finding below the top_k cutoff and removing corrective feedback from the model's prompt."
+  },
+  "C0035": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 3297,
+   "description": "In `build_feedback_sections`, the hard-cap `while` loop at lines ~340-355:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (...placeholder...)\n        break\n    section = _rebuild_section(\n        top_items, model_recs, round_idx,\n        len(model_recs) - len(top_items),\n    )\nAfter calling `_rebuild_section`, the loop condition `len(section) > max_chars_per_model` is re-evaluated. If `_rebuild_section` returns a section whose length is exactly equal to `max_chars_per_model`, the condition `len(section) > max_chars_per_model` is `False`, and the loop terminates correctly. No bug there.\n\nHowever, there is a subtler issue: the loop does not check whether `len(section) > max_chars_per_model` after the `break` path (when `top_items` becomes empty). The placeholder section is built and then the code does:\nif len(section) > max_chars_per_model:\n    section = section[:max_chars_per_model]\nThis truncation is applied only in the `if not top_items:` branch, not after the `_rebuild_section` path. If `_rebuild_section` returns a section that is still over the cap, the loop iterates again. This is correct. But if the loop exits because `len(section) <= max_chars_per_model` (normal exit), the section is used as-is. If the section is exactly at the cap, that's fine.\n\nThe actual edge case: if `max_chars_per_model` is set so low that even the header alone (the fixed preamble text) exceeds it, the loop will pop all items, enter the `if not top_items:` branch, build the placeholder, and then truncate the placeholder. This works. But if the header alone is exactly at the cap, the placeholder (which includes the header plus the truncation message) will exceed the cap, and the truncation `section[:max_chars_per_model]` will cut mid-sentence. This is documented behaviour (the docstring says \"hard cap\") but the truncation can produce malformed output (e.g., cutting in the middle of a line). This is a minor edge case with negligible practical impact since `max_chars_per_model` defaults to 8000 and the header is ~600 chars.\n\nMore concretely: there is a logic gap between the `while` loop's exit and the final assignment `sections[model_id] = section`. After the `while` loop exits (either normally or via `break`), there is no post-loop truncation check for the normal-exit path. If the loop exits because `len(section) <= max_chars_per_model` but `section` was built by `_rebuild_section` and contains a trailing newline that pushes it 1 byte over the cap, the loop would have iterated again. But if the section is exactly at `max_chars_per_model + 1` after `_rebuild_section`, the loop iterates, pops an item, rebuilds, and rechecks. This is correct.\n\nThe real finding: there is no post-loop truncation safety net for the normal-exit path. The truncation `section[:max_chars_per_model]` is only applied in the `if not top_items:` branch. If the loop exits normally with `len(section) <= max_chars_per_model`, the section is used as-is \u2014 which is correct. But if a future code change introduces a path where the loop exits without the condition being satisfied (e.g., a `break` added for another reason), the section could exceed the cap. This is a defensive-coding gap, not an active bug. Severity is low."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1345,
+   "description": "This is a cross-cutting interaction between the known `finding_by_id` collision bug (C0003/C0004/C0007/C0010/C0020/C0025) and the multi-stage record creation logic. Consider this scenario:\n\n1. Two findings share the same `finding_id`: F-A (from model X) and F-B (from model Y).\n2. The `finding_by_id` dict keeps only F-B (last-wins).\n3. Step 1 (refutations) processes `cell_verdicts`. If F-A had refutations but F-B did not, the lookup `finding_by_id.get(fid)` returns F-B (wrong finding). F-B's `model_id` is Y, not X. The refutation is misattributed to model Y.\n4. Step 2 (admissibility) processes `admissibility_failures`. If F-A had admissibility failures, the lookup again returns F-B. A record is created for F-B with F-B's `model_origin=Y` and F-B's `severity_claimed`, but the admissibility failures belong to F-A. The feedback goes to the wrong model.\n5. Step 3 (duplicates) and step 4 (R_k) have the same misattribution.\n\nThis is a consequence of the known collision bug, not a new root cause. However, the specific interaction \u2014 where a record is created in step 2/3/4 for a finding that was skipped in step 1, using the wrong finding's metadata \u2014 has not been explicitly documented in the registry. The existing findings focus on the silent-dropping behaviour; this finding documents the cross-stage metadata corruption that results."
+  },
+  "C0039": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 714,
+   "description": "In `_render_single_record`, line:\nseverity = f\"{rec.severity_claimed:.2f}\"\nIf `severity_claimed` is `None`, this raises `TypeError: unsupported format character`. The dataclass annotates `severity_claimed: float`, but Python dataclasses do not enforce type annotations at runtime. All construction sites in `build_feedback_records` assign `severity_claimed=finding.severity`, and `finding.severity` comes from external model output (JSON schema). A malformed or missing severity field would propagate `None` through to this format call.\n\nC0027 (CLOSED) fixed the identical None-safety issue in `priority_score()` but did NOT fix this call site. Same root cause, different crash location, independently triggerable."
+  },
+  "C0041": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 556,
+   "description": "In `build_feedback_records`, step 3 (near-duplicates, lines ~217-231), only `fid_a` of each duplicate pair receives a feedback record. `fid_b` is never notified that it has a near-duplicate. This is asymmetric information loss.\n\nConcrete trace: `duplicate_pairs = [(\"F-alpha\", \"F-beta\", 0.92)]`. After step 3:\n- `records_by_id[\"F-alpha\"].duplicates = [(\"F-beta\", 0.92)]` \u2014 model A is told to differentiate or withdraw\n- `records_by_id` has NO entry for `\"F-beta\"` (unless created by steps 1, 2, or 4) \u2014 model B is never told its finding is a near-duplicate"
+  },
+  "C0042": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1018,
+   "description": "C0041 is correct: in `build_feedback_records()`, the near-duplicate section only creates feedback for `fid_a` in each `(fid_a, fid_b, sim)` tuple.\n\nLocation:\n\n`bench/logs/exp40_slice_records_20260518T160503Z/working/_feedback_records_slice.py`, function `build_feedback_records()`, section `# 3. Near-duplicates`.\n\nCurrent code:\n\n- Looks up only `finding_by_id.get(fid_a)`.\n- Creates or updates only `records_by_id[fid_a]`.\n- Appends only `rec.duplicates.append((fid_b, sim))`.\n- Never attempts to create a reciprocal record for `fid_b`.\n\nPremises:\n\n1. `duplicate_pairs` represents near-duplicate relationships between two finding IDs.\n2. The feedback channel is per-model; each model whose finding is flagged needs corrective feedback if its current-round finding participates in the duplicate relation.\n3. `findings` contains round-K findings across models.\n4. `build_feedback_sections()` only renders records that exist in `records_by_id`.\n5. The current loop creates no record for `fid_b`.\n\nConcrete trace:\n\nInput:"
+  },
+  "C0044": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 344,
+   "description": "C0035 should be merged into C0015/C0023 rather than kept as an independent open finding. The active code contains the same hard-cap failure mode already described by C0015: after dropping all detailed items, the placeholder section is assigned even if its length still exceeds `max_chars_per_model`.\n\nConcrete trace:\nrecords = [FindingFeedback("
+  },
+  "C0045": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 557,
+   "description": "C0043 should not remain open as a code-defect finding on the visible registry evidence. The registry summary says:\nNow I have the ground truth from disk. The on-disk file is the original seed; the chunk 2 artifact is the sandbox copy w...\nThat visible text describes artifact/provenance state, not a concrete executable defect in `_feedback_records_slice.py`. It does not identify a function, input, expected output, actual output, or broken invariant. The target artifact itself explicitly states its provenance and review boundary in the module docstring."
+  },
+  "C0046": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1581,
+   "description": "C0035 is not a distinct open issue. Its visible registry summary describes the same root cause as settled C0015/C0023: `build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the all-items-dropped fallback placeholder can still exceed very small caps.\n\nEvidence in target file:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== END SCHEMA FEEDBACK ===\\n\"\n        )\n        break\nConcrete trace:\n\nPremises:\n\n1. `max_chars_per_model` is documented as a hard cap.\n2. The fallback placeholder has fixed nonzero length.\n3. The loop breaks immediately after assigning the placeholder.\n4. No final truncation is applied after the `break`.\n\nExample:\nmax_chars_per_model = 1\nrecords = [FindingFeedback(...)]\nExecution:\n\n1. Initial `section` length is greater than `1`.\n2. `top_items` is repeatedly shortened.\n3. When `top_items` becomes empty, the fallback placeholder is assigned.\n4. The placeholder length is still greater than `1`.\n5. The loop breaks.\n6. `sections[model_id] = section` stores an over-cap section.\n\nExpected under hard-cap contract: `len(section) <= 1`.  \nActual: `len(section) > 1`.\n\nThis is exactly the mechanism already recorded by C0015 and fixed/closed via C0023. Therefore C0035 should be merged rather than kept as a separate open item."
+  },
+  "C0047": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1260,
+   "description": "C0043 should not remain an open code-defect finding in its current form. The visible registry summary is a provenance/artifact statement, not a concrete runtime or correctness bug:\nNow I have the ground truth from disk. The on-disk file is the original seed; the chunk 2 artifact is the sandbox copy ...\nThe target file itself explicitly documents its provenance as an experiment artifact and states that it deliberately preserves known seed defects. That is not, by itself, a new defect in `_feedback_records_slice.py`.\n\nRelevant artifact text:\nProvenance: verbatim from bench/exp40_baseline/_feedback_cleaned.py\n...\nThe repo bench/dm/_feedback.py is left\npristine; this slice is the experiment artefact only.\n\nKNOWN SEED DEFECT (deliberately preserved, not cooked away): ...\nConcrete trace:\n\nPremises:\n\n1. A review finding must identify a code location, mechanism, and consequence.\n2. C0043\u2019s visible summary describes artifact provenance rather than a function-level behavior.\n3. The artifact provenance is already stated in the module docstring.\n4. No concrete failing input/output behavior is visible in the registry summary.\n\nConclusion: C0043 is not admissible as an open code defect unless expanded with a concrete mechanism and downstream consequence."
+  },
+  "C0054": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 229,
+   "description": "C0019 and C0041 should merge into closed C0017 because they describe the same near-duplicate endpoint-loss bug.\n\nPremises from current source:\n# 3. Near-duplicates\nif duplicate_pairs:\n    for fid_a, fid_b, sim in duplicate_pairs:"
+  },
+  "C0055": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 624,
+   "description": "In `build_feedback_records`, the R_k discrepancies block (Lines 235-253) processes validation records and assigns `rec.rk_discrepancy = (claimed, aggregate)` unconditionally via `records_by_id.get(fid)` \u2192 `rec.rk_discrepancy = ...`. If multiple validation records exist for the same `fid` (e.g., different validators, round-merged data), the last assignment wins, potentially overwriting a larger discrepancy with a smaller one. The function\u2019s behaviour should report the *worst* observed discrepancy to the model, but it currently reports the last-observed.\n\nEvidence: Lines 239-250 in the target file \u2014 no max-delta guard."
+  }
+ }
+}

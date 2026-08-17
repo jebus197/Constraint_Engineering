@@ -129,7 +129,27 @@ def _symbols_for(run: str, rep: dict) -> frozenset:
     return frozenset(ids)
 
 
-def build_dataset() -> dict:
+def _backfill_for(run: str) -> dict:
+    """Repaired descriptions for a run, or {} if none were written.
+
+    OPT-IN, never automatic. The sidecar is produced by
+    `scripts/backfill_descriptions.py` and holds only repairs whose join to the
+    archived raw response was verified against the stored text. Reading it
+    changes what every figure below is computed on, so the caller asks for it
+    explicitly and the report says which mode it ran in.
+    """
+    stem = ARCHIVE[run][0]
+    for d in (REPO / "bench" / "logs").glob(f"{stem}_*"):
+        p = d / "descriptions_backfill.json"
+        if p.is_file():
+            try:
+                return json.loads(p.read_text(encoding="utf-8")).get("descriptions") or {}
+            except Exception:
+                return {}
+    return {}
+
+
+def build_dataset(backfilled: bool = False) -> dict:
     """Rebuild the 165 criticals and their 438 same-location pairs.
 
     POPULATION NOTE, and it matters. This uses every critical in the registry —
@@ -143,9 +163,16 @@ def build_dataset() -> dict:
     crits, pairs = [], []
     for run in ARCHIVE:
         rep = _report(run)
-        syms = _symbols_for(run, rep)
+        repairs = _backfill_for(run) if backfilled else {}
+        entries = rep["registry"]["entries"]
+        if repairs:
+            entries = json.loads(json.dumps(entries))
+            for cid, v in repairs.items():
+                if cid in entries:
+                    entries[cid]["description"] = v["description"]
+        syms = _symbols_for(run, {"registry": {"entries": entries}})
         here = []
-        for e in rep["registry"]["entries"].values():
+        for e in entries.values():
             if (e.get("severity") or 0.0) < CRITICAL_SEVERITY:
                 continue
             desc = e.get("description", "") or ""
@@ -199,12 +226,15 @@ def add_embedding_labels(data: dict) -> dict:
     return data
 
 
-def load_dataset(rebuild: bool = False) -> dict:
-    if CACHE.is_file() and not rebuild:
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    data = add_embedding_labels(build_dataset())
-    CACHE.parent.mkdir(parents=True, exist_ok=True)
-    CACHE.write_text(json.dumps(data, indent=1), encoding="utf-8")
+def load_dataset(rebuild: bool = False, backfilled: bool = False) -> dict:
+    cache = (CACHE.with_name("similarity_pairs_backfilled.json")
+             if backfilled else CACHE)
+    if cache.is_file() and not rebuild:
+        return json.loads(cache.read_text(encoding="utf-8"))
+    data = add_embedding_labels(build_dataset(backfilled=backfilled))
+    data["backfilled"] = backfilled
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(data, indent=1), encoding="utf-8")
     return data
 
 
@@ -517,13 +547,18 @@ def main() -> int:
     ap.add_argument("--human-labels", metavar="FILE",
                     help="a completed adjudication pack; re-reports against it")
     ap.add_argument("--bootstrap", type=int, default=2000)
+    ap.add_argument("--backfilled", action="store_true",
+                    help="use repaired descriptions from the backfill sidecars")
     args = ap.parse_args()
 
-    data = load_dataset(rebuild=args.rebuild)
+    data = load_dataset(rebuild=args.rebuild, backfilled=args.backfilled)
     pairs = data["pairs"]
 
     print("=" * 74)
     print("SIMILARITY FUNCTION — OPERATING CHARACTERISTIC")
+    print("  descriptions: " + ("REPAIRED (backfill sidecars applied)"
+                                if args.backfilled else
+                                "AS ARCHIVED (truncated/substituted, pre-2026-08-17)"))
     print("=" * 74)
 
     print("\n1. REPRODUCTION OF THE RECORDED FIGURES")

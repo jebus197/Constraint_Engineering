@@ -1,0 +1,104 @@
+{
+ "run": "exp34_endocrine_20260405T225218Z",
+ "stats": {
+  "entries": 81,
+  "prefix": 15,
+  "fallback": 0,
+  "unverified": 38,
+  "no_join": 26,
+  "unchanged": 2,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0013": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 612,
+   "description": "FIND \u2014 `_apply_fix_to_source` Strategy 2 (whole-file replacement) has no guard against the proposed fix being a description paragraph that happens to parse as valid Python and has \u22655 lines. Any English text block that accidentally passes `compile(..., \"exec\")` and has 6+ newlines will replace the entire source file in the sandbox. Example: a multi-line docstring-only proposed_fix compiles as valid Python, passes the 5-line check, and silently replaces the entire file \u2014 producing a NEUTRAL or SAFE verdict (the docstring has no type errors, no ruff errors, no bandit issues) for a fix that destroys the file."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 790,
+   "description": "FIND \u2014 `evaluate_fix` runs pre-fix baseline tools against the *original file on disk* (`_count_tool_issues(run_pyright, target_path)`), but runs post-fix tools against the *patched file inside the sandbox* (`_count_tool_issues(run_pyright, patched_path)`). The sandbox path is a different directory tree. Pyright and mypy resolve imports relative to package roots and project configuration (pyrightconfig.json, pyproject.toml). The original file's tool run finds and uses the real project config; the sandbox file's tool run does not find any project config (tmpdir has none). This means pre-fix and post-fix diagnostic counts are not comparable \u2014 the sandbox run may produce spurious import resolution errors that inflate `new_type_errors`, causing valid fixes to be classified as HARMFUL."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 593,
+   "description": "FIND \u2014 `compute_pacing_signals` has a `context_budget` type coercion block that silently converts `dict` to `max(dict.values())`. The docstring says `context_budget: int` but the defensive code handles dict, str, and float. If the orchestrator passes `context_budget` as a dict (which happens when TOML config loads model-specific overrides as `{\"CC2\": 80000, \"Gemini\": 120000}`), the function takes the max of all model budgets. This means the context growth signal uses the largest model's budget as the denominator, systematically underestimating context pressure for smaller-budget models."
+  },
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 682,
+   "description": "FIND \u2014 The endocrine layer's `evaluate_fix` is called from two paths: (1) `EndocrineLayer.run()` via `evaluate_fixes()`, and (2) the immune pipeline's Stage 4 in `immune_agents.py` via `from bench.endocrine import evaluate_fixes`. In path (2), the immune pipeline passes a hardcoded test command: `[\"python3\", \"-m\", \"pytest\", \"bench/tests/\", \"-x\", \"-q\", \"--tb=no\", \"--no-header\", \"-q\"]`. This test command runs inside the sandbox tmpdir as `cwd`. But `bench/tests/` is a relative path that doesn't exist in the sandbox \u2014 it only exists in the real project tree. The tests will fail to find the test directory and either error out or run zero tests, making `tests_passed` unreliable."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 582,
+   "description": "FIND \u2014 `evaluate_fix` runs pre-fix baselines sequentially for each tool (pyright, ruff, bandit) on the original file, then runs post-fix baselines sequentially for each tool on the sandbox file. For each finding, that's 6 subprocess invocations (3 pre + 3 post), each with a 60-second timeout. `evaluate_fixes` caps at `max_evals=20`. Worst case: 120 subprocess calls, 120 minutes wall time if tools are slow. In practice, tools are fast (seconds each), but the sequential execution of all fix evaluations means the endocrine cycle can be the bottleneck in the inter-round interval."
+  },
+  "C0029": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 540,
+   "description": "FIND \u2014 Tool\u2011timeout incorrectly reported as \u201cavailable\u201d in health scan. In `_run_tool`, a timeout returns `CompletedProcess` with `stderr=\"TIMEOUT\"`. Runner functions (e.g., `run_pyright`) do not treat this as a failure, so `scan_health` sets `tools_available[tool_name]=True` even though the tool produced no diagnostics. Evidence: `_run_tool` returns `stderr=\"TIMEOUT\"` on timeout; `run_pyright` only raises `ToolNotFoundError` for `\"NOT_FOUND\"`; `scan_health` catches `ToolNotFoundError` but not timeout, so the tool is marked available."
+  },
+  "C0041": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 637,
+   "description": "FIND: `compute_pacing_signals` incorrectly computes context\u2011growth fraction when `context_budget` is per\u2011model. The function divides `cumulative_context_chars` (total chars across all rounds) by `context_budget` (per\u2011model budget), ignoring the number of models. This causes the signal to fire at the wrong threshold, potentially misleading the insect brain\u2019s relay\u2011degradation decision.  \n\nEvidence:  \n- Line 1116: `context_fraction = cumulative_context_chars / context_budget`  \n- Docstring: `context_budget: Per-model context budget from config.`  \n- `cumulative_context_chars` is total accumulated chars across rounds, not per\u2011model."
+  },
+  "C0052": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 564,
+   "description": "FIND \u2014 In `_apply_fix_to_source`, Strategy 3 (line\u2011level replacement), multi\u2011line range replacements incorrectly assign the replaced block as a single string, collapsing multiple lines and breaking source structure. Evidence: lines 597\u2011609 in endocrine.py join the target lines into `block`, replace `old_frag` with `new_frag`, then assign the resulting `new_block` as a single\u2011element list to the slice `lines[start_line:end_line + 1]`. This destroys the original line\u2011boundary structure because `new_block` may contain newlines but is stored as one list element."
+  },
+  "C0053": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 869,
+   "description": "FIND \u2014 In `evaluate_fix`, the function `_find_target_file` uses a simple regex to extract file paths from the finding description. If no match is found, it falls back to the first file in `source_paths`. This fallback is arbitrary and may lead to applying the fix to the wrong file, causing incorrect pre\u2011fix and post\u2011fix analysis and thus an incorrect verdict.\n\nEVIDENCE: \n- Lines 480\u2011500: `_find_target_file` function.\n- The regex pattern `r\"[\\w/\\\\]+\\.py\\b\"` matches sequences of word characters, slashes, and backslashes ending with `.py`. It does not match paths with hyphens, dots (other than the extension), or spaces.\n- If no match is found, the function returns `source_paths[0] if source_paths else None`.\n- In `evaluate_fix`, this target path is used to read the source file and apply the fix. If it is the wrong file, the fix is applied to an unrelated file."
+  },
+  "C0054": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 530,
+   "description": "FIND \u2014 `_apply_fix_to_source` Strategy\u202f2 (whole\u2011file replacement) compiles the proposed fix with `compile(fix, \"<fix>\", \"exec\")` to check syntax, but this accepts any valid Python module, including standalone expressions or arbitrary code that is not a file replacement. The guard `fix.count(\"\\n\") >= 5` is arbitrary and does not guarantee the fix is a full\u2011file replacement. Evidence: A 5\u2011line Python expression (e.g., a multi\u2011line list literal) passes the guard and replaces the entire source file, destroying the original code."
+  },
+  "C0056": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 521,
+   "description": "FIND \u2014 `_apply_fix_to_source` Strategy\u202f1 (search\u2011replace) uses `re.DOTALL` flag, allowing the pattern to match across newlines in the fix text. This can cause over\u2011matching and incorrect replacement when the proposed fix contains newlines between the old and new fragments.\nEvidence: Pattern `replace_pattern` compiled with `re.IGNORECASE | re.DOTALL`. The DOTALL flag makes `.` match newlines, so a fix like \u201creplace \u2018foo\u2019\\nwith \u2018bar\u2019\u201d would match the entire multi\u2011line string as a single match, likely failing to apply."
+  },
+  "C0062": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 616,
+   "description": "FIND \u2014 `evaluate_fix` lacks a try\u2011except block around sandbox creation and post\u2011fix analysis. If `_create_sandbox` raises an exception (e.g., `ValueError` from `commonpath`, permission errors, disk full) or if the tool\u2011runner calls fail unexpectedly, the function crashes. Evidence: lines 457\u2011510 in `endocrine.py` show the sandbox creation and subsequent tool calls are inside a try block with a finally clause but no except clause. The finally block uses `tmpdir` which may be uninitialized if `_create_sandbox` fails before assignment (C0043 covers this symptom, but the root cause is missing exception handling)."
+  },
+  "C0067": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 977,
+   "description": "FIND \u2014 `EndocrineLayer.run()` evaluates fixes via `evaluate_fixes(findings, ...)` on ALL round findings. The immune pipeline in `immune_agents.py` Stage 4 independently calls `evaluate_fixes(fix_candidates, source_paths, ...)` on immune-filtered findings. When the orchestrator calls both `endo.run()` and `brain.run_immune_pipeline()`, every finding with a proposed fix is evaluated twice \u2014 once by the endocrine layer (on raw findings) and once by the immune pipeline (on filtered findings). The endocrine evaluations for findings the immune pipeline later rejects are wasted computation. More critically, the two invocations use different `test_cmd` values: `EndocrineLayer` uses `self.test_cmd` (which defaults to `None`), while the immune pipeline hardcodes `[\"python3\", \"-m\", \"pytest\", \"bench/tests/\", ...]`. This means the same fix can receive different verdicts from the two evaluation paths \u2014 NEUTRAL from endocrine (no tests run) and HARMFUL from immune (tests fail)."
+  },
+  "C0068": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 618,
+   "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection uses `novelty_counts[-window:]` where `window=3`, but does not validate that `novelty_counts` entries correspond to actual rounds. If the caller passes `novelty_counts=[0, 0, 0]` for round_idx=0 (three zeros representing pre-experiment initialization, not actual round data), the function emits a false plateau signal on the very first round. The guard `round_idx >= window - 1` (i.e., `round_idx >= 2`) prevents this for round 0 and 1, but not for round 2 when the system legitimately has only 3 rounds of data that may all be low-novelty in the warmup phase."
+  },
+  "C0078": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 627,
+   "description": "FIND: In `evaluate_fix`, the pre\u2011fix baseline tool counts are measured on the original file in the project workspace, but the post\u2011fix counts are measured on the sandboxed file. If the workspace has existing type errors that are not present in the sandbox (e.g., missing `pyproject.toml`), the net\u2011change calculation is invalid.  \nEvidence: lines 590\u2013598 compute `pre_type_errors = _count_tool_issues(run_pyright, target_path)` (original file), while lines 624\u2013626 compute `new_type_errors = _count_tool_issues(run_pyright, patched_path)` (sandboxed file). The sandbox lacks project configuration files, so tool outputs differ."
+  }
+ }
+}

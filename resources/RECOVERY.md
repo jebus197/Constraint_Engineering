@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 16 August 2026 23:55 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 17 August 2026 01:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -126,7 +126,76 @@ tamper-evident provenance as a core property. Standing rule added to
 
 ---
 
-## SESSION STATE — 2026-08-16 23:42 BST (READ THIS FIRST)
+## SESSION STATE — 2026-08-17 01:45 BST (READ THIS FIRST)
+
+### THE TRUNCATION ALARM WAS WRONG. THREE FIXES LANDED. NO EXPERIMENT IS INVALIDATED.
+
+Suite **3540 passed, 14 skipped, 0 failed**. Three defects fixed; the claim that
+truncation caused early convergence is **REFUTED**.
+
+**★ THE HEADLINE CORRECTION.** On 2026-08-16 CC1 reported that exp46 and exp49 had
+converged EARLY because of description truncation. **Both claims are refuted.** The
+error was comparing truncated text against *premise-contaminated* full text. Exp 49's
+C0037 accuses claim EN-16 and then lists premises EN-01/EN-03/EN-17/EN-20; truncation
+was cutting that premise list off, so extraction gave the RIGHT answer ({EN-16}) for
+the WRONG reason. Repairing truncation ALONE made extraction worse (all five flagged).
+**The two defects were masking each other.** With both fixed, close rounds are:
+exp44 10→8, exp45 3→3, exp46 5→5, exp47 11→7, exp48 never→never, exp49 6→6.
+**No run converged early**; the two that move were DELAYED by truncation — the safe
+direction. This vindicates the adversarial sweep (`wf_b73772cb-b99`) over CC1.
+
+**[FIXED] A — the parser.** `runner_core.py` desc regex. The `|$` branch was
+UNREACHABLE (`block.strip()` removes the newline `\n\s*$` needs), the separator class
+missed `.` and dashes, and markdown-heading style has no separator. Now line-anchored,
+`\Z`, widened separator, + FALSIFIER/TARGET_FILE terminators. Measured over 5592
+accepted archived blocks: **4748 → 5060 matches (84.9% → 90.5%), 312 recovered, ZERO
+regressions**, 4734 of 4748 byte-identical, 9 longer (two from EMPTY captures),
+5 shorter and all 5 corrections. **Two wider candidates rejected on measurement** —
+one shortened 870 correct descriptions, the other 834. The first was nearly shipped:
+the regression metric counted match/no-match and was blind to text loss.
+
+**[FIXED] B — the backfill.** `scripts/backfill_descriptions.py`. **531 repairs, every
+join content-verified** against the stored text; 471 unverifiable joins left alone;
+0 ambiguous. **Archived reports NOT modified** — repairs go to
+`bench/logs/<run>/descriptions_backfill.json`, opt-in only. An early draft keyed one
+candidate per (model, finding_id) and silently joined round-0 text to round-3 entries;
+23 exp47 repairs were quietly wrong. The content check caught it.
+
+**[FIXED] C — premise exclusion.** `finding_locations` no longer flags symbols that
+appear only under a `Premises:` header. **Scope set by measurement**: of 2187
+descriptions only 122 (5.6%) carry a supporting-material header and `EVIDENCE:` is 78
+of them — and EVIDENCE substantiates the same defect at the same place, so stripping it
+would delete real signal. TESTED at 19 in `bench/tests/test_premise_exclusion.py`.
+
+**RE-DERIVED (`--backfilled`).** criticals 165 (same), tier-2 cov 160 (was 161), tier-3
+cov **110** (was 94), pairs **460** (was 438), labelled 31/296 (was 28/290), truncated
+criticals **23/165 = 14%** (was 81/165 = 49%), AUC 0.976 (was 0.986).
+**SURVIVES the repair:** P(merge|different) at 0.20 = **14.9%** (was 14.5%); **ZERO
+false splits**; vs location keying alone false merges **296 → 47 (84% fewer)**; tier 3
+changes **3 of 327** decisions and is **wrong on all 3**.
+**DIES:** the truncation-harm association, pooled p = 2.07e-05 on damaged text, is
+**p = 0.272** on repaired text. It was flagged NOT ESTABLISHED at the time because it
+reversed under stratification — the stratification was right.
+
+**ALSO CORRECTED from 2026-08-16:** the `[:500]` registry cap is NOT storage-only. It
+is read by `_location_keyed_critical_series` (gates) and by `_verification_step`
+(`:6271`, CC2 casts CONFIRM/REFUTE/DUPLICATE/ESCALATE from round 6). And "models never
+see more than 120 chars" is false — that is the registry SUMMARY only.
+
+**THE TRANSFERABLE LESSON:** two defects can mask each other so completely that fixing
+one alone makes the measurement WORSE. When a repair degrades a measurement, check for
+a second defect the first was hiding before reverting.
+
+**STILL OPEN:** the 133 unadjudicated pairs (was 120) — **PENDING FOUNDER RULING**;
+471 unverifiable backfill joins; 44 descriptions still carrying falsifier source (was
+190); registry cap still 500 while the routing ladder asks for 1200.
+
+Full record: `experimental_notes/Description_Truncation_Three_Fixes_2026-08-17.md`
+(+ `_Plain_English_` + Desktop TTS).
+
+---
+
+## SESSION STATE — 2026-08-16 23:42 BST (superseded 2026-08-17)
 
 ### THE SIMILARITY FUNCTION'S EVIDENCE WAS NEVER STORED, AND MEASURING IT PROPERLY FOUND TWO DEFECTS
 
@@ -196,7 +265,7 @@ would break comparability of Exp 50+ with Exp 40–49 on signature-derived measu
 The recorded measurement labels SAME at embedding ≥ 0.90, DIFFERENT at ≤ 0.70, and
 **silently drops the 120 between**. 27.4% of the data, and the HARD 27%. No version of
 the comment says so. Extracted unanswered to
-`bench/results/similarity_adjudication_pack.json`. **Deliberately not pre-answered** —
+`experimental_notes/data/similarity_adjudication_pack.json`. **Deliberately not pre-answered** —
 labelling them here reproduces the machine-grading-machine defect the exercise removes.
 Every operating point is provisional until they return.
 

@@ -1,0 +1,134 @@
+{
+ "run": "exp35_pe_20260406T152126Z",
+ "stats": {
+  "entries": 79,
+  "prefix": 20,
+  "fallback": 0,
+  "unverified": 26,
+  "no_join": 27,
+  "unchanged": 6,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 618,
+   "description": "`_compute_provenance` unconditionally overwrites provenance for every dotpath present in a layer's flattened dict, regardless of whether the value changed. The docstring says \"records when each dotpath first appears or changes value\" but the code does not compare values \u2014 it just overwrites. This means provenance reports `domain/X` for a parameter even when the domain layer re-states the identical value as universal. That's misleading \u2014 provenance should mean \"the layer that determined the effective value,\" which for an unchanged re-statement is still universal (or at minimum, the layer that last *changed* it)."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 573,
+   "description": "`_flatten_schema` uses the heuristic `isinstance(value, dict) and \"type\" in value` to distinguish parameter definitions from section containers. If a future parameter definition includes a nested dict key (e.g., `allowed_values` were a dict instead of a list, or metadata were added as a sub-table), the function would still correctly identify it because `\"type\"` is present. However, if a *section* happened to contain a key called `\"type\"` (e.g., a section named `type_checking` with a `type` sub-parameter), the section itself would be treated as a parameter definition."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 508,
+   "description": "Every schema parameter defines `min_layer` \u2014 the lowest layer allowed to set it. For example, `model.name` has `min_layer = \"model\"`, meaning it should only appear in model-layer TOML files. `constraints.anti_deference` has `min_layer = \"universal\"`, meaning it can appear anywhere. Neither `validate()` in engine.py nor `validate_all_policies()` in registry.py checks this constraint. A domain-layer TOML file could define `model.timeout = 5` and it would be silently accepted despite `min_layer = \"model\"`."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 516,
+   "description": "FIND: In `engine.py`, function `load_schema()` (lines 109-153) does not validate that the `default` value for each parameter matches the declared `type`. For example, a parameter of type `\"int\"` with a default of `\"string\"` would cause runtime type errors when the default is used. The evidence: the function checks only that `type` is in `VALID_TYPES`, `constraint_class` in `VALID_CLASSES`, and `min_layer` in `VALID_LAYERS`, but never inspects the `default` field. This is a correctness flaw in schema validation."
+  },
+  "C0026": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 582,
+   "description": "FIND: The engine does not enforce the `min_layer` property of parameters. The schema defines `min_layer` as the lowest layer that may define a parameter (e.g., `min_layer=\"domain\"` means the parameter cannot appear in `universal.toml`). However, `engine.validate()` (lines 258-306) performs no check that each parameter in a TOML file is defined at a layer permitted by its `min_layer`. Evidence: the validation only checks schema coverage of HARD constraints and delegates to `validate_all_policies` for monotonicity, but never compares the layer of definition against `min_layer`."
+  },
+  "C0029": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1334,
+   "description": "FIND: `engine.py` lines 278-279 \u2014 `PolicyEngine.validate()`'s schema coverage check incorrectly classifies HARD threshold parameters. Evidence: The check `if defn.constraint_class == \"HARD\" and defn.type in (\"int\", \"float\")` includes `convergence.hard_coverage_threshold` (float, HARD) but excludes `anti_deference.min_independent_observations` (int, HARD) because the latter's type is `\"int\"`, which is in the tuple. However, the registry's `HARD_THRESHOLDS` includes both. The bug is that the check is correct but the error message is misleading: it says \"missing HARD threshold constraints\" when the missing constraints are actually present in the schema. The real issue is that the schema might be missing them, but the check logic is sound. Wait\u2014re-examining: The check subtracts `registry_hard_thresholds - schema_hard_thresholds`. If a HARD threshold is in the registry but not in the schema, it will be reported. That's correct. The finding is false? Let me double-check: `HARD_THRESHOLDS` keys are exactly the three thresholds. All three appear in schema.toml. So the check should pass. However, the schema entry for `anti_deference.min_independent_observations` has `type=\"int\"` and `constraint_class=\"HARD\"`, so it will be in `schema_hard_thresholds`. The check is correct. Therefore, no bug here. Withdrawing this finding."
+  },
+  "C0036": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 886,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, function `_compute_provenance` (lines ~175-210). The provenance tracking logic is fundamentally broken: it overwrites provenance entries for parameters that appear in multiple layers, but it does not respect the merge semantics of `load_effective_policy`. Specifically, the function records provenance for every dotpath in each layer's flattened config, even if that layer's value is identical to the accumulated value from higher layers (i.e., no actual override). This yields incorrect provenance attribution when a lower layer repeats a value from a higher layer (e.g., a domain config re\u2011states a universal default). Evidence: the function iterates through `_flatten_dict(domain_config).items()` and sets `provenance[dp] = f\"domain/{domain_key}\"` unconditionally, without checking whether `dp` already exists in `current` with the same value."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 693,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, method `diff_policies` (lines ~310-330). The signature omits `task_id_a` and `task_id_b` parameters, making the method incapable of comparing policies that differ by task\u2014a core dimension of the 4\u2011layer hierarchy. The method only accepts `domain_a, domain_b, model_a, model_b`. This is a direct interface mismatch with `load_effective_policy` (which accepts `domain, task_id, model`) and `query` (which accepts `domain, task_id, model`). Evidence: the method calls `load_effective_policy(domain_a, model=model_a)` and `load_effective_policy(domain_b, model=model_b)`, passing `None` implicitly for `task_id`. Any task\u2011specific differences are invisible."
+  },
+  "C0038": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 706,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, method `validate` (lines ~280-310). The schema\u2011coverage check is unidirectional: it verifies that the schema contains all HARD constraints defined in `registry.py` (bools, thresholds, strings), but it does not check that the registry\u2019s HARD constraints match the schema\u2019s HARD constraints in the opposite direction. If the schema defines a parameter as `HARD` but the registry does not list it in `HARD_CONSTRAINTS`/`HARD_THRESHOLDS`/`HARD_STRINGS`, that parameter will not be monotonicity\u2011enforced by the underlying registry, creating a silent security gap. Evidence: the checks compute `registry_hard_* - schema_hard_*` but never `schema_hard_* - registry_hard_*`."
+  },
+  "C0039": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 598,
+   "description": "FIND: `bench/cdsfl_registry/schema.toml`, parameter `verification.sympy_verification` (line ~? ). The `default` value `\"auto\"` is not included in the `allowed_values` list `[\"auto\", \"mandatory\", \"disabled\"]`. This violates the schema\u2019s own consistency rule: an enum parameter\u2019s default must be one of its allowed values. Evidence: `default = \"auto\"` and `allowed_values = [\"auto\", \"mandatory\", \"disabled\"]` \u2014 wait, `\"auto\"` is in the list. Re\u2011reading: the provided schema snippet shows `allowed_values = [\"auto\", \"mandatory\", \"disabled\"]`. Actually, `\"auto\"` is present. My mistake. Let me re\u2011scan."
+  },
+  "C0040": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 672,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, function `_flatten_schema` (lines ~85-100). The heuristic `isinstance(value, dict) and \"type\" in value` to identify a parameter definition is fragile and could incorrectly classify a nested dict that contains a key `\"type\"` but is not a parameter definition (e.g., a section with a `type` field for documentation). While the current `schema.toml` does not have such a structure, the code is not defensive against future evolution. Evidence: the function does not verify that the dict contains other expected fields (`default`, `constraint_class`, etc.). A malformed TOML could cause a parameter definition to be silently mis\u2011parsed."
+  },
+  "C0041": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 832,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, method `query` and `get_parameter` use two independent code paths to compute the effective policy and provenance, creating a risk of inconsistency. `query` calls `load_effective_policy` (from registry) and `_compute_provenance` (local). `get_parameter` also calls both. However, `_compute_provenance` re\u2011implementes the layer\u2011merge logic (by loading and merging TOMLs itself) instead of reusing `load_effective_policy`. This duplication is a maintenance hazard: if the merge logic in `registry.py` changes (e.g., order of layers, handling of missing files), `_compute_provenance` will become inconsistent unless manually updated. Evidence: `_compute_provenance` contains its own sequence of `_load_toml` and `_deep_merge` calls, mirroring but not sharing the logic in `load_effective_policy`."
+  },
+  "C0042": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 677,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, method `list_parameters` (lines ~265-280). The `section` filter uses `dp.startswith(section + \".\")`. This will incorrectly exclude parameters whose dotpath is exactly equal to the section (i.e., a top\u2011level parameter like `constraints` if such existed). The schema is nested, so dotpaths are always `section.param`. However, the filter also fails if the section ends with a dot (user error) or if the parameter is in a subsection (e.g., `constraints.anti_deference` with section `\"constraints\"` works). The filter is correct for the current schema structure, but it\u2019s brittle. Evidence: `if section and not dp.startswith(section + \".\"):`"
+  },
+  "C0044": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 660,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, `PolicyEngine.validate()` method does not perform schema validation of configuration files. It only checks monotonicity (via `validate_all_policies`) and schema coverage, but does not validate that the values in TOML files match the schema's type, allowed_values, or min_layer constraints. Evidence: `validate()` delegates to `validate_all_policies` (line ~275) and adds coverage checks, but nowhere does it validate actual config values against the schema definitions. This violates the engine's advertised \"schema-driven validation\" and allows type mismatches (e.g., a string where a bool is defined) to go undetected."
+  },
+  "C0046": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 513,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, `load_schema()` does not validate that default values in the schema match the declared type and allowed_values. Evidence: The function checks that `type` is in `VALID_TYPES`, `constraint_class` in `VALID_CLASSES`, and `min_layer` in `VALID_LAYERS`, but does not validate that `default` is of the correct type or within `allowed_values`. This means a malformed schema.toml (e.g., default=\"true\" for a bool) will be accepted and cause runtime errors when the default is used."
+  },
+  "C0060": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 680,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, `load_schema()` stores `allowed_values` as strings regardless of parameter type, making validation impossible for non\u2011string types. Evidence: in `load_schema()` (lines 99\u2013130), `allowed_values` is taken directly from the TOML (`defn.get(\"allowed_values\")`) without type conversion. The TOML defines `allowed_values` as an array of strings even for integer/float parameters (e.g., `verification.test_execution` is a string parameter, but if an integer parameter had `allowed_values = [1, 2, 3]`, they would be stored as `[\"1\",\"2\",\"3\"]`). Consequently, any validation comparing an integer value against string allowed\u2011values will always fail."
+  },
+  "C0061": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 567,
+   "description": "FIND: `bench/cdsfl_registry/engine.py`, `diff_policies()` compares raw flattened TOML dicts, ignoring schema defaults, causing misleading diffs. Evidence: lines 418\u2013446 call `load_effective_policy()` (which merges TOML layers but does not apply schema defaults) and then `_flatten_dict()`. If a parameter is absent in a policy, `_dotpath_get` returns `_MISSING` and the diff shows `\"<absent>\"`. However, the effective value for that parameter should be the schema default. The diff should compare the effective values (including defaults) to reflect true differences."
+  },
+  "C0062": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 564,
+   "description": "FIND: `bench/cdsfl_registry/engine.py` completely ignores the `min_layer` schema constraint, allowing parameters to be defined in lower layers than permitted. Evidence: `ParameterDef.min_layer` is loaded from schema (line 99\u2013130) but never validated against actual layer definitions. The `_compute_provenance()` records which layer sets a parameter, but there is no check that a parameter defined in e.g., a task config (`task/...`) is allowed by `min_layer=\"domain\"`. The registry\u2019s `_check_monotonicity` only enforces HARD constraints, not layer\u2011placement rules."
+  },
+  "C0067": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1655,
+   "description": "FIND: `PolicyEngine.query()` and `get_parameter()` return effective policies that violate schema completeness guarantees because they do NOT inject schema defaults for parameters missing from all four TOML layers. The module docstring explicitly promises \"Schema-driven validation: every parameter has a defined type, default, ...\" and \"Unified query: one call for 'give me the effective value of X ... with its source layer.'\" However, `load_effective_policy()` returns only the raw TOML merge without defaults. Consequently, any parameter not explicitly defined in universal/domain/task/model layers is absent from `PolicyResult.effective` and reported as `_MISSING` in `get_parameter()` (though latter injects default). This breaks the contract that the engine provides a complete policy. Evidence:  \n1. `engine.py` lines 217-219: `effective = load_effective_policy(domain, task_id, model)` \u2013 no default injection.  \n2. `engine.py` lines 248-257: `get_parameter()` calls `load_effective_policy`, then `_dotpath_get(effective, dotpath)` which returns `_MISSING` if absent, then falls back to `defn.default`. This inconsistency means `query().effective` \u2260 `get_parameter().value` for missing parameters.  \n3. Schema defines defaults for all 55 parameters (e.g., `constraints.deterministic_output = false`). If absent from TOML files, they should appear in the effective policy with source \"default\".  \n4. Test case: create a minimal `universal.toml` with only HARD constraints. `engine.query(domain=\"mathematics\")` will return an `effective` dict missing all SOFT parameters, making the policy unusable for downstream consumers expecting complete schema."
+  },
+  "C0068": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 781,
+   "description": "FIND: `PolicyEngine.diff_policies()` signature is missing `task_id_a` and `task_id_b` parameters, making it impossible to compare policies with task\u2011specific overrides. The method accepts only `domain_a, domain_b, model_a, model_b`. This violates the principle that the engine should support full 4\u2011layer comparison. Evidence:  \n1. `engine.py` lines 310\u2011313: `def diff_policies(self, domain_a: str, domain_b: str, model_a: Optional[str] = None, model_b: Optional[str] = None)`.  \n2. `load_effective_policy` (from registry) accepts `task_id`. The engine\u2019s `query()` and `get_parameter()` accept `task_id`. The omission in `diff_policies` is an inconsistent interface gap.  \n3. Use case: compare policy for \"mathematics\" task \"ma\u2011001\" vs \"ma\u2011002\". Cannot be done without workarounds."
+  }
+ }
+}

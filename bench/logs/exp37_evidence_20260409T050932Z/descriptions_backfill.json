@@ -1,0 +1,404 @@
+{
+ "run": "exp37_evidence_20260409T050932Z",
+ "stats": {
+  "entries": 222,
+  "prefix": 8,
+  "fallback": 57,
+  "unverified": 87,
+  "no_join": 68,
+  "unchanged": 2,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0012": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 318,
+   "description": "`EvidenceStore.verify_bundle()` validates the inclusion proof of `record.get(\"chain_hash\")` but completely skips verifying the content integrity of the detached record itself. It does not check if the record's `sealed_body` actually hashes to `entry_hash`, nor if `entry_hash` and `prev_hash` produce the `chain_hash`."
+  },
+  "C0013": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 285,
+   "description": "`EvidenceBundle` provides `save_json()` to export evidence, but lacks any `load_json()` or `from_dict()` method to deserialize it. Furthermore, `to_dict()` injects non-dataclass fields (`bundle_version`, `record_count`), making naive ingestion via `EvidenceBundle(json.load(f))` crash."
+  },
+  "C0026": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 827,
+   "description": "`EvidenceStore.verify_bundle()` does not verify that each bundled record\u2019s sealed content hashes to the bundled record\u2019s `entry_hash`/`chain_hash`; it only verifies Merkle inclusion of `proof[\"chain_hash\"]` into `bundle.merkle_root`, plus an optional equality check between top-level `record[\"chain_hash\"]` and `proof[\"chain_hash\"]`. Location: `verify_bundle()` loop in `bench/evidence.py`. Evidence: `VerificationChain.verify_inclusion_proof()` proves inclusion of a leaf equal to `_digest_bytes(proof[\"chain_hash\"])`; it does not inspect `record[\"sealed_body\"]`, `entry_hash`, or `prev_hash`. Therefore a tampered bundle can keep `record[\"chain_hash\"]` unchanged while altering `record[\"sealed_body\"][\"payload\"]` or metadata; `verify_bundle()` still returns success because it never recomputes hashes from the bundled record."
+  },
+  "C0027": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 794,
+   "description": "`trace_finding()` claims chronological provenance, but it sorts by raw timestamp string only: `events.sort(key=lambda e: e.timestamp_utc)`. `EvidenceRecord.from_chain_record()` copies `sealed_body[\"timestamp_utc\"]` without normalization. If loaded chain data contains equivalent RFC3339 timestamps with different offsets (`2026-04-05T10:00:00Z` vs `2026-04-05T09:30:00-01:00`), lexicographic order is not guaranteed to match absolute time. Location: `trace_finding()` and `EvidenceRecord.from_chain_record()`. Evidence from context: `VerificationChain.append_record()` normalizes when it creates records, but `load_json()` accepts arbitrary record dicts and verification does not validate timestamp normalization; `evidence.py` therefore cannot assume normalized `Z` form for all loaded chains."
+  },
+  "C0028": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 649,
+   "description": "`EvidenceStore.from_chain_file()` infers `experiment` as `p.parent.name` or `p.stem`, but query-by-experiment indexes records using `metadata[\"experiment\"]`. These can diverge, causing `summary().experiment` / exported bundle `experiment` to disagree with `query(experiment=...)`. Location: `from_chain_file()`, `EvidenceRecord.from_chain_record()`, `_EvidenceIndex.by_experiment`, `summary()`, `export_bundle()`. Concrete example: loading `/tmp/experiment_chain.json` yields store experiment `\"tmp\"` while all records may carry metadata experiment `\"exp35_policy\"`. `summary().experiment` reports `\"tmp\"` but `query(experiment=\"tmp\")` returns none."
+  },
+  "C0029": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 575,
+   "description": "`EvidenceRecord.from_chain_record()` sets `round_idx = meta.get(\"round\", -1)` without type validation. If metadata carries `\"round\": \"5\"` or `None`, `_EvidenceIndex.by_round` can store non-int keys while the public API `query(round_idx=5)` and `rounds` property imply integer rounds. Location: `EvidenceRecord.from_chain_record()` and `_EvidenceIndex.__init__`. Evidence: index insertion condition is `if rec.round_idx >= 0:`; with a string value this raises `TypeError` during store construction, preventing load; with a boolean `True` it indexes as round 1 unintentionally."
+  },
+  "C0030": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1033,
+   "description": "`EvidenceRecord.from_chain_record()` trusts `metadata` to be a dict, but `VerificationChain.append_record()` permits `metadata: Optional[dict]` and `load_json()` does not validate `sealed_body[\"metadata\"]` type. The code path `meta = body.get(\"metadata\") or {}` followed by `er.experiment = meta.get(\"experiment\", \"\")`, `er.model = meta.get(\"model\", \"\")`, and `er.round_idx = meta.get(\"round\", -1)` will raise `AttributeError` if `metadata` is a truthy non-dict such as `\"x\"`, `[1]`, or `42`. Concrete example: load a chain JSON with one record whose `sealed_body.metadata` is `\"bad\"`. `EvidenceStore.__init__()` enumerates records, `from_chain_record()` sets `meta = \"bad\"`, then `\"bad\".get(...)` raises, preventing store construction entirely. Expected behavior for a query layer is to load and then let explicit verification report malformed records, not crash during indexing. Formal conclusion: malformed-but-loadable chain files can crash the evidence layer before verification, blocking end-to-end review of tampered evidence."
+  },
+  "C0031": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 888,
+   "description": "`EvidenceStore.verify()` caches only one boolean/message pair and a flag for \u201cverified with verifier\u201d, but not which verifier/key was used. Premises: after a successful call with `verifier=A`, the code sets `_verified=True`, `_verified_with_verifier=True`; a later call with `verifier=B` computes `needs_verify` as `False` because `_verified is not None` and `_verified_with_verifier is False` is false. Concrete example: chain contains authenticated records signed by key A. `store.verify(verifier=A)` returns `(True, \"All N records verified.\")`. Later caller accidentally or adversarially supplies unrelated public key B. Expected result is signature failure. Actual result: cached success is returned without rechecking. Formal conclusion: signature verification result is incorrectly reused across distinct verifier identities, yielding silently wrong authenticated-source validation."
+  },
+  "C0038": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 159,
+   "description": "`EvidenceBundle` provides serialization methods (`to_dict` / `save_json`) but entirely lacks corresponding deserialization methods (`from_dict` / `from_json`)."
+  },
+  "C0057": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 654,
+   "description": "Strict dict type check in `_classify_event` silently drops formatted verdicts.\nPremise: The layer classifies findings by parsing `\"model_chat_log\"` payloads.\nExample: A model outputs its reasoning and verdict as an OpenAI-compatible message array: `[{\"role\": \"assistant\", \"content\": \"CONFIRM C0042\"}]`. The function evaluates `if rec.payload and isinstance(rec.payload, dict):`. Since a list is not a dict, it fails the type check, skips all `CONFIRM`/`CHALLENGE` substring matching, and falls back to `\"submitted\"`.\nConclusion: All properly structured chat log arrays (and raw string payloads) are silently excluded from the verdict provenance timeline."
+  },
+  "C0058": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 636,
+   "description": "Vacuous Empty Bundle Validation in `verify_bundle`.\nPremise: An evidence bundle asserts the verified existence of specific data. The absence of data is not a cryptographically verifiable state using standard RFC 9162 Merkle trees.\nExample: An attacker intercepts a bundle export and replaces it with `EvidenceBundle(..., records=[], inclusion_proofs=[])`. The function runs `if len(records) != len(proofs)` (0 == 0, passes). It then loops over `zip([], [])` (executes 0 times). It returns `len(errors) == 0` (`True`).\nConclusion: `verify_bundle` validates empty bundles as `True`, falsely attesting to the validity of stripped evidence."
+  },
+  "C0059": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 588,
+   "description": "`_classify_event()` (lines 448\u2013471) only inspects payloads that are dicts. The guard `if rec.payload and isinstance(rec.payload, dict)` skips string payloads entirely. In `verification_chain.py`, `append_record` accepts `payload: Any` \u2014 string payloads are valid. If a `model_chat_log` record stores a raw string like `\"CONFIRM C0042: analysis confirms the race condition\"`, `_classify_event` falls through to `return \"submitted\"` without ever checking for CONFIRM/CHALLENGE/EXTEND/MERGE tokens. This means `trace_finding()` provenance traces silently misclassify verdicts as submissions."
+  },
+  "C0060": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 500,
+   "description": "`EvidenceRecord.from_chain_record()` (line 100) stores `round_idx` directly from metadata without type coercion: `er.round_idx = meta.get(\"round\", -1)`. If the metadata contains `\"round\": \"5\"` (string \u2014 valid JSON, common in serialised data), the `_EvidenceIndex` stores key `\"5\"` (str) in `by_round`. A subsequent `store.query(round_idx=5)` passes integer `5` to `_intersect(self.by_round, 5)`, which looks up key `5` (int) \u2014 no match. The query silently returns zero results for records that exist."
+  },
+  "C0061": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 775,
+   "description": "`_describe_event()` (lines 477\u2013496) calls `_classify_event()` internally on line 478, duplicating the classification that `trace_finding()` already performed at line 365. This is not merely a performance issue \u2014 it's a correctness risk. If `_classify_event` has side-effect-like behavior differences between calls (it doesn't currently, but more critically): `trace_finding` stores the first call's result in `ProvenanceEvent.event_type`, then `_describe_event` independently recomputes it. If a future change makes classification stateful or if `rec.payload` is mutated between calls, the `event_type` field and the description would disagree. For the current code, the concrete bug is wasted computation (calling `json.dumps` on every payload twice per event in the trace)."
+  },
+  "C0064": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1076,
+   "description": "`export_bundle()` (lines 394\u2013435) computes the Merkle root from `raw_records = self._chain.records` (a deep copy), while `self._chain.build_inclusion_proof(i)` internally operates on `self._chain._records` (the actual internal list). Both should produce identical trees. However, `export_bundle` also calls `self._chain.epochs` (line 424, variable `epochs`) \u2014 this triggers another deep copy of the epoch list \u2014 but `epochs` is used only for `len(epochs)` in the metadata dict at line 435. The substantive issue: the Merkle root in the bundle is computed from `raw_records` via `_digest_bytes(r[\"chain_hash\"])`, while `build_inclusion_proof` computes its internal root the same way from `self._chain._records`. These are consistent only if `chain.records` returns an exact copy. If `records` property ever applies filtering, transformation, or lazy evaluation, the roots would diverge and every inclusion proof in the bundle would fail verification. The current implementation is correct but the coupling is implicit \u2014 there's no assertion that bundle root matches proof root."
+  },
+  "C0066": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1251,
+   "description": "`verify_bundle()` accepts tampered record payloads as valid if the attacker leaves `record[\"chain_hash\"]` equal to `proof[\"chain_hash\"]`. Location: `EvidenceStore.verify_bundle()` lines 421\u2013449 in the target file. Evidence: the function only (1) checks list lengths, (2) optionally compares `record[\"chain_hash\"]` to `proof[\"chain_hash\"]`, then (3) verifies the proof against `bundle.merkle_root` using `proof[\"chain_hash\"]`. It never recomputes the record\u2019s `entry_hash`/`chain_hash` from `record[\"sealed_body\"]`. Concrete execution trace:\n- Original bundle contains a valid record `R` and proof `P` for chain hash `H`.\n- Attacker edits `bundle.records[0][\"sealed_body\"][\"payload\"]` to different content, but leaves top-level `bundle.records[0][\"chain_hash\"] = H` unchanged.\n- `verify_bundle()` sees `record_hash == proof_hash == H`.\n- `self._chain.verify_inclusion_proof(P, bundle.merkle_root)` succeeds because proof verification depends only on `P[\"chain_hash\"]`, not the tampered payload.\n- Result: bundle validates although exported record content is forged.\nFormal conclusion: bundle verification proves inclusion of a claimed chain hash, not integrity of the accompanying record body. For a self-contained audit bundle, that is silently wrong."
+  },
+  "C0067": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 662,
+   "description": "`verify_bundle()` returns success for an empty bundle. Location: `EvidenceStore.verify_bundle()` lines 414\u2013449. Evidence: after the length-equality check, the function iterates over `zip(bundle.records, bundle.inclusion_proofs)`. If both lists are empty, the loop is skipped and it returns `(len(errors) == 0, errors)`, i.e. `(True, [])`. Concrete example:\n- `bundle.records = []`\n- `bundle.inclusion_proofs = []`\n- no errors appended\n- return `(True, [])`\nFormal conclusion: verification is vacuous for empty bundles, contradicting the module contract that a bundle contains evidence records with proofs. This can silently mark missing-export failures as valid."
+  },
+  "C0068": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1091,
+   "description": "`summary()` reports the full-chain Merkle root, not the published epoch root promised by the evidence-layer interface. Location: `EvidenceStore.summary()` lines 452\u2013474. Evidence: it ignores `self._chain.epochs[-1][\"merkle_root\"]` and instead recomputes a root from all current records:\n`leaves = [_digest_bytes(r[\"chain_hash\"]) for r in raw_records]`\n`merkle_root = \"sha256:\" + rfc9162_merkle_root(leaves).hex()`\nIn the verification chain, epochs seal prefixes only; unsealed appended records after the last epoch are allowed. Therefore when `len(records) > epochs[-1][\"record_count\"]`, `summary().merkle_root` differs from the latest published epoch root. Concrete example:\n- chain has 10 records, last sealed epoch covers 8 with root E8\n- two new records appended, no new seal\n- `summary().merkle_root` returns root over 10 records, which is unpublished\n- external auditor cannot match this root to any epoch commitment\nFormal conclusion: the summary interface exposes an unpublished tree state while the module documentation frames bundle/audit verification around published epoch roots."
+  },
+  "C0072": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 210,
+   "description": "`verify_bundle` verifies inclusion proofs against the `merkle_root` provided *inside the bundle itself* (`bundle.merkle_root`), without exposing an interface for the auditor to supply an external, trusted root."
+  },
+  "C0076": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 791,
+   "description": "`verify()` (lines 303\u2013318) caches verification results using a boolean `_verified_with_verifier` flag that tracks *whether* a verifier was used, not *which* verifier was used. Once `verify(verifier=verifier_A)` succeeds, `_verified_with_verifier` is set to `True`. A subsequent `verify(verifier=verifier_B)` finds `needs_verify` is `False` (because `_verified_with_verifier` is already `True`) and returns the cached `True` result \u2014 even if `verifier_B` would reject the signatures (e.g., different public key).\n\nRelevant code path:\nneeds_verify = (\n    self._verified is None\n    or (verifier is not None and self._verified_with_verifier is False)\n)\nThe second branch is only `True` when `_verified_with_verifier is False`. Once it's `True`, no subsequent verifier triggers re-verification."
+  },
+  "C0077": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 776,
+   "description": "`_classify_event()` (lines 448\u2013480) returns `\"submitted\"` as the default for ALL `model_chat_log` records that reference a finding ID but don't contain an explicit verdict keyword. A model that *mentions* finding C0042 in a chat about C0043 (e.g., \"this is related to C0042\") gets classified as having *submitted* C0042. The provenance trace then reports \"Finding C0042 submitted by Model X in round Y\" for records where Model X never submitted that finding \u2014 it merely referenced it.\n\nThis is distinct from C0057/C0059 (which address the dict-type gate on payload inspection). Even with those fixes applied, string payloads containing `\"see also C0042\"` would still be classified as `\"submitted\"` because the fallthrough is the semantic default, not a type-handling omission."
+  },
+  "C0083": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1272,
+   "description": "`EvidenceStore.verify_bundle()` can accept a bundle whose `records` list is reordered relative to `inclusion_proofs`, as long as each record\u2019s `chain_hash` equals the paired proof\u2019s `chain_hash`. Location: `verify_bundle()` in `evidence.py`. Evidence: the method checks only (1) same list length, (2) optional `record[\"chain_hash\"] == proof[\"chain_hash\"]`, and (3) proof validity against `bundle.merkle_root`. It never checks that the proof corresponds to the record\u2019s actual position from `chain_metadata[\"bundle_indices\"]`, nor that bundle order preserves exported selection order. Concrete example:\n- Original chain has records at indices `[2, 5]`.\n- Exported bundle contains `records=[r2, r5]`, `proofs=[p2, p5]`, `chain_metadata[\"bundle_indices\"]=[2,5]`.\n- Tampered bundle swaps both arrays and indices inconsistently, e.g. `records=[r5, r2]`, `proofs=[p5, p2]`, but leaves `bundle_indices=[2,5]`.\n- For each pair, `record.chain_hash == proof.chain_hash`, and each proof verifies against the same root, so `verify_bundle()` returns success.\nFormal conclusion: bundle verification proves inclusion of each paired record, but not integrity of bundle ordering/selection metadata. An auditor can be shown a misleading mapping between exported records and claimed indices."
+  },
+  "C0084": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 695,
+   "description": "`EvidenceBundle.save_json()` is not interface-compatible with `verification_chain` durability expectations and can leave a partially written/corrupt bundle on crash or interruption. Location: `EvidenceBundle.save_json()` in `evidence.py`. Evidence: it uses plain `open(path, \"w\")` and `json.dump(...)`. In the same codebase, `VerificationChain.save_json()` explicitly uses temp-file + `fsync` + `os.replace` for atomicity. For PoC evidence export, a killed process during write can truncate the bundle file. Concrete example: exporting a large bundle, process dies after writing first 20% of JSON. Resulting file exists but is invalid JSON or incomplete; external audit cannot load or verify it."
+  },
+  "C0085": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 979,
+   "description": "`_classify_event()` misclassifies `MERGE` verdicts of the canonical protocol form `MERGE C0001 <- F123` unless the referenced finding ID is the left-hand canonical ID. Location: `_classify_event()` in `evidence.py`. Evidence: classification checks only substring `f\"MERGE {finding_id}\"`. For a provenance trace of the merged-away ID on the right side, e.g. querying `trace_finding(\"F123\")` or any non-left token extracted from payload text, payload string contains `MERGE C0001 <- F123`, which does not include `MERGE F123`; event falls through to `\"submitted\"`. Concrete example:\n- payload contains `{\"text\": \"MERGE C0001 <- F123\"}`\n- `_extract_finding_ids` extracts both IDs.\n- `trace_finding(\"F123\")` includes this record because `by_finding[\"F123\"]` has the record.\n- `_classify_event(rec, \"F123\")` misses MERGE and returns `submitted`.\nFormal conclusion: provenance classification is asymmetric for merge records and wrong for right-hand-side IDs present in the same record."
+  },
+  "C0086": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1306,
+   "description": "`EvidenceStore.from_chain_file()` infers the experiment name from the parent directory of the chain file, but `from_experiment_dir()` passes the path to `experiment_chain.json`, so the resulting `experiment` is the directory name, not the experiment identifier stored in records. This makes `summary().experiment` and `export_bundle().experiment` disagree with `query(experiment=...)` when record metadata uses the actual experiment id.\nPremises:\n1. `from_chain_file(path)` sets `experiment = p.parent.name if p.parent.name != \".\" else p.stem`.\n2. `from_experiment_dir(dir_path)` always calls `from_chain_file(str(dir_path / \"experiment_chain.json\"))`.\n3. Record indexing uses `meta.get(\"experiment\", \"\")`, not `_experiment`.\nConcrete trace:\n- Directory path: `bench/logs/exp33_endocrine_20260405T110345Z/experiment_chain.json`\n- Record metadata: `{\"experiment\": \"exp33_endocrine\"}`\n- `store = EvidenceStore.from_experiment_dir(...)`\n- Then `store.summary().experiment == \"exp33_endocrine_20260405T110345Z\"`\n- But `store.query(experiment=\"exp33_endocrine\")` matches records from index metadata.\n- Exported bundle carries `bundle.experiment == \"exp33_endocrine_20260405T110345Z\"`, not the record experiment id.\nFormal conclusion: the store exposes two inconsistent experiment identifiers for the same chain."
+  },
+  "C0087": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1244,
+   "description": "`trace_finding()` claims chronological order but sorts only by `timestamp_utc`, so equal timestamps lose the append order guaranteed by the verification chain and can produce unstable provenance ordering.\nPremises:\n1. `trace_finding()` appends events in record-index order: `for i in sorted(indices)`.\n2. It then re-sorts with `events.sort(key=lambda e: e.timestamp_utc)`.\n3. `VerificationChain._utc_now()` has second-level resolution only: `\"%Y-%m-%dT%H:%M:%SZ\"`.\nConcrete trace:\n- Two records for `C0042` appended in the same second:\n  - record 10: submission, timestamp `2026-04-05T11:03:45Z`\n  - record 11: confirmation, timestamp `2026-04-05T11:03:45Z`\n- The chain guarantees 10 precedes 11.\n- After sort by identical timestamp, Python\u2019s stable sort preserves original order only because current list was already index-ordered. That is an implicit dependence, not encoded in the sort key.\n- More importantly, if indices were ever assembled from a different source order or future refactor changes pre-sort order, chronology breaks; current implementation does not express the required tie-break.\nFormal conclusion: the method does not fully encode the chronological ordering it claims; it relies on incidental pre-sort order to break ties."
+  },
+  "C0091": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 251,
+   "description": "`_EvidenceIndex.__init__` uses truthiness checks (`if rec.experiment:`, `if rec.model:`) before populating index maps. Records with an explicitly empty or default `experiment=\"\"` or `model=\"\"` are silently excluded from `by_experiment` and `by_model`."
+  },
+  "C0097": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1338,
+   "description": "`EvidenceStore.trace_finding()` can return non-chronological provenance for valid chain data because it sorts events by the raw timestamp string, not by append order with a deterministic tiebreaker. Location: `trace_finding()`, final line `events.sort(key=lambda e: e.timestamp_utc)`. Evidence: verification_chain normalizes timestamps to RFC3339 UTC, but `_utc_now()` has only second precision and multiple records can share the exact same timestamp within one second. Concrete execution: append record 10 submitting `C0042` at `2026-04-05T11:03:45Z`, then append record 11 challenging `C0042` within the same second so it gets the same timestamp. `trace_finding(\"C0042\")` builds events in index order `[10,11]`, then sorts by identical key for both items. Python sort is stable, so this case happens to preserve order. But if loaded data contains two equivalent UTC instants rendered differently before normalization is absent from sealed body? That path is blocked by chain normalization. The actual confirmed issue is narrower: chronological order is underspecified for equal timestamps, and the API claims \u201cordered by timestamp, for true chronological order\u201d. Equal timestamps are common and raw timestamp sorting alone does not derive chronology; only record index does. The method therefore cannot guarantee the contract it states."
+  },
+  "C0098": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 854,
+   "description": "`_classify_event()` misclassifies `MERGE` verdicts that use the mandated protocol form `MERGE C0001 <- F001` when tracing the source finding ID on the right-hand side. Location: `_classify_event()`, `model_chat_log` branch only checks for `f\"MERGE {finding_id}\"`. Evidence: focus spec says cross-model references use canonical IDs on the left (`MERGE C0001 <- [your_finding_id]`). `_extract_finding_ids()` indexes both `C0001` and local IDs like `F001` because regex accepts any letter+3-5 digits. For a chat payload containing `\"MERGE C0001 <- F001\"`, `trace_finding(\"F001\")` includes the record via `by_finding`, but `_classify_event(rec, \"F001\")` fails all checks and returns `\"submitted\"`. Concrete example: payload `{\"text\":\"MERGE C0001 <- F001\"}` produces `finding_ids=[\"C0001\",\"F001\"]`; tracing `F001` reports a submission instead of a merge-link."
+  },
+  "C0099": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 755,
+   "description": "`EvidenceBundle.save_json()` is not interface-compatible with the verification chain\u2019s determinism requirements because it uses default text encoding and no atomic write. Location: `EvidenceBundle.save_json()`. Evidence: the context chain layer\u2019s `save_json()` explicitly uses atomic write to prevent partial-file corruption. The evidence layer is advertised for external audit bundles; interrupted writes can leave truncated/invalid bundles on the happy path. Concrete execution: process writes bundle to destination, crashes after opening and partially dumping JSON; file now exists but is corrupt. A human reviewer opening the exported proof bundle gets invalid JSON and cannot verify inclusion proofs. This is an end-to-end feature failure for export."
+  },
+  "C0100": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 557,
+   "description": "`StoreSummary` omits \u201crecord counts by round\u201d and \u201crecord counts by finding/type partition\u201d despite the module-level contract promising \u201cStore summary \u2014 record counts by type, model, round.\u201d Location: `StoreSummary` dataclass and `EvidenceStore.summary()`. Evidence: returned fields are `records_by_type`, `records_by_model`, `rounds_covered`, `chain_verified`, `epoch_count`, `merkle_root`; there is no count per round. Concrete example: if round 3 has 20 records and round 4 has 2, `summary()` returns `[3,4]` only, losing the requested count information."
+  },
+  "C0106": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 182,
+   "description": "`trace_finding` explicitly sorts events by `timestamp_utc` (wall clock), completely overriding the authoritative causal order established by the hash chain sequence (`record_index`)."
+  },
+  "C0107": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 301,
+   "description": "`EvidenceRecord.from_chain_record` maps `er.round_idx = meta.get(\"round\", -1)` without enforcing type safety. If `metadata[\"round\"]` is submitted as a string (e.g., `\"5\"`), `er.round_idx` becomes a string. The in-memory indexer then blindly executes `if rec.round_idx >= 0:`, crashing the interpreter."
+  },
+  "C0108": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 359,
+   "description": "The extraction regex `\\b[A-Za-z]\\d{3,5}\\b` rigidly enforces exactly ONE prefix letter. This silently drops multi-letter model IDs currently active in the registry (e.g., DeepSeek's `DS001`). Crucially, restricting this to `\\bC\\d{4}\\b` (as implied by prompt and peer findings) to prevent false positives would catastrophically drop `E001`, `F019`, and `DS001`."
+  },
+  "C0109": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 229,
+   "description": "`_classify_event` restricts verdict parsing exclusively to `isinstance(rec.payload, dict)`. Model chat logs containing string payloads (raw responses) completely bypass the verdict checks and incorrectly default to `\"submitted\"`."
+  },
+  "C0112": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1029,
+   "description": "`EvidenceStore.trace_finding()` sorts `ProvenanceEvent`s by raw `timestamp_utc` string instead of preserving chain order or parsing timestamps into real instants. In `evidence.py`, `trace_finding()` builds events from matching records, then executes `events.sort(key=lambda e: e.timestamp_utc)`. This is unsafe because `verification_chain._normalize_timestamp()` accepts RFC 3339 timestamps with explicit offsets and preserves the original fractional-second formatting when present. Concrete execution:\n- record A timestamp `\"2026-04-05T10:00:00+01:00\"` normalizes to `\"2026-04-05T09:00:00Z\"`\n- record B timestamp `\"2026-04-05T09:00:00.500000Z\"` stays fractional\nLexicographic sort places `\"2026-04-05T09:00:00.500000Z\"` before `\"2026-04-05T09:00:00Z\"` because `'.' < 'Z'`, even though B is later.\nAnother concrete case:\n- `\"2026-04-05T09:00:00Z\"`\n- `\"2026-04-05T09:00:00.1Z\"`\nLexicographic order again inverts chronology.\nFormal conclusion: provenance traces can be chronologically wrong even when the underlying chain is valid."
+  },
+  "C0113": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 785,
+   "description": "`EvidenceRecord.from_chain_record()` reads experiment/model/round only from `metadata`, but the chain\u2019s authoritative recorder field is `sealed_body[\"recorded_by\"]`. In `evidence.py`:\n- `recorded_by=body[\"recorded_by\"]`\n- then `er.model = meta.get(\"model\", \"\")`\nIf producers populate `recorded_by` but omit metadata `\"model\"`, the evidence layer exposes a blank model and fails to index by model despite the chain already carrying recorder identity. Concrete execution:\n- chain record with `sealed_body.recorded_by = \"Gemini\"`, `metadata = {}`\n- `er.recorded_by == \"Gemini\"`\n- `er.model == \"\"`\n- `_EvidenceIndex.by_model` skips the record\n- `query(model=\"Gemini\")` misses it\nFormal conclusion: the interface drops available identity information and breaks entity-indexed model queries."
+  },
+  "C0114": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1279,
+   "description": "`EvidenceStore.verify_bundle()` does not verify that each proof corresponds to the supplied record\u2019s actual `chain_hash` when either side omits the top-level `chain_hash` field. Code path:\n- `record_hash = record.get(\"chain_hash\", \"\")`\n- `proof_hash = proof.get(\"chain_hash\", \"\")`\n- mismatch check runs only if both are truthy\n- then `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` validates only `proof[\"chain_hash\"]` against the Merkle root\nBut raw chain records from `VerificationChain` store `chain_hash` at top level, while bundle consumers can tamper with `record[\"chain_hash\"]` by deleting it or supplying a synthetic record lacking that key. Concrete execution:\n1. Export a valid bundle for record i.\n2. Replace `bundle.records[0]` with another dict that preserves `sealed_body` but omits top-level `chain_hash`.\n3. Leave `bundle.inclusion_proofs[0]` unchanged.\n4. In `verify_bundle()`, `record_hash == \"\"`, so mismatch check is skipped.\n5. Proof verifies against root because it binds only `proof[\"chain_hash\"]`.\n6. Function returns success although the attached record object is not cryptographically bound to the verified proof.\nFormal conclusion: bundle verification can authenticate the proof while failing to authenticate the bundled record content."
+  },
+  "C0115": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 821,
+   "description": "`EvidenceStore.summary()` reports a Merkle root over all current records, not a published epoch root, yet `StoreSummary.merkle_root` is presented without qualification. In `summary()`:\n- `epochs = self._chain.epochs`\n- it computes `merkle_root` from `raw_records` regardless of sealing state\nThis diverges from the verification chain\u2019s published roots, which live in epochs and may cover only a prefix if new records were appended after the last seal. Concrete execution:\n- chain has 10 records\n- last sealed epoch covers 8 records with root R8\n- summary computes root R10\n- auditors comparing `summary().merkle_root` to published epoch metadata see a mismatch even though chain is healthy\nFormal conclusion: summary exposes an unpublished root under a name that implies canonical epoch root, producing misleading output."
+  },
+  "C0116": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1210,
+   "description": "`EvidenceRecord.from_chain_record()` assumes `metadata` is dict-like and immediately calls `meta.get(...)` after `meta = body.get(\"metadata\") or {}`. If a chain record contains non-dict metadata that is still accepted by `VerificationChain` (`append_record(metadata=...)` has no type check, `load_json()` preserves raw JSON), `EvidenceStore` crashes during load with `AttributeError`. Location: `EvidenceRecord.from_chain_record`, lines assigning `er.experiment`, `er.model`, `er.round_idx`.\nPremises:\n1. `verification_chain.append_record(..., metadata: Optional[dict] = None)` is only hinted, not enforced.\n2. `_build_sealed_body` stores `metadata` verbatim.\n3. `load_json` validates record container keys, not metadata shape.\n4. `from_chain_record` executes `meta = body.get(\"metadata\") or {}`; truthy non-dict values survive.\n5. Then `meta.get(...)` is called unconditionally.\nConcrete example:\n- Input record sealed_body metadata = `\"round5\"`.\n- `meta` becomes `\"round5\"`.\n- `meta.get(\"experiment\", \"\")` raises `AttributeError: 'str' object has no attribute 'get'`.\nFormal conclusion: the evidence layer is not robust to interface-valid but schema-loose chain records and can fail to load the store at all."
+  },
+  "C0117": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1268,
+   "description": "`verify()` caches a successful verifier-backed result and later reuses it for structurally-only verification requests, even when a different verifier object is supplied or the caller omits the verifier. The cache key is only \u201cwas any verifier ever used\u201d, not verifier identity or mode. Location: `EvidenceStore.verify`.\nPremises:\n1. `needs_verify = self._verified is None or (verifier is not None and self._verified_with_verifier is False)`.\n2. After one call with any verifier, `_verified_with_verifier` becomes `True`.\n3. A later call with a different verifier sets `needs_verify` to `False` because `verifier is not None` and `_verified_with_verifier is False` is false.\nConcrete example:\n- First call: `store.verify(verifier=pubkey_A)` on records signed by A \u2192 returns `(True, \"All ... verified.\")`, sets `_verified=True`, `_verified_with_verifier=True`.\n- Second call: `store.verify(verifier=pubkey_B)` where B is wrong key.\n- `needs_verify` is false, so method returns cached `(True, ...)` without actually checking signatures against B.\nExpected: second call should fail signature verification. Actual: cached true.\nFormal conclusion: verification result is unsafely memoized across different verifier identities, causing silently wrong authentication outcomes."
+  },
+  "C0118": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 302,
+   "description": "Substring matching in `_classify_event` causes false positive verdict classifications. The inclusion check `f\"CONFIRM {finding_id}\" in payload_str` incorrectly matches partial finding IDs if the target string is embedded in a longer ID (e.g., searching for \"C004\" successfully matches \"CONFIRM C0042\")."
+  },
+  "C0126": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 823,
+   "description": "C0117 identifies that `verify()` caches a successful verifier-backed result and returns it for a different verifier. There is an additional failure mode in the opposite direction: if `verify(verifier=V)` fails (signature check fails), `self._verified` is set to `False` and `self._verified_with_verifier = True`. A subsequent `verify()` (no verifier) evaluates `needs_verify = (False is None) or (None is not None and ...)` \u2192 `False`. It returns the cached `(False, \"signature verification failed\")` even though structural-only verification would succeed. The chain appears unverified to all callers after a single signature failure.\n\nRoot cause: `self._verified` conflates two distinct verification outcomes (structural vs signature) into one boolean. The cache cannot represent \"structurally valid but signature-invalid.\""
+  },
+  "C0130": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 396,
+   "description": "In `EvidenceStore.summary()`, `total_records` is drawn from the immutable snapshot `self._records`, but `merkle_root` is computed from the live chain state `self._chain.records`. If the chain receives new appends after the store is initialized, the summary presents a `merkle_root` that does not correspond to the reported `total_records` or the queryable index, creating cryptographic ambiguity."
+  },
+  "C0136": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 320,
+   "description": "`_classify_event` (lines 540\u2013560) guards verdict detection with `isinstance(rec.payload, dict)`. Non-dict payloads (strings, lists) bypass all CONFIRM/CHALLENGE/EXTEND/MERGE detection and return `\"submitted\"` unconditionally. Since `VerificationChain.append_record` accepts `payload: Any`, this is a reachable code path."
+  },
+  "C0139": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 131,
+   "description": "`_FINDING_ID_RE` regular expression (`\\b[A-Za-z]\\d{3,5}\\b`) systematically excludes valid multi-letter finding IDs (e.g., `DS002`)."
+  },
+  "C0140": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 121,
+   "description": "`_extract_finding_ids` lacks case normalization, splitting provenance queries between lowercase and uppercase ID strings."
+  },
+  "C0162": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 195,
+   "description": "`EvidenceStore.export_bundle()` ignores the caller-supplied `experiment` filter when `record_indices` is not provided. Location: `export_bundle()` calls `self._index.search(experiment=experiment,"
+  },
+  "C0165": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1193,
+   "description": "`EvidenceStore.verify_bundle()` does not verify that each proof corresponds to the record payload included in the bundle; it only compares `record[\"chain_hash\"]` to `proof[\"chain_hash\"]` if the top-level field exists. In the actual chain schema, exported records store `chain_hash` at the top level, but bundle verification never recomputes that chain hash from `record[\"sealed_body\"]`, `record[\"entry_hash\"]`, and `record[\"prev_hash\"]`. Concrete execution:\n- Take a valid exported bundle.\n- Modify `bundle.records[0][\"sealed_body\"][\"payload\"]` to any different payload.\n- Leave `bundle.records[0][\"chain_hash\"]` unchanged.\n- Leave the inclusion proof unchanged.\n- `verify_bundle()` reads `record_hash = record.get(\"chain_hash\", \"\")`, sees it matches `proof[\"chain_hash\"]`, then delegates to `verify_inclusion_proof(proof, bundle.merkle_root)`, which validates only the proof\u2019s chain hash against the Merkle root.\n- Result: verification returns success even though the bundled record content is tampered and no longer matches its claimed chain hash.\nThis makes bundle verification accept silently corrupted record contents as long as the attacker preserves the original top-level `chain_hash`."
+  },
+  "C0182": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 494,
+   "description": "`trace_finding` sorts provenance events by `timestamp_utc` string instead of relying on the chain's index sequence. This introduces a subtle ordering bug: because the `.` character (ASCII 46) is lexicographically smaller than `Z` (ASCII 90), string sorting evaluates `\"2026-04-05T11:03:45.123Z\" < \"2026-04-05T11:03:45Z\"`. This places sub-second events before events on the exact same second, breaking causality. It also violates HARD constraint #3 (\"Wall clocks are for human display only...\")."
+  },
+  "C0189": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 763,
+   "description": "`EvidenceStore.export_bundle()` cannot export by `artifact_type` even though the module contract explicitly advertises \u201centity-indexed queries \u2014 by experiment, model, round, finding, type\u201d and `query()` supports `artifact_type`. Location: `EvidenceStore.export_bundle()` signature and its `_index.search(...)` call omit `artifact_type`. Evidence from code: signature accepts only `record_indices`, `finding_id`, `model`, `round_idx`, `experiment`; call site passes only those four filters. Concrete example: `store.query(artifact_type=\"experiment_report\")` returns matching records, but there is no corresponding `store.export_bundle(artifact_type=\"experiment_report\")`; attempting that call raises `TypeError: got an unexpected keyword argument 'artifact_type'`."
+  },
+  "C0191": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 819,
+   "description": "`EvidenceRecord.from_chain_record()` stores `meta.get(\"round\", -1)` into `round_idx` without type normalization, while downstream index/search assumes rounds are integers. Location: `EvidenceRecord.from_chain_record()` and `_EvidenceIndex.__init__()`. Evidence from code: `round_idx` field is typed `int`, but assignment is unvalidated; `_EvidenceIndex.__init__()` does `if rec.round_idx >= 0: self.by_round[rec.round_idx].append(i)`. Concrete example: if chain metadata contains `\"round\": \"5\"` (string), record construction succeeds but index build evaluates `\"5\" >= 0`, raising `TypeError`. If metadata contains `\"round\": 5.0`, it indexes under float key `5.0`; later `query(round_idx=5)` may coincide by Python numeric key equality, but `rounds` property returns `[5.0]`, violating the declared `List[int]` contract."
+  },
+  "C0192": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 729,
+   "description": "`trace_finding()` claims \u201cchronological provenance trace\u201d but sorts timestamps lexicographically as raw strings, not by normalized time. Location: `trace_finding()` final sort `events.sort(key=lambda e: e.timestamp_utc)`. Evidence from context interface: `VerificationChain` normalizes timestamps only when records are appended through its API, but `load_json()` accepts persisted records as-is and `EvidenceStore` trusts them. Concrete example with two loaded records referencing the same finding: `\"2026-04-05T10:00:00+01:00\"` and `\"2026-04-05T09:30:00Z\"`. Real UTC order is 09:00Z then 09:30Z, but lexicographic sort places `+01:00` string after or before incorrectly depending on formatting, so provenance order can be wrong."
+  },
+  "C0195": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 355,
+   "description": "`EvidenceStore` violates the `fail_closed_unassessed` policy constraint by allowing reads on unverified chains. The `from_chain_file` and `from_experiment_dir` methods load the chain and build the index without automatically calling `.verify()`, and the query methods (`query`, `trace_finding`, `export_bundle`) do not check if `self._verified` is `True`."
+  },
+  "C0196": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 270,
+   "description": "`EvidenceRecord.from_chain_record` blindly assigns the raw value of `metadata[\"round\"]` to `er.round_idx`. If a record contains a string value (e.g. `{\"round\": \"3\"}`), the subsequent check in `_EvidenceIndex.__init__` (`if rec.round_idx >= 0:`) crashes with `TypeError`."
+  },
+  "C0197": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 172,
+   "description": "`_EvidenceIndex.__init__` uses truthiness checks (`if rec.experiment:`) that silently drop records with empty strings from the `by_experiment` and `by_model` lookup tables."
+  },
+  "C0198": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 187,
+   "description": "`_classify_event` fails to classify the source finding of a `MERGE` operation. The protocol string `MERGE C0001 <- C0042` contains `f\"MERGE C0001\"`, but does not contain `f\"MERGE C0042\"`."
+  },
+  "C0200": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 682,
+   "description": "No new unregistered bug in `bench/evidence.py` survived deduplication and falsification. Candidate areas reviewed: entity partitioning in `_EvidenceIndex`, finding ID extraction regex, `_classify_event`, provenance ordering, bundle export/proof verification, and `verification_chain.py` interface usage. All distinct issues I could derive mapped to existing canonical entries, notably round type normalization (C0191), chronological sort weakness (C0192), regex coverage/misclassification families (C0139/C0109/C0059/C0098/C0121), bundle root/proof verification families (C0001/C0066/C0133/C0162/C0165/C0181/C0189), and query/export filter inconsistencies (C0162/C0189 and related)."
+  },
+  "C0201": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 793,
+   "description": "`EvidenceStore.verify()` caching uses a boolean `_verified_with_verifier` that tracks whether *any* Verifier was ever used, but does not track *which* Verifier. When `verify(verifier=A)` succeeds, `_verified_with_verifier` is set to `True`. A subsequent `verify(verifier=B)` (different public key) evaluates `needs_verify` as `False` because `_verified is not None` and `_verified_with_verifier is True`. It returns the cached result from verifier A without ever checking verifier B's signatures.\n\nLines ~220-232 in evidence.py:\nneeds_verify = (\n    self._verified is None\n    or (verifier is not None and self._verified_with_verifier is False)\n)\nThe second clause `self._verified_with_verifier is False` is never True again after any verifier succeeds. So verifier identity is not considered."
+  },
+  "C0208": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 773,
+   "description": "The regex `_FINDING_ID_RE = re.compile(r\"\\b[A-Za-z]\\d{3,5}\\b\")` matches both uppercase and lowercase letters, but the index stores extracted IDs with their original case. Query functions perform exact case\u2011sensitive lookups, causing queries for uppercase finding IDs (e.g., `\"C001\"`) to miss records that contain the lowercase variant (`\"c001\"`). This violates the CDSFL protocol\u2019s expectation that finding IDs are canonically uppercase.\n\nLocation: `bench/evidence.py`, lines 131\u2013133 (`_FINDING_ID_RE`), and the `_extract_finding_ids` function.\n\nEvidence:  \n- The regex pattern `[A-Za-z]` matches any letter.  \n- The index (`by_finding`) uses the extracted string as a key without normalization.  \n- `_EvidenceIndex.search` uses `key in index_map`, which is case\u2011sensitive."
+  },
+  "C0213": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 708,
+   "description": "`EvidenceStore.verify_bundle()` verifies each proof against `bundle.merkle_root` but never checks that this root matches the bundle\u2019s own included chain metadata. In `export_bundle()`, `chain_metadata` includes `total_records`, `epoch_count`, and `bundle_indices`, but not a signed/bound root; in `verify_bundle()`, the code accepts any `bundle.merkle_root` that makes the proofs validate. Concrete trace: take a valid exported bundle, alter `chain_metadata[\"total_records\"]` from `N` to `N+999`, leave `records`, `inclusion_proofs`, and `merkle_root` unchanged. `verify_bundle()` still returns success because it ignores metadata entirely. The bundle is then internally inconsistent while reported as valid."
+  },
+  "C0214": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 584,
+   "description": "`EvidenceBundle.save_json()` is not interface-compatible with the chain\u2019s serialization path because it writes with plain `open(..., \"w\")` and no explicit encoding, unlike `VerificationChain.save_json()` which uses atomic write semantics. For this evidence layer, bundle export is a core end-to-end feature. Concrete trace: `bundle.save_json(path)` truncates target file immediately; if process crashes or disk write fails mid-write, the file at `path` becomes partial JSON. A subsequent consumer loading the bundle gets invalid JSON even though the source bundle in memory was valid."
+  },
+  "C0215": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 667,
+   "description": "`EvidenceRecord.from_chain_record()` trusts `metadata[\"round\"]` without type normalization, so string round values are dropped from round-partitioned queries and summaries. Evidence: `er.round_idx = meta.get(\"round\", -1)` stores raw value. `_EvidenceIndex.__init__` indexes by round only when `rec.round_idx >= 0`. If metadata contains `\"round\": \"5\"`, comparison `'5' >= 0` raises `TypeError` during index build, preventing store construction; if metadata contains non-int numeric-like forms, round semantics are inconsistent. Concrete example: a chain record with metadata `{\"round\": \"5\"}` passes `EvidenceRecord` construction, then `_EvidenceIndex` crashes at init."
+  },
+  "C0221": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1124,
+   "description": "`verify_bundle()` verifies Merkle inclusion proofs (chain_hash \u2192 root) but never verifies record content integrity. It does not recompute `entry_hash` from `sealed_body`, does not check `payload_hash` against `payload`, and does not check `chain_hash` derivation from `entry_hash + prev_hash`. An attacker (or corruption) can modify `record[\"sealed_body\"][\"payload\"]` in a bundle while preserving the original `chain_hash`, `entry_hash`, and proof. `verify_bundle` returns `(True, [])` for the tampered bundle.\n\nConcrete trace through `verify_bundle`:\n1. Length check passes (counts unchanged)\n2. `record.get(\"chain_hash\")` returns the original (untampered) hash \u2014 passes chain_hash match with proof\n3. `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` verifies the original chain_hash against the Merkle tree \u2014 passes\n4. No step examines `sealed_body` content. Tampered payload is invisible.\n\nBy contrast, `VerificationChain.verify_chain()` performs full content verification: recomputes entry_hash from sealed_body, verifies chain_hash derivation, checks payload_hash. `verify_bundle` delegates none of this."
+  },
+  "C0222": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 562,
+   "description": "`_describe_event()` produces misleading human-readable provenance descriptions when records have sentinel/unset metadata. When `rec.model == \"\"` and `rec.round_idx == -1` (the defaults from `from_chain_record` when metadata lacks these fields), descriptions render as:\n\"Finding C0042 submitted by  in round -1\"\n\"Health scan at round -1 references C0042\"\nThe empty model and sentinel round leak directly into user-facing output. Every description template in `_describe_event` interpolates `rec.model` and `rec.round_idx` without guarding against sentinel values."
+  }
+ }
+}

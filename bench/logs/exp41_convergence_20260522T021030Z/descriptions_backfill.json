@@ -1,0 +1,188 @@
+{
+ "run": "exp41_convergence_20260522T021030Z",
+ "stats": {
+  "entries": 79,
+  "prefix": 29,
+  "fallback": 0,
+  "unverified": 0,
+  "no_join": 3,
+  "unchanged": 47,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1364,
+   "description": "`ConvergenceDetector.kappa_rate()` treats an empty round 1 as \u201cno baseline\u201d forever, even when round 0 had findings. Location: `bench/dm/_convergence.py`, method `kappa_rate`.\n\nEvidence from the code:\nrate_r = _rate(round_idx)\nrate_1 = _rate(1) if 1 in self._round_findings else _rate(0)\n\nif rate_1 < self.config.epsilon_conv:\n    if rate_r < self.config.epsilon_conv:\n        return 0.0  # No baseline, no current activity\n    return -1.0  # Diverging: new findings with no baseline\nConcrete trace:\n\nPremises:\n\n1. Round 0 has findings: `len(get_round_classes(0)) = 5`, duration `1.0`, so rate is `5.0`.\n2. Round 1 has no findings: rate is `0.0`.\n3. Round 2 has no findings: rate is `0.0`.\n4. `round_idx = 2`.\n5. `1 in self._round_findings` is true.\n\nExecution:\nrate_r = _rate(2) = 0.0\nrate_1 = _rate(1) = 0.0\nrate_1 < epsilon_conv  # true\nrate_r < epsilon_conv  # true\nreturn 0.0\nExpected behaviour: after a non-empty initial discovery round followed by zero new findings, the rate-based convergence component should indicate strong depletion/stability, not \u201cno data\u201d. The detector already has a valid earlier baseline from round 0.\n\nActual downstream value:\nkappa(round_idx) = min(kappa_set, max(0, kappa_rate), kappa_adopt)\n                 = min(1.0, 0.0, 1.0)\n                 = 0.0\nSo `converged(2)` remains false regardless of `kappa_set` and `kappa_adopt`."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1562,
+   "description": "`bench/dm/_convergence.py:kappa_rate()` measures the rate of all per-round equivalence classes via `get_round_classes(r)`, not the rate of novel classes. This makes repeated duplicate findings keep `kappa_rate` near zero even after the discovery frontier is exhausted.\n\nEvidence in current code:\ndef _rate(r: int) -> float:\n    classes = self.get_round_classes(r)\n    dt = self._round_durations.get(r, 1.0)\n    return len(classes) / max(dt, 1e-10)\nConcrete trace:\n\nPremises:\n\n1. Round 0 has 5 distinct findings.\n2. Round 1 repeats the same 5 findings.\n3. Round 2 repeats the same 5 findings again.\n4. Similarity threshold clusters each repeated finding with its prior instance.\n5. `adoption_delta=0.0`, so `kappa_adopt(2)=1.0`.\n6. No novel high-severity finding exists in round 2, so veto is false.\n\nExpected result:\n\n- Novel discovery rate at round 2 is `0`.\n- `kappa_set(2)` is high because `_novel_classes(2)` is empty.\n- `kappa_rate(2)` should also be high because discovery has stopped.\n- `kappa(2)` should be high enough to allow convergence if `tau_kappa` and `min_rounds_for_convergence` are satisfied.\n\nActual result:\n\n- `kappa_rate(2)` computes raw round class rate:\n  - `rate_1 = 5 / 1.0 = 5`\n  - `rate_2 = 5 / 1.0 = 5`\n  - `kappa_rate(2) = 1 - 5 / (5 + epsilon) \u2248 0`\n- `kappa(2) = min(kappa_set\u22481, kappa_rate\u22480, kappa_adopt=1) \u2248 0`\n- `converged(2)` returns `False`.\n\nFormal conclusion: duplicate rediscovery blocks convergence even when novelty is exhausted. That contradicts the convergence detector\u2019s stated purpose of detecting finding exhaustion."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1124,
+   "description": "`kappa_set()` (line 258) is documented as returning `[0, 1]` but is unbounded below zero. The formula `1 - novel_sev / total_sev` can produce negative values when novel severity (computed over round-level equivalence classes) exceeds cumulative severity (computed over cumulative equivalence classes that merge findings across rounds). This negative value propagates unclamped through `kappa()` (line 336, which only clamps `kappa_rate` via `max(0.0, kr)` but not `kappa_set`) and into the immune system's `_kappa_history` (bench/dm/_immune.py:182). At line 215, the health monitor checks `all(k < 0.01 for k in recent_kappa)` \u2014 negative kappa satisfies this, triggering a false \"kappa stuck at ~0\" pathology diagnosis and potentially triggering wrong remediation (lowering `tau_sim`).\n\nConcrete trigger: Round r introduces 5 novel findings at severity 0.9 that form 5 round-level classes. In the cumulative view, these merge with prior findings into 3 classes (max severity 0.9 each). novel_sev = 5 \u00d7 0.9 \u00d7 w \u2248 4.5 (high weights for genuinely novel findings). total_sev = 3 \u00d7 0.9 + \u03b5 \u2248 2.7. kappa_set = 1 \u2212 4.5/2.7 = \u22120.67."
+  },
+  "C0005": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 525,
+   "description": "`estimate_gamma()` (line 397) returns 0.0 when `cum_r < cum_1` (cumulative equivalence class count decreased due to cross-round merging), misclassifying strong convergence as \"no data.\" The Duane model gives \u03b2 < 0 when N(r) < N(1), yielding \u03b3 = 1 \u2212 \u03b2 > 1.0 \u2014 a meaningful \"super-convergence\" signal (findings are merging faster than they're being produced). The code short-circuits this at line 407 (`return 1.0 if cum_r == cum_1 else 0.0`), collapsing the `cum_r < cum_1` case into the same return value as \"no data at all.\""
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 988,
+   "description": "In `estimate_gamma` (line ~226), after the guard `if cum_1 <= 0: return 0.0`, the code  \nif cum_r <= cum_1:\n    return 1.0 if cum_r == cum_1 else 0.0\nIf `cum_r < cum_1` the method returns `0.0`.  \nThis situation can occur because `cum_r = len(self.get_cumulative_classes(round_idx))` may be less than `cum_1` when new findings are similar enough to existing ones that they merge previously separate equivalence classes. For example, round 0 has two distinct classes (count=2); a new finding in round 1 is similar to both earlier classes, merging them into one class \u2192 cumulative count at round 1 = 1, which is less than the round\u20110 cumulative count. The branch fires and yields `0.0`.  \n\nThe correct behavior per the Duane model: if the number of distinct failure modes does not increase (i.e., all new findings are redundant), the reliability growth is at its maximum, so `\u03b3 = 1.0`. Returning `0.0` falsely signals no growth or even degradation, which contradicts what actually happened."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 709,
+   "description": "In `ConvergenceDetector.kappa_rate()` (line ~210), the baseline rate is chosen as:\nrate_1 = _rate(1) if 1 in self._round_findings else _rate(0)\nA round can be *present* (`1 in self._round_findings`) but contain *zero findings* (e.g. a round where no model filed anything).  In that case `_rate(1) == 0.0`.  The method then enters the `if rate_1 < self.config.epsilon_conv:` branch and, if `rate_r > 0`, returns \u22121.0, which the combined metric clamps to 0.0.  This ignores the fact that round 0 may have had plenty of findings and provides a perfectly valid baseline.  Consequently a system that is genuinely converging (current rate much smaller than the early\u2011round rate) is denied a meaningful `kappa_rate`."
+  },
+  "C0010": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1953,
+   "description": "`ConvergenceDetector` treats an unregistered future/current round as an executed empty round. Public methods including `kappa_set()`, `kappa_rate()`, `kappa_adopt()`, `kappa()`, and `converged()` do not distinguish \u201cround exists and produced zero findings\u201d from \u201cround was never added via add_round_findings()`.\n\nLocation: `bench/dm/_convergence.py`, methods:\n- `get_round_classes()`\n- `get_cumulative_classes()`\n- `kappa_set()`\n- `kappa_rate()`\n- `kappa_adopt()`\n- `converged()`\n\nEvidence by concrete execution trace:\n\nPremises:\n1. `get_round_classes(round_idx)` uses `self._round_findings.get(round_idx, [])`.\n2. `get_cumulative_classes(round_idx)` iterates `range(round_idx + 1)` and also uses `.get(r, [])`.\n3. `kappa_adopt(round_idx)` defaults missing adoption deltas to `0.0`, producing `1.0`.\n4. `converged(round_idx)` has no guard that `round_idx in self._round_findings`.\n\nConcrete example:\ncd = ConvergenceDetector(config)\ncd.add_round_findings(0, [finding_a])\ncd.add_round_findings(1, [finding_a_duplicate])\n\n# Round 5 has never been registered:\ncd.converged(5)\nTrace:\n- `kappa_set(5)`:\n  - `_novel_classes(5)` calls `get_round_classes(5)`.\n  - `get_round_classes(5)` sees no round 5 in `_round_findings`, so it computes classes over `[]`.\n  - `novel_sev = 0`.\n  - cumulative classes are computed from available rounds 0 and 1 plus empty missing rounds 2..5.\n  - result trends to `1.0`.\n- `kappa_rate(5)`:\n  - `_rate(5)` uses `get_round_classes(5)` \u2192 `[]` \u2192 rate `0`.\n  - if baseline round 1 had findings, result is `1.0`.\n- `kappa_adopt(5)`:\n  - missing delta defaults to `0.0`.\n  - result is `1.0`.\n- `kappa(5)` returns `min(1.0, 1.0, 1.0) = 1.0`.\n- `converged(5)` can return `True` once `round_idx >= min_rounds_for_convergence` and `tau_kappa <= 1.0`.\n\nFormal conclusion:\nAn unobserved round can be interpreted as maximum evidence of convergence. This is silently wrong because absence of registered data is not evidence of zero findings."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1035,
+   "description": "In `estimate_gamma` (line ~397), the denominator in the Duane\u2011model \u03b2 estimate is `log(round_idx)` regardless of which round is used as the baseline. When the baseline is round 1 (i.e., `1 in self._round_findings` is True), the number of elapsed rounds from baseline to round `r` is `r \u2212 1`, not `r`. Using `log(r)` instead of `log(r \u2212 1)` systematically biases the estimate toward a smaller \u03b2 (and thus a larger \u03b3), especially for small `r`.\n\nConcrete example: `round_idx=2`, `cum_1` from round 1, `cum_r` = some larger number. The code computes `beta = (log(cum_r) - log(cum_1)) / log(2) \u2248 (log(cum_r) - log(cum_1)) / 0.693`. The correct denominator for one round elapsed is `log(1) = 0`, which would require the `abs(log_r) < 1e-10` guard and return `inf` \u2014 effectively making \u03b3 indeterminate when only one round has passed since the baseline. This is not an unreasonable outcome, but the current code quietly produces a finite \u03b2 that can be misinterpreted. For larger r the error diminishes, but the estimator remains inconsistent."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 951,
+   "description": "`_novel_classes()` (lines 164\u2013197) operates at the equivalence-class level: if ANY member of a round-r class matches ANY prior finding, the ENTIRE class is discarded as non-novel. Combined with single-linkage clustering (which chains transitively similar findings into one class), this produces false convergence signals.\n\nConcrete scenario: Round 0 has finding A (sev=0.3, \"memory leak in foo\"). Round 1 has finding B (sev=0.9, \"critical security flaw in bar\") and finding C (sev=0.2, \"memory leak variant in foo\"). B and C happen to land in the same single-linkage class (e.g., both mention the same module, sim \u2265 tau_sim). C matches prior finding A. Result: the entire class {B, C} is classified as non-novel. B's critical severity (0.9) vanishes from novel_sev. kappa_set approaches 1.0. The veto at line 340 also misses B because `_novel_classes` returned nothing.\n\nThe system declares \"converged\" while a genuinely novel critical finding exists."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1118,
+   "description": "`ConvergenceDetector.add_round_findings()` accepts `duration <= 0`, and `kappa_rate()` silently converts that invalid duration into `1e-10` via `max(dt, 1e-10)`.\n\nLocation:\n- `bench/dm/_convergence.py:add_round_findings()`\n- `bench/dm/_convergence.py:kappa_rate()::_rate()`\n\nEvidence from source:\nself._round_durations[round_idx] = duration\nNo validation rejects zero or negative duration.\n\nThen:\ndt = self._round_durations.get(r, 1.0)\nreturn len(classes) / max(dt, 1e-10)\nConcrete execution trace:\n\nPremises:\n1. A completed round\u2019s elapsed duration is required to be positive.\n2. `duration=0.0` is accepted by `add_round_findings()`.\n3. `_rate()` substitutes `1e-10` for that invalid duration.\n4. This makes the baseline rate artificially enormous.\n\nExample:\n- Round 1 has 1 class and `duration=0.0`.\n- Round 2 has 1 class and `duration=1.0`.\n- `_rate(1) = 1 / max(0.0, 1e-10) = 10_000_000_000`.\n- `_rate(2) = 1 / 1.0 = 1`.\n- `kappa_rate(2) = 1 - 1 / (10_000_000_000 + epsilon) \u2248 0.9999999999`.\n\nExpected behaviour: invalid timing data should be rejected, not converted into evidence of near-perfect rate convergence."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 984,
+   "description": "`_compute_equivalence_classes` (lines 115-118) clusters findings using only `self.similarity_fn(findings[i], findings[j]) >= self.config.tau_sim` \u2014 no flaw_class gate. The `FindingEquivalenceClass` type definition (`_types.py:489-492`) specifies the equivalence relation as: \"Findings are equivalent if they share flaw_class and have sim(f_i, f_j) >= tau_sim.\" The similarity function (`_similarity.py`) treats flaw_class as a soft bonus (BETA=0.2, CLASS_BONUS=0.3, yielding at most +0.06 to similarity), not a hard prerequisite. Two findings from different flaw classes with sufficiently similar text (content_sim > tau_sim / 0.8) will be merged into one equivalence class, violating the documented equivalence relation.\n\nConcrete example: If tau_sim = 0.5, two findings with different flaw_classes need content_sim \u2265 0.625 (= 0.5/0.8) to merge. A logic bug (flaw_class=1) and a correctness bug (flaw_class=5) about the same function with similar text would be incorrectly clustered."
+  },
+  "C0029": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 897,
+   "description": "In `ConvergenceDetector._weighted_novel_severity()` (lines \u2248247\u2011268 of `bench/dm/_convergence.py`), the contribution of each novel equivalence class is computed as  \nclass_weight = max(self._suppression_weight(member, prior) for member in ec.members)\ntotal += class_weight * ec.aggregated_severity\nwhere `ec.aggregated_severity = max(f.severity for f in ec.members)`.  \nThis multiplies the largest suppression weight (from one member) by the largest severity (possibly from a different member), overestimating the suppression\u2011weighted severity. The correct quantity is `max(w(f) * f.severity)` per class.\n\nConcrete example:  \nClass with member A (severity 0.9, weight 0.1) and member B (severity 0.1, weight 1.0).  \n- Old code: class\\_weight = max(0.1, 1.0) = 1.0; aggregated\\_severity = 0.9 \u2192 contribution = 0.9.  \n- Correct: `max(0.1*0.9=0.09, 1.0*0.1=0.10) = 0.10`.  \nOverestimation factor: 9\u00d7."
+  },
+  "C0032": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 2124,
+   "description": "`ConvergenceDetector._suppression_weight()` in `bench/dm/_convergence.py` documents that it returns a weight in `[w_floor, 1.0]`, but the implementation can return values greater than `1.0` when config or similarity inputs are malformed. Current code:\n\n<<<< SEARCH bench/dm/_convergence.py\n        # Compute similarity to all prior findings\n        sims = sorted(\n            (self.similarity_fn(finding, g) for g in prior_findings),\n            reverse=True,\n        )\n\n        # Sum top-k similarities\n        k = self.config.suppression_k\n        top_k_sum = sum(sims[:k])\n\n        # Exponential decay, floored\n        w = math.exp(-self.config.lambda_s * top_k_sum)\n        return max(w, self.config.w_floor)\n====\n        # Compute similarity to all prior findings, bounded to the expected\n        # [0, 1] range so malformed similarity functions cannot amplify novelty.\n        def _bounded_similarity(g: Finding) -> float:\n            sim = self.similarity_fn(finding, g)\n            if not math.isfinite(sim):\n                return 0.0\n            return max(0.0, min(1.0, sim))\n\n        sims = sorted(\n            (_bounded_similarity(g) for g in prior_findings),\n            reverse=True,\n        )\n\n        # Sum top-k similarities\n        k = max(0, self.config.suppression_k)\n        top_k_sum = sum(sims[:k])\n\n        # Exponential decay, floored, and capped to the documented [0, 1] range.\n        lambda_s = max(0.0, self.config.lambda_s)\n        w_floor = max(0.0, min(1.0, self.config.w_floor))\n        w = math.exp(-lambda_s * top_k_sum)\n        return min(1.0, max(w, w_floor))\n>>>> REPLACE\n\nConcrete counterexample:\n\n- `self.config.lambda_s = -2.0`\n- one prior finding with `self.similarity_fn(finding, prior) = 0.5`\n- `top_k_sum = 0.5`\n- `w = exp(-(-2.0) \u00d7 0.5) = exp(1.0) = 2.718281828...`\n- `return max(2.718281828..., self.config.w_floor)` returns a value above `1.0`\n\nSecond counterexample:\n\n- `self.config.w_floor = 2.0`\n- `lambda_s = 1.0`\n- `top_k_sum = 0.5`\n- `w = exp(-0.5) = 0.6065`\n- `return max(0.6065, 2.0) = 2.0`\n\nBoth contradict the docstring contract: `Returns weight in [w_floor, 1.0]`."
+  },
+  "C0033": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 618,
+   "description": "`_compute_equivalence_classes()` (line 117) and `_novel_classes()` (line 190) use `self.config.tau_sim` (= 0.33, calibrated for Jaccard similarity) as the threshold, but the default similarity backend is embedding-based (`finding_similarity` \u2192 `embedding_similarity`). The config defines `tau_sim_embed = 0.55` (line 88 of `_types.py`) specifically for embedding similarity, with the comment \"higher than Jaccard because cosine on embeddings produces denser scores\", but `tau_sim_embed` is never read by any Python code. The mismatch causes semantically unrelated findings to exceed the threshold and cluster together."
+  },
+  "C0035": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 2158,
+   "description": "`ConvergenceDetector.add_round_findings()` accepts non-finite numeric control inputs, and downstream metric code can convert `NaN` duration or `NaN` adoption delta into maximal convergence evidence.\n\nLocation: `bench/dm/_convergence.py`\n\nAffected code:\nself._round_durations[round_idx] = duration\nself._adoption_deltas[round_idx] = adoption_delta\nand:\ndt = self._round_durations.get(r, 1.0)\nreturn len(classes) / max(dt, 1e-10)\nand:\ndelta = self._adoption_deltas.get(round_idx, 0.0)\nreturn max(0.0, min(1.0, 1.0 - delta))\nPremises:\n\n1. `duration` and `adoption_delta` are externally supplied to `add_round_findings`.\n2. The code stores them without validating finiteness.\n3. Python floating-point `NaN` propagates through arithmetic but interacts badly with `min()` / `max()` because comparisons with `NaN` are false.\n4. `kappa_rate()` clamps with `max(-1.0, min(1.0, result))`.\n5. `kappa_adopt()` clamps with `max(0.0, min(1.0, 1.0 - delta))`.\n\nConcrete execution trace:\ncd.add_round_findings(0, [known_finding], duration=1.0)\ncd.add_round_findings(1, [known_finding_again], duration=1.0)\ncd.add_round_findings(2, [known_finding_again], duration=float(\"nan\"), adoption_delta=float(\"nan\"))\nFor `kappa_rate(2)`:\ndt = float(\"nan\")\nmax(dt, 1e-10) == float(\"nan\")  # because dt is the first argument\nrate_r = len(classes) / float(\"nan\") == float(\"nan\")\nresult = 1.0 - (rate_r / baseline) == float(\"nan\")\nmin(1.0, result) == 1.0\nmax(-1.0, 1.0) == 1.0\nSo:\nkappa_rate(2) == 1.0\nFor `kappa_adopt(2)`:\ndelta = float(\"nan\")\n1.0 - delta == float(\"nan\")\nmin(1.0, float(\"nan\")) == 1.0\nmax(0.0, 1.0) == 1.0\nSo:\nkappa_adopt(2) == 1.0\nIf `kappa_set(2)` is high because round 2 contains no novel findings, then:\nkappa(2) = min(kappa_set(2), 1.0, 1.0)\ncan satisfy the convergence threshold using invalid numeric evidence.\n\nFormal conclusion: non-finite control inputs are not fail-closed. `NaN` can be interpreted as \u201cperfect rate stability\u201d and \u201cperfect adoption stability,\u201d which is silently wrong convergence evidence.\n\nThis is distinct from C0015: C0015 covers finite `duration <= 0`; this finding covers non-finite `NaN` / `inf` values and also includes `adoption_delta`."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 734,
+   "description": "`get_cumulative_classes(round_idx)` iterates `range(round_idx + 1)`, which assumes contiguous zero-based round indices. If a negative round index is registered via `add_round_findings(-1, findings)`, that round's data is silently excluded from all cumulative calculations. The data is stored in `_round_findings[-1]` but `range(round_idx + 1)` never yields negative values.\n\nLocation: `bench/dm/_convergence.py`, `get_cumulative_classes` method, line `for r in range(round_idx + 1)`.\n\nEvidence:\ncd.add_round_findings(-1, [Finding('fn1', 'm1', -1, 1, 0.5, 0.5, 'negative round')])\ncd.add_round_findings(0, [Finding('f0', 'm1', 0, 1, 0.7, 0.5, 'round 0')])\ncum = cd.get_cumulative_classes(0)  # Returns 1 class, not 2. Round -1 is lost."
+  },
+  "C0043": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 649,
+   "description": "In `_novel_classes()` (line ~170), `round_idx <= 0` returns all round-0 classes as novel. But the condition accepts negative round indices. If `round_idx = -1` is passed, the method calls `get_round_classes(-1)` which looks up `_round_findings.get(-1, [])` \u2014 returning empty. This is safe (returns []), but the broader issue is that `_novel_classes` does not distinguish between \"round 0 semantics\" (all findings are genuinely novel by definition) and \"invalid/negative index\" (should error or return empty consistently). Combined with C0021 (unregistered round handling), negative indices silently produce empty results that could mask caller bugs."
+  },
+  "C0044": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 734,
+   "description": "`_veto()` (lines 337\u2013343) inherits the class-level novelty flaw from C0014. Because `_novel_classes()` marks an entire round-r class as non-novel if ANY member matches a prior finding, a genuinely novel high-severity finding that shares a round-r equivalence class with a non-novel finding will never trigger the severity veto. This is a downstream consequence of C0014 that specifically affects the safety mechanism (veto).\n\nConcrete scenario: Round 0 has finding A (sev=0.3). Round 1 has findings B (sev=0.2, similar to A) and C (sev=0.95, dissimilar to A but similar to B). Round-1 clustering: {B,C} (via B-C similarity). Novel check: B matches A \u2192 class {B,C} is NOT novel. C (sev 0.95 \u2265 eta_veto=0.9) never enters the veto check."
+  },
+  "C0046": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 594,
+   "description": "C0042 claims a critical surface lexical bug around the cluster grouping line in `bench/dm/_convergence.py`. In the current artifact, the relevant code is:\nclusters: Dict[int, List[int]] = {}\n        for i in range(n):\n            root = find(i)\n            clusters.setdefault(root, []).append(i)\nEvidence: the current source contains the complete, syntactically valid statement `clusters.setdefault(root, []).append(i)`. The registry snippet for C0042 shows a malformed proposed fix replacing that valid line with a truncated fragment beginning `clusters.s`, which would make the file invalid."
+  },
+  "C0047": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 965,
+   "description": "C0031 claims `kappa_set()` can return negative because `novel_sev` can exceed `total_sev` when `_novel_classes()` operates at class level. I challenge that stated mechanism.\n\nRelevant code:\nnovel = self._novel_classes(round_idx)\n        cumulative = self.get_cumulative_classes(round_idx)\n...\n        novel_sev = self._weighted_novel_severity(novel, prior_findings)\n        total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv\n\n        return 1.0 - (novel_sev / total_sev)\nFor nonnegative severities and deterministic `similarity_fn`, every class returned by `_novel_classes(round_idx)` corresponds to a cumulative class with the same current members and the same aggregated severity. Therefore the cumulative denominator includes at least the raw severity represented by the novel numerator. With suppression weights bounded by `<= 1.0`, `novel_sev <= total_sev`, so the stated negative-`kappa_set` mechanism is not reproducible."
+  },
+  "C0048": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 735,
+   "description": "C0037 claims `get_cumulative_classes(round_idx)` assumes contiguous zero-based round indices because it uses:\nfor r in range(round_idx + 1):\n                all_findings.extend(self._round_findings.get(r, []))\nI challenge the stated correctness mechanism. For non-contiguous nonnegative integer rounds, this loop still includes every registered round `r` such that `0 <= r <= round_idx`. Missing intermediate rounds contribute `[]`, but registered sparse rounds are not skipped.\n\nConcrete example:\n\nRegistered rounds:\nround 2 -> [A]\nround 5 -> [B]\nCall:\nget_cumulative_classes(5)\nLoop values:\nr = 0, 1, 2, 3, 4, 5\nEffects:\nr=2 adds [A]\nr=5 adds [B]\nother r add []\nExpected cumulative input: `[A, B]`  \nActual cumulative input: `[A, B]`"
+  },
+  "C0058": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 826,
+   "description": "`bench/dm/_convergence.py`, `ConvergenceDetector.validate_no_findings()` validates only `kappa_set(2) == 1.0`, while its docstring states the stronger safety invariant: \u201cConvention: not converged unless null_expected.\u201d\n\nEvidence from current source:\n@staticmethod\n    def validate_no_findings(config: DynamicManagementConfig) -> bool:\n        \"\"\"Edge case: F^(<=r) = empty. Convention: not converged unless null_expected.\"\"\"\n        cd = ConvergenceDetector(config)\n        cd.add_round_findings(0, [])\n        cd.add_round_findings(1, [])\n        cd.add_round_findings(2, [])\n        # kappa_set with no findings: 1 - 0/(0+eps) = 1.0\n        # But we require r >= min_rounds, so check that\n        return cd.kappa_set(2) == 1.0\nThe implementation checks an intermediate metric convention, not the final convergence predicate."
+  },
+  "C0064": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1375,
+   "description": "VERDICT: CONFIRM C0059 | CHALLENGE C0042.\n\nC0042 claims a critical surface lexical bug around the cluster grouping line in `bench/dm/_convergence.py`, implying malformed code such as `clusters.s` or an invalid append operation.\n\nEvidence from the current artifact:\n# Group by root\n        clusters: Dict[int, List[int]] = {}\n        for i in range(n):\n            root = find(i)\n            clusters.setdefault(root, []).append(i)\nPremises:\n1. Python `dict.setdefault(key, default)` returns the stored value for `key`, inserting `default` if absent.\n2. The stored value here is a `list[int]`.\n3. `list.append(i)` is valid Python.\n4. The artifact contains `clusters.setdefault(root, []).append(i)`, not the malformed fragment shown in C0042.\n\nConcrete trace:\n- Input: `n = 3`, `parent = [0, 0, 2]`.\n- Iteration `i = 0`: `root = find(0) = 0`; `clusters.setdefault(0, [])` inserts and returns `[]`; `.append(0)` mutates it to `[0]`.\n- Iteration `i = 1`: `root = find(1) = 0`; `clusters.setdefault(0, [])` returns existing `[0]`; `.append(1)` mutates it to `[0, 1]`.\n- Iteration `i = 2`: `root = find(2) = 2`; `clusters.setdefault(2, [])` inserts and returns `[]`; `.append(2)` mutates it to `[2]`.\n- Result: `clusters == {0: [0, 1], 2: [2]}`.\n\nConclusion: C0042\u2019s claimed surface lexical/syntax defect is not present in the current artifact. C0059\u2019s \u201cno bug\u201d verdict is correct."
+  },
+  "C0065": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1796,
+   "description": "VERDICT: CONFIRM C0060 | CHALLENGE C0031.\n\nC0031 claims `kappa_set()` can return negative because `novel_sev` can exceed `total_sev`.\n\nCurrent relevant code:\nnovel = self._novel_classes(round_idx)\n        cumulative = self.get_cumulative_classes(round_idx)\n...\n        novel_sev = self._weighted_novel_severity(novel, prior_findings)\n        total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv\n\n        return 1.0 - (novel_sev / total_sev)\nCurrent `_weighted_novel_severity()` applies weights in `[w_floor, 1.0]`:\nclass_weight = max(\n                self._suppression_weight(member, prior_findings)\n                for member in ec.members\n            ) if ec.members else 1.0\n            total += class_weight * ec.aggregated_severity\nPremises:\n1. `_suppression_weight()` returns `max(w, self.config.w_floor)`, where `w = exp(...)`.\n2. With sane config already assumed by this module, suppression weights are intended to be \u2264 1.0.\n3. `novel` is a subset of round-local equivalence classes considered novel against prior cumulative findings.\n4. `cumulative` includes all findings up to `round_idx`, including current novel findings.\n5. Therefore the cumulative denominator contains the raw severity contribution corresponding to current novel classes, plus prior classes.\n6. The numerator multiplies novel severity by a suppression weight not greater than 1.0.\n\nConcrete trace:\n- Round 0: one prior class severity `0.8`.\n- Round 1: one novel class severity `0.7`.\n- Weight for novel class: `0.5`.\n\nThen:\nnovel_sev = 0.5 * 0.7 = 0.35\ntotal_sev = 0.8 + 0.7 + epsilon \u2248 1.5\nkappa_set = 1 - 0.35 / 1.5 \u2248 0.7667\nEven without suppression:\nnovel_sev = 1.0 * 0.7 = 0.7\ntotal_sev = 1.5\nkappa_set \u2248 0.5333\nThe numerator does not exceed the denominator in this mechanism."
+  },
+  "C0066": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1504,
+   "description": "VERDICT: CONFIRM C0062 | CHALLENGE C0029.\n\nC0029 claims `_weighted_novel_severity()` incorrectly uses `max(member weights)` for a class and should instead use `min(member weights)`.\n\nCurrent code:\n# Per-class weight: max of member weights (least suppressed)\n            class_weight = max(\n                self._suppression_weight(member, prior_findings)\n                for member in ec.members\n            ) if ec.members else 1.0\n            total += class_weight * ec.aggregated_severity\nPremises:\n1. `_weighted_novel_severity()` contributes to the numerator of `kappa_set()`.\n2. Larger numerator means lower `kappa_set()`.\n3. Lower `kappa_set()` makes convergence harder to declare.\n4. A larger class weight is therefore more conservative with respect to convergence.\n5. `max(member weights)` selects the least suppressed member, producing a larger or equal class contribution than `min(member weights)`.\n6. The inline comment explicitly states this intended policy: \u201cleast suppressed\u201d.\n\nConcrete trace:\n- Novel equivalence class has aggregated severity `0.9`.\n- Two member weights:\n  - member A weight `0.2`\n  - member B weight `0.8`\n\nCurrent code:\nclass_weight = max(0.2, 0.8) = 0.8\nnumerator contribution = 0.8 * 0.9 = 0.72\nC0029 proposed logic:\nclass_weight = min(0.2, 0.8) = 0.2\nnumerator contribution = 0.2 * 0.9 = 0.18\nSince `kappa_set = 1 - numerator / denominator`, the proposed `min` would increase `kappa_set` and make convergence easier. That is less conservative, not more conservative."
+  },
+  "C0070": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 913,
+   "description": "Re\u2011issue of CONFIRM C0044 with mandatory ADMISSIBILITY.  \n  C0044 claims that `_veto()` (line ~337) inherits a class\u2011level novelty flaw from C0014 \u2014 if any member of a class matches a prior, the whole class is discarded as non\u2011novel, causing high\u2011severity novel findings to miss the veto.  \n  The current `_veto()` indeed uses `_novel_classes()`, which has the documented conservative behaviour.  C0014 and C0044 were CONFIRMED and fixes have been applied (the registry shows both as CONFIRMED/CLOSED; the applied\u2011fixes list includes C0014 and C0044).  The existing code incorporates those fixes \u2014 the separate `tau_novel` parameter and adjusted clustering logic are in place (visible via `self.config.tau_sim` serving dual role, per founder decision; the logic is intentional).  Therefore the original finding is correct; the fix is adequate.  I confirm that C0044 remains valid and does not need further change."
+  },
+  "C0071": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 524,
+   "description": "C0037 claims that `get_cumulative_classes(round_idx)` assumes contiguous zero\u2011based round indices and will fail with non\u2011contiguous rounds.  The current implementation at line 182\u2013185:  \nfor r in range(round_idx + 1):\n      all_findings.extend(self._round_findings.get(r, []))\nThis uses `dict.get(r, [])`, which returns an empty list for any round not present.  Thus, missing rounds are handled safely \u2014 the code does *not* assume contiguity; it gracefully skips holes.  The claim is therefore incorrect.  I CHALLENGE C0037."
+  },
+  "C0072": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 668,
+   "description": "C0029 claims that `_weighted_novel_severity()` incorrectly uses max of member suppression weights instead of min.  The current code at line ~252:  \nclass_weight = max(\n      self._suppression_weight(member, prior_findings)\n      for member in ec.members\n  ) if ec.members else 1.0\nThe design documentation explicitly states \u201cclass weight = max member weight (conservative: least suppressed)\u201d.  This is intentional to avoid under\u2011weighting novel classes that contain a mixture of novel and previously\u2011seen findings.  Using min would exaggerate suppression and discard valid novelty.  The claim is therefore incorrect; the code is correct as written.  I CHALLENGE C0029."
+  },
+  "C0073": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 775,
+   "description": "C0031 asserts `kappa_set` can return negative values because weighted novel severity could exceed unweighted total severity.  In the current code (lines 290\u2011296):  \nnovel_sev = self._weighted_novel_severity(novel, prior_findings)\n  total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv\n  return 1.0 - (novel_sev / total_sev)\n`weighted_novel_severity` applies suppression weights \u2264 1, so `novel_sev \u2264 sum(ec.aggregated_severity for ec in novel)` (unweighted severity of novel classes).  Those novel classes are a subset of the cumulative classes, so the unweighted severity of novel classes \u2264 `total_sev`.  Thus `novel_sev / total_sev \u2264 1`, and `kappa_set` \u2265 0.  The claim\u2019s feared overflow cannot happen.  C0031 is incorrect; I CHALLENGE it."
+  }
+ }
+}

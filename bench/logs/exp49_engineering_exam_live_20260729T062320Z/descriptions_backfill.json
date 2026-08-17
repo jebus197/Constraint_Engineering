@@ -1,0 +1,32 @@
+{
+ "run": "exp49_engineering_exam_live_20260729T062320Z",
+ "stats": {
+  "entries": 38,
+  "prefix": 3,
+  "fallback": 0,
+  "unverified": 6,
+  "no_join": 1,
+  "unchanged": 28,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 548,
+   "description": "EN-30 is internally contradictory. It states the pump set is \"two-out-of-three redundant \u2026 any two of the three units running together meet the full 46 L/s duty, and a single unit on its own delivers 55 per cent of duty,\" then concludes \"if any two of the three units are lost then the surviving unit continues to meet the duty requirement, so the arrangement tolerates two simultaneous unit failures without loss of duty.\" By its own premise, one surviving unit delivers 55 % < 100 % duty. A 2-out-of-3 set tolerates the loss of ONE unit, not two."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 600,
+   "description": "EN-19 forms a \"bearing factor of safety = R_d / p_Ed = 450 kN / 3.60 MPa = 125\" and asserts it \"is a dimensionless ratio and is therefore reported without units.\" A force divided by a stress is not dimensionless: kN / MPa = kN / (kN\u00b7m\u207b\u00b2) = m\u00b2 (an area). 450 kN / 3.60 MPa = 0.125 m\u00b2 = 125000 mm\u00b2. The value \"125\" carries units of area, and the two inputs are quantities of different kind (a resistance force vs a demand pressure), so their ratio is not a factor of safety at all. This directly falsifies the section's premise (\u00a74: every ratio here \"states its units explicitly\" and is dimensionless)."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1607,
+   "description": "EN-16 reports a \u201cglobal bending factor of safety\u201d for B4-01 as:\n\n> `f_y / sigma_Ed = 275 / 50.78 = 5.42`\n\nLocation: `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`, Section 4, EN-16.\n\nThe arithmetic `275 / 50.78 = 5.42` is dimensionally valid, but the factor convention is wrong. It divides an unfactored nominal resistance value, `f_y = 275 MPa`, by a factored design-action stress, `sigma_Ed = 50.78 MPa`. That hybrid ratio is neither:\n\n1. a code partial-factor utilisation/reserve ratio, because that requires design resistance `f_yd = f_y / gamma_M0 = 250 MPa`; nor  \n2. a legacy/global factor of safety against characteristic demand, because that requires the characteristic/unfactored bending stress, not `sigma_Ed`.\n\nPremises:\n\n- EN-01 defines the factored load:  \n  `w_Ed = 1.35 \u00d7 4.20 + 1.50 \u00d7 6.00 = 14.67 kN/m`.\n- Characteristic total line action is:  \n  `w_k = 4.20 + 6.00 = 10.20 kN/m`.\n- EN-03/EN-16 use design bending stress:  \n  `sigma_Ed = 50.78 MPa`.\n- EN-17 defines design yield:  \n  `f_yd = 275 / 1.10 = 250 MPa`.\n\nConcrete traces:\n\n- Correct partial-factor resistance margin:\n\n\\[\n\\frac{f_{yd}}{\\sigma_{Ed}}=\\frac{250}{50.78}=4.92\n\\]\n\nEquivalently, utilisation is:\n\n\\[\n\\frac{\\sigma_{Ed}}{f_{yd}}=\\frac{50.78}{250}=0.203\n\\]\n\n- Correct legacy/global nominal-yield-to-characteristic-stress factor:\n\n\\[\n\\sigma_k = 50.78 \\times \\frac{10.20}{14.67}=35.31\\ \\text{MPa}\n\\]\n\n\\[\nFoS_{global}=\\frac{275}{35.31}=7.79\n\\]\n\n- EN-16\u2019s printed `5.42` is:\n\n\\[\n\\frac{275}{50.78}=5.42\n\\]\n\nThat is a nominal resistance divided by a factored demand effect. It is not a clean factor convention."
+  }
+ }
+}

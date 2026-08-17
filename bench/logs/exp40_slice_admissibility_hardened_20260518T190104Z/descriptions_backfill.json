@@ -1,0 +1,134 @@
+{
+ "run": "exp40_slice_admissibility_hardened_20260518T190104Z",
+ "stats": {
+  "entries": 53,
+  "prefix": 18,
+  "fallback": 2,
+  "unverified": 2,
+  "no_join": 4,
+  "unchanged": 27,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1573,
+   "description": "`_feedback_slice.py::parse_admissibility_block` accepts invalid or context-invalid admissibility statuses as passing evidence.\n\nPremises:\n1. The parser\u2019s status regex is `r\"(PASS|FAIL|N/A|NA)\"` for `\u03c3_measured` and `r\"(PASS|FAIL)\"` for other gates.\n2. The regex has no right-hand token boundary.\n3. Therefore `PASSIVE` matches `PASS`, and any word beginning with `PASS` is accepted as a valid pass status.\n4. The parser also treats `\u03c3_measured: N/A` as pass unconditionally.\n5. FFAFP \u00a715 permits `\u03c3_measured: N/A` only when no fix measurement is applicable. If a finding includes a machine-parseable `FIX` block, `\u03c3_measured: N/A` is not valid because post-fix verification is required.\n\nConcrete examples:\n\nExample A \u2014 malformed status accepted:\nADMISSIBILITY:\n  S_min: PASSIVE\n  G-completeness: PASS\n  d_tool: PASS\n  \u03c3_measured: PASS\n  q_retest: PASS\nCurrent behavior:\n- For `S_min`, regex `S_min\\s*[:\\-=]?\\s*(PASS|FAIL)` matches the `PASS` prefix of `PASSIVE`.\n- `found_pass=True`.\n- `S_min` is not returned as failed.\n\nExpected behavior:\n- `PASSIVE` is not one of `{PASS, FAIL}`.\n- `S_min` should be returned as failed.\n\nExample B \u2014 fix present but `\u03c3_measured: N/A` accepted:\nFIX:\n<<<< SEARCH bench/foo.py\nold\n====\nnew\n>>>> REPLACE\n\nADMISSIBILITY:\n  S_min: PASS\n  G-completeness: PASS\n  d_tool: PASS\n  \u03c3_measured: N/A\n  q_retest: PASS\nCurrent behavior:\n- `\u03c3_measured` status `N/A` is treated as pass.\n- The parser returns no failure for `\u03c3_measured`.\n\nExpected behavior:\n- A machine-parseable fix exists.\n- `\u03c3_measured` must be measured post-fix, so `N/A` should fail."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 3083,
+   "description": "The `gate_patterns` list for `G-completeness` includes the pattern `r\"G completeness\"` (with a space), but the `status_pattern` regex that follows requires `[:\\-=]?\\s*` between the gate name and the status. The pattern `r\"G completeness\"` followed by `r\"\\s*[:\\-=]?\\s*\"` would match `G completeness: PASS` (space, then optional separator, then PASS). However, if a model writes `G completeness PASS` (space, no colon), the regex `G completeness\\s*[:\\-=]?\\s*PASS` would match because `\\s*` matches the space and `[:\\-=]?` is optional. This is actually fine \u2014 the permissive matching works.\n\nBut there's a subtler issue: the `gate_patterns` for `G-completeness` includes `r\"G[-_\\s]+completeness\"`. This pattern uses `+` (one or more), which means it requires at least one separator character between \"G\" and \"completeness\". The canonical form is \"G-completeness\" (with a hyphen). If a model writes \"Gcompleteness\" (no separator), it won't match. But this is arguably correct \u2014 \"Gcompleteness\" is not a valid gate name.\n\nThe actual edge case: the pattern `r\"G[-_\\s]+completeness\"` would match \"G completeness\" (with a space), but the separate pattern `r\"G completeness\"` is redundant since `[-_\\s]+` already covers spaces. This is not a bug, just redundant code.\n\nMore concerning: the `gate_patterns` list is extended with `extend`, which adds patterns to the list. But the loop `for pat in gate_patterns:` iterates over all patterns including the original `re.escape(gate)`. For `G-completeness`, `re.escape(\"G-completeness\")` produces `\"G\\\\-completeness\"`, which matches the literal string \"G-completeness\". The extended patterns add alternative spellings. This is correct.\n\nI cannot find a genuine bug here beyond the heading-marker issue in F001. Let me look deeper.\n\nActual Bug: The `section_terminator` regex uses `re.MULTILINE` but the `tail` string may not start at a line boundary, causing `^` to fail for the first line.\n\nWait, I already analysed this above and concluded it works because `re.MULTILINE` makes `^` match at string start AND after newlines. Even if `tail` starts mid-line, `^` matches at position 0 of `tail`. The issue would only arise if a section header appeared on the same line as the ADMISSIBILITY marker without a newline, e.g.:\nADMISSIBILITY: S_min: PASS NOVELTY: ...\nHere `tail` = ` S_min: PASS NOVELTY: ...`. The `section_terminator` regex `^\\s*NOVELTY\\s*:` would need to match `NOVELTY:` but it's on the same line as other content. `^\\s*` matches at position 0 (start of `tail`), then `\\s*` matches the leading space, then it looks for `NOVELTY` but finds `S_min`. No match. The regex engine continues searching and finds `NOVELTY:` later in the string, but `^` won't match mid-line even with `re.MULTILINE` because there's no newline before `NOVELTY`. So the terminator fails to match, and the block consumes everything. This is a parser-runaway scenario.\n\nHowever, this requires the ADMISSIBILITY content and the next section to be on the same line, which is unlikely in practice (models typically put each section on its own line). Severity is low."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 568,
+   "description": "The `parse_admissibility_block` function returns `List[str]` but the type annotation uses `from typing import List` (capital-L), which is deprecated in Python 3.9+ in favour of `list[str]` (lowercase-l builtin). The code includes `from __future__ import annotations` which enables PEP 585 behaviour, making `List[str]` valid at runtime, but the import of `List` from `typing` is unnecessary and triggers deprecation warnings in Python 3.9+. This is a MEDIUM finding per the proof-of-concept context \u2014 it doesn't affect correctness but indicates stale typing practices."
+  },
+  "C0005": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1495,
+   "description": "The `section_terminator` regex includes `FINDING` as a terminator, but this is overly aggressive. The field name is `FINDING_ID`, not `FINDING`. If a model writes `FINDING` as a standalone word in the ADMISSIBILITY evidence text (e.g., \"evidence=see FINDING above\" or \"this FINDING is novel\"), the parser will incorrectly terminate the ADMISSIBILITY block at that point, truncating the block and potentially missing subsequent gate declarations. The `FINDING` terminator was likely added as a catch-all alongside `FINDING_ID`, but it creates a false-positive termination risk.\n\nConcrete example:\nADMISSIBILITY:\n  S_min: PASS (location=bench/foo.py:42, mechanism=off-by-one, evidence=this FINDING is documented in test_case_7)\n  G-completeness: PASS\nHere `FINDING` appears in the S_min evidence text. The `section_terminator` regex matches `FINDING` followed by `\\s*:`, but in this case `FINDING` is followed by ` is documented...`, not `:`. Wait \u2014 the regex requires `\\s*:` after the section name. So `FINDING is` would NOT match because there's no `:` after `FINDING`. The regex is `FINDING\\s*:`, which requires a colon. So `FINDING:` would match, but `FINDING ` (without colon) would not.\n\nBut what if a model writes `FINDING:` in the evidence text? E.g., `evidence=see FINDING: the off-by-one error`. This would incorrectly terminate the block. This is a real risk, though mitigated by the fact that `FINDING:` is unlikely to appear in natural-language evidence text (models typically write `"
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 707,
+   "description": "`parse_admissibility_block` only terminates the ADMISSIBILITY block at a hard-coded list of section headers, so a valid later all-caps section not in that list can be swallowed into the ADMISSIBILITY block and mask missing gates.\n\nLocation: `bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z/working/_feedback_slice.py`, inside `parse_admissibility_block`, at the `section_terminator = re.search(...)` block.\n\nEvidence with concrete input:\nADMISSIBILITY:\n  S_min: PASS (location supplied)\nDIVERGENCE:\n  G-completeness: PASS (alternative discussion text)\n  d_tool: PASS (alternative discussion text)\n  \u03c3_measured: PASS (alternative discussion text)\n  q_retest: PASS (alternative discussion text)"
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 770,
+   "description": "`parse_admissibility_block` returns false total failure (all 5 gates) when the ADMISSIBILITY block uses an inline format \u2014 i.e., gate content starts on the same line as the marker. The marker regex at line 58\u201362 uses a `$` anchor after the optional parenthetical:\nr\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\"\nInput like `ADMISSIBILITY: S_min: PASS | G-completeness: PASS | ...` (all on one line) fails the `$` match because `S_min: PASS ...` follows the colon on the same line. The function falls through to `return list(ADMISSIBILITY_GATES)` \u2014 silently reporting all five gates as FAIL when the model actually reported them all as PASS.\n\nConfirmed via tool execution: `'ADMISSIBILITY: S_min: PASS'` \u2192 NO MATCH; `'ADMISSIBILITY:\\n  S_min: PASS'` \u2192 MATCH."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 760,
+   "description": "The `\u03c3_measured` gate has a coverage gap for the Unicode \u03c3 with whitespace separator. The parser provides two patterns for this gate: (1) `re.escape('\u03c3_measured')` \u2192 matches literal `\u03c3_measured` only, (2) `r\"sigma[_\\s]*measured\"` \u2192 matches ASCII `sigma` with flexible separator. Neither matches `\u03c3 measured` (Unicode \u03c3, space instead of underscore). Confirmed by tool execution:\n\n- Pattern `'\u03c3_measured'` on `'\u03c3 measured: PASS'` \u2192 NO MATCH\n- Pattern `r'sigma[_\\s]*measured'` on `'\u03c3 measured: PASS'` \u2192 NO MATCH\n- Pattern `r'\u03c3[_\\s]*measured'` on `'\u03c3 measured: PASS'` \u2192 MATCH\n\nThe docstring claims the parser \"accepts the \u03c3 character or the ASCII 'sigma' spelling\" and is \"whitespace-tolerant\", but the Unicode \u03c3 variant is only matched with a literal underscore."
+  },
+  "C0009": {
+   "method": "fallback",
+   "stored_len": 172,
+   "recovered_len": 98,
+   "description": "The `section_terminator` regex fails to account for markdown headers (e.g., `### NOVELTY:` or `###"
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 996,
+   "description": "The per-gate `re.search` scans the entire `block` string and returns the first match. Because gate names can appear inside the evidence/rationale text of other gates, a gate's status can be determined from the wrong line. The `break` after the first pattern match prevents any recovery.\n\nConcrete trigger: a model writes:\nADMISSIBILITY:\n  S_min: PASS (verified alongside q_retest: PASS check)\n  G-completeness: PASS\n  d_tool: PASS\n  \u03c3_measured: N/A\n  q_retest: FAIL (no decomposition provided)\nWhen parsing `q_retest`, `re.search(r\"q\\_retest\\s*[:\\-=]?\\s*(PASS|FAIL)\", block)` matches the `q_retest: PASS` substring inside S_min's evidence text first. `found_pass = True`, `break`. The actual `q_retest: FAIL` line is never examined. The function incorrectly omits `q_retest` from the failed list.\n\nThis is distinct from C0001 (which covers accepting invalid status values) \u2014 this is about positional cross-contamination where a valid status from the wrong context is attributed to the wrong gate."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 850,
+   "description": "In `_feedback_slice.py`, the `section_terminator` regex (line ~109\u2011115) uses `r\"^\\s*(NOVELTY|\u2026)\\s*:\"` to locate the next section header. The pattern allows leading whitespace but not markdown heading\u2011prefix characters (`#`, `##`, \u2026, `######`). The corresponding `marker_match` regex for ADMISSIBILITY itself *does* accept an optional `(?:#{1,6}\\s*)?` prefix. Consequently, when a model writes its report with markdown\u2011style headings (e.g., `## NOVELTY`), the terminator regex fails to match because the `#` characters are not whitespace. The extracted block then bleeds into the following section (NOVELTY, VERIFIED, etc.), contaminating the admissibility gate\u2011status search with text from a different context. Evidence: contrast lines 100\u2011106 (marker regex) with lines 109\u2011115 (terminator regex) \u2014 the optional\u2011heading group is absent in the latter."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 631,
+   "description": "In `_feedback_slice.py`, the `marker_match` regex (line ~100\u2011106) attempts to support an inline parenthetical after ADMISSIBILITY with `(?:\\([^)]*\\))?`. The character class `[^)]*` cannot match a closing parenthesis, so nested parentheses (e.g., `ADMISSIBILITY (see \u00a715 (requirements)):`) cause the regex to fail. The outer parenthesis opens, `[^)]*` consumes `see \u00a715 (` then stops at `)`, leaving `requirements)):` unmatched; the regex engine fails to match the required `\\)\\s*$`. Consequently, `marker_match` returns `None`, the function treats the block as missing, and returns a list of all five gates as FAIL (total failure)."
+  },
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 648,
+   "description": "The `section_terminator` regex (line ~109) uses only `re.MULTILINE` as its flags, while the `marker_match` regex (line ~100) uses `re.IGNORECASE | re.MULTILINE`. This inconsistency means the parser is case-flexible when *locating* the ADMISSIBILITY block but case-rigid when *terminating* it. If a model uses mixed-case or title-case section headers (`Novelty:`, `Verified:`, `Corroboration:`), the section_terminator fails to match, and the admissibility `block` variable consumes all subsequent text until the next ALL-CAPS header or end-of-string. Evidence: line 109 `re.MULTILINE` vs line 100 `re.IGNORECASE | re.MULTILINE` \u2014 direct inspection."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 738,
+   "description": "The `\u03c3_measured` status pattern `(PASS|FAIL|N/A|NA)` on line 107 matches the two-character prefix `NA` of any word beginning with those letters (e.g., `NARRATIVE`, `NAME`, `NATURAL`). Because `re.IGNORECASE` is active and `NA` has no trailing word-boundary or lookahead, the regex `sigma[_\\s]*measured\\s*[:\\-=]?\\s*(PASS|FAIL|N/A|NA)` matches `sigma_measured NARRATIVE` \u2014 extracting status `\"NA\"`, which the conditional on line 120 treats as a valid N/A pass. The gate is silently marked as passing when it should fail. This is specific to `\u03c3_measured`; for other gates, partial matches on `PASS`/`FAIL` (e.g., `PASSING`\u2192`PASS`, `FAILED`\u2192`FAIL`) produce the same boolean outcome as the full word, so the missing boundary is harmless there."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 820,
+   "description": "In `parse_admissibility_block` the `section_terminator` regex (line ~124\u2011130) uses only `re.MULTILINE` without `re.IGNORECASE`.\n  The alternation lists all\u2011caps section names (`NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|FINDING_ID|FINDING`).\n  If a model writes a section header in mixed/lower case (e.g. `Novelty:` or `verified:`), the regex will not match, the ADMISSIBILITY block will consume the rest of the finding text, and `failed` will report an incorrect set of gates (likely all five as failed or some gates that happen to appear later).\n  Evidence: the regex is defined as `re.search(\u2026, tail, re.MULTILINE)` \u2013 no `re.IGNORECASE`. Contrast with `marker_match` (line ~98\u2011101) which uses `re.IGNORECASE | re.MULTILINE` for the ADMISSIBILITY marker."
+  },
+  "C0029": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1039,
+   "description": "`marker_match` (line 58\u201362) uses `ADMISSIBILITY\\s*:?` with an optional colon. This means any line starting with the word \"ADMISSIBILITY\" in prose context \u2014 e.g., `ADMISSIBILITY gates fail under X conditions` inside a FIND or FOLLOW section \u2014 is accepted as the section header. Because ADMISSIBILITY is not in the `section_terminator` alternation (lines 81\u201383), there is no recovery path: the parser cannot re-anchor to the real `ADMISSIBILITY:` header. If any section terminator (FOLLOW, FIX, ANALYSE, etc.) appears between the false match and the real header, the extracted `block` contains only prose \u2014 no gate statuses \u2014 producing false total failure on all 5 gates.\n\nFile: `bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z/working/_feedback_slice.py`, line 59.\n\nEvidence \u2014 Python reproduction:\ntext = \"FIND: problem\\nADMISSIBILITY gates fail.\\nFOLLOW: trace.\\nADMISSIBILITY:\\n  S_min: PASS\\n...\"\nparse_admissibility_block(text) \u2192 ['S_min','G-completeness','d_tool','\u03c3_measured','q_retest']\n# Expected: [] (all gates pass)"
+  },
+  "C0031": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1280,
+   "description": "`parse_admissibility_block` fails valid ADMISSIBILITY gate lines when the gate labels are markdown-bolded, e.g. `S_min: PASS`.\n\nLocation: `bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z/working/_feedback_slice.py`, inside `parse_admissibility_block`, gate matching loop around:\nmatch = re.search(\n    pat + r\"\\s*[:\\-=]?\\s*\" + status_pattern,\n    block,\n    re.IGNORECASE,\n)\nConcrete failing input:\nADMISSIBILITY:\n  S_min: PASS (location=bench/foo.py:42)\n  G-completeness: PASS (verifier can reproduce)\n  d_tool: PASS (pytest ran)\n  \u03c3_measured: N/A (no fix proposed)\n  q_retest: PASS (\u03b7 from similarity)\nNOVELTY:\n  \u03bd_k: 0.50\nExpected output:\n[]\nActual derivation for `S_min`:\n\n1. `pat = re.escape(\"S_min\")`, so the effective regex is `S_min\\s*[:\\-=]?\\s*(PASS|FAIL)`.\n2. The text contains `S_min: PASS`.\n3. Regex search can start at the `S` in `S_min`.\n4. It matches `S_min`.\n5. It consumes the optional separator `:`.\n6. The next characters are ` PASS`, not whitespace followed by `PASS`.\n7. The match fails.\n8. The alias pattern `S[_\\s]*min` fails for the same reason.\n9. `found_pass` remains `False`; `S_min` is incorrectly appended to `failed`.\n\nThe same mechanism applies to `G-completeness`, `d_tool`, `\u03c3_measured`, and `q_retest` when their labels are bolded."
+  },
+  "C0040": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 537,
+   "description": "The `marker_match` regex (line ~61) does not match an `ADMISSIBILITY` header that places the colon *after* an optional parenthesised comment, e.g.  \n`ADMISSIBILITY (mandatory):`  \nThe regex pattern is  \n`r\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\"`  \nwhich allows `:` only before the comment, not after.  \nConcrete test input:\nADMISSIBILITY (mandatory):\n  S_min: PASS\n  G-completeness: PASS\n  d_tool: PASS\n  \u03c3_measured: PASS\n  q_retest: PASS\n`marker_match` returns `None` \u2192 the function returns all five gates as failed."
+  },
+  "C0042": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 522,
+   "description": "`parse_admissibility_block` selects the first line matching `ADMISSIBILITY` anywhere in `finding_text`, including inside earlier SEARCH/REPLACE blocks or fenced examples, instead of selecting the actual top-level ADMISSIBILITY section.\n\nLocation: `bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z/working/_feedback_slice.py`, `parse_admissibility_block`, `marker_match = re.search(...)`.\n\nEvidence from current code:\nmarker_match = re.search(\n    r\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\","
+  },
+  "C0051": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 995,
+   "description": "In `parse_admissibility_block`, the gate\u2011pattern handling for `\u03c3_measured` offers two patterns: the escaped Unicode `\u03c3_measured` (exact) and the ASCII fallback `sigma[_\\s]*measured`. If a model writes `\u03c3 measured` (Unicode sigma followed by a space), neither pattern matches: the escaped pattern expects an underscore, and the ASCII fallback starts with Latin `s`, not Greek `\u03c3`. The gate is then reported as FAIL even though the model supplied it. Example input line that would be missed:\n\u03c3_measured: FAIL\nNo, that has underscore, so it would match. Actually the exact `\u03c3_measured` matches. The gap is specifically `\u03c3` followed by whitespace: `\"\u03c3 measured\"`. That would not match either pattern. The evidence is in the code at lines:\ngate_patterns = [re.escape(gate)]  # gate = \"\u03c3_measured\" -> r'\\xcf\\x83_measured'\nif gate == \"\u03c3_measured\":\n    gate_patterns.append(r\"sigma[_\\s]*measured\")\nThe ASCII fallback is purely `sigma`, not `\\\\xcf\\\\x83`. So Greek sigma with whitespace escapes detection."
+  },
+  "C0053": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 702,
+   "description": "The `section_terminator` regex (lines 110\u2013115) terminates the ADMISSIBILITY block at the next all-caps section header but:\n- lacks `re.IGNORECASE`, so lowercase variants like `novelty:` fail to match and lead to block overrun.\n- does not allow a markdown header prefix (e.g., `### CORROBORATION`), unlike `marker_match` which accepts `#{1,6}`. This inconsistency causes overrun when the next section is prefixed with a markdown header.\n\nLocation: `_feedback_slice.py`, function `parse_admissibility_block`, `section_terminator = re.search(...)` (lines 110\u2013115). Evidence: static code inspection; regex101 test confirms `re.search(r\"^\\s*(NOVELTY|...)\\s*:\", \"novelty: ...\", re.MULTILINE)` returns `None`."
+  }
+ }
+}

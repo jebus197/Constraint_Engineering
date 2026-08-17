@@ -19,11 +19,15 @@ The directory holds **103 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 49 |
+| Mirrored (in summarised form) in `MEMORY.md` | 50 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 106 |
+| total | 107 |
+
+> **[Correction 2026-08-17.]** Mirrored 49 → 50 and total 106 → 107 for
+> `cdsfl_session_2026-08-17.md`. Fourth consecutive correction in the same direction —
+> the ledger update belongs in the `sv` path, not the author's memory.
 
 > **[Correction 2026-08-16.]** Mirrored 48 → 49 and total 105 → 106.
 > `cdsfl_session_2026-08-16.md` was written this session and carries an index line in

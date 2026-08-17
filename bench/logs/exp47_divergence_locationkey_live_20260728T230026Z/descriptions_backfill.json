@@ -1,0 +1,224 @@
+{
+ "run": "exp47_divergence_locationkey_live_20260728T230026Z",
+ "stats": {
+  "entries": 70,
+  "prefix": 23,
+  "fallback": 12,
+  "unverified": 16,
+  "no_join": 0,
+  "unchanged": 19,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1596,
+   "description": "`parse_alternative_block()` in `bench/dm/_divergence.py` lets an alternative block consume later top-level review sections.\n\nLocation:\nbody_start = m.end()\nbody_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)\nbody = text[body_start:body_end].strip()\nBug mechanism: the parser terminates an alternative body only at the next alternative/conjecture header or end-of-text. It does not stop at mandatory review sections such as `FALSIFICATION`, `CORROBORATION`, `ADMISSIBILITY`, or `NOVELTY`.\n\nConcrete trace:\n\nInput:\nAlternative (dimension: scope)\nDiffers from primary: This narrows the fix to local parsing boundaries only.\nTerminate the alternative body before later mandatory review sections.\n\nFALSIFICATION\nThis section is not part of the alternative.\nExpected `alternative_text`:\nTerminate the alternative body before later mandatory review sections.\nActual `alternative_text`:\nTerminate the alternative body before later mandatory review sections.\n\nFALSIFICATION\nThis section is not part of the alternative.\nPremises:\n\n1. `_ALT_HEADER_RE.finditer(text)` only finds alternative/conjecture headers.\n2. `body_end` is set to the next alternative header or `len(text)`.\n3. Mandatory CDSFL sections are not alternative headers.\n4. Therefore, a single alternative followed by `FALSIFICATION` is sliced through end-of-text.\n5. Therefore, later mandatory review sections become part of `AlternativeRecord.alternative_text`.\n\nFormal conclusion: `parse_alternative_block()` over-approximates alternative bodies and can treat unrelated mandatory review sections as alternative content."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1673,
+   "description": "`validate_null_justification()` in `bench/dm/_divergence.py` accepts generic filler that violates \u00a718 Structure B.\n\nCurrent implementation:\nif justification is None or not justification.strip():\n    reasons.append(\"missing_null_justification\")\n    return False, reasons\n\ncleaned = justification.strip()\nif len(cleaned) < config.null_justification_min_chars:\n    reasons.append(\n        f\"null_justification_too_short ({len(cleaned)} < \"\n        f\"{config.null_justification_min_chars})\"\n    )\n\nreturn not reasons, reasons\nBug mechanism: the validator checks only non-emptiness and minimum length. \u00a718 requires a scoped null-alternative justification naming:\n\n1. the search space considered,\n2. rejected candidates,\n3. why each rejected candidate collapsed to the primary.\n\nConcrete trace:\n\nInput:\ngeneric = (\n    \"No distinct alternative exists here because all alternatives collapse \"\n    \"to the same solution in practice, so the primary is sufficient.\"\n)\nThis string is longer than the default `null_justification_min_chars=60`, but it does not name a search space, rejected candidates, or candidate-specific collapse reasons.\n\nExpected under \u00a718:\n(False, [\"missing_null_search_space\", \"missing_rejected_candidates\", \"missing_collapse_reasons\"])\nActual:\n(True, [])\nPremises:\n\n1. \u00a718 says bare declarations are inadmissible.\n2. A valid null alternative must name search space, rejected candidates, and rejection/collapse reasons.\n3. Current code validates only presence and character count.\n4. Therefore, generic filler longer than the threshold passes validation.\n\nFormal conclusion: `validate_null_justification()` under-enforces the Structure B admissibility contract."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 772,
+   "description": "`validate_null_justification()` admits bare filler text on length alone.\n\nLocation: `bench/dm/_divergence.py`, function `validate_null_justification`.\n\nEvidence from current code:\ncleaned = justification.strip()\nif len(cleaned) < config.null_justification_min_chars:\n    reasons.append(...)\nreturn not reasons, reasons\nThe function does not check that the null-alternative justification names:\n\n1. the search space considered;\n2. rejected candidate alternatives;\n3. why each rejected candidate collapsed to the primary.\n\nConcrete input:\ncfg = DivergenceConfig(null_justification_min_chars=60)\nvalidate_null_justification(\"a\" * 60, cfg)\nExpected under \u00a718: reject, because this is a bare declaration/filler and contains no scoped null search.\n\nActual: returns `(True, [])`."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 934,
+   "description": "`parse_alternative_block()` lets alternative bodies bleed into following CDSFL sections.\n\nLocation: `bench/dm/_divergence.py`, function `parse_alternative_block`.\n\nEvidence from current code:\nbody_start = m.end()\nbody_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)\nbody = text[body_start:body_end].strip()\nThe parser terminates an alternative body only at the next alternative header or EOF. It does not stop at later section headers such as `FALSIFICATION:`, `CORROBORATION:`, `ADMISSIBILITY:`, or `NOVELTY:`.\n\nConcrete input:\nAlternative (dimension: mechanism)\nDiffers from primary: Uses a separate parser state rather than slicing to EOF.\nUse a section-aware parser.\n\nFALSIFICATION:\nThis prose is not part of the alternative.\nExpected parsed `alternative_text`:\nUse a section-aware parser.\nActual parsed `alternative_text`:\nUse a section-aware parser.\n\nFALSIFICATION:\nThis prose is not part of the alternative."
+  },
+  "C0005": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 458,
+   "description": "`eta_int_modulator()` ignores `DivergenceConfig.mode=\"advisory\"`.\n\nLocation: `bench/dm/_divergence.py`, function `eta_int_modulator`.\n\nEvidence from configuration:\nmode: str = \"imperative\"  # \"imperative\" | \"advisory\"\nEvidence from current modulation logic:\nif not config.enabled or record.compliant:\n    return 1.0\nThe function does not inspect `config.mode`.\n\nConcrete input:\ncfg = DivergenceConfig(enabled=True, mode=\"advisory\")\nrecord = DivergenceRecord("
+  },
+  "C0012": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 829,
+   "description": "`check_sibling_admissibility()` applies the prior-round recidivism check across all supplied prior alternatives without enforcing the function\u2019s own \u201csame finding\u201d scope.\n\nLocation: `bench/dm/_divergence.py`, function `check_sibling_admissibility()`:\nif prior_round_alternatives:\n    max_prior = 0.0\n    worst_prior_idx: Optional[int] = None\n    for k, prior in enumerate(prior_round_alternatives):\n        prior_text = getattr(prior, \"alternative_text\", \"\") or \"\"\n        if not prior_text:\n            continue\n        prior_iso = score_isomorphism(prior_text, alt.alternative_text)\nEvidence: no condition compares `prior.primary_finding_id` with `alt.primary_finding_id`, despite the docstring saying prior-round alternatives are checked \u201cfor the same finding.\u201d\n\nConcrete failing input:\nprior = AlternativeRecord(\n    primary_"
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1423,
+   "description": "`parse_null_justification_block()` in `bench/dm/_divergence.py` terminates a null-alternative block only at markdown headings/rules or end-of-text. It does not terminate at required CDSFL section headers such as `FALSIFICATION:`, `CORROBORATION:`, `ADMISSIBILITY:`, or `NOVELTY:`.\n\nEvidence location:\nbody_start = m.end()\n# Terminate at the next markdown heading, rule, or end-of-text \u2014 the\n# justification block should be a contiguous prose chunk.\nterminator = re.search(\n    r\"\\n(?:\\#{1,6}\\s|\\-{3,}|\\*{3,}|\\={3,})\",\n    text[body_start:],\n)\nbody_end = body_start + terminator.start() if terminator else len(text)\nbody = text[body_start:body_end].strip()\nreturn body if body else None\nConcrete trace:\n\nInput:\nNo alternative found:\n\nFALSIFICATION:\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nExpected result:\n\n- `parse_null_justification_block()` should return `None` or an empty null justification, because no scoped null rationale was supplied.\n- `build_divergence_record()` should not treat the later `FALSIFICATION:` section as null-alternative prose.\n\nActual result:\n\n- `parse_null_justification_block()` returns text beginning with `FALSIFICATION:`.\n- If the later section is longer than `null_justification_min_chars`, `validate_null_justification()` accepts it.\n- `build_divergence_record()` can mark the finding compliant despite no real alternative and no real null-alternative justification."
+  },
+  "C0015": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 980,
+   "description": "Several public helper functions in `bench/dm/_divergence.py` ignore `DivergenceConfig.enabled=False`, contradicting the module\u2019s documented disabled-mode contract.\n\nRelevant documentation in module header:\n* Disabled gracefully \u2014 all parse / validate functions return empty or\n  neutral results when the directive is off; no pipeline mutation.\nActual behavior:\n\n- `parse_alternative_block(..., config=DivergenceConfig(enabled=False))` still parses and returns alternatives.\n- `validate_alternative(..., config=DivergenceConfig(enabled=False))` still rejects malformed alternatives.\n- `check_sibling_admissibility(..., config=DivergenceConfig(enabled=False))` still mutates alternatives and can demote siblings.\n\nConcrete trace:\n\nInput:\nconfig = DivergenceConfig(enabled=False)\n\nrecords = parse_alternative_block(valid_raw_alternative, \"F005\", \"primary\", config)\nExpected:\nrecords == []\nActual:\nrecords contains AlternativeRecord(...)\nSecond trace:\nalt = AlternativeRecord(primary_"
+  },
+  "C0018": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 712,
+   "description": "`eta_int_modulator()` in `bench/dm/_divergence.py` returns `1.0` immediately for any `record.compliant`, before checking the mandatory severe near-copy tiers.\n\nCurrent code:\nif not config.enabled or record.compliant:\n    return 1.0\n\nhas_any_alt = bool(record.alternatives)\nhas_null = record.null_justification is not None\n\nif has_any_alt:\n    ...\n    any_near_copy = any(...)\n    if any_near_copy:\n        return 0.60\nThe early `record.compliant` return means a record containing a near-copy alternative can avoid the severe `0.60` \u03b7-int modulation whenever it is also compliant through another route, such as a valid null justification or enough other admissible alternatives.\n\nConcrete input:\nDivergenceRecord("
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 818,
+   "description": "`DivergenceConfig.mode` (`bench/dm/_divergence.py:222`, documented `\"imperative\" | \"advisory\"`) is read by no code path. It is written in the dataclass, copied through `divergence_config_from_dict` (`:883`), and populated from `bench/cdsfl_registry/universal.toml:72` (`mode = \"imperative\"  # imperative = MUST; advisory = SHOULD`). The only reference outside the module is `test_divergence_directive.py:542`, which merely asserts the field round-trips. Neither `build_divergence_record` nor `eta_int_modulator` branches on `config.mode`. Evidence (real module, run above): with `mode=\"advisory\"`, `eta_int_modulator` returns `0.70` \u2014 identical to imperative. An operator who sets `mode=\"advisory\"` (documented as \"SHOULD address\", i.e. non-enforcing) still gets the full imperative R_k penalty tiers (0.60/0.70/0.85)."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 712,
+   "description": "`check_sibling_admissibility` penalizes models for carrying forward valid alternatives across rounds. When `prior_round_alternatives` is provided, it scores the current alternative against ALL prior-round alternatives. If the Jaccard similarity is `>= near_copy_threshold`, it rejects the alternative with `recidivism_near_copy` and triggers the severe 0.60 penalty tier in `eta_int_modulator`. However, it does not check if the prior-round alternative was actually rejected. If a model correctly supplies an ADMISSIBLE alternative in Round 1, and the finding remains open in Round 2, the model will naturally resubmit the same valid alternative. The current logic punishes this correct behavior as \"recidivism\"."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1859,
+   "description": "`divergence_config_from_dict()` accepts unvalidated TOML/dict values and coerces them with raw `bool()`, `int()`, and `float()` conversions. This creates silently wrong divergence enforcement for common configuration payloads.\n\nLocation: `bench/dm/_divergence.py`, function `divergence_config_from_dict`.\n\nEvidence from current code:\nreturn DivergenceConfig(\n    enabled=bool(payload.get(\"enabled\", defaults.enabled)),\n    min_alternatives=int(payload.get(\"min_alternatives\", defaults.min_alternatives)),\n    ...\n    isomorphism_threshold=float(\n        payload.get(\"isomorphism_threshold\", defaults.isomorphism_threshold)\n    ),\n    ...\n)\nConcrete examples:\n\n1. Input:\ndivergence_config_from_dict({\"enabled\": \"false\"})\nPremises:\n- Python truthiness treats any non-empty string as `True`.\n- `\"false\"` is a non-empty string.\n- Current code computes `bool(\"false\")`.\n\nActual output:\nDivergenceConfig(enabled=True, ...)\nExpected output:\nDivergenceConfig(enabled=False, ...)\n2. Input:\ncfg = divergence_config_from_dict({\n    \"enabled\": True,\n    \"isomorphism_threshold\": 1.1,\n})\nPremises:\n- Jaccard scores from `score_isomorphism()` are bounded in `[0.0, 1.0]`.\n- `validate_alternative()` rejects cosmetic alternatives only when `alternative.isomorphism_score >= config.isomorphism_threshold`.\n- If `isomorphism_threshold = 1.1`, even an exact lexical copy with score `1.0` passes the isomorphism gate.\n\nActual downstream result:\nvalidate_alternative(exact_copy_alt, cfg)[0] == True\nExpected result:\n- Either config construction rejects `1.1` as invalid, or clamps/refuses it before validation.\n- An exact copy must not pass the near-duplicate gate.\n\nFormal conclusion: because config values are not semantically validated at the module boundary, invalid or string-encoded configuration can invert directive enablement and disable core near-duplicate enforcement."
+  },
+  "C0023": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1737,
+   "description": "`bench/dm/_divergence.py`, `_ALT_HEADER_RE` / `parse_alternative_block()`: the parser rejects the shorthand alternative header format used by the mandatory prompt itself: `Alternative [Scope]:`.\n\nEvidence from the target file:\n_ALT_HEADER_RE = re.compile(\n    r\"\"\"\n    ^\\s*\n    (?:\\#{1,6}\\s+|\\*{1,2})?        # optional markdown heading / bold\n    (?:alt(?:ernative)?|conjecture) # keyword\n    \\s*\n    (?:\\#?\\s*\\d+\\s*)?              # optional index\n    (?:[:\\-\u2014]\\s*)?                 # optional separator\n    (?P<tag>\n        [\\(\\[]\\s*(?:dim(?:ension)?|on)\\s*[:=]\\s*(?P<dim_inline>[a-zA-Z_-]+)\\s*[\\)\\]]\n        |\n        [-\u2014]\\s*(?:dim(?:ension)?|on)\\s*[:=]\\s*(?P<dim_dash>[a-zA-Z_-]+)\n    )?\n    \\s*\n    (?:\\*{1,2})?\n    \\s*$\n    \"\"\",\n    re.VERBOSE | re.IGNORECASE | re.MULTILINE,\n)\nThis accepts forms such as:\nAlternative [dim: scope]\nAlternative [dimension: scope]\nAlternative (dimension: scope)\nAlternative \u2014 dimension: scope\nIt does not accept:\nAlternative [Scope]:\nBut the required review format explicitly examples alternatives as:\nAlternative [Scope]: ...\nAfter optional Markdown emphasis is stripped only at the start/end, the core header still contains a bare bracketed dimension token without `dim:` / `dimension:` / `on:`. `_ALT_HEADER_RE` has no branch for that syntax.\n\nConcrete input:\nAlternative [Scope]\nDiffers from primary: This narrows applicability to batch jobs only.\nUse this only for batch jobs, not online paths.\nExpected: one parsed `AlternativeRecord` with `dimension == \"scope\"` and, assuming the rest of the body is valid, compliance can pass.\n\nActual: no alternative is parsed; `build_divergence_record()` returns `alternatives=[]`, `compliant=False`, and `failure_reasons=[\"no_alternative_or_null_block\"]`."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1711,
+   "description": "`parse_null_justification_block()` in `bench/dm/_divergence.py` fails to parse an inline null-alternative justification where the prose appears on the same line as the null header.\n\nLocation:\n_NULL_HEADER_RE = re.compile(\n    r\"\"\"\n    ^\\s*\n    (?:\\#{1,6}\\s+|\\*{1,2})?\n    (?:no[-_\\s]alternative(?:\\s+found)?\n       |null[-_\\s]alternative\n       |no[-_\\s]distinct[-_\\s]alternative\n       |alternative[-_\\s]search[-_\\s]result\n    )\n    \\s*[:\\-\u2014]?\\s*\n    (?:\\*{1,2})?\n    \\s*$\n    \"\"\",\n    re.VERBOSE | re.IGNORECASE | re.MULTILINE,\n)\nand:\ndef parse_null_justification_block(text: str) -> Optional[str]:\n    ...\n    m = _NULL_HEADER_RE.search(text)\n    if not m:\n        return None\nConcrete input:\nNo alternative found: I searched scope, mechanism, and tradeoff candidates; rejected batching and caching because each collapses to the primary mechanism.\nCurrent execution trace:\n\n1. `_NULL_HEADER_RE.search(text)` evaluates the only line.\n2. The regex accepts the header phrase and optional separator, but then requires only optional bold markers and end-of-line via `\\s*$`.\n3. The inline justification text after the colon prevents the regex from matching.\n4. `m is None`.\n5. `parse_null_justification_block()` returns `None`.\n6. `build_divergence_record()` sees no alternatives and no null block.\n7. `record.compliant` remains `False`.\n8. `record.failure_reasons` receives `\"no_alternative_or_null_block\"`.\n\nExpected behavior:\n\nThe parser should treat the inline prose after `No alternative found:` as the null-alternative justification body, equivalent to:\nNo alternative found:\nI searched scope, mechanism, and tradeoff candidates; rejected batching and caching because each collapses to the primary mechanism."
+  },
+  "C0026": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 930,
+   "description": "The regexes `_CONTRAST_RE`, `_NULL_HEADER_RE`, and `_DIM_LINE_RE` are highly brittle to standard markdown formatting, and the contrast statement extraction logic is flawed:\n1. Markdown Brittleness: The regexes expect separators (`:`, `-`) immediately after keywords. If a model writes `Differs from primary: ...` or `No alternative found:`, the regexes fail to match because the `` intercepts the colon.\n2. Truncation: `_CONTRAST_RE` uses `.+?` with a `$` anchor. Since `.` does not match newlines, multi-line contrast statements are truncated at the first newline, often causing them to falsely fail the `min_contrast_chars` (20) length check.\n3. Empty Body False Positives: `parse_contrast_statement` removes the matched contrast line from the body. If the alternative is concise and consists of a single paragraph, removing the contrast statement leaves an empty body, falsely triggering the `empty_alternative_body` rejection."
+  },
+  "C0027": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 157,
+   "description": "Character\u2011limit enforcement can be circumvented via the contrast statement \u2013 `validate_alternative` checks only the stripped body, not the full block length."
+  },
+  "C0028": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1622,
+   "description": "`bench/dm/_divergence.py` claims disabled mode makes \u201call parse / validate functions return empty or neutral results,\u201d but several public functions ignore `DivergenceConfig.enabled`.\n\nLocations:\n\n- `parse_alternative_block(...)`\n- `validate_alternative(...)`\n- `check_sibling_admissibility(...)`\n- `validate_null_justification(...)`\n- `parse_null_justification_block(...)` has no `config` parameter, so it cannot honour disabled mode at all.\n\nEvidence from code:\ndef parse_alternative_block(..., config: Optional[DivergenceConfig] = None) -> List[AlternativeRecord]:\n    ...\n    if config is None:\n        config = DivergenceConfig()\n    if not text:\n        return []\nThere is no `if not config.enabled: return []`.\n\n`validate_null_justification()` likewise validates and rejects while disabled:\nif justification is None or not justification.strip():\n    reasons.append(\"missing_null_justification\")\n    return False, reasons\nThe module-level design note says:\n\n> Disabled gracefully \u2014 all parse / validate functions return empty or neutral results when the directive is off; no pipeline mutation.\n\nConcrete input:\ncfg = DivergenceConfig(enabled=False)\nraw = \"\"\"Alternative (dimension: scope)\nDiffers from primary: It narrows the data path enough.\nUse Redis only for POST /orders.\"\"\"\nExpected when disabled:\n\n- `parse_alternative_block(...) == []`\n- `validate_null_justification(None, cfg) == (True, [])` or other neutral non-penalising result.\n\nActual:\n\n- `parse_alternative_block(...)` returns one parsed `AlternativeRecord`.\n- `validate_null_justification(None, cfg)` returns `(False, [\"missing_null_justification\"])`."
+  },
+  "C0029": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 906,
+   "description": "`check_sibling_admissibility()` applies cross-round recidivism checks to every item in `prior_round_alternatives` without verifying that the prior alternative belongs to the same finding.\n\nLocation:\n\n- `bench/dm/_divergence.py`\n- `check_sibling_admissibility(...)`\n- Cross-round recidivism loop:\nif prior_round_alternatives:\n    max_prior = 0.0\n    worst_prior_idx: Optional[int] = None\n    for k, prior in enumerate(prior_round_alternatives):\n        prior_text = getattr(prior, \"alternative_text\", \"\") or \"\"\n        if not prior_text:\n            continue\n        prior_iso = score_isomorphism(prior_text, alt.alternative_text)\n        if prior_iso > max_prior:\n            max_prior = prior_iso\n            worst_prior_idx = k\n    alt.prior_round_isomorphism = max_prior\n    if max_prior >= config.near_copy_threshold:\n        ...\n        alt.admissible = False\nThe function never checks:\nprior.primary_"
+  },
+  "C0033": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 2374,
+   "description": "`bench/dm/_divergence.py` documents disabled-mode behaviour as neutral for \u201call parse / validate functions\u201d, but several public helper functions still enforce divergence parsing/validation when called with `DivergenceConfig(enabled=False)`.\n\nAffected functions:\n\n- `parse_alternative_block()`\n- `validate_alternative()`\n- `check_sibling_admissibility()`\n- `validate_null_justification()`\n\nEvidence from the module docstring/design note:\n* Disabled gracefully \u2014 all parse / validate functions return empty or\n  neutral results when the directive is off; no pipeline mutation.\nCurrent behaviour contradicts that statement:\ncfg = DivergenceConfig(enabled=False)\nparse_alternative_block(raw, \"F\", \"primary\", cfg)        # returns parsed alternatives\nvalidate_alternative(invalid_alt, cfg)                   # returns False + reasons\nvalidate_null_justification(None, cfg)                   # returns False + reasons\ncheck_sibling_admissibility([a1, a2], cfg)               # mutates a2 inadmissible\nConcrete example:\nfrom bench.dm._divergence import (\n    parse_alternative_block,\n    validate_alternative,\n    validate_null_justification,\n    check_sibling_admissibility,\n    DivergenceConfig,\n    AlternativeRecord,\n)\n\ncfg = DivergenceConfig(enabled=False)\n\nraw = \"\"\"Alternative (dimension: scope)\nDiffers from primary: This changes the scope sufficiently.\nBody text.\n\"\"\"\n\nparsed = parse_alternative_block(raw, \"F_DISABLED\", \"primary\", cfg)\n\nalt = AlternativeRecord(\"F_DISABLED\", \"\", None)\nvalid_alt, alt_reasons = validate_alternative(alt, cfg)\n\nvalid_null, null_reasons = validate_null_justification(None, cfg)\n\na1 = AlternativeRecord(\"F_DISABLED\", \"same lexical body\", \"scope\", admissible=True)\na2 = AlternativeRecord(\"F_DISABLED\", \"same lexical body\", \"scope\", admissible=True)\ncheck_sibling_admissibility([a1, a2], cfg)\nExpected disabled-mode outputs:\nparsed == []\n(valid_alt, alt_reasons) == (True, [])\n(valid_null, null_reasons) == (True, [])\na2.admissible is True\na2.rejection_reasons == []\nActual current outputs observed with tool execution:\nparsed_count == 1\nvalid_alt == False\nalt_reasons == [\"empty_alternative_body\", \"missing_or_invalid_dimension\", \"missing_contrast_statement\"]\nvalid_null == False\nnull_reasons == [\"missing_null_justification\"]\na2.admissible_after_sibling == False\na2_reasons == [\"sibling_cosmetic_isomorphism (jaccard_vs_alt_0=1.000 >= 0.85)\"]"
+  },
+  "C0035": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 171,
+   "description": "`build_divergence_record` uses `record.compliant = has_enough_alts or null_ok`, allowing a null\u2011justification to override failed alternatives and bypass \u00a718\u2019s exclusivity."
+  },
+  "C0042": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1311,
+   "description": "`parse_alternative_block()` in `bench/dm/_divergence.py` uses a header regex `_ALT_HEADER_RE` that matches any line beginning with `alternative` or `alt` (or `conjecture`) optionally preceded by markdown heading/emphasis, without requiring structural block\u2011start context. This causes false\u2011positive matching inside an existing alternative\u2019s body, splitting a legitimate alternative into multiple parsed records.\n\nEvidence:  \nThe regex pattern `(alt(?:ernative)?|conjecture)` is so permissive that a line such as \u201cAlternative methods include \u2026\u201d appearing inside the prose body of a previously parsed alternative will be detected as the start of a new alternative. The `parse_alternative_block` function slices alternative bodies between consecutive header matches; a mid\u2011body false match creates a truncated first alternative and a spurious second alternative consisting of the remaining text. This violates the directive\u2019s intent that only intentional alternative headers trigger parsing.\n\nConcrete example:  \nRaw text:\n## Alternative 1 (dimension: mechanism)  \nA completely different implementation approach.  \nAlternative 2: using the same mechanism is also possible.\nThe second line, although not a real header, would be mis\u2011identified as a new alternative, producing two records where only one was intended."
+  },
+  "C0043": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 930,
+   "description": "`validate_alternative()` enforces `max_chars_per_alternative` on `alternative_text` (the body after contrast\u2011statement removal), but the contrast statement itself is not counted toward the per\u2011alternative length limit. A model can supply a trivially short alternative body (e.g., \u201cX\u201d) together with an arbitrarily long contrast statement (\u201cDiffers from primary: \u2026\u201d \u00d7 10,000 chars), and the alternative passes the character\u2011length gate, effectively circumventing the rendering\u2011boundary cap.\n\nEvidence:  \n`validate_alternative` checks `len(alternative.alternative_text) > config.max_chars_per_alternative`, where `alternative.alternative_text` is `body_without_contrast`. The contrast text is stored separately in `contrast_statement` and never tested against the cap. The directive states that \u201cAlternatives are capped at `max_chars_per_alternative`\u201d without exception, implying the entire alternative submission should be bounded."
+  },
+  "C0045": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1793,
+   "description": "`validate_alternative()` in `bench/dm/_divergence.py` accepts generic contrast-statement filler because it checks only presence and `min_contrast_chars`, not whether the statement names any dimension-specific difference.\n\nLocation:\n# Round-2: mandatory contrast statement\n    if alternative.contrast_statement is None:\n        reasons.append(\"missing_contrast_statement\")\n    elif len(alternative.contrast_statement.strip()) < config.min_contrast_chars:\n        reasons.append(\n            f\"contrast_statement_too_short ({len(alternative.contrast_statement.strip())} < \"\n            f\"{config.min_contrast_chars})\"\n        )\nConcrete input:\nAlternative (dimension: scope)\nDiffers from primary: This is different from the primary in several important ways.\nUse a per-tenant limiter for paid accounts only.\nPrimary text:\nUse a Redis global counter to enforce rate limits.\nConcrete execution trace against the real module:\n\n1. `_ALT_HEADER_RE` parses `dimension: scope`.\n2. `parse_contrast_statement()` extracts:\nThis is different from the primary in several important ways.\n3. The contrast statement length is greater than `min_contrast_chars = 20`.\n4. `validate_alternative()` does not check whether the contrast mentions scope, applicability, tenant/local boundary, or any dimension-specific departure.\n5. The alternative is treated as admissible if its body has low enough Jaccard against the primary.\n\nObserved behaviour from tool execution:\nrecord.compliant == True\nrecord.alternatives[0].contrast_statement == \"This is different from the primary in several important ways.\"\nrecord.alternatives[0].rejection_reasons == []\nExpected behaviour:\n\n- The generic contrast should be rejected because it does not name how the alternative differs from the primary on the declared `scope` dimension."
+  },
+  "C0046": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 161,
+   "description": "`_DIM_LINE_RE.match(body)` fails to find the dimension line when the body does not start with it, causing a false\u2011negative rejection of valid alternative blocks."
+  },
+  "C0047": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 518,
+   "description": "`check_sibling_admissibility` falsely penalizes valid alternatives in two ways: 1) It compares against INADMISSIBLE earlier siblings, causing a valid alternative to be rejected if it resembles a malformed prior attempt in the same output. 2) The cross-round recidivism check strips the contrast statement before comparing. If a model fixes a `missing_contrast_statement` rejection by adding one, the stripped text remains identical to the prior round, falsely triggering the severe 0.60 `recidivism_near_copy` penalty."
+  },
+  "C0051": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 749,
+   "description": "`check_sibling_admissibility()` in `bench/dm/_divergence.py` compares every current alternative against all earlier siblings, including siblings that already failed primary validation.\n\nLocation:\nfor j in range(i):\n    sib = alternatives[j]\n    sib_iso = score_isomorphism(sib.alternative_text, alt.alternative_text)\nEvidence:\nIf alternative 0 is inadmissible because it lacks a contrast statement, and alternative 1 is otherwise valid but has the same body text, alternative 1 is rejected for `sibling_cosmetic_isomorphism` against an inadmissible sibling. That means the invalid first alternative can poison the valid second alternative.\n\nThis is the same root cause as C0047 and should merge into C0047 rather than create a new canonical finding."
+  },
+  "C0053": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 524,
+   "description": "The cross-round recidivism check in `check_sibling_admissibility` falsely penalizes models for fixing previously rejected alternatives. When a model adds a missing contrast statement to a prior alternative, `parse_contrast_statement` strips the new contrast statement from the body. The resulting `alternative_text` is identical to the prior round's `alternative_text`. The recidivism check then scores them as 1.0 isomorphic and rejects the fixed alternative with `recidivism_near_copy`, triggering the severe 0.60 penalty."
+  },
+  "C0054": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 289,
+   "description": "_ALT_HEADER_RE in bench/dm/_divergence.py (lines 129\u2011155) includes an optional separator (?:[:\\-\u2014]\\s*)? that can greedily consume an em\u2011dash, preventing the dash\u2011alternative dimension tag from matching, causing parse failure for valid \u00a718 headers like \"Alternative \u2014 dimension: mechanism\"."
+  },
+  "C0055": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 591,
+   "description": "`parse_alternative_block()` and therefore `build_divergence_record()` parse alternative headers inside fenced code blocks as submitted Structure A alternatives.\n\nLocation: `bench/dm/_divergence.py`, function `parse_alternative_block()`, specifically:\nmatches = list(_ALT_HEADER_RE.finditer(text))\nEvidence: `_ALT_HEADER_RE` is applied across the entire raw model output with `re.MULTILINE`, without excluding fenced code regions. A finding that contains no real alternative, but quotes an example alternative inside a Markdown code fence, can be marked divergence-compliant.\n\nConcrete input:"
+  },
+  "C0057": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 602,
+   "description": "`eta_int_modulator` incorrectly short-circuits and returns `1.0` if `record.compliant` is True, completely bypassing the severe `0.60` penalty for near-copies and the `0.85` soft penalty for mixed-admissibility alternatives.\nEvidence: At the top of `eta_int_modulator`, the code executes `if not config.enabled or record.compliant: return 1.0`. If a model submits one valid alternative and one near-copy alternative, `record.compliant` evaluates to True (assuming `min_alternatives=1`). The function immediately returns `1.0`, allowing the model to escape the severe penalty for submitting a near-copy."
+  },
+  "C0062": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1230,
+   "description": "`score_isomorphism()` / `_tokenise()` in `bench/dm/_divergence.py` ignores numeric-only differences because `_WORD_RE` only matches tokens beginning with a letter:\n_WORD_RE = re.compile(r\"[A-Za-z][A-Za-z0-9_\\-']*\")\nand `_tokenise()` therefore never sees tokens such as `5`, `9`, `100`, `5000`, `0`, or `3`.\n\nEvidence:\nfrom bench.dm._divergence import score_isomorphism\n\nprimary = \"Use timeout 5 ms and retry limit 3 for calls.\"\nalternative = \"Use timeout 9 ms and retry limit 0 for calls.\"\n\nscore = score_isomorphism(primary, alternative)\nCurrent tokenisation drops `5`, `9`, `3`, and `0`, leaving the same token set on both sides:\nprimary tokens     = {\"use\", \"timeout\", \"ms\", \"retry\", \"limit\", \"calls\"}\nalternative tokens = {\"use\", \"timeout\", \"ms\", \"retry\", \"limit\", \"calls\"}\nSo:\nscore = |intersection| / |union| = 6 / 6 = 1.0\nExpected behaviour: numeric differences should be part of the lexical near-duplicate heuristic because \u00a718 explicitly allows alternatives to differ by timescale and tradeoff, both of which commonly appear as rates, budgets, thresholds, retry counts, quorum sizes, or latency targets.\n\nFormal conclusion: alternatives that differ only in quantitative parameters are falsely scored as exact near-copies."
+  },
+  "C0063": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 175,
+   "description": "eta_int_modulator's severe-tier 'all_isomorphic' gate ignores sibling_cosmetic_isomorphism reasons, allowing compliance-theatre alternatives to escape the 0.60 double-penalty."
+  },
+  "C0064": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 153,
+   "description": "validate_alternative_with_ground_truth allows near\u2011verbatim rephrasing through when ground\u2011truth indicates \"repetition\", missing the near_copy rejection."
+  },
+  "C0067": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 629,
+   "description": "`_tokenise()` in `bench/dm/_divergence.py` drops all single-character tokens because it returns only tokens satisfying `len(t) >= 2`:\nreturn {t for t in tokens if t not in _STOPWORDS and len(t) >= 2}\nTool receipt from my local falsifier run against the real module:\nFALSIFIED: distinct single-character alternatives collapse to empty token sets and score 1.0\nAssertionError: (set(), set(), 1.0)\nConcrete input:\nleft = \"x y z\"\nright = \"a b c\"\nExpected: lexical Jaccard should be `0.0`, because the token sets are disjoint.\n\nActual:\n_tokenise(\"x y z\") == set()\n_tokenise(\"a b c\") == set()\nscore_isomorphism(\"x y z\", \"a b c\") == 1.0"
+  },
+  "C0068": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 942,
+   "description": "`check_sibling_admissibility()` applies the cross-round recidivism check to every object passed in `prior_round_alternatives` without verifying that the prior alternative belongs to the same `primary_finding_id`.\n\nRelevant current code:\nif prior_round_alternatives:\n    max_prior = 0.0\n    worst_prior_idx: Optional[int] = None\n    for k, prior in enumerate(prior_round_alternatives):\n        prior_text = getattr(prior, \"alternative_text\", \"\") or \"\"\n        if not prior_text:\n            continue\n        prior_iso = score_isomorphism(prior_text, alt.alternative_text)\n        if prior_iso > max_prior:\n            max_prior = prior_iso\n            worst_prior_idx = k\nTool receipt from my local falsifier run against the real module:\nFALSIFIED: cross-finding prior alternative demoted current alternative as recidivism\nAssertionError: ['recidivism_near_copy (jaccard_vs_prior_round_alt_0=1.000 >= 0.98)']\nConcrete example:\ncurrent.primary_"
+  }
+ }
+}

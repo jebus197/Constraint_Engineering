@@ -1,0 +1,122 @@
+{
+ "run": "exp36_evidence_latest",
+ "stats": {
+  "entries": 217,
+  "prefix": 17,
+  "fallback": 1,
+  "unverified": 38,
+  "no_join": 161,
+  "unchanged": 0,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0010": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 546,
+   "description": "FIND \u2014 `export_bundle` computes the Merkle root from the latest epoch when epochs exist, but builds inclusion proofs from `build_inclusion_proof()` which always computes the root over ALL current records. If additional records were appended after the last epoch was sealed, the epoch's `merkle_root` covers only `record_count` records while the proof was built against the full set. The proof will not verify against the epoch root. This breaks bundle verification on the happy path whenever unsealed records exist beyond the last epoch boundary."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 742,
+   "description": "FIND \u2014 `_classify_event` uses string containment (`f\"CONFIRM {finding_id}\" in payload_str`) on the full JSON-dumped payload. This produces false positives when one finding ID is a substring of another in the JSON structure. E.g., if `payload_str` contains `\"CONFIRM C0001 and C0002\"` and we're classifying for `C0002`, the search for `\"CONFIRM C0002\"` matches \u2014 but so does a search for `C0001` on the same record, which might find `\"CONFIRM C0001\"` and classify it as \"confirmed\" for C0001 even though the actual verdict was on both. More critically: `json.dumps` on the payload means the search matches across key names, not just verdict text. A metadata key like `\"CONFIRM_TEMPLATE\"` adjacent to the finding ID could trigger a false match."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 510,
+   "description": "FIND \u2014 `export_bundle` calls `self._chain.records` which returns a deep copy (per verification_chain.py's `@property records`), then iterates over indices to build proofs. Each call to `build_inclusion_proof` internally accesses `self._records` (the original list). This is correct \u2014 the indices are consistent because nothing modifies the chain between calls. However, the deep copy of all records is taken even when only a subset is needed for the bundle. For large chains this is wasteful but not incorrect."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 728,
+   "description": "FIND \u2014 In `verify_bundle`, the method calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)`. This requires the `EvidenceStore` instance that created the bundle \u2014 but the docstring and design intent say \"An external party can verify this bundle without access to the full chain.\" The `verify_inclusion_proof` method on the chain doesn't actually need chain state (it delegates to `rfc9162_verify_inclusion`), so this works on ANY `EvidenceStore` instance. But the API design is misleading: `verify_bundle` is an instance method that appears to need the original chain. A bundle received externally cannot be verified without constructing a dummy `EvidenceStore` or calling the chain's static-like method directly."
+  },
+  "C0024": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 538,
+   "description": "FIND: In `bench/evidence.py`, lines 272-286, the `trace_finding` method claims to return events \"ordered by timestamp\" but actually sorts by record index (`sorted(indices)`). The docstring states: \"Build a chronological provenance trace for a finding. Returns every event related to this finding ID, ordered by timestamp\". The evidence is line 275: `for i in sorted(indices):`. Record index order is not guaranteed to match timestamp order (timestamps could be out-of-order if records are appended retroactively, or if clock skew exists)."
+  },
+  "C0028": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 518,
+   "description": "FIND: In `bench/evidence.py`, lines 386-389, `_classify_event` uses `json.dumps(rec.payload)` and substring search to detect verdicts. This is fragile: if the payload contains the string \"CONFIRM C0042\" as part of a larger word (e.g., \"CONFIRMC0042\") or in a different case (e.g., \"confirm C0042\"), it will not match. The regex used for finding ID extraction is `\\bC\\d{4}\\b`, which requires word boundaries. The substring search does not. This could lead to false negatives. However, for a PoC, this may be acceptable."
+  },
+  "C0029": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 556,
+   "description": "FIND: In `bench/evidence.py`, lines 370-380, `StoreSummary` includes a field `merkle_root` which is set to `epochs[-1][\"merkle_root\"] if epochs else \"\"`. However, if there are no epochs, the summary returns an empty string. This is misleading because the chain still has a Merkle root (the root of the tree over all records). The `export_bundle` method computes this root when there are no epochs. The summary should provide the current Merkle root even without epochs. The evidence is line 380: `merkle_root = epochs[-1][\"merkle_root\"] if epochs else \"\"`."
+  },
+  "C0048": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 634,
+   "description": "FIND: In `bench/evidence.py`, lines 330-337, `export_bundle` sets `merkle_root` to `epochs[-1][\"merkle_root\"]` if epochs exist. However, inclusion proofs are built against the *current* chain (which may have more records than the last epoch). This causes the proof's embedded `merkle_root` (from `build_inclusion_proof`) to differ from the bundle's `merkle_root`, making `verify_bundle` fail.\nEVIDENCE: The code uses `self._chain.build_inclusion_proof(i)` which returns a proof with a `merkle_root` field computed from the current chain. If the chain has grown since the last epoch, this root differs from `epochs[-1][\"merkle_root\"]`."
+  },
+  "C0050": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 646,
+   "description": "FIND: In `bench/evidence.py`, `EvidenceStore.query()` accepts an `experiment` filter, and `_EvidenceIndex` builds `by_experiment` from `record.metadata[\"experiment\"]`, but `from_chain_file()` populates store-level experiment name from the directory name and `EvidenceRecord.from_chain_record()` leaves `experiment=\"\"` when metadata omits it. Evidence: constructor stores `self._experiment = experiment_name`, yet records are not backfilled from that value. Result: `summary().experiment` can report a valid experiment name while `query(experiment=self._experiment)` returns no records for chains whose records lack per-record experiment metadata."
+  },
+  "C0060": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 821,
+   "description": "FIND: In `bench/evidence.py`, lines 303-311, `EvidenceStore.verify_bundle` iterates through `zip(bundle.records, bundle.inclusion_proofs)` and calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` for each pair. This verifies that the proof is valid for *some* leaf hash, but does not verify that the proof's leaf hash matches the record's `chain_hash`. An attacker could swap proofs between records or substitute a valid proof for a different record, and verification would still pass.  \nEvidence: The `verify_inclusion_proof` method in `verification_chain.py` (line 519) only checks that the proof is valid for the `chain_hash` embedded in the proof dict. It does not compare that `chain_hash` to the record's `chain_hash`. The `EvidenceStore.verify_bundle` loop does not perform this comparison either."
+  },
+  "C0080": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1064,
+   "description": "FIND: In `bench/evidence.py`, lines 335-337, `export_bundle` uses `_digest_bytes(r[\"chain_hash\"])` for all records in `raw_records` when computing the Merkle root for chains without epochs. However, `raw_records` is a deep copy of the chain's records obtained via `self._chain.records`. The `_digest_bytes` function expects a string in 'sha256:<hex>' format, but `r[\"chain_hash\"]` is guaranteed to be that format because it comes from the chain. This is correct, but there is a hidden assumption: the `raw_records` list includes *all* records in the chain, not just the subset being bundled. The computed root is for the entire chain, but the bundle contains only a subset of records. The inclusion proofs are built for the entire chain's root, which is valid because each proof is for the leaf (record's chain_hash) in the full tree. However, the bundle's `merkle_root` field is set to the root of the entire chain, not a root of just the bundled records. This is correct for verification because inclusion proofs are relative to the full chain root. No bug here."
+  },
+  "C0081": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 993,
+   "description": "FIND: In `bench/evidence.py`, lines 303-311, `verify_bundle` iterates over `zip(bundle.records, bundle.inclusion_proofs)` and calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)`. However, `verify_inclusion_proof` in `verification_chain.py` expects `proof` to be a dict with keys `\"chain_hash\"`, `\"proof\"`, and optionally `\"merkle_root\"`. The proof built by `build_inclusion_proof` includes these keys. But `verify_bundle` passes the proof dict directly, which includes the `\"merkle_root\"` field. `verify_inclusion_proof` checks if the embedded `merkle_root` matches the supplied root (bundle.merkle_root). This is correct. However, there is a subtlety: the bundle's `merkle_root` might be from an epoch that is not the latest in the current chain (if the chain has advanced). The verification still works because the proof's embedded `merkle_root` should equal the bundle's `merkle_root`. The function `verify_inclusion_proof` returns False if they mismatch. This is correct."
+  },
+  "C0082": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 629,
+   "description": "FIND: In `bench/evidence.py`, lines 268-278, `trace_finding` returns events sorted by record index, not by timestamp. The docstring states \"chronological provenance trace\" and \"ordered by timestamp\". However, the code sorts `indices` (which are record indices) and then appends events in that order. Record indices are monotonic with insertion order, but timestamps may not be monotonic across records (e.g., if system clock skews or records are appended out-of-order). The trace should be sorted by `timestamp_utc` to guarantee chronological order. Evidence: line 276 uses `sorted(indices)`, which sorts by index, not timestamp."
+  },
+  "C0083": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 667,
+   "description": "FIND: In `bench/evidence.py`, lines 386-389, `_classify_event` uses `json.dumps(rec.payload)` to convert the payload to a string and then searches for substrings like `f\"CONFIRM {finding_id}\"`. This is fragile:  \n1. JSON formatting may not preserve whitespace or order (though `json.dumps` without indent produces a compact representation).  \n2. The substring `\"CONFIRM C0042\"` could appear inside a larger string (e.g., a model's reasoning text) that is not a verdict.  \n3. It does not handle nested structures where the verdict might be in a list or dict key.  \nEvidence: The code uses `if f\"CONFIRM {finding_id}\" in payload_str:` which is a simple substring match."
+  },
+  "C0084": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 779,
+   "description": "FIND: In `bench/evidence.py`, lines 330-337, `export_bundle` computes the Merkle root when there are no epochs by using `raw_records` (all records) to compute leaves. However, the `raw_records` list is obtained via `self._chain.records`, which returns a deep copy. The `_digest_bytes` function is called on `r[\"chain_hash\"]`, which is a string. This is correct. However, there is a critical issue: the bundle's `merkle_root` is computed from *all* records in the chain, but the bundle may contain only a subset of records (if filtered by finding_id, model, round_idx). The inclusion proofs for the subset are built against the full chain's root, which is correct. The bundle's root must be the root of the full chain (or the epoch root) for the proofs to verify. This is correct."
+  },
+  "C0183": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 182,
+   "description": "FIND: `_extract_finding_ids` recursively searches `obj.values()` for dictionaries, completely ignoring dictionary keys. If a finding ID appears only as a key, it is silently dropped."
+  },
+  "C0204": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 639,
+   "description": "FIND \u2014 `bench/evidence.py`, `EvidenceStore.verify_bundle()`, lines 303-311. The method verifies inclusion proofs but does not validate that each record's payload_hash matches the actual payload. For `full_payload` records, the sealed body includes a `payload_hash` field that must equal SHA-256(canonical_json(payload)). Without this check, a bundle could contain a record where the payload has been altered but the chain_hash remains valid (if the attacker also tampers with entry_hash and chain_hash accordingly). The internal consistency fix for C0199 verifies entry_hash and chain_hash derivation but still does not check payload_hash."
+  },
+  "C0215": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 992,
+   "description": "FIND: `bench/evidence.py`, `EvidenceStore.verify_bundle()` lines 309-312. The method calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` but doesn't verify that the proof's embedded `chain_hash` matches the record's `chain_hash` when the proof lacks a `chain_hash` field.\n\nEvidence: \n- Line 310: `valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)`\n- The `VerificationChain.verify_inclusion_proof()` method (from context) returns `False` on any malformed input but doesn't specifically validate that `proof[\"chain_hash\"]` exists when the record has a `chain_hash`.\n- Lines 303-308 check for mismatch when both exist, but if `proof.get(\"chain_hash\")` returns `None` or empty string (malformed proof), the check passes through `if record_hash and proof_hash and record_hash != proof_hash:` (short-circuits on `proof_hash` being falsy).\n- This allows a proof with missing `chain_hash` to proceed to verification, potentially verifying against the wrong leaf."
+  }
+ }
+}

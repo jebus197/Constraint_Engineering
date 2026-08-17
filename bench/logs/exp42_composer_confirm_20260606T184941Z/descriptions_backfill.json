@@ -1,0 +1,62 @@
+{
+ "run": "exp42_composer_confirm_20260606T184941Z",
+ "stats": {
+  "entries": 23,
+  "prefix": 8,
+  "fallback": 0,
+  "unverified": 1,
+  "no_join": 2,
+  "unchanged": 12,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 573,
+   "description": "`_prune_for_coherence()` (line ~510) is counterproductive. It removes SOFT text to lower constraint density, but density = `_count_constraints(policy)` / `token_estimate`. `_count_constraints` counts from the TOML policy dict (fixed, independent of packet text). Removing text shrinks `token_estimate` while `constraint_count` stays constant, so density increases after every prune. The early-exit condition `if density <= budget` can never become true through pruning \u2014 the function always exhausts all prunable content, then exits with density worse than when it started."
+  },
+  "C0005": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 633,
+   "description": "Final global length cap raw-truncates rendered directive text after packet-level safety checks.\n\nLocation: `compose()`, final length cap:\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\nEvidence: this code slices the fully rendered string without checking packet boundaries or `DirectivePacket.constraint_class`. A HARD packet appended late, such as `build_interaction_pattern(\"four_layer\")`, can be partially or completely omitted from `rendered_text`."
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1123,
+   "description": "HARD-vs-HARD conflicts are silently resolved by priority instead of rejected.\n\nLocation: `resolve_layer_conflicts()` conflict loop:\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins; else higher layer wins; \"\n                        \"same-layer tie goes to more specific packet.\"\n                    ),\n                ))\n                losing = True\n                break\nEvidence: both entries can have `entry[\"hard\"] == True` and `winner[\"hard\"] == True`; no guard raises. The later conflicting HARD directive is dropped."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 590,
+   "description": "`_compute_cid()` is not content-addressed; equal-length directive text changes collide.\n\nLocation:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence: the CID preimage includes only layer, name, text length, and model. It omits `p.text`, `constraint_class`, `domain`, `model`, and `tags`."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 895,
+   "description": "Domain directives containing HARD language are loaded as SOFT and can be whole-packet pruned.\n\nLocations:\n\n`_load_domain_directive()`:\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n`_prune_for_coherence()` whole-packet pruning:\n# Pass 2: whole-packet pruning if still over budget\n    keep_indices = set(range(len(mutable_packets)))\n    for idx, packet in prunable:\n        keep_indices.discard(idx)\n        pruned_names.append(packet.name)\nEvidence: all loaded domain files are labeled SOFT regardless of text. If the domain file contains `[HARD constraints]`, `MUST`, `NEVER`, `FORBIDDEN`, or similar hard markers, the packet is still eligible for whole-packet pruning because `prunable` is based on `packet.constraint_class == \"SOFT\"`."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1266,
+   "description": "`bench/cdsfl_registry/composer.py::compose()` violates the composer\u2019s HARD-preservation, fail-loud, and purity contracts for situation packets.\n\nThere are two coupled mechanisms at the same layer boundary:\n\n1. Caller-provided `situation` packets are mutated and phenotype-transformed unconditionally:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\n2. The final rendered prompt is blindly truncated by raw character count:\n# Apply global phenotype length cap\nif len(rendered) > transform.max_directive_chars:\n    rendered = (\n        rendered[: transform.max_directive_chars]\n        + \"\\n[... truncated for model capacity]\"\n    )\nEvidence:\n\n- `build_interaction_pattern(\"four_layer\")` returns a `DirectivePacket` with `constraint_class == \"HARD\"`.\n- `_apply_phenotype_transform()` can strip rationale, strip examples, simplify language, deduplicate lines, and truncate.\n- `compose()` applies that transformation to `situation` without checking `constraint_class`.\n- The global cap can cut through any packet, including HARD packets, after pruning/conflict resolution.\n- The module docstring explicitly promises: \u201cPure function, deterministic, fail-loud\u201d and \u201cHARD constraints are NEVER pruned.\u201d"
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 841,
+   "description": "`bench/cdsfl_registry/composer.py::_compute_cid()` does not identify directive content. It hashes only packet layer, name, text length, and model:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence:\n\nTwo different packet texts with the same length produce identical hash input.\n\nExample:\nDirectivePacket(layer=\"situation\", name=\"same_name\", text=\"Review A\", constraint_class=\"SOFT\")\nDirectivePacket(layer=\"situation\", name=\"same_name\", text=\"Review B\", constraint_class=\"SOFT\")\nBoth produce:\nsituation:same_name:8\nfor the packet component."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 842,
+   "description": "`bench/cdsfl_registry/composer.py::_prune_for_coherence()` uses a density formula that pruning cannot improve under its current numerator.\n\nThe function computes:\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nThen, after pruning text, it recomputes:\nremaining_tokens = max(remaining_chars // 4, 1)\ndensity = constraint_count / remaining_tokens\nBut `constraint_count` is fixed from the TOML policy and is not reduced when SOFT packet text or SOFT directive blocks are removed.\n\nEvidence:\n\nFor positive `constraint_count`, if pruning reduces `remaining_tokens`, then:\nconstraint_count / remaining_tokens\nincreases.\n\nConcrete arithmetic:\nconstraint_count = 10\ntokens_before = 1000\ndensity_before = 10 / 1000 = 0.010\n\ntokens_after = 500\ndensity_after = 10 / 500 = 0.020\nThe measured density gets worse."
+  }
+ }
+}

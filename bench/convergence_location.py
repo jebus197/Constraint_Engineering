@@ -77,10 +77,61 @@ def target_symbols(source_or_path: str) -> FrozenSet[str]:
     return frozenset(names)
 
 
+# A finding's PREMISES are antecedents it cites to build its argument, not places
+# it accuses. Everything from this header to the end of the description is
+# supporting material.
+#
+# THE HEADER SET IS DELIBERATELY NARROW — "premise(s)" and nothing else. The
+# obvious candidates were measured against the archive first: of 2187 archived
+# descriptions only 122 (5.6%) carry any supporting-material header at all, and
+# `EVIDENCE:` is 78 of them. Reading those, `EVIDENCE:` does not introduce cited
+# antecedents; it introduces the substantiation of the SAME defect at the SAME
+# place ("EVIDENCE: In `_run_tool`, `sp.TimeoutExpired` is caught and returns
+# ..."). Stripping it would delete real location signal. `premise(s)` is 35
+# findings, and those are the citation case. A wider set would have been easy to
+# justify in prose and wrong on the evidence.
+_PREMISE_HEADER = re.compile(
+    r"(?im)^\s*[#*\->\s]*\**\s*premises?\s*\**\s*[:\-]"
+)
+
+
+def _accusing_span(description: str) -> str:
+    """The part of a description that ACCUSES, with cited antecedents removed.
+
+    WHY THIS EXISTS, and it is the deeper of the two truncation defects found on
+    2026-08-17. `finding_locations` is a word-boundary scan over the whole text,
+    so it cannot tell "the defect is at EN-16" from "EN-01 defines the factored
+    load". Both render as a flagged location, and under location keying a flagged
+    location is what decides whether a finding counts as new.
+
+    OBSERVED. Exp 49 finding C0037 accuses claim EN-16 of using the wrong factor
+    convention, then lists four premises — EN-01, EN-03, EN-17, EN-20 — to derive
+    the correct value. Stored truncated at 500 chars it yielded {EN-16}; restored
+    in full it yielded all five. The truncation had been cutting the premise list
+    off, so it produced the RIGHT answer for the wrong reason, and repairing the
+    truncation without this would have made the extraction worse, not better. The
+    two defects were masking each other, which is why neither was visible alone.
+
+    MEASURED, over the six location-keyed runs, with descriptions backfilled from
+    the archived raw responses: with this applied, exp45/46/48/49 reproduce their
+    archived novelty series close-round exactly, and exp44 and exp47 close EARLIER
+    than they did live (10 -> 8 and 11 -> 7) — meaning truncation had DELAYED
+    those two, which is the conservative direction. No run converged early.
+    """
+    text = description or ""
+    m = _PREMISE_HEADER.search(text)
+    return text[:m.start()] if m else text
+
+
 def finding_locations(description: str, symbols: Iterable[str]) -> FrozenSet[str]:
     """The subset of `symbols` named (word-boundary match) in a finding description,
-    excluding generic identifiers. Empty result means no specific code location."""
-    desc = description or ""
+    excluding generic identifiers. Empty result means no specific code location.
+
+    Cited premises are excluded — see `_accusing_span`. A symbol that appears ONLY
+    under a `Premises:` header is being quoted, not accused, and flagging it lets
+    one finding claim locations it never alleged a defect at.
+    """
+    desc = _accusing_span(description)
     return frozenset(
         s for s in symbols
         if s not in _GENERIC and re.search(r"\b" + re.escape(s) + r"\b", desc)
@@ -484,6 +535,40 @@ def signature_similarity(a: FrozenSet[str], b: FrozenSet[str]) -> float:
 # ones. Both p-values cross-verified three ways (scipy, hand-rolled
 # hypergeometric, exact SymPy rational). The original figures were correct for
 # the code as it then stood and are recorded here rather than overwritten.
+#
+# ── RE-DERIVED ON REPAIRED TEXT, 2026-08-17 ──────────────────────────────────
+# Every figure above was computed on the ARCHIVED descriptions, and those were
+# damaged in two ways discovered on 2026-08-17: `runner_core.parse_findings` fell
+# through to `block[:200]` on 15.1% of blocks — substituting the schema header for
+# the claim — and `FindingRegistry.register` clipped a further 29% at 500 chars.
+# Both are now fixed, and `scripts/backfill_descriptions.py` recovers the real
+# text from the archived raw model responses (531 repairs, each join verified
+# against the stored value; nothing unverifiable was touched, and no archived
+# report was modified).
+#
+# Re-running the operating characteristic with `--backfilled`:
+#
+#     criticals 165 (same)   tier-2 coverage 160 (was 161)
+#     tier-3 coverage 110 (was 94)    same-location pairs 460 (was 438)
+#     labelled 31 same / 296 different (was 28 / 290)
+#     truncated criticals 23 of 165 (14%), was 81 of 165 (49%)
+#     AUC 0.976, 95% CI [0.939, 0.998] by finding-level bootstrap (was 0.986)
+#
+# WHAT SURVIVES THE REPAIR — these are the load-bearing claims, and they hold on
+# both the damaged and the repaired text:
+#   * P(merge | genuinely different) at the live 0.20 threshold: 14.9% (was 14.5%)
+#   * ZERO false splits on either version
+#   * against location keying alone, which merges every same-location pair:
+#     false merges 296 -> 47, an 84% reduction
+#   * tier 3 changes the decision on 3 of 327 pairs and is wrong on all 3
+#
+# WHAT DIES — and it should. The 2026-08-16 note recorded a pooled association
+# between truncation and wrong merges at Fisher p = 2.07e-05, odds ratio 10.5,
+# flagged then as NOT ESTABLISHED because it reversed under stratification by
+# run. On repaired text it measures p = 0.272. The stratification was right and
+# the pooled figure was an artefact. Recorded here rather than deleted, because a
+# claim that was correctly hedged and then correctly withdrawn is worth more as a
+# record than as a silence.
 #
 # ── AND THE MEASUREMENT THAT MATTERS MORE, added 2026-08-16 ──────────────────
 # Everything above describes tier 3's ANSWERS. It does not describe its EFFECT,

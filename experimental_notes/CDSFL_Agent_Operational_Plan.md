@@ -8,7 +8,42 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
-**★ RESUME POINTER (2026-08-16 23:42 BST). SUPERSEDES EVERY POINTER BELOW.**
+**★ RESUME POINTER (2026-08-17 01:45 BST). SUPERSEDES EVERY POINTER BELOW.**
+**READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
+every future pointer inherits it.)**
+
+**THE TRUNCATION ALARM IS REFUTED. THREE FIXES LANDED. NO EXPERIMENT IS INVALIDATED.**
+Suite **3540 passed, 14 skipped, 0 failed**.
+
+CC1's 2026-08-16 claim that exp46 and exp49 converged EARLY because of truncation is
+**WRONG**. Truncation was cutting PREMISE lists off the end of findings, so location
+extraction gave the right answer for the wrong reason; repairing truncation alone made it
+worse. **Two defects were masking each other.** With both fixed: exp44 10→8, exp45 3→3,
+exp46 5→5, exp47 11→7, exp48 never, exp49 6→6. **No run converged early**; two were
+DELAYED by truncation, the safe direction. The adversarial sweep was right and CC1 was not.
+
+**[FIXED] A parser** (`runner_core.py`): the `|$` branch was unreachable after
+`block.strip()`; separator class missed `.`/dashes; heading style has no separator.
+5592 archived blocks: **4748→5060 matched, 312 recovered, ZERO regressions**. Two wider
+candidates rejected — they shortened 870 and 834 correct descriptions. The first was nearly
+shipped because the regression metric was blind to text loss.
+**[FIXED] B backfill** (`scripts/backfill_descriptions.py`): **531 content-verified
+repairs**, 471 unverifiable left alone, **archives NOT modified** (opt-in sidecars).
+**[FIXED] C premise exclusion** (`finding_locations`): scope set by measurement — only
+`Premises:` (35 findings), NOT `EVIDENCE:` (78), which substantiates the same defect.
+
+**RE-DERIVED:** pairs 438→460, tier-3 coverage 94→110, truncated criticals 49%→14%,
+AUC 0.986→0.976. **Survives:** P(merge|different)=14.9% at the live 0.20 threshold, ZERO
+false splits, 84% fewer false merges than location keying alone, tier 3 wrong on all 3 of
+the decisions it changes. **Dies:** truncation-harm association p=2.07e-05 → **p=0.272**.
+
+**NEEDS A FOUNDER RULING:** the 133 unadjudicated similarity pairs (was 120).
+
+Full record: `experimental_notes/Description_Truncation_Three_Fixes_2026-08-17.md`.
+
+---
+
+**★ RESUME POINTER (2026-08-16 23:42 BST). Superseded by the block above; retained as trail.**
 **READ `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` — it is the live queue. (Standing line:
 every future pointer inherits it.)**
 
@@ -42,7 +77,7 @@ often those changes are right.
    shrink (median 4 vs 5, p = 0.0104) and **15 of 318 pairs sit EXACTLY on the 0.20 threshold**.
 2. **The 120 dropped pairs.** The recorded measurement silently discards pairs between embedding
    0.70 and 0.90 — 27.4% of the data and the hard 27%. Extracted unanswered to
-   `bench/results/similarity_adjudication_pack.json`. Deliberately NOT pre-answered. Every operating
+   `experimental_notes/data/similarity_adjudication_pack.json`. Deliberately NOT pre-answered. Every operating
    point is provisional until they return.
 
 Full record: `experimental_notes/Similarity_Function_Operating_Characteristic_2026-08-16.md`

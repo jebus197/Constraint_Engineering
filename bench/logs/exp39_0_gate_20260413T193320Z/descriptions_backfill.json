@@ -1,0 +1,44 @@
+{
+ "run": "exp39_0_gate_20260413T193320Z",
+ "stats": {
+  "entries": 41,
+  "prefix": 5,
+  "fallback": 0,
+  "unverified": 3,
+  "no_join": 20,
+  "unchanged": 13,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1277,
+   "description": "`source_env()` in `bench/runner_core.py` performs naive `KEY=VALUE` splitting and stores raw text into `os.environ`, which misparses common `.env` syntax such as quoted values and inline comments.\n\nPremises:\n1. Current implementation:\nfor line in env_path.read_text().splitlines():\n    line = line.strip()\n    if line and not line.startswith(\"#\") and \"=\" in line:\n        if line.startswith(\"export \"):\n            line = line[7:]\n        key, _, val = line.partition(\"=\")\n        os.environ[key.strip()] = val.strip()\n2. This implementation only strips whitespace; it does not parse shell-like quoting or comment syntax.\n3. The docstring says it loads a `.env` file generically, with no restriction to a reduced dialect.\n\nConcrete traces:\n- Input: `API_KEY=\"abc 123\"`\n  - Current output: `os.environ[\"API_KEY\"] == '\"abc 123\"'`\n  - Expected `.env` semantics: `abc 123`\n- Input: `TOKEN=abc # comment`\n  - Current output: `abc # comment`\n  - Expected: `abc`\n- Input: `export URL='https://x/y?z=1'`\n  - Current output includes the quotes.\n\nFormal conclusion:\n- The function does not preserve intended key/value mappings for a non-trivial class of valid `.env` inputs.\n- Because the module is shared runner infrastructure, this is a silently wrong-results bug, not merely cosmetic."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 925,
+   "description": "`_parse_flaw_class()` claims deterministic mapping for unknown flaw-class text but uses Python\u2019s built-in `hash()`, which is process-randomized by default. That makes the mapping non-deterministic across runs.\n\nLocation: `bench/runner_core.py`, function `_parse_flaw_class`\n\nPremises:\n1. Current code:\n# Deterministic hash for unknown classes (Gemini recommendation)\nreturn (abs(hash(key)) % 8) + 1\n2. In CPython, string hashing is salted per process unless `PYTHONHASHSEED` is fixed.\n3. Therefore the same unknown label can map to different class integers in different runs.\n\nConcrete trace:\n- Input text: `\"novel category\"`\n- Run A may produce class 3.\n- Run B may produce class 7.\n- The code comment explicitly says deterministic; the implementation does not satisfy that property across executions.\n\nFormal conclusion:\n- The code contradicts its own stated invariant and undermines reproducibility of parsing and metrics."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1476,
+   "description": "`dispatch_to_model()` is not exception-safe after starting the subprocess. If an exception occurs after `proc.start()` but before normal return, the child process and queue may be left running or unclosed.\n\nLocation: `bench/runner_core.py`, function `dispatch_to_model`\n\nPremises:\n1. Current code starts a process and queue:\nresult_queue = mp.Queue()\nproc = mp.Process(...)\nproc.start()\nproc.join(timeout=wall_clock_limit)\n...\nif proc.is_alive():\n    proc.terminate()\n    ...\n    raise TimeoutError(...)\nif result_queue.empty():\n    raise RuntimeError(...)\nstatus, payload = result_queue.get_nowait()\n2. Cleanup is only performed on the explicit timeout branch.\n3. There is no `try/finally` guaranteeing:\n   - termination/join of a started child process on exceptional exit paths,\n   - closure of `result_queue`.\n4. Multiprocessing operations such as `join`, `empty`, and `get_nowait` can raise under interruption or IPC failure.\n5. Therefore there exist paths where the child outlives the caller or queue resources remain open.\n\nConcrete execution scenario:\n- `proc.start()` succeeds.\n- Child blocks in `dispatch(...)`.\n- Parent encounters an exception during `result_queue.empty()` or `get_nowait()`.\n- Function exits immediately with no finalizer.\n- Child continues running until natural completion or process exit.\n\nFormal conclusion:\n- Process lifecycle management is not exception-safe.\n- This is a confirmed resource/control-plane bug in shared dispatch infrastructure."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 585,
+   "description": "Both JSON parsers (array \u00a71 and object \u00a71b) handle string `FLAW_CLASS` values with a bare `int()` cast plus fallback to 1, ignoring the dedicated `_parse_flaw_class()` function that handles \"5 (correctness)\" and text labels like \"correctness\". When a model emits `\"FLAW_CLASS\": \"5 (correctness)\"` or `\"FLAW_CLASS\": \"correctness\"` in JSON, `int(...)` raises `ValueError` and the finding is silently assigned `flaw_class=1`. The marker parser (\u00a73/4) correctly calls `_parse_flaw_class`. This asymmetry means identical findings parsed via JSON vs marker format get different flaw classes."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 978,
+   "description": "`dispatch_to_model` estimates token count as `estimated_chars / 3.5` and compares against `MODEL_SPECS[label][\"L\"]`. But `L` is defined as \"input context window minus 32K reserved for output\" in *tokens*, while `estimated_chars` is in *characters*. The comparison `estimated_tokens > model_L` uses a fixed 3.5 chars/token ratio, but the check only accounts for `len(prompt) + len(cdsfl_text)` \u2014 it omits any system prompt overhead, tool definitions, or other content injected by the API client layer (`experiment_11_orchestrator.dispatch`). If the downstream dispatch function adds substantial framing, the pre-check passes but the actual API call exceeds the context window.\n\nMore critically, the 3.5 chars/token ratio is a rough English-text average. Code-heavy prompts (which this system sends \u2014 entire Python files) tokenise at closer to 2.5-3.0 chars/token due to whitespace and short identifiers, meaning the pre-check systematically underestimates token usage by ~15-30%."
+  }
+ }
+}

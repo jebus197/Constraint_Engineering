@@ -1,0 +1,116 @@
+{
+ "run": "exp45_memory_statistics_live_20260727T225640Z",
+ "stats": {
+  "entries": 39,
+  "prefix": 16,
+  "fallback": 1,
+  "unverified": 9,
+  "no_join": 0,
+  "unchanged": 13,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1543,
+   "description": "`ImmuneMemory.load()` in `bench/dm/_memory.py` accepts persisted memory with no `source_hash` even when the caller supplies `expected_hash`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`, hash invalidation branch:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises:\n1. The module states that JSON persistence is \u201cfile-hash grounded for invalidation\u201d.\n2. `load(path, expected_hash=...)` is the interface that enforces that grounding.\n3. If a memory file has no `source_hash`, it is not grounded to the current source.\n4. Current code only invalidates when both `expected_hash` and `stored_hash` are truthy and unequal.\n5. Therefore, a legacy or malformed memory file with `source_hash` missing bypasses invalidation.\n\nConcrete execution:\n- Input JSON:\n{\n    \"version\": 1,\n    \"experiment_count\": 1,\n    \"decay_rate\": 0.1,\n    \"drift_threshold\": 2.0,\n    \"records\": {\n      \"1\": {\n        \"flaw_class\": 1,\n        \"confirmed\": 100.0,\n        \"rejected\": 0.0,\n        \"experiments_seen\": 1\n      }\n    }\n  }\n- Call:\nmem = ImmuneMemory.load(path, expected_hash=\"currenthash\")\n  mem.pi_mem(1)\n- Expected output if hash grounding is enforced: `0.5`, because memory should be invalidated and class 1 has no trusted data.\n- Actual output: approximately `0.995049504950495`, because stale ungrounded memory is reused.\n\nConclusion: missing `source_hash` is treated as acceptable even when `expected_hash` is supplied, silently contaminating priors with ungrounded historical data."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1442,
+   "description": "`ImmuneMemory` accepts negative confirmed/rejected counts from both the public ingestion API and persisted JSON records, allowing impossible Beta-Binomial state and invalid priors.\n\nLocations:\n1. `bench/dm/_memory.py`, `ImmuneMemory.record_experiment()`:\nfor fc, (confirmed, rejected) in flaw_counts.items():\n       ...\n       rec.confirmed += confirmed\n       rec.rejected += rejected\n2. `bench/dm/_memory.py`, `FlawClassRecord.from_dict()`:\nconfirmed=d.get(\"confirmed\", 0.0),\n   rejected=d.get(\"rejected\", 0.0),\nPremises:\n1. Confirmed and rejected counts are counts; counts must be non-negative.\n2. `pi_mem()` computes:\n(confirmed + 0.5) / (confirmed + rejected + 1.0)\n3. Negative counts can make the denominator zero or can produce priors outside `[0, 1]`.\n4. Current code performs no validation on API input or JSON-loaded records.\n\nConcrete execution:\n- API case:\nm = ImmuneMemory()\n  m.record_experiment(\"bad\", {1: (-1, 0)})\n  m.pi_mem(1)\nActual result: `ZeroDivisionError`, because denominator is `-1 + 0 + 1 = 0`.\n\n- Persisted JSON case:\n{\n    \"records\": {\n      \"1\": {\n        \"flaw_class\": 1,\n        \"confirmed\": -2.0,\n        \"rejected\": 0.0,\n        \"experiments_seen\": 1\n      }\n    }\n  }\nThen:\nmem = ImmuneMemory.load(path)\n  mem.pi_mem(1)\nActual result: `1.5`, which is outside the valid probability range.\n\nConclusion: invalid negative count data can either block operation or silently generate mathematically invalid priors."
+  },
+  "C0004": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 172,
+   "description": "In `ImmuneMemory.load`, missing `source_hash` in the JSON file combined with a caller-supplied `expected_hash` does not invalidate memory, allowing stale data to be loaded."
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1321,
+   "description": "`ImmuneMemory.load()` fails to invalidate ungrounded legacy memory when `expected_hash` is supplied but the persisted JSON has no `\"source_hash\"`.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.load()`:\nstored_hash = data.get(\"source_hash\")\nif expected_hash and stored_hash and stored_hash != expected_hash:\nPremises and evidence:\n\n1. The file docstring promises \u201cJSON persistence with file-hash grounding for invalidation\u201d.\n2. `expected_hash` is the current source hash supplied by the caller.\n3. A memory file with no `source_hash` is not grounded to the current source tree.\n4. Current condition requires `expected_hash and stored_hash and stored_hash != expected_hash`.\n5. If `expected_hash=\"current\"` and `stored_hash=None`, the condition is false.\n6. Therefore old or legacy memory lacking a source hash is loaded as valid even though it cannot be proven to match the current code.\n\nConcrete example:\ndata = {\n    \"version\": 1,\n    \"experiment_count\": 1,\n    \"decay_rate\": 0.1,\n    \"drift_threshold\": 2.0,\n    \"records\": {\n        \"5\": {\"flaw_class\": 5, \"confirmed\": 10.0, \"rejected\": 0.0}\n    }\n}\nImmuneMemory.load(path, expected_hash=\"current-source-hash\")\nExpected output: fresh memory, because persisted memory is ungrounded.\n\nActual output: loaded memory with `pi_mem(5) = (10 + 0.5) / (10 + 0 + 1) = 0.9545`."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 992,
+   "description": "`compute_source_hash()` is collision-prone for different source-file states because it hashes only the concatenated file bytes, with no path, length, or file-boundary separator.\n\nLocation: `bench/dm/_memory.py`, `ImmuneMemory.compute_source_hash()`:\nfor path in sorted(file_paths):\n    try:\n        with open(path, \"rb\") as f:\n            h.update(f.read())\n    except (OSError, IOError):\n        h.update(path.encode(\"utf-8\"))\nPremises and evidence:\n\n1. Hashing `file1=b\"ab\", file2=b\"c\"` updates SHA-256 with byte stream `b\"abc\"`.\n2. Hashing `file1=b\"a\", file2=b\"bc\"` also updates SHA-256 with byte stream `b\"abc\"`.\n3. The function does not include file paths, file lengths, or delimiters for readable files.\n4. Therefore two different source trees can produce the same source hash.\n\nConcrete example:\n\n- State A:\n  - `a.py = b\"ab\"`\n  - `b.py = b\"c\"`\n- State B:\n  - `a.py = b\"a\"`\n  - `b.py = b\"bc\"`\n\nExpected output: different source hashes.\n\nActual output: identical hash, `sha256(b\"abc\")`."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1153,
+   "description": "Public methods accept invalid probability and count inputs, allowing `pi_mem()` and `blended_prior()` to return values outside their documented probability ranges.\n\nLocations:\n\n- `ImmuneMemory.__init__()`\n- `ImmuneMemory.record_experiment()`\n- `ImmuneMemory.blended_prior()`\n- `ImmuneMemory.update_drift()`\n\nRelevant documented contracts:\nReturns value in (0, 1) \u2014 never exactly 0 or 1 due to pseudocounts.\nand:\nReturns:\n    Blended prior in [0, 1].\nPremises and evidence:\n\n1. `record_experiment()` accepts `confirmed` and `rejected` without validation.\n2. Negative counts can make `confirmed + ALPHA_0` negative.\n3. Example: `confirmed=-0.6`, `rejected=0`.\n4. `pi_mem = (-0.6 + 0.5) / (-0.6 + 0 + 0.5 + 0.5) = -0.1 / 0.4 = -0.25`.\n5. Therefore `pi_mem()` can return a negative probability.\n6. `blended_prior()` accepts `rho` and `pi_base` without validation.\n7. Example: `pi_base=0.5`, `rho=2.0`, and `pi_mem=1.0` gives `(1 - 2) \u00d7 0.5 + 2 \u00d7 1.0 = 1.5`.\n8. Therefore `blended_prior()` can return above 1 despite its documented `[0, 1]` contract.\n9. `update_drift()` accepts `observed_rate` without validation, so CUSUM can be driven by impossible rates."
+  },
+  "C0009": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 578,
+   "description": "`save()` (lines ~230\u2013248) serialises `records` but never serialises `self._drift`. `load()` (lines ~250\u2013305) rebuilds `_records` but never restores `_drift`. Evidence \u2014 pre-save `is_drifting(0)=True`, post-load `is_drifting(0)=False` (falsifier F3 output: `pre-save drift: True post-load drift: False`). The module's docstring calls this \"Cross-experiment memory,\" and JSON persistence is the mechanism by which state crosses experiments. The CUSUM drift detector therefore only accumulates within a single in-memory session and is silently zeroed at every persistence boundary."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 715,
+   "description": "`update_drift` (lines ~184\u2013224) implements a tabular CUSUM with no reference/slack value `k`: `ds.cusum_pos = max(0.0, ds.cusum_pos + residual)`. A textbook CUSUM subtracts a slack `k` (typically half the minimum shift to detect) so that sub-shift noise/bias does not accumulate. Without `k`, any persistent residual \u2014 however small and however far below a meaningful drift \u2014 integrates without bound and eventually crosses `drift_threshold`. Evidence (falsifier F1b): a steady bias of `+0.01` (1%) flags drift at iteration 199 (`cusum_pos = 200\u00d70.01 = 2.0`). Time-to-false-alarm is purely `threshold / bias`, so the detector cannot distinguish \"small chronic bias\" from \"genuine shift\" except by how long you wait."
+  },
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 829,
+   "description": "`ImmuneMemory.load()` (lines ~283\u2013305) wraps only `json.load(f)` in `try/except (json.JSONDecodeError, OSError)`. The subsequent record-reconstruction loop is *outside* that guard:\nfor fc_str, rec_dict in data.get(\"records\", {}).items():\n    rec = FlawClassRecord.from_dict(rec_dict)   # from_dict does d[\"flaw_class\"] with no .get\n    mem._records[rec.flaw_class] = rec\n`FlawClassRecord.from_dict` accesses `d[\"flaw_class\"]` directly (unlike `confirmed`/`rejected`/`experiments_seen`, which use `.get`). A persisted record missing `\"flaw_class\"`, or a non-dict record value, raises an uncaught `KeyError`/`TypeError` that propagates out of `load()`. Evidence (executed): a records dict `{\"0\": {\"confirmed\":5.0,...}}` (no `flaw_class`) \u2192 `KeyError 'flaw_class'`; `{\"0\": \"garbage\"}` \u2192 `TypeError: string indices must be integers`."
+  },
+  "C0013": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 572,
+   "description": "`update_drift()` (lines ~184\u2013224) computes `expected = self.pi_mem(flaw_class)` and accumulates `residual = observed_rate - expected`. For a flaw class with no memory record, `pi_mem` returns the uninformative `ALPHA_0/(ALPHA_0+BETA_0) = 0.5`. So drift is measured against a fabricated 0.5 baseline that reflects zero observations. Evidence (executed): feeding `observed_rate=1.0` to `update_drift(flaw_class=99, ...)` for a class never recorded flags drift at round 4 with the warning *\"Memory predictions may be stale\"* \u2014 despite there being no memory prediction at all."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 590,
+   "description": "`ImmuneMemory.record_experiment(exp_id, flaw_counts)` accepts an `exp_id` argument documented as \"for logging\" but performs no deduplication. The method unconditionally adds `flaw_counts` to the internal records and increments `experiments_seen`, even when the same `exp_id` was already ingested. Replay of a single experiment doubles (or multiplies) the evidence contributed by that experiment, producing a silently incorrect memory and therefore a silently incorrect blended prior downstream. The evidence is that the method body contains no check of `exp_id` against any set of seen IDs."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1484,
+   "description": "`ImmuneMemory.load()` in `bench/dm/_memory.py`, in the loop rebuilding persisted records:\nfor fc_str, rec_dict in data.get(\"records\", {}).items():\n            rec = FlawClassRecord.from_dict(rec_dict)\n            mem._records[rec.flaw_class] = rec\nassumes every persisted record dictionary contains `\"flaw_class\"`. That assumption is inconsistent with the surrounding load-error tolerance: `load()` catches unreadable JSON and `OSError`, but a valid JSON memory file with a malformed or legacy record missing `\"flaw_class\"` raises an uncaught `KeyError`.\n\nConcrete evidence:\n\nInput memory file:\n{\n  \"version\": 1,\n  \"experiment_count\": 1,\n  \"decay_rate\": 0.1,\n  \"drift_threshold\": 2.0,\n  \"source_hash\": null,\n  \"records\": {\n    \"1\": {\n      \"confirmed\": 1.0,\n      \"rejected\": 0.0,\n      \"experiments_seen\": 1\n    }\n  }\n}\nExecution trace:\n\n1. `ImmuneMemory.load(path)` opens and parses the file successfully.\n2. `data.get(\"records\", {})` returns `{\"1\": {...}}`.\n3. The loop passes `rec_dict` to `FlawClassRecord.from_dict(rec_dict)`.\n4. `from_dict()` executes `flaw_class=d[\"flaw_class\"]`.\n5. `\"flaw_class\"` is absent.\n6. Python raises `KeyError(\"flaw_class\")`.\n7. The exception is not caught by `load()`, so memory loading can abort the caller instead of starting fresh or skipping the bad record.\n\nExpected operational behaviour for this proof-of-concept: malformed persisted memory should not block operation; it should be ignored, skipped, or converted using the canonical map key."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 588,
+   "description": "`ImmuneMemory.__init__` in `bench/dm/_memory.py` accepts invalid control parameters `decay_rate` and `drift_threshold` without validation. Evidence from current code: `self.decay_rate = decay_rate` and `self.drift_threshold = drift_threshold` are assigned directly. Concrete execution: `ImmuneMemory(decay_rate=-1.0)` makes `record_experiment()` compute `math.exp(-self.decay_rate) == math.exp(1.0)`, so old evidence grows instead of decaying. `ImmuneMemory(drift_threshold=-0.1).update_drift(1, 0.5)` returns `True` even with zero residual because `ds.cusum_pos > -0.1` is true at `0.0`."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 597,
+   "description": "`ImmuneMemory.load()` handles malformed JSON syntax and `OSError`, but not malformed JSON schema in the `\"records\"` object. Location: `bench/dm/_memory.py`, in `load()`, after constructing `mem`, specifically `for fc_str, rec_dict in data.get(\"records\", {}).items(): rec = FlawClassRecord.from_dict(rec_dict)`. Evidence: if `\"records\"` is a list, `.items()` raises `AttributeError`; if a record lacks `\"flaw_class\"`, `FlawClassRecord.from_dict()` raises `KeyError`. These exceptions are not caught, so loading a syntactically valid but schema-invalid memory file crashes instead of starting fresh."
+  },
+  "C0023": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 690,
+   "description": "`save()` (lines ~230\u2013248) writes JSON directly onto the destination path via `open(path, \"w\")`, which truncates the target file *before* `json.dump` runs. This is a non-atomic write. If the process is interrupted (crash, kill, disk-full, container OOM) between the truncate and the completed dump, the file is left as truncated/partial JSON. `load()` then hits `json.JSONDecodeError`, logs a `warning`, and silently returns `cls()` \u2014 a fresh empty instance. Evidence: falsifier above saved 2 records (365 bytes), simulated an interrupted write by truncating to a partial JSON, and `load()` returned `records=0, exp_count=0` \u2014 all learned memory silently lost, not just the in-flight update."
+  },
+  "C0024": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1312,
+   "description": "`ImmuneMemory.load()` ignores the persisted `\"version\"` field even though `save()` writes `\"version\": 1`. Location: `bench/dm/_memory.py`, `ImmuneMemory.load`, after `data = json.load(f)` and before reconstructing `ImmuneMemory`.\n\nPremises:\n\n1. `save()` serialises a schema marker:\n\"version\": 1,\n2. `load()` never reads or checks `data[\"version\"]`.\n3. A future or incompatible memory file with `\"version\": 999` and matching `source_hash` is accepted as if it were schema version 1.\n4. Loaded records directly affect `pi_mem()` and therefore `blended_prior()`.\n\nConcrete evidence:\n\nInput persisted JSON:\n{\n  \"version\": 999,\n  \"experiment_count\": 1,\n  \"decay_rate\": 0.1,\n  \"drift_threshold\": 2.0,\n  \"source_hash\": \"expected\",\n  \"records\": {\n    \"1\": {\n      \"flaw_class\": 1,\n      \"confirmed\": 99,\n      \"rejected\": 1,\n      \"experiments_seen\": 1\n    }\n  }\n}\nCall:\nmem = ImmuneMemory.load(path, expected_hash=\"expected\")\nmem.pi_mem(1)\nExpected output for unsupported schema: fresh/invalidation behaviour, so `pi_mem(1) == 0.5`.\n\nActual output in current code: loaded incompatible record, so:\npi_mem(1) == (99 + 0.5) / (99 + 1 + 1) == 0.9851485148514851\nFormal conclusion: because an explicit persisted schema version exists but is not enforced, incompatible memory can be silently accepted and used to bias priors."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1632,
+   "description": "`ImmuneMemory.load()` ignores the persisted `\"version\"` field even though `save()` writes `\"version\": 1`. Location: `bench/dm/_memory.py`, `ImmuneMemory.save()` writes the schema version in the JSON payload, but `ImmuneMemory.load()` never checks `data[\"version\"]` before trusting persisted records.\n\nPremises:\n1. `save()` serialises memory with `\"version\": 1`.\n2. A persisted version field is only operationally meaningful if `load()` rejects, migrates, or otherwise handles unsupported versions.\n3. `load()` currently does:\n   - parse JSON,\n   - read `source_hash`,\n   - instantiate `ImmuneMemory`,\n   - rebuild `FlawClassRecord`s,\n   without consulting `data[\"version\"]`.\n4. Therefore a file labelled as an unsupported future/incompatible schema, for example `\"version\": 999`, is accepted as if it were version 1.\n5. The accepted records influence `pi_mem()` and therefore `blended_prior()`.\n\nConcrete execution:\n- Input file:\n{\n    \"version\": 999,\n    \"experiment_count\": 1,\n    \"decay_rate\": 0.1,\n    \"drift_threshold\": 2.0,\n    \"source_hash\": \"h\",\n    \"records\": {\n      \"5\": {\n        \"flaw_class\": 5,\n        \"confirmed\": 100.0,\n        \"rejected\": 0.0,\n        \"experiments_seen\": 1\n      }\n    }\n  }\n- Call:\nmem = ImmuneMemory.load(path, expected_hash=\"h\")\n  mem.pi_mem(5)\n- Current output:\n0.995049504950495\n- Expected output for unsupported schema:\n0.5\nbecause the memory should be invalidated rather than trusted.\n\nFormal conclusion: `load()` silently trusts memory whose declared schema version is unsupported. This can silently bias advisory priors with data whose structure or semantics the loader has not validated."
+  }
+ }
+}

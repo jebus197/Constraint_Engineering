@@ -1,0 +1,92 @@
+{
+ "run": "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+ "stats": {
+  "entries": 24,
+  "prefix": 8,
+  "fallback": 5,
+  "unverified": 2,
+  "no_join": 3,
+  "unchanged": 6,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 277,
+   "description": "`build_feedback_records` still keys both `finding_by_id` and `records_by_id` only by `finding_id`. Location: `bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py`, inside `build_feedback_records`.\n\nEvidence:\n- The code builds `finding_by_id = {f."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1155,
+   "description": "`FindingFeedback.priority_score()` under-prioritizes findings whose `final_verdict` is `\"REJECTED\"` but whose `refutations` list is empty. Location: `FindingFeedback.priority_score`.\n\nEvidence:\n- `action` treats either `self.refutations` or `self.final_verdict == \"REJECTED\"` as requiring `\"RECALCULATE\"`.\n- `build_feedback_records` also creates a feedback record when `final_v == \"REJECTED\"`, even if `refutations` is empty.\n- But `priority_score` only applies the +3.0 rejected/refuted priority when `self.refutations` is non-empty:\n  - current code: `if self.refutations: score += 3.0`\n- Therefore, a final rejected finding without individual specialist refutation evidence can receive only the severity tie-breaker, e.g. `0.1 * 1.0 = 0.1`.\n\nConcrete example:\n- Record A: `final_verdict=\"REJECTED\"`, `refutations=[]`, `severity_claimed=1.0`.\n  - Current score: `0.1`\n  - Action: `RECALCULATE`\n- Record B: `duplicates=[(\"prior\", 0.9)]`, `severity_claimed=0.1`.\n  - Current score: `1.8 + 0.01 = 1.81`\n- With `top_k=1`, the duplicate is shown and the rejected finding is omitted, despite the action precedence saying rejected claims require recalculation."
+  },
+  "C0003": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 142,
+   "description": "`build_feedback_records()` in `bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py` builds `finding_by_id = {f."
+  },
+  "C0004": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 290,
+   "description": "`build_feedback_records()` only creates rejection feedback while iterating `cell_verdicts.items()`. A finding that appears in `immune_result.final_verdicts` as `\"REJECTED\"` but has no corresponding `cell_verdicts` entry is silently omitted.\n\nConcrete trace:\n\n- Input findings:\n  - `Finding("
+  },
+  "C0005": {
+   "method": "fallback",
+   "stored_len": 177,
+   "recovered_len": 103,
+   "description": "The `finding_by_id` dictionary comprehension in `build_feedback_records` uses a last-wins mapping (`{f."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 660,
+   "description": "`build_feedback_records` section 1 (lines ~183-200): when `final_v == \"REJECTED\"` but `refutations` is empty (no individual cell produced a REJECTED verdict \u2014 the immune pipeline's aggregation rule mapped UNCERTAIN verdicts to a final REJECTED), a `FindingFeedback` record is created with `refutations=[]` and `final_verdict=\"REJECTED\"`. The `action` property returns `\"RECALCULATE\"`. However, `_render_single_record` renders no \"REFUTED by:\" block (guarded by `if rec.refutations`), so the model sees only the header: `\"<id> (your severity X, pipeline verdict: REJECTED) \u2014 action: RECALCULATE\"` with zero evidence or guidance on *what* to recalculate against."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1193,
+   "description": "`build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed the cap.\n\nLocation:\n\n`bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py`, function `build_feedback_sections`, max-character fallback block:\nwhile len(section) > max_chars_per_model and top_items:\n            top_items = top_items[:-1]\n            if not top_items:\n                section = (\n                    f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n                    \"\\n\"\n                    \"Feedback truncated: all items exceeded the per-model \"\n                    \"character limit.\\n\"\n                    \"\\n\"\n                    \"=== END SCHEMA FEEDBACK ===\\n\"\n                )\n                break\nPremises:\n\n1. The function parameter documentation states: `max_chars_per_model`: \u201cHard cap on section length\u201d.\n2. `max_chars_per_model` is not lower-bound validated or normalized.\n3. The fallback placeholder has fixed nonzero length.\n4. The loop breaks immediately after assigning the placeholder.\n5. No post-loop check enforces `len(section) <= max_chars_per_model`.\n\nConcrete trace:\n\nInput shape:\nrecords = ["
+  },
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 946,
+   "description": "New DISCOVERY. `build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed it.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== END SCHEMA FEEDBACK ===\\n\"\n        )\n        break\nConcrete trace:\n\nInput:\nmax_chars_per_model = 10\nrecords = [one_large_record]\nExecution:\n\n1. Initial rendered `section` length is greater than 10.\n2. Loop removes all `top_items`.\n3. Placeholder text is assigned.\n4. Loop breaks immediately.\n5. Placeholder length is greater than 10.\n\nExpected under docstring: `len(section) <= max_chars_per_model`.\n\nActual: `len(section) > max_chars_per_model`."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 847,
+   "description": "In `FindingFeedback.priority_score()`, a finding that is REFUTED by a specialist tool receives a base urgency increment of `+3.0`. Admissibility failures add `0.8` per failed gate, up to a maximum of `0.8\u00d75 = 4.0`. A finding with five failed admissibility gates (and no refutations) therefore earns a priority score of `4.0`, exceeding the `3.0` of a refuted finding. Because `priority_score` determines the top\u2011K ordering in `build_feedback_sections`, a refuted finding can be pushed out of the top\u2011K list by a less\u2011critical admissibility\u2011only finding. The intended precedence stated in the `action` property (refutation before admissibility) is violated by the scoring, leading to models potentially missing the instruction to recalculate a refuted claim. The code is at lines 82\u201199 of `_feedback_records_slice.py` (the `priority_score` method)."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 888,
+   "description": "`_rebuild_section` (line ~380) accepts parameter `all_recs: List[FindingFeedback]` which is never referenced in the function body. The function uses only `top_items`, `round_idx`, and `overflow_count`. The parameter is passed from `build_feedback_sections` (line ~340) as `model_recs`, creating a false interface dependency.\n\nConcrete evidence \u2014 the function body:\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    all_recs: List[FindingFeedback],   # \u2190 never referenced\n    round_idx: int,\n    overflow_count: int,\n) -> str:\n    lines = [...]\n    for rec in top_items:              # uses top_items\n        lines.append(_render_single_record(rec))\n    if overflow_count > 0:             # uses overflow_count\n        ...\n    return \"\\n\".join(lines)\n`all_recs` does not appear in the body. `grep -n \"all_recs\" _feedback_records_slice.py` would show it only in the signature."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1162,
+   "description": "VERDICT: CONFIRM C0011 | EXTEND C0011 with concrete boundary case `max_chars_per_model=1`.\n\n`build_feedback_sections()` documents `max_chars_per_model` as a hard cap:\nmax_chars_per_model : int\n    Hard cap on section length, to prevent prompt blow-up.\nBut the fallback path can return a section longer than the cap.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== END SCHEMA FEEDBACK ===\\n\"\n        )\n        break\nPremises:\n\n1. `max_chars_per_model` is documented as a hard cap.\n2. The loop condition checks the cap only while `top_items` is truthy.\n3. When the final item is dropped, the code assigns a placeholder and immediately `break`s.\n4. The placeholder length is greater than very small caps such as `1`.\n5. Therefore the function can return text whose length exceeds the documented hard cap.\n\nConcrete trace:\n\nInput shape:\nrecords = ["
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 777,
+   "description": "In `FindingFeedback.priority_score()`, the additive score components do not preserve the documented urgency precedence.  \nThe docstring states *\u201crefutation beats admissibility beats duplicate beats R_k discrepancy\u201d*, implying refutations must always rank highest. However the formula assigns:  \n\n- refutations: +3.0 (fixed)  \n- admissibility failures: +0.8 per failed gate \u2192 max 4.0 (5 gates \u00d7 0.8)  \n- duplicates: up to +2.0  \n- R_k discrepancy: up to +1.0  \n\nA finding with 5 admissibility failures (score 4.0) and no refutation out\u2011ranks a finding with a single tool refutation (score 3.0). This violates the required ordering.  \n\nLocation: `_feedback_records_slice.py`, `FindingFeedback.priority_score()` method, line `score += 3.0` inside the `if self.refutations:` block."
+  },
+  "C0021": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 639,
+   "description": "`FindingFeedback.priority_score()` does not preserve the documented urgency precedence when multiple lower-priority signals accumulate.\n\nLocation:\ndef priority_score(self) -> float:\n    ...\n    score = 0.0\n    if self.refutations:\n        score += 3.0\n    score += 0.8 * len(self.admissibility_failures)\n    if self.duplicates:\n        score += 2.0 * max(s for _, s in self.duplicates)\n    if self.rk_discrepancy is not None:\n        claimed, aggregate = self.rk_discrepancy\n        score += min(1.0, abs(claimed - aggregate))\n    score += 0.1 * self.severity_claimed\n    return score\nEvidence by concrete trace:\nrefuted = FindingFeedback("
+  }
+ }
+}

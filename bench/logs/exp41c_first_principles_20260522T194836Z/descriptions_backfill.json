@@ -1,0 +1,68 @@
+{
+ "run": "exp41c_first_principles_20260522T194836Z",
+ "stats": {
+  "entries": 22,
+  "prefix": 9,
+  "fallback": 0,
+  "unverified": 2,
+  "no_join": 6,
+  "unchanged": 5,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1468,
+   "description": "`ConvergenceDetector.converged()` can return `True` when every reviewed round contains zero findings, despite the file\u2019s own validator documenting \u201cnot converged unless null_expected.\u201d\n\nLocation: `bench/dm/_convergence.py`, `converged()` and `validate_no_findings()`.\n\nEvidence from the target file:\ndef validate_no_findings(config: DynamicManagementConfig) -> bool:\n    \"\"\"Edge case: F^(<=r) = empty. Convention: not converged unless null_expected.\"\"\"\nBut `converged()` only checks:\nif round_idx < self.config.min_rounds_for_convergence:\n    return False\nif self._veto(round_idx):\n    return False\nreturn self.kappa(round_idx) >= self.config.tau_kappa\nConcrete execution trace with the file\u2019s own validator setup:\ncd = ConvergenceDetector(config)\ncd.add_round_findings(0, [])\ncd.add_round_findings(1, [])\ncd.add_round_findings(2, [])\nFor `round_idx = 2`, assuming the normal convergence config where `min_rounds_for_convergence <= 2` and `tau_kappa <= 1.0`:\n\n1. `get_cumulative_classes(2)` returns `[]`.\n2. `kappa_set(2)` computes `1.0 - 0 / epsilon = 1.0`.\n3. `kappa_rate(2)` computes `peak < epsilon_conv`, then returns `1.0`.\n4. `kappa_adopt(2)` defaults `adoption_delta = 0.0`, then returns `1.0`.\n5. `kappa(2) = min(1.0, 1.0, 1.0) = 1.0`.\n6. `_veto(2)` is `False` because there are no novel classes.\n7. `converged(2)` returns `1.0 >= tau_kappa`, so `True`.\n\nThat contradicts the stated convention that an empty cumulative finding set is not convergence evidence."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 817,
+   "description": "`ConvergenceDetector.converged()` can return `True` when the requested round has no registered findings, and can also return `True` after only registered empty rounds. Location: `bench/dm/_convergence.py`, method `converged()`.\n\nEvidence from source:\ndef converged(self, round_idx: int) -> bool:\n    \"\"\"Convergence predicate.\n\n    converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n    Note: tau_kappa is SEPARATE from gamma (founder decision \u00a79.2).\n    \"\"\"\n    if round_idx < self.config.min_rounds_for_convergence:\n        return False\n    if self._veto(round_idx):\n        return False\n    return self.kappa(round_idx) >= self.config.tau_kappa\n`converged()` does not check that `round_idx` was registered via `add_round_findings()`. The helper methods default missing rounds to empty data:"
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1203,
+   "description": "In `ConvergenceDetector.kappa_set()` at lines 195\u2011198, `prior_findings` is built by extending all members from each equivalence class in `get_cumulative_classes(round_idx - 1)`. Because `get_cumulative_classes` clusters the entire multi\u2011round union and identical findings from different rounds land in the same class, the member list of that class contains multiple copies of substantively identical findings. Consequently `prior_findings` becomes a multiset.\n\n  In `_suppression_weight`, similarities to all prior findings are sorted and the top\u2011k sum is taken. Duplicate prior findings that are not highly similar to the novel class (but whose similarity is low) can appear multiple times in the sorted list; if k\u22652 they contribute twice to the sum, inflating the suppression weight beyond what is warranted.\n\n  Example: Round\u202f0 has finding A. Round\u202f1 resubmits identical A. Round\u202f2 introduces novel finding B with similarity to A = 0.3 (below \u03c4). With default `suppression_k=3`, the top\u2011k sum becomes 0.3+0.3 = 0.6 instead of 0.3, causing `w(f) = exp(-\u03bb_s\u00b70.6)` instead of `exp(-\u03bb_s\u00b70.3)`. This over\u2011suppresses the novelty score of B, inflating \u03ba_set and potentially triggering premature convergence."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 582,
+   "description": "`_compute_equivalence_classes` (line 136\u2013139) merges findings based solely on `similarity_fn() >= tau_sim`, ignoring `flaw_class`. The `FindingEquivalenceClass` docstring (line 489 of `_types.py`) specifies equivalence requires BOTH shared `flaw_class` AND similarity >= `tau_sim`. The implementation violates this documented invariant. Verified by tool: two findings with identical descriptions but `flaw_class=1` and `flaw_class=7` merge into a single equivalence class labeled `flaw_class=1` (the first member's class, line 152). The second finding's flaw_class is silently lost."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1228,
+   "description": "In bench/dm/_convergence.py, ConvergenceDetector.kappa_set() builds prior_findings by extending every member of each prior cumulative equivalence class. Evidence location: the block `for ec in self.get_cumulative_classes(round_idx - 1): prior_findings.extend(ec.members)`. Because the denominator counts each prior equivalence class once via aggregated_severity, but the numerator suppression can count multiple members from the same prior equivalence class through TopK similarity, duplicate or near-duplicate prior reports can over-suppress later novel findings. Concrete example: prior cumulative has one equivalence class with two duplicate members p1 and p2, both similarity 0.49 to a new finding n, with tau_sim=0.55, lambda_s=1.0, suppression_k=3, w_floor=0.0. n is novel because 0.49 < tau_sim for both p1 and p2. Current code computes top_k_sum=0.98 and weight=exp(-0.98)=0.375. If prior equivalence classes are represented once, top_k_sum=0.49 and weight=exp(-0.49)=0.613. For severity(n)=0.9 and total cumulative severity 1.8, current kappa_set is 1 - (0.375*0.9)/1.8 = 0.8125, while representative-level suppression gives 1 - (0.613*0.9)/1.8 = 0.6935. With tau_kappa=0.8, current code can falsely report convergence."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 764,
+   "description": "`kappa_rate` at line 304 computes the peak novel rate over `range(round_idx + 1)`, which includes `round_idx` itself. This means if the CURRENT round has the highest novel rate ever, `peak == rate_r` and `kappa_rate \u2248 1 - rate_r / (rate_r + \u03b5) \u2248 0`. This is correct for the current round. BUT: it also means that a single anomalous late-round burst (e.g., a model hallucinates many \"novel\" findings in round 7) permanently resets the peak for ALL future rounds. In round 8 with zero novelty, kappa_rate = 1 - 0/(large_peak + \u03b5) \u2248 1.0 \u2014 correct. But in round 9 with moderate novelty (2 new classes where peak was 15), kappa_rate = 1 - 2/15 \u2248 0.87 \u2014 this is HIGH convergence relative to a spike that may have been artifactual. The peak never decays or gets windowed."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1766,
+   "description": "`ConvergenceDetector.add_round_findings()` accepts invalid control inputs and stores them directly:\n\n- negative `round_idx`\n- zero, negative, `NaN`, or infinite `duration`\n- `NaN` or infinite `adoption_delta`\n\nLocation: `bench/dm/_convergence.py`, method `add_round_findings()`.\n\nCurrent code:\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\nConcrete evidence:\n\nCase A \u2014 negative round index creates internally contradictory state:\ncd.add_round_findings(-1, [finding])\nThen:\ncd.get_round_classes(-1)\ncan return a class for the stored finding, because `_round_findings[-1]` exists.\n\nBut:\ncd.get_cumulative_classes(-1)\niterates:\nfor r in range(round_idx + 1):\nFor `round_idx = -1`, this is `range(0)`, so the stored round is omitted from cumulative aggregation. The same detector can therefore report that round `-1` has findings but cumulative `<= -1` has no findings.\n\nCase B \u2014 negative duration poisons rate baseline:\ncd.add_round_findings(0, [finding_a], duration=-5.0)\n`kappa_rate()` computes:\nreturn len(self._novel_classes(r)) / max(dt, 1e-10)\nWith `dt = -5.0`, `max(-5.0, 1e-10) == 1e-10`, so one novel class becomes:\nlambda_novel = 1 / 1e-10 = 10,000,000,000\nThat artificial peak then contaminates later `kappa_rate()` comparisons.\n\nCase C \u2014 `NaN` adoption delta is silently converted to maximum stability:\ncd.add_round_findings(2, [], adoption_delta=float(\"nan\"))\ncd.kappa_adopt(2)\n`kappa_adopt()` executes:\ndelta = float(\"nan\")\nreturn max(0.0, min(1.0, 1.0 - delta))\nIn Python, `min(1.0, float(\"nan\"))` returns `1.0` because `nan < 1.0` is false. Therefore `kappa_adopt()` returns `1.0`, treating invalid schema data as perfectly stable adoption."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1039,
+   "description": "In `_weighted_novel_severity` (line 261), the class weight is computed as `max(member weights)`. The class\u2019s contribution to novel severity is then `class_weight * aggregated_severity`, where `aggregated_severity` is the maximum severity among members. The member with the highest weight may not be the same member that supplied the `aggregated_severity`. Consequently, a high\u2011severity finding that is heavily suppressed (low weight) can still contribute almost its full raw severity if another member in the same class has a high weight. This gives the novel class nearly full credit for its raw severity, weakening the suppression mechanism and making `kappa_set` underestimate convergence when high\u2011severity findings are heavily suppressed.\n\nExample: a class with two members:\n- `m1`: severity=0.9, weight=0.1 (heavily suppressed)\n- `m2`: severity=0.3, weight=1.0 (not suppressed)\nCurrent: class_weight = max(0.1, 1.0) = 1.0 \u2192 contribution = 1.0 * 0.9 = 0.90\nIntended: the 0.9 finding should be suppressed, yielding contribution \u2248 0.09."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1703,
+   "description": "`ConvergenceDetector._suppression_weight()` documents that it returns a weight in `[w_floor, 1.0]`, but the implementation can return values greater than `1.0` when a custom `similarity_fn` returns negative values.\n\nLocation: `bench/dm/_convergence.py`, method `_suppression_weight()`.\n\nRelevant current code:\n# Compute similarity to all prior findings\n        sims = sorted(\n            (self.similarity_fn(finding, g) for g in prior_findings),\n            reverse=True,\n        )\nand:\n# Exponential decay, floored\n        w = math.exp(-self.config.lambda_s * top_k_sum)\n        return max(w, self.config.w_floor)\nConcrete execution trace:\n\nPremises:\n\n1. The constructor accepts a caller-provided custom similarity function:\ndef __init__(\n       self,\n       config: DynamicManagementConfig,\n       similarity_fn: Optional[Callable[[Finding, Finding], float]] = None,\n   ) -> None:\n       self.config = config\n       self.similarity_fn = similarity_fn or _finding_similarity\n2. `_tau_sim()` explicitly treats custom similarity functions as supported:\nif self.similarity_fn is _finding_similarity:\n       return _effective_tau_sim(self.config)\n   return self.config.tau_sim\n3. `_suppression_weight()` does not clamp similarity values before summing.\n4. `exp(-\u03bb \u00b7 x) > 1.0` when `\u03bb > 0` and `x < 0`.\n\nCounterexample:\nconfig.lambda_s = 1.0\nconfig.suppression_k = 1\nconfig.w_floor = 0.05\nsimilarity_fn = lambda a, b: -1.0\nprior_findings = [g]\nThen:\nsims = [-1.0]\ntop_k_sum = -1.0\nw = math.exp(-1.0 * -1.0) = math.exp(1.0) = 2.718281828...\nreturn max(2.718281828..., 0.05) = 2.718281828...\nFormal conclusion: `_suppression_weight()` can return `2.718...`, contradicting its stated `[w_floor, 1.0]` contract."
+  }
+ }
+}

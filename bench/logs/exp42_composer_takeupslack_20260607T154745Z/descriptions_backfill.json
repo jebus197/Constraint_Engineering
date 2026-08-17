@@ -1,0 +1,134 @@
+{
+ "run": "exp42_composer_takeupslack_20260607T154745Z",
+ "stats": {
+  "entries": 80,
+  "prefix": 19,
+  "fallback": 1,
+  "unverified": 14,
+  "no_join": 5,
+  "unchanged": 41,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1357,
+   "description": "Global rendered-text truncation can silently amputate HARD directives.\n\nLocation: `bench/cdsfl_registry/composer.py`, `compose()`, final render/length-cap block:\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\nEvidence:\n- The code slices the already-rendered directive text by raw character count.\n- The slice is not packet-aware.\n- The slice is not HARD/SOFT-aware.\n- `packets`, `cid`, and `manifest[\"packets\"]` continue to describe the untruncated packet set.\n\nConcrete execution trace:\n1. `situation = build_interaction_pattern(\"four_layer\")`\n2. `four_layer` is declared as a HARD situation packet.\n3. `compose(\"software\", \"deepseek_v3\", situation=situation)` uses `max_directive_chars=4000`.\n4. If the rendered text exceeds 4000 characters, `rendered` is sliced.\n5. The returned `ComposedDirectiveSet.packets` can still contain the complete HARD packet, while `rendered_text` contains only a prefix.\n\nExpected:\n- HARD directives are never silently removed or partially removed.\n- Provenance should identify the actual rendered artifact.\n\nActual:\n- HARD directive text can be partially removed.\n- Provenance can claim a packet was delivered when only a prefix was delivered."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1132,
+   "description": "`_compute_cid()` can return the same CID for different directive contents with equal metadata and equal text length.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_compute_cid()`:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence:\n- The CID input includes `p.layer`, `p.name`, `len(p.text)`, and `model`.\n- The CID input does not include `p.text`.\n- Distinct strings can have the same length.\n\nConcrete execution trace:\na = [DirectivePacket(layer=\"domain\", name=\"same\", text=\"abc\", constraint_class=\"SOFT\")]\nb = [DirectivePacket(layer=\"domain\", name=\"same\", text=\"xyz\", constraint_class=\"SOFT\")]\n_compute_cid(a, \"model_x\") == _compute_cid(b, \"model_x\")\nExpected:\n- A composition identity hash should change when directive content changes.\n\nActual:\n- The CID is identical for different text if layer/name/length/model are equal."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1014,
+   "description": "`compose()` mutates caller-supplied `situation` packets, violating its documented purity contract and causing reuse/order-dependence bugs.\n\nLocation: `bench/cdsfl_registry/composer.py`, `compose()` situation handling:\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\nEvidence:\n- `DirectivePacket` is a mutable dataclass.\n- `compose()` assigns directly to `situation.text`.\n- The caller retains a reference to the same object.\n- The function docstring says:\n- Pure: no side effects, no state mutation\nConcrete execution trace:\ns = build_interaction_pattern(\"four_layer\")\n\nfirst = compose(\"software\", \"deepseek_v3\", situation=s)\nsecond = compose(\"software\", \"opus_4_6\", situation=s)\nExpected:\n- The second call should receive the original full `four_layer` packet and apply only the `opus_4_6` transform.\n\nActual:\n- The first call mutates `s.text`.\n- The second call operates on already-transformed text.\n- Output depends on call history."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1280,
+   "description": "`_prune_for_coherence()` removes text while keeping the same `constraint_count`, so it can worsen the measured constraint density it is trying to reduce.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_prune_for_coherence()`.\n\nRelevant code:\ntotal_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\nAfter pruning:\nremaining_chars = sum(len(p.text) for p in mutable_packets)\n        remaining_tokens = max(remaining_chars // 4, 1)\n        density = constraint_count / remaining_tokens\nEvidence:\n- `constraint_count` is computed once from TOML policy.\n- Pruning removes packet text.\n- The numerator remains fixed.\n- The denominator decreases.\n- For positive numerator, decreasing denominator increases the ratio.\n\nConcrete execution trace:\n- Initial `constraint_count = 30`\n- Initial `total_chars = 8000`\n- Initial `token_estimate = 2000`\n- Initial `density = 30 / 2000 = 0.015`\n\nAfter pruning 2000 chars:\n- `remaining_chars = 6000`\n- `remaining_tokens = 1500`\n- New `density = 30 / 1500 = 0.020`\n\nExpected:\n- Pruning should move density toward or below the budget.\n\nActual:\n- Text-only pruning with fixed `constraint_count` moves density upward."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 870,
+   "description": "`_prune_for_coherence()` (line ~876) has inverted optimization logic. Constraint density = `_count_constraints(policy) / token_estimate`. `_count_constraints` counts constraints from the TOML policy dict (fixed, ~14 for universal.toml). `token_estimate` = `total_chars // 4` from packet text. When density exceeds budget, the function prunes packet text \u2014 but this reduces `token_estimate`, which increases density. The pruning loop is counterproductive: it strips all SOFT content and leaves density higher than before.\n\nEvidence: with initial density 0.0127 and budget 0.010, pruning removes the domain packet entirely, density rises to 0.028 \u2014 a 2.2x increase. Affects 4 of 5 models (Codex, ChatGPT, Gemini, DeepSeek). After pruning, these models receive only the universal CDSFL core with zero task context (no review target, no code extracts, no domain directives)."
+  },
+  "C0009": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 773,
+   "description": "`compose()` mutates the caller's `situation` parameter in-place at line ~1370: `situation.text = _apply_phenotype_transform(situation.text, transform)`. The docstring claims \"Pure: no side effects, no state mutation.\" If a caller builds a situation packet via `build_interaction_pattern()` and passes it to `compose()` for multiple models, the second call receives already-transformed text, which is transformed again (double transformation \u2014 examples stripped twice, language simplified twice, text truncated from an already-truncated version).\n\nEvidence: passing a 1230-char FFF situation packet to `compose(\"software\", \"codex_5_3\")` mutates it to 1221 chars. A second call with a different model would transform the 1221-char version, not the original 1230-char version."
+  },
+  "C0013": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 826,
+   "description": "`bench/cdsfl_registry/composer.py::_load_domain_directive()` classifies every loaded domain directive as `SOFT`:\nreturn DirectivePacket(\n    layer=\"domain\",\n    name=path.stem,\n    text=path.read_text(encoding=\"utf-8\"),\n    constraint_class=\"SOFT\",\n    domain=domain,\n    tags={domain},\n)\nThis is wrong for domain files that contain explicit hard/non-negotiable constraints. In the provided artifact, the distributed-systems domain text contains:\n[HARD constraints \u2014 non-negotiable]\nbut the composer marks that whole domain packet as `SOFT`.\n\nEvidence: `_prune_for_coherence()` treats non-universal `SOFT` packets as prunable:\nprunable = [\n    (i, p) for i, p in enumerate(mutable_packets)\n    if p.constraint_class == \"SOFT\" and p.layer != \"universal\"\n]\nSo a domain packet containing HARD constraints can be pruned wholesale."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 714,
+   "description": "`bench/cdsfl_registry/composer.py::_prune_for_coherence()` uses a constant constraint count while pruning text, so pruning generally increases the measured density instead of reducing it.\n\nInitial calculation:\ntotal_chars = sum(len(p.text) for p in packets)\ntoken_estimate = max(total_chars // 4, 1)\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nAfter pruning:\nremaining_chars = sum(len(p.text) for p in mutable_packets)\nremaining_tokens = max(remaining_chars // 4, 1)\ndensity = constraint_count / remaining_tokens\n`constraint_count` is not recomputed from the remaining rendered directive content. Removing text lowers the denominator while keeping the numerator fixed."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 506,
+   "description": "`bench/cdsfl_registry/composer.py::compose()` silently truncates the final rendered prompt by raw character count:\n# Apply global phenotype length cap\nif len(rendered) > transform.max_directive_chars:\n    rendered = (\n        rendered[: transform.max_directive_chars]\n        + \"\\n[... truncated for model capacity]\"\n    )\nThis truncation is not packet-aware and does not preserve HARD packets. Earlier coherence pruning protects HARD packets, but this final string slice bypasses packet metadata entirely."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 818,
+   "description": "`compose()` applies `_apply_phenotype_transform()` to domain and situation packets without checking whether those packets are HARD:\nfor packet in packets:\n    if packet.layer == \"domain\":\n        packet.text = _apply_phenotype_transform(packet.text, transform)\nand:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\nBut `_apply_phenotype_transform()` can strip examples, strip rationale, simplify language, compress tables, deduplicate, and truncate:\nif len(text) > transform.max_directive_chars:\n    text = (\n        text[: transform.max_directive_chars].rstrip()\n        + \"\\n[... truncated for model capacity]\"\n    )\nTherefore HARD domain or HARD situation packets can be modified or truncated before coherence pruning and before final rendering."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 597,
+   "description": "`_block_is_hard()` (line ~360) fails to detect HARD markers (`MUST`, `NEVER`, `REQUIRED`, `ALWAYS`, etc.) when the marker occurs at a line boundary within a multi-line block. The function pads the block with spaces (`f\" {block.upper()} \"`) but does not normalize internal newlines to spaces. The markers in `_HARD_BLOCK_MARKERS` all require surrounding spaces (e.g., `\" MUST \"`), so `\"MUST\\n\"` or `\"\\nNEVER\\n\"` never match.\n\n`_split_packet_directives` produces multi-line blocks (joined with `\\n`), so any HARD keyword at end-of-line or start-of-line within a block is invisible to the classifier."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 838,
+   "description": "`_apply_phenotype_transform` step 1 (strip examples, line ~280) sets a `skipping` flag when it encounters a line starting with \"example:\", \"e.g.,\", \"for example:\", etc. The flag only resets when it encounters an empty line or a structural marker (header, section break). Non-empty, non-structural lines that follow the example trigger \u2014 including lines containing HARD constraint keywords \u2014 are silently deleted.\n\nThis is distinct from C0005 (which addresses the same function) in the *downstream consequence*: the over-eager skipping specifically deletes HARD constraint content (`MUST`, `NEVER`, `ALWAYS` directives) that happens to follow an example line without blank-line separation. C0005 identifies the mechanism; this finding identifies the HARD-constraint-loss consequence for models with `strip_examples=True` (Codex, DeepSeek)."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 806,
+   "description": "`bench/cdsfl_registry/composer.py::_load_domain_directive()` does not constrain `domain` or `variant` to the `DIRECTIVES_DIR` namespace before reading `.txt` files.\n\nLocation:\ndef _load_domain_directive(\n    domain: str, variant: str | None = None\n) -> DirectivePacket | None:\n    \"\"\"Load a domain-specific directive (Layer 2).\"\"\"\n    domain_dir = DIRECTIVES_DIR / domain\n    if not domain_dir.exists():\n        return None\nThe function then reads from that derived directory:\ntxt_files = sorted(domain_dir.glob(\"*.txt\"))\n...\ntext=path.read_text(encoding=\"utf-8\")\nConcrete evidence from the real module: with `DIRECTIVES_DIR` temporarily pointed at a test fixture, passing `domain=\"../outside\"` causes `_load_domain_directive()` to load `outside/outside.txt`, which is outside the intended directives root."
+  },
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1377,
+   "description": "`_block_is_hard()` fails to recognise common punctuation-delimited HARD markers inside otherwise-SOFT packets.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_block_is_hard()`:\n_HARD_BLOCK_MARKERS = (\n    \" HARD \", \" MUST \", \" NEVER \", \" REQUIRED \",\n    \" NON-NEGOTIABLE \", \" FORBIDDEN \", \" DO NOT \", \" ALWAYS \",\n)\n\n\ndef _block_is_hard(block: str) -> bool:\n    \"\"\"Determine if a directive block contains HARD constraint content.\"\"\"\n    upper = f\" {block.upper()} \"\n    return any(m in upper for m in _HARD_BLOCK_MARKERS)\nEvidence: the function pads the block with spaces and then searches only for markers that themselves require spaces on both sides. This misses markers followed or preceded by punctuation, despite those being normal directive syntax.\n\nConcrete inputs and current outputs:\n_block_is_hard(\"MUST: keep X\")      -> False\n_block_is_hard(\"NEVER: remove X\")   -> False\n_block_is_hard(\"[HARD] keep X\")     -> False\n_block_is_hard(\"REQUIRED: keep X\")  -> False\n_block_is_hard(\"DO NOT remove X\")   -> True\nExpected outputs: all first four should be `True`, because `MUST:`, `NEVER:`, `[HARD]`, and `REQUIRED:` are explicit hard-constraint markers.\n\nThis is distinct from the already-settled global truncation, phenotype-transform, domain-classification, and coherence-density findings. The root cause here is local lexical classification of intra-packet hard blocks."
+  },
+  "C0028": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1762,
+   "description": "`bench/cdsfl_registry/composer.py::resolve_layer_conflicts()` silently drops one HARD directive when two HARD directives conflict on the same detected topic.\n\nLocation: `resolve_layer_conflicts()`, conflict loop:\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins; else higher layer wins; \"\n                        \"same-layer tie goes to more specific packet.\"\n                    ),\n                ))\n                losing = True\n                break\nEvidence: the resolver computes priority as:\n(\n    1 if hard else 0,\n    _LAYER_PRIORITY.get(packet.layer, 0),\n    _specificity_score(packet),\n    -packet_index,\n    -directive_index,\n)\nSo two conflicting HARD directives are still ordered by layer priority. The first one is kept, the second is marked `losing=True` and omitted from `rebuilt_packets`. No exception is raised.\n\nConcrete example:\nDirectivePacket(\"universal\", \"u\", \"MUST include examples\", \"HARD\")\nDirectivePacket(\"domain\", \"d\", \"MUST avoid examples\", \"HARD\")\nBoth are HARD. `_directive_topic_and_stance()` maps them to:\n(\"examples\", \"include\")\n(\"examples\", \"exclude\")\nThe resolver keeps the universal directive and removes the domain directive."
+  },
+  "C0034": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1434,
+   "description": "`bench/cdsfl_registry/composer.py::_render_universal_minimal()` renders only flattened `universal.toml` keys plus the five \u201cNon-Formalisable Directives\u201d bullets. It does not include actionable text for mandatory HARD protocols enabled by that same TOML, including FFAFP admissibility, runnable falsifiers for critical findings, numerical corroboration, Stage-6 novelty reporting, SEARCH/REPLACE fix format, and divergence/alternative requirements.\n\nEvidence from the real module execution performed in this round:\n\n- `_render_universal_minimal()` returned a 2503-character prompt for all configured phenotype caps, including `deepseek_v3`.\n- The rendered minimal universal text contained:\n  - `policy.constraints.ffafp_required=true`\n  - `policy.divergence.enabled=true`\n  - `policy.refinements.novelty_channel_enabled=true`\n- The rendered minimal universal text did not contain:\n  - `FALSIFIER`\n  - `ADMISSIBILITY`\n  - `NOVELTY`\n  - `SEARCH/REPLACE`\n  - `Differs from primary`\n  - `R_old`\n\nLocation:\ndef _render_universal_minimal(max_chars: int | None = None) -> str:\n    ...\n    lines = [\"CDSFL CORE MINIMAL\"]\n    lines.extend(_flatten_policy_items(universal_policy, \"policy\"))\n    for i, directive in enumerate(\n        _extract_hard_behavioural_directives(universal_text), 1\n    ):\n        lines.append(f\"behaviour.{i}={directive}.\")\nThe function serialises flags but omits the operational instructions needed to obey those flags."
+  },
+  "C0035": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 192,
+   "description": "_count_constraints only inspects \"constraints\", \"verification\", and \"protocol\" top\u2011level keys, ignoring other policy sections such as \"divergence\", causing an undercount of active constraints."
+  },
+  "C0054": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1404,
+   "description": "`_directive_topic_and_stance()` misclassifies negated \u201cwithout examples/rationale\u201d requirements as exclusions rather than inclusions.\n\nLocation: `bench/cdsfl_registry/composer.py::_directive_topic_and_stance()`:\nif \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"examples\", \"exclude\"\n        return \"examples\", \"include\"\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"rationale\", \"exclude\"\n        return \"rationale\", \"include\"\nEvidence: the function treats the token `without` as always meaning \u201cexclude examples/rationale\u201d. That is false under negation. For example:\n\"Do not answer without examples.\"\nmeans examples are required. The current function classifies it as:\n(\"examples\", \"exclude\")\nConcrete consequence reproduced with the real module before tool budget was exhausted:\n_directive_topic_and_stance(\"Do not answer without examples.\")\n\u2192 (\"examples\", \"exclude\")\n\nresolve_layer_conflicts([\n  HARD universal: \"Do not answer without examples.\",\n  SOFT situation: \"Avoid examples.\"\n])\n\u2192 keeps both packets and records no conflict\nExpected result: the HARD directive should be classified as `(\"examples\", \"include\")`, conflict with `Avoid examples`, and win over the SOFT exclusion."
+  },
+  "C0060": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1770,
+   "description": "`bench/cdsfl_registry/composer.py::_directive_topic_and_stance()` misclassifies negated verbosity directives, causing conflict resolution to keep contradictory instructions.\n\nLocation:\ndef _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\nEvidence:\n\nThe function checks for low-verbosity keywords before it checks whether those keywords are negated.\n\nConcrete trace:\n\nPremises:\n\n1. Domain packet says: `\"Use concise output.\"`\n2. HARD situation packet says: `\"Do not be concise; provide detailed proof.\"`\n3. `_directive_topic_and_stance(\"Use concise output.\")` returns `(\"verbosity\", \"low\")`.\n4. `_directive_topic_and_stance(\"Do not be concise; provide detailed proof.\")` also returns `(\"verbosity\", \"low\")` because `\"concise\"` is detected before `\"detailed proof\"`.\n5. `resolve_layer_conflicts()` only treats entries as conflicting when topics match and stances differ:\nif winner_topic == topic and winner_stance != stance:\nActual result: both directives are retained because both are classified as low verbosity.\n\nExpected result: the HARD situation packet should be classified as high verbosity and should conflict with, and defeat, the lower-priority concise instruction.\n\nFormal conclusion: the conflict resolver\u2019s semantic classifier collapses negated low-verbosity directives into the same stance as affirmative low-verbosity directives, so it fails to remove contradictory prompt content."
+  },
+  "C0061": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1328,
+   "description": "`_apply_phenotype_transform()` rewrites `\"must not\"` to `\"do not\"`, weakening prohibition language into a declarative sentence.\n\nLocation:\nif transform.simplify_language:\n        replacements = {\n            \"therefore\": \"so\", \"however\": \"but\", \"additionally\": \"also\",\n            \"approximately\": \"about\", \"sufficient\": \"enough\",\n            \"prioritise\": \"prefer\", \"commence\": \"start\",\n            \"must not\": \"do not\", \"should not\": \"avoid\",\n            \"is required to\": \"must\",\n        }\nEvidence:\n\nFor an input directive:\nYou must not disclose secrets.\nthe simplification transform produces:\nYou do not disclose secrets.\nThat output is not an imperative prohibition. It reads as a factual assertion about the model/user rather than a constraint.\n\nConcrete trace:\n\nPremises:\n\n1. `deepseek_v3` has `simplify_language=True`.\n2. `_apply_phenotype_transform()` applies replacements case-insensitively.\n3. `\"must not\"` is replaced with `\"do not\"`.\n4. The input `\"You must not disclose secrets.\"` becomes `\"You do not disclose secrets.\"`\n\nExpected behaviour: simplification should preserve the deontic force of prohibitions.\n\nActual behaviour: the modal obligation `\"must not\"` is removed.\n\nFormal conclusion: the simplification step can silently weaken HARD-style prohibition language in transformed domain or situation packets."
+  }
+ }
+}

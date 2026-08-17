@@ -1,0 +1,158 @@
+{
+ "run": "exp43_macrophage_locationkey_live_20260719T014326Z",
+ "stats": {
+  "entries": 51,
+  "prefix": 21,
+  "fallback": 3,
+  "unverified": 10,
+  "no_join": 4,
+  "unchanged": 13,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 747,
+   "description": "`bench/macrophage_cell.py:observe()` accepts `prior_observations`, but the value is never used. The advertised self-check behavior says the Macrophage monitors whether systemic anomalies persist across rounds, and `_self_check_observe()` contains a `persistent_anomaly` detector. However, that detector only reads `self._round_history`, which is process-local and populated only by prior calls on the same `MacrophageCell` instance. A runner that reconstructs the cell per round and passes historical observations through `prior_observations` gets a false negative.\n\nEvidence: with three prior anomalous `MacrophageObservation` objects passed to `observe(..., prior_observations=prior)`, the current implementation returns no `persistent_anomaly`."
+  },
+  "C0002": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 951,
+   "description": "`bench/macrophage_cell.py`, `MacrophageObservation.to_dict()`: nested floats inside `evidence` are not stringified, despite the method contract saying floats are stringified for `VerificationChain` / `canonical_json` determinism.\n\nEvidence: the current implementation only stringifies floats at the first level of `self.evidence.items()`:\n\"evidence\": {\n    k: str(v) if isinstance(v, float) else v\n    for k, v in self.evidence.items()\n},\nConcrete input:\nMacrophageObservation(\n    observation_id=\"obs\",\n    mode=MacrophageMode.PATROL,\n    category=\"timing_spike\",\n    description=\"nested float evidence\",\n    severity=0.7,\n    evidence={\"nested\": {\"latency\": 1.25}, \"samples\": [0.1, 0.2]},\n).to_dict()\nCurrent output contains raw floats under `evidence[\"nested\"][\"latency\"]` and inside `evidence[\"samples\"]`. Expected output under the stated determinism contract is that every float reachable in the serialised observation is represented as a string."
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 502,
+   "description": "In `_patrol_observe`, `vstr = getattr(v, \"verdict\", str(v))` extracts the verdict attribute directly. If `v.verdict` is an Enum (which is standard for `CellVerdict`), `vstr` becomes an Enum object. This Enum is then stored in `evidence={\"verdict_type\": verdict_type}`. When `MacrophageObservation.to_dict()` is called, it stringifies floats but leaves Enums untouched. Downstream, `VerificationChain` will crash with `TypeError: Object of type ... is not JSON serializable` when calling `json.dumps()`."
+  },
+  "C0005": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 962,
+   "description": "The class docstring (lines 22\u201325) advertises three mechanisms \u2014 \"Sensitivity dial\", \"Circuit breaker preventing alert flooding during systemic events\", and \"Semantic clustering grouping identical observations by root cause\" \u2014 and the audit design (lines \"Exception-based audit\u2026 prevents cognitive overload\", \"prevents HIL overload\") explicitly *relies* on them. None exist. `grep -niE \"circuit|breaker|dedup|sensitiv\"` returns only docstring/label lines; no implementation. The concrete failure path is `_check_provenance`'s missing-fields loop (lines ~330\u2013345): it emits one anomaly observation + one WARNING log per claim, unbounded. Falsifier: 50 malformed provenance dicts \u2192 50 anomalies, 50 WARNING logs (output above). That is exactly the \"alert flooding during systemic events\" the docstring claims is prevented. A single systemic defect (e.g. Ouroboros emits a batch all missing `source_hash`) floods the HIL channel the audit design promises to protect."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 517,
+   "description": "In `MacrophageCell._patrol_observe`, the timing spike detection uses `median_t > 0.1` as a gate for flagging spikes. Because 0.1 is not exactly representable in binary floating-point, the comparison is unreliable: a median computed from values that mathematically equal 0.1 may compare strictly greater or less depending on floating\u2011point error, causing inconsistent detection. This is a correctness defect \u2014 the code intends to skip spike detection when absolute timings are negligible, but the threshold is fragile."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1998,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_gate_stats()` silently skips Ouroboros-specific gate-stat monitoring when `by_origin` contains usable data but the top-level aggregate counters `total_passed` and `total_failed` are absent or zero.\n\nCurrent control flow:\ntotal_passed = gate_stats.get(\"total_passed\", 0)\ntotal_failed = gate_stats.get(\"total_failed\", 0)\ntotal = total_passed + total_failed\n\nif total == 0:\n    return\nThe later Ouroboros-specific check is therefore unreachable unless top-level totals are also populated:\nby_origin = gate_stats.get(\"by_origin\", {})\nouroboros_stats = by_origin.get(\"external_ouroboros\", {})\nif ouroboros_stats:\n    o_passed = ouroboros_stats.get(\"passed\", 0)\n    o_failed = ouroboros_stats.get(\"failed\", 0)\n    o_total = o_passed + o_failed\n    if o_total >= 3 and o_failed == 0:\n        ...\nPremises:\n\n1. The `observe()` docstring says `gate_stats` accepts `by_origin` data:\ngate_stats: PE gate pass/fail statistics (optional).\n       Expected keys: total_passed, total_failed, by_origin (dict).\n2. `_check_gate_stats()` contains a specific Ouroboros-origin immune-deficiency detector.\n3. That detector only needs `gate_stats[\"by_origin\"][\"external_ouroboros\"]`.\n4. The current `if total == 0: return` exits before inspecting `by_origin`.\n5. A caller can provide by-origin gate stats without top-level aggregate counters, or with stale zero aggregate counters.\n\nConcrete example:\nfrom bench.macrophage_cell import MacrophageCell\n\nmacro = MacrophageCell()\nsummary = macro.observe(\n    verdicts=[],\n    gate_stats={\n        \"by_origin\": {\n            \"external_ouroboros\": {\"passed\": 3, \"failed\": 0}\n        }\n    },\n)\nExpected: one `immune_deficiency` anomaly, because Ouroboros-origin claims have 3/3 passed and 0 failed.\n\nActual: no observation is emitted because `_check_gate_stats()` returns at `total == 0`.\n\nFormal conclusion: the global-total early return incorrectly suppresses a more specific downstream check that has sufficient local data."
+  },
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1683,
+   "description": "`bench/macrophage_cell.py`, `_patrol_observe()` and `_self_check_observe()`: a global `len(verdicts) < MIN_FINDINGS_FOR_ANALYSIS` early return suppresses checks that do not depend on having three verdicts.\n\nEvidence in `_patrol_observe()`:\nif len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:\n    return\nThis returns before timing-spike analysis, even though timing analysis depends on `timings`, not on verdict count.\n\nConcrete input:\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\ncell = MacrophageCell(mode=MacrophageMode.PATROL)\nsummary = cell.observe(\n    verdicts=[],\n    timings={\"parse\": 1.0, \"load\": 1.0, \"verify\": 10.0},\n)\nExpected: a `timing_spike` observation for `\"verify\"` because it is `10x` the `1.0s` median baseline.\n\nActual: no observations, because `_patrol_observe()` returns before reaching timing logic.\n\nEvidence in `_self_check_observe()`:\nif len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:\n    return\nThis returns before persistent-anomaly analysis, even though persistent-anomaly analysis depends on `self._round_history`, not on current verdict count.\n\nConcrete input:\ncell = MacrophageCell(mode=MacrophageMode.SELF_CHECK)\ncell._round_history = [\n    {\"observation_count\": 1, \"anomaly_count\": 1, \"verdict_count\": 0, \"timestamp\": 1.0},\n    {\"observation_count\": 1, \"anomaly_count\": 1, \"verdict_count\": 0, \"timestamp\": 2.0},\n    {\"observation_count\": 1, \"anomaly_count\": 1, \"verdict_count\": 0, \"timestamp\": 3.0},\n]\nsummary = cell.observe(verdicts=[])\nExpected: a `persistent_anomaly` observation, because the last three rounds had anomalies.\n\nActual: no observation, because `_self_check_observe()` returns before checking `_round_history`."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 727,
+   "description": "C0004 fixed Enum extraction for `verdict` in `_patrol_observe`, but missed three other dynamic type crashes:\n1. `tool_used` in `_self_check_observe`: If it's an Enum, `sources_used` uses Enums as keys. This causes `math_sources = any(t in source_types for t in (\"sympy\", \"z3\"))` to fail (string vs Enum comparison), leading to false positive `method_claim_mismatch` anomalies. It also crashes `json.dumps` in `to_dict()`.\n2. `claim_type` in `_self_check_observe`: If `ct.value` is an integer, `ct.lower()` crashes with `AttributeError: 'int' object has no attribute 'lower'`.\n3. `confidence` in `_patrol_observe`: If it's a string, `sum(severities)` crashes with `TypeError: unsupported operand type(s) for +: 'int' and 'str'`."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 950,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_provenance()` checks only whether required provenance keys exist, not whether the required values are usable.\n\nCurrent code:\nrequired_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\nfor p in provenance:\n    missing = required_fields - set(p.keys())\n    if missing:\nConcrete failing input:\nprovenance = [\n    {\n        \"origin_type\": \"external_ouroboros\",\n        \"source_ref\": \"\",\n        \"source_hash\": \"\",\n    }\n]\nObserved behaviour from executable check: `_check_provenance()` appends zero observations. Expected behaviour: it should append a `provenance_incomplete` anomaly because `source_ref` and `source_hash` are present but empty, so the external claim is not traceable.\n\nA second edge case exists in the same code path: non-dict entries in `provenance`, such as `[None]`, raise `AttributeError` in the source-diversity list comprehension before incomplete provenance can be reported."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 968,
+   "description": "`MacrophageCell.__init__()` accepts any object as `mode` and stores it directly:\nself.mode = mode\nLocation: `bench/macrophage_cell.py`, `MacrophageCell.__init__()`.\n\nEvidence: the public constructor is typed as:\nmode: MacrophageMode = MacrophageMode.PATROL\nbut no runtime validation or coercion is performed. A caller passing the natural serialized enum value `\"patrol\"` creates a cell whose `mode` is a plain string, not a `MacrophageMode`.\n\nConcrete trace:\ncell = MacrophageCell(mode=\"patrol\")\nCurrent execution:\nself.mode = \"patrol\"\nThen `observe()` evaluates:\nif self.mode == MacrophageMode.PATROL:\n    self._patrol_observe(...)\nelse:\n    self._self_check_observe(...)\nBecause `\"patrol\" != MacrophageMode.PATROL`, the cell runs self-check mode instead of patrol mode.\n\nA second downstream failure occurs in `sign_observation()`:\nrecorded_by=f\"macrophage_{self.mode.value}\",\nFor `self.mode == \"patrol\"`, `.value` does not exist, so signing fails and returns `None`."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1539,
+   "description": "`_check_provenance()` does not enforce the provenance fields documented by `observe()`, and it treats empty required values as valid.\n\nLocation: `bench/macrophage_cell.py`, `_check_provenance()`.\n\n`observe()` documents provenance entries as containing:\norigin_type, source_ref, retrieval_query, retrieved_at, source_hash, source_diversity\nCurrent `_check_provenance()` only checks three fields:\nrequired_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\nfor p in provenance:\n    missing = required_fields - set(p.keys())\nThis has two defects:\n\n1. `retrieval_query`, `retrieved_at`, and `source_diversity` are never checked.\n2. Empty required values such as `source_ref=\"\"` or `source_hash=\"\"` are accepted because the code checks only key presence.\n\nConcrete example 1 \u2014 missing documented fields:\nprovenance = [{\n    \"origin_type\": \"external_ouroboros\",\n    \"source_ref\": \"paper-1\",\n    \"source_hash\": \"abc123\",\n}]\nExpected: provenance is incomplete because `retrieval_query`, `retrieved_at`, and `source_diversity` are absent.\n\nActual current calculation:\nrequired_fields = {\"origin_type\", \"source_ref\", \"source_hash\"}\nmissing = required_fields - set(p.keys())\nmissing == set()\nNo `provenance_incomplete` observation is appended.\n\nConcrete example 2 \u2014 empty required values:\nprovenance = [{\n    \"origin_type\": \"external_ouroboros\",\n    \"source_ref\": \"\",\n    \"source_hash\": \"\",\n}]\nI ran this against the real module through `_check_provenance()` and observed zero observations. Empty provenance identifiers therefore pass as complete."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1225,
+   "description": "`MacrophageCell._patrol_observe()` can crash the advisory monitor when a verdict\u2019s `confidence` attribute is present but not numeric.\n\nLocation: `bench/macrophage_cell.py`, patrol-mode severity distribution block:\nseverities = []\n        for v in verdicts:\n            sev = getattr(v, \"confidence\", None)\n            if sev is not None:\n                severities.append(sev)\n\n        if len(severities) >= self.MIN_FINDINGS_FOR_ANALYSIS:\n            mean_sev = sum(severities) / len(severities)\n            variance = sum((s - mean_sev)  2 for s in severities) / len(severities)\nConcrete trace:\n\n1. Construct three verdict-like objects.\n2. Each has `confidence = \"0.9\"` rather than `confidence = 0.9`.\n3. `observe()` is called in `PATROL` mode.\n4. `_patrol_observe()` appends the string `\"0.9\"` to `severities`.\n5. `len(severities) == 3`, so the severity concentration block runs.\n6. `sum([\"0.9\", \"0.9\", \"0.9\"])` raises `TypeError: unsupported operand type(s) for +: 'int' and 'str'`.\n7. The advisory monitor aborts instead of returning a `MacrophageSummary`.\n\nThis is not a duplicate of C0004/C0015, which concern enum/string extraction for `verdict` fields. This finding concerns unvalidated arithmetic over `confidence`."
+  },
+  "C0026": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1333,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell.__init__()` accepts `shadow=False` and stores it directly even though the constructor line states the invariant `# MUST be True for Exp 39`.\n\nCurrent code:\ndef __init__(\n        self,\n        mode: MacrophageMode = MacrophageMode.PATROL,\n        shadow: bool = True,\n    ) -> None:\n        self.mode = mode\n        self.shadow = shadow  # MUST be True for Exp 39\n        self._observation_counter = 0\n        self._round_history: List[Dict[str, Any]] = []\nPremises:\n\n1. The file states `self.shadow = shadow  # MUST be True for Exp 39`.\n2. The constructor exposes `shadow` as a caller-controlled argument.\n3. No guard rejects `False`.\n4. `sign_observation()` writes `self.shadow` into signed metadata:\nmetadata={\n    \"shadow\": self.shadow,\n    \"is_anomaly\": observation.is_anomaly,\n},\nConcrete trace:\nfrom bench.macrophage_cell import MacrophageCell\n\ncell = MacrophageCell(shadow=False)\nassert cell.shadow is False\nA downstream signed observation can therefore contain:\n{\"shadow\": False, \"is_anomaly\": ...}\nExpected under the file\u2019s explicit invariant:\nMacrophageCell(shadow=False)\n# should reject the invalid state, or at minimum force shadow=True\nFormal conclusion: the implementation permits an object state and signed metadata state that the file itself declares impossible for Exp 39."
+  },
+  "C0027": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1786,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell._check_ouroboros_metrics()` silently accepts non-finite `diversity_score` values such as `NaN`, producing no anomaly.\n\nCurrent code:\ndef _check_ouroboros_metrics(\n        self,\n        ouroboros_metrics: Dict[str, Any],\n        summary: MacrophageSummary,\n    ) -> None:\n        \"\"\"Monitor Ouroboros cell activity for pathologies.\"\"\"\n        diversity = ouroboros_metrics.get(\"diversity_score\", 1.0)\n        if diversity < 0.3:\n            obs = MacrophageObservation(\n                observation_id=self._next_id(),\n                mode=self.mode,\n                category=\"source_monoculture\",\n                description=(\n                    f\"Ouroboros source diversity score {diversity:.2f} \"\n                    f\"(below 0.3 threshold) \u2014 research may be too narrow\"\n                ),\n                severity=0.6,\n                evidence={\"diversity_score\": diversity},\n                is_anomaly=True,\n            )\n            summary.observations.append(obs)\nPremises:\n\n1. `diversity_score` is expected to represent a diversity score.\n2. The code compares it only with `< 0.3`.\n3. In Python, `float(\"nan\") < 0.3` evaluates to `False`.\n4. Therefore a non-finite diversity metric does not trigger an anomaly.\n5. A monitor should not treat `NaN` diversity as healthy/default.\n\nConcrete trace:\nfrom bench.macrophage_cell import MacrophageCell\n\nsummary = MacrophageCell().observe(\n    verdicts=[],\n    ouroboros_metrics={\"diversity_score\": float(\"nan\")},\n)\n\nassert summary.anomaly_count == 0\nExpected behaviour:\nsummary.anomaly_count >= 1\nsummary.anomalies[0].category in {\n    \"ouroboros_metrics_invalid\",\n    \"source_monoculture\",\n}\nFormal conclusion: a malformed/non-finite metric silently suppresses the intended monitoring signal."
+  },
+  "C0031": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 157,
+   "description": "`_check_provenance()` only enforces three of the six provenance fields declared in the `observe()` docstring, allowing incomplete provenance without anomaly."
+  },
+  "C0033": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1923,
+   "description": "`_self_check_observe()` detects persistent anomalies one round late because it checks only prior `_round_history` entries and excludes the current round.\n\nLocation: `bench/macrophage_cell.py`, `MacrophageCell._self_check_observe()` and `MacrophageCell.observe()`.\n\nCurrent code in `_self_check_observe()`:\nif len(self._round_history) >= 3:\n            recent = self._round_history[-3:]\n            all_had_anomalies = all(r[\"anomaly_count\"] > 0 for r in recent)\n            if all_had_anomalies:\nBut `observe()` appends current history only after self-check observation completes:\nself._round_history.append({\n            \"observation_count\": len(summary.observations),\n            \"anomaly_count\": summary.anomaly_count,\n            \"verdict_count\": len(verdicts),\n            \"timestamp\": time.time(),\n        })\nPremises:\n\n1. The persistent anomaly description says: \u201cAnomalies detected in 3+ consecutive rounds\u201d.\n2. A three-round consecutive anomaly condition becomes true on the third anomalous round.\n3. `_round_history` contains only completed prior rounds while `_self_check_observe()` is executing.\n4. The current round\u2019s anomalies are appended to `summary.observations` before `_round_history` is updated.\n5. Therefore, the current implementation requires three previous anomalous rounds, so earliest alert is round four.\n\nConcrete execution:\n\nUse six same-source verdicts per round to force `source_monoculture` anomalies in self-check mode.\n\nExpected sequence:\n\n- Round 1: `source_monoculture`\n- Round 2: `source_monoculture`\n- Round 3: `source_monoculture` plus `persistent_anomaly`\n\nActual sequence under current code:\n\n- Round 1: `source_monoculture`\n- Round 2: `source_monoculture`\n- Round 3: `source_monoculture`\n- Round 4: `source_monoculture` plus `persistent_anomaly`\n\nFormal conclusion: persistent anomaly detection is delayed by one invocation and does not match its \u201c3+ consecutive rounds\u201d semantics."
+  },
+  "C0036": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1007,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell._patrol_observe()`, timing-spike block:\nif timings and len(timings) >= 2:\n            values = [v for v in timings.values() if v > 0]\n            if values:\n                median_t = sorted(values)[len(values) // 2]\n                for stage, t in timings.items():\n                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:\nThe block assumes every timing value supports numeric comparison with `0` and with `median_t`. A malformed or JSON-derived timing value such as `\"slow\"` raises `TypeError` before the advisory monitor can return a `MacrophageSummary`.\n\nConcrete reproducer:\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nclass V:\n    verdict = \"CONFIRMED\"\n    confidence = 0.8\n    tool_used = \"sympy\"\n\nMacrophageCell(mode=MacrophageMode.PATROL).observe(\n    [V(), V(), V()],\n    timings={\"parse\": \"slow\", \"verify\": 1.0},\n)\nObserved tool result: `TypeError: '>' not supported between instances of 'str' and 'int'`."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1098,
+   "description": "`bench/macrophage_cell.py`, `_patrol_observe()`, severity-distribution block accepts `confidence` from arbitrary verdict objects but uses it as numeric without validation:\nseverities = []\nfor v in verdicts:\n    sev = getattr(v, \"confidence\", None)\n    if sev is not None:\n        severities.append(sev)\n\nif len(severities) >= self.MIN_FINDINGS_FOR_ANALYSIS:\n    mean_sev = sum(severities) / len(severities)\nEvidence: `verdicts` is typed as `List[Any]`. A verdict object with `confidence=\"0.9\"` reaches `sum(severities)`, producing `TypeError: unsupported operand type(s) for +: 'int' and 'str'`.\n\nConcrete input:\nfrom types import SimpleNamespace\nfrom bench.macrophage_cell import MacrophageCell\n\nMacrophageCell().observe([\n    SimpleNamespace(verdict=\"same\", confidence=\"0.9\"),\n    SimpleNamespace(verdict=\"same\", confidence=\"0.9\"),\n    SimpleNamespace(verdict=\"same\", confidence=\"0.9\"),\n])\nExpected output: advisory observation should return a `MacrophageSummary` and either coerce valid numeric confidences or ignore invalid ones.  \nActual output: observation crashes before returning a summary."
+  },
+  "C0038": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 926,
+   "description": "`bench/macrophage_cell.py`, `_self_check_observe()`, source-diversity block uses arbitrary `tool_used` values as dictionary keys without validation:\nsources_used: Dict[str, int] = {}\nfor v in verdicts:\n    source = getattr(v, \"tool_used\", \"unknown\")\n    sources_used[source] = sources_used.get(source, 0) + 1\nEvidence: `verdicts` is typed as `List[Any]`. A verdict object with `tool_used=[\"sympy\"]` reaches dictionary key insertion and raises `TypeError: unhashable type: 'list'`.\n\nConcrete input:\nfrom types import SimpleNamespace\nfrom bench.macrophage_cell import MacrophageCell, MacrophageMode\n\nMacrophageCell(mode=MacrophageMode.SELF_CHECK).observe([\n    SimpleNamespace(tool_used=[\"sympy\"], verdict=\"same\") for _ in range(6)\n])\nExpected output: advisory observation returns a `MacrophageSummary`, canonicalizing the source label to a string if necessary.  \nActual output: `_self_check_observe()` crashes before returning."
+  },
+  "C0039": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 912,
+   "description": "`bench/macrophage_cell.py`, `_check_gate_stats()` treats `gate_stats: Dict[str, Any]` values as numeric/dict without validation.\n\nPrimary crashing block:\ntotal_passed = gate_stats.get(\"total_passed\", 0)\ntotal_failed = gate_stats.get(\"total_failed\", 0)\ntotal = total_passed + total_failed\nConcrete crashing input:\nfrom bench.macrophage_cell import MacrophageCell\n\nMacrophageCell().observe([], gate_stats={\"total_passed\": \"5\", \"total_failed\": 0})\nActual behavior: `TypeError: can only concatenate str (not \"int\") to str`.\n\nSecondary same-root interface fault:\nby_origin = gate_stats.get(\"by_origin\", {})\nouroboros_stats = by_origin.get(\"external_ouroboros\", {})\nIf `by_origin=[]`, this raises `AttributeError: 'list' object has no attribute 'get'`.\n\nExpected output: malformed optional gate stats should not crash the advisory monitor; they should be ignored or converted to an advisory invalid-metric observation."
+  },
+  "C0042": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1607,
+   "description": "`bench/macrophage_cell.py`, `_check_provenance()`, source-diversity block crashes when a provenance record has a truthy but unhashable `source_ref`, for example a list.\n\nCurrent code:\nsources = [p.get(\"source_ref\", \"\") for p in provenance if p.get(\"source_ref\")]\nif len(sources) >= 3:\n    unique_sources = set(sources)\nEvidence: `observe()` documents `provenance` as `List[Dict[str, Any]]`, so `_check_provenance()` receives arbitrary metadata dictionaries. The implementation filters only for truthiness, not hashability or scalar type. A `source_ref` such as `[\"paper-A\"]` is truthy but unhashable. `set(sources)` then raises `TypeError: unhashable type: 'list'`.\n\nConcrete input:\nprovenance = [\n    {\"origin_type\": \"external_ouroboros\", \"source_ref\": [\"paper-A\"], \"source_hash\": \"h1\"},\n    {\"origin_type\": \"external_ouroboros\", \"source_ref\": [\"paper-A\"], \"source_hash\": \"h2\"},\n    {\"origin_type\": \"external_ouroboros\", \"source_ref\": [\"paper-B\"], \"source_hash\": \"h3\"},\n]\nExecution trace:\n\n1. `p.get(\"source_ref\")` returns `[\"paper-A\"]`, `[\"paper-A\"]`, `[\"paper-B\"]`.\n2. All three values are truthy.\n3. `sources = [[\"paper-A\"], [\"paper-A\"], [\"paper-B\"]]`.\n4. `len(sources) >= 3` is true.\n5. `set(sources)` attempts to hash each list.\n6. Python raises `TypeError: unhashable type: 'list'`.\n\nExpected behaviour: the advisory monitor should not crash the pipeline while inspecting provenance metadata. It should canonicalise source references before counting unique sources, or reject malformed provenance by emitting an advisory anomaly. The simplest sufficient correction is canonicalisation before `set()`."
+  },
+  "C0045": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 203,
+   "description": "In `_check_gate_stats()`, the method hardcodes the string `\"external_ouroboros\"` to look up Ouroboros\u2011specific gate statistics, silently missing immune deficiency if upstream uses a different origin key."
+  },
+  "C0046": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 160,
+   "description": "In bench/macrophage_cell.py `_check_ouroboros_metrics`, calling `diversity < 0.3` on a non-numeric `diversity_score` raises TypeError, crashing the observation."
+  },
+  "C0047": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 717,
+   "description": "`bench/macrophage_cell.py`, `MacrophageCell.__init__` and `_next_id()` generate observation IDs from a per-instance counter only:\nself._observation_counter = 0\ndef _next_id(self) -> str:\n    self._observation_counter += 1\n    return f\"macro_{self._observation_counter:04d}\"\nEvidence: two independent `MacrophageCell` instances both produce `macro_0001` as their first observation ID.\n\nConcrete execution trace against the real module:\nfrom bench.macrophage_cell import MacrophageCell\n\na = MacrophageCell()\nb = MacrophageCell()\n\na._next_id()  # \"macro_0001\"\nb._next_id()  # \"macro_0001\"\nActual output: duplicate IDs.  \nExpected output: distinct IDs if observations may be signed into a shared verification/audit chain."
+  }
+ }
+}

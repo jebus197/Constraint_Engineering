@@ -1,0 +1,68 @@
+{
+ "run": "exp40_slice_collision_20260518T130744Z",
+ "stats": {
+  "entries": 17,
+  "prefix": 6,
+  "fallback": 3,
+  "unverified": 0,
+  "no_join": 2,
+  "unchanged": 6,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0001": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 307,
+   "description": "`detect_finding_id_collisions()` in `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py` has two edge-case correctness failures in the duplicate-ID observation path.\n\nPremises:\n\n1. The function\u2019s stated contract is to detect the silent-overwrite condition created by `{f."
+  },
+  "C0002": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 473,
+   "description": "`detect_finding_id_collisions` can turn an observation-only collision detector into a blocking failure and can overcount collision evidence in the module-level accumulator. Location: `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py`, inside `detect_finding_id_collisions`, at the `model_ids = sorted({...})` construction and `_finding_id_collisions.append(rec)` side effect.\n\nEvidence:\n\n1. Crash path:\n   - Input findings:\n     - `f1."
+  },
+  "C0003": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 804,
+   "description": "`detect_finding_id_collisions` (line 79\u201387) appends the same `rec` dict object to both the local `collisions` return list and the module-level `_finding_id_collisions` accumulator. The two references alias the same mutable object. Any caller that mutates a record from the returned list silently corrupts the post-mortem accumulator \u2014 the evidence trail this function exists to produce.\n\nFile: `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py`, lines 79\u201387.\n\nEvidence: direct test confirms aliasing:\nresult = detect_finding_id_collisions([F('F001','CC2'), F('F001','Gemini')], 1)\nresult[0]['INJECTED'] = 'corruption'\nassert 'INJECTED' in _finding_id_collisions[0]  # True \u2014 accumulator corrupted\nassert result[0] is _finding_id_collisions[0]    # True \u2014 same object"
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 729,
+   "description": "In `detect_finding_id_collisions`, the model\u2011id collection line\nmodel_ids = sorted({\n    getattr(f, \"model_id\", \"?\")\n    for f in findings\n    if getattr(f, \"finding_id\", None) == fid\n})\nuses a bare string `\"?\"` as the default when `model_id` is missing. The `cross_model` flag is later computed as `len(model_ids) > 1`. If any finding in a collision set lacks `model_id`, the set will contain `\"?\"` alongside real model IDs, causing `cross_model` to be `True` even when all the colliding findings come from the *same* model (some of which happen to be missing the attribute). This misclassifies a same\u2011model duplicate as a cross\u2011model collision, directly corrupting the evidence the UUID\u2011namespace gate is supposed to decide on."
+  },
+  "C0009": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 626,
+   "description": "The function signature `def detect_finding_id_collisions(findings: List[Any], round_idx: int = -1) -> ...` provides a default value of `-1` for the round index. If a caller omits the round index (by accident or incomplete integration), every collision record produced in that call will have `\"round\": -1`. This can silently pollute the evidence accumulator, making it impossible to distinguish missing data from a genuine round index of `-1`, and may skew post\u2011mortem statistics (e.g., collision rate per round). The docstring does not warn that the default is a sentinel, nor does it raise if a proper round index is missing."
+  },
+  "C0010": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 593,
+   "description": "The module-level accumulator `_finding_id_collisions` (line 49) has no public clearing API. The comment at line 47 states *\"The runner clears it at experiment start\"* but the module exposes no `clear` function. The runner must reach into the private `_finding_id_collisions` list directly (`_feedback_collision_slice._finding_id_collisions.clear()`), which couples the runner to the internal implementation detail \u2014 the name, the type (list), and the mutability contract. If the accumulator is ever refactored (e.g., to a deque, a dataclass, or made truly private), the runner breaks silently."
+  },
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 878,
+   "description": "File: _feedback_collision_slice.py, lines ~97-101 (the `model_ids` comprehension inside `detect_finding_id_collisions`).\n  The cross\u2011model collision flag (`cross_model`) is computed as `len(model_ids) > 1`.\n  However, `model_ids` is built with:\nmodel_ids = sorted({\n      getattr(f, \"model_id\", \"?\")\n      for f in findings\n      if getattr(f, \"finding_id\", None) == fid\n  })\nIf two *different* models both lack the `model_id` attribute, the default `\"?\"` makes them indistinguishable \u2014 the set collapses to `{\"?\"}`, so `len(model_ids) == 1` and `cross_model` is `False`.\n  This produces a cross\u2011model false negative: the evidence\u2011gate for the UUID\u2011namespace deferral will incorrectly believe no cross\u2011model collision occurred.\n  Concrete proof: a list of two `Finding` objects with the same `finding_id` but no `model_id` attribute \u2192 `model_ids = {\"?\"}`, `cross_model = False`."
+  },
+  "C0014": {
+   "method": "fallback",
+   "stored_len": 131,
+   "recovered_len": 51,
+   "description": "`detect_finding_id_collisions()` ignores explicit `"
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 785,
+   "description": "In `detect_finding_id_collisions`, line 88\u201396:\nmodel_ids = sorted({\n    getattr(f, \"model_id\", \"?\")\n    for f in findings\n    if getattr(f, \"finding_id\", None) == fid\n})\nrec = {\n    ...\n    \"model_ids\": model_ids,\n    \"cross_model\": len(model_ids) > 1,\n}\nThe use of `\"?\"` as a default for missing `model_id` collapses all unknown model identities into a single sentinel. This makes the `cross_model` flag unreliable:\n\n* False negative (missed cross\u2011model collision): Two findings from *different* models that both lack `model_id` \u2192 both become `\"?\"` \u2192 set has one element \u2192 `cross_model` = `False`.\n* False positive (wrongly flagged cross\u2011model): One finding from model *A* with `model_id=\"A\"` and one from *A* with `model_id=None` \u2192 set contains `{\"A\", \"?\"}` \u2192 `cross_model` = `True`."
+  }
+ }
+}

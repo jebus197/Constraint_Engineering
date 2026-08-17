@@ -1,0 +1,176 @@
+{
+ "run": "exp38_ouroboros_20260411T041938Z",
+ "stats": {
+  "entries": 169,
+  "prefix": 27,
+  "fallback": 0,
+  "unverified": 44,
+  "no_join": 75,
+  "unchanged": 23,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 665,
+   "description": "FIND \u2014 `_estimate_gamma` uses variable name `n` for `len(novelty_counts)` but then shadows it with `n_pts = len(log_x)` in the regression. The initial `n` is computed but never used after the `if n < min_rounds` guard \u2014 not a bug per se, but the real issue is that when all `novelty_counts` entries are zero except one early one, cumulative values will be positive but the log-log regression will have very few points and produce unstable gamma estimates. More critically: if `novelty_counts` contains negative values (possible if a dedup step over-counts), `total` could go negative, `cumulative` entries could be negative, and `math.log(cum)` raises `ValueError`."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 824,
+   "description": "FIND \u2014 `_check_gamma_gate` has inverted pass/fail semantics. When `gamma < cfg.gamma_soft_threshold`, it returns `(\"soft\", False)` \u2014 blocking termination because gamma is *too low* (i.e., discovery is still active, not depleted enough). But `_estimate_gamma` returns `1.0 - beta` where beta is the log-log slope. A high gamma means strong depletion (discovery exhausted). A low gamma means discovery is still active. So blocking when gamma is low is *correct* for preventing premature termination. However, examine the hard gate: `if gamma < cfg.gamma_hard_threshold: return \"hard\", False`. The docstring and `GAMMA_BANDS` say gamma >= 0.45 is \"strong depletion \u2014 confirms closure\" and gamma < 0.20 is \"disagrees with closure.\" The gate logic is consistent with this. No bug here on closer inspection \u2014 withdrawing severity."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 614,
+   "description": "FIND \u2014 `contested_count` has a logic gap. The method counts findings as contested only if `current_round - oldest > 1` (i.e., the challenge has persisted for more than 1 round). This means a finding challenged in the current round and the immediately preceding round is never counted as contested. This is likely intentional (grace period for resolution), but the grace period is hardcoded to 1 round rather than using the `grace_period` parameter, which is only applied to UNCONFIRMED status. The `grace_period=2` parameter is misleading \u2014 it controls only UNCONFIRMED entries, not the contested detection window."
+  },
+  "C0009": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 508,
+   "description": "FIND \u2014 `_resolve_merge_source` regex `r'(?:F|C)(\\d+)'` captures only the digits in group(1) but then uses `m.group(0)` (the full match including the F/C prefix) as `local_id`. This means `lookup_alias` is called with e.g. `\"F003\"` as the local_id, and `registry.entries` is checked for `\"F003\"`. But canonical IDs are formatted as `\"C0001\"` (zero-padded to 4 digits). So `registry.entries[\"C3\"]` would fail to match `\"C0003\"`. The lookup only succeeds if the model happened to use the exact canonical format."
+  },
+  "C0010": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 638,
+   "description": "FIND \u2014 `_compute_rho` returns `round_idx = len(raw_counts) - 1` conceptually but doesn't return it \u2014 the churn detection uses this internally. The real issue: when `raw_counts[-1] == 0`, the function returns `(0.0, 0.0, False)` \u2014 no churn detected. But a round with zero raw findings is itself a strong signal of exhaustion. `rho_current` being 0 when `raw_counts[-1] == 0` is correct (no findings = no novel/raw ratio), but the rolling average skips this by early-returning before computing it. If several consecutive rounds have zero raw findings, the churn detector never fires because it never reaches the rolling average calculation."
+  },
+  "C0012": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 573,
+   "description": "FIND \u2014 `_parse_verdicts` regex `_VERDICT_RE` requires `C\\d{4,}` (4+ digits), which correctly matches `C0001` through arbitrarily large IDs. However, it will NOT match if a model emits a 3-digit ID like `C001` (which `_resolve_merge_source` could theoretically produce as a lookup key, though canonical IDs are always 4+ digits). The real edge case: the regex delimiter pattern `[|<\\-\\u2014\\u2013\\u2190]+` does not include `\u2192` (U+2192, rightward arrow), which models sometimes use for MERGE directives (`MERGE C0005 \u2192 C0001`). These would be parsed as having empty evidence."
+  },
+  "C0013": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 720,
+   "description": "FIND \u2014 `auto_resolve_contested` checks `recent_verdicts` from the last 2 rounds (`current_round - 2`), but the docstring/comment says \"last 3 rounds\". More importantly: it requires `challenges >= 3 and confirms == 0` within a 2-round window. In a 5-model star topology dispatching once per round, a finding can accumulate at most ~2 verdicts per round (each model issues at most one verdict per finding per round), so 3 challenges in 2 rounds is achievable but tight. The real concern: if `current_round` is small (e.g., round 2), `current_round - 2 = 0`, and the filter captures ALL verdicts from all rounds, making the 3-challenge threshold easier to reach \u2014 findings could be auto-refuted prematurely in early rounds."
+  },
+  "C0014": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 563,
+   "description": "FIND \u2014 `FindingRegistry.register()` stores `finding.round_idx` via `getattr(finding, \"round_idx\", 0)` for `open_since_round` and `last_status_change_round`. The `Finding` dataclass (from `dynamic_management`) likely does not have a `round_idx` attribute \u2014 it's a per-finding property set by the caller. If `Finding` doesn't carry `round_idx`, both fields default to 0. This means `escalate_stale_contested` will compute `rounds_contested = current_round - 0 = current_round`, potentially triggering immediate escalation if `current_round >= max_contested_rounds`."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 578,
+   "description": "FIND: In `RunnerConfig.__post_init__`, line `if self.rho_earliest_round != self.earliest_stop_round:` forces equality between two independent parameters that serve different purposes. `rho_earliest_round` controls when the rho churn detector activates (A2 fix), while `earliest_stop_round` is the minimum round for state-based convergence. Overriding user-set `rho_earliest_round` silently breaks the A2 fix's configurability. Evidence: The condition unconditionally sets `self.rho_earliest_round = self.earliest_stop_round` when they differ, discarding any user-provided value."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 525,
+   "description": "FIND: `FindingRegistry.contested_count` method contains a logic error that miscounts contested findings. The condition `if current_round - oldest > 1:` (line ~220) only counts a finding as contested if the oldest unresolved challenge is *more than* 1 round old. The correct threshold should be `>= 1`. Evidence: The docstring says \"actively contested\", but a challenge that appeared in the *previous* round (i.e., `current_round - oldest == 1`) is active and unresolved, yet is excluded by `> 1`. This leads to undercounting."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 823,
+   "description": "FIND: Regex `_VERDICT_RE` line `r'^\\s*(?:[*]{0,2}[-*]?\\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\\s+(C\\d{4,})'` incorrectly uses `C\\d{4,}` which requires *at least* 4 digits. The canonical ID format is `C{self._next_id:04d}` (exactly 4 digits). The regex will fail to match IDs with exactly 4 digits because `{4,}` means \"4 or more\". Evidence: Python regex `\\d{4,}` matches 4+ digits; `C0001` has exactly 4 digits, so it matches, but `C001` (3 digits) would not. However, the comment says \"supports IDs beyond 9999\", which requires `{4,}`. This is contradictory: either we want exactly 4 digits (fixed width) or variable width. The current generation uses exactly 4 digits, so the regex should be `C\\d{4}` (or `C\\d{4,}` if we want to support >4 digits but still allow 4). The latter is okay, but the comment is misleading."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 680,
+   "description": "FIND: `FindingRegistry.escalate_stale_contested` incorrectly sets status to `UNCONFIRMED` instead of escalating to HIL (Human-in-the-Loop) as indicated by the A3 fix description. The method adds `hil_escalated` flag but changes status to `UNCONFIRMED`, which is a regular registry status. The A3 fix intends to move contested findings out of automated resolution entirely, not to another automated status. Evidence: The docstring says \"escalate CONTESTED findings to HIL after threshold.\" The method sets `entry[\"hil_escalated\"] = True` but also calls `self.resolve(fid, \"UNCONFIRMED\", current_round)`. `UNCONFIRMED` is not a HIL state; it's an automated status with grace period."
+  },
+  "C0024": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1045,
+   "description": "FIND: `_compute_rho` function contains a potential division by zero bug. The line `rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0` guards against zero, but the loop that builds `rho_values` does NOT guard against `raw_counts[i] == 0`. Inside the loop, `if raw_counts[i] > 0: rho_values.append(novelty_counts[i] / raw_counts[i]) else: rho_values.append(0.0)`. However, the loop uses `range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts))`. If `raw_counts[i] == 0`, the else branch appends 0.0. But if `raw_counts[-1] == 0`, the function returns early with `return 0.0, 0.0, False`. So the bug is that the early return when `raw_counts[-1] == 0` prevents the loop from running at all, but the loop's else branch would handle zero. This is inconsistent but not a crash. However, the early return condition `if not raw_counts or raw_counts[-1] == 0:` is too broad: it returns `0.0, 0.0, False` even if there are earlier non-zero rounds in the window. This discards potentially useful rho history."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 557,
+   "description": "FIND: `GAMMA_BANDS` list has an open-ended upper bound `(0.45, float(\"inf\"), ...)`. The `_interpret_gamma` function loops through bands and checks `if low <= gamma < high:`. Since `float(\"inf\")` is used, gamma values exactly 0.45 will fall into the first band (0.45 <= gamma < inf). However, the next band starts at 0.30, so gamma=0.45 is correctly placed. But the band description \"Strong depletion \u2014 confirms state-based closure\" for gamma >= 0.45 is misleading because gamma=0.45 is the lower bound, not necessarily \"strong\". This is a documentation nit."
+  },
+  "C0081": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 519,
+   "description": "FIND: In `RunnerConfig.__post_init__`, the line `if self.rho_earliest_round != self.earliest_stop_round:` forcibly overwrites a user\u2011configured `rho_earliest_round` with `earliest_stop_round`. This violates the principle of least surprise and breaks independent tuning of the rho\u2011earliest gate. Evidence: the field `rho_earliest_round` is documented as a \u201cDerived constant (set from the above or left at defaults)\u201d, but the user may explicitly set it in a JSON config. The unconditional overwrite discards that setting."
+  },
+  "C0129": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 722,
+   "description": "FIND \u2014 `_compute_rho` early\u2011return when `raw_counts[-1] == 0` suppresses rolling\u2011average computation and churn detection for the entire window, discarding history and masking true efficiency trends. Location: `bench/reference_runner.py`, `_compute_rho` function, lines after docstring.  \nEVIDENCE: The guard `if not raw_counts or raw_counts[-1] == 0: return 0.0, 0.0, False` exits before the loop that builds `rho_values`. Consequently, if the current round yields zero raw findings, the rolling average (over `cfg.rho_rolling_window`) is not computed, and churn is forced to `False`. This loses the ability to detect a low\u2011efficiency trend that may have been building over previous rounds, violating the A2 fix\u2019s purpose."
+  },
+  "C0130": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 744,
+   "description": "FIND \u2014 `RunnerConfig.__post_init__` unconditionally overrides `rho_earliest_round` with `earliest_stop_round`, discarding any user\u2011provided or JSON\u2011configured value. This violates the configuration contract and silently breaks experiments that rely on distinct rho\u2011gating and stop\u2011round thresholds. Location: `bench/reference_runner.py`, `RunnerConfig.__post_init__` method.  \nEVIDENCE: The line `if self.rho_earliest_round != self.earliest_stop_round: self.rho_earliest_round = self.earliest_stop_round` forces equality, regardless of the source of `rho_earliest_round` (default, explicit constructor argument, or `from_json`). There is no warning or documentation that this field is derived; it is presented as a first\u2011class config parameter."
+  },
+  "C0131": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 832,
+   "description": "FIND \u2014 `FindingRegistry.contested_count` hardcodes `current_round - oldest > 1` for non\u2011`UNCONFIRMED` findings, ignoring the `grace_period` parameter. This creates inconsistent grace\u2011period handling between `UNCONFIRMED` and other active statuses, and can prematurely count findings as contested. Location: `bench/reference_runner.py`, `contested_count` method, line with `if current_round - oldest > 1`.  \nEVIDENCE: The function signature defines `grace_period` (default 2) and uses it for `UNCONFIRMED` findings (`rounds_in_status < grace_period`). However, for other active findings, the condition `current_round - oldest > 1` uses a fixed 1\u2011round grace, disregarding the parameter. This mismatch means a finding with a challenge older than 1 round but within the configured grace period will be incorrectly counted as contested."
+  },
+  "C0132": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 943,
+   "description": "FIND \u2014 `FindingRegistry.open_crit_high_count` excludes `REOPENED` from its `_NON_TERMINAL` tuple, while `build_summary` includes `REOPENED` in `full_detail_statuses`. This inconsistency means a reopened critical finding would not be counted toward the \u201cOpen CRIT/HIGH\u201d gate, potentially allowing premature convergence. Location: `bench/reference_runner.py`, `open_crit_high_count` method (line with `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")`) and `build_summary` (line with `full_detail_statuses = (\"OPEN\", \"CONTESTED\", \"REOPENED\")`).  \nEVIDENCE: The `open_crit_high_count` method explicitly defines `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")`, omitting `REOPENED`. The `build_summary` method treats `REOPENED` as an active status (full detail). If a finding were ever set to `REOPENED`, it would appear in the active summary but not be counted in the open\u2011critical\u2011high gate, breaking the gate\u2019s semantic alignment with the displayed registry state."
+  },
+  "C0133": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 820,
+   "description": "FIND \u2014 `_compute_rho` uses zero\u2011based `round_idx` ( `len(raw_counts) - 1` ) but compares it against `cfg.rho_earliest_round`, which is one\u2011based (configured as a round number). This off\u2011by\u2011one error delays rho\u2011churn detection by one round, causing late termination. Location: `bench/reference_runner.py`, `_compute_rho` function, line `churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round`.  \nEVIDENCE: The runner\u2019s round numbers start at 1 (typical for experiment rounds). `rho_earliest_round` defaults to 12 (from `earliest_stop_round`). `raw_counts` length equals the current round number (round 1 \u2192 length 1). Thus `round_idx = len(raw_counts) - 1` is zero\u2011based. The condition `round_idx >= cfg.rho_earliest_round` becomes true one round later than intended (e.g., at round 13 instead of 12)."
+  },
+  "C0134": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 622,
+   "description": "FIND \u2014 `_estimate_gamma` includes a redundant condition `(i + 1) > 0` that is always true (i \u2265 0). This does not affect correctness but adds cognitive noise and could mask a future bug if the loop range changes. Location: `bench/reference_runner.py`, `_estimate_gamma` function, line `if cum > 0 and (i + 1) > 0:`.  \nEVIDENCE: The loop `for i, cum in enumerate(cumulative):` iterates over indices starting at 0. `(i + 1)` is always positive. The condition is redundant; the guard `cum > 0` is sufficient. The redundant check suggests a misunderstanding of the log\u2011regression precondition and should be removed for clarity."
+  },
+  "C0135": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 957,
+   "description": "FIND \u2014 `_VERDICT_RE` regex incorrectly uses a bare `|` inside a character class `[|<\\-\\u2014\\u2013\\u2190]`, causing the literal `|` character to be matched as a separator, which conflicts with the intended use of `|` as a verdict separator in model responses. This can cause mis\u2011parsing of lines like `CONFIRM C0001 | evidence`. Location: `bench/reference_runner.py`, `_VERDICT_RE` definition.  \nEVIDENCE: The regex segment `[|<\\-\\u2014\\u2013\\u2190]` includes `|` as a literal character. The comment \u201cF19 fix: bare | inside character class (no backslash needed)\u201d indicates awareness, but the design is flawed: `|` is a common delimiter in model responses for separating verdict from evidence (e.g., `CONFIRM C0001 | evidence`). Including it as a separator character will cause the regex to match the `|` as part of the separator sequence, potentially chopping evidence incorrectly. The intended separator sequence should be a dash/arrow, not a vertical bar."
+  },
+  "C0156": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 857,
+   "description": "FIND \u2014 In `_compute_rho`, the early return `if not raw_counts or raw_counts[-1] == 0: return 0.0, 0.0, False` suppresses rolling\u2011average computation even when previous rounds had non\u2011zero data. This violates the A2 fix's intent to detect discovery\u2011efficiency churn over a configurable window. The function should compute rho_avg from the rolling window regardless of current round's raw count, because churn is a multi\u2011round trend.  \nEVIDENCE: Lines 400\u2013401 in the gamma estimation section:  \nif not raw_counts or raw_counts[-1] == 0:\n    return 0.0, 0.0, False\nThe condition aborts the entire function, skipping the loop that builds `rho_values` from the rolling window. This means a single round with zero raw findings (which can happen in late stages) will incorrectly report `rho_avg = 0.0` and `churn = False`, masking a preceding low\u2011efficiency trend."
+  },
+  "C0157": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 716,
+   "description": "FIND \u2014 `RunnerConfig.__post_init__` unconditionally overwrites `rho_earliest_round` with `earliest_stop_round`, discarding any caller\u2011supplied value. This breaks the configurable\u2011parameter contract and makes the `rho_earliest_round` field meaningless. The condition `if self.rho_earliest_round != self.earliest_stop_round:` always forces equality, preventing independent tuning of the rho\u2011churn gate.  \nEVIDENCE: Lines 124\u2013125 in the Configuration dataclass:  \nif self.rho_earliest_round != self.earliest_stop_round:\n    self.rho_earliest_round = self.earliest_stop_round\nIf a user sets `rho_earliest_round=8` and `earliest_stop_round=12`, the user\u2019s value is silently changed to 12. No warning or validation occurs."
+  },
+  "C0158": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 795,
+   "description": "FIND \u2014 `FindingRegistry.contested_count` hardcodes the grace threshold as `> 1` instead of using the `grace_period` parameter for the unresolved\u2011challenge aging check. This introduces a silent coupling: the method accepts `grace_period` but only applies it to UNCONFIRMED findings, while the contested\u2011aging logic uses a fixed 1\u2011round buffer. This can cause findings to be mis\u2011counted as contested earlier or later than intended.  \nEVIDENCE: Lines 239\u2013240 in `contested_count`:  \noldest = min(v[\"round\"] for v in unresolved)\nif current_round - oldest > 1:\n    count += 1\nThe `grace_period` parameter is used only for UNCONFIRMED status (lines 220\u2011225). The hardcoded `> 1` means a challenge must be at least two rounds old to count as contested, regardless of the caller\u2019s intended grace window."
+  },
+  "C0159": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 611,
+   "description": "FIND \u2014 `FindingRegistry.open_crit_high_count` excludes `REOPENED` from its `_NON_TERMINAL` tuple, while `build_summary` treats `REOPENED` as an active (full\u2011detail) status. This inconsistency means a reopened critical finding will not be counted toward the \u201cOpen CRIT/HIGH\u201d gate, potentially causing premature convergence.  \nEVIDENCE: Line 207: `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")`. Line 261: `full_detail_statuses = (\"OPEN\", \"CONTESTED\", \"REOPENED\")`. A finding with status `REOPENED` and severity \u22650.7 will appear in the registry summary as active but will be omitted from `open_crit_high_count()`\u2019s tally."
+  },
+  "C0164": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 735,
+   "description": "FIND \u2014 `_compute_rho` has a critical off-by-one error in round indexing. The function computes `round_idx = len(raw_counts) - 1` (zero-based index) but compares it directly to `cfg.rho_earliest_round` (one-based round number). This causes the rho churn detection to activate one round earlier than configured, potentially terminating experiments prematurely. Evidence: line `churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round` compares a zero-based index (0 for round 1) to a one-based threshold (e.g., 12). When `raw_counts` length is 12 (round 12), `round_idx = 11`, and `cfg.rho_earliest_round = 12`, the condition `11 >= 12` is false, preventing churn detection in round 12 even though it should be active."
+  }
+ }
+}

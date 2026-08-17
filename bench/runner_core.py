@@ -743,12 +743,68 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
             r'[Ii][Nn][Dd][Ee][Xx]\*{0,2}\s*[:=\-]\s*([\d.]+)', block
         )
         # DESCRIPTION or FIND (CC2 uses FIND: instead of DESCRIPTION:)
+        #
+        # REPAIRED 2026-08-17. The previous form fired the `block[:200]` fallback
+        # at line ~814 on 844 of 5592 archived finding blocks (15.1%), and that
+        # fallback does not truncate a description — it SUBSTITUTES the raw schema
+        # header for it, so the stored "description" is `FINDING_ID: F006\nSEVERITY:
+        # 0.80\nFIND: <first ~130 chars>`. Every downstream consumer then reads
+        # metadata as though it were the claim, including the location-keyed
+        # convergence count (reference_runner_v2.py:4288) and the CC2 verification
+        # prompt (:6271).
+        #
+        # THREE INDEPENDENT CAUSES, each fixed by one clause below.
+        #
+        # 1. THE `|$` BRANCH WAS UNREACHABLE. `block = block.strip()` above is the
+        #    only assignment to `block` before this point, and the lookahead spelled
+        #    `\n\s*$`: a newline, then whitespace, then end. `strip()` has already
+        #    removed every trailing newline, so no such position can exist. The
+        #    author's intent — "or the description runs to the end of the block" —
+        #    never once executed. `\Z` replaces it and needs no preceding newline.
+        #
+        # 2. THE SEPARATOR CLASS WAS `[:=\-]`. CC2 writes `FIND.` and `FIND —`.
+        #    Widened to include the full stop and both dashes.
+        #
+        # 3. MARKDOWN HEADING STYLE HAD NO SEPARATOR AT ALL. Gemini and Codex emit
+        #    `## FIND` / `#### FIND` on its own line, then the claim. The label is
+        #    now allowed to be followed by a newline instead of a separator — but
+        #    ONLY when it starts a line, optionally behind `#`/`*` markers. That
+        #    line anchor is load-bearing: without it, the word "find" in ordinary
+        #    prose would start a match.
+        #
+        # THE TERMINATOR SET GAINS EXACTLY TWO LABELS — FALSIFIER and TARGET_FILE —
+        # and nothing else. Both are separate schema fields extracted elsewhere
+        # (`_FALSIFIER_BLOCK_RE`, and the TARGET_FILE search below), so text after
+        # them was never part of the claim. Without them, `\Z` runs the description
+        # straight through the falsifier's Python: 190 archived descriptions ended
+        # up containing their own falsifier source, whose import lines and symbol
+        # names then feed `finding_locations` and manufacture locations the finding
+        # never claimed. With them, that falls to 44.
+        #
+        # TWO WIDER CANDIDATES WERE REJECTED ON MEASUREMENT, not taste. Ending the
+        # description at ANY following ALL-CAPS label recovered the same 312 blocks
+        # but SHORTENED 870 that parse correctly today — `EVIDENCE:` and `IMPACT:`
+        # are part of the claim in this corpus, not the next field. Ending it at a
+        # code fence shortened 834.
+        #
+        # MEASURED over every archived finding block the parser accepts (5592, after
+        # this function's own `_structurally_valid_fid` and code-leak guards):
+        # matches rise 4748 -> 5060 (84.9% -> 90.5%), 312 recovered, ZERO blocks
+        # that matched before now fail. Of the 4748 matching both ways, 4734 are
+        # byte-identical, 9 gain text — two from a previously EMPTY capture, 0 ->
+        # 966 and 0 -> 3989 chars — and 5 shrink: two because the un-anchored old
+        # pattern had begun matching inside a fenced code sample and swallowed 5439
+        # characters of Python, three because it had swallowed a FALSIFIER section.
+        # All five are corrections.
         desc_match = re.search(
-            r'\*{0,2}(?:[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]'
+            r'(?:^|\n)[ \t]*[#*]{0,4}[ \t]*'
+            r'(?:[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]'
             r'|[Ff][Ii][Nn][Dd])\*{0,2}'
-            r'\s*[:=\-]\s*(.+?)'
-            r'(?=\n\s*(?:\*{0,2}(?:[Pp][Rr][Oo][Pp]|[Vv][Ee][Rr][Ii]|'
-            r'[Ff][Oo][Ll][Ll]|[Ff][Ii][Nn][Dd])|$))',
+            r'[ \t]*(?:[:=–—.\-][ \t]*|\n)\s*(.+?)'
+            r'(?=\n\s*\*{0,2}(?:[Pp][Rr][Oo][Pp]|[Vv][Ee][Rr][Ii]|'
+            r'[Ff][Oo][Ll][Ll]|[Ff][Ii][Nn][Dd]|'
+            r'[Ff][Aa][Ll][Ss][Ii][Ff][Ii][Ee][Rr]|'
+            r'[Tt][Aa][Rr][Gg][Ee][Tt][_ ][Ff][Ii][Ll][Ee])|\Z)',
             block, re.DOTALL
         )
         ver_match = re.search(

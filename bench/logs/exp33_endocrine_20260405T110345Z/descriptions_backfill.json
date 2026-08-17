@@ -1,0 +1,62 @@
+{
+ "run": "exp33_endocrine_20260405T110345Z",
+ "stats": {
+  "entries": 32,
+  "prefix": 8,
+  "fallback": 0,
+  "unverified": 24,
+  "no_join": 0,
+  "unchanged": 0,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 604,
+   "description": "FIND \u2014 `scan_health()` marks tools as available whenever the runner function returns normally, even when the binary is missing or timed out. Evidence: `run_pyright()`, `run_ruff()`, `run_bandit()`, and `run_mypy()` all return `[]` on `_run_tool(...).stderr == \"NOT_FOUND\"`; `scan_health()` then sets `tools_available[tool_name] = True` unconditionally after `diags = runner(existing)`. The same false-positive availability occurs on timeout because `_run_tool()` returns a synthetic `CompletedProcess(..., returncode=-1, stderr=\"TIMEOUT\")`, but the runners mostly just parse empty stdout and return `[]`."
+  },
+  "C0009": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 730,
+   "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection requires `len(novelty_counts) >= 3 and round_idx >= 2`, then checks `novelty_counts[-3:]`. But `novelty_counts` is passed from the caller as a list where index = round number. If rounds are skipped or the list is shorter than `round_idx`, the check `round_idx >= 2` is redundant with `len(novelty_counts) >= 3`, but more importantly: the condition `all(n <= 1 for n in recent)` triggers on 3 consecutive rounds with \u22641 novel findings. At round 2 (the third round, 0-indexed), with `novelty_counts = [5, 1, 0]`, the plateau fires immediately. Three rounds is very early to declare convergence plateau \u2014 this threshold is too aggressive for the typical 6-8 round experiment."
+  },
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 657,
+   "description": "FIND \u2014 `compute_pacing_signals` receives `context_budget` which may be a dict (per-model budgets). The defensive check `if isinstance(context_budget, dict): context_budget = max(context_budget.values())` extracts the max value. But `cumulative_context_chars` is a single integer representing total chars across all models. Comparing total cumulative chars against a single model's budget is semantically wrong \u2014 `context_fraction` will be inflated by the number of models. With 5 models each at 80K budget, cumulative chars of 200K gives `context_fraction = 200000/80000 = 2.5`, triggering the 0.8 threshold when no individual model is anywhere near budget."
+  },
+  "C0017": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 584,
+   "description": "FIND \u2014 `compute_pacing_signals()` has an interface/type contract mismatch that can crash at runtime when called with non-`int` scalar numerics. The signature says `context_budget: int`, but the implementation only special-cases `dict` and then performs `if context_budget > 0:` followed by division. If a caller passes `None`, a string from config/env parsing, or any other non-int scalar-ish value, this raises `TypeError` inside endocrine between rounds. Evidence: there is no validation/coercion after the dict branch, and `EndocrineLayer.run()` forwards `context_budget` directly."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 917,
+   "description": "FIND \u2014 The endocrine layer\u2019s pacing\u2011signal function `compute_pacing_signals` contains a logic error in slow\u2011model detection that can cause division by zero. The code calculates `median_duration = sorted(durations)[len(durations) // 2]`. If `durations` is empty (possible when `round_timings` is empty or contains only zero\u2011duration entries), this indexing raises `IndexError`. The function catches exceptions only for convergence metrics, not for this median calculation.\nEVIDENCE: Lines ~475\u2011485: `if round_timings:` guard passes if `round_timings` is a non\u2011empty list, but `durations` could be `[0.0, 0.0, 0.0]`. `len(durations) // 2` is 1, indexing works. However, if `round_timings` is `[]`, the guard skips the block. The bug triggers when `round_timings` is provided but all durations are zero (unlikely but possible). The more critical issue is the missing exception handling for the median calculation itself."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 784,
+   "description": "FIND \u2014 The endocrine layer\u2019s `run_pyright` function mis\u2011categorizes all pyright diagnostics as `TYPE_SAFETY` or `NULL_DEREF`. The categorisation logic `_categorise_pyright` uses keyword matching that incorrectly labels other error types (e.g., \u201creportMissingImports\u201d, \u201creportUnknownMemberType\u201d) as type safety. This inflates the `type_safety` count in `HealthScan` and misleads the insect brain\u2019s health trends.\nEVIDENCE: `_categorise_pyright` checks for keywords \u201cnone\u201d, \u201coptional\u201d, \u201ccould be none\u201d, \u201cis not callable\u201d \u2192 `NULL_DEREF`; otherwise defaults to `TYPE_SAFETY`. Pyright produces many other diagnostic types (import errors, syntax errors, attribute errors) that should be mapped to `UNKNOWN` or more specific categories. The current mapping skews defect\u2011distribution metrics."
+  },
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 744,
+   "description": "FIND \u2014 `_run_tool` returns `TIMEOUT` in stderr on timeout, but the tool runners (`run_pyright`, `run_ruff`, etc.) treat this as a successful execution (return empty list) and `scan_health` marks the tool as available. This causes silent loss of static\u2011analysis results when a tool times out, and the health scan will incorrectly report zero diagnostics from that tool.  \nEVIDENCE: In `_run_tool`, `sp.TimeoutExpired` is caught and returns `stderr=\"TIMEOUT\"`. In `run_pyright`, the check `if result.stderr == \"NOT_FOUND\":` does not catch `\"TIMEOUT\"`, so the function proceeds to parse the empty stdout and returns `[]`. `scan_health` then sets `tools_available[tool_name] = True`. The same pattern occurs in `run_ruff`, `run_bandit`, `run_mypy`."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 627,
+   "description": "FIND \u2014 The endocrine layer\u2019s pacing\u2011signal function `compute_pacing_signals` uses a hard\u2011coded threshold of 0.8 (80%) for context\u2011growth signaling, but the context budget may be as low as 20,000 characters in some experiments. At that budget, 80% is 16,000 characters, which may be reached in the first round, causing premature \u201cdegrade_relay\u201d signals. The threshold is not calibrated to the actual budget and may be too sensitive for small\u2011budget runs.  \nEVIDENCE: Line ~468: `if context_fraction > 0.8:` with `context_fraction = cumulative_context_chars / context_budget`. The threshold 0.8 is arbitrary and not configurable."
+  }
+ }
+}

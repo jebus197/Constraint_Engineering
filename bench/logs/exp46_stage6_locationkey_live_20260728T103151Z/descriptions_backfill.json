@@ -1,0 +1,110 @@
+{
+ "run": "exp46_stage6_locationkey_live_20260728T103151Z",
+ "stats": {
+  "entries": 27,
+  "prefix": 11,
+  "fallback": 5,
+  "unverified": 5,
+  "no_join": 1,
+  "unchanged": 5,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0003": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 643,
+   "description": "`_compute_shadow_e_values()` still interprets `immune_response.cell_verdicts` outer keys as tool names, but `_track_tool_fpr()` documents and implements the corrected interpretation that those keys are finding IDs.\n\nLocation: `bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()`.\n\nProblematic code:\n# Per-tool composition: each tool contributes once (HARD 1 fix)\n        for cell_name, verdicts in cell_verdicts.items():\n            tracker = self._cumulative_tool_fpr.get(cell_name)\n            if tracker is None:\n                continue\nPremises:\n\n1. `_track_tool_fpr()` states that `cell_verdicts` is keyed by"
+  },
+  "C0004": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 2033,
+   "description": "`_estimate_source_coverage()` silently ignores later metadata records for the same source, making source coverage order-dependent and capable of discarding successful search evidence after an earlier error/empty record.\n\nLocation: `bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._estimate_source_coverage()`.\n\nProblematic code:\nsources = []\n        seen_sources: Set[str] = set()\n\n        for meta in o1_metadata:\n            source_name = meta.get(\"source\", \"unknown\")\n            if source_name in seen_sources:\n                continue\n            seen_sources.add(source_name)\nPremises:\n\n1. The function accepts `o1_metadata: List[Dict[str, Any]]`.\n2. The type and docstring do not guarantee one record per source.\n3. O1 metadata can naturally contain multiple records for the same source if multiple queries are executed against the same backend.\n4. The current implementation keeps the first record for a source and discards all later records.\n5. Later records may contain stronger evidence than earlier records.\n\nConcrete trace:\n\nInput:\no1_metadata = [\n    {\"source\": \"arxiv\", \"status\": \"error\", \"results_count\": 0},\n    {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": 3},\n]\nCurrent execution:\n\n1. First record:\n   - `source_name = \"arxiv\"`\n   - not in `seen_sources`\n   - processed as `status = \"error\"`, `results_count = 0`\n   - `r_s = 0.4`\n   - `q_s = 0.2`\n   - `a_s = 0.0`\n   - `c_s = 0.4 * 0.2 * 0.0 = 0.0`\n\n2. Second record:\n   - `source_name = \"arxiv\"`\n   - already in `seen_sources`\n   - skipped entirely\n\nActual output:\n[\n    PerSourceCoverage(\n        source_name=\"arxiv\",\n        results_count=0,\n        status=\"error\",\n        c_s=0.0,\n    )\n]\nExpected aggregate-based output:\n[\n    PerSourceCoverage(\n        source_name=\"arxiv\",\n        results_count=3,\n        status=\"live\",\n        c_s=0.4,\n    )\n]\nbecause:\nr_s = 0.4\nq_s = min(1.0, 3 / 3.0) = 1.0\na_s = 1.0\nc_s = 0.4\nFormal conclusion: duplicate-source metadata can make `_estimate_source_coverage()` understate `c_s` solely due to input order."
+  },
+  "C0005": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 186,
+   "description": "In `_compute_shadow_e_values`, loop iterates over finding\u2011ID keys from `cell_verdicts` but accesses `self._cumulative_tool_fpr` keyed by tool names, so `shadow_e_combined` always `None`."
+  },
+  "C0006": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1101,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._compute_shadow_e_values()` treats `immune_response.cell_verdicts` as if its outer keys are tool/cell names, but the same module\u2019s `_track_tool_fpr()` documents and handles the actual shape as finding-ID keyed.\n\nEvidence from target code:\n# _track_tool_fpr()\nfor _fid, verdicts in cell_verdicts.items():\n    for verdict in verdicts:\n        tool = (getattr(verdict, \"tool_used\", \"\") or\n                str(getattr(verdict, \"cell_type\", \"unknown\")))\nbut later:\n# _compute_shadow_e_values()\nfor cell_name, verdicts in cell_verdicts.items():\n    tracker = self._cumulative_tool_fpr.get(cell_name)\n    if tracker is None:\n        continue\nConcrete reproduced input:\ncell_verdicts = {\n    \"p0\": [Verdict(tool_used=\"sympy\", verdict=\"CONFIRMED\")],\n    ...\n    \"f0\": [Verdict(tool_used=\"sympy\", verdict=\"REJECTED\")],\n}\n`_track_tool_fpr()` creates `_cumulative_tool_fpr[\"sympy\"]`, but `_compute_shadow_e_values()` looks for `\"p0\"`, `\"f0\"`, etc. No tracker is found, so `shadow_e_combined` and `shadow_d_eff` remain `None` despite determinate tool evidence."
+  },
+  "C0007": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 760,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._estimate_source_coverage()` silently discards later metadata records for the same source because it uses first-record-wins deduplication:\nseen_sources: Set[str] = set()\n\nfor meta in o1_metadata:\n    source_name = meta.get(\"source\", \"unknown\")\n    if source_name in seen_sources:\n        continue\n    seen_sources.add(source_name)\nConcrete reproduced input:\n[\n    {\"source\": \"arxiv\", \"status\": \"error\", \"results_count\": 0},\n    {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": 3},\n]\nObserved output:\n{'source_name': 'arxiv',\n 'results_count': 0,\n 'status': 'error',\n 'recall_estimate': 0.4,\n 'query_quality': 0.2,\n 'access_completeness': 0.0,\n 'c_s': 0.0}\nThe later successful live result is ignored."
+  },
+  "C0008": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 622,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._assess_finding()` accepts external numeric attributes from `finding: Any` without validating or clamping them to the probability-like `[0, 1]` range.\n\nCurrent code:\neta_int = getattr(finding, \"novelty\", 0.9)\neta_stage6 = eta_int * (1.0 - c_ext * (1.0 - nu_k_proxy))\nand:\nc_base = getattr(finding, \"detection_confidence\", 0.5)\nc_freq = c_base * (1.0 + self.ALPHA_FREQ * math.log(1.0 + n_k))\nc_freq = min(self.C_MAX, c_freq)\n`C_MAX` only caps the upper bound of `c_freq`; it does not prevent negative values. `eta_int` is not clamped at all.\n\nConcrete reproduced input:"
+  },
+  "C0009": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 1035,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._assess_finding()` accepts unbounded numeric attributes from arbitrary `finding` objects and logs impossible probability-like values.\n\nAffected code:\neta_int = getattr(finding, \"novelty\", 0.9)\neta_stage6 = eta_int * (1.0 - c_ext * (1.0 - nu_k_proxy))\ndelta = eta_int - eta_stage6\nand:\nc_base = getattr(finding, \"detection_confidence\", 0.5)\nc_freq = c_base * (1.0 + self.ALPHA_FREQ * math.log(1.0 + n_k))\nc_freq = min(self.C_MAX, c_freq)\nPremises:\n1. `novelty`, `eta_stage5`, and `eta_stage6` are probability-like values expected in `[0, 1]`.\n2. `detection_confidence`, `shadow_c_base`, and `shadow_c_freq` are also probability/confidence-like values expected in `[0, 1]`.\n3. `_assess_finding()` obtains `finding.novelty` and `finding.detection_confidence` with `getattr()` and performs no lower or upper bound validation before logging.\n4. The upper clamp on `c_freq` does not clamp `c_base`, and it does not prevent negative values if `c_base < 0`.\n\nConcrete trace:\nclass Finding:"
+  },
+  "C0013": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 182,
+   "description": "In `_assess_finding()`, `flaw_class = getattr(finding, \"flaw_class\", \"unknown\")` may return an int, which is then used as a dict key in `_flaw_class_counts`, mixing int and str keys."
+  },
+  "C0014": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 210,
+   "description": "In `_compute_shadow_e_values()`, when all tools issue PASS verdicts but no tracker has \u22655 determinate outcomes, `has_any_evidence` stays False, leaving `shadow_e_combined` None and discarding the pass evidence."
+  },
+  "C0015": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1709,
+   "description": "`bench/dm/_shadow_stage6.py` treats `o1_metadata[*][\"results_count\"]` as numeric in three separate O1-metadata consumers without coercion or validation, even though the type is declared as `Dict[str, Any]` and metadata commonly crosses JSON / subprocess / logging boundaries where numeric fields can arrive as strings.\n\nLocations:\n- `ShadowStage6Calibrator._estimate_source_coverage()`\n- `ShadowStage6Calibrator._estimate_retrieval_sparsity()`\n- `ShadowStage6Calibrator._track_source_cooccurrence()`\n\nEvidence from the current code:\nresults_count = meta.get(\"results_count\", 0)\n\nelif status == \"live\" and results_count > 0:\ntotal_results = sum(m.get(\"results_count\", 0) for m in o1_metadata)\nif status == \"live\" and results_count > 0:\nConcrete execution input:\nouroboros_data = {\n    \"metadata_retrieved\": [\n        {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": \"3\"},\n        {\"source\": \"semantic_scholar\", \"status\": \"live\", \"results_count\": \"1\"},\n    ]\n}\nExpected behaviour:\n- `\"3\"` is accepted as count `3`.\n- source coverage records `results_count=3`.\n- retrieval sparsity uses total result count `4`.\n- source co-occurrence records `arxiv|semantic_scholar: both=1`.\n- `observe_round()` returns a `ShadowStage6RoundLog`.\n\nActual behaviour:\n- `_estimate_source_coverage()` reaches `results_count > 0`.\n- Python compares `str` to `int`.\n- `TypeError: '>' not supported between instances of 'str' and 'int'`.\n- round observation aborts before producing shadow calibration data.\n\nFormal conclusion: the shadow logger has an interface-boundary bug. It accepts `Dict[str, Any]` metadata but assumes a numeric subtype without normalisation, so valid JSON-like metadata can crash the calibration observer."
+  },
+  "C0016": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1193,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator` assumes O1 metadata field `results_count` is already an `int` in multiple methods:\n\n- `_estimate_source_coverage()`\n- `_estimate_retrieval_sparsity()`\n- `_track_source_cooccurrence()`\n\nEvidence from the target file:\nresults_count = meta.get(\"results_count\", 0)\n\n...\nelif status == \"live\" and results_count > 0:\nand:\ntotal_results = sum(m.get(\"results_count\", 0) for m in o1_metadata)\nand:\nresults_count = meta.get(\"results_count\", 0)\n\n...\nif status == \"live\" and results_count > 0:\nIf `metadata_retrieved` contains JSON-like but unnormalised values such as `\"3\"` or `None`, `observe_round()` raises `TypeError`.\n\nConcrete input:\nouroboros_data = {\n    \"metadata_retrieved\": [\n        {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": \"3\"}\n    ]\n}\nExecution reaches `_estimate_source_coverage()`:\nresults_count = \"3\"\nstatus == \"live\"\nresults_count > 0\nPython cannot compare `str` and `int`, so the logger crashes:\nTypeError: '>' not supported between instances of 'str' and 'int'\nThis is distinct from the settled duplicate-source issue: even with only one metadata entry per source, malformed numeric type crashes the round observer."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 702,
+   "description": "In `_estimate_source_coverage`, `_track_source_cooccurrence`, and `_estimate_retrieval_sparsity`, the code uses `meta.get(\"key\", default)` to extract values from `o1_metadata` dictionaries. If the key exists but its value is explicitly `None` (e.g., `{\"source\": None, \"results_count\": None}`), `get()` returns `None` instead of the default. This causes `TypeError` crashes downstream: `sorted(queried_sources)` crashes with `TypeError: '<' not supported between instances of 'NoneType' and 'str'`, `results_count > 0` crashes with `TypeError: '>' not supported between instances of 'NoneType' and 'int'`, and `sum(...)` crashes with `TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'`."
+  },
+  "C0019": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 549,
+   "description": "In `_assess_finding` and `_estimate_h_ratio`, the code extracts the `description` attribute from the `finding` object using `getattr(finding, \"description\", \"\")`. If the `finding` object has a `description` attribute explicitly set to `None` (which is common for optional dataclass fields), `getattr` returns `None`. This causes two immediate crashes: `desc = getattr(finding, \"description\", \"\")[:120]` raises `TypeError: 'NoneType' object is not subscriptable`, and `desc_len = len(desc)` raises `TypeError: object of type 'NoneType' has no len()`."
+  },
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1949,
+   "description": "`bench/dm/_shadow_stage6.py`, `ShadowStage6Calibrator._track_source_cooccurrence()` drops the cumulative source co-occurrence snapshot from `round_log` whenever the current round has fewer than two queried sources.\n\nLocation:\nif len(queried_sources) < 2:\n            return  # Need at least 2 sources for co-occurrence\n\n        # Update co-occurrence for all queried pairs\n        for src_a, src_b in combinations(sorted(queried_sources), 2):\nEvidence from the real module:\nfrom bench.dm._shadow_stage6 import ShadowStage6Calibrator\n\ncal = ShadowStage6Calibrator()\n\nlog1 = cal.observe_round(\n    1,\n    [],\n    ouroboros_data={\n        \"metadata_retrieved\": [\n            {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": 1},\n            {\"source\": \"semantic_scholar\", \"status\": \"live\", \"results_count\": 1},\n        ]\n    },\n)\nassert log1.source_cooccurrence == {\"arxiv|semantic_scholar\": {\"both\": 1}}\n\nlog2 = cal.observe_round(\n    2,\n    [],\n    ouroboros_data={\n        \"metadata_retrieved\": [\n            {\"source\": \"arxiv\", \"status\": \"live\", \"results_count\": 1},\n        ]\n    },\n)\n\n# Current behavior:\nassert log2.source_cooccurrence == {}\nassert cal.get_calibration_summary()[\"source_cooccurrence\"] == {\n    \"arxiv|semantic_scholar\": {\"both\": 1}\n}\nPremises:\n\n1. `_source_cooccurrence` is cumulative calibrator state.\n2. Round 1 correctly records cumulative state into `log1.source_cooccurrence`.\n3. Round 2 has fewer than two queried sources, so `_track_source_cooccurrence()` returns before the \u201cSnapshot into round log\u201d block.\n4. Therefore `log2.source_cooccurrence` is `{}` even though cumulative source co-occurrence state still exists and is reported by `get_calibration_summary()`.\n\nFormal conclusion: per-round logs are internally inconsistent with the calibrator\u2019s cumulative state. A round with insufficient new pair evidence should record \u201cno update this round,\u201d not erase the visible cumulative snapshot from that round\u2019s log."
+  },
+  "C0026": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1272,
+   "description": "`_compute_shadow_e_values` (line 578-579) iterates `for cell_name, verdicts in cell_verdicts.items()` and looks up `tracker = self._cumulative_tool_fpr.get(cell_name)`. But `cell_verdicts` is keyed by finding ID (the module's own 2026-07-27 comment at line 514-517 states this explicitly), whereas `_cumulative_tool_fpr` is keyed by tool name (`tool_used`/`cell_type`, line 520-526). A finding-ID is never a key in a tool-name-keyed dict, so `tracker` is always `None` \u2192 `continue` (line 580-581) \u2192 the loop body never executes \u2192 `has_any_evidence` stays `False` \u2192 `shadow_e_combined` and `shadow_d_eff` are never set. Evidence: the runnable falsifier below fires against the real module; 24 determinate verdicts across 4 rounds, both outputs `None`, tracker keys `['sympy','z3']` vs verdict keys `['find_0','find_1','find_2']`.\n\nThis is a regression introduced by the 2026-07-27 `_track_tool_fpr` repair (which correctly changed tracker keying from per-finding to per-tool) without updating this consumer. It is distinct from the closed C0005/C0006/C0010 (those were per-verdict double-counting / magnitude errors) and from C0023/C0001 (empty-product semantics). Note the newly-added F003 fix at lines 602-612 is dead code \u2014 it lives inside the loop body that never runs."
+  },
+  "C0027": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 645,
+   "description": "`bench/dm/_shadow_stage6.py:182`, field declaration\n`source_cooccurrence: Dict[str, int] = field(default_factory=dict)` in `ShadowStage6RoundLog`. The field is only ever assigned a *nested* mapping \u2014 `_track_source_cooccurrence` (line 682-685) sets `round_log.source_cooccurrence = {pair: dict(counts) ...}` where each value is a `Dict[str, int]`. The declared value type (`int`) is wrong. Evidence (tool, not assertion):\n$ python3 -m mypy bench/dm/_shadow_stage6.py\nbench/dm/_shadow_stage6.py:683: error: Value expression in dictionary comprehension\n  has incompatible type \"dict[str, int]\"; expected type \"int\"  [misc]\nFound 1 error in 1 file."
+  }
+ }
+}

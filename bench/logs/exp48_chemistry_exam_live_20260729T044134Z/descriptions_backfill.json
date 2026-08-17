@@ -1,0 +1,80 @@
+{
+ "run": "exp48_chemistry_exam_live_20260729T044134Z",
+ "stats": {
+  "entries": 37,
+  "prefix": 8,
+  "fallback": 3,
+  "unverified": 1,
+  "no_join": 0,
+  "unchanged": 25,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0011": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 531,
+   "description": "CH-37 states that the second-order rate constant for the titrimetric back-assay is `k = 0.126 s^-1` and is carried directly into the hold-time model without conversion. This contradicts CH-36, which correctly derives that a second-order rate constant for `rate = k[ester][OH-]` must have units `L mol^-1 s^-1`. A second-order constant cannot have first-order units `s^-1` unless one reactant concentration has been absorbed into a pseudo-first-order observed constant, which CH-36 explicitly says is not done for the forced system."
+  },
+  "C0018": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 526,
+   "description": "CH-22 claims N-(4-hydroxyphenyl)acetamide (paracetamol) \"returns exactly one match for the carboxylic-acid query `[CX3](=O)[OX2H1]`, arising from the hydroxyl on the aromatic ring.\" Paracetamol (`CC(=O)Nc1ccc(O)cc1`) contains no carboxylic acid. Its carbonyl is an amide (C(=O)N), and the ring hydroxyl is a phenol (c\u2013OH), neither of which matches `[CX3](=O)[OX2H1]`. rdkit `GetSubstructMatches` returns 0, not 1. The stated rationale (\"arising from the hydroxyl\") is chemically incoherent \u2014 a phenol is not a carboxylic acid."
+  },
+  "C0020": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 535,
+   "description": "CH-29 states three independent uncertainty components (0.42%, 0.28%, 0.15%) \"because the components are independent they are combined by arithmetic addition, giving 0.85 per cent.\" This inverts the correct rule: independent components combine in quadrature (root-sum-of-squares), per GUM/ICH. \u221a(0.42\u00b2+0.28\u00b2+0.15\u00b2) = 0.53%, not 0.85%. Arithmetic addition (0.85%) is the rule for fully correlated components. The document contradicts itself: CH-30 correctly combines its independent components in quadrature (\u221a(0.20\u00b2+0.11\u00b2+0.06\u00b2)=0.24%)."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 659,
+   "description": "CH-27 claims that \"Injecting argon into the converter at constant volume and constant temperature ... produces an equilibrium shift toward ammonia, and the argon bleed is therefore used as a fine trim on converter yield.\" This is a classic Le Chatelier error. Adding an inert gas at constant volume raises total pressure but leaves the partial pressures (and concentrations) of N\u2082, H\u2082, NH\u2083 unchanged, so the reaction quotient Q is unchanged and there is no shift. Le Chatelier's \"move to fewer moles under raised pressure\" applies only when the pressure rise comes from volume reduction (which does change partial pressures) \u2014 as correctly described in CH-26."
+  },
+  "C0023": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 678,
+   "description": "CH-37 states \"the measured second-order rate constant is k = 0.126 s^-1, and this value is carried directly into the hold-time model without conversion.\" A second-order rate constant cannot have units of s\u207b\u00b9. CH-36 (immediately prior) establishes by dimensional analysis that the rate constant for `rate=k[ester][OH\u207b]` must carry units L mol\u207b\u00b9 s\u207b\u00b9. Labelling 0.126 as s\u207b\u00b9 is dimensionally inconsistent with CH-36. Compounding this, \"carried directly into the hold-time model without conversion\" implies feeding a second-order constant (L mol\u207b\u00b9 s\u207b\u00b9) into the first-order hold-time model (CH-34, which uses s\u207b\u00b9) \u2014 a units mismatch that would corrupt any half-life derived from it."
+  },
+  "C0024": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 208,
+   "description": "CH\u201111 claims the balanced equation for dichromate oxidation of ethanol is `3 C2H5OH + 2 K2Cr2O7 + 8 H2SO4 \u2192 3 CH3COOH + 2 Cr2(SO4)3 + 2 K2SO4 + 8 H2O` but hydrogen count is imbalanced (left 34\u202fH, right 28\u202fH)."
+  },
+  "C0026": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 181,
+   "description": "CH\u201122 asserts N\u2011(4\u2011hydroxyphenyl)acetamide returns exactly one match for the carboxylic\u2011acid query `[CX3](=O)[OX2H1]`, but it contains no carboxylic acid group (correct count is 0)."
+  },
+  "C0027": {
+   "method": "fallback",
+   "stored_len": 200,
+   "recovered_len": 169,
+   "description": "CH\u201127 claims injecting argon at constant V,T shifts equilibrium toward ammonia due to Le Chatelier, but inert gas addition at constant volume does not shift equilibrium."
+  },
+  "C0034": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 953,
+   "description": "The Section 9 application note understates the temperature sensitivity implied by CH-35.\n\nLocation: `/Users/georgejackson/CDSFL_review_targets/exp48_chemistry.md`, Section 9, first paragraph:\n\n> `Because the activation energy is moderate, the model is sensitive to storage temperature: a 10 K excursion above the nominal 298 K roughly doubles the degradation rate...`\n\nEvidence: CH-35 states the activation energy used by the hold-time model is `75.2 kJ/mol`. Using the Arrhenius relation for a temperature increase from 298.15 K to 308.15 K:\n\n\\[\n\\frac{k_{308.15}}{k_{298.15}} =\n\\exp\\left[-\\frac{E_a}{R}\\left(\\frac{1}{308.15}-\\frac{1}{298.15}\\right)\\right]\n\\]\n\nWith `Ea = 75.2 kJ/mol`, the factor is about `2.68`, not \u201croughly doubles.\u201d\n\nThis is not the settled CH-35 activation-energy finding; CH-35\u2019s value is correct. The defect is the later cross-section propagation of that correct value into an incorrect qualitative/quantitative application note."
+  },
+  "C0036": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 1138,
+   "description": "DISCOVERY \u2014 Section 7, paragraph immediately after CH-33, permits straight single-point external-standard back-calculation despite a non-zero calibration intercept and an explicitly admitted low-end bias.\n\nOffending text:\n\n> \u201cThe intercept in CH-33 is small relative to the level-1 response \u2014 about 2 per cent of it \u2014 so the method is used with a straight external-standard back-calculation rather than a full calibration-line back-calculation, and the residual bias this introduces at the bottom of the range is absorbed in the reporting tolerance.\u201d\n\nEvidence from the document\u2019s own calibration table:\n\n- Level 1: 10.0 \u00b5g/mL, area 21980\n- Nominal external standard: 50.0 \u00b5g/mL, area 105210\n- Single-point response factor = `105210 / 50.0 = 2104.2 counts/(\u00b5g/mL)`\n- Back-calculated level-1 concentration = `21980 / 2104.2 = 10.45 \u00b5g/mL`\n- Bias = `(10.45 \u2212 10.00) / 10.00 \u00d7 100 = +4.46%`\n\nThe document\u2019s regression already supplies a fitted line with non-zero intercept: slope 2107.1, intercept 448.3. Choosing a through-origin single-point calculation while knowingly absorbing low-end bias is unsupported for the stated validated range."
+  },
+  "C0037": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 622,
+   "description": "CH\u201135 states the second first\u2011order rate constant was measured \u201cat 318 K\u201d, but the subsequent Arrhenius computation is performed with temperatures 298.15 K and 318.15 K. The text uses one temperature value, the arithmetic uses a different one; this is an internal inconsistency. Either the measurement was made at 318.15\u202fK (in which case the text should say so) or the calculation was performed with the wrong temperature (in which case the activation energy is wrong). The discrepancy is evident in the sentence:  \n\u201c*\u2026 at 318 K gives k = 1.28 \u00d7 10\u207b\u00b3 s\u207b\u00b9, and applying the Arrhenius relation \u2026 at 298.15 K and 318.15 K \u2026*\u201d"
+  }
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "run": "exp39_0_gate_20260413T054642Z",
+ "stats": {
+  "entries": 35,
+  "prefix": 6,
+  "fallback": 0,
+  "unverified": 0,
+  "no_join": 20,
+  "unchanged": 9,
+  "ambiguous": 0
+ },
+ "descriptions": {
+  "C0021": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 838,
+   "description": "FIND \u2014 Star topology `_make_prompt` ignores all ITC adaptations except `change_focus`. When `_itc_adapt` sets `strip_context`, `section_assign`, or `restart_fresh`, the star topology's `_dispatch_round_star._make_prompt` (lines ~1060-1080) only checks `if adaptation == \"change_focus\"` and ignores all other adaptation states. This means a model that hits `CAPABILITY_MISMATCH` (context overflow) receives the identical oversized prompt every subsequent round, wasting API calls until `_itc_flag_underperformer` fires after 3 consecutive failures. The relay topology partially handles `strip_context` (strips relay context but not artifact), confirming this is an implementation gap rather than a design choice. `_itc_build_recovery_prompt` exists to implement `strip_context`/`restart_fresh` but is never called anywhere in the codebase."
+  },
+  "C0022": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 548,
+   "description": "FIND \u2014 `_itc_build_recovery_prompt` (line ~808) claims to reduce context to `max_ok_chars` but includes the full, untruncated artifact section. The code extracts a 2000-char preamble and concatenates the ENTIRE artifact: `preamble + artifact`. If the artifact is 280K chars and `max_ok_chars` is 100K, the \"reduced\" prompt is still ~282K chars. The log message `\"context reduced to ~{max_ok_chars:,} chars\"` is misleading \u2014 no truncation occurs. This means even if F001 is fixed to wire up this function, context overflow recovery would still fail."
+  },
+  "C0023": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 828,
+   "description": "FIND \u2014 `_evaluate_gate_conditions` deduplicates consecutive identical `open_ch_history` entries (line ~571), which prevents the stability window check from ever accumulating enough history when `open_ch` is stable and non-zero. The guard `if not open_ch_history or open_ch_history[-1] != open_ch` was intended (per the F12 comment) to prevent double-counting from multiple calls per round, but it suppresses exactly the signal the stability check needs: consecutive identical values across rounds. With `max_open_crit_high > 0` (non-default), a stable `open_ch` value produces only 1 history entry, and `len(open_ch_history) < open_ch_stability_window` remains true forever, adding a permanent gate failure. With default `max_open_crit_high = 0`, the bug is unreachable because any `open_ch > 0` fails the threshold check first."
+  },
+  "C0024": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 581,
+   "description": "FIND \u2014 Module-level mutable state (`_itc_model_state`, `_itc_hil_flags`, `_shadow_macrophage`, `_shadow_ouroboros`) is not cleared at the start of a fresh (non-resume) `run_experiment` call. If `run_experiment` is called multiple times in the same process (e.g., test harness, interactive use), ITC history, HIL flags, and shadow cell state from previous runs persist and contaminate the new run. The resume path correctly restores/clears this state, but the fresh-start path does not. Lines ~1289-1296 restore ITC state on resume; no corresponding cleanup exists for fresh starts."
+  },
+  "C0025": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 673,
+   "description": "FIND \u2014 `_evaluate_sk_for_findings` receives `str(target_rel)` (a relative path like `bench/reference_runner.py`) as `source_path` (line ~1485), but multiple S_k gate functions use `Path(source_path).parent` to anchor temp files for config discovery (`_run_hard_gate_compile`, `_run_effect_ruff`, `_run_effect_bandit`) and `Path(source_path).resolve()` for sandbox overlay (`_run_effect_regression`). These operations resolve relative to CWD. If CWD is not REPO_ROOT (e.g., running from a subdirectory, or in a test fixture), temp files are created in wrong directories and ruff/bandit miss `pyproject.toml` config, and the regression sandbox overlay targets the wrong path."
+  },
+  "C0030": {
+   "method": "prefix",
+   "stored_len": 500,
+   "recovered_len": 652,
+   "description": "`auto_resolve_contested` (lines 527-540) counts verdicts within a 3-round window (`current_round - 2` to `current_round`), but the window is asymmetric with how verdicts are timestamped. A CONFIRM verdict issued in the same round as the auto-resolve check (round N) with `v[\"round\"] == N` passes the filter, but the auto-resolve runs BEFORE new verdicts from round N are registered (verdicts are added during dispatch, auto-resolve runs post-dispatch). This means the window effectively covers rounds N-2 to N-1 for challenges, but any same-round CONFIRM that could defend the finding hasn't been added yet. The timing creates a bias toward refutation."
+  }
+ }
+}
