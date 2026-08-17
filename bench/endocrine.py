@@ -586,11 +586,25 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
     i = 0
     while i < len(sr_lines):
         line = sr_lines[i]
-        if line.strip().startswith("<<<<") and "SEARCH" in line.upper():
+        # OPENING MARKER. Was `startswith("<<<<") and "SEARCH" in line.upper()`,
+        # which accepted only one of the two forms the runner itself emits:
+        # `<<<< SEARCH <path>` when a file hint is present, `<<<< OLD` when it is
+        # not (runner_core.py:886-888). Across the archive that gate rejected 66
+        # `<<<< OLD` blocks and 207 whose first line carries code rather than a
+        # label. The label was never what made a block valid — the `====`
+        # separator and the `>>>>` closer are, and a run of lines lacking either
+        # is skipped below regardless. So the label requirement is dropped and
+        # the structure does the validating.
+        if line.strip().startswith("<<<<"):
             i += 1
             search_lines: list = []
             while i < len(sr_lines):
-                if sr_lines[i].rstrip() == "====":
+                # SEPARATOR. Was `sr_lines[i].rstrip() == "===="` — exactly four
+                # equals and nothing after. `runner_core.parse_findings` emits
+                # `==== REPLACE` (runner_core.py:886), so that test could never
+                # be true for a runner-produced fix. Now: four-or-more equals at
+                # line start, trailing label optional.
+                if re.match(r'^\s*={4,}', sr_lines[i]):
                     i += 1
                     break
                 search_lines.append(sr_lines[i])
@@ -599,7 +613,12 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
                 continue
             replace_lines: list = []
             while i < len(sr_lines):
-                if sr_lines[i].strip().startswith(">>>>") and "REPLACE" in sr_lines[i].upper():
+                # CLOSER. Was `startswith(">>>>") and "REPLACE" in ...upper()`.
+                # The runner emits a BARE `>>>>` and puts the word REPLACE on the
+                # separator line instead, so requiring it here failed too. Two
+                # independent mismatches between the emitter and this parser, both
+                # in the same block — see the header note on `_apply_fix_to_source`.
+                if sr_lines[i].strip().startswith(">>>>"):
                     i += 1
                     break
                 replace_lines.append(sr_lines[i])
