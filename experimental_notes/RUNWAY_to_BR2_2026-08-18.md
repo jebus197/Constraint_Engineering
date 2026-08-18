@@ -1,6 +1,6 @@
 # THE RUNWAY — where we are, what is left, what each step costs
 
-**Opened 2026-08-18 11:42 BST at HEAD `f53c276`.**
+**Opened 2026-08-18 11:42 BST at HEAD `f53c276`. Last updated 2026-08-18 12:28 BST at HEAD `f4df176`.**
 **This is a LIVING TRACKER. Update the STATUS column as each item lands.**
 **Canonical copy: this file. Mirror: `~/Desktop/CDSFL_RUNWAY.md`.**
 
@@ -32,13 +32,16 @@ live run.**
 
 | # | Item | Evidence | STATUS |
 |---|---|---|---|
-| 1.1 | Gate-population mismatch: gamma's input counts a different population from the one the spec requires | 82% of merges land in a later round and are never corrected | DONE |
+| 1.1 | ~~Gate-population mismatch~~ **CORRECTED 2026-08-18 12:28: this is a rho/endocrine repair, NOT a gate repair.** `novelty_counts` was corrected in its final position only; it feeds `_compute_rho` (:8935) and the endocrine module (:9060). The gamma gate reads `_settled_novelty_series` directly (:4385-4387), which was ALREADY post-dedup in every round | 82% of merges land in a later round and are never corrected. Refutation: the runner's own settled series reproduces archived `gamma_critical_history` exactly in 9 of 11 archived runs | DONE (re-scoped) |
 | 1.2 | Alias-key normalisation: `_resolve_merge_source` cannot resolve the syntax the runner itself teaches, so MERGE silently recasts to CONFIRM | spec `cdsfl_topology_formal.md:126-127` mandates the recast; the repair target is the resolver | DONE |
 | 1.3 | Merge target guards: no check that the target exists, is live, or is not self | exp37 has a finding merged into itself at severity 0.86 | DONE |
 | 1.4 | Merge cycle guard | 21 of 86 merged entries in exp36 sit inside a cycle | DONE |
 | 1.5 | Health-monitor carve-out: suppresses the alarm when all removals are duplicates, so a 100%-rejection round reports healthy | `bench/immune_agents.py:4711-4726` | DONE |
 | 1.6 | MERGED semantics: it is a delete-with-pointer, not a fold. Either make it fold, or stop telling models it folds | alias map is a bijection in **all 28 registries**; no entry has ever gained a second alias | TODO |
 | 1.7 | **REPLAY exp44-49** through the repaired accounting; report old vs new rho, gamma, novelty series | archive is intact; this is how everything this week was derived | TODO |
+
+| 1.8 | **NEW, OBSERVED 2026-08-18:** churn detector cannot fire on most of the arc. `rho_earliest_round=12`; of exp44-49 only exp44 (13 rounds) reaches R12 | exp45=4, exp46=6, exp47=9, exp48=6, exp49=7 rounds | TODO |
+| 1.9 | **NEW, OBSERVED 2026-08-18:** exp47's report records 9 rounds; its registry carries `open_since_round` up to 13 | any per-round exp47 comparison spans two different lengths. An apparent rho rise of +0.2153 was an artefact of this and is WITHDRAWN | TODO |
 
 **Stage 1 exit test:** the replay reproduces each run's archived series exactly
 under the OLD accounting, and reports a defensible delta under the new. If it

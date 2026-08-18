@@ -3,6 +3,10 @@
 **Subject: duplicate / difference detection between findings in CDSFL.**
 **Prepared 2026-08-17T23:23+01:00. Verified against HEAD `5354b95` (working tree clean).**
 
+> **ADDENDUM, 2026-08-18 — read alongside this brief:** `experimental_notes/Dedup_Historical_Brief_Addendum_2026-08-18.md` (verified at HEAD `f53c276`). It covers what this brief does not: the Bugzilla state machine as a duplicate-handling design, whether the mathematical model ever grounds "same finding" (it does not, and 23 named quantities depend on it), the spec requirements the implementation violates, pre-Exp-40 history, and near-duplicate *documents* on the ouroboros path — a different population from finding pairs, where the MinHash refutation in §2.3 does not transfer.
+>
+> **One correction to this brief lands there:** §1.9's *"its one behavioural effect is the feedback channel"* is right about the registry and wrong about the pipeline. `helper_t_v2` converts `is_duplicate` into a terminal DUPLICATE verdict (`bench/immune_agents.py:4550-4554`) and the response builder drops it (`:5948`), so `filtered_findings` is empty in 37 of 44 archived immune rounds — which starves programmatic fix verification and the literature cell. See Addendum §E.4 and §F.5.
+
 ## How to read this
 
 This project has been working on one question for five months: given two findings produced by different models (or the same model in different rounds) about the same target document, decide whether they name the same defect or two different defects. The answer feeds a convergence gate — get it wrong in the merge direction and a run stops while genuine defects are still arriving; get it wrong in the split direction and a run never stops.
