@@ -32,11 +32,11 @@ live run.**
 
 | # | Item | Evidence | STATUS |
 |---|---|---|---|
-| 1.1 | Gate-population mismatch: gamma's input counts a different population from the one the spec requires | 82% of merges land in a later round and are never corrected | TODO |
-| 1.2 | Alias-key normalisation: `_resolve_merge_source` cannot resolve the syntax the runner itself teaches, so MERGE silently recasts to CONFIRM | spec `cdsfl_topology_formal.md:126-127` mandates the recast; the repair target is the resolver | TODO |
-| 1.3 | Merge target guards: no check that the target exists, is live, or is not self | exp37 has a finding merged into itself at severity 0.86 | TODO |
-| 1.4 | Merge cycle guard | 21 of 86 merged entries in exp36 sit inside a cycle | TODO |
-| 1.5 | Health-monitor carve-out: suppresses the alarm when all removals are duplicates, so a 100%-rejection round reports healthy | `bench/immune_agents.py:4711-4726` | TODO |
+| 1.1 | Gate-population mismatch: gamma's input counts a different population from the one the spec requires | 82% of merges land in a later round and are never corrected | DONE |
+| 1.2 | Alias-key normalisation: `_resolve_merge_source` cannot resolve the syntax the runner itself teaches, so MERGE silently recasts to CONFIRM | spec `cdsfl_topology_formal.md:126-127` mandates the recast; the repair target is the resolver | DONE |
+| 1.3 | Merge target guards: no check that the target exists, is live, or is not self | exp37 has a finding merged into itself at severity 0.86 | DONE |
+| 1.4 | Merge cycle guard | 21 of 86 merged entries in exp36 sit inside a cycle | DONE |
+| 1.5 | Health-monitor carve-out: suppresses the alarm when all removals are duplicates, so a 100%-rejection round reports healthy | `bench/immune_agents.py:4711-4726` | DONE |
 | 1.6 | MERGED semantics: it is a delete-with-pointer, not a fold. Either make it fold, or stop telling models it folds | alias map is a bijection in **all 28 registries**; no entry has ever gained a second alias | TODO |
 | 1.7 | **REPLAY exp44-49** through the repaired accounting; report old vs new rho, gamma, novelty series | archive is intact; this is how everything this week was derived | TODO |
 
