@@ -1,0 +1,301 @@
+========================================================================
+2026-08-18T00:19:44+01:00 · HEAD `f53c276` (clean tree) · all measurements recomputed this session
+
+## LENS 6 — COMPLETENESS CRITIC: what the brief and the five lenses still miss
+
+Scope: the four named blind spots (ouroboros literature retrieval, ImmuneMemory persistence, cross-experiment duplicates, `bench/dm/`), read against `experimental_notes/Dedup_Historical_Brief_2026-08-17.md` (626 lines) and the four prior lenses. Coverage test first: the brief contains **zero** occurrences of "ouroboros", one line on ImmuneMemory (`:374`), one on cross-run duplicates (same line), and zero mentions of `_shadow_stage6.py`, `_shadow_extensions.py`, `_round_context.py`, `_fsm.py`, `_validation.py`, `_role_assignment.py`, `_load_balancer.py`, `_failure_handler.py`, `_sk_format.py`, `_events.py`, `_directive_sections.py`. Everything below is a genuine absence, not a restatement.
+
+---
+
+### A. THE BRIEF'S §1.9 CONCLUSION IS FALSE, AND THE FALSIFICATION IS THE LARGEST UNREPORTED FACT IN THE ARCHIVE
+
+**[SPEC_VIOLATION] The NK duplicate flag does not merely "report" — it empties the immune pipeline. `filtered_findings` is ZERO in every round from round 1 onward, in every modern live run.**
+
+The brief states at `:111`: *"In runner v2 it cannot change the registry… Its one behavioural effect is the feedback channel (§1.10)"*, and `:130`: *"This decides indirectly — on model behaviour, not on state."* Lens 5 repeats it. Both are wrong. `helper_t_v2` converts `is_duplicate` into a terminal verdict at `bench/immune_agents.py:4550-4554` (`# Auto-reject duplicates` → `final_verdicts[fid] = "DUPLICATE"`), and the response builder at `:5942-5954` admits only `("CONFIRMED", "UNCERTAIN", "UNSCORED")` into `filtered`; everything else goes to `rejected`. `observation_only` is never passed by the runner (`reference_runner_v2.py:9017` calls `brain.run_immune_pipeline(findings)` with one argument; the default is `False` at `bench/insect_brain.py:1264`), so the filter is live.
+
+*evidence:* Recomputed from `checkpoint.json` `round_records[*].immune_response` in all seven modern runs. From round 1 onward, **every** round records `rejection_rate = 1.0` and `filtered_findings = []`: exp44 rounds 1–11 (12 rounds, r0 = 0.727), exp45 r1–2, exp46 r1–4, exp47 **r0–r7 all 1.0**, exp48 r1–4 (r0 = 0.926), exp49 r1–5 (r0 = 0.926), exp53 r1–2. Triaged-level duplicate rates: exp44 95/98 (96.9%), exp47 53/53 (100%), exp48 37/41, exp49 38/40. The pipeline's own log line at `bench/insect_brain.py:1316-1323` has been printing "0/N survived" for the entire location-keyed era.
+
+**[SPEC_VIOLATION] Real tool verdicts — SymPy, z3, `stoichiometric_balance` — are computed and then discarded by the duplicate flag.**
+
+The cells run in parallel on the *original* triaged list while NK v2 works on a deep copy (`bench/immune_agents.py:5691-5692`, the MF-20 race fix). The flags are adopted only afterwards at `:5846` (`triaged = nk_triaged_result`). Consequence: every `if tf.is_duplicate: continue` guard inside a parallel-launched cell — `b_cell_verify:2904`, `_specialist_b_cell_dispatch:2983`, `b_cell_v2:4063`, `cytotoxic_t_cell:813`, `cytotoxic_t_cell_v2:3711` — is **unreachable as True** in the live pipeline (and `nk_cell_verify`, the v1 that sets flags in-place at `:3126`, has no caller anywhere in `bench/` outside tests). So the tools do run; their output is then overwritten at synthesis.
+
+*evidence:* Joined `specialist_verdicts_r*.json` `verdicts` against `final_verdicts` per run. exp49: 38 of 40 findings ended `DUPLICATE` while carrying non-NK tool verdicts — **18 CONFIRMED, 8 REJECTED, 85 UNCERTAIN discarded**. exp48: 40 of 44, **7 CONFIRMED, 21 REJECTED, 92 UNCERTAIN discarded**, including `DeepSeek_F001` where `stoichiometric_balance` returned REJECTED at confidence 0.9 and the finding was recorded as DUPLICATE. exp44/exp47 have no such log — the per-verdict logger was added 2026-07-29 (`reference_runner_v2.py:9019-9056`).
+
+**[SPEC_VIOLATION] The programmatic fix-verification channel has been starved by duplicate detection since Exp 44.**
+
+`fix_candidates = [f for f in filtered if f.proposed_fix.strip()]` (`bench/immune_agents.py:5981`) feeds `evaluate_fixes` at `:5984-5988`, the mechanism that sets `finding.verified = True` and thereby drives the Bugzilla bug-closed gate. With `filtered` empty from round 1 onward, it has had nothing to evaluate in any modern run. The high `verified` counts in the reports (exp49 33/38, exp44 65/82) come from a different path: `reference_runner_v2.py:9058-9062` reads `f.verified`, the **model's own self-reported** `VERIFIED: TRUE` field, never the programmatic verdict.
+
+**[SPEC_VIOLATION] The autoimmune brake carries an explicit carve-out that exempts exactly this failure, so a 100%-rejection round reports as healthy.**
+
+`regulatory_t_v2` at `bench/immune_agents.py:4711-4726`: `if removal_rate > max_rejection_rate:` then `if rejected == 0:` → `checks_fired.append("depletion_high_duplicate_rate")` with the comment *"All removals are duplicates — depletion, not autoimmune"* and *"intentionally NOT appending to `reasons`"*. `max_rejection_rate = 0.65` (`:4641`). Because DUPLICATE is not REJECTED, a round in which the similarity function rejects **everything** cannot raise the flag. Measured: exp49 rounds 1–5, exp47 rounds 0–6, exp44 rounds 1–2 and 4–9 all sit at `rejection_rate = 1.0` with `autoimmune_flag = False`. The brief flags `DetectorHealthMonitor` (`bench/dm/_immune.py:218-244`) as a dormant self-monitor for this failure; the monitor that *is* live is structurally unable to fire.
+
+---
+
+### B. THE OUROBOROS LITERATURE PATH — an entire second identity problem, absent from the brief
+
+**[MODEL_GAP] Paper identity is exact-hash — tier 0 again, at the document level — and it is single-round only.**
+
+`build_brief_prompt_section` dedups admitted briefs on `key = rec.get("source_hash") or rec.get("source_ref") or rec.get("title")` (`bench/ouroboros_cell.py:1648`, `seen` set at `:1636`). `source_hash` is `sha256` of the **full extracted text** (`:1444-1445`). Two renderings of the same work — arXiv preprint vs publisher HTML, v1 vs v2, abstract-only vs full text — hash differently and both are admitted. The comment at `:1632-1635` records the defect being caught in the first live proof run ("the block listed one arXiv paper twice as [1] and [2]"). No title normalisation, no DOI normalisation (`_normalise_doi` exists at `:1142` and is used only for Unpaywall lookup), no author/year matching. The MinHash refutation the brief records at §2.3 was run on 4-token finding signatures and says nothing about this population.
+
+**[MODEL_GAP] There is no cross-round retrieval memory at all, and 31% of archive-wide retrievals are papers the same run already had.**
+
+`run_between_rounds` builds a fresh `OuroborosShadowLog` per call (`:769`) and appends to `self._round_logs` (`:743`, `:820`); nothing reads prior rounds' papers. The caller passes only the current round's briefs (`reference_runner_v2.py:6095-6096`).
+
+*evidence:* All 59 archived `ouroboros_shadow_r*.json` files: **145 paper records retrieved, 100 distinct titles per run — 45 (31.0%) are repeat retrievals within the same run.** Worst: exp47 42 records → 22 distinct titles (47.6% repeats), with *"supersymmetry anomalies in new minimal supergravity"* retrieved in **8 of 14 rounds**, *"a typology of data anomalies"* in 5, *"gauge anomalies of finite groups"* in 4. exp53 (2026-08-01) 12 records → 6 distinct. Cross-source duplication is a *latent* rather than observed hole: 0 rounds in the archive returned the same title from two sources, but nothing in `_fetch_metadata` (`:941-1006`) or the `_query_arxiv` / `_query_semantic_scholar` / `_query_openalex` trio (`:1010`, `:1032`, `:1094`) would detect it if they did, and Semantic Scholar and OpenAlex both index arXiv.
+
+**[MODEL_GAP] `c_ext` treats three overlapping bibliographic databases as independent sources — and the apparatus built to calibrate that assumption has never been read.**
+
+`bench/dm/_shadow_stage6.py:340-346` computes `c_ext_raw = 1 - Π(1 - c_s)` — a noisy-OR that is exactly the independence assumption — then applies one flat global discount `GAMMA_SRC = 0.7` (`:228`, labelled "calibration target"). `_track_source_cooccurrence` (`:638-686`) exists precisely to replace it: its docstring says *"post-experiment estimation of pairwise source correlation, which could replace the global gamma_src discount with per-pair weights."* `grep -rn 'source_cooccurrence' bench/` returns exactly one hit outside the defining file, in `bench/tests/test_generic_location_bucket.py:387` (a name-presence assertion). `GAMMA_SRC` appears nowhere outside `_shadow_stage6.py` and its own test. The appendix's §0.1 Branch 2 `ψ_ij` machinery for correlated detection is the principled home for this and is not connected to it.
+
+Separately, `_estimate_source_coverage` (`:436-473`) keys on `meta.get("source")` — the *requested* source — while `_fetch_metadata:975-982` records the fallback chain in a different field, `fetched_via`. An arXiv query answered by OpenAlex is scored with arXiv's `DEFAULT_SOURCE_RECALL` of 0.4 (`:220`). And `seen_sources` at `:442-448` keeps only the **first** query per source name, so with the runner's default `api_access` of two sources (`reference_runner_v2.py:6050`) and three queries per round, the third query's results never enter coverage at all.
+
+**[MODEL_GAP] ν_k, the literature-novelty term, is a round-level constant. It has never once distinguished two findings in the same round — 1,726 rows, 202 rounds, 26 runs, zero variance.**
+
+`_estimate_retrieval_sparsity(self, finding, o1_metadata)` is declared with a `finding` argument at `bench/dm/_shadow_stage6.py:477-479` and **its body never references it** (`:490-505`): the value is a four-step ladder on `total_results = sum(m.get("results_count", 0) for m in o1_metadata)` at `:495`. Every finding in a round therefore receives the identical ν_k, and the identical `c_ext` (which is computed once per round at `:338-346`). The runner's own comment at `reference_runner_v2.py:6166-6169` asserts the opposite: *"c_ext is a property of the SEARCH… nu_k IS per-finding, so it is carried per finding_id."* `_w["nu_k_by_finding"]` at `:6192-6194` is a dict every value of which is the same number.
+
+*evidence:* Every `stage6_calibration_r*.json` in `bench/logs/` — 202 rounds carrying per-finding logs, 1,726 rows, 26 runs. **Rounds in which `nu_k_proxy` or `c_ext` varies within the round: 0.** Round means land exactly on the ladder: 0.2/0.49, 0.4/0.28, 0.8/0.0, 0.5/0.0.
+
+**[MODEL_GAP] The causal chain nobody has connected: duplicate detection starves the literature cell of targets, so it searches a round number.**
+
+`_select_targets` (`bench/ouroboros_cell.py:825-868`) derives finding-level targets only from `final_verdicts` entries equal to `"UNCERTAIN"` (`:857-864`). Section A above shows those verdicts are ~100% `DUPLICATE` from round 1 onward. The remaining source is the macrophage anomaly label the runner synthesises at `reference_runner_v2.py:6070-6072`: `f"round_{round_idx}_anomalies:{last['anomaly_count']}"`.
+
+*evidence:* Classifying all 59 archived targets: **44 (74.6%) are `round_N_anomalies` labels, 15 are `uncertain_finding:`** — and in each modern run (Exp 45–53) exactly **one** finding-derived target appears, always round 0, the only round with a non-empty `filtered`. This is the mechanism behind Lens 3's observation that exp46 r2 queried "round 2 anomalies" and got *ALOHA 2: An Enhanced Low-Cost Hardware for Bimanual Teleoperation*. It is not a query-construction bug; it is the duplicate detector cutting the literature-novelty channel's only real input.
+
+**[DESIGN_VS_REALITY] Two `_ouroboros` config keys are read by nothing, in all 13 configs that carry the block.** `max_papers_per_round` and `contact_email` appear in every `_ouroboros` block (Exp 45–53, including the unrun Exp 50/51/52 cells); `grep -rn 'max_papers_per_round' bench/ --include='*.py'` returns nothing, and the constructor call at `reference_runner_v2.py:6051-6062` passes only `shadow`, `allowed_sources` and `reader_backend`. `max_papers_per_round` is the retrieval-volume cap — the one knob that would bound duplicate retrieval. Unpaywall therefore also goes out under the placeholder default `cdsfl-ouroboros@constraint-engineering.local` (`bench/ouroboros_cell.py:718`).
+
+**[WORKS_AS_INTENDED, and load-bearing for scope]** Neither `inject_brief` nor `c_ext_enabled` is set by any config in the repository (`grep -rn 'inject_brief\|c_ext_enabled' --include='*.json' .` excluding `logs/` returns nothing), so no retrieved paper has reached a model prompt and no `c_ext` has reached R_k. All the above is **armed but not consuming** — two boolean flags away, in configs that already carry the block.
+
+---
+
+### C. IMMUNEMEMORY — the only cross-experiment persistent state in the project, and its duplicate guard is inert on the only file that exists
+
+**[SPEC_VIOLATION] Executed at HEAD today: re-ingesting Exp 47 into the live memory is accepted, and lifts flaw class 1's confirmed count from 56.90 to 81.49.**
+
+`record_experiment` refuses a repeated `exp_id` at `bench/dm/_memory.py:232-238`. `provenance_complete` (`:177-195`) documents why that is not enough: a file written before the ledger existed carries `experiment_count` but no `experiment_ids`, so *"it cannot recognise a single one of its own sources."* The docstring closes with *"Backfilling `experiment_ids` into a legacy file closes the gap."* **It has not been backfilled.** `bench/state/immune_memory.json` at HEAD (last written by commit `043a0a8`) contains `"experiment_count": 3`, `"source_hash": null`, and **no `experiment_ids` key at all**.
+
+*evidence:* Executed against HEAD: `ImmuneMemory.load('bench/state/immune_memory.json')` prints its own warning, then `provenance_complete → False`, `experiment_ids → ()`, and `record_experiment('exp47_divergence_locationkey_live', {1:(30,1)})` **succeeds**, moving flaw class 1 from 56.902 to 81.487. The exposure is live, not theoretical: `bench/exp53_configs/53_control_zero_live.json:86` sets `immune_memory_enabled: true` under a fixed `experiment_name`, and Exp 53 has **two** run directories (`exp53_control_zero_live_20260729T222431Z`, `..._20260801T005649Z`) — neither reached the recorder, but a completed re-run would double-count in silence. The runner's recorder additionally swallows `MemoryIntegrityError` into a warning at `reference_runner_v2.py:9987-9989`, so once the ledger *is* backfilled the guard's success mode becomes "recorded nothing, logged a line."
+
+**[MODEL_GAP] ImmuneMemory records nothing about findings — it aggregates the duplicate-inflated registry, so cross-model echoes enter the cross-experiment prior as independent evidence.**
+
+The recorder at `reference_runner_v2.py:9968-9981` walks `registry.entries.values()` and increments per-flaw-class counters on status ∈ {CONFIRMED, CLOSED} / {REFUTED}. Those entries are minted by tier-0 exact `(model_id, finding_id)` identity, so five models reporting one defect contribute five confirmations. There is no finding-level identity anywhere in this path, and `pi_mem` is already saturated: `pi_mem(1) = 0.9641`, `pi_mem(5) = 0.9719` from three runs. `blended_prior` (`:292-312`) seeds R_k(0) when `immune_memory_consume_rk0` is on — a flag set by **no config in the repository**.
+
+**[MODEL_GAP] The cross-experiment memory and the mechanism designed to consume it were built separately and there is no code path between them.** Appendix §1.5 defines N_k, the frequency-scaling count, as a decayed count across prior experiments. `ShadowStage6Calibrator` implements `c_freq = c_base · (1 + ALPHA_FREQ · ln(1 + n_k))` at `bench/dm/_shadow_stage6.py:367`, where `n_k` comes from `self._flaw_class_counts` (`:331-332`) — a `defaultdict` reset in `__init__` (`:243`), within-run only, as its own comment at `:359-363` admits. `ShadowStage6Calibrator()` is constructed with no arguments at `reference_runner_v2.py:6134`; `_shadow_stage6.py` never imports `_memory`. And `_flaw_class_counts[flaw_class] += 1` counts every finding including duplicates, so `c_freq` inherits the registry's echo inflation as well.
+
+**[MODEL_GAP] `bench/state/` contains exactly one file.** `ls -la bench/state/` → `immune_memory.json`, 1,061 bytes. Per-flaw-class scalars are the project's *entire* cross-experiment persistent state. No cross-experiment finding registry, no cross-experiment location ledger, no retrieval cache.
+
+---
+
+### D. CROSS-EXPERIMENT DUPLICATE FINDINGS — measured, and the worked case is the project's landmark run
+
+**[HISTORICAL_LESSON] Exp 44, the clean convergence, re-found an Exp 36 defect in an unchanged function, and the source file carries the Exp 36 finding's canonical ID in a comment three lines above it.**
+
+`_location_keyed_critical_series` initialises `seen: set = set()` per call (`reference_runner_v2.py:4295`) and takes only `(registry, max_round, symbols)` — cross-experiment novelty is invisible by construction, as is every other identity rule in the project.
+
+*evidence, using the repo's own `finding_locations` / `target_symbols` over `bench/evidence.py` (51 symbols):* Exp 36 (2026-04-07), Exp 37 (2026-04-09) and Exp 44 (2026-07-27) all reviewed `bench/evidence.py`. **18 of Exp 44's 19 distinct flagged locations, and 15 of its 16 distinct CRITICAL locations, had already been flagged in Exp 36 or Exp 37.** The file did not change in between except for a 7-line diff at commit `9d2ac85` (2026-04-09 19:26 +0100) touching `_FINDING_ID_RE`, `round_idx` coercion and an event sort — `git diff --stat 9d2ac85 4bdcecb^ -- bench/evidence.py` is empty, so the version Exp 44 reviewed stood unchanged from 2026-04-09 to 2026-08-12.
+
+The worked case:
+- Exp 36 `C0106`, severity 0.84, opened R12, **CLOSED**: *"`verify_bundle()` verifies each proof against `bundle.merkle_root`… but does not verify that the bundled record content matches the proof's `chain_hash`."*
+- The Exp 36 fix was applied — `bench/evidence.py:529` reads `# C0034/C0060/C0106: verify chain_hash matches before proof check` — and it compares the record's *stored* hash to the proof's hash only (`:530-537`). The defect is not closed.
+- Exp 37 `C0070`, severity 0.79, opened R3, UNCONFIRMED: *"does not verify that each record's contents hash to the proof's `chain_hash`."*
+- Exp 44 `C0026`, **severity 0.95**, opened **R2**, CLOSED: *"does not verify that the record's `chain_hash` actually matches the record's contents."* Registered as a novel critical.
+- Exp 44 `C0080` (0.80) and `C0068` (0.65) are the same defect again later in the same run; the intra-run location key **did** suppress them (all three resolve to `{EvidenceStore, record, verify_bundle}`), which is the honest control: tier 1 works within a run and has no cross-run counterpart.
+
+Description-level corroboration (token Jaccard, Exp 44 registry vs the pooled Exp 36+37 registries, 79 comparable entries): 20 Exp 44 entries score ≥ 0.30 against a prior-experiment entry, 4 ≥ 0.40, top pair 0.625 (Exp 44 `C0068` ↔ Exp 37 `C0202`).
+
+**Same-target run families that no mechanism relates:** `bench/evidence.py` (4 runs, Exp 36/36/37/44), `bench/cdsfl_registry/composer.py` (4 runs, Exp 42), `bench/endocrine.py` (2), `bench/reference_runner.py` (2), `bench/dm/_convergence.py` (2).
+
+---
+
+### E. `bench/dm/` — three modules with novelty machinery the brief does not name
+
+**[DESIGN_VS_REALITY] `bench/dm/_shadow_extensions.py` (477 lines) contains two whole novelty mechanisms with no consumer anywhere.** `ShadowCreditScorecard` tracks per-model `novel_confirmed` and derives `novelty_yield = novel_confirmed / findings_submitted` (`:44`, `:58-67`, `:104-140`), weighting models at `0.5·precision + 0.5·novelty_yield` (`:146`, `:163`). `ShadowSteeringPredictor` predicts a model's per-round novelty from flaw-class gaps (`:232-233`, `:276-331`) — an anticipatory duplicate-avoidance dispatcher. `grep -rn 'ShadowCreditScorecard\|ShadowSteeringPredictor\|_shadow_extensions' bench/ --include='*.py'` outside the file and its tests returns only `bench/confer_revised_model.py:65`, `:221`, which quote the file into a confer prompt. Nothing instantiates either class.
+
+**[DESIGN_VS_REALITY] The only round-scheduled instruction telling models to close duplicates fires in the last three rounds, and ten of nineteen archived runs never got there.** `build_consolidation_preamble` (`bench/dm/_round_context.py:108-144`) emits *"3. Close genuine duplicates with MERGE verdicts"* only when `round_idx >= max_rounds - consolidation_rounds` (`:130-133`); wired at `reference_runner_v2.py:8765-8770` against `effective_max`, default 3 (`:553`), set to 3 by 27 configs.
+
+*evidence:* Comparing `total_rounds` against `max_rounds - 3` for every archived Exp 40–53 report: **9 of 19 runs reached the window; 10 did not.** The entire modern converging set is in the "did not" column — exp42-locationkey (7 of 16), exp44 (13, window opens at 13 → last round is 12), exp45 (4), exp46 (6), exp48 (6), exp49 (7). A run that converges early is a run in which the duplicate-closing instruction is never issued, which is the precise condition under which duplicate pressure is highest.
+
+**[DESIGN_VS_REALITY] `bench/dm/_shadow_stage6.py` (760 lines) is absent from the brief entirely** despite owning `nu_k_proxy`, `c_ext`, `c_freq`, `eta_stage6` and the source-coverage model — i.e. the whole of the schema's external-novelty apparatus. Its `_track_tool_fpr` at `:531-533` additionally files a `DUPLICATE` cell verdict as `tracker.inconclusive` ("Redundant, not invalid"), so the per-tool false-positive statistics that the exam experiments were built to produce are computed over a population in which 90–100% of entries are duplicate-flagged non-events.
+
+---
+
+### GAPS — what I could not settle
+
+1. **No live replay.** Everything is source reading plus archive replay, except the ImmuneMemory duplicate-guard test, which I executed against HEAD and the real `bench/state/immune_memory.json` (in memory; the file on disk is unmodified). No paid dispatch occurred.
+
+2. **The `filtered = 0` chain is traced, its consequence for `evaluate_fixes` is inferred.** I established `fix_candidates` derives from `filtered` (`immune_agents.py:5981`) and that `filtered` is empty; I did **not** find a log line proving `evaluate_fixes` was skipped in a specific archived round, because the "Fix VERIFIED (programmatic)" line at `:5995` writes to `_shadow_log`, which is not in the run directories I have. Rounds where `autoimmune_flag = True` (exp44 r3/r10, exp46 r3, exp47 r7, exp48 r0, exp53 r0/r2) may resurrect via `:5961-5966`; the recorded `filtered_findings` is still 0 in those rounds, which I read as full `locked_ids` coverage but did not confirm against `_reconciliation_gate`.
+
+3. **Cross-experiment location overlap is location-level, not defect-level.** 18/19 is the repo's own tier-1 identity rule applied across runs; it does not by itself prove the same defect. The `verify_bundle` chain is confirmed defect-level by reading four descriptions and the current source, and by the unchanged-file diff. The other 17 locations are not individually adjudicated.
+
+4. **The ouroboros cross-source duplicate hole is latent.** 0 archived rounds returned one title from two sources. That is a small sample (145 records, 3 papers per query, one paper per query actually read at `ouroboros_cell.py:1424`). The absence of a normalisation step is structural; the incidence is unmeasured at scale.
+
+5. **Not traced: `_role_assignment.py`, `_load_balancer.py`, `_failure_handler.py`, `_fsm.py`, `_validation.py`, `_events.py`, `_sk_format.py`, `_directive_sections.py`.** I grepped all eight for dedup/novelty vocabulary and found nothing above noise, but did not read them end to end.
+
+6. **Exp 50/51/52 have no run archive.** The `_ouroboros` and `immune_memory_enabled` blocks in those configs are read from source only.
+
+7. **Not assessed: whether the ~100% NK duplicate rate is *correct*.** Lens 4 established the threshold is saturated (tau_sim 0.50 sits inside MiniLM's anisotropy floor), which makes the flags near-certainly false. I did not adjudicate any individual pair, so "the pipeline verified nothing" is established; "the pipeline suppressed real findings" is strongly implied by the discarded CONFIRMED/REJECTED tool verdicts (25 CONFIRMED and 29 REJECTED across exp48+exp49) but not proven per finding.
+
+**One thing worth saying plainly.** The brief's map of the duplicate machinery is a map of the *convergence* side — registry, gate, gamma, rho. The four blind spots share a structure: on every side of the system that is *not* the convergence gate, sameness is decided by exact identity of a string the producer chose — a model's `finding_id`, an experiment's `exp_id`, a paper's content hash — and each of those decisions then feeds a quantity presented as a measurement of novelty. The founder's claim is right, and its reach is wider than the brief shows: the duplicate detector is not merely mis-measuring convergence, it is currently the reason the immune pipeline verifies nothing, the reason the literature cell searches round numbers instead of findings, and the reason the cross-experiment prior is saturated at 0.97 on three runs.
+
+========================================================================
+Note: claude-sonnet-5[1m] (the safety classifier) was unavailable when reviewing this subagent's work. Please carefully verify the subagent's actions and output before acting on them.
+
+Verification complete. Everything below was checked by opening the cited files at HEAD `f53c276` (2026-08-18T00:07 +01:00, clean tree) and by executing the live functions; archive claims were recomputed independently.
+
+# ADVERSARIAL ADJUDICATION — 5-lens dedup sweep
+
+## 0. Scope reconciliation (resolves an apparent inter-lens conflict — no one is wrong)
+
+The four lenses quote four different denominators. They are all correct at different scopes, and I reproduced each:
+
+| scope | runs | entries | MERGED |
+|---|---|---|---|
+| `*report.json` only (Lens 3, Lens 5) | — | **2247** | **287** |
+| + `runner_state.json`-only runs, `exp36_evidence_latest` deduped (Lens 1) | — | **2315** | **210**\* |
+| + the `exp36_evidence_latest` duplicate (my full sweep) | 38 | 2532 | 296 |
+
+\*Lens 1's 210 is MERGED across its own 54-registry scope; my report-only recount of the same population gives 201 with an identical 38 same-round split. Status tally on the report-only scope is byte-identical to Lens 5's: `{CLOSED 840, UNCONFIRMED 563, CONFIRMED 505, MERGED 287, OPEN 32, REFUTED 20}`, **DUPLICATE 0**. Not a discrepancy — record the scope with the number.
+
+---
+
+## 1. REFUTED — must be corrected before it steers a repair
+
+### 1.1 Lens 1 item 8 `[WORKS_AS_INTENDED]` "Gamma's input DOES satisfy T5's post-deduplication constraint — in the strong form". **REFUTED.** Lens 5 item 14 carries the same error.
+
+This is the single most expensive claim in the set, because Lens 1 attaches an explicit instruction to it: *"it should not be disturbed by any repair to the items above."* That instruction is wrong.
+
+`_settled_novelty_series` (`bench/reference_runner_v2.py:4139-4165`) strips only four *statuses* (`_NON_NOVEL_TERMINAL_STATUSES`, `:4134-4136`). It performs no content comparison. `bench/dm/_similarity.finding_similarity` is never called on the gamma path. So "post-deduplication" is satisfied only to the extent that the MERGE channel works — and Lens 1's own item 1 proves that channel is 66% inverted and produced 0-5 merges per run in the modern era.
+
+The refutation is direct and archived, not theoretical. In exp44, entries **C0016 (r1), C0029 (r2), C0042 (r3)** carry **byte-identical descriptions** (`identical: True`, verified), all CLOSED, and all three are counted as novel in the gamma series. Their alias chain is `Gemini:Gemini_F006 -> C0016`, `Gemini:Gemini_C0016 -> C0029`, `Gemini:Gemini_C0029 -> C0042`. That is precisely the "rediscoveries" contaminant `bench/directives/universal/cdsfl_topology_formal.md:210-215` names.
+
+**Lens 2 item 8 and Lens 3 item 2 are the correct readings.** The accurate label is SPEC_VIOLATION (weak-form compliance only). Lens 3 additionally establishes the part Lens 1 missed entirely: the two sides of the two-sided gate read **different populations** — `gamma_critical` from `_settled_crit`, the count side overwritten by `_location_keyed_critical_series` at `:9297`. The function's own docstring says so at `:4276-4277`: *"It does NOT touch gamma_critical."*
+
+Confirmed magnitudes (recomputed, `_settled_novelty_series` + `_location_keyed_critical_series` at HEAD): exp44 34 vs 12; exp46 12 vs 6; exp47 42 vs **12** (Lens 3 said 11 — see §3).
+
+### 1.2 Lens 1 item 7, sub-clause: "only 38 merged in the round they opened, **where the in-round correction catches them**". **REFUTED, and the finding understates itself.**
+
+`_compute_rho` is called at `:8890` and `rho_history.append(rho_current)` at `:8891`. **Both** corrections land afterwards — the γ-input correction at `:8952-8968` and the settled overwrite at `:9263-9271`. `rho_history[-1]` is therefore the fully raw pre-reconciliation ratio for **every** round, and no merge — same-round or later — ever reaches the number rendered to the panel at `:8710` as "ρ (discovery efficiency / semantic novelty rate)". The correction reaches `rho_avg` only from the *following* round onward, via the mutated `novelty_counts[r]`.
+
+Lens 3 item 4 and Lens 5 item 5 state this correctly. Lens 1's version is narrower than the real defect and contains a false exculpatory clause.
+
+---
+
+## 2. RE-SCOPED — correct finding, wrong framing or wrong root cause
+
+### 2.1 Lens 1 item 1: "The panel's duplicate channel is not lossy, it is **inverted**". Mechanism confirmed; **root-cause attribution is wrong**.
+
+The CONFIRM recast is **mandated by the spec itself**. `cdsfl_topology_formal.md:126-127`:
+
+```
+      source_canonical = alias_map[m, F_local]
+      If source_canonical is undefined: treat as CONFIRM on target
+```
+
+The runner at `:8906-8912` implements exactly that. The defect is that the alias key format makes the fallback fire **100% of the time** for the syntax the prompt teaches. Lens 3 item 1 gets this right; Lens 1 reads as though the runner invented an inversion, which points the repair at the wrong line. The fix is to normalise the model prefix in `_resolve_merge_source` (`:1533-1545`), after which the spec's fallback becomes rare and harmless — not to delete the fallback.
+
+Everything else in Lens 1 item 1 reproduces **exactly**:
+
+```
+parsed ids: ['Codex_F001']
+alias_map: {'Codex:Codex_F001': 'C0001'}
+lookup_alias('Codex','F001') -> None
+_resolve_merge_source('F001 - same root cause')      -> None
+_resolve_merge_source('Codex_F001 same root cause')  -> None
+_resolve_merge_source('C0001 same')                  -> 'C0001'
+```
+
+Independent re-parse of the archived response files with the runner's own `_VERDICT_RE`, deduped by (round, model): exp42-49 → **78 MERGE lines** (Lens said 77), **26 recorded as MERGE verdicts** (exact), **51 local-source → recast as CONFIRM** (exact, 65%). exp40_gate → **510 lines / 389 recorded / 118 recast** (Lens said 507/389/118 — the two consequential numbers match exactly). Downstream corroboration effect confirmed at `:1968` (`independent_count = len(confirm_models - {entry["source_model"]})`, `required = 2` at severity ≥ 0.7).
+
+### 2.2 Lens 2 item 4: "§1.4 forbids one similarity-derived weight from entering q_eff, then requires another to do exactly that… This is Error 1 in a different coat." **DOWNGRADE from MODEL_GAP-with-teeth to open ambiguity, and de-prioritise.**
+
+Two corrections:
+
+**(a) Not a literal self-contradiction.** `docs/MATHEMATICAL_APPENDIX.md:1420-1424` names `w(f)` specifically and scopes the prohibition to *suppression weights* with top-k semantics. η (`:198`, `:207`) is a distinct construct with its own stated rationale. What is genuinely missing — and this part stands — is that the appendix never says which reading applies when a **second model** reports the same defect: corroboration under §0.1 Branch 1, or redundancy under η ≈ 0. That is a real unresolved fork worth an appendix amendment. It is not evidence of a repeat of Error 1.
+
+**(b) The quantified 3.64× / 14.85× divergence is a hypothetical about a dormant channel.** Lens 5 item 2 proves η has never carried a value: `entry["model_params"]` is read at `:7526` and written nowhere (the code says so itself at `:7536` — *"because model_params is never populated"*), so `q = meta.get("q", 0.5)` returns 0.5 always, and `:7596` passes `eta_int=q, m_div=1.0, d=1.0, p=1.0`. Archive: **590** `sk_result` rows carry `R_new`; **558 are the identical value 0.366667**; **0 rows carry `c_ext`, 0 carry `nu_k`, 0 carry `rk0_source`**.
+
+**Do not fund an experiment on the η fork before η is wired.** It cannot have affected any archived result, and any measurement of it today would measure a constant.
+
+### 2.3 Lens 2 item 6: "Every cross-model set operation in §7.5/§7.6/§8.2 is degenerate under **the implemented identity**". Correct for the runner; **overbroad as written**.
+
+`reference_runner_v2.py:8852` does key on `(model_id, finding_id)` and does degenerate — `F_conv = ∅ → O_A = 1 → S_sync = 0` follows from `docs/MATHEMATICAL_APPENDIX.md:993-1003`. But `bench/run_round_robin.py:300-321` `_defect_key` uses `structural_canon_hash(finding)` and `:3248-3280` `_count_novel_hard_findings` deduplicates **within a round across models** before taking the set difference. §7.5 was calibrated on that bench. Scope the claim to the reference runner or it reads as a model-level impossibility when it is a runner-level regression — which is also Lens 4 item 12's point, and Lens 4 is right that this is the highest-value thing the project already built and dropped.
+
+### 2.4 Lens 3 item 8: dismisses `:3244-3246` as "the unrelated routing ladder". It is not unrelated — `:3246` is `registry.resolve(cid, "MERGED", round_idx, merged_into=result.duplicate_of)`, a **fifth merge-writing path** driven by a duplicate judgement, with no target/cycle validation. Lens 4 item 4 enumerates it correctly.
+
+---
+
+## 3. Numeric and citation corrections (direction unaffected)
+
+| claim | stated | measured |
+|---|---|---|
+| L3-2 exp47 location-dedup criticals | 11 (3.8×) | **12** (3.5×) — `location_crit_shadow_history` sums to 12 |
+| L3-3 exp47 g_3 failures | 10 of 14 | **12 of 14** exceed `max_novel_findings=2`; 10 if rounds 0-1 are excluded — say which |
+| L3-5 canonical-ID echo entries | 238 across 19 runs | **207** across 37 runs. Four of five named per-run figures match **exactly** (exp41 25/79, exp45 12/39, exp44 22/82, exp42-lk 13/52); exp38_ouroboros is **19/169 (11.2%)**, not 44/169 (26.0%) |
+| L3 g_3 code citation | `:3729-3730` | **`:3644`**. The runner gained only 19 lines between `5354b95` and `f53c276`, so this is a citation error, not drift. Lens 5's `:3605-3668` is right |
+| L2-3 "spread exceeds the full width of a GAMMA_BANDS interval" | — | **False.** Narrowest band is 0.20-0.30, width 0.10 > 0.0798. The spread is ~80% of the narrowest band — say that |
+| L1-2 merged-in-a-later-round | 172/210 (81.9%) | **163/201 (81.1%)** on report-only scope; same-round **38**, exact |
+| L4-10 CLOSED omitted from prior-fix list | 61.6% | **61.5%** (914/1485) |
+
+---
+
+## 4. CONFIRMED — reproduced by execution or exact recount
+
+**Executed against the live registry with a 5-model `RunnerConfig`, all four reproduce as claimed:**
+
+```
+TEST1 cycle:  C0001 (0.72) MERGED->C0002, C0002 (0.88) MERGED->C0001
+              open_crit_high_count=0  contested_count=0
+              both listed in SETTLED 'do not re-describe'      [L1-2]
+TEST2 folds:  0.95 critical + 2 CONFIRMs merged into 0.40 target
+              target sev 0.40 unchanged, 0 verdicts, desc unchanged
+              open_crit_high_count=0                           [L1-3]
+TEST3 phantom: two votes on 'C9999' -> MERGED, merged_into=C9999,
+              'C9999' in registry.entries == False             [L1-10]
+TEST4 stale:  1 vote at r1 -> OPEN through 14 rounds;
+              2nd vote at r15 completes quorum -> MERGED       [L1-5]
+```
+
+**Archive-verified, exact:**
+
+- **Merge cycles** — `to_MERGED` 62, `in_cycle` 25, `dangling` **0** across the archive (L1-2 exact). exp40_gate C0002 (0.72, r0, MERGED r15 → C0023) ↔ C0023 (0.88, r1, MERGED r24 → C0002), C0033 (0.82, MERGED r5 → C0023); 29 rounds, `converged_at None`. Stale-vote quorum confirmed verbatim: ChatGPT@r5 and Gemini@r15, ten rounds apart. Violates two explicit formal invariants: T2 `f.status = MERGED → target.status ≠ MERGED` (`cdsfl_topology_formal.md:89`) and T3 *"The merge graph must be acyclic"* (`:130-131`).
+- **exp37 C0105** MERGED into itself at severity 0.86, alias `Gemini_C0086`, description is a parsed verdict block (L4-5 exact).
+- **Alias map is a bijection in every run** — `maxdup == 1`, 38/38 registries. No two findings have ever been merged into one canonical entry (L4-2). **DUPLICATE = 0 archive-wide; no `registry.resolve()` call site in the runner ever passes it** (statuses passed: CLOSED, CONFIRMED, CONTESTED, MERGED, OPEN, REFUTED, REOPENED, UNCONFIRMED).
+- **CC2v** — `verification.duplicates` sums to **30**; **0 CC2v verdicts across any registry** (L1-4 gap 3, exact; closes Lens 5's gap 3).
+- **exp42 gamma non-invariance** — settled crit `[20,4,8,3,4,1,0]`, 40 criticals, γ = **0.6068**, reproducing the run's recorded `gamma_critical_history` final value exactly; location series `[10,1,5,1,0,0,0]`, 17 criticals, γ = **0.6866**; spread **0.0798**; cross-checked with numpy `polyfit`. Zero-tail: ID-proxy 1 round, location 3 rounds → at K=3 one relation converges and the other does not, same data (L2-3).
+- **Similarity saturation** — sentence-transformers 2.4.0 live, all-MiniLM-L6-v2 loading. At the shipped `tau_sim_embed = 0.55`: exp36 216→**1** class, exp41 79→**1**, exp44 79→**1**, exp49 38→**1**. Sweep on exp36: 161 classes at 0.80, 216 singletons at 0.90 — **exact match to L4-7**. 100.0% of random pairs exceed `tau_sim = 0.33` in all four runs (L4-7).
+- **`final_kappa`** — varied 0.0-0.8944 across the **20** runs Exp 29→Exp 41; **exactly 1.0 for all 12** runs from exp41c onward, no exception. Commit `0901fd5` confirmed at **2026-05-22 20:11:18 +0100**; `exp41_convergence` started 02:10Z that morning (0.1348), `exp41c` at 19:48:36Z = **37 minutes after the commit** (1.0). `grep -ic kappa bench/reference_runner_v2.py` = **0** (L4-8).
+- **Order-dependence of `_unlocated_novelty_key`** — reproduced at the repo's own threshold with the repo's own metric: three signatures, J(A,B)=0.000, J(A,C)=J(B,C)=0.250 → `{ABC:2, ACB:2, BAC:2, BCA:2, CAB:1, CBA:1}`. Same three findings, two different novelty counts, decided by arrival order (L2-10). Violates `MATHEMATICAL_APPENDIX.md:1412-1418`.
+- **sha1 empty-string residue** — `sha1('')[:12] == 'da39a3ee5e6b'`; `_unlocated_novelty_key("")` returns `<unlocated:text:da39a3ee5e6b>`. **20** empty-description criticals archive-wide, split exp36 ×2, exp37 ×9, exp39-0 ×6, exp44 ×3 — **exact match to L5-16**.
+- **`build_prior_fix_summary`** — filter is `("CONFIRMED", "RESOLVED")` (`bench/dm/_round_context.py:66`); `round_closed` written only in tests, **0 of 2247** archived entries carry `round_closed` or `round`, so the fallback is always −1, the recency guard never excludes, and every fix renders as `r=-1`. Default `True` at `:550`; **27** configs set it true (L4-10).
+- **Regression tests lock the unsafe behaviour** — `bench/tests/test_runner_status_transitions.py:327-337` and `:339-347` both merge into `"C0002"`, never registered in those fixtures, and assert `status == "MERGED"` (L1-10, L3-11).
+- **`eta_int_modulator` has no call site** outside `bench/verify_round2_implementation.py`, comments and tests; `m_div=1.0` literal at `:7596`; divergence pass annotated *"Logging-only — does not gate admission or R_k"* (L3-6, L5-19).
+- **NOVELTY block never parsed** — only hit in `bench/dm/_feedback.py:587`, a section-boundary regex. exp46 r02 ouroboros confirmed verbatim: `"query": "round 2 anomalies"`, `"status": "live"`, 3 results, first = *"ALOHA 2: An Enhanced Low-Cost Hardware for Bimanual Teleoperation"* (L3-7).
+- **Immune pipeline runs after registration** — registration `:8852-8854`, `brain.run_immune_pipeline` `:9017`; `is_duplicate`/`duplicate_of` readers are `:3244-3246` and `:5711/5715/5718` only (L3-8, L5-21).
+- **Verdict tally exact** — `CONFIRM 5282, MERGE 796, CHALLENGE 735, EXTEND 209, REOPEN 25`. `grep '"EXTEND"'` in the runner returns **nothing** — no branch handles it (L5-9).
+- **Directive line count exact** — §8 76 + §13 17 + §16 103 + §18 140 = **336 of 920 = 36.5%** (L5-1).
+- **exp30_deduped_bugs** — 83 clusters, 316 findings, size histogram and models-per-cluster histogram **exact** to L4-11 (51 multi-finding, 39 multi-model, 46 critical, 45 with code fix).
+- **exp33 reprocessing** — 499 vs 84 (16.8% parsed), 47 MERGE verdicts recovered, all 499 OPEN, γ 0.1548; live run has CONFIRM-only verdicts (L4-15).
+- **exp37 Dedup Assessor** — `exp37_live.log`: 35 adjudications, **19 DUPLICATE / 16 NOVEL** (54.3%), 16 applied; exp37 registry carries **zero** model-cast MERGE verdicts, so all 16 came from the assessor (L4-6).
+- **Appendix**: `≈ relation` occurs **exactly once** (`:1730`) and is never defined; `tau_sim` occurs three times, never valued (`:1380`, `:1430`, `:1835`); §1.2 `:368` *"None of these factors may be model self-assessments"*; Stage 4→5 (`:194-235`) carries **no derivation**; §7.10 `:1150` still lists ρ as *"Pending implementation"* and `docs/GLOSSARY.md:93` as *"Not yet formalised"* while §7.1a formalises it; `kappa_rate` code uses `lambda_peak` over 0..r vs the appendix's `λ_hat(1)`.
+- **Config gate schedule** — all Exp 42-49 configs set `gamma_telemetry_only_until=20` against `max_rounds=16`; exp41c 14 vs 12. `_check_gamma_gate` returns `("telemetry", True)` every round of every run, so T5's three-tier schedule is unreachable by configuration while `gamma_critical` — a quantity T5 does not define — is what actually gates (L3-10).
+- **T2 status set** `{OPEN, CONFIRMED, CONTESTED, MERGED, UNCONFIRMED}` omits CLOSED, the dominant end state at 840 of 2247 (L3-12).
+- **`ARCHITECTURE.md:308`** states `q = d_ik · p_ik` — η omitted — and reuses ν_k for re-injection, against `cdsfl_operational.md:434-440`'s explicit *"Do not conflate them"* (L5-24).
+- **ConvergenceDetector is fed and queried on the live path** — `insect_brain.py:888` inside `persist`, `:1404` in `signal_complete`; runner calls `brain.persist` `:8972` and `brain.signal_complete()` `:9842`, but never reads kappa. Lens 4 item 17's correction of the first sweep is right (L4-17).
+
+---
+
+## 5. Not settled here
+
+- Lens 2 item 2's full 23-quantity dependency map: I verified η, ρ, ρ̄₃, κ_set, F_conv, O_A, S_sync and the §7.5 convention. The remainder is plausible but not exhaustively traced.
+- Lens 4's "~9 actual bugs" for Exp 36 — still an unverified note claim; verifying it requires adjudicating 217 entries.
+- Lens 3's reported exp44 gamma reconstruction drift at rounds 7-8: my full-series recompute reproduces the recorded `gamma_critical_history` **exactly** at every index, so the drift is an artefact of Lens 3's method, not of the runner.
+- Lens 5 gap 1 (behavioural effect of §17 NEAR-DUPLICATE): still open. Volume confirmed substantial.
+- Whether any of the 287 archived merges were *substantively* correct: unanswerable from the archive, since `:8909` overwrites the model's evidence with `merged_into=<id>`. Lens 1 states this correctly.
+
+---
+
+## 6. Bottom line for the paid experiment
+
+Every SPEC_VIOLATION survives except **Lens 1 item 8 / Lens 5 item 14**, which are labelled WORKS_AS_INTENDED and are refuted. That is the one to fix first, because it is the only finding in the set that instructs the reader to leave a broken path alone.
+
+Two MODEL_GAPs should be re-sequenced rather than funded now: **Lens 2 item 4** (η corroboration fork) and **Lens 2 item 5** (Stage 4→5 derivation) both concern a channel that `model_params` has never populated in 590 of 590 archived decisions. Wire η first, then measure. Everything else — the alias-key mismatch, merge cycles, the ρ mislabel, the canonical-ID echo, the location/gamma population split, the undefined `≈` relation, `tau_sim` saturation and the 61.5% gap in the do-not-repeat list — is confirmed, cheap to fix, and independent of any dispatch.
+

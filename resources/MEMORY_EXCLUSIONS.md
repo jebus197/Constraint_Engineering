@@ -19,11 +19,14 @@ The directory holds **103 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 50 |
+| Mirrored (in summarised form) in `MEMORY.md` | 51 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 107 |
+| total | 108 |
+
+> **[Correction 2026-08-18.]** Mirrored 50 -> 51, total 107 -> 108 for
+> `cdsfl_runway_2026-08-18.md`, the runway tracker.
 
 > **[Correction 2026-08-17.]** Mirrored 49 → 50 and total 106 → 107 for
 > `cdsfl_session_2026-08-17.md`. Fourth consecutive correction in the same direction —
