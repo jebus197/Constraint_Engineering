@@ -4709,8 +4709,8 @@ def regulatory_t_v2(
     # falsely rejecting novel ones.  Log as DEPLETION for visibility but do
     # NOT set the autoimmune flag.
     if removal_rate > max_rejection_rate:
-        if rejected == 0:
-            # All removals are duplicates — depletion, not autoimmune.
+        if rejected == 0 and removed < total:
+            # All removals are duplicates AND something survived — depletion.
             checks_fired.append("depletion_high_duplicate_rate")
             _shadow_log.info(
                 "RT v2: depletion (not autoimmune) — removal rate %d/%d (%.1f%%), "
@@ -4719,6 +4719,35 @@ def regulatory_t_v2(
             )
             # NOTE: intentionally NOT appending to `reasons` — this check
             # does not contribute to the autoimmune flag when rejected==0.
+        elif rejected == 0 and total > 0 and removed >= total:
+            # STARVATION, added 2026-08-18. The `rejected == 0` carve-out above
+            # was written on sound reasoning — a high duplicate rate IS normal
+            # depletion, not autoimmunity — but it carried no floor, so it also
+            # swallowed the case where the pipeline passes NOTHING AT ALL.
+            #
+            # OBSERVED, and this is why the floor exists. From round 1 onward, in
+            # every modern run, `filtered_findings` is empty and the rejection
+            # rate is exactly 1.0: exp44 11 of 12 rounds, exp47 8 of 8, exp45,
+            # exp46, exp48, exp49 likewise. Root cause dated to 12 April 2026,
+            # commit "Phase 2: Embedding similarity shared backend" — unrelated
+            # findings score a minimum of 0.418 under embeddings against a
+            # duplicate threshold of 0.50. The pipeline logged "0/N survived"
+            # every round for five months and this monitor reported healthy.
+            #
+            # A high duplicate rate can be benign. Nothing surviving cannot be.
+            #
+            # SCOPE, narrowed after this branch broke an existing test: it fires
+            # ONLY when `rejected == 0`, i.e. exactly the case the carve-out above
+            # was swallowing. When findings are genuinely REJECTED the pre-existing
+            # "removal rate exceeded" branch already flags it and says something
+            # more useful about why, so intercepting that case made the message
+            # worse and the test that caught it was right.
+            reasons.append(
+                f"[RT_v2] STARVATION: {removed}/{total} findings removed — NOTHING "
+                f"survived the pipeline (duplicated={duplicated}, rejected={rejected}). "
+                f"A duplicate rate this total is a broken discriminator, not depletion."
+            )
+            checks_fired.append("starvation_nothing_survived")
         else:
             reasons.append(
                 f"[RT_v2] Removal rate {removed}/{total} ({removal_rate:.1%}) "

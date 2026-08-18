@@ -9012,6 +9012,36 @@ def run_experiment(
             )
             novelty_counts[-1] = post_reconciliation_novel
 
+        # RETROACTIVE CORRECTION, added 2026-08-18.
+        #
+        # The correction above rewrites novelty_counts[-1] — THIS round only. A
+        # finding registered in round 3 and merged in round 7 therefore stayed
+        # counted as novel in round 3's entry of the γ input, permanently.
+        #
+        # MEASURED on the archive: of 287 MERGED entries carrying round data, 236
+        # (82%) were merged in a LATER round than the one they opened in. So the
+        # in-round correction reached 18% of merges and missed the rest.
+        #
+        # `cdsfl_topology_formal.md:210-215` states the requirement as a MUST: the
+        # Duane input series is "canonical novel findings (post-deduplication,
+        # post-alias-resolution), NOT raw parsed findings. Using raw findings
+        # inflates the series with rediscoveries and cross-model echoes." A series
+        # corrected only in its final position is not post-deduplication; it is
+        # post-deduplication in one round and pre-deduplication in every other.
+        #
+        # Recomputing the whole series is the correct reading and not merely the
+        # tidier one: a finding later found to be a duplicate WAS NEVER NOVEL. The
+        # round it arrived in should not carry it once that is known. γ measures a
+        # decay curve over cumulative novel findings, so leaving stale counts in
+        # earlier rounds flattens the curve with findings that turned out to be
+        # rediscoveries — the exact inflation the spec names.
+        for _r in range(len(novelty_counts)):
+            novelty_counts[_r] = sum(
+                1 for e in registry.entries.values()
+                if e.get("open_since_round") == _r
+                and e.get("status") not in _NON_NOVEL_TERMINAL
+            )
+
         # Persist round
         round_elapsed = time.monotonic() - round_start
         brain.persist(round_idx, responses, findings, duration_s=round_elapsed)
