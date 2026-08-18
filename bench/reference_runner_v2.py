@@ -1114,11 +1114,37 @@ class FindingRegistry:
         self, canonical_id: str, status: str, round_idx: int,
         merged_into: Optional[str] = None,
     ):
-        if canonical_id in self.entries:
-            self.entries[canonical_id]["status"] = status
-            self.entries[canonical_id]["last_status_change_round"] = round_idx
-            if merged_into:
-                self.entries[canonical_id]["merged_into"] = merged_into
+        if canonical_id not in self.entries:
+            return
+        # MERGE GUARDS, added 2026-08-18. Applied here rather than at each call
+        # site because this is the single chokepoint every merge passes through.
+        #
+        # `cdsfl_topology_formal.md:110-111` requires the target to exist and be
+        # live before any MERGE, and :129-131 requires the merge graph be acyclic.
+        # Neither was enforced. Measured on the archive: exp37 carries a finding
+        # MERGED INTO ITSELF at severity 0.86, and 21 of exp36's 86 merged entries
+        # sit inside a cycle, so the pointer chain never reaches a surviving entry
+        # and the whole family disappears from the gate.
+        #
+        # A refused merge leaves the finding where it was — OPEN and visible —
+        # which is the safe direction. A merge into a phantom, a self, or a cycle
+        # silently deletes a finding that may be real.
+        if merged_into:
+            if merged_into == canonical_id:
+                return                                    # self-merge
+            if merged_into not in self.entries:
+                return                                    # phantom target
+            # Walk the existing chain; refuse if it leads back to this finding.
+            seen, cur = {canonical_id}, merged_into
+            while cur is not None and cur not in seen:
+                seen.add(cur)
+                cur = (self.entries.get(cur) or {}).get("merged_into")
+            if cur is not None:
+                return                                    # would close a cycle
+        self.entries[canonical_id]["status"] = status
+        self.entries[canonical_id]["last_status_change_round"] = round_idx
+        if merged_into:
+            self.entries[canonical_id]["merged_into"] = merged_into
 
     def mark_verified(self, canonical_id: str):
         if canonical_id in self.entries:
@@ -1537,9 +1563,28 @@ def _resolve_merge_source(
     if not m:
         return None
     local_id = m.group(0)
-    canonical = registry.lookup_alias(model_id, local_id)
-    if canonical:
-        return canonical
+    # ALIAS-KEY NORMALISATION, repaired 2026-08-18.
+    #
+    # The regex above strips any model prefix, so `Codex_F001` reduces to `F001`.
+    # But `parse_findings` mints finding ids ALREADY PREFIXED — it returns
+    # `Codex_F001`, not `F001` — so `register()` writes the alias key
+    # `Codex:Codex_F001`. Looking up `Codex:F001` therefore missed every time,
+    # and BOTH forms a model can plausibly write failed:
+    #
+    #     MERGE C0001 <- F001         -> None      (the form FINDING_FORMAT teaches)
+    #     MERGE C0001 <- Codex_F001   -> None      (the form the runner itself mints)
+    #     MERGE C0001 <- C0001        -> C0001     (canonical only)
+    #
+    # An unresolved source is not dropped: `cdsfl_topology_formal.md:126-127`
+    # MANDATES treating it as a CONFIRM on the target. So the failure was silent
+    # and it inverted the verdict — a model saying "these two are the same defect"
+    # was recorded as a model AGREEING the target is real. The spec is right and
+    # the resolver was wrong, which is why the repair belongs here and not at the
+    # call site.
+    for candidate in (local_id, f"{model_id}_{local_id}"):
+        canonical = registry.lookup_alias(model_id, candidate)
+        if canonical:
+            return canonical
     if local_id in registry.entries:
         return local_id
     return None
