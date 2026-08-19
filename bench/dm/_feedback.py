@@ -172,7 +172,17 @@ class FindingFeedback:
             score += 2.0 * max(s for _, s in self.duplicates)
         if self.rk_discrepancy is not None:
             claimed, aggregate = self.rk_discrepancy
-            score += min(1.0, abs(claimed - aggregate))
+            # PRIORITY RAISED 2026-08-19. Was `min(1.0, abs(delta))`, which for a
+            # typical delta scores under 0.1 while a near-duplicate flag scores
+            # `2.0 * similarity`. With the similarity function flagging 97% of
+            # pairs, every finding carried a duplicate flag worth >= 1.4 and the
+            # R_k correction was crowded out of essentially every prompt for four
+            # months. The mechanism was never missing - it was starved.
+            #
+            # A self-inconsistency is strictly more damning than a similarity
+            # score: the model's own arithmetic does not close. Flat 2.5 places
+            # it ABOVE near-duplicate (max 2.0) and BELOW a refutation (3.0).
+            score += 2.5 if abs(claimed - aggregate) > 0.05 else min(1.0, abs(claimed - aggregate))
         severity = self.severity_claimed if self.severity_claimed is not None else 0.0
         score += 0.1 * severity  # tie-breaker
         return score
@@ -322,8 +332,13 @@ def build_feedback_records(
                 for finding in targets:
                     rec = _record_for(fid, finding)
                     # Keep the worst (largest delta) R_k discrepancy
-                if rec.rk_discrepancy is None or abs(claimed - aggregate) > abs(rec.rk_discrepancy[0] - rec.rk_discrepancy[1]):
-                    rec.rk_discrepancy = (claimed, aggregate)
+                    # INDENTATION FIX 2026-08-19: these two lines sat at the
+                    # loop's OWN level, so they ran ONCE after it finished, using
+                    # whatever `rec` leaked from the final iteration. With more than
+                    # one target for a finding id, every earlier record silently lost
+                    # its discrepancy. Found by a CC2 audit, 2026-08-19.
+                    if rec.rk_discrepancy is None or abs(claimed - aggregate) > abs(rec.rk_discrepancy[0] - rec.rk_discrepancy[1]):
+                        rec.rk_discrepancy = (claimed, aggregate)
 
     return list(records.values())
 
@@ -480,8 +495,10 @@ def _render_single_record(rec: FindingFeedback) -> str:
     if rec.rk_discrepancy is not None:
         claimed, aggregate = rec.rk_discrepancy
         body_lines.append(
-            f"  R_k INCONSISTENT: you reported {claimed:.2f}; "
-            f"aggregate = {aggregate:.2f} (Δ = {abs(claimed - aggregate):.2f})"
+            f"  R_k INCONSISTENT: you reported {claimed:.2f}, but recomputing "
+            f"from YOUR OWN stated eta, d, p, S_k and nu gives {aggregate:.2f} "
+            f"(Δ = {abs(claimed - aggregate):.2f}). This is not a peer average - "
+            f"it is your own arithmetic. Restate the working or correct the value."
         )
 
     return "\n".join(body_lines)

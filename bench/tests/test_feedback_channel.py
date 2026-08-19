@@ -180,7 +180,26 @@ class TestPriorityAndAction:
         # finding). Check the descending-order invariant that was intended:
         # refutation > duplicate > rk, and admissibility scales with count.
         assert refuted.priority_score() > duplicate.priority_score()
-        assert duplicate.priority_score() > rk.priority_score()
+        # INVARIANT CHANGED 2026-08-19: was `duplicate > rk`.
+        #
+        # That ordering was deliberate and is recorded above, but it was set
+        # before anyone knew the duplicate detector was flagging 97% of pairs.
+        # CC2's audit measured the consequence: the `R_k INCONSISTENT` record
+        # fired in 20 of 170 files in exp44 against a 31.7% FAIL rate, because
+        # every finding carried a duplicate flag worth >= 1.4 and R_k's
+        # `min(1.0, |delta|)` scored ~0.35.
+        #
+        # Repairing the cosine map does NOT fix this on its own, and simulation
+        # shows it makes the specific problem WORSE: once duplicates are rare
+        # (21.4%) they stop being a constant and start discriminating, so the
+        # minority carrying a duplicate flag outrank every R_k failure. Fraction
+        # of R_k-failing findings reaching the prompt: 65.8% before the clamp,
+        # 46.3% after it under the old weights, 66.4% after it under these.
+        #
+        # A FAIL means the model's own arithmetic does not close. That is
+        # strictly more damning than a similarity score, so it now sits ABOVE
+        # near-duplicate (2.0) and BELOW a refutation (3.0).
+        assert rk.priority_score() > duplicate.priority_score()
         # The 5-gate case is an edge — document it explicitly so future
         # changes don't silently flip it:
         assert admissibility.priority_score() > refuted.priority_score()
@@ -206,13 +225,23 @@ class TestPriorityAndAction:
         assert hi.priority_score() > lo.priority_score()
 
     def test_priority_rk_delta_capped_at_one(self):
+        # A FAIL-sized delta (> 0.05) now scores a flat 2.5 - see the invariant
+        # note above. The CAP still applies below that: a sub-threshold delta
+        # must not be inflated, so it stays `min(1.0, |delta|)`.
         capped = FindingFeedback(
             finding_id="a", model_origin="m", severity_claimed=0.0,
             final_verdict="UNCERTAIN",
-            rk_discrepancy=(10.0, 0.0),  # absurd delta
+            rk_discrepancy=(10.0, 0.0),  # absurd delta -> a FAIL
         )
-        # With severity tiebreak = 0, the rk contribution should max at 1.0.
-        assert capped.priority_score() == pytest.approx(1.0)
+        assert capped.priority_score() == pytest.approx(2.5)
+
+        # Below the FAIL threshold the old cap behaviour is preserved.
+        small = FindingFeedback(
+            finding_id="b", model_origin="m", severity_claimed=0.0,
+            final_verdict="UNCERTAIN",
+            rk_discrepancy=(0.52, 0.50),  # delta 0.02, under the 0.05 FAIL line
+        )
+        assert small.priority_score() == pytest.approx(0.02)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

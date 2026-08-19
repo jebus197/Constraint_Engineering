@@ -7300,7 +7300,16 @@ _RK_RE_R_DET = re.compile(
 # the final value is always the last float on the R_k line.
 _RK_RE_R_FINAL_LINE = re.compile(
     r'^[^\n]*R_?k\s*[=≈:].*$', re.IGNORECASE | re.MULTILINE)
-_RK_RE_TRAILING_FLOAT = re.compile(r'([0-9]+\.?[0-9]*)\s*$')
+# MARKDOWN-TOLERANT, repaired 2026-08-19. The old form was
+# r'([0-9]+\.?[0-9]*)\s*$' - it required the number to be the LAST thing on the
+# line. Models write markdown: "R_k = ... = **0.12**." and "`R_k ~ 0.385`". A
+# bold marker, a backtick or a full stop after the digits made the value
+# invisible and the block was recorded SKIP - "did not show its working".
+# MEASURED: of 286 SKIPs in the exp44-49 raw responses, 220 (77%) carry a
+# readable R_k value the old pattern could not reach. Enforcing rejection
+# against that measurement would have rejected compliant models for using
+# asterisks. Now: take the LAST float on the line, whatever trails it.
+_RK_RE_TRAILING_FLOAT = re.compile(r'([0-9]+\.?[0-9]*)(?:[^0-9]*)$')
 
 
 def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[float], Optional[float]]:

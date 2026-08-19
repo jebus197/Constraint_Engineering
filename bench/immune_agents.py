@@ -3103,8 +3103,13 @@ def nk_cell_verify(
             if sim > best_sim:
                 best_sim = sim
                 best_match = pf.finding_id
-                if best_sim >= tau_sim:
-                    break  # MF-19: early termination
+                # EARLY EXIT REMOVED 2026-08-19. `break` here stopped at the
+                # FIRST candidate over threshold, so `duplicate_of` named an
+                # arbitrary above-threshold neighbour rather than the nearest.
+                # Invisible while flagging sat at 97% (almost everything was
+                # over threshold); visible once it drops to ~16%, where naming
+                # the WRONG canonical entry is a real misattribution.
+                # MF-19's saving was one pass over a list of tens of findings.
 
         # MF-16 fix: assert best_match is not None (prevent phantom duplicates)
         if best_sim >= tau_sim and best_match is not None:

@@ -179,8 +179,25 @@ def embedding_similarity(f1: Finding, f2: Finding) -> float:
     else:
         cos_sim = float(np.dot(emb1, emb2) / (norm1 * norm2))
 
-    # Map to [0, 1]
-    cos01 = (cos_sim + 1.0) / 2.0
+    # Map to [0, 1]. CLAMPED 2026-08-19.
+    #
+    # WAS: cos01 = (cos_sim + 1.0) / 2.0 - correct for a quantity that uses the
+    # full [-1, 1] range. Sentence-transformer embeddings of English do not.
+    # MEASURED on exp46's 27 findings, 351 pairs: lowest cosine 0.150, and NOT
+    # ONE of the 351 is negative. Half the output scale was reserved for a
+    # region the data never visits, so the live range began at 0.460 after the
+    # BETA blend, against tau_sim = 0.50 calibrated for the JACCARD backend
+    # whose floor genuinely is 0.
+    #
+    # Consequence, measured: 97.4% of pairs flagged duplicate, against a rate of
+    # 97.1% logged by the pipeline itself over four months. With a flaw-class
+    # match the floor was 0.541 - ABOVE the threshold - so any two findings
+    # sharing a flaw class were duplicates by construction: 79 of 79 flagged.
+    #
+    # Clamping restores a scale whose floor is 0. Same 351 pairs: 97.4% -> 15.8%.
+    # This is a bug fix, not a recalibration. No finding is discarded; the ruler
+    # is remarked.
+    cos01 = max(0.0, cos_sim)
 
     return (1 - BETA) * cos01 + BETA * b_class
 
