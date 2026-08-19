@@ -1848,10 +1848,18 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         and top_target != "__unknown__"):
                     distinct = {v["model"] for v in top_votes}
                     if len(distinct) >= 2:
-                        registry.resolve(canonical_id, "MERGED", round_idx,
-                                         merged_into=top_target)
-                        _log(f"  D4 MERGE QUORUM {canonical_id} -> {top_target}: "
-                             f"{len(top_votes)} votes vs {second_votes}")
+                        # NO VOTING (founder ruling 2026-08-19). The old log line
+                        # named this honestly: a QUORUM. A plurality of models is
+                        # not authority to delete a finding from the convergence
+                        # gate. Withheld pending a tool verdict.
+                        entry["merge_candidate_of"] = top_target
+                        entry["merge_blocked_reason"] = (
+                            f"quorum of {len(distinct)} model(s), "
+                            f"{len(top_votes)} votes vs {second_votes}; "
+                            f"no tool verdict")
+                        _log(f"  MERGE WITHHELD {canonical_id} -> {top_target}: "
+                             f"quorum vote ({len(top_votes)} vs {second_votes}), "
+                             f"no tool verdict")
                         continue
                 # Genuine tie or insufficient quorum — defer
                 defer_count = entry.get("merge_defer_count", 0) + 1
@@ -1896,21 +1904,41 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         if cfg else len({v["model"] for v in entry["verdicts"]} - {entry["source_model"]})
                     )
 
-                    if len(distinct_models) >= 2:
-                        # Clear consensus — merge
-                        registry.resolve(canonical_id, "MERGED", round_idx, merged_into=target_id)
-                        continue
-                    elif external_panel_size < 2 and len(distinct_models) == 1:
-                        # Small panel: allow single vote + HIL flag + reversion gate
-                        registry.resolve(canonical_id, "MERGED", round_idx, merged_into=target_id)
-                        entry["hil_escalated"] = True
-                        entry["hil_reason"] = (
-                            f"Single-model merge (small panel, {external_panel_size} "
-                            f"external models). Reversion available."
-                        )
-                        _log(f"  MERGED {canonical_id} (small panel, HIL flagged)")
-                        continue
-                    # else: insufficient quorum, do not merge this round
+                    # ── NO VOTING. Founder ruling, 2026-08-19. ──────────────
+                    #
+                    # WAS: `if len(distinct_models) >= 2: resolve(MERGED)`, plus a
+                    # single-vote path for small panels. MEASURED 2026-08-18: all
+                    # 13 merges across exp42-49 were written by that first branch.
+                    # None came from a tool.
+                    #
+                    # A merge removes a finding from every count, every series and
+                    # the convergence gate, so a show of hands could delete a
+                    # critical finding from the convergence calculation - in a
+                    # project whose founding rule is that findings are confirmed
+                    # programmatically or by HIL, never by model vote.
+                    #
+                    # The replacement is counterfactual repair: apply one
+                    # finding's fix, re-run both falsifiers, require both
+                    # directions to agree. That tool exists and decided 85 pairs
+                    # at 0.287 s/pair. It cannot be called from HERE: this
+                    # function receives (registry, round_idx, cfg) and no target
+                    # path, and RunnerConfig carries none. Plumbing it is a
+                    # separate change.
+                    #
+                    # Until it is wired, the conservative default stands and is
+                    # the founder's stated design: WHERE THE TOOL CANNOT DECIDE,
+                    # NOTHING MERGES. Both findings stay OPEN and non-blocking,
+                    # visible in the registry with the reason recorded. A false
+                    # split leaves two entries for one defect - recoverable and
+                    # visible. A false merge deletes a real finding - neither.
+                    entry["merge_candidate_of"] = target_id
+                    entry["merge_blocked_reason"] = (
+                        f"merge requires a tool verdict; {len(distinct_models)} "
+                        f"model(s) proposed it, which is not sufficient authority"
+                    )
+                    _log(f"  MERGE WITHHELD {canonical_id} -> {target_id}: "
+                         f"proposed by {len(distinct_models)} model(s), no tool verdict")
+                    continue
 
         # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
@@ -6407,8 +6435,13 @@ def _verification_step(
             if merge_target in registry.entries:
                 entry = registry.entries.get(finding_id)
                 if entry and entry["status"] in ("OPEN", "CONTESTED"):
-                    registry.resolve(finding_id, "MERGED", round_idx)
-                    entry["merged_into"] = merge_target
+                    # NO VOTING (founder ruling 2026-08-19). `action` is a
+                    # model-DECLARED verdict, not a tool result. Declaring a
+                    # duplicate is not demonstrating one, and a merge removes the
+                    # finding from the convergence gate.
+                    entry["merge_candidate_of"] = merge_target
+                    entry["merge_blocked_reason"] = (
+                        "model-declared DUPLICATE action; no tool verdict")
                     duplicates += 1
 
     stats.update(confirmed=confirmed, rejected=rejected,
