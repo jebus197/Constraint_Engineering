@@ -1675,6 +1675,31 @@ def _compute_rho(
     # Using len-1 compared against a 1-based threshold delays churn by one round.
     round_number = len(raw_counts)
     churn = rho_avg < cfg.rho_threshold and round_number >= cfg.rho_earliest_round
+
+    # ── SHADOW FLOOR, 2026-08-19. Logged, never gating. ──────────────────────
+    #
+    # rho_earliest_round is 12 with no derivation on record. The rolling window
+    # is 3, so before two full windows the average is not measuring anything;
+    # 2 * window = 6 is a structural floor rather than a fitted one, and deriving
+    # it from the window means the two can never drift apart again.
+    #
+    # It is NOT promoted, for two measured reasons. A floor of 6 would have
+    # REFUSED convergence in exp46 (corrected rho_avg 0.2176) and exp48 (0.1944),
+    # both under the 0.25 threshold - churn is blocking condition (d) in
+    # _check_gamma_alt_convergence, so this is behavioural, not an accounting
+    # tidy-up. And rho's input is distorted by the similarity-function defect
+    # being repaired in the same window, so any value fitted now would be
+    # calibrated on contaminated data.
+    #
+    # The operating value is to be set from exp46's re-run, which is the first
+    # uncontaminated rho this project will have.
+    _derived_floor = 2 * cfg.rho_rolling_window
+    _churn_shadow = rho_avg < cfg.rho_threshold and round_number >= _derived_floor
+    if _churn_shadow != churn:
+        _log(f"  [shadow] churn would differ at a derived floor of {_derived_floor} "
+             f"(2 x window {cfg.rho_rolling_window}): shadow={_churn_shadow} "
+             f"live={churn} at round {round_number}, rho_avg={rho_avg:.4f} "
+             f"vs threshold {cfg.rho_threshold} — TELEMETRY ONLY, does not gate")
     return rho_current, rho_avg, churn
 
 
@@ -9411,7 +9436,31 @@ def run_experiment(
                 _idprox = _settled_crit[round_idx] if round_idx < len(_settled_crit) else "NA"
                 if _gates and round_idx < len(location_crit_history) and novel_critical_history:
                     # PROMOTED: the location-keyed count is the convergence trigger.
-                    novel_critical_history[-1] = location_crit_history[round_idx]
+                    #
+                    # WHOLE-SERIES CORRECTION, 2026-08-19. This wrote
+                    # `novel_critical_history[-1] = ...` - the CURRENT round only -
+                    # exactly the single-position defect item 1.1 repaired in
+                    # `novelty_counts`. Item 1.1 fixed the copy that does NOT gate
+                    # and left this one, which DOES: the gate reads
+                    # novel_critical_history[-window:] at :3979.
+                    #
+                    # _location_keyed_critical_series recomputes the WHOLE series
+                    # from the registry on every call, so each earlier element was
+                    # frozen at the vintage it was written with. A finding opened
+                    # in round 3 and later merged left round 3's entry crediting it
+                    # for the rest of the run.
+                    #
+                    # MEASURED against the archive with the runner's own function:
+                    # exp44 recorded [4,2,2,1,0,2,0,1,0,0,0,0,0] resettles to
+                    # [4,2,3,1,0,2,1,1,0,0,0,0,0] (rounds 2 and 6); exp47 differs at
+                    # rounds 0,3,7,8,10. Direction is PERMISSIVE - the gate saw 2
+                    # fewer criticals than the registry held in exp44 and 5 fewer in
+                    # exp47 - and under-counting criticals makes convergence easier.
+                    # No archived verdict changes: both gate windows read [0,0,0]
+                    # recorded and resettled.
+                    _n = min(len(novel_critical_history), len(location_crit_history))
+                    for _r in range(_n):
+                        novel_critical_history[_r] = location_crit_history[_r]
                 _log(f"  [{'GATE' if _gates else 'shadow'}] location-keyed novel-crit this "
                      f"round={location_crit_history[round_idx]} (ID-proxy crit={_idprox}; "
                      f"series tail={_loc_tail}; "

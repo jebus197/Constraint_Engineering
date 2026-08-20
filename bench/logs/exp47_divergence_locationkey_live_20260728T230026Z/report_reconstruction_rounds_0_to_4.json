@@ -1,0 +1,165 @@
+{
+  "_RECONSTRUCTION": {
+    "generated": "2026-08-20T01:20+01:00",
+    "why": "The stored report's `rounds` list and `gamma_critical_history` each hold 9 entries beginning at round 5, while the run recorded converged_at=13 and total_rounds=14. Round 5 carries 15 per-model response files against 5 for every other round: the signature of a resume. The report was rebuilt from the resume point and rounds 0-4 were dropped from those two fields. location_crit_shadow_history was rebuilt from the registry and has all 14.",
+    "what_is_derivable": "Per-round model response counts, from the raw files on disk. Per-round novel and novel-critical counts, recomputed from the registry via the runner's own _settled_novelty_series.",
+    "what_is_NOT_derivable": "elapsed_s, models_responded, per-round gamma, rho and rho_avg for rounds 0-4. Those were computed live and are not recoverable from the artefacts. They are recorded as null, NOT estimated.",
+    "rule": "No field here is inferred. A value is either measured from an artefact or null."
+  },
+  "rounds_reconstructed": [
+    {
+      "round": 0,
+      "in_stored_report": false,
+      "model_response_files": 5,
+      "settled_novel_all": 11,
+      "settled_novel_critical": 9,
+      "location_keyed_critical": 5,
+      "elapsed_s": null,
+      "gamma_critical": null,
+      "rho_avg": null
+    },
+    {
+      "round": 1,
+      "in_stored_report": false,
+      "model_response_files": 5,
+      "settled_novel_all": 6,
+      "settled_novel_critical": 4,
+      "location_keyed_critical": 3,
+      "elapsed_s": null,
+      "gamma_critical": null,
+      "rho_avg": null
+    },
+    {
+      "round": 2,
+      "in_stored_report": false,
+      "model_response_files": 5,
+      "settled_novel_all": 5,
+      "settled_novel_critical": 3,
+      "location_keyed_critical": 1,
+      "elapsed_s": null,
+      "gamma_critical": null,
+      "rho_avg": null
+    },
+    {
+      "round": 3,
+      "in_stored_report": false,
+      "model_response_files": 5,
+      "settled_novel_all": 4,
+      "settled_novel_critical": 2,
+      "location_keyed_critical": 0,
+      "elapsed_s": null,
+      "gamma_critical": null,
+      "rho_avg": null
+    },
+    {
+      "round": 4,
+      "in_stored_report": false,
+      "model_response_files": 5,
+      "settled_novel_all": 6,
+      "settled_novel_critical": 3,
+      "location_keyed_critical": 1,
+      "elapsed_s": null,
+      "gamma_critical": null,
+      "rho_avg": null
+    },
+    {
+      "round": 5,
+      "in_stored_report": true,
+      "model_response_files": 15,
+      "settled_novel_all": 6,
+      "settled_novel_critical": 5,
+      "location_keyed_critical": 1,
+      "elapsed_s": 563.2,
+      "gamma_critical": 0.4417,
+      "rho_avg": 0.8857
+    },
+    {
+      "round": 6,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 5,
+      "settled_novel_critical": 4,
+      "location_keyed_critical": 0,
+      "elapsed_s": 528.2,
+      "gamma_critical": 0.4057,
+      "rho_avg": 0.9524
+    },
+    {
+      "round": 7,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 6,
+      "settled_novel_critical": 4,
+      "location_keyed_critical": 0,
+      "elapsed_s": 654.8,
+      "gamma_critical": 0.3755,
+      "rho_avg": 0.9048
+    },
+    {
+      "round": 8,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 3,
+      "settled_novel_critical": 2,
+      "location_keyed_critical": 1,
+      "elapsed_s": 1190.6,
+      "gamma_critical": 0.3601,
+      "rho_avg": 0.8095
+    },
+    {
+      "round": 9,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 2,
+      "settled_novel_critical": 1,
+      "location_keyed_critical": 0,
+      "elapsed_s": 1319.2,
+      "gamma_critical": 0.3651,
+      "rho_avg": 0.7619
+    },
+    {
+      "round": 10,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 4,
+      "settled_novel_critical": 3,
+      "location_keyed_critical": 0,
+      "elapsed_s": 1168.4,
+      "gamma_critical": 0.3621,
+      "rho_avg": 0.5873
+    },
+    {
+      "round": 11,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 3,
+      "settled_novel_critical": 1,
+      "location_keyed_critical": 0,
+      "elapsed_s": 1638.1,
+      "gamma_critical": 0.3526,
+      "rho_avg": 0.5657
+    },
+    {
+      "round": 12,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 1,
+      "settled_novel_critical": 0,
+      "location_keyed_critical": 0,
+      "elapsed_s": 1464.0,
+      "gamma_critical": 0.3592,
+      "rho_avg": 0.3608
+    },
+    {
+      "round": 13,
+      "in_stored_report": true,
+      "model_response_files": 5,
+      "settled_novel_all": 3,
+      "settled_novel_critical": 1,
+      "location_keyed_critical": 0,
+      "elapsed_s": 1393.1,
+      "gamma_critical": 0.3668,
+      "rho_avg": 0.4719
+    }
+  ]
+}
