@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 August 2026 01:34 BST (2026-08-17T01:34:36+01:00)
+Generated: 22 August 2026 00:18 BST (2026-08-22T00:18:16+01:00)
 
 ---
 
@@ -18,34 +18,19 @@ Generated: 17 August 2026 01:34 BST (2026-08-17T01:34:36+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `130b539` sv: similarity function operating characteristic; anchorless-anchor wildcard fixed; archive-wide description truncation measured
-- **Committed:** 2026-08-16 23:55:38 +0100
+- **Last commit (the PARENT of the commit containing this file):** `4f786a4` Design reviews: the Bugzilla question answered at last, and perturbation assessed.
+- **Committed:** 2026-08-21 21:27:14 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/main
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/convergence_location.py`
-- `A  bench/logs/exp33_endocrine_20260405T110345Z/descriptions_backfill.json`
-- `A  bench/logs/exp34_endocrine_20260405T225218Z/descriptions_backfill.json`
-- `A  bench/logs/exp35_pe_20260406T152126Z/descriptions_backfill.json`
-- `A  bench/logs/exp36_evidence_20260407T004931Z/descriptions_backfill.json`
-- `A  bench/logs/exp37_evidence_20260409T050932Z/descriptions_backfill.json`
-- `A  bench/logs/exp38_ouroboros_20260411T041938Z/descriptions_backfill.json`
-- `A  bench/logs/exp39_0_gate_20260413T054642Z/descriptions_backfill.json`
-- `A  bench/logs/exp39_0_gate_20260413T193320Z/descriptions_backfill.json`
-- `A  bench/logs/exp40_gate_20260514T020550Z/descriptions_backfill.json`
-- `A  bench/logs/exp40_slice_admissibility_20260516T223952Z/descriptions_backfill.json`
-- `A  bench/logs/exp40_slice_admissibility_hardened_20260518T190104Z/descriptions_backfill.json`
-- `A  bench/logs/exp40_slice_collision_20260518T130744Z/descriptions_backfill.json`
-- `A  bench/logs/exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5/descriptions_backfill.json`
-- `A  bench/logs/exp40_slice_records_20260518T160503Z/descriptions_backfill.json`
-- … and 23 more, not shown (list capped at 15 of 38 — run `git status --porcelain` for the full set)
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**3554 tests collected** at 17 August 2026 01:34 BST, HEAD `130b539` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**3607 tests collected** at 22 August 2026 00:18 BST, HEAD `4f786a4` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,13 +60,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `130b539 sv: similarity function operating characteristic; anchorless-anchor wildcard fixed; archive-wide description truncation measured`
-- `3a633e1 TTS compliance: remove a second-person phrasing and name a bare referent in the Gemini assessment.`
-- `f32056f Test Gemini's two duplicate-detection answers against the project. Nothing to adopt.`
-- `5176738 Benchmark the similarity function against published work, and correct the Bletchley framing.`
-- `34fbe87 Name the rule: "the similarity function", founder-named 2026-08-16.`
-- `7c28378 Zenodo archive uploaded as a draft, deposition 21959922. Publication left to the founder.`
-- `772e87c README: a five-line signpost at the top, on founder approval.`
-- `a44547e CORRECTION to bdadcfe: the answer keys were never at risk, and I briefly unsealed them.`
-- `bdadcfe Test the branch-drift guard, and record why the answer keys were nearly destroyed.`
-- `723287e sv: guard against branch drift — main is the only branch that gets updated.`
+- `4f786a4 Design reviews: the Bugzilla question answered at last, and perturbation assessed.`
+- `247ee33 Runway: correct three stale rows and finally record the future-work items (item 9).`
+- `b1a9ed4 Bugzilla verbatim compendium: every source from the last 3 days, unedited.`
+- `5b3043f Fix list from the independent review. Nine defects, six of them CC1's own from this week.`
+- `2a422b5 Independent read-only review, verbatim record: Fable 5 and CC2.`
+- `ce6337a Items 10 and 13: the fix-complexity measurer (shadow only) and the pre-registration draft.`
+- `bd9c569 Items 8, 9, 11, 14: the gate's own count input, exp47's lost rounds, the prose control, and rho's floor in shadow.`
+- `3c96d29 Item 7: no voting. Remove every model-vote path to MERGED.`
+- `3660816 Items 1-6: repair the R_k reader, the feedback wording and priority, and clamp the similarity map.`
+- `210d21d Rescue the one file that existed in no ref: the Exp 39 -> 40-52 renumbering record.`

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 August 2026 01:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 22 August 2026 00:18 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -125,6 +125,110 @@ tamper-evident provenance as a core property. Standing rule added to
 `.claude/CLAUDE.md` and to memory.
 
 ---
+
+## SESSION STATE — 2026-08-22 00:20 BST (READ THIS FIRST)
+
+### ★ THE HEADLINE: THE 97% CAUSE WAS ONE LINE, AND EVERY VOTE PATH TO MERGED IS NOW CLOSED
+
+Suite **3587 passed, 20 skipped, 0 failed**. Both remote experimental branches DELETED;
+`main` is the sole branch. One file rescued that existed in no ref at all.
+
+**The immune pipeline removed 97.1% of everything for four months** (measured from its own
+log, Apr–Jul: 3042/3132). Cause: `bench/dm/_similarity.py` mapped cosine to [0,1] as
+`(cos+1)/2`. Measured on exp46's 351 pairs, **not one cosine is negative** (min 0.150), so
+half the scale was dead and the live range began at 0.460 against `tau_sim = 0.50` —
+calibrated for the JACCARD backend, whose floor genuinely is 0. Flagging rate 97.4%
+measured vs 97.1% logged. With a flaw-class match the floor was 0.541, ABOVE threshold: any
+two findings sharing a class were duplicates by construction. Clamped to `max(0, cos)`:
+**98.0% → 21.4%** in the live path.
+
+**Consequence for the arc:** every convergence in exp44–49 was reached while models were
+told each round that essentially all their prior findings were near-duplicates and must be
+proven distinct or withdrawn. Those curves are curves of a suppressed process. exp50
+post-fix would be the first uncontaminated measurement.
+
+### NO VOTING — SIX PATHS REMOVED ACROSS THREE DAYS
+
+Founder ruling 2026-08-19. Measured: all 13 merges in exp42–49 were written by model vote.
+Removed: the 2-model consensus branch; a **single**-model small-panel branch; a plurality
+branch whose own log said "MERGE QUORUM"; a merge on a model-*declared* DUPLICATE action;
+**G7 arbitration on 3-of-5 votes**; and the routing path deciding on word-overlap Jaccard.
+
+**Two of those were found only because independent reviewers checked CC1's work.** CC1's
+commit claimed `merge_arbitration_enabled` was "unset in every exp44-52 config" — it is
+`true` in EVERY config exp40–exp51 including exp46/50/51. And `routing_enabled` is set via
+the legacy alias `take_up_slack_enabled`, which both loaders map. CC1 had catalogued the
+routing path as live in its own document the day before, and the alias trap was recorded on
+2026-08-12 with a note to record it "so the next audit does not repeat tonight's false
+alarm". Repeated nine days later.
+
+**CURRENT STATE: NO code path writes MERGED.** The replacement — counterfactual repair,
+0.287 s/pair, no metered cost — is NOT wired. It cannot be called from
+`_update_finding_statuses`, which receives no target path; but `target_path` IS in scope in
+the caller at `:8132`, so this is ONE ARGUMENT, not an architecture change. **Highest
+priority outstanding item.**
+
+### REVIEWS: 2 PAID PANELS + 4 FREE READ-ONLY REVIEWS
+
+Full verbatim records in `experimental_notes/`: `Panel_Stage1_Audit_FULL_RECORD_2026-08-18`,
+`Panel_Enforcement_Prose_FULL_RECORD_2026-08-19`, `Independent_Review_FULL_RECORD_2026-08-21`,
+`Design_Reviews_Bugzilla_And_Perturbation_2026-08-21`, plus
+`Bugzilla_Verbatim_Compendium_2026-08-21` (76,501 chars of primary source).
+
+**The most serious finding, from CC2:** across ~1200 CONFIRMED entries, **over 1000 carry no
+field identifying what decided them**, and every MERGED entry's justification was overwritten
+at write time. **The archive cannot answer whether any archived CONFIRMED was tool-established
+or vote-established. The founding principle is currently unauditable on its own record.**
+Both reviewers' first recommendation: a transition log in `resolve()` — the single status
+write in the runner — recording `{to, from, round, wall_clock, mechanism, actor, evidence_ref}`
+with `mechanism` a typed enum, then one test forbidding `MODEL_ATTESTATION` from writing
+CONFIRMED/CLOSED/MERGED.
+
+**`OPEN → CONFIRMED` is a vote**, and worse than reported: `required = min(2, panel)` at
+sev ≥ 0.7, **else 1**. One model suffices for the majority of findings. Both reviewers
+independently propose splitting it: CORROBORATED (model-attested, scheduling only) vs
+CONFIRMED (tool re-executed the falsifier). Fable's rule: *existence-votes may schedule;
+only tools settle.*
+
+**EXTEND is the answer to ledger-vs-instrument**, reached independently by both. Parsed,
+offered in the prompt as the explicit alternative to duplicating, used 183–543 times, and
+**read by nothing** (`grep -c '"EXTEND"' reference_runner_v2.py` → 0). Make it carry a
+falsifier; still-fires-after-the-parent-fix means the parent fix is demonstrably
+insufficient and the system names what it misses. Only 11 archived entries can replay it,
+so it needs one live run.
+
+### PERTURBATION: THE CONTROL IS BUILT, HAS NEVER RUN, AND ITS SWITCH IS DEAD
+
+`discrimination_control_ask` (`:593`) is its ONLY occurrence — nothing reads it. The real
+gate is `_gate_falsifier_directive(ask_corrected_copy=False)` whose single caller passes
+nothing, so the panel has NEVER been asked for a corrected copy. Zero exist in the archive.
+Fable: the launcher-drop defect shape the control's own comment says shipped three times —
+a fourth instance, inside the control itself.
+
+Both reviewers: perturbation IS sound for sameness, but **only with the corrected copy as
+the perturbation**, never an arbitrary one (an arbitrary perturbation destroys the shared
+substrate and collapses every co-located pair to a false SAME). It removes counterfactual
+repair's measured 46.8% failure mode. The gaming defeat is real and cannot be closed: the
+examinee supplies both instrument and stimulus, so a change-detector falsifier passes every
+probe while testing nothing.
+
+### MEASURED 2026-08-22: THE TWO DECAY CURVES ARE GENUINELY DIFFERENT
+
+Testing an external claim that γ_critical tracks HARD constraints and γ_all tracks SOFT:
+γ_critical exceeds γ_all in **10 of 10 runs**, Wilcoxon p = 0.001. P-passed against a
+sparsity null — random same-size subsets give **−0.004**, the real critical subset **+0.115**,
+p = 0.005. **The effect is attributable to SEVERITY, not to the critical series being
+sparser.** Hard-constraint findings deplete faster than soft ones, measurably.
+
+### CC1's ERROR RECORD THIS WINDOW — READ BEFORE TRUSTING ANY SUMMARY
+
+Six of fifteen commits over three days were self-corrections, and more since. Withdrawn:
+the early-convergence alarm; "deleting the branch is lossless"; "main is in deficit"; "item
+1.1 fixes the gamma gate"; "the defect is dormant"; "37.7% didn't show their working"; "32
+then 1 then 7 files are missing"; "prose decides better than code"; "nu is replay-validatable
+at zero cost"; "merge_arbitration is unset in every config"; "routing is unset". **Every one
+was a claim quantified over a set, asserted after checking one member.** Trust the
+measurements, which reproduce; discount the syntheses until independently checked.
 
 ## SESSION STATE — 2026-08-17 01:45 BST (READ THIS FIRST)
 
