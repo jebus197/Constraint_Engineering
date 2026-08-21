@@ -331,8 +331,12 @@ Operational consequence for you, the model:
    finding you must produce evidence beyond what the verification
    pipeline checks.
 
-3. Findings shown as MERGED have been folded into a canonical entry.
-   That canonical entry is the live target for any additional verdicts.
+3. Findings shown as MERGED carry a pointer to a canonical entry. NOTHING
+   IS FOLDED: no severity, no verdicts and no evidence transfer to that
+   entry — corrected 2026-08-21, having told you otherwise for the whole
+   arc. The canonical entry is still the live target for additional
+   verdicts. Note also that as of 2026-08-19 NO code path writes MERGED:
+   a merge now requires a tool verdict, and that tool is not yet wired.
 
 4. The clearest path to convergence is producing well-formed
    SEARCH/REPLACE fixes for CONFIRMED findings so they can close. A
@@ -768,7 +772,10 @@ scientific process. What is not permitted is unreceipted disagreement.
 
 **Rendering boundary.** The feedback section is capped at the top K
 flagged items per model (ranked by priority: REFUTED > ADMISSIBILITY
-FAIL > NEAR-DUPLICATE > R_k delta, with severity as tiebreaker). If you
+FAIL > R_k FAIL > NEAR-DUPLICATE > sub-threshold R_k delta, with
+severity as tiebreaker; corrected 2026-08-21 to match the code — an R_k
+FAIL means your own stated numbers do not produce your own stated result,
+which is a stronger signal than a similarity score). If you
 have more than K flags in one round, the remainder are surfaced as an
 aggregate count and logged to the round file. Address the top items
 first; if fewer than K in the subsequent round, earlier overflow items

@@ -1774,11 +1774,32 @@ def _try_merge_arbitration(
     })
 
     if result.decision == "MERGE" and result.target:
-        registry.resolve(canonical_id, "MERGED", round_idx,
-                          merged_into=result.target)
-        _log(f"  G7 MERGE ARBITRATED {canonical_id} -> "
-             f"{result.target}: {result.rationale}")
-        return "MERGED"
+        # NO VOTING (founder ruling 2026-08-19). THIS PATH SURVIVED THE FIRST
+        # PASS AND IS THE ONE THAT MATTERED.
+        #
+        # Commit 3c96d29 asserted merge_arbitration_enabled "defaults False and
+        # is unset in every exp44-52 config". MEASURED 2026-08-21 by an
+        # independent Fable 5 review and confirmed three ways: it is TRUE in
+        # every config from exp40 to exp51, INCLUDING exp46 (the pre-registered
+        # matched re-run), exp50 and exp51. CC1 read the default in RunnerConfig
+        # and never opened a config file.
+        #
+        # `dispatch_merge_arbitration(..., majority=3)` merges on 3 of 5 model
+        # votes. This function's own docstring calls it compelled-convergence
+        # arbitration - the family the founder retired on 2026-07-08. So the
+        # honest merge route was closed and the largest voting route left open,
+        # which is worse than either leaving it alone or finishing the job.
+        #
+        # KEEP_DISTINCT below is UNTOUCHED and remains live: it deletes nothing,
+        # and clearing stale MERGE verdicts is what stops a quorum being
+        # assembled from votes many rounds apart (Dedup addendum A.3).
+        entry["merge_candidate_of"] = result.target
+        entry["merge_blocked_reason"] = (
+            f"G7 arbitration voted MERGE ({result.rationale[:80]}); "
+            f"a model vote is not authority to delete a finding from the gate")
+        _log(f"  MERGE WITHHELD {canonical_id} -> {result.target}: "
+             f"G7 arbitration vote, no tool verdict")
+        return "KEEP_DISTINCT"
     if result.decision == "KEEP_DISTINCT":
         # Abandon the auto-merge attempt; the finding stays its own
         # canonical entry. Clear pending MERGE verdicts so the
@@ -1885,7 +1906,19 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         _log(f"  MERGE WITHHELD {canonical_id} -> {top_target}: "
                              f"quorum vote ({len(top_votes)} vs {second_votes}), "
                              f"no tool verdict")
-                        continue
+                    # NO `continue` HERE. 2026-08-21.
+                    # The withhold block inherited a `continue` from the code it
+                    # replaced, where it followed a TERMINAL resolve(MERGED). A
+                    # withheld finding is not terminal, and that `continue` skipped
+                    # the verdict-evaluation block below - so a finding carrying two
+                    # MERGE votes was pinned at OPEN forever: never CONFIRMED, never
+                    # CLOSED, never leaving the discovery pool. That is precisely the
+                    # failure cdsfl_operational.md:317-320 says the lifecycle exists
+                    # to prevent. Demonstrated by a CC2 review running the live
+                    # function: identical findings, 2 CONFIRMs each; with 2 MERGE
+                    # votes present the status stays OPEN, without them it reaches
+                    # CONFIRMED. 8 of 293 exp44-49 entries would have been pinned.
+                    # The finding now falls through and is judged on its own merits.
                 # Genuine tie or insufficient quorum — defer
                 defer_count = entry.get("merge_defer_count", 0) + 1
                 entry["merge_defer_count"] = defer_count
@@ -1963,7 +1996,19 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                     )
                     _log(f"  MERGE WITHHELD {canonical_id} -> {target_id}: "
                          f"proposed by {len(distinct_models)} model(s), no tool verdict")
-                    continue
+                    # NO `continue` HERE. 2026-08-21.
+                    # The withhold block inherited a `continue` from the code it
+                    # replaced, where it followed a TERMINAL resolve(MERGED). A
+                    # withheld finding is not terminal, and that `continue` skipped
+                    # the verdict-evaluation block below - so a finding carrying two
+                    # MERGE votes was pinned at OPEN forever: never CONFIRMED, never
+                    # CLOSED, never leaving the discovery pool. That is precisely the
+                    # failure cdsfl_operational.md:317-320 says the lifecycle exists
+                    # to prevent. Demonstrated by a CC2 review running the live
+                    # function: identical findings, 2 CONFIRMs each; with 2 MERGE
+                    # votes present the status stays OPEN, without them it reaches
+                    # CONFIRMED. 8 of 293 exp44-49 entries would have been pinned.
+                    # The finding now falls through and is judged on its own merits.
 
         # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
@@ -3339,9 +3384,23 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             elif not result.resolved and result.verdict != "DUPLICATE":
                 continue  # transport-dead: no model reached; retry a later round
         if result.verdict == "DUPLICATE":
+            # NO VOTING (founder ruling 2026-08-19). routing_enabled is unset in
+            # all 14 forward configs - VERIFIED against the config files, not the
+            # default, because "inert by default" is the exact claim that failed
+            # on merge_arbitration_enabled. Made safe by CONSTRUCTION rather than
+            # by configuration, so the ruling holds whoever enables what later.
+            #
+            # confirmed_duplicate() decides on bare word-overlap Jaccard at
+            # threshold 0.85 (bench/routing.py:76). A similarity score is not a
+            # tool verdict.
             e["routing_duplicate_of"] = result.duplicate_of
             e["escalated"] = False
-            registry.resolve(cid, "MERGED", round_idx, merged_into=result.duplicate_of)
+            e["merge_candidate_of"] = result.duplicate_of
+            e["merge_blocked_reason"] = (
+                "routing similarity >= 0.85 (word overlap); "
+                "a similarity score is not a tool verdict")
+            _log(f"  MERGE WITHHELD {cid} -> {result.duplicate_of}: "
+                 f"routing similarity, no tool verdict")
             tally["dup"] += 1
         elif result.resolved:
             e["falsifier_code"] = result.falsifier_code
@@ -7339,8 +7398,10 @@ def compute_rk_with_eta_channel(
 # Models use varied notation (η vs eta, ν_eff vs nu_eff, × vs * vs ·).
 _RK_RE_R_OLD = re.compile(
     r'R_?(?:old|prev|prior)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+# Same defect, found by sweeping every parameter regex rather than fixing the
+# one that was reported: 'eta = 0.9 x 0.8 = 0.72' captured 0.9.
 _RK_RE_ETA = re.compile(
-    r'(?:[ηη]|eta)\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+    r'(?:[ηη]|eta)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
 _RK_RE_D = re.compile(
     r'\bd\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)')
 _RK_RE_P = re.compile(
@@ -7349,8 +7410,22 @@ _RK_RE_Q_LINE = re.compile(
     r'^\s*q\s*[=:].*$', re.MULTILINE)
 _RK_RE_SK = re.compile(
     r'S_?k\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+# LAST-VALUE ANCHOR, 2026-08-21. This captured the FIRST float after '='.
+# Models write the formula before the result:
+#   nu_eff = 1 - (1 - 0.02) x (1 - (1 - 0.95) x 0.05) = 0.02245
+# and it captured 1, giving recomputed = R_base*(1-1.0) + 1.0 = 1.0 - an
+# impossible residual risk, laundered into a legal-looking one by the
+# max(0, min(1, ...)) clamp downstream, and scored FAIL. MEASURED by a CC2
+# review: 89 of 198 FAILs carried recomputed == exactly 1.0. That is ~45% of
+# the FAIL mass, and item 4 now puts every FAIL at the top of the next
+# round's prompt worded 'this is your own arithmetic' - so roughly half those
+# accusations were false, delivered with maximum confidence, to models that
+# had done the arithmetic correctly.
+#
+# This is item 1's defect - read the final value, not the first - left
+# unfixed one line away, in the same function, in the same commit.
 _RK_RE_NU_EFF = re.compile(
-    r'(?:[νν]_?eff|nu_?eff)\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+    r'(?:[νν]_?eff|nu_?eff)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
 _RK_RE_R_DET = re.compile(
     r'R_?(?:det|base)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
 # For R_k final value: match lines starting with R_k and extract the last
@@ -7358,16 +7433,34 @@ _RK_RE_R_DET = re.compile(
 # the final value is always the last float on the R_k line.
 _RK_RE_R_FINAL_LINE = re.compile(
     r'^[^\n]*R_?k\s*[=≈:].*$', re.IGNORECASE | re.MULTILINE)
-# MARKDOWN-TOLERANT, repaired 2026-08-19. The old form was
-# r'([0-9]+\.?[0-9]*)\s*$' - it required the number to be the LAST thing on the
-# line. Models write markdown: "R_k = ... = **0.12**." and "`R_k ~ 0.385`". A
-# bold marker, a backtick or a full stop after the digits made the value
-# invisible and the block was recorded SKIP - "did not show its working".
-# MEASURED: of 286 SKIPs in the exp44-49 raw responses, 220 (77%) carry a
-# readable R_k value the old pattern could not reach. Enforcing rejection
-# against that measurement would have rejected compliant models for using
-# asterisks. Now: take the LAST float on the line, whatever trails it.
-_RK_RE_TRAILING_FLOAT = re.compile(r'([0-9]+\.?[0-9]*)(?:[^0-9]*)$')
+# MARKDOWN-TOLERANT, repaired 2026-08-19, CORRECTED 2026-08-21.
+#
+# The 2026-08-19 form took the LAST float on the line whatever trailed it. That
+# fixed the markdown blindness and introduced a worse fault. MEASURED on the
+# exp44-49 raw responses: of 176 lines newly recovered by it, 20 (11.4%) capture
+# a number that is not the model's stated R_k. Real cases:
+#   "R_k = 0.334x(1-0.05) + 0.05 = **0.367** (<0.5 OK)"  -> captured 0.5, the THRESHOLD
+#   "R_k ~ 0.39 (< 0.5 -> admissible)"                   -> captured 0.5
+#   "R_k = 0.3828 x 0.95836 + 0.04164"                   -> captured the final TERM
+# and one captured line was not an R_k statement at all.
+#
+# That matters because a mis-read becomes a FAIL, and a FAIL now scores 2.5 at
+# the top of the next round's prompt worded "this is your own arithmetic". A
+# model would be confidently accused of arithmetic it never wrote - the failure
+# shape this project's Wolfram rule already names: a wrong reading that looks
+# like evidence.
+#
+# CORRECT ANCHOR: a model's stated R_k is the number immediately after the LAST
+# '=' or '~' on the line, optionally wrapped in bold or backticks. Trailing
+# commentary is ignored rather than mined.
+# The negative lookahead after the capture rejects an UNEVALUATED expression:
+# "R_k = 0.3828 x 0.95836 + 0.04164" states no result, so the honest outcome is
+# SKIP rather than mining an operand out of it. Guessing there is how the
+# 2026-08-19 form produced accusations against arithmetic no model wrote.
+_RK_RE_TRAILING_FLOAT = re.compile(
+    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])'
+    r'(?!\s*[*\u00d7x+\-/]\s*[0-9])'
+    r'(?!.*[=\u2248\u2243]\s*\**\s*`?\s*[0-9])')
 
 
 def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[float], Optional[float]]:

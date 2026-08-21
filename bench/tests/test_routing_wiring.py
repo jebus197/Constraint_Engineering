@@ -78,7 +78,30 @@ def test_dedup_short_circuits_before_dispatch(monkeypatch):
     cfg = rr.RunnerConfig(falsifier_gate_enabled=True, routing_enabled=True)
     rr._apply_routing(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
     e = reg.entries[cid]
-    assert e["status"] == "MERGED" and e.get("routing_duplicate_of") == twin
+    # BEHAVIOUR CHANGED 2026-08-19/21 on the founder's ruling: "There will be no
+    # voting in CDSFL... truth should always be deterministic and be decided via
+    # tools."
+    #
+    # This path decided DUPLICATE on `confirmed_duplicate()` - bare word-overlap
+    # Jaccard at threshold 0.85 (bench/routing.py:76). A similarity score is not a
+    # tool verdict, and a merge REMOVES the finding from the convergence gate, so
+    # a score above a threshold could delete a critical from the calculation.
+    #
+    # It was not dormant, contrary to commit 3c96d29. The configs do not set
+    # `routing_enabled`; they set the legacy alias `take_up_slack_enabled: true`,
+    # which BOTH loaders map (launcher_core.py:216-217,
+    # reference_runner_v2.py:822-823). It is live in all 13 forward configs, and
+    # `resolved_by_routing` appears 82 times across exp44-49. Found by a CC2
+    # review, 2026-08-21; the same alias trap had already been written down on
+    # 2026-08-12 with the note "record the alias so the next audit does not repeat
+    # tonight's false alarm". It was repeated nine days later.
+    #
+    # The merge is now WITHHELD: the candidate and the reason are recorded, and
+    # the finding survives to be judged on its own merits.
+    assert e["status"] != "MERGED", "a similarity score must not write MERGED"
+    assert e.get("routing_duplicate_of") == twin, "the candidate is still recorded"
+    assert e.get("merge_candidate_of") == twin
+    assert "not a tool verdict" in e.get("merge_blocked_reason", "")
     assert dispatched == []  # dedup caught it before any model dispatch
 
 

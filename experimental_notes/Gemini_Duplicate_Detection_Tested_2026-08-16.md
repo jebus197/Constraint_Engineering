@@ -1,5 +1,57 @@
 # Gemini's duplicate detection advice, tested against the project's own data
 
+> ## ★ CORRECTION, 2026-08-21 — three statements in this note are WRONG, and one of them is a demonstration constructed to pass
+>
+> Found by an independent CC2 review with repository access and re-verified against
+> the live code. **The note's overall verdict — "nothing to adopt" — STANDS**, and the
+> scale argument alone is sufficient to reach it. What follows is wrong underneath it.
+>
+> **1. THE SERIOUS ONE. The signature demonstration was padded and the padding was not
+> disclosed.** This note states that Gemini's own example — "reduced thermal load" versus
+> "decreased heat dissipation" — was run through the project's signature extractor and
+> produced identical signatures scoring 1.000.
+>
+> Run today:
+> ```
+> stem_signature('reduced thermal load')       -> frozenset()
+> stem_signature('decreased heat dissipation') -> frozenset()
+> signature_similarity(...)                     = 0.0
+> ```
+> The 1.000 appears only once `ZC-17` and four shared numbers are added **to both sides**,
+> and neither `thermal`/`heat` nor `load`/`dissipation` appears anywhere in the resulting
+> signature. The synonym pair — the entire point of Gemini's example — contributes nothing
+> to that score. **A padded test's output was attributed to an unpadded example.**
+>
+> Gemini's actual claim, that lexical methods score zero on synonym-only paraphrase, is
+> **CONFIRMED by the live extractor, not refuted by it.** A sound defence was available and
+> was not used: 97.6% of critical findings carry a hard token, so paraphrase-only pairs are
+> rare in this corpus. That is a coverage argument and it holds on its own.
+>
+> **2. The "error plateaus" mechanism is false.** MinHash estimator variance is `J(1−J)/k`,
+> independent of set cardinality. Measured at true J = 1/3 over 400 trials per k: MAE 0.0931,
+> 0.0449, 0.0236, 0.0110, 0.0059 for k = 16, 64, 256, 1024, 4096 — clean `1/√k` across five
+> octaves against a theoretical ratio of 2.00. There is no plateau at any k.
+>
+> **3. "Maximum error 0.358 at k=256" is a k=16 figure.** Rebuilt from 1,993 real
+> `stem_signature` outputs across all 28 report files, k=256, 300,000 sampled pairs:
+> **MAE 0.0015, MAX 0.1172.** At k=256 the standard-deviation ceiling is 0.031, so 0.358 is
+> about 11 sd and not attainable on this corpus. The max at **k=16** is 0.3542 — this note's
+> 0.358, to within noise. A synthetic small-set maximum was reported as a real-signature one.
+> The note also contradicts itself: it states an error floor near 0.068 two paragraphs before
+> stating a MAE of 0.007 on the same signatures.
+>
+> **Also uncorrected in commit `f32056f`:** the claim that every tool named is "already
+> installed and routed by the 21-entry manifest: hypothesis 6.151.9…". `hypothesis` is not in
+> the manifest. It is installed but **not routed**, so Gemini's property-based tier has no
+> route. And the decision boundary is misstated here as ~0.5; the operative constant is
+> `WITHIN_LOCATION_THRESHOLD = 0.20` (`bench/convergence_location.py:459`).
+>
+> **What was never tested:** this note covers the transcript's first five prompts. The file
+> has ten and 656 lines. Everything from the Falsification Ledger onward is untested — with
+> one exception, the "unified equation", independently shown degenerate on 2026-08-19 and
+> again by CC2: its inner argmax returns the entire feasible set, so the novelty term does no
+> work, and it contains no γ at all.
+
 2026-08-16, 04:10 BST. Written under CDSFL note standard version one point four. Every claim below was tested with tools against real project data rather than assessed by reading. No paid model dispatch.
 
 
