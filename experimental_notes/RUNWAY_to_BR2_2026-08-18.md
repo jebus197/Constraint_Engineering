@@ -1,5 +1,67 @@
 # THE RUNWAY — where we are, what is left, what each step costs
 
+**★★ THE DISCRIMINATION CONTROL HAS BEEN RUN, 2026-08-22 03:05 BST. THE RESULT IS
+THE MOST IMPORTANT NUMBER THIS PROJECT HAS. READ THIS FIRST.**
+
+**Of 263 archived confirmations that could be tested, 132 (50.2%) are backed by a
+falsifier demonstrated to fire on the accused defect and go silent on its repair.
+The other 131 still fire after their own accused defect is repaired, and 128 of
+those have NEVER been observed to go quiet under any condition tested.**
+
+The pre-registered rule, taken from CC2 before the measurement: ≥95% quiet →
+H-BUILD without reservation; ≥10% still firing → materially toward H-VOID.
+**50.2% FAILS THAT RULE, on the H-VOID side.** It is honoured, not renegotiated.
+
+**THE CONFOUND WAS MEASURED, NOT ASSUMED.** "Still fires" could mean the fix was
+bad rather than the falsifier blind. Each still-firing falsifier was re-run against
+up to 8 OTHER findings' fixes for the same file, known-substantive because each had
+silenced some other falsifier. **2 of 130 (1.5%) were sensitive — their own fix
+failed. 128 (98.5%) never went quiet on anything.** The bad-fix explanation accounts
+for 1.5%, not 50%.
+
+**THE MIRROR CONTROL SAYS THE PASSING HALF PASSES CLEANLY.** Of the 132, **92
+(69.7%) are specific** — quiet on their own fix, firing on all 8 others. Of the 40
+that were not, **35 were silenced by only 1–2 of 8**, which is the signature of
+DUPLICATE findings sharing a root cause (this project's own repair adjudicator uses
+exactly that as its SAME criterion). Exactly **1** is genuinely fragile. **So the
+fragile population is 1–5 of 132, not 40.**
+
+**ROUTE B IS LARGELY UNINFORMATIVE — DO NOT QUOTE ITS 3.9%.** 346 of 360 fire on
+every stored version, but **126 findings went quiet on their own fix while firing on
+every version**: this runner suggests fixes to a human and does not commit them, so
+most accused defects were never repaired in git and a correct falsifier is RIGHT to
+fire on every version. Route A is load-bearing.
+
+**WHAT THIS DOES NOT SHOW.** Not that the design is unsound. 50% is not 0% — 132
+falsifiers do exactly what the design specifies, and a design that did not work
+would return near 0%, not a clean split. The failure is located in the GATE, not the
+concept: `reverify_falsifier("print('FALSIFIED')")` returns CONFIRMED, because
+nothing ever required a falsifier to demonstrate dependence on its target. **And the
+measurement IS the repair** — `scripts/discrimination_control_archive.py` is the
+filter; run it in-loop and the 131 never reach CONFIRMED.
+
+**THE QUEUE, RE-ORDERED BY THIS RESULT:**
+
+| # | item | why |
+|---|---|---|
+| **1** | **Feed the in-runner control.** `run_discrimination_control` exists with 8 outcomes and 3 self-probes; it is presence-gated on a corrected copy no panel has ever been asked for. A finding's own proposed fix is already emitted, so the corrected copy is one apply away | until it lands, no future run can tell a demonstration from an assertion either |
+| **2** | **Re-grade the archive.** Stamp all 263 scored findings with their discrimination outcome: 132 demonstrated, 131 asserted | this IS Codex's typed-provenance work, and the data now exists |
+| **3** | **The 67 NO_APPLICABLE_FIX and 30 INDETERMINATE_ERROR** — a quarter of the population could not be scored at all | its own finding, unexamined |
+| **4** | FW.5, wire counterfactual repair to the merge site | unchanged; still true that no code path writes MERGED |
+| **5** | ERROR/UNTOOLABLE can write a terminal status (4 of 24, all escalated) | small, cheap |
+| **6** | `null_perturbation_control.py` needs `--dry-run` | it overwrote its own committed result on 22 Aug |
+
+**NO LIVE RUN UNTIL ITEM 1 LANDS.** Adding runs to an instrument that cannot
+distinguish a demonstration from an assertion multiplies the problem measured here.
+This supersedes every run ordering below.
+
+Full account: `experimental_notes/Discrimination_Control_Result_2026-08-22.md`
+(+ plain-English companion + Desktop TTS). Data:
+`experimental_notes/data/discrimination_control_archive.json` and the two
+`..._cross_probe_*.json`.
+
+---
+
 **★ THE ORDER CHANGED, 2026-08-22 01:40 BST. READ THIS BLOCK BEFORE THE TABLES BELOW.**
 
 A five-model panel (`Panel_Track_Record_FULL_RECORD_2026-08-22.md`, 5 of 5
