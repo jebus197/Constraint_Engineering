@@ -115,8 +115,56 @@ def test_a_patch_that_breaks_the_suite_is_rejected(anchor):
     resp = _patch(anchor, anchor + MARKER) + _test_block(
         "from bench.dm._types import _commissioning_probe\n"
         "def test_probe():\n    assert _commissioning_probe() == 42\n")
-    v = BA.evaluate(resp, suite_cmd=["python3", "-c", "import sys; sys.exit(1)"])
+    cmd = ["python3", "-c",
+           "print('FAILED bench/tests/test_regressed.py::test_z'); import sys; sys.exit(1)"]
+    BA._BASELINE[("HEAD", tuple(cmd))] = frozenset()   # parent is green for this cmd
+    v = BA.evaluate(resp, parent="HEAD", suite_cmd=cmd)
     assert v.outcome == BA.REJ_SUITE_WENT_RED, f"{v.outcome}: {v.detail}"
+    assert "test_regressed" in v.detail
+
+
+def test_step_three_compares_against_the_parent_rather_than_assuming_green():
+    """The defect that stopped the run on 2026-08-22, pinned so it cannot return.
+
+    A pre-existing failure at the parent must NOT be blamed on the patch. Driven
+    with a suite command that fails identically on both sides: if the gate compared
+    against an assumption of green it would reject; comparing against the measured
+    parent, it must accept.
+    """
+    txt = (BA.REPO / TARGET).read_text(encoding="utf-8")
+    anchor_line = [ln for ln in txt.splitlines() if ln.strip()][-1]
+    resp = _patch(anchor_line, anchor_line + MARKER) + _test_block(
+        "from bench.dm._types import _commissioning_probe\n"
+        "def test_probe():\n    assert _commissioning_probe() == 42\n")
+    # A "suite" with one failure that exists on both sides, printed in pytest's
+    # own FAILED format so the gate's parser sees it.
+    always_red = ["python3", "-c",
+                  "print('FAILED bench/tests/test_pre_existing.py::test_x'); "
+                  "import sys; sys.exit(1)"]
+    v = BA.evaluate(resp, suite_cmd=always_red)
+    assert v.outcome == BA.ACCEPTED, (
+        f"a failure present at the parent was blamed on the patch: {v.outcome} {v.detail}")
+
+
+def test_a_new_suite_failure_is_still_rejected(anchor):
+    """The other side of the same check: a failure the parent does NOT have.
+
+    The baseline is computed with one command and the patched run with another that
+    reports a DIFFERENT failing node-id, so the difference is a genuine regression.
+    """
+    resp = _patch(anchor, anchor + MARKER) + _test_block(
+        "from bench.dm._types import _commissioning_probe\n"
+        "def test_probe():\n    assert _commissioning_probe() == 42\n")
+    key_cmd = ["python3", "-c",
+               "print('FAILED bench/tests/test_brand_new.py::test_y'); "
+               "import sys; sys.exit(1)"]
+    # evaluate() keys the cache on the parent string IT IS GIVEN, so prime it with
+    # the same literal. Priming under the resolved SHA was the first attempt and it
+    # missed, causing a real 200s suite run against the wrong baseline.
+    BA._BASELINE[("HEAD", tuple(key_cmd))] = frozenset()      # parent is green
+    v = BA.evaluate(resp, parent="HEAD", suite_cmd=key_cmd)
+    assert v.outcome == BA.REJ_SUITE_WENT_RED, f"{v.outcome}: {v.detail}"
+    assert "test_brand_new" in v.detail
 
 
 def test_no_model_vote_appears_anywhere_in_the_gate():

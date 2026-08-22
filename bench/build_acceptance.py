@@ -101,6 +101,54 @@ def _run(cmd: list, cwd: Path, timeout: int = 900) -> tuple:
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 
+def failing_nodeids(out: str) -> frozenset:
+    """The set of failing test node-ids in a pytest run."""
+    return frozenset(re.findall(r"^FAILED\s+(\S+)", out or "", re.M))
+
+
+_BASELINE: dict = {}
+
+
+def suite_baseline(parent: str, suite_cmd: list, timeout: int) -> frozenset:
+    """WHICH TESTS ALREADY FAIL AT THE PARENT, IN A WORKTREE.
+
+    MEASURED 2026-08-22, and it is why this function exists: the first version of
+    this gate assumed a green suite and rejected a VALID patch from Codex as
+    REJECTED_SUITE_WENT_RED. In a bare worktree at the same commit, with NO patch
+    applied, 1 test fails -- test_falsifier_cannot_read_the_key.py scans "the whole
+    tracked archive" and bench/logs is gitignored, so a fresh worktree has no
+    archive for it to scan.
+
+    Every task in the run would have been falsely rejected, the experiment would
+    have reported near-0% acceptance, and near-0% is this harness's own
+    pre-registered tell for "the models cannot do the task". A harness artefact
+    would have rendered as a confident verdict about six models' competence -- this
+    project's house failure mode, committed by the instrument built to end it.
+
+    So step 3 is now TWO-SIDED like steps 1 and 2: measure the parent, compare the
+    patch. Green-at-parent was an assumption, and refusing assumptions is the whole
+    design. Cached per parent: the baseline is identical for every candidate.
+    """
+    key = (parent, tuple(suite_cmd))
+    if key in _BASELINE:
+        return _BASELINE[key]
+    wt = Path(tempfile.mkdtemp(prefix="cdsfl_base_")) / f"wt_{uuid.uuid4().hex[:8]}"
+    try:
+        rc, _ = _run(["git", "worktree", "add", "--detach", str(wt), parent], REPO)
+        if rc != 0:
+            _BASELINE[key] = frozenset()
+            return _BASELINE[key]
+        _, out = _run(suite_cmd, wt, timeout)
+        _BASELINE[key] = failing_nodeids(out)
+    except Exception:                              # noqa: BLE001
+        _BASELINE[key] = frozenset()
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
+                       cwd=str(REPO), capture_output=True)
+        shutil.rmtree(wt.parent, ignore_errors=True)
+    return _BASELINE[key]
+
+
 def _summarise_pytest(out: str) -> str:
     m = re.search(r"(\d+ (?:passed|failed)[^\n]*)", out or "")
     return m.group(1) if m else (out or "")[-200:].replace("\n", " ")
@@ -120,8 +168,10 @@ def evaluate(response: str, *, parent: str = "HEAD",
                        "parent cannot be accepted, because nothing then demonstrates "
                        "the defect was real")
 
+    # NOT -x: the gate needs the FULL failing set on both sides to compare them.
     suite_cmd = suite_cmd or ["python3", "-m", "pytest", "bench/tests/", "-q",
-                              "--netguard-strict", "-x", "-p", "no:randomly"]
+                              "--netguard-strict", "-p", "no:randomly"]
+    baseline = suite_baseline(parent, suite_cmd, suite_timeout)
     wt = Path(tempfile.mkdtemp(prefix="cdsfl_build_")) / f"wt_{uuid.uuid4().hex[:8]}"
     try:
         rc, out = _run(["git", "worktree", "add", "--detach", str(wt), parent], REPO)
@@ -167,16 +217,20 @@ def evaluate(response: str, *, parent: str = "HEAD",
 
         # ---- (3) the full suite must stay green -----------------------------
         rc_suite, out_suite = _run(suite_cmd, wt, suite_timeout)
-        if rc_suite != 0:
+        new_failures = failing_nodeids(out_suite) - baseline
+        if new_failures:
             return Verdict(REJ_SUITE_WENT_RED,
-                           "the patch makes its own test pass but breaks the suite",
+                           "the patch makes its own test pass but breaks "
+                           f"{len(new_failures)} test(s) that pass at the parent: "
+                           + ", ".join(sorted(new_failures)[:4]),
                            test_at_parent=_summarise_pytest(out_before),
                            test_with_patch=_summarise_pytest(out_after),
                            suite_after=_summarise_pytest(out_suite),
                            files_touched=tuple(touched))
 
         return Verdict(ACCEPTED,
-                       "test fails at parent, passes with the patch, suite green",
+                       "test fails at parent, passes with the patch, and adds no "
+                       "suite failure the parent does not already have",
                        test_at_parent=_summarise_pytest(out_before),
                        test_with_patch=_summarise_pytest(out_after),
                        suite_after=_summarise_pytest(out_suite),
