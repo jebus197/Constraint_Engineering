@@ -58,7 +58,11 @@ def main() -> int:
                     help="if given AND composition is clean, write the result here")
     args = ap.parse_args()
 
-    results = json.loads((LOGS / "results.json").read_text())
+    # results.json is clobbered by every resume; the cy log is append-only and is
+    # therefore the authoritative record. Same reasoning the report script uses.
+    sys.path.insert(0, str(REPO / "scripts"))
+    from build_experiment_report import from_cy_log
+    results = from_cy_log()
     idx_f = LOGS / "RESPONSE_MODEL_INDEX.json"
     idx = json.loads(idx_f.read_text()) if idx_f.is_file() else {}
     accepted = [r for r in results if r.get("outcome") == "ACCEPTED"]
@@ -84,10 +88,17 @@ def main() -> int:
 
         for r in accepted:
             tid = r["task"]
+            # The ACCEPTED attempt is the rung named in the record, not merely the
+            # last file on disk -- a later rung may exist from an earlier, aborted
+            # pass. Resolve it through the model index.
+            who = r.get("accepted_by", "")
             src = None
             for cand in sorted(LOGS.glob(f"{tid}_rung*_response.md")):
-                # the accepted attempt is the last one recorded for this task
-                src = cand
+                if idx.get(cand.name) == who:
+                    src = cand
+            if src is None:
+                for cand in sorted(LOGS.glob(f"{tid}_rung*_response.md")):
+                    src = cand
             if src is None:
                 report["conflicts"].append({"task": tid, "why": "no response file"})
                 continue

@@ -240,6 +240,7 @@ def main() -> int:
                 _cy(f"[{task['id']}] {tag} report {len(resp)} chars in {el}s — "
                     f"{'RECORDED' if ok else 'TOO SHORT'}")
                 rec["attempts"].append({"rung": rung_i + 1, "model": tag, "elapsed_s": el,
+                                        "route": route,
                                         "outcome": "REPORT_RECORDED" if ok else "REPORT_TOO_SHORT",
                                         "chars": len(resp)})
                 if ok:
@@ -250,8 +251,8 @@ def main() -> int:
             if resp.count("<invoke") or resp.strip().startswith("<tool_calls>"):
                 _cy(f"[{task['id']}] {tag} emitted a TOOL-CALL BLOCK, not an answer — "
                     f"CONFIGURATION failure, not a model failure")
-                rec["attempts"].append({"rung": rung_i + 1, "model": tag, "elapsed_s": el,
-                                        "chars": len(resp),
+                rec["attempts"].append({"rung": rung_i + 1, "route": route,
+                                        "elapsed_s": el, "chars": len(resp),
                                         "outcome": "CONFIG_ERROR_TOOLCALL_BLOCK"})
                 continue
             _cy(f"[{task['id']}] {tag} returned {len(resp)} chars in {el}s — evaluating")
@@ -262,13 +263,13 @@ def main() -> int:
             if v.test_with_patch:
                 _cy(f"[{task['id']}]      w/ patch : {v.test_with_patch}")
             rec["attempts"].append({
-                "rung": rung_i + 1, "model": tag, "elapsed_s": el, "chars": len(resp),
+                "rung": rung_i + 1, "route": route, "elapsed_s": el, "chars": len(resp),
                 "outcome": v.outcome, "detail": v.detail,
                 "test_at_parent": v.test_at_parent, "test_with_patch": v.test_with_patch,
                 "suite_after": v.suite_after, "files": list(v.files_touched)})
             if v.accepted:
                 rec["outcome"] = "ACCEPTED"
-                rec["accepted_by"] = tag
+                rec["accepted_by_rung"] = rung_i + 1
                 rec["files"] = list(v.files_touched)
                 _cy(f"[{task['id']}] *** ACCEPTED from {tag} — {v.suite_after} ***")
                 break

@@ -1,0 +1,102 @@
+{
+ "parent": "36ab4e3c124849eef38b48550dd073e62addd821",
+ "baseline_failures": [
+  "bench/tests/test_falsifier_cannot_read_the_key.py::test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive"
+ ],
+ "applied": [
+  {
+   "task": "T02",
+   "model": "cc2",
+   "files": [
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/tests/test_corrected_copy_wiring.py",
+    "bench/tests/test_corrected_copy_wiring.py"
+   ],
+   "test": "bench/tests/test_corrected_copy_from_proposed_fix.py"
+  },
+  {
+   "task": "T03",
+   "model": "cc2",
+   "files": [
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py",
+    "bench/reference_runner_v2.py"
+   ],
+   "test": "bench/tests/test_survival_ledger_wired.py"
+  },
+  {
+   "task": "T06",
+   "model": "cc2",
+   "files": [
+    "bench/dm/_load_balancer.py",
+    "bench/dm/_load_balancer.py",
+    "bench/dm/_manager.py",
+    "bench/dynamic_management.py",
+    "resources/ONBOARDING.md",
+    "bench/TEST_COVERAGE.md",
+    "docs/ARCHITECTURE.md"
+   ],
+   "test": "bench/tests/test_load_balancer_shelved.py"
+  },
+  {
+   "task": "T08",
+   "model": "cgpt",
+   "files": [
+    "scripts/cdsfl_sv.py",
+    "scripts/cdsfl_sv.py"
+   ],
+   "test": "bench/tests/test_cdsfl_sv_memory_ledger.py"
+  },
+  {
+   "task": "T09",
+   "model": "cc2",
+   "files": [
+    "experimental_notes/OUTSTANDING_QUEUE_to_BR2.md",
+    "resources/RECOVERY.md"
+   ],
+   "test": "bench/tests/test_critical_prereg_citation.py"
+  },
+  {
+   "task": "T10",
+   "model": "cx",
+   "files": [
+    "scripts/discrimination_control_archive.py",
+    "scripts/discrimination_control_archive.py"
+   ],
+   "test": "bench/tests/test_discrimination_archive_failure_classification.py"
+  }
+ ],
+ "conflicts": [
+  {
+   "task": "T04",
+   "model": "fable",
+   "why": "SEARCH no longer matches bench/reference_runner_v2.py once earlier patches are applied"
+  },
+  {
+   "task": "T05",
+   "model": "cc2",
+   "why": "SEARCH no longer matches bench/reference_runner_v2.py once earlier patches are applied"
+  }
+ ],
+ "tests": [
+  "bench/tests/test_corrected_copy_from_proposed_fix.py",
+  "bench/tests/test_survival_ledger_wired.py",
+  "bench/tests/test_load_balancer_shelved.py",
+  "bench/tests/test_cdsfl_sv_memory_ledger.py",
+  "bench/tests/test_critical_prereg_citation.py",
+  "bench/tests/test_discrimination_archive_failure_classification.py"
+ ],
+ "suite": "1 failed, 3668 passed, 22 skipped, 18 warnings in 219.13s (0:03:39)",
+ "new_failures": [],
+ "accepted_tests_together": "56 passed in 4.32s",
+ "composes_cleanly": false
+}
