@@ -19,11 +19,20 @@ The directory holds **103 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 51 |
+| Mirrored (in summarised form) in `MEMORY.md` | 55 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 108 |
+| total | 112 |
+
+> **[Correction 2026-08-22.]** Mirrored 51 -> 55, total 108 -> 112 for
+> `cdsfl_session_2026-08-18_to_22.md`, `cdsfl_bugzilla_design_2026-08-21.md`,
+> `feedback_check_the_whole_set.md` and `cdsfl_session_2026-08-22_track_record.md`.
+> All four carry an index line in `MEMORY.md`, so all four land in the mirrored
+> bucket. **FIFTH consecutive correction in the same direction.** The fix recorded
+> on 2026-08-17 — move the ledger bump into the `sv` path so it stops depending on
+> the author remembering — was never implemented. The check keeps working and the
+> remedy keeps not being built. That is the defect, not the count.
 
 > **[Correction 2026-08-18.]** Mirrored 50 -> 51, total 107 -> 108 for
 > `cdsfl_runway_2026-08-18.md`, the runway tracker.

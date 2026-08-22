@@ -1,5 +1,80 @@
 # THE RUNWAY — where we are, what is left, what each step costs
 
+**★ THE ORDER CHANGED, 2026-08-22 01:40 BST. READ THIS BLOCK BEFORE THE TABLES BELOW.**
+
+A five-model panel (`Panel_Track_Record_FULL_RECORD_2026-08-22.md`, 5 of 5
+returned, no compelled convergence) was asked whether the project's track record
+is sound. **Four of the five named the same next step, and it is not the one this
+tracker had at the top.**
+
+**THE NEW HEAD OF THE QUEUE: run the DISCRIMINATION CONTROL on the archive,
+offline, at zero cost.** Repair the accused claim; the falsifier must go quiet.
+It was believed to need a live run because the in-runner version is presence-gated
+on a corrected copy no panel has ever been asked for. It does not. 367 of 437
+modern CONFIRMED findings carry a machine-applyable SEARCH/REPLACE fix, and CC2's
+second route needs no fix at all — re-run each archived falsifier against the
+commit that later fixed the defect it accuses.
+
+**PRE-REGISTERED DECISION RULE, taken from CC2 before the measurement:**
+≥95% go quiet → the modern arc is H-BUILD without reservation.
+≥10% still fire → it moves materially toward H-VOID.
+
+**WHY IT JUMPED THE QUEUE.** CC2 executed the gate rather than reasoning about it:
+
+    reverify_falsifier("assert False, 'FALSIFIED: trivially'")  ->  CONFIRMED
+    reverify_falsifier("print('FALSIFIED')")                    ->  CONFIRMED
+
+The gate measures that a falsifier FIRED, never that it fired BECAUSE of the
+claim. **0 of 2,030 archived entries carry a discrimination record** — the control
+has never run once in the project's life (`discrimination_control_ask = False`,
+`reference_runner_v2.py:593`). Everything else on this page is downstream of the
+answer, because a transition log that records which mechanism decided is worthless
+if the mechanism does not discriminate.
+
+**WHAT THE SAME AUDIT ESTABLISHED IN THE PROJECT'S FAVOUR.** The claim CC1 made on
+21-22 August that "the founding principle is unauditable on its own record" is
+**WITHDRAWN**. It is false from exp42 on and true only for exp34-41, where the
+mechanism did not exist — `falsifier_verdict` entered the code 2026-06-03
+(`4fba6cc`), and `falsifier_gate_enabled` is unset in all 8 exp40/41 configs and
+True in all 17 configs from exp42 on. Modern arc: **85.3%** of terminal verdicts
+carry a recorded tool verdict, **97.4%** of closures do, status tracks the tool
+verdict at **99.8%**, and 8 of 8 archived series replay exactly.
+
+**WHAT WAS ALSO WITHDRAWN, and it was CC1's own.** The sign test on M6 (25/25,
+p = 2.98e-08, then 25/26, p = 4.02e-07) is **deleted**. `apply_falsifier_verdicts`
+runs AFTER `_update_finding_statuses` and overwrites status unconditionally, so
+"the tool prevails" is deterministic and the p-value was arithmetic on a foregone
+conclusion. The table survives as a REGRESSION CHECK — the gate was on and nothing
+bypassed it — which is worth having given six model-vote paths to MERGED were found
+on 19 August. And the 26 disagreements decompose 18 / 6 / 2: **"the tool overrules
+the panel on truth" rests on n = 2, not 26.**
+
+**NEW EXCLUSION: exp48 and exp49 come out of headline claims.** Answer-key
+contamination already in the errata; **both target documents are deleted from disk**
+so 68 falsifiers can never be re-executed; and 100% of the archive's detached
+falsifiers (9 by one heuristic, 15 by CC2's) live in those two runs.
+
+**NEW SMALL DEFECTS.** (a) A falsifier verdict of ERROR or UNTOOLABLE can still
+write a terminal status: 4 of 24, two of them REFUTED with `verified=False`. All
+four carry `escalated=True`, so a human saw them; the status is still wrong.
+(b) `scripts/null_perturbation_control.py` writes its output unconditionally — a
+read-only reviewer overwrote the committed 397-row result with a 12-row one on
+22 August. Disclosed, restored from git. It needs `--dry-run`.
+
+**VERIFIED TONIGHT AND UNCHANGED: no code path in `reference_runner_v2.py`,
+`immune_agents.py` or `bench/dm/` writes MERGED at all.** Any live run started today
+produces zero merges. `target_path` is a local in `run_experiment` (`:8225`-`:8231`)
+and the `_update_finding_statuses` call is at `:9122` in the same function, so
+FW.5 is one argument. It is now SECOND, not first: MERGED is 13 modern entries,
+CONFIRMED/CLOSED is 436, and the wiring falls out of the discrimination control's
+machinery anyway.
+
+Full account: `experimental_notes/Track_Record_Audit_2026-08-22.md`
+(+ the plain-English companion + Desktop TTS). Reproduce with
+`python3 scripts/track_record_audit.py`.
+
+---
+
 **Opened 2026-08-18 11:42 BST at HEAD `f53c276`. Last updated 2026-08-18 12:28 BST at HEAD `f4df176`.**
 **This is a LIVING TRACKER. Update the STATUS column as each item lands.**
 **Canonical copy: this file. Mirror: `~/Desktop/CDSFL_RUNWAY.md`.**
