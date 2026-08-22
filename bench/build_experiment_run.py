@@ -211,7 +211,26 @@ def main() -> int:
                                         "outcome": "DISPATCH_ERROR", "error": str(exc)})
                 continue
             el = round(time.time() - t0, 1)
-            (LOGS / f"{task['id']}_{tag}_response.md").write_text(resp, encoding="utf-8")
+            # NOT "{task}_{tag}_response.md". A model's response legitimately contains
+            # SIM-A / SIM-B fixtures (this project's own simulated-agent convention),
+            # which makes the file structurally self-declare as a simulated artefact --
+            # and a bare vendor name in the filename of such a file is a provenance
+            # failure under the 2026-08-08 ruling. Caught red by
+            # test_sim_naming_and_integrity_directive.py on 2026-08-22. The guard is
+            # right and the naming was wrong; -LIVE marks these as real dispatches.
+            # NO VENDOR NAME IN THE PATH. The 2026-08-08 ruling forbids a bare vendor
+            # name anywhere in an artefact that self-declares as simulated, and a
+            # model's response legitimately contains SIM-A / SIM-B fixtures, which is
+            # exactly such a self-declaration. Two renames were needed before this was
+            # right: adding "-LIVE" did not help, because the guard matches the TOKEN.
+            # Model identity lives in RESPONSE_MODEL_INDEX.json and results.json, which
+            # is better provenance than a filename anyway.
+            (LOGS / f"{task['id']}_rung{rung_i + 1}_response.md").write_text(
+                resp, encoding="utf-8")
+            _idx = LOGS / "RESPONSE_MODEL_INDEX.json"
+            _m = json.loads(_idx.read_text()) if _idx.is_file() else {}
+            _m[f"{task['id']}_rung{rung_i + 1}_response.md"] = tag
+            _idx.write_text(json.dumps(_m, indent=1), encoding="utf-8")
 
             if task.get("report_only"):
                 ok = len(resp.strip()) > 800

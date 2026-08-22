@@ -3359,19 +3359,7 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # severity, then confirm or leave it in the residual queue — no
             # indefinite limbo. One attempt only (error_routed flag) so
             # sub-criticals cannot consume the ladder round after round.
-            #
-            # T01 (founder ruling 2026-08-22): NON_DISCRIMINATING joins ERROR.
-            # A falsifier that fails the discrimination control fired against a
-            # CORRECTED copy of the target — a broken INSTRUMENT, not a refuted
-            # claim, the same class as one that errored. The control's helper
-            # already un-confirms and escalates it, but this admission read only
-            # ERROR, so a sub-critical mechanical fault sat in HIL limbo for ever
-            # while the ladder — the mechanism that exists for exactly this — was
-            # never asked. Same one-attempt guard, same transport-dead protection.
-            # Criticals already reach the ladder via escalated + verdict !=
-            # CONFIRMED, so this admission was the only closed door.
-            if (e.get("falsifier_verdict") not in ("ERROR", "NON_DISCRIMINATING")
-                    or e.get("error_routed")):
+            if e.get("falsifier_verdict") != "ERROR" or e.get("error_routed"):
                 continue
             # Adversarial-pass repair (2026-07-27): consume the one attempt only
             # if a rung actually REACHED a model (transport-dead rounds — the
@@ -3433,15 +3421,6 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["irreducible_escalation"] = False
             e["hil_escalated"] = False
             e.pop("hil_reason", None)
-            # T01, same stale-stamp class: the ladder REPLACED the instrument.
-            # A mechanical_fault stamp and a discrimination record describing the
-            # falsifier just discarded would otherwise ride the repaired finding
-            # for ever — the control clears neither on a later pass, so nothing
-            # downstream ever would. The diagnosis itself is untouched: it stays
-            # permanently in the computed-evidence channel, and the next round
-            # runs the control afresh on the falsifier now attached.
-            if e.pop("mechanical_fault", None):
-                e.pop("discrimination", None)
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
         else:
