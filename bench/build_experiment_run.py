@@ -63,7 +63,7 @@ LADDER = [
     [("fable", "fable", "claude_cli")],
 ]
 
-SYSTEM = (
+_SYSTEM_TEMPLATE = (
     "You are fixing defects in CDSFL, a research framework that uses structured "
     "Popperian falsification and a multi-model panel to find defects in STEM artefacts. "
     "Biological component names (B-Cell, immune pipeline, NK cell, macrophage, ouroboros) "
@@ -81,9 +81,7 @@ SYSTEM = (
     "two-sidedness is deliberate: this project's falsifier gate accepts a falsifier merely "
     "for FIRING, which is why `reverify_falsifier(\"print('FALSIFIED')\")` returns "
     "CONFIRMED and why half its archived confirmations cannot be demonstrated.\n\n"
-    "USE YOUR TOOLS. Read the files named in the task before writing anything. Run the "
-    "existing tests. Check a claim rather than asserting it -- the standard here is TOOLS "
-    "DECIDE, NOT VOTES, and it applies to you.\n\n"
+    "{TOOLS_PARAGRAPH}"
     "REQUIRED OUTPUT FORMAT, exactly:\n\n"
     "<<<< SEARCH path/to/file.py\n<the exact existing text, copied verbatim>\n"
     "==== REPLACE\n<the replacement text>\n>>>>\n\n"
@@ -95,6 +93,27 @@ SYSTEM = (
     "already does that for its memory ledger and its qc checks.\n\n"
     "Do not pad. The founder is dyslexic and reads every word."
 )
+
+# TWO VARIANTS, because the routes differ. Sending one SYSTEM to every route is the
+# defect recorded on 2026-08-19 in bench/confer_enforcement_ds_retry.py and
+# reintroduced here on 2026-08-22: DeepSeek has no tool loop on its API route, read
+# "USE YOUR TOOLS", and hallucinated a <tool_calls> block instead of answering.
+_TOOLS_YES = (
+    "USE YOUR TOOLS, AND USE grep FIRST. bench/reference_runner_v2.py is 10,510 lines "
+    "and 527,304 characters; read_file returns at most 24,000 characters, so paging it "
+    "whole would exhaust your budget before you reach the code. grep for the symbol "
+    "named in the task, then read_file the surrounding 200 lines. Run the existing "
+    "tests. Check a claim rather than asserting it -- the standard here is TOOLS DECIDE, "
+    "NOT VOTES, and it applies to you.\n\n")
+_TOOLS_NO = (
+    "YOU HAVE NO TOOLS ON THIS ROUTE. Do not emit tool calls; they will not execute and "
+    "a response that is mostly a tool-call block is discarded. Work from the task text, "
+    "and say plainly where you would need to read a file you have not been given.\n\n")
+
+SYSTEM_TOOLS = _SYSTEM_TEMPLATE.replace("{TOOLS_PARAGRAPH}", _TOOLS_YES)
+SYSTEM_NOTOOLS = _SYSTEM_TEMPLATE.replace("{TOOLS_PARAGRAPH}", _TOOLS_NO)
+assert "{TOOLS_PARAGRAPH}" not in SYSTEM_TOOLS and "grep FIRST" in SYSTEM_TOOLS
+assert "NO TOOLS ON THIS ROUTE" in SYSTEM_NOTOOLS
 
 
 def _cy(msg: str) -> None:
@@ -119,12 +138,16 @@ def _prompt(task: dict) -> str:
 
 
 def dispatch(tag: str, model_id: str, route: str, prompt: str, timeout: int = 1800) -> str:
-    if route == "claude_cli":
-        return call_claude_cli(model_id, SYSTEM, prompt, timeout=timeout, max_retries=2) or ""
-    if route == "deepseek":
-        return call_deepseek(model_id, SYSTEM, prompt) or ""
-    return call_openrouter(model_id, SYSTEM, prompt, tools=TOOLS.TOOL_SPECS,
-                           tool_executor=TOOLS.execute, max_tool_iters=8) or ""
+    if route == "claude_cli":                       # native tools via the Claude CLI
+        return call_claude_cli(model_id, SYSTEM_TOOLS, prompt,
+                               timeout=timeout, max_retries=2) or ""
+    if route == "deepseek":                         # NO tool loop on this route
+        return call_deepseek(model_id, SYSTEM_NOTOOLS, prompt) or ""
+    # 30, not 8. Measured: the target file needs 22 read_file calls at the 24,000-char
+    # cap, so a budget of 8 cannot reach the code the task names. ChatGPT said exactly
+    # that and was right.
+    return call_openrouter(model_id, SYSTEM_TOOLS, prompt, tools=TOOLS.TOOL_SPECS,
+                           tool_executor=TOOLS.execute, max_tool_iters=30) or ""
 
 
 def main() -> int:
@@ -171,6 +194,13 @@ def main() -> int:
                     break
                 continue
 
+            if resp.count("<invoke") or resp.strip().startswith("<tool_calls>"):
+                _cy(f"[{task['id']}] {tag} emitted a TOOL-CALL BLOCK, not an answer — "
+                    f"CONFIGURATION failure, not a model failure")
+                rec["attempts"].append({"rung": rung_i + 1, "model": tag, "elapsed_s": el,
+                                        "chars": len(resp),
+                                        "outcome": "CONFIG_ERROR_TOOLCALL_BLOCK"})
+                continue
             _cy(f"[{task['id']}] {tag} returned {len(resp)} chars in {el}s — evaluating")
             v = BA.evaluate(resp, parent=parent)
             _cy(f"[{task['id']}] {tag} -> {v.outcome}  {v.detail}")

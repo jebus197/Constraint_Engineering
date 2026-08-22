@@ -3359,7 +3359,19 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # severity, then confirm or leave it in the residual queue — no
             # indefinite limbo. One attempt only (error_routed flag) so
             # sub-criticals cannot consume the ladder round after round.
-            if e.get("falsifier_verdict") != "ERROR" or e.get("error_routed"):
+            #
+            # T01 (founder ruling 2026-08-22): NON_DISCRIMINATING joins ERROR.
+            # A falsifier that fails the discrimination control fired against
+            # a CORRECTED copy — a broken INSTRUMENT, not a refuted claim, the
+            # same class as a falsifier that errored. The control's helper
+            # already un-confirms and escalates it, but this admission read
+            # only ERROR, so a sub-critical mechanical fault sat in HIL limbo
+            # for ever while the ladder — the mechanism that exists exactly
+            # for un-demonstrated findings — never saw it. Same one-attempt
+            # guard, same transport-dead protection. (Criticals already fall
+            # through to the ladder via escalated + verdict != CONFIRMED.)
+            if (e.get("falsifier_verdict") not in ("ERROR", "NON_DISCRIMINATING")
+                    or e.get("error_routed")):
                 continue
             # Adversarial-pass repair (2026-07-27): consume the one attempt only
             # if a rung actually REACHED a model (transport-dead rounds — the
