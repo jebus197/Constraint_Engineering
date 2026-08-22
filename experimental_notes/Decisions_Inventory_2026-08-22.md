@@ -156,3 +156,60 @@ Nothing is built and nothing is run until list one is answered. The nine items a
 Once those are answered, the order is the instrument inventory first, because it is the thing that ends the cycle of discovering problems one at a time, and then the fix experiment.
 
 Written under CDSFL note standard v1.4 (13 August 2026, Rule 24 added 16 August).
+
+---
+
+# FOUNDER RULINGS, 22 August 2026
+
+Recorded verbatim in effect. Three of the nine changed shape under the founder's
+questions, and one of CC1's recommendations was reversed by them and is withdrawn.
+
+| # | ruling | note |
+|---|---|---|
+| 1 | **Use the mechanism that already exists** — retry, escalate to a stronger model, then HIL | **The founder is right and CC1 proposed a parallel mechanism.** `_apply_routing` (`reference_runner_v2.py:3279`) already routes a failed critical up a ladder of progressively stronger writers, excluding the failed source model, with `reverify_falsifier` deciding. Only its TRIGGER needs changing: it fires on `escalated=True AND not CONFIRMED`, and a falsifier that fails discrimination is CONFIRMED, so it never reaches the ladder today. One condition, not a new component. |
+| 2 | **Counts as unresolved, escalated to HIL** | taken as stated |
+| 3 | **Re-routed, not answered.** The founder's framing supersedes the question: tool-undecidable pairs are irreducible HIL items and belong in the normal guarded queue, severity-filtered, arriving a few at a time | the ask for a 30-pair sitting is **withdrawn** |
+| 4 | **Keep 0.7** | taken as stated |
+| 5 | **Redesign exp50/51 AFTER the build experiment**, with every fix it uncovers in place too | later than CC1 proposed, and better sequenced |
+| 6 | **SHELVE the load balancer, do not retire it.** Mark it clearly in the docs until more eyes are on it | founder's reason: avoid widening the error surface by deleting rather than quarantining. **Distinct from the routing ladder** — the founder flagged the ambiguity and was right; `dynamic_management.py` is not `bench/routing.py` |
+| 7 | **CC1's recommendation is WITHDRAWN.** The ledger should be WIRED, not the claim withdrawn | `SurvivedFalsificationLedger` in `bench/evidence.py`, built 2026-08-08 with a full test suite, verified NOT read by the runner. It records that a claim was TESTED AND STOOD, closing the gap where a clean zero-plant control produces an ABSENCE indistinguishable from a dispatch failure. Small, tested, and it closes exactly the gap the founder's own scientific-method anchor cares about |
+| 8 | Explained; hold stands | signing = freezing what will be measured and what would refute it, before the run. Not signing costs nothing; the exp46 re-run is already held |
+| 9 | Deferred | **clarified: no signature and no publication is involved.** Quote the values in `.env`; revoke and reissue one Zenodo API token printed into an error on 19 August |
+
+## The archive re-grade, defined
+
+For each of the 263 findings tested on 22 August, record whether its falsifier was
+**demonstrated** (fires on the accused defect, silent on its repair, still firing
+through eight unrelated edits) or merely **asserted**. Written as sidecar files;
+no archived run report is modified, per the 2026-07-29 standing rule. The archive
+stops saying "CONFIRMED" uniformly and starts distinguishing the 132 that earned it
+from the 131 that did not. **It is labelling, not deleting.**
+
+## The perturbation instrument: the settled design, and its honest status
+
+Two halves of one instrument, and either alone is defeatable.
+
+**Null half.** Change something the finding does NOT accuse; the falsifier must not
+move. Built as `scripts/null_perturbation_control.py`. Run once, 21 August: 397
+findings, 360 fired, 0 moved on either an appended comment or an unaccused function
+rename.
+
+**Discrimination half.** Repair what it DOES accuse; the falsifier must go quiet.
+`run_discrimination_control` in the runner, eight outcomes and three self-probes.
+
+**THE FOUNDER'S FEAR IS CORRECT AS OF THIS ENTRY.** The null half is a standalone
+script that has never affected an experiment. The discrimination half is in the
+runner and **has never fired once**, because it waits on a corrected copy that
+nothing supplies. Both are, right now, exactly the "built but never wired" pattern
+that is the headline finding of this whole investigation.
+
+What changed on 22 August is that the missing input was shown to already exist: the
+finding's own `proposed_fix`, which applied cleanly to 367 of 437 archived findings.
+Wiring it is small, and it happens as part of ruling 1 rather than as another shelf
+item.
+
+## Standing
+
+**"Built but never wired", "never affected a single experiment", "discussed but
+never implemented" is the pattern.** The instrument inventory is the instrument that
+makes it countable, and it is the next thing built.
