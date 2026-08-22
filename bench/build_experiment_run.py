@@ -28,8 +28,10 @@ import argparse
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -48,7 +50,7 @@ if _env.is_file():                       # parse, never source: zsh executes val
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
 from experiment_11_orchestrator import (call_claude_cli, call_deepseek,  # noqa: E402
-                                        call_openrouter)
+                                        call_openrouter, set_panel_cwd)
 import build_experiment_tools as TOOLS                                   # noqa: E402
 from build_experiment_tasks import TASKS                                 # noqa: E402
 from bench import build_acceptance as BA                                 # noqa: E402
@@ -131,16 +133,45 @@ def _prompt(task: dict) -> str:
     if task.get("report_only"):
         p += ["## NOTE", "This task accepts a REPORT rather than a patch. Run the "
               "components, report what they did, and name what you could not verify.", ""]
-    p += ["## Repository", f"{REPO}", "",
+    p += ["## Repository",
+          "Your working directory is a DISPOSABLE COPY of the repository at the "
+          "commit under test. Read it and run tests in it freely. Anything you write "
+          "there is discarded -- the only thing that leaves this session is the patch "
+          "and test you return in the required format below.", "",
           "Read before you write. Run the existing tests. Then produce the patch and the "
           "test in the required format."]
     return "\n".join(p)
 
 
-def dispatch(tag: str, model_id: str, route: str, prompt: str, timeout: int = 1800) -> str:
-    if route == "claude_cli":                       # native tools via the Claude CLI
-        return call_claude_cli(model_id, SYSTEM_TOOLS, prompt,
-                               timeout=timeout, max_retries=2) or ""
+def dispatch(tag: str, model_id: str, route: str, prompt: str, timeout: int = 1800,
+             parent: str = "HEAD") -> str:
+    if route == "claude_cli":
+        # SANDBOXED. The Claude CLI route grants Bash, and BASH IS A SUPERSET OF
+        # WRITE. On 2026-08-22 a model working T01 edited bench/reference_runner_v2.py
+        # in the live tree instead of returning a patch, and a blanket `git add -A`
+        # committed 157 lines of unreviewed, ungated code under a commit message that
+        # did not mention it. The 2026-07-29 ruling "remove Write/Edit from panel
+        # dispatch" was verified DONE by checking --allowedTools for Write and Edit;
+        # Bash was left in place and defeats it.
+        #
+        # set_panel_cwd() already existed for exactly this and had never been called
+        # by any dispatch in this project. Its own docstring: "failing open here would
+        # put the panel back in the repo, which is the exposure this exists to close."
+        # The model gets a full disposable worktree: reads work, writes cannot escape.
+        wt = pathlib.Path(tempfile.mkdtemp(prefix="cdsfl_panel_")) / "repo"
+        try:
+            rc = subprocess.run(["git", "worktree", "add", "--detach", str(wt), parent],
+                                cwd=str(REPO), capture_output=True, text=True).returncode
+            if rc != 0:
+                raise RuntimeError("could not create the panel sandbox worktree")
+            set_panel_cwd(str(wt))
+            return call_claude_cli(model_id, SYSTEM_TOOLS, prompt,
+                                   timeout=timeout, max_retries=2) or ""
+        finally:
+            set_panel_cwd(None)
+            subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
+                           cwd=str(REPO), capture_output=True)
+            shutil.rmtree(wt.parent, ignore_errors=True)
     if route == "deepseek":                         # NO tool loop on this route
         return call_deepseek(model_id, SYSTEM_NOTOOLS, prompt) or ""
     # 30, not 8. Measured: the target file needs 22 read_file calls at the 24,000-char
@@ -173,7 +204,7 @@ def main() -> int:
             _cy(f"[{task['id']}] rung {rung_i+1}: dispatching to {tag}")
             t0 = time.time()
             try:
-                resp = dispatch(tag, model_id, route, prompt)
+                resp = dispatch(tag, model_id, route, prompt, parent=parent)
             except Exception as exc:                     # noqa: BLE001
                 _cy(f"[{task['id']}] {tag} DISPATCH ERROR {type(exc).__name__}: {exc}")
                 rec["attempts"].append({"rung": rung_i + 1, "model": tag,
