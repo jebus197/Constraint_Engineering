@@ -1,5 +1,36 @@
 # THE RUNWAY — where we are, what is left, what each step costs
 
+**★★★ EVERYTHING IS ON HOLD PENDING NINE FOUNDER DECISIONS, 2026-08-22 03:47 BST.**
+**The list is `experimental_notes/Decisions_Inventory_2026-08-22.md` (+ Desktop TTS).**
+**Nothing is built and nothing is run until it is answered. This supersedes every
+ordering below, including the one written two hours earlier on this same page.**
+
+The nine, with the recommendation carried here so a recovering agent does not have
+to open the file to know what is pending:
+
+| # | decision | recommendation | blocks |
+|---|---|---|---|
+| 1 | discrimination gate: **block / label / retry** | **retry then block** — a filter that only subtracts turns a quality problem into a volume problem; iteration is recorded as load-bearing | the fix experiment and every future run |
+| 2 | does a finding reclassified **equipment error** stop counting? | **counts as UNRESOLVED** — otherwise a run looks more converged the more its instruments fail | any future run |
+| 3 | the **133 similarity pairs**: 33 machine-settled both ways, **100 still need a human** | a **stratified sample of 30**, ~1 hour, not all 100 | any claim about dedup quality |
+| 4 | the **critical-severity threshold, 0.7** | **keep it**, and cite the frozen pre-registration from the live queue, which does not mention it | nothing now; a future agent could move the float blind |
+| 5 | **exp50/51**: redesign before running? | **redesign** — same TRUE/FALSE pairing that contaminated exp48/49 | exp50 and exp51 |
+| 6 | the **load balancer** | **retire** — never ran outside its own tests, reports impossible allocations as successes, self-description false 4.5 months | nothing |
+| 7 | the **survived-falsification ledger** — verified NOT read by the runner | **withdraw the claim it exists** | nothing; records accuracy |
+| 8 | the **exp46 pre-registration** draft | **do not sign** — it predates the discrimination result it must account for | the exp46 re-run, already held |
+| 9 | **`.env` quoting + Zenodo token rotation** | needs the founder's own hands; open 3 days | nothing technical |
+
+**PROCEEDING ON ONE ASSUMPTION unless told otherwise:** the archive re-grade writes
+SIDECARS and modifies no archived report, per the 2026-07-29 standing rule that a
+fold-forward never alters a completed experiment's record.
+
+**AFTER the nine are answered, the order is: (a) the INSTRUMENT INVENTORY — ~17
+components emit a number or a verdict and nobody has ever listed them or recorded
+which are commissioned; this is what converts an apparently endless defect stream
+into a finite burndown — then (b) the fix experiment.**
+
+---
+
 **★★ THE DISCRIMINATION CONTROL HAS BEEN RUN, 2026-08-22 03:05 BST. THE RESULT IS
 THE MOST IMPORTANT NUMBER THIS PROJECT HAS. READ THIS FIRST.**
 
