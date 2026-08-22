@@ -23,12 +23,16 @@ MAX_CHARS = 24_000
 TOOL_SPECS = [
     {"type": "function", "function": {
         "name": "read_file",
-        "description": "Read a UTF-8 text file from the repository. Returns the file "
-                       "with 1-based line numbers so you can cite them.",
+        "description": "Read a UTF-8 text file from the repository. Returns the RAW "
+                       "text, byte for byte, so anything you copy from it can be used "
+                       "verbatim in a SEARCH block. Pass numbered=true only if you want "
+                       "line numbers to cite a location -- numbered output must NEVER be "
+                       "pasted into a SEARCH block.",
         "parameters": {"type": "object", "properties": {
             "path": {"type": "string", "description": "repo-relative path"},
             "start": {"type": "integer", "description": "first line, 1-based (optional)"},
-            "end": {"type": "integer", "description": "last line, inclusive (optional)"}},
+            "end": {"type": "integer", "description": "last line, inclusive (optional)"},
+            "numbered": {"type": "boolean", "description": "prefix line numbers (default false)"}},
             "required": ["path"]}}},
     {"type": "function", "function": {
         "name": "grep",
@@ -84,7 +88,14 @@ def execute(name: str, args: dict) -> str:
             s = int(args.get("start") or 1)
             e = int(args.get("end") or len(lines))
             s, e = max(1, s), min(len(lines), e)
-            return _clip("\n".join(f"{i:>6}  {lines[i-1]}" for i in range(s, e + 1)))
+            sel = lines[s - 1:e]
+            if args.get("numbered"):
+                # OPT-IN ONLY. This was the DEFAULT until 2026-08-22 and it made a
+                # verbatim SEARCH block impossible: Codex stripped the digits, kept the
+                # two-space separator, and every line it returned carried +2 indentation.
+                # The rejection rendered as a model failure and was a harness failure.
+                return _clip("\n".join(f"{i:>6}  {ln}" for i, ln in enumerate(sel, s)))
+            return _clip("\n".join(sel))
 
         if name == "grep":
             target = str(_safe(args.get("path") or "."))

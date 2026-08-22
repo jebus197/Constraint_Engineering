@@ -104,7 +104,10 @@ _TOOLS_YES = (
     "USE YOUR TOOLS, AND USE grep FIRST. bench/reference_runner_v2.py is 10,510 lines "
     "and 527,304 characters; read_file returns at most 24,000 characters, so paging it "
     "whole would exhaust your budget before you reach the code. grep for the symbol "
-    "named in the task, then read_file the surrounding 200 lines. Run the existing "
+    "named in the task, then read_file the surrounding 200 lines -- read_file returns "
+    "RAW text, so what you copy from it can go straight into a SEARCH block byte for "
+    "byte. Never paste numbered output (numbered=true) into a SEARCH block. Run the "
+    "existing "
     "tests. Check a claim rather than asserting it -- the standard here is TOOLS DECIDE, "
     "NOT VOTES, and it applies to you.\n\n")
 _TOOLS_NO = (
