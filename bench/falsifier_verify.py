@@ -825,6 +825,7 @@ def execute_python(
     code: str,
     repo_root: str | None = None,
     timeout: int = DEFAULT_TIMEOUT,
+    cwd: str | None = None,
 ) -> str:
     """Run a Python snippet in the sandbox and return combined stdout/stderr.
 
@@ -859,10 +860,33 @@ def execute_python(
     # the repo so relative-path writes from the snippet cannot touch the tree.
     # A second temp dir carries the generated observer (layer 4).
     with tempfile.TemporaryDirectory(prefix="cdsfl_obs_") as obs_dir, \
-            tempfile.TemporaryDirectory(prefix="cdsfl_falsifier_") as tmp_cwd:
+            tempfile.TemporaryDirectory(prefix="cdsfl_falsifier_") as _scratch:
+        # WORKING DIRECTORY. Default: a throwaway scratch dir, which is the
+        # isolation this sandbox has always had. `cwd` overrides it, and ONLY the
+        # discrimination control passes it.
+        #
+        # WHY IT EXISTS (measured, Exp 55, 2026-08-23). A falsifier that reads its
+        # target by a RELATIVE path -- Path("bench/.../target.md") -- resolves that
+        # against the scratch dir, where nothing exists. `_retarget_falsifier`
+        # rewrites only ABSOLUTE repo paths, so a relative reader could never be
+        # redirected into the control's overlay. Every discrimination record in
+        # Exp 55 came back INDETERMINATE_NOT_INTERCEPTED, twice, across two runs.
+        # Two causes were rendering alike: this one (ours) and genuinely detached
+        # falsifiers (the model's).
+        #
+        # RESIDUAL RISK, STATED RATHER THAN GLOSSED. The overlay is built from
+        # SYMLINKS to the real repository. The audit observer confines access to
+        # the declared roots by PATH STRING, so a write to a relative path landing
+        # on a symlink inside the overlay would follow it into the real tree. That
+        # is no worse than the status quo -- an absolute-path falsifier is already
+        # retargeted into the same overlay -- but "no worse" is not "safe", and a
+        # falsifier has no business writing anything. Flagged for a founder ruling
+        # rather than decided here.
+        tmp_cwd = cwd or _scratch
+        _snippet_dir = _scratch   # never write the snippet into a symlink tree
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
-            "w", suffix=".py", dir=tmp_cwd, delete=False, encoding="utf-8"
+            "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
         )
         try:
             fh.write(code)
@@ -1041,6 +1065,7 @@ def reverify_falsifier(
     falsifier_code: str,
     repo_root: str | None = None,
     timeout: int = DEFAULT_TIMEOUT,
+    cwd: str | None = None,
 ) -> str:
     """Independently re-run a model-attached falsifier and decide the verdict.
 
@@ -1093,10 +1118,19 @@ def reverify_falsifier(
         _announce_rejection("reverify_falsifier", violations, falsifier_code)
         return INTEGRITY_VIOLATION
     with tempfile.TemporaryDirectory(prefix="cdsfl_obs_") as obs_dir, \
-            tempfile.TemporaryDirectory(prefix="cdsfl_reverify_") as tmp_cwd:
+            tempfile.TemporaryDirectory(prefix="cdsfl_reverify_") as _scratch:
+        # See execute_python for why `cwd` exists and what its residual risk is.
+        # Default is the throwaway scratch dir -- unchanged behaviour on every
+        # existing call site. Only the discrimination control passes it, so that a
+        # falsifier reading its target by a RELATIVE path resolves inside the
+        # control's overlay rather than into an empty scratch directory.
+        tmp_cwd = cwd or _scratch
+        # The snippet still lives in the scratch dir, never in the overlay: writing
+        # it into a symlink tree would put a stray .py file in the real repository.
+        _snippet_dir = _scratch
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
-            "w", suffix=".py", dir=tmp_cwd, delete=False, encoding="utf-8"
+            "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
         )
         try:
             fh.write(falsifier_code)

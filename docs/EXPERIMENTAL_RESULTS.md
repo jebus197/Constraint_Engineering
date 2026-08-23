@@ -2004,6 +2004,58 @@ This is the narrowest margin in the record: γ_crit 0.3357 against a threshold o
 
 Same reproducibility limitation as Experiment 48: the target lives outside the repository.
 
+### Experiment 55: The v3 Control
+
+**Run directory:** `bench/logs/exp55_v3_control_20260823T144624Z`
+**Window:** 2026-08-23 14:46 → 15:04 UTC, 19 min
+**Target:** `bench/cdsfl_registry/targets/control_two_distinct_defects.md` · **Domain:** engineering · **Rounds:** 1 of 6
+
+**Outcome: HALTED, NOT CONVERGED.** `convergence_reason`, verbatim:
+`HALTED_IRREDUCIBLE_QUEUE_ALARM`. Six criticals locked as irreducible against a
+bound of two, at round 0.
+
+**The alarm diagnosed itself, and it was right.** Its own text: *"Genuinely
+irreducible criticals are rare, so a queue this size is overwhelmingly a MECHANICAL
+failure — routing, dedup, or **a gate that cannot speak to this target** —
+presenting as irreducibility."* That is the same conclusion reached independently by
+reading the round-0 falsifiers. It also refused the suppression in advance: *"Do NOT
+raise max_irreducible_queue to clear this — that is how the same alarm was
+suppressed twice on 2026-08-01 while it was right."*
+
+**Findings:** 10 raw, 10 canonical. Final spread: 2 CONFIRMED, 8 UNCONFIRMED.
+Sweep: 0 cleared, 2 withdrawn, 8 remaining. **Gamma:** γ_crit 0.000.
+Routing ladder ran and resolved nothing: 0 resolved, 0 dedup'd, 8 → HIL.
+
+**First run of the v3 runner**, and the first on a target whose correctness is a
+property of its generator rather than of adjudication. Both planted defects were
+verified symbolically with SymPy before the run. The answer key was split out of the
+target the same day, after it was found stating its own ground truth inside the file
+the runner reads whole and places in the panel prompt.
+
+**Against the five pre-registered predictions, frozen in the config before launch:**
+
+| # | prediction | result |
+|---|---|---|
+| 1 | the discrimination control fires at least once | **MET** — 2 records, the first in the project's history. But both `INDETERMINATE_NOT_INTERCEPTED`, so it decided nothing |
+| 2 | the panel raises findings against CT-01 and CT-02 | **MET** — 5 findings cite CT-01, 5 cite CT-02, including the hard case whose conclusion is true |
+| 3 | counterfactual repair returns DIFFERENT if sound, SAME if degenerate | **NOT REACHED** — no pair was adjudicated, because nothing was confirmed on both sides |
+| 4 | CORROBORATED appears; aliases exceed 1.00 per finding | **PARTIAL** — aliases reached **1.10**, the first time above 1.00 in 566+ findings, and one co-discovery record was written. But it is Gemini with Gemini: a SAME-model duplicate, not cross-model co-discovery. No CORROBORATED status was written |
+| 5 | the survival ledger records at least one row | **NOT MET** — zero falsifiers were REFUTED, and the ledger records survivals only. Nothing survived because nothing was tested to destruction |
+
+**Why prediction 1 met the letter and not the substance.** Every falsifier reaching
+CONFIRMED was uncontrollable, for two distinct reasons that the control reported
+identically: relative-path readers, which the overlay could not redirect because
+`_retarget_falsifier` rewrites only absolute paths (a harness limit, fixed the same
+day); and detached falsifiers, which reimplement the reasoning and never open the
+document at all (the same class as Exp 48/49, both prose targets).
+
+**What the run establishes.** The prose anchor fallback works — 10 of 10 corrected
+copies derived, against 0 of 10 before it, reproduced across two runs. The
+discrimination control fires and, when it cannot decide, refuses and says why rather
+than concluding. The finding catalogue writes 10 machine-readable records in which
+**every single status was adjudicated by `tool`, none by model attestation** — the
+founding principle made auditable per record for the first time.
+
 ### What the back-fill shows, taken together
 
 Of the 29 runs recorded in this section, **11 converged and 18 did not.** A record that had listed only the convergences would have described a very different system from the one that ran.

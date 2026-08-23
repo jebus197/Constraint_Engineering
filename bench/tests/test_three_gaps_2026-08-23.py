@@ -247,3 +247,55 @@ def test_a_co_discovery_failure_is_logged_LOUDLY_not_swallowed():
            / "reference_runner_v2.py").read_text(encoding="utf-8")
     i = src.index("[co-discovery] recording failed")
     assert "_log(" in src[i - 200:i], "the failure path does not log"
+
+
+class TestRelativePathFalsifiersReachTheOverlay:
+    """Exp 55, measured twice: EVERY discrimination record came back
+    INDETERMINATE_NOT_INTERCEPTED, because a falsifier reading its target by a
+    RELATIVE path resolved it against a throwaway scratch dir where nothing
+    exists. `_retarget_falsifier` rewrites only ABSOLUTE repo paths.
+    """
+
+    CODE = ('from pathlib import Path\n'
+            'p = Path("bench/cdsfl_registry/targets/control_two_distinct_defects.md")\n'
+            'print("EXISTS" if p.exists() else "MISSING")\n')
+
+    def test_without_cwd_a_relative_reader_finds_nothing(self):
+        from bench.falsifier_verify import execute_python
+        assert "MISSING" in execute_python(self.CODE, repo_root=".")
+
+    def test_with_cwd_at_the_overlay_it_reads_the_REPLACED_target(self):
+        import shutil
+        from bench.falsifier_verify import execute_python
+        from bench.reference_runner_v2 import (REPO_ROOT,
+                                               _build_discrimination_overlay)
+        tgt = "bench/cdsfl_registry/targets/control_two_distinct_defects.md"
+        root = _build_discrimination_overlay(REPO_ROOT, tgt, "# REPLACED\n")
+        try:
+            out = execute_python(self.CODE, repo_root=str(root), cwd=str(root))
+            assert "EXISTS" in out
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+    def test_the_snippet_is_never_written_into_the_overlay(self):
+        """The overlay is a SYMLINK TREE. A stray .py written into it could land
+        in the real repository, so the snippet stays in the scratch dir."""
+        src = (pathlib.Path(__file__).resolve().parents[1]
+               / "falsifier_verify.py").read_text(encoding="utf-8")
+        assert src.count("dir=_snippet_dir") == 2, "both exec paths must use it"
+        assert "_snippet_dir = _scratch" in src
+
+    def test_the_control_passes_cwd_at_every_execution_site(self):
+        src = (pathlib.Path(__file__).resolve().parents[1]
+               / "reference_runner_v2.py").read_text(encoding="utf-8")
+        # Scoped to run_discrimination_control, NOT the whole file: `cwd=str(` also
+        # appears at two unrelated pre-existing sandbox call sites, and a file-wide
+        # count would silently pass on the wrong five. Measured, not guessed -- a
+        # first version of this assertion guessed 5 file-wide and was wrong.
+        i = src.index("def run_discrimination_control")
+        j = src.index("\ndef ", i + 10)
+        body = src[i:j]
+        assert body.count("cwd=str(") == 5, (
+            f"the control has five execution sites -- baseline, two determinism "
+            f"probes, the tripwire and the corrected run -- and {body.count('cwd=str(')} "
+            f"are redirected. A partial interception is silently partial")

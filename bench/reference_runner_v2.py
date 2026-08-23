@@ -3509,7 +3509,7 @@ def run_discrimination_control(
         real_code, nsub = _retarget_falsifier(fcode, root, real_overlay)
         rec["retarget_substitutions"] = nsub
         rec["baseline_verdict"] = reverify_falsifier(
-            real_code, repo_root=str(real_overlay), **kwargs)
+            real_code, repo_root=str(real_overlay), cwd=str(real_overlay), **kwargs)
         if rec["baseline_verdict"] != "CONFIRMED":
             rec["outcome"] = DISC_BASELINE
             rec["detail"] = (
@@ -3521,8 +3521,8 @@ def run_discrimination_control(
 
         # 2. DETERMINISM. A comparison-based control is meaningless on a
         #    falsifier whose output varies between identical runs.
-        probe_a = execute_python(real_code, repo_root=str(real_overlay), **kwargs)
-        probe_a2 = execute_python(real_code, repo_root=str(real_overlay), **kwargs)
+        probe_a = execute_python(real_code, repo_root=str(real_overlay), cwd=str(real_overlay), **kwargs)
+        probe_a2 = execute_python(real_code, repo_root=str(real_overlay), cwd=str(real_overlay), **kwargs)
         norm_a = _normalise_probe_output(probe_a, (real_overlay, root))
         rec["deterministic"] = (
             norm_a == _normalise_probe_output(probe_a2, (real_overlay, root)))
@@ -3549,7 +3549,7 @@ def run_discrimination_control(
             return rec
         overlays.append(trip_overlay)
         trip_code, _ = _retarget_falsifier(fcode, root, trip_overlay)
-        probe_b = execute_python(trip_code, repo_root=str(trip_overlay), **kwargs)
+        probe_b = execute_python(trip_code, repo_root=str(trip_overlay), cwd=str(trip_overlay), **kwargs)
         norm_b = _normalise_probe_output(probe_b, (trip_overlay, root))
         rec["intercepted"] = (norm_b != norm_a)
         if not rec["intercepted"]:
@@ -3572,7 +3572,7 @@ def run_discrimination_control(
         overlays.append(corr_overlay)
         corr_code, _ = _retarget_falsifier(fcode, root, corr_overlay)
         rec["corrected_verdict"] = reverify_falsifier(
-            corr_code, repo_root=str(corr_overlay), **kwargs)
+            corr_code, repo_root=str(corr_overlay), cwd=str(corr_overlay), **kwargs)
 
         if rec["corrected_verdict"] == "REFUTED":
             rec["outcome"] = DISC_PASSED
