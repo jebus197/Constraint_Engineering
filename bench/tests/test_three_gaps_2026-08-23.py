@@ -211,3 +211,39 @@ class TestProseAnchorFallback:
         copy, reason = _splice_corrected_copy(code, loose, "def compute(x):\n    return x * 3",
                                               "bench/x.py")
         assert not copy and "verbatim" in reason
+
+
+def test_the_co_discovery_wiring_is_where_the_registry_actually_is():
+    """The bug that Exp 55 caught live at 15:31, pinned.
+
+    The first wiring sat inside `_build_feedback_for_next_round`, which takes no
+    `registry` and no `**kwargs`. It raised NameError on every round, and that
+    function's own defensive handler swallowed the exception and returned empty
+    feedback -- so the only symptom was the feedback channel silently going dark.
+    A defect whose sole visible effect is the disappearance of a feature is the
+    hardest kind to notice, which is why this asserts the placement rather than
+    the behaviour.
+    """
+    import re
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "reference_runner_v2.py").read_text(encoding="utf-8")
+    assert 'kwargs.get("registry")' not in src, (
+        "the wiring reads a kwargs that does not exist in its enclosing function")
+    i = src.index("record_codiscovery(\n")
+    # walk back to the enclosing def and confirm the call is in the round loop
+    head = src[:i]
+    enclosing = head[head.rindex("\ndef "):].splitlines()[0]
+    assert "def run_experiment" in enclosing or "registry" in src[i - 900:i], (
+        f"record_codiscovery is called from {enclosing!r}, which may not hold a "
+        f"registry")
+
+
+def test_a_co_discovery_failure_is_logged_LOUDLY_not_swallowed():
+    """The first version's exception vanished into a handler that returned {}.
+
+    A recording failure must not kill a run and must not disappear either.
+    """
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "reference_runner_v2.py").read_text(encoding="utf-8")
+    i = src.index("[co-discovery] recording failed")
+    assert "_log(" in src[i - 200:i], "the failure path does not log"

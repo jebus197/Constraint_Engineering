@@ -6737,25 +6737,6 @@ def _build_feedback_for_next_round(
                      triaged.duplicate_of,
                      float(getattr(triaged, "similarity", 0.0))),
                 )
-                # CO-DISCOVERY, RECORDED 2026-08-23. The immune pipeline already
-                # knows two findings are the same defect; until now that knowledge
-                # died here, and `source_aliases` stayed at exactly 1.00 per
-                # finding across all 566 in the modern arc. Recording it costs
-                # nothing and changes nothing: registration, the novelty count and
-                # therefore gamma are all untouched. See
-                # FindingRegistry.record_codiscovery for why that separation is
-                # deliberate rather than timid.
-                _reg = locals().get("registry") or kwargs.get("registry")
-                if _reg is not None:
-                    _cid = _reg.lookup_alias(
-                        getattr(triaged.finding, "model_id", ""),
-                        triaged.duplicate_of) or triaged.duplicate_of
-                    if _cid in getattr(_reg, "entries", {}):
-                        _reg.record_codiscovery(
-                            _cid,
-                            getattr(triaged.finding, "model_id", "?"),
-                            triaged.finding.finding_id,
-                            float(getattr(triaged, "similarity", 0.0)))
 
         # Parse admissibility blocks from each model's raw response. The
         # parser is permissive (see bench/dm/_feedback.py) — missing blocks
@@ -10211,6 +10192,35 @@ def run_experiment(
                 canonical = registry.lookup_alias(f.model_id, f.finding_id)
                 if canonical:
                     registry.mark_verified(canonical)
+
+        # CO-DISCOVERY, RECORDED 2026-08-23. The immune pipeline already knows
+        # two findings are the same defect; that knowledge used to die inside the
+        # triage loop, and `source_aliases` stayed at exactly 1.00 per finding
+        # across all 566 findings of the modern arc.
+        #
+        # RECORDED HERE AND NOT IN _build_feedback_for_next_round, WHICH WAS THE
+        # FIRST ATTEMPT AND WAS WRONG. That function takes no `registry` and no
+        # `**kwargs`, so the wiring raised NameError on every round -- and its own
+        # defensive handler swallowed it and returned empty feedback, so the only
+        # symptom was the feedback channel silently going dark. Caught live in
+        # Exp 55 at 15:31 by the cy monitor, on the round-1 boundary.
+        #
+        # Recording changes nothing it must not: registration, `novel_this_round`
+        # and therefore gamma are untouched. See record_codiscovery.
+        try:
+            for _tr in getattr(immune_result, "triaged", []) or []:
+                if not (getattr(_tr, "is_duplicate", False) and _tr.duplicate_of):
+                    continue
+                _model = getattr(_tr.finding, "model_id", "") or ""
+                _cid = registry.lookup_alias(_model, _tr.duplicate_of) or _tr.duplicate_of
+                if _cid in registry.entries:
+                    registry.record_codiscovery(
+                        _cid, _model, _tr.finding.finding_id,
+                        float(getattr(_tr, "similarity", 0.0)))
+        except Exception as _exc:                     # noqa: BLE001
+            # Loud, not silent. A recording failure must not kill a run, and it
+            # must not vanish either -- the first version of this vanished.
+            _log(f"  [co-discovery] recording failed: {type(_exc).__name__}: {_exc}")
 
         # Feedback channel (cdsfl_operational.md §17) — close the loop by
         # assembling per-model feedback from round K's schema outputs. The

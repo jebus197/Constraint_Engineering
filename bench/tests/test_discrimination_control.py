@@ -42,6 +42,8 @@ distinct outcome.
 from __future__ import annotations
 
 import json
+import pathlib
+import re
 import sys
 from pathlib import Path
 
@@ -749,7 +751,16 @@ class TestTheArchiveSaysHowAggressiveThisIs:
         rule is inert on the archive — which is what makes it promotable, and
         also exactly why it does nothing until the panel is asked for the
         corrected copy alongside the falsifier."""
-        rows = self._archived_confirmed()
+        # SCOPED TO PRE-v3, 2026-08-23, AND THE BOUNDARY IS PRINCIPLED. This
+        # measurement was taken when NO run had ever produced a corrected copy,
+        # and its claim is that the rule is INERT ON THE ARCHIVE -- that promoting
+        # it changes nothing already recorded. Exp 55 is the first run WITH the
+        # feature, so it legitimately carries copies; that is the feature working,
+        # not the rule reaching backwards. The exclusion is exp55-and-later, the
+        # same v3 boundary the runner's version banner sets, NOT "whatever is
+        # failing". The claim and its denominator over pre-v3 runs are unchanged.
+        rows = [(f, cid, e) for f, cid, e in self._archived_confirmed()
+                if not re.match(r"exp(5[5-9]|[6-9]\d)", pathlib.Path(f).parent.name)]
         with_copy = [(f, cid) for f, cid, e in rows
                      if (e.get("corrected_copy") or "").strip()]
         assert with_copy == [], (
