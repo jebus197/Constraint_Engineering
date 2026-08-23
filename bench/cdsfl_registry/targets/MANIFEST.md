@@ -1,5 +1,36 @@
 # Review targets — provenance only
 
+> **★ RE-MEASURED 2026-08-24 00:25 BST. THE PUBLIC EXPOSURE BELOW IS CLOSED, AND THE
+> ARTICLES ARE NOT LOST. Read this before the 2026-08-08 correction, which is now
+> stale in both directions.**
+>
+> **The material survives.** All three unrun articles are recoverable from local
+> history at `ddd74bde^`, and their hashes reproduce this file's published table
+> exactly: `exp50_physics.md` 29,378 bytes `92a6424d…`, `exp51_biology.md` 27,931
+> bytes `67c35e37…`, `exp52_factorial.md` 23,740 bytes `8ff5f06b…`. All five answer
+> keys are at `eecdb0f^`, 42-83 KB each. Nothing needs re-authoring.
+>
+> **The public leak is closed.** `git ls-remote origin` returns exactly one head:
+> `refs/heads/main`. Both `exp39-experimental` and `exp38-experimental` are gone from
+> GitHub, and neither `ddd74bde^` nor `eecdb0f^` is an ancestor of `origin/main`. The
+> route the correction below describes — `git show` against a public branch — no
+> longer exists.
+>
+> **What that does NOT settle, and a founder ruling is still owed on it.** The branch
+> was public for a period. Anyone who cloned during that window holds the articles and
+> the keys, and no deletion reaches them. So the live route is shut and the historical
+> exposure cannot be undone. Whether Exp 50/51/52 may still be reported as blind exams
+> is a scientific judgement about that window, not a technical question, and it is the
+> ruling the 2026-08-08 correction asked for and never received.
+>
+> **The staged copies are a separate matter and are simply absent.**
+> `~/CDSFL_review_targets/current/` holds one file, `SW-21-REF-04.md`. The staging
+> names (`PX-12-REF-05.md`, `BX-14-REF-04.md`, `SW-14-REF-01.md`) that the exp50-52
+> configs point at do not exist there and were never committed under those names in
+> any branch's history. Staging them from `ddd74bde^` is a copy, not a rebuild — but
+> the configs and the repo disagree about what the articles are called, and that
+> disagreement is what made them look lost.
+
 > **[Correction 2026-08-08 00:50 BST. Read this before the rest of the file.]**
 > The claim below — that the exam documents are not in this repository — is FALSE
 > for three of the six. `exp48_chemistry.md`, `exp49_engineering.md` and
