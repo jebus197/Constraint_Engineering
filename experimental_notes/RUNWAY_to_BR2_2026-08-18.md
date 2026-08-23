@@ -1,15 +1,26 @@
 # THE RUNWAY — where we are, what is left, what each step costs
 
-> **★ STATUS 2026-08-24 00:10 BST. THE ARC IS BLOCKED ON MISSING FILES, NOT ON CODE.**
-> Six of the seven Stage 3 runs point at target documents that are not on this machine
-> (`PX-12-REF-05.md`, `BX-14-REF-04.md`, `SW-14-REF-01.md`). Only `SW-21-REF-04.md` is
-> present. No amount of harness work moves Stage 3 until those exist.
+> **★ STATUS 2026-08-24 00:30 BST. CORRECTED — THE ARTICLES ARE NOT LOST.**
+> An earlier line here said the Stage 3 targets were "not on this machine". That was a
+> SEARCH FAILURE, not a data loss, and it is withdrawn. The configs point at STAGING
+> names (`PX-12-REF-05.md`, `BX-14-REF-04.md`, `SW-14-REF-01.md`); in the repository the
+> same articles are `exp50_physics.md`, `exp51_biology.md` and `exp52_factorial.md`. All
+> three recover from local history at `ddd74bde^` and reproduce the target MANIFEST's
+> published hashes exactly; all five answer keys are at `eecdb0f^`.
 >
-> **The 23 August work did NOT advance this runway** and should not be counted as
-> though it did. It repaired defect H08, which was reachable only from `55_v3_control.json`,
-> a config written the previous day; zero arc configs use the relative path form that
-> triggers it. It also repaired three defects in the mechanical acceptance gate. Real
-> work, none of it on this list.
+> **What actually blocks Stage 3 is a ruling, not a build.** The articles and their keys
+> were committed to a branch that was public on GitHub for a period. That branch is now
+> gone from the remote (`git ls-remote origin` returns only `main`, and neither commit is
+> an ancestor of it), so the live route is shut — but anyone who cloned during that window
+> holds them. Whether Exp 50/51/52 may still be reported as blind exams is a scientific
+> judgement about that window. The target MANIFEST asked for that ruling on 2026-08-08 and
+> has not received it.
+>
+> **The 23 August work did NOT advance this runway** and should not be counted as though
+> it did. It repaired defect H08, reachable only from `55_v3_control.json`, a config
+> written the previous day; zero arc configs use the relative path form that triggers it.
+> It also repaired three defects in the mechanical acceptance gate. Real work, none of it
+> on this list.
 >
 > **The nearest item that can actually be done is 1.7** — replay exp44-49 through the
 > repaired accounting. Zero dispatch, no missing files, and it is Stage 1's exit test.
@@ -251,12 +262,12 @@ flags all 85 pairs at 47% precision, which is the base rate.
 
 | # | Run | Config | STATUS |
 |---|---|---|---|
-| 3.1 | exp50 physics exam | `bench/exp50_configs/50_physics_exam_live.json` | **BLOCKED 2026-08-24 — TARGET NOT ON THIS MACHINE.** `~/CDSFL_review_targets/current/PX-12-REF-05.md` does not exist; that directory holds exactly one file, `SW-21-REF-04.md`. Not recoverable from the repo, not found anywhere under `~`, and the archive bundle named in the tracker is not at its recorded path. **Founder-held. Needs the founder's hands, not a build.** |
-| 3.2 | exp51 biology exam | `bench/exp51_configs/51_biology_exam_live.json` | **BLOCKED — TARGET MISSING** (`BX-14-REF-04.md`). Same cause as 3.1 |
-| 3.3 | exp52 factorial cell A | `bench/exp52_configs/52_factorial_cell_A.json` | **BLOCKED — TARGET MISSING** (`SW-14-REF-01.md`). Same cause as 3.1 |
-| 3.4 | exp52 factorial cell B | `..._cell_B.json` | **BLOCKED — TARGET MISSING** (`SW-14-REF-01.md`). Same cause as 3.1 |
-| 3.5 | exp52 factorial cell C | `..._cell_C.json` | **BLOCKED — TARGET MISSING** (`SW-14-REF-01.md`). Same cause as 3.1 |
-| 3.6 | exp52 factorial cell D | `..._cell_D.json` | **BLOCKED — TARGET MISSING** (`SW-14-REF-01.md`). Same cause as 3.1 |
+| 3.1 | exp50 physics exam | `bench/exp50_configs/50_physics_exam_live.json` | **BUILT, NOT RUN.** Article recovers from `ddd74bde^` as `exp50_physics.md` (29,378 bytes, hash matches the MANIFEST). Staging name in the config is `PX-12-REF-05.md`. Blocked on the held-out-status ruling, not on the file |
+| 3.2 | exp51 biology exam | `bench/exp51_configs/51_biology_exam_live.json` | **BUILT, NOT RUN.** Recovers as `exp51_biology.md` (27,931 bytes, hash matches). Blocked on the same ruling as 3.1 |
+| 3.3 | exp52 factorial cell A | `bench/exp52_configs/52_factorial_cell_A.json` | **BUILT, NOT RUN.** Recovers as `exp52_factorial.md` (23,740 bytes, EXACT hash match — the manifest's 'fully exposed' row). Blocked on the same ruling as 3.1 |
+| 3.4 | exp52 factorial cell B | `..._cell_B.json` | **BUILT, NOT RUN.** Recovers as `exp52_factorial.md` (23,740 bytes, EXACT hash match — the manifest's 'fully exposed' row). Blocked on the same ruling as 3.1 |
+| 3.5 | exp52 factorial cell C | `..._cell_C.json` | **BUILT, NOT RUN.** Recovers as `exp52_factorial.md` (23,740 bytes, EXACT hash match — the manifest's 'fully exposed' row). Blocked on the same ruling as 3.1 |
+| 3.6 | exp52 factorial cell D | `..._cell_D.json` | **BUILT, NOT RUN.** Recovers as `exp52_factorial.md` (23,740 bytes, EXACT hash match — the manifest's 'fully exposed' row). Blocked on the same ruling as 3.1 |
 | 3.7 | exp54 capstone / integration | no config yet | NOT BUILT |
 
 ---
