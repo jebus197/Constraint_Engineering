@@ -145,10 +145,21 @@ single shared launcher, `bench/launch_exp42.py`, driving `bench/reference_runner
 | **Exp 46 (reference run)** | `bench/exp46_configs/46_stage6_locationkey_live.json` | `bench/dm/_shadow_stage6.py` | **yes — start here** |
 | Exp 47 | `bench/exp47_configs/47_divergence_locationkey_live.json` | `bench/dm/_divergence.py` | yes |
 | Exp 48–53 | `bench/exp48_configs/` … `bench/exp53_configs/` | withheld exam articles | **no** — see `bench/cdsfl_registry/targets/MANIFEST.md` |
+| **Exp 55 (the v3 control)** | `bench/exp55_configs/55_v3_control.json` | `bench/cdsfl_registry/targets/control_two_distinct_defects.md` | **yes — and its ground truth is known by construction** |
 
 Every config above was parsed and its `test_article` resolved on 2026-08-07: Exp 42–47
 target files inside this repository and all six are present. Exp 48–53 target absolute
 paths outside the repository, under a directory that is deliberately not distributed.
+
+**Exp 55 is the odd one out and the useful one.** It is the first run of the v3
+runner, on a document generated so that its correctness is a property of the
+generator rather than of adjudication — two genuinely distinct defects that a
+single plausible edit could appear to cure. Both were verified symbolically with
+SymPy before the run rather than taken on the generator's word. Its answer key
+lives in `control_two_distinct_defects_KEY.md` and is never staged: the key was
+originally section 3 of the target itself, inside the file the runner reads whole
+and places in the panel prompt, and was split out on 2026-08-23 before anything
+ran. Its five predictions are frozen in the config's `_pre_registration`.
 
 The exam articles are released on request under an embargo, to a named custodian with
 stated conditions of use — the arrangement controlled-access scientific datasets use.
