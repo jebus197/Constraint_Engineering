@@ -58,6 +58,51 @@ whether its models find different things.** The field that would show it is
 structurally empty, so the central claim for running a multi-model panel at all has
 no measurement behind it in this project's own archive.
 
+---
+
+## CORRECTION, same day, before this note was read
+
+The section above says *"the project cannot currently measure whether its models
+find different things."* **That is too strong and is withdrawn.** It asserted a
+universal after checking one field — the identical error shape recorded in
+`feedback_check_the_whole_set`.
+
+**Co-discovery DOES happen, and it has been measured — under a different name.**
+
+The 133 similarity pairs adjudicated by counterfactual repair were checked against
+the model that raised each finding:
+
+| | |
+|---|---|
+| pairs raised by **different** models | **106 of 133** |
+| pairs raised by the same model | 27 |
+| cross-model pairs the tool called **SAME in both directions** | **21** |
+
+**Those 21 are co-discovery**: two different models independently raised one defect,
+and a tool — not a vote — confirmed they were the same defect. They sit in the
+archive as two separate canonical entries because nothing links them.
+
+**So the corrected finding is narrower and more useful:**
+
+1. The **registry** cannot record co-discovery. `source_aliases` is written once at
+   creation (`:1057`) and **no code anywhere appends to it**; `_alias_map` gains an
+   entry only when a NEW canonical is minted (`:1053`). Verified in exp44: 82 map
+   entries for 82 findings, **0 canonical IDs with more than one alias**. There is
+   no mechanism, not a mechanism that fails to fire.
+2. The **similarity and dedup analysis** does capture it, and found at least 21
+   confirmed instances.
+3. **The rate is therefore unknown, and the archive systematically under-represents
+   agreement** — because only the 133 pairs inside the similarity function's
+   candidate band were ever adjudicated. 21 is a floor, not an estimate.
+
+The practical consequence is unchanged and now better supported: **the fix is an
+append at the dedup site**, so that a finding recognised as another model's defect
+adds its id to `source_aliases` instead of minting an unlinked twin. Small, and it
+turns a quantity the project currently recovers by expensive after-the-fact
+adjudication into something the registry records for free.
+
+---
+
 ## Cross-examination, the weaker signal
 
 Do models at least pass judgement on each other's findings, even if co-discovery is

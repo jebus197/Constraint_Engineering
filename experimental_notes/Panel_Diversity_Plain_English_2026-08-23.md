@@ -30,6 +30,21 @@ That is not evidence of remarkable diversity. It is the aliasing mechanism never
 The consequence is the one that matters. The project cannot currently measure whether its models find different things. The field that would show it is structurally empty. So the central claim for running a multi model panel at all has no measurement behind it in this project's own archive.
 
 
+## A Correction, Made The Same Day And Before This Was Read
+
+The section above says the project cannot currently measure whether its models find different things. That is too strong and is withdrawn. It asserted a general claim after checking a single field, which is the same error shape this project has recorded repeatedly.
+
+Co discovery does happen, and it has been measured, under a different name.
+
+The 133 similarity pairs that were adjudicated by counterfactual repair were checked against the model that raised each finding. 106 of the 133 pairs were raised by different models. 27 were raised by the same model. And of the cross model pairs, 21 were judged by the tool to be the same defect in both directions.
+
+Those 21 are co discovery. Two different models independently raised one defect, and a tool rather than a vote confirmed they were the same. They sit in the archive as two separate entries because nothing links them.
+
+So the corrected finding is narrower and more useful. The registry cannot record co discovery, because the alias field is written once at creation and no code anywhere appends to it. Verified on one experiment: 82 map entries for 82 findings, and zero entries with more than one alias. There is no mechanism, rather than a mechanism that fails to fire. But the similarity and deduplication analysis does capture it, and found at least 21 confirmed instances. The rate is therefore unknown, and the archive systematically under represents agreement, because only the pairs falling inside the similarity function's candidate band were ever adjudicated. Twenty one is a floor, not an estimate.
+
+The practical consequence is unchanged and now better supported. The fix is an append at the deduplication site, so that a finding recognised as another model's defect adds its identifier to the alias list instead of creating an unlinked twin. It is a small change, and it turns something the project currently recovers by expensive after the fact adjudication into something the registry records for free.
+
+
 ## Cross Examination, The Weaker Signal
 
 Do the models at least pass judgement on each other's findings, even if co discovery goes unrecorded?
