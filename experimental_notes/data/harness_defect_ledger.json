@@ -1,0 +1,26 @@
+{
+  "_what": "Harness defects, by the run or review that surfaced them. RECORD ONLY -- nothing reads this to make a decision.",
+  "_why": "Founder ruling 2026-08-23. Fable's Q3 dissent: the phrase 'demonstrably closer to iron-clad' needs a convergence curve -- defects found per run over time -- and nothing tracked it. The founder's extension: the same series could later feed the capability mechanics, since a falling harness-defect rate is evidence the instrument is stable enough for its competence measurements to be trusted. Speculative how; costless to record now.",
+  "_the_measure": "This is gamma applied one level up. gamma measures findings-per-round WITHIN a run and rises as discovery saturates. This ledger measures harness-defects-per-run ACROSS runs. Same Duane NHPP shape, same interpretation: the CUMULATIVE curve flattening and the RATE curve decaying are one event, not two.",
+  "_honesty": "Seeded from the record, not from measurement in flight. Entries before 2026-08-23 are RECONSTRUCTED from commits and notes and are marked so. A reconstructed count is a lower bound: defects nobody found are not in it, and that is the limitation this series can never escape.",
+  "_attribution": "author = who wrote the defect. finder = who found it. Both matter: a project whose defects are all its own assistant's has a different problem from one whose defects are all in vendor code.",
+  "entries": [
+    {"date": "2026-08-22", "occasion": "build experiment", "kind": "run", "reconstructed": true,
+     "defects": [
+       {"id": "H01", "what": "step 3 assumed a green suite; test_falsifier_cannot_read_the_key fails in a bare worktree", "author": "CC1", "finder": "CC1", "severity": "blocking", "rendered_as": "model failure"},
+       {"id": "H02", "what": "git add -A committed a model's direct writes twice; Bash is a superset of Write", "author": "CC1", "finder": "founder", "severity": "blocking", "rendered_as": "tree contamination"},
+       {"id": "H03", "what": "read_file's line-number prefix made verbatim SEARCH impossible", "author": "CC1", "finder": "CC1", "severity": "blocking", "rendered_as": "model failure"},
+       {"id": "H04", "what": "parse_test's unanchored fence truncated all three T01 tests to SyntaxError", "author": "CC1", "finder": "CC2+Fable", "severity": "blocking", "rendered_as": "model failure"},
+       {"id": "H05", "what": "the composer left hunks applied after a failure, manufacturing a conflict", "author": "CC1", "finder": "Fable", "severity": "high", "rendered_as": "model failure"},
+       {"id": "H06", "what": "any non-zero pytest exit counted as 'fails at parent'", "author": "CC1", "finder": "CC2", "severity": "high", "rendered_as": "model failure"},
+       {"id": "H07", "what": "replace(search, replace, 1) with no uniqueness check", "author": "CC1", "finder": "CC2", "severity": "high", "rendered_as": "silent miscorrection"}
+     ]},
+    {"date": "2026-08-23", "occasion": "exp55_v3_control", "kind": "run", "reconstructed": false,
+     "defects": [
+       {"id": "H08", "what": "the falsifier gate ran every falsifier in an empty working directory, so relative-path readers ERRORed and detached falsifiers CONFIRMED; the gate selected FOR the pathology the discrimination control exists to catch. Reachable only because 55_v3_control.json used a repo-relative target path, breaking the convention 10 of 11 prose configs already followed.", "author": "CC1", "finder": "CC1+CC2+Fable", "severity": "blocking", "rendered_as": "model failure", "sites": 3},
+       {"id": "H09", "what": "failing_nodeids matched only ^FAILED and rc_suite was never read, so a collection error read as a green suite", "author": "CC1", "finder": "CC2+Fable", "severity": "blocking", "rendered_as": "false ACCEPT"},
+       {"id": "H10", "what": "suite_baseline cached frozenset() on any failure, poisoning every later candidate at that parent", "author": "CC1", "finder": "CC2+Fable", "severity": "blocking", "rendered_as": "model failure"},
+       {"id": "H11", "what": "model-supplied TEST_FILE and SEARCH paths joined unvalidated; pathlib discards the left operand on an absolute right operand", "author": "CC1", "finder": "CC2", "severity": "high", "rendered_as": "tree contamination"}
+     ]}
+  ]
+}

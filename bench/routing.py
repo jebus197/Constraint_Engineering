@@ -38,6 +38,26 @@ from typing import Callable, Optional, Sequence
 # 10-of-15-residuals last. Validated ladder: gpt-5.5 (Codex) resolved 6/7 of the
 # hardest residuals; CC2 picks up the 7th (the markdown-embedding trap). The
 # primary offender (DeepSeek) is last and is never asked to take over routing.
+# ★ DO NOT RE-DERIVE THIS ORDER FROM A RUN WITHOUT CHECKING FALSIFIER PROVENANCE
+# (founder observation, 2026-08-23, raised by neither external reviewer). This order
+# is not a report — it decides which model is asked to resolve the hardest findings,
+# so a contaminated confirm rate contaminates the MECHANICS, not just the write-up.
+#
+# THE ORDER ABOVE IS SOUND: Exp 42's target was `composer.py`, and a code falsifier
+# reaches its target by `import`, which PYTHONPATH carries regardless of working
+# directory. The gate's empty-working-directory defect (H08) could not touch it.
+#
+# THE HAZARD IS FORWARD-LOOKING AND WAS MEASURED. On Exp 55, a prose target, while
+# that defect was live: Gemini 2 of 2 CONFIRMED with both falsifiers DETACHED (they
+# open nothing and restate the document's numbers from memory); DeepSeek 0 of 2 with
+# both falsifiers genuine readers that ERRORed on the missing file. Re-deriving from
+# that run promotes Gemini to FIRST and demotes DeepSeek to LAST — ranking the models
+# by their willingness to ignore the evidence, which is the precise inversion the
+# discrimination control exists to detect.
+#
+# Run `python3 scripts/competence_provenance.py <report.json>` first. It exits 2 and
+# prints UNSAFE TO RANK ON when a model's confirmations rest on falsifiers that never
+# read the target.
 DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")
 
 
