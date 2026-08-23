@@ -22,7 +22,9 @@ Last updated: 30 March 2026.
 
 ---
 
-## Area 3: Load Balancing (16 tests)
+## Area 3: Load Balancing (16 tests) — SHELVED 2026-08-22
+
+Area 3 is SHELVED as of 2026-08-22 (founder ruling: shelve, do not retire). The 16 tests below still run and still pass, and that is the whole point of the entry: they are the only place `bench/dm/_load_balancer.py` has ever executed. Passing tests here are not evidence that the component is commissioned. See `bench/dm/_load_balancer.py` for the three grounds, and `bench/tests/test_load_balancer_shelved.py` for the check that keeps the runner off it.
 
 **TestLoadBalancer** (13 tests). Solve returns valid allocation. Every task covered. PM excluded when k>1. k=1 PM handles all. High criticality → full redundancy. Empty tasks. Feasibility probability: deterministic, uncertain, well-below-mean. Dispatch blocks when uncertain, passes when within capacity. Edge cases: k=1, homogeneous.
 

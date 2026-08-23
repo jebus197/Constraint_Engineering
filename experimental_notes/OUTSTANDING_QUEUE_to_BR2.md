@@ -166,9 +166,15 @@ Testing is now in — B3 is the first item to take up.
 Suite 2521 passed / 0 failed, offline under `--netguard-strict`.
 
 **STILL OPEN from the falsification, in rank order:** the critical-severity
-ceiling (needs a founder ruling — the sweep cannot clear a critical and a
-false-positive critical is permanent human work decided by one un-recomputed
-float); the 38 stuck-CONFIRMED sub-criticals with no route to terminal; the
+ceiling — **RULED: `CRITICAL_SEVERITY_THRESHOLD = 0.7` STAYS.** The float is not
+a free parameter. It is the operational proxy for the consequence-based rubric
+pre-registered and FROZEN at
+`bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`, which is
+authoritative where rubric and number disagree. Moving 0.7 takes a NEW dated
+pre-registration, never an edit to the constant or to that file. The residual
+cost stands and is accepted: the sweep cannot clear a critical, so a
+false-positive critical is permanent human work. Then: the 38
+stuck-CONFIRMED sub-criticals with no route to terminal; the
 false-CONFIRMED hole (a valid-but-logically-wrong falsifier closed a finding
 against a TRUE claim); the falsifier transport truncation + 4 skipped tests;
 `escalated` not cleared on ladder exhaustion (cost only); B2 archive redirect;

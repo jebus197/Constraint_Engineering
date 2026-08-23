@@ -807,7 +807,13 @@ Engine licence terms acceptable ("personal projects at home, at school, at work"
    PR-14, PX-12, SW-14) with claims in prose/tables/equations rather than fenced
    code listings. Exp 48/49 are the proof: no listings → 41/41 routing resolutions,
    1 escalation in 75.
-3. The critical-severity ceiling (see above).
+3. The critical-severity ceiling — **RULED: keep
+   `CRITICAL_SEVERITY_THRESHOLD = 0.7`.** The number is only the operational
+   proxy for the consequence-based rubric pre-registered and FROZEN at
+   `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`; that file
+   governs where rubric and number disagree, so the threshold cannot be moved by
+   editing a float — it takes a new dated pre-registration. The accepted cost is
+   unchanged (see above): the sweep cannot clear a critical.
 4. Is the queue alarm's new HALT intended, vs veto-only?
 5. One paid dispatch confirming a model reads the new sentinel markers.
 6. Push/merge and `origin/exp39-experimental` deletion; exam reseeding (founder

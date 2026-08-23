@@ -1,6 +1,53 @@
 #!/usr/bin/env python3
 """Parameterised reference runner for CDSFL experiments (Exp 37+, Bench Run 2).
 
+RUNNER VERSION v3 (2026-08-23). A DIRECT DERIVATION OF v2, NOT A REBUILD.
+
+v3 is v2 with ten mechanically-validated patches applied. Each was accepted by a
+gate requiring the patch's own test to FAIL at the parent, PASS with the patch, and
+leave the full suite green against the parent's own failing set -- no model vote and
+no assistant judgement anywhere in that path. The set was then proved to compose:
+10 of 10 applied in order, 141 accepted tests passing together, 3,759 suite passes
+with zero failures the parent does not already have.
+
+What changed, and why each mattered:
+
+  T01  Discrimination failures now reach the escalation ladder. The sub-critical arm
+       admitted ERROR and nothing else, so a falsifier that fired against a CORRECTED
+       copy -- a broken instrument, not a refuted claim -- was never sent to a
+       stronger writer.
+  T02  The discrimination control is FED. It had eight outcomes and three self-probes
+       and HAD NEVER FIRED ONCE in this project's life, because it waits on a
+       corrected copy that nothing supplied. It is now derived from each finding's
+       own proposed fix.
+  T03  The survived-falsification ledger is WIRED. It records that a claim was tested
+       and STOOD, closing the gap where a clean control run produces an ABSENCE
+       indistinguishable from a dispatch failure or a document nobody read.
+  T04  An equipment failure can no longer write a terminal status. Measured before
+       the fix: 4 of 24 did, two of them writing REFUTED on a falsifier that never
+       ran.
+  T05  The Bugzilla status vocabulary and machine-readable catalogue. CORROBORATED
+       makes co-discovery visible; every status declares who may assert it and what
+       evidence it requires, enforced at the single status chokepoint.
+  T06  The load balancer is SHELVED and marked in the documentation (founder ruling).
+  T07  --dry-run for the null-perturbation control, which overwrote its own committed
+       result when run with a limit.
+  T08  The memory-ledger recount moves into the save-state path, after five
+       consecutive manual corrections of the same figure.
+  T09  The frozen critical-severity pre-registration is cited from the live queue,
+       which governed the 0.7 threshold and never named it.
+  T10  The 67 unmatchable fixes and 30 errored falsifiers are classified by cause.
+
+TWO SETS IN THE ROUTING/DEMOTION SPLIT ARE LOAD-BEARING.
+EQUIPMENT_FAILURE_VERDICTS drives DEMOTION -- the instrument produced no reading, so
+no terminal status may stand on it. ROUTABLE_INSTRUMENT_FAULTS drives ROUTING and
+additionally carries NON_DISCRIMINATING, whose instrument DID produce a reading that
+simply does not depend on the target. Collapsing the two turns discrimination
+BLOCKING on by the back door, and blocking is default-off by founder ruling
+(RunnerConfig.discrimination_control_blocks). A first merge did exactly that and
+three tests caught it, one written for precisely that purpose.
+
+
 Extracts the parameterised entry point from run_exp36_evidence.py so future
 experiments don't need per-experiment runner scripts. The test article,
 context files, domain, and convergence parameters are all configurable.
@@ -1026,6 +1073,231 @@ class SkResult:
     blocks_applied: int = 0
 
 
+# ── Equipment failure (T04, founder ruling 2026-08-22) ───────────────────────
+# A falsifier that returned ERROR (it crashed) or UNTOOLABLE (there was nothing
+# to run) did not measure anything. That is an EQUIPMENT FAILURE, not evidence
+# in either direction, so it may never underwrite a terminal status. Ruling:
+# equipment error counts as UNRESOLVED, escalates to HIL, and is subject to
+# re-routing. UNCONFIRMED is this registry's existing name for that unresolved
+# state — the A4 fail-safe already counts UNCONFIRMED criticals as candidates
+# given up on WITHOUT verification, which is exactly what these are.
+# MEASURED 2026-08-22: 4 of 24 findings whose falsifier returned ERROR or
+# UNTOOLABLE carried a terminal status; two carried REFUTED, verified=False.
+EQUIPMENT_FAILURE_VERDICTS = frozenset({"ERROR", "UNTOOLABLE"})
+# TWO SETS, DELIBERATELY, AND THE DISTINCTION IS LOAD-BEARING (2026-08-23).
+# EQUIPMENT_FAILURE_VERDICTS drives DEMOTION: the instrument produced NO reading,
+# so no terminal status may stand on it.
+# ROUTABLE_INSTRUMENT_FAULTS drives ROUTING only. NON_DISCRIMINATING belongs here
+# and NOT above: the instrument DID produce a reading, it simply does not depend on
+# the target. It deserves a stronger writer; it must NOT change the finding's status,
+# because that is discrimination BLOCKING and blocking is default-off by founder
+# ruling (`discrimination_control_blocks`, RunnerConfig:594).
+# A first version of this merge put NON_DISCRIMINATING in the demotion set and
+# turned that default ON by the back door. Three tests caught it, including one
+# written for exactly that purpose: "Blocking is a founder decision and stays
+# default-off; the supply must not change that by the back door."
+ROUTABLE_INSTRUMENT_FAULTS = EQUIPMENT_FAILURE_VERDICTS | frozenset({"NON_DISCRIMINATING"})
+TERMINAL_STATUSES = frozenset(
+    {"CONFIRMED", "REFUTED", "CLOSED", "MERGED", "DUPLICATE"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FINDING STATUS VOCABULARY — registered, machine-readable, ENFORCED
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Agreed in `experimental_notes/Design_Reviews_Bugzilla_And_Perturbation_2026-08-21.md`
+# (Q1, the status table at :59-69) and MEASURED as absent on 2026-08-22: the
+# blocking BEHAVIOUR had landed at five sites (`merge_candidate_of` /
+# `merge_blocked_reason`), but `WITHHELD` had 0 references in this file and
+# `CORROBORATED` had 1, in a comment. A vocabulary that lives only in prose is
+# not a vocabulary — nothing can count it, export it, or be refused by it.
+#
+# THE AXIS IS DESTRUCTIVENESS, NOT EXISTENCE-VS-IDENTITY (design doc :50-55).
+# A wrong CONFIRMED leaves the finding in play; a CHALLENGE moves it to
+# CONTESTED. A wrong MERGED deletes it — MERGED is in
+# `_NON_NOVEL_TERMINAL_STATUSES`, so the finding leaves gamma, the novelty
+# count, `open_crit_high_count`, `contested_count` and
+# `irreducible_queue_count`, and there is no unmerge. So: a DESTRUCTIVE
+# transition requires a tool; a non-destructive one may be model-attested,
+# PROVIDED THE RECORD SAYS SO.
+#
+# `who_may_assert` values:
+#   "model"      — a panel attestation is sufficient authority
+#   "tool"       — only an executed measurement may write it (TOOL-ONLY)
+#   "human"      — HIL only
+#   "mechanical" — a timer/sweep in the runner, no judgement involved
+#   "runner"     — written BY this chokepoint when it refuses a model request
+#
+# This dict is the single source of truth for humans and machines alike:
+# `export_status_vocabulary` serialises it verbatim, `export_finding_catalogue`
+# stamps every record against it, and `FindingRegistry.resolve` enforces it.
+
+STATUS_VOCABULARY_VERSION = "2026-08-22"
+
+FINDING_STATUS_VOCABULARY: Dict[str, Dict[str, Any]] = {
+    "OPEN": {
+        "meaning": "Filed, not adjudicated.",
+        "who_may_assert": ("model",),
+        "in_from": ("REOPENED", "WITHHELD", "CORROBORATED"),
+        "out_to": ("CORROBORATED", "CONFIRMED", "REFUTED", "MERGED",
+                   "WITHHELD", "CONTESTED", "UNCONFIRMED", "ESCALATED"),
+        "evidence_required": "none",
+        "terminal": False,
+        "live": True,
+    },
+    "CORROBORATED": {
+        "meaning": ("At least one independent model also asserts the finding "
+                    "exists. NOT a truth claim — a scheduling signal only."),
+        "who_may_assert": ("model",),
+        "in_from": ("OPEN", "WITHHELD", "CONTESTED"),
+        "out_to": ("CONFIRMED", "REFUTED", "CLOSED", "UNCONFIRMED",
+                   "WITHHELD", "CONTESTED", "MERGED"),
+        "evidence_required": "model attestations, counted and named",
+        "terminal": False,
+        "live": True,
+    },
+    "CONFIRMED": {
+        "meaning": ("A falsifier was executed by the runner and fired against "
+                    "the target."),
+        "who_may_assert": ("tool",),
+        "in_from": ("OPEN", "CORROBORATED", "CONTESTED"),
+        "out_to": ("CLOSED", "CONTESTED", "REOPENED"),
+        "evidence_required": "falsifier source + exit status + target hash",
+        "terminal": False,
+        "live": True,
+    },
+    "REFUTED": {
+        "meaning": "A falsifier was executed and did not fire.",
+        "who_may_assert": ("tool",),
+        "in_from": ("OPEN", "CORROBORATED"),
+        "out_to": ("REOPENED",),
+        "evidence_required": "falsifier source + exit status + target hash",
+        "terminal": True,
+        "live": False,
+    },
+    "CLOSED": {
+        "meaning": ("A proposed fix was applied to a scratch copy and the "
+                    "falsifier stopped firing."),
+        "who_may_assert": ("tool",),
+        "in_from": ("CONFIRMED", "CORROBORATED"),
+        "out_to": ("REOPENED",),
+        "evidence_required": "pre/post falsifier verdicts + diff + target hash",
+        "terminal": True,
+        "live": False,
+    },
+    "MERGED": {
+        "meaning": "Counterfactual repair says two findings are one defect.",
+        "who_may_assert": ("tool",),
+        "in_from": ("OPEN", "CORROBORATED", "CONFIRMED"),
+        "out_to": (),
+        "evidence_required": ("adjudicate_by_repair verdict SAME in BOTH "
+                              "directions"),
+        "terminal": True,
+        "live": False,
+    },
+    "WITHHELD": {
+        "meaning": ("A merge was proposed and no tool verdict decided it. The "
+                    "finding stays live and countable — withholding is the "
+                    "safe direction."),
+        "who_may_assert": ("runner",),
+        "in_from": ("OPEN", "CORROBORATED"),
+        "out_to": ("OPEN", "CORROBORATED", "CONFIRMED", "MERGED",
+                   "UNCONFIRMED"),
+        "evidence_required": ("the refused proposal, its proposer(s), and the "
+                              "reason no tool decided it"),
+        "terminal": False,
+        "live": True,
+    },
+    "CONTESTED": {
+        "meaning": ("A CONFIRMED or CORROBORATED finding drew a challenge "
+                    "carrying new evidence."),
+        "who_may_assert": ("model",),
+        "in_from": ("CONFIRMED", "CORROBORATED"),
+        "out_to": ("CONFIRMED", "CORROBORATED", "REFUTED", "ESCALATED",
+                   "UNCONFIRMED"),
+        "evidence_required": "the challenge text and its falsifier if any",
+        "terminal": False,
+        "live": True,
+    },
+    "ESCALATED": {
+        "meaning": ("No tool can decide and it matters. The SOLE arbiter "
+                    "state — do not widen it."),
+        "who_may_assert": ("human",),
+        "in_from": ("OPEN", "CORROBORATED", "CONFIRMED", "CONTESTED",
+                    "UNCONFIRMED"),
+        "out_to": ("OPEN", "CONFIRMED", "REFUTED", "CLOSED"),
+        "evidence_required": "the exhaustion record",
+        "terminal": False,
+        "live": True,
+    },
+    "UNCONFIRMED": {
+        "meaning": "Aged out without decision. Reopenable on new evidence.",
+        "who_may_assert": ("mechanical",),
+        "in_from": ("OPEN", "CORROBORATED", "CONTESTED", "WITHHELD"),
+        "out_to": ("REOPENED", "OPEN"),
+        "evidence_required": "none — it is the ABSENCE of evidence",
+        "terminal": False,
+        "live": False,
+    },
+    "REOPENED": {
+        "meaning": "New evidence arrived after a terminal or aged-out state.",
+        "who_may_assert": ("model",),
+        "in_from": ("CLOSED", "REFUTED", "UNCONFIRMED"),
+        "out_to": ("OPEN",),
+        "evidence_required": "the new verdict that reopened it",
+        "terminal": False,
+        "live": True,
+    },
+    "DUPLICATE": {
+        "meaning": ("DEPRECATED — collapse into MERGED + merged_into. Written "
+                    "zero times across the archive; retained only because "
+                    "eleven terminal-status filters still name it."),
+        "who_may_assert": ("tool",),
+        "in_from": (),
+        "out_to": (),
+        "evidence_required": "n/a — deprecated",
+        "terminal": True,
+        "live": False,
+        "deprecated": True,
+    },
+}
+
+# Derived, so these sets can never drift from the table above.
+TOOL_ONLY_STATUSES = frozenset(
+    s for s, spec in FINDING_STATUS_VOCABULARY.items()
+    if spec["who_may_assert"] == ("tool",)
+)
+MODEL_ASSERTABLE_STATUSES = frozenset(
+    s for s, spec in FINDING_STATUS_VOCABULARY.items()
+    if "model" in spec["who_may_assert"]
+)
+LIVE_STATUSES = frozenset(
+    s for s, spec in FINDING_STATUS_VOCABULARY.items() if spec["live"]
+)
+
+# What a model request BECOMES when the chokepoint refuses it. The substitute
+# must be NON-DESTRUCTIVE and must keep the finding MOVING: a bare refusal
+# leaves the entry pinned at its old status, which is the exact failure
+# repaired on 2026-08-21 (a finding carrying two MERGE votes sat at OPEN for
+# ever — never CONFIRMED, never CLOSED, never leaving the discovery pool).
+#
+# A model asking for CONFIRMED has, by construction, supplied attestations —
+# that is CORROBORATED. A model asking for MERGED has proposed an identity no
+# tool checked — that is WITHHELD.
+#
+# CLOSED and REFUTED have NO substitute and are refused outright, leaving the
+# status untouched: each is a claim about an EXECUTION ("the falsifier stopped
+# firing" / "it did not fire") and no show of hands can stand in for one.
+MODEL_ASSERTION_SUBSTITUTE: Dict[str, str] = {
+    "CONFIRMED": "CORROBORATED",
+    "MERGED": "WITHHELD",
+}
+
+# Statuses that mean "a model said so", not "a tool measured it". Readers that
+# report demonstrated defects MUST NOT count these.
+ATTESTED_STATUSES = frozenset({"CORROBORATED"})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1113,6 +1385,9 @@ class FindingRegistry:
     def resolve(
         self, canonical_id: str, status: str, round_idx: int,
         merged_into: Optional[str] = None,
+        adjudicator: str = "tool",
+        evidence: str = "",
+        mechanism: str = "",
     ):
         if canonical_id not in self.entries:
             return
@@ -1141,10 +1416,95 @@ class FindingRegistry:
                 cur = (self.entries.get(cur) or {}).get("merged_into")
             if cur is not None:
                 return                                    # would close a cycle
-        self.entries[canonical_id]["status"] = status
-        self.entries[canonical_id]["last_status_change_round"] = round_idx
+
+        entry = self.entries[canonical_id]
+        previous = entry.get("status")
+
+        # ── TOOL-ONLY ENFORCEMENT (2026-08-22) ───────────────────────────────
+        # `resolve` is the ONLY status write in the runner, so the vocabulary
+        # can be enforced here and nowhere else. A caller that has EXECUTED
+        # something passes adjudicator="tool" (the default, so every existing
+        # call site keeps its authority). A caller relaying a PANEL ATTESTATION
+        # passes adjudicator="model" and is refused any status whose evidence
+        # requirement is an execution it did not perform.
+        refused = None
+        if adjudicator == "model" and status in TOOL_ONLY_STATUSES:
+            refused = status
+            substitute = MODEL_ASSERTION_SUBSTITUTE.get(status)
+            entry.setdefault("refused_transitions", []).append({
+                "requested": refused,
+                "substituted": substitute,
+                "round": round_idx,
+                "adjudicator": "model",
+                "evidence": evidence[:500],
+                "mechanism": mechanism[:200],
+                "reason": (
+                    f"{refused} is TOOL-ONLY; its evidence requirement is "
+                    f"'{FINDING_STATUS_VOCABULARY[refused]['evidence_required']}'"
+                    f" and a model attestation is not that"
+                ),
+            })
+            entry["attestation_count"] = entry.get("attestation_count", 0) + 1
+            if substitute is None:
+                # No non-destructive equivalent (CLOSED, REFUTED). Refuse
+                # outright — the status is left exactly as it was.
+                return
+            if refused == "MERGED" and merged_into:
+                # The two fields the withhold behaviour already wrote at five
+                # call sites, now written by the chokepoint that refused it.
+                entry["merge_candidate_of"] = merged_into
+                entry["merge_blocked_reason"] = evidence[:500] or (
+                    "merge requires a tool verdict; none was produced")
+            status, merged_into, adjudicator = substitute, None, "runner"
+            if status == previous:
+                # A re-attestation of a status already held is countable but is
+                # NOT a transition: bumping last_status_change_round every round
+                # would reset the staleness timers that drive escalation and
+                # exhaustion, and the finding would never age out.
+                return
+
+        # ── EQUIPMENT-FAILURE GUARD (T04) ────────────────────────────────────
+        # Placed AFTER the authority substitution above and made to FALL THROUGH
+        # rather than return, so the transition it forces is written to the
+        # status_log like every other. T04's original returned early; that would
+        # have left the one status write in the runner with no logged transition,
+        # inside a patch whose entire claim is that `resolve` is the single
+        # chokepoint. Ordering and fall-through are as CC2 and Fable both
+        # independently specified, 2026-08-23.
+        #
+        # NOTE THE SET: EQUIPMENT_FAILURE_VERDICTS, not ROUTABLE_INSTRUMENT_FAULTS.
+        # NON_DISCRIMINATING is routed but NEVER demoted — demoting it is
+        # discrimination BLOCKING, which is default-off by founder ruling.
+        if (status in TERMINAL_STATUSES
+                and entry.get("falsifier_verdict") in EQUIPMENT_FAILURE_VERDICTS):
+            entry["verified"] = False
+            entry["escalated"] = True
+            entry["equipment_failure"] = True
+            entry.setdefault(
+                "hil_reason",
+                f"falsifier {entry.get('falsifier_verdict')}: the instrument "
+                f"never ran, so {status!r} would record a result nothing "
+                f"produced — equipment failure is UNRESOLVED (HIL + re-routing)")
+            status, merged_into, adjudicator = "UNCONFIRMED", None, "runner"
+            if status == previous:
+                return
+
+        entry["status"] = status
+        entry["last_status_change_round"] = round_idx
+        entry["status_adjudicator"] = adjudicator
+        entry["status_evidence"] = evidence[:500]
+        entry["status_mechanism"] = mechanism[:200]
+        entry.setdefault("status_log", []).append({
+            "from": previous,
+            "to": status,
+            "round": round_idx,
+            "adjudicator": adjudicator,
+            "evidence": evidence[:500],
+            "mechanism": mechanism[:200],
+            "refused": refused,
+        })
         if merged_into:
-            self.entries[canonical_id]["merged_into"] = merged_into
+            entry["merged_into"] = merged_into
 
     def mark_verified(self, canonical_id: str):
         if canonical_id in self.entries:
@@ -1160,7 +1520,12 @@ class FindingRegistry:
         _update_finding_statuses) are excluded from the count.
         Gate threshold stays fixed; finding eligibility changes.
         """
-        _NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")
+        # CORROBORATED and WITHHELD are LIVE (2026-08-22): neither is a
+        # measurement, so a critical holding either is still an open critical
+        # and must still block the state gate. Both are exhaustible by the
+        # pre-pass in _update_finding_statuses, so this cannot block for ever.
+        _NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED",
+                         "CORROBORATED", "WITHHELD")
         count = 0
         for e in self.entries.values():
             if e["status"] not in _NON_TERMINAL or e["severity"] < 0.7:
@@ -1820,6 +2185,119 @@ def _try_merge_arbitration(
 # Status transitions and convergence gate
 # ─────────────────────────────────────────────────────────────────────────────
 
+def export_status_vocabulary(path: Optional[Path] = None) -> Dict[str, Any]:
+    """Serialise the status vocabulary itself, machine-readable.
+
+    The catalogue is useless without the key that decodes it, so the key ships
+    with it. Tuples become lists so the output is plain JSON.
+    """
+    statuses = {
+        name: {
+            "meaning": spec["meaning"],
+            "who_may_assert": list(spec["who_may_assert"]),
+            "in_from": list(spec["in_from"]),
+            "out_to": list(spec["out_to"]),
+            "evidence_required": spec["evidence_required"],
+            "terminal": spec["terminal"],
+            "live": spec["live"],
+            "tool_only": name in TOOL_ONLY_STATUSES,
+            "deprecated": bool(spec.get("deprecated")),
+        }
+        for name, spec in FINDING_STATUS_VOCABULARY.items()
+    }
+    doc = {
+        "vocabulary_version": STATUS_VOCABULARY_VERSION,
+        "source": ("experimental_notes/"
+                   "Design_Reviews_Bugzilla_And_Perturbation_2026-08-21.md"),
+        "tool_only_statuses": sorted(TOOL_ONLY_STATUSES),
+        "model_assertable_statuses": sorted(MODEL_ASSERTABLE_STATUSES),
+        "live_statuses": sorted(LIVE_STATUSES),
+        "model_assertion_substitute": dict(MODEL_ASSERTION_SUBSTITUTE),
+        "statuses": statuses,
+    }
+    if path is not None:
+        Path(path).write_text(
+            json.dumps(doc, indent=2, ensure_ascii=False), encoding="utf-8")
+    return doc
+
+
+def export_finding_catalogue(
+    registry, path: Optional[Path] = None,
+) -> List[Dict[str, Any]]:
+    """One machine-readable record per finding: status, evidence, mechanism.
+
+    The founder's requirement is that everything is registered and catalogued
+    so it can be accessed and understood trivially by BOTH humans and machines.
+    Three fields carry that weight per record:
+
+      status     — the vocabulary term, plus the term's own definition inline,
+                   so a reader needs no second file to interpret it;
+      evidence   — WHAT decided it (the falsifier verdict, the named
+                   attestations, the refused proposal);
+      mechanism  — WHICH machinery decided it, e.g. "falsifier_rerun",
+                   "model_confirm_quorum", "bugzilla_close_loop".
+
+    `demonstrated` is the field that cannot be faked by a show of hands: it is
+    true only where a falsifier was executed and fired. Written as JSON Lines
+    when `path` is given — one record per line, streamable, diffable.
+    """
+    entries = registry.entries if hasattr(registry, "entries") else registry
+    items = (sorted(entries.items()) if isinstance(entries, dict)
+             else [(e.get("canonical_id", ""), e) for e in entries])
+    records: List[Dict[str, Any]] = []
+    for cid, e in items:
+        status = e.get("status", "OPEN")
+        spec = FINDING_STATUS_VOCABULARY.get(status)
+        log = e.get("status_log", []) or []
+        if log:
+            adjudicator = e.get("status_adjudicator", "unrecorded")
+            evidence = e.get("status_evidence", "")
+            mechanism = e.get("status_mechanism", "")
+        else:
+            # Never resolved — it is still exactly as filed.
+            adjudicator = "model"
+            evidence = f"filed by {e.get('source_model', 'unknown')}"
+            mechanism = "registration"
+        records.append({
+            "canonical_id": cid or e.get("canonical_id", ""),
+            "status": status,
+            "status_is_registered": spec is not None,
+            "status_meaning": spec["meaning"] if spec else
+                              "UNREGISTERED STATUS — not in the vocabulary",
+            "who_may_assert": list(spec["who_may_assert"]) if spec else [],
+            "evidence_required": spec["evidence_required"] if spec else "",
+            "tool_only": status in TOOL_ONLY_STATUSES,
+            "terminal": bool(spec["terminal"]) if spec else False,
+            "live": bool(spec["live"]) if spec else False,
+            "adjudicator": adjudicator,
+            "evidence": evidence,
+            "mechanism": mechanism,
+            "demonstrated": (
+                e.get("falsifier_verdict") == "CONFIRMED"
+                and status in ("CONFIRMED", "CLOSED")
+            ),
+            "falsifier_verdict": e.get("falsifier_verdict", ""),
+            "attestation_count": e.get("attestation_count", 0),
+            "severity": e.get("severity", 0.0),
+            "source_model": e.get("source_model", ""),
+            "open_since_round": e.get("open_since_round", 0),
+            "last_status_change_round": e.get("last_status_change_round", 0),
+            "merged_into": e.get("merged_into", ""),
+            "merge_candidate_of": e.get("merge_candidate_of", ""),
+            "merge_blocked_reason": e.get("merge_blocked_reason", ""),
+            "transitions": log,
+            "refused_transitions": e.get("refused_transitions", []) or [],
+            "vocabulary_version": STATUS_VOCABULARY_VERSION,
+        })
+    if path is not None:
+        Path(path).write_text(
+            "\n".join(json.dumps(r, ensure_ascii=False, default=str)
+                       for r in records) + ("\n" if records else ""),
+            encoding="utf-8",
+        )
+    return records
+
+
 def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                              cfg: Optional[RunnerConfig] = None):
     # Bugzilla close-the-loop attempt counter for this call. Reset at
@@ -1832,7 +2310,8 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     # Derived fresh each call — not sticky. Requires review activity.
     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
     for e in registry.entries.values():
-        if e["status"] in ("OPEN", "CONTESTED") and e["severity"] >= 0.7:
+        if (e["status"] in ("OPEN", "CONTESTED", "CORROBORATED", "WITHHELD")
+                and e["severity"] >= 0.7):
             age = round_idx - e.get("last_status_change_round", 0)
             has_reviews = len(e.get("verdicts", [])) > 0
             if exhausted_threshold > 0 and age >= exhausted_threshold and has_reviews:
@@ -1898,11 +2377,17 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         # named this honestly: a QUORUM. A plurality of models is
                         # not authority to delete a finding from the convergence
                         # gate. Withheld pending a tool verdict.
-                        entry["merge_candidate_of"] = top_target
-                        entry["merge_blocked_reason"] = (
-                            f"quorum of {len(distinct)} model(s), "
-                            f"{len(top_votes)} votes vs {second_votes}; "
-                            f"no tool verdict")
+                        # Routed through resolve() so the refusal is RECORDED
+                        # and the finding lands in the named status WITHHELD
+                        # rather than in two loose fields nothing counts.
+                        registry.resolve(
+                            canonical_id, "MERGED", round_idx,
+                            merged_into=top_target, adjudicator="model",
+                            evidence=(f"quorum of {len(distinct)} model(s), "
+                                      f"{len(top_votes)} votes vs "
+                                      f"{second_votes}; no tool verdict"),
+                            mechanism="model_merge_quorum",
+                        )
                         _log(f"  MERGE WITHHELD {canonical_id} -> {top_target}: "
                              f"quorum vote ({len(top_votes)} vs {second_votes}), "
                              f"no tool verdict")
@@ -1989,10 +2474,15 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                     # visible in the registry with the reason recorded. A false
                     # split leaves two entries for one defect - recoverable and
                     # visible. A false merge deletes a real finding - neither.
-                    entry["merge_candidate_of"] = target_id
-                    entry["merge_blocked_reason"] = (
-                        f"merge requires a tool verdict; {len(distinct_models)} "
-                        f"model(s) proposed it, which is not sufficient authority"
+                    registry.resolve(
+                        canonical_id, "MERGED", round_idx,
+                        merged_into=target_id, adjudicator="model",
+                        evidence=(
+                            f"merge requires a tool verdict; "
+                            f"{len(distinct_models)} model(s) proposed it, "
+                            f"which is not sufficient authority"
+                        ),
+                        mechanism="model_merge_vote",
                     )
                     _log(f"  MERGE WITHHELD {canonical_id} -> {target_id}: "
                          f"proposed by {len(distinct_models)} model(s), no tool verdict")
@@ -2022,8 +2512,22 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         # ── F0/F4 fix: check challenges BEFORE closing ──
         # Previously, CONFIRMED+verified closed immediately, skipping the
         # challenge check. Now: unresolved challenges take priority.
-        if entry["status"] == "CONFIRMED" and unresolved_challenges:
-            registry.resolve(canonical_id, "CONTESTED", round_idx)
+        if (entry["status"] in ("CONFIRMED", "CORROBORATED")
+                and unresolved_challenges):
+            # Remember what it was, so settling the contest restores THAT
+            # status with THAT authority. Without this, a contested-then-
+            # settled CORROBORATED would return as CONFIRMED — a model vote
+            # laundered into a tool verdict by a round-trip through CONTESTED.
+            entry["pre_contest_status"] = entry["status"]
+            entry["pre_contest_adjudicator"] = entry.get(
+                "status_adjudicator", "model")
+            registry.resolve(
+                canonical_id, "CONTESTED", round_idx, adjudicator="model",
+                evidence="; ".join(
+                    f"{v['model']}:CHALLENGE@r{v['round']}"
+                    for v in unresolved_challenges)[:500],
+                mechanism="unresolved_challenge",
+            )
             continue
 
         # ── Bugzilla CLOSED-loop (added 15 May 2026) ──
@@ -2036,7 +2540,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         # wall-clock bounded. Exception-safe — Bugzilla errors don't
         # break the state machine. Module: bench/bugzilla_loop.py.
         if (
-            entry["status"] == "CONFIRMED"
+            entry["status"] in ("CONFIRMED", "CORROBORATED")
             and not entry.get("verified")
             and not entry.get("bugzilla_attempted")
             and entry.get("proposed_fix", "").strip()
@@ -2082,13 +2586,32 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         f"{type(_bz_exc).__name__}: {str(_bz_exc)[:160]}"
                     )
 
-        if entry["status"] == "CONFIRMED" and entry.get("verified"):
-            registry.resolve(canonical_id, "CLOSED", round_idx)
+        if (entry["status"] in ("CONFIRMED", "CORROBORATED")
+                and entry.get("verified")):
+            # CLOSED stays TOOL-ONLY and remains honestly so: `verified` is
+            # only ever set by an execution — the Bugzilla close-the-loop
+            # above (fix applied to a sandbox copy, ruff/mypy/bandit/test_cmd
+            # re-run) or the falsifier gate. The model never sets it.
+            registry.resolve(
+                canonical_id, "CLOSED", round_idx, adjudicator="tool",
+                evidence=("bugzilla close-the-loop verified"
+                          if entry.get("bugzilla_verified")
+                          else "verified fix, no unresolved challenges"),
+                mechanism=("bugzilla_close_loop"
+                           if entry.get("bugzilla_verified")
+                           else "verified_flag"),
+            )
             _log(f"  CLOSED {canonical_id}: verified fix, no unresolved challenges")
             continue
 
         if entry["status"] == "CONTESTED" and not unresolved_challenges:
-            registry.resolve(canonical_id, "CONFIRMED", round_idx)
+            restored = entry.get("pre_contest_status", "CORROBORATED")
+            registry.resolve(
+                canonical_id, restored, round_idx,
+                adjudicator=entry.get("pre_contest_adjudicator", "model"),
+                evidence="challenge settled; restored pre-contest status",
+                mechanism="contest_settled",
+            )
             continue
 
         # F18 fix: use resolve() instead of direct mutation for REOPENED → OPEN.
@@ -2096,7 +2619,8 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         if entry["status"] == "REOPENED":
             registry.resolve(canonical_id, "OPEN", round_idx)
 
-        if entry["status"] in ("OPEN", "CONTESTED"):
+        if entry["status"] in ("OPEN", "CONTESTED", "CORROBORATED",
+                               "WITHHELD"):
             confirm_models = {v["model"] for v in confirms}
             # F11 contextual: severity-based confirmation quorum.
             # Floor: at least 1 independent external confirmation (source excluded).
@@ -2110,7 +2634,23 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
             )
             required = min(2, external_panel_size) if sev >= 0.7 else 1
             if independent_count >= required and not unresolved_challenges:
-                registry.resolve(canonical_id, "CONFIRMED", round_idx)
+                # THE MODEL PATH, and the reason CORROBORATED exists. This site
+                # wrote CONFIRMED from a COUNT OF OPINIONS, indistinguishable
+                # in the entry from the CONFIRMED the falsifier gate writes
+                # after executing something. resolve() now refuses it and
+                # records CORROBORATED instead: attestation, not demonstration.
+                # Only apply_falsifier_verdicts, which runs code, writes
+                # CONFIRMED.
+                registry.resolve(
+                    canonical_id, "CONFIRMED", round_idx, adjudicator="model",
+                    evidence="; ".join(
+                        f"{v['model']}:CONFIRM@r{v['round']}" for v in confirms
+                    )[:500],
+                    mechanism=(
+                        f"model_confirm_quorum "
+                        f"({independent_count}/{required} independent)"
+                    ),
+                )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2130,12 +2670,17 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
 # target — one in which the claim under test has been fixed. A sound falsifier
 # must now go QUIET. If it still fires, it is not testing that claim at all.
 #
-# WHERE THE CORRECTED COPY COMES FROM. It is ASKED FOR from the panel alongside
-# the falsifier, and read here from ``entry["corrected_copy"]``. It is NEVER
-# synthesised by applying the model's proposed fix: a fix with a bad indent or a
-# missing import makes the falsifier CRASH, the crash reads as "still fires", and
-# a genuine defect is silently un-confirmed. Two independent reviews killed that
-# route on 2026-08-04 and the reasoning is recorded here so it is not re-invented.
+# WHERE THE CORRECTED COPY COMES FROM. Two supplies, both reaching
+# ``entry["corrected_copy"]`` through one verified writer. It is ASKED FOR from
+# the panel alongside the falsifier (2026-08-12); and, because no panel has ever
+# answered in that form, it is also READ from the finding's own SEARCH/REPLACE
+# `proposed_fix`, whose two halves are an anchored passage already (2026-08-22 —
+# the reasoning is above `_derive_corrected_copy_from_fix`). It is NEVER
+# synthesised by APPLYING a fix as a patch: a fix with a bad indent or a missing
+# import makes the falsifier CRASH, the crash reads as "still fires", and a
+# genuine defect is silently un-confirmed. Two independent reviews killed that
+# route on 2026-08-04, so BOTH supplies go through `_splice_corrected_copy`,
+# which refuses a copy that does not parse before it can be measured.
 #
 # THE THIRD OUTCOME IS THE ONE THAT MATTERS. "Fires on the corrected copy" is not
 # merely a veto of one finding — it is diagnostic output about the INSTRUMENT, in
@@ -2162,8 +2707,9 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
 # key in RunnerConfig.from_dict is the exact shape of a defect this project has
 # now shipped three times (routing 2026-07-12, max_contested 2026-07-27, the
 # factorial's primary factor 2026-07-29), where the runner honours a key the
-# launcher silently drops. Nothing supplies a corrected copy today, so this is a
-# strict no-op on every existing config and every archived run.
+# launcher silently drops. Until 2026-08-22 nothing supplied a corrected copy at
+# all, so the control had never once run; the second supply below feeds it from
+# findings the registry already holds.
 
 DISC_TRIPWIRE_TOKEN = "CDSFL_DISCRIMINATION_TRIPWIRE"
 DISC_TRIPWIRE_BODY = (
@@ -2295,13 +2841,16 @@ def _normalise_probe_output(text: str, roots) -> str:
 # recorded in `_sweep_prompt`: a markdown target carries its own ``` fences, so
 # a fence cannot delimit a passage taken out of one.
 #
-# WHAT IS ASKED FOR, AND WHAT IS NEVER READ. The model supplies the PASSAGE as
-# it stands and the SAME PASSAGE with the claim corrected. The runner locates
+# WHAT IS ASKED FOR, AND WHAT IS NEVER READ HERE. The model supplies the PASSAGE
+# as it stands and the SAME PASSAGE with the claim corrected. The runner locates
 # the first inside the target and substitutes the second. The model's
 # `proposed_fix` / FIX SEARCH-REPLACE block is NEVER a source here, and nothing
-# below reads it: two reviews killed that route on 2026-08-04 because a fix with
-# a bad indent or a missing import makes the falsifier CRASH, and a crash that
-# read as "still fires" would silently un-confirm a genuine defect.
+# in this section reads it: the ask is for text, and the prompts say so. The fix
+# is read by the separate, separately-tested supply that FOLLOWS this section
+# (`_derive_corrected_copy_from_fix`, 2026-08-22), which does not apply it as a
+# patch either — it reads ONE SEARCH/REPLACE block as the same two halves this
+# splice already takes, and a copy that would make the falsifier crash is
+# refused by the same check.
 #
 # WHY AN ANCHORED PASSAGE RATHER THAN A PASTED WHOLE DOCUMENT. The field is
 # consumed as the ENTIRE content of the target (`_build_discrimination_overlay`
@@ -2625,6 +3174,162 @@ def _ingest_corrected_copies(
     return stats
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# THE SECOND SUPPLY — the finding's OWN proposed fix (wired 2026-08-22, T02)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE MEASURED PROBLEM. The ask path above is correct and it is connected, and
+# the control STILL has not fired once in this project's life: no panel has ever
+# answered in the CORRECTED_COPY form, so `entry["corrected_copy"]` is empty on
+# every archived finding and the control reports NO_CONTROL — a silence that
+# reads, at a glance, exactly like a pass. Measured 2026-08-22 over every
+# archived run: 954 of the 1503 findings that carry a `proposed_fix` parse to
+# exactly one SEARCH/REPLACE block — an anchored passage under another name. The
+# input the control has been waiting for is already in the registry.
+#
+# WHY THIS IS NOT THE ROUTE THE 2026-08-04 REVIEWS KILLED. What they killed was
+# APPLYING A FIX AS A PATCH and handing the result to the control unchecked: a
+# fix with a bad indent or a missing import makes the falsifier CRASH, the crash
+# reads as "still fires", and a genuine defect is silently un-confirmed. That
+# failure mode was closed at the door on 2026-08-12, before this was written and
+# for its own reasons: `_splice_corrected_copy` REFUSES a copy that does not
+# parse as Python, refuses an anchor that does not occur in the target, refuses
+# one that occurs twice, and refuses one that changes nothing. A derived copy
+# goes through that same door and is refused by the same checks — it is not
+# privileged over a model's own passage in any way.
+#
+# AND THE TWO SHAPES ARE THE SAME SHAPE. A SEARCH/REPLACE block IS an anchored
+# passage: `search` is "the passage exactly as it stands in the target",
+# `replace` is "the same passage with this claim corrected". Nothing is applied
+# and nothing is patched here; one block is READ as the two halves the splice
+# already takes.
+#
+# WHAT IS DELIBERATELY NOT DONE.
+#   * A model-supplied passage ALWAYS wins. Derivation fills a gap; it never
+#     overwrites, and it never runs on an entry that already carries a copy.
+#   * A fix with more than one block against the target is REFUSED, not merged.
+#     The stored anchor is ONE pair, and `_refresh_stale_corrected_copies` re-
+#     splices from it after a target rewrite; a merged multi-block copy could not
+#     be re-derived and would rot into a document that no longer exists.
+#   * A derived refusal is recorded under its OWN key. `corrected_copy_rejected`
+#     is rendered back to the panel, and telling a model its passage was refused
+#     when it never sent one is a message about a thing that did not happen.
+#   * The ownership rule does not apply. It exists because a passage correcting a
+#     DIFFERENT claim mints a mechanical fault against a sound instrument; a
+#     finding's own proposed fix corrects THIS claim by construction, whoever
+#     wrote the falsifier now attached to it.
+
+
+def _fix_block_targets(block, target_rel: str) -> bool:
+    """Does this SEARCH/REPLACE block edit the reviewed target?
+
+    `apply_fix_blocks`' own matching rule, restated rather than borrowed because
+    that function APPLIES blocks and this one only SELECTS one: a path-less block
+    defaults to the single target under review, an explicit path must match in
+    full or by basename.
+    """
+    bp = (getattr(block, "file_path", "") or "").strip()
+    if not bp:
+        return True
+    tgt = (target_rel or "").strip()
+    return bool(tgt) and (bp == tgt or Path(bp).name == Path(tgt).name)
+
+
+def _derive_corrected_copy_from_fix(
+    entry: dict, target_text: str, *, target_rel: str = "", cid: str = "",
+) -> bool:
+    """Read one finding's proposed fix as a corrected passage, or decline.
+
+    Returns True only if ``entry["corrected_copy"]`` was written — and it is
+    written by `_accept_corrected_copy`, the single production writer, so a
+    derived copy passes exactly the checks a model-supplied one passes. Every
+    decline names its reason in ``corrected_copy_from_fix`` and changes nothing
+    else on the entry.
+    """
+    if (entry.get("corrected_copy") or "").strip():
+        return False
+    fix = (entry.get("proposed_fix") or "").strip()
+    if not fix:
+        return False
+
+    def _decline(reason: str) -> bool:
+        entry["corrected_copy_from_fix"] = {"used": False, "reason": reason}
+        return False
+
+    blocks = [b for b in parse_search_replace_blocks(fix)
+              if _fix_block_targets(b, target_rel)]
+    if not blocks:
+        return _decline(
+            f"the proposed fix carries no SEARCH/REPLACE block against "
+            f"{target_rel or 'the target'}, so there is no anchored passage to "
+            f"derive a corrected copy from")
+    if len(blocks) > 1:
+        return _decline(
+            f"the proposed fix carries {len(blocks)} SEARCH/REPLACE blocks "
+            f"against {target_rel or 'the target'}; a corrected copy is stored "
+            f"as ONE anchored passage so it can be re-spliced after a target "
+            f"rewrite, and a merged copy could not be")
+    block = blocks[0]
+    # Checked BEFORE storing rather than by catching the store's refusal: the
+    # refusal text `_accept_corrected_copy` writes is addressed to a model that
+    # supplied a passage, and no model supplied this one.
+    copy, reason = _splice_corrected_copy(
+        target_text, block.search, block.replace, target_rel)
+    if not copy:
+        _log(f"  corrected copy NOT DERIVED {cid or '?'}: {reason}")
+        return _decline(reason)
+    ok = _accept_corrected_copy(
+        entry, block.search, block.replace, target_text,
+        target_rel=target_rel, by="proposed_fix", cid=cid)
+    if ok:
+        entry["corrected_copy_from_fix"] = {"used": True, "reason": reason}
+        _log(f"  corrected copy DERIVED {cid or '?'} from its own proposed "
+             f"fix: {reason}")
+    return ok
+
+
+def _supply_corrected_copies_from_fixes(
+    registry, cfg=None, repo_root: Optional[str] = None,
+) -> Dict[str, int]:
+    """Fill the gaps the ask path left, from the findings' own proposed fixes.
+
+    Called once per round, immediately after `_ingest_corrected_copies` and
+    BEFORE the falsifier gate, so a copy derived in round K reaches the control
+    in round K rather than one round late. A separate call site from the ask,
+    deliberately: the ask is what a model said this round, this is what the
+    registry already held, and a reader of either path should not have to
+    disentangle the two.
+    """
+    target_rel = (getattr(cfg, "test_article", "") or "") if cfg else ""
+    try:
+        target_text = (Path(repo_root or REPO_ROOT) / target_rel).read_text(
+            encoding="utf-8", errors="replace")
+    except (OSError, ValueError):
+        target_text = ""
+    stats = {"candidates": 0, "derived": 0, "declined": 0}
+    if not target_text.strip():
+        # A target that cannot be read is not evidence about any finding. Every
+        # splice below would refuse anyway, and refusing in bulk would stamp a
+        # reason on every finding about what is really a transient read fault.
+        return stats
+    for cid, entry in registry.entries.items():
+        if (entry.get("corrected_copy") or "").strip():
+            continue
+        if not (entry.get("proposed_fix") or "").strip():
+            continue
+        stats["candidates"] += 1
+        if _derive_corrected_copy_from_fix(
+                entry, target_text, target_rel=target_rel, cid=cid):
+            stats["derived"] += 1
+        else:
+            stats["declined"] += 1
+    if stats["candidates"]:
+        _log(f"  corrected copies from proposed fixes: {stats['derived']} "
+             f"derived, {stats['declined']} declined, of {stats['candidates']} "
+             f"findings that carry a fix and no copy")
+    return stats
+
+
 def run_discrimination_control(
     entry: dict, *, repo_root: Optional[str] = None,
     target_rel: str = "", timeout: Optional[int] = None,
@@ -2936,8 +3641,17 @@ def _apply_discrimination_control(
 def apply_falsifier_verdicts(
     registry: FindingRegistry, round_idx: int,
     cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
+    ledger=None,
 ):
     """GATED "tools decide, not votes" override (2026-06-03).
+
+    ``ledger`` (T03 wiring, 2026-08-22): an optional
+    :class:`bench.evidence.SurvivedFalsificationLedger`. EVERY verdict this gate
+    obtains is shown to it — CONFIRMED, REFUTED, ERROR, UNTOOLABLE and
+    INTEGRITY_VIOLATION alike — because the ledger's denominator is what lets an
+    empty section say WHY it is empty ("never invoked" and "40 falsifiers ran
+    and every one fired" are opposite results). Only a REFUTED writes a row.
+    Passing no ledger leaves behaviour byte-identical.
 
     When ``cfg.falsifier_gate_enabled`` a finding's truth is set by the RUNNER
     independently re-running the model-attached falsifier
@@ -2970,6 +3684,30 @@ def apply_falsifier_verdicts(
         return
     from bench.falsifier_verify import reverify_falsifier
     _HARD_TERMINAL = {"MERGED", "CLOSED", "DUPLICATE"}
+
+    def _to_ledger(cid, entry, verdict):
+        """Show one re-execution result to the survival ledger, if wired.
+
+        The ledger raises on a miswiring rather than absorbing it, and this is
+        inside the round loop — so the raise is caught and logged LOUDLY rather
+        than killing a live run. A refused row is a measurement lost, never a
+        survival gained.
+        """
+        if ledger is None:
+            return
+        try:
+            ledger.record(
+                finding_id=cid,
+                claim_under_test=(entry.get("description") or ""),
+                falsifier_code=(entry.get("falsifier_code") or ""),
+                authored_by=(entry.get("source_model") or ""),
+                runner_verdict=verdict,
+                round_idx=round_idx,
+                severity=float(entry.get("severity") or 0.0),
+            )
+        except ValueError as _lx:  # noqa: BLE001 — never lose a run to bookkeeping
+            _log(f"  *** WARNING: survival ledger REFUSED {cid} ({_lx}) — that "
+                 f"verdict is missing from the survival denominator ***")
     tally = {"CONFIRMED": 0, "REFUTED": 0, "HIL": 0}
     disc_tally: dict = {}
     for cid, e in list(registry.entries.items()):
@@ -2982,13 +3720,23 @@ def apply_falsifier_verdicts(
             # HIL and is never left standing as a vote-CONFIRMED genuine critical.
             if is_critical:
                 e["falsifier_verdict"] = "UNTOOLABLE"
+                _to_ledger(cid, e, "UNTOOLABLE")
                 e["escalated"] = True
-                if e.get("status") == "CONFIRMED":
+                # T04 (2026-08-22): demote EVERY terminal status, not only
+                # CONFIRMED — the vote pass runs BEFORE the gate and can
+                # already have written REFUTED on a claim no tool measured.
+                if e.get("status") in TERMINAL_STATUSES:
                     registry.resolve(cid, "UNCONFIRMED", round_idx)
+                    e["verified"] = False
                 tally["HIL"] += 1
             continue
         verdict = reverify_falsifier(fcode, repo_root=repo_root)
         e["falsifier_verdict"] = verdict
+        # Recorded on the RUNNER's re-execution result, before any later stage
+        # rewrites the verdict field (the discrimination control overwrites it
+        # with NON_DISCRIMINATING), because what the ledger documents is what
+        # the falsifier did when the runner ran it.
+        _to_ledger(cid, e, verdict)
         if verdict == "CONFIRMED":
             # DISCRIMINATION CONTROL (founder ruling 2026-08-08). "It fired" is
             # not "it fired because of the claim". Before a CONFIRMED closes a
@@ -3034,7 +3782,19 @@ def apply_falsifier_verdicts(
             # an un-demonstrated critical (REFUTED, ERROR, or UNTOOLABLE) is
             # escalated, never dropped — eliminating the one place faking can occur.
             e["escalated"] = True
-            if e.get("status") == "CONFIRMED":
+            # T04 (founder ruling 2026-08-22): ERROR/UNTOOLABLE is an
+            # EQUIPMENT FAILURE — the instrument never ran, so it is evidence
+            # in NEITHER direction and demotes EVERY terminal status (the vote
+            # pass runs before this gate and can already have written REFUTED;
+            # measured: two ERROR-verdict findings stood REFUTED with
+            # verified=False). A REFUTED critical keeps the narrower
+            # CONFIRMED-only demotion — there the falsifier RAN, and
+            # CONFIRM-only already refuses to trust its clean exit.
+            if verdict in EQUIPMENT_FAILURE_VERDICTS:
+                if e.get("status") in TERMINAL_STATUSES:
+                    registry.resolve(cid, "UNCONFIRMED", round_idx)
+                    e["verified"] = False
+            elif e.get("status") == "CONFIRMED":
                 registry.resolve(cid, "UNCONFIRMED", round_idx)
             tally["HIL"] += 1
     if any(tally.values()):
@@ -3359,7 +4119,23 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # severity, then confirm or leave it in the residual queue — no
             # indefinite limbo. One attempt only (error_routed flag) so
             # sub-criticals cannot consume the ladder round after round.
-            if e.get("falsifier_verdict") != "ERROR" or e.get("error_routed"):
+            #
+            # DISCRIMINATION FAILURES take the same door (founder ruling
+            # 2026-08-22: use the mechanism that exists). NON_DISCRIMINATING is
+            # the same class as ERROR — the INSTRUMENT is broken, not the claim:
+            # the falsifier fires against a corrected copy, so it demonstrated
+            # nothing about this finding. Criticals already reach the ladder
+            # (escalated + verdict != CONFIRMED); sub-criticals were skipped
+            # here, leaving a mechanical fault no stronger writer ever saw.
+            # Same one-attempt, transport-safe semantics as the ERROR class.
+            # T04 (founder ruling 2026-08-22): UNTOOLABLE joins ERROR. Both
+            # are equipment failures — the instrument produced no reading —
+            # and the ruling makes both subject to re-routing: this ladder is
+            # the mechanism that exists to obtain the falsifier that crashed
+            # or was never written. Same one-attempt guard, same
+            # transport-dead protection.
+            if (e.get("falsifier_verdict") not in ROUTABLE_INSTRUMENT_FAULTS
+                    or e.get("error_routed")):
                 continue
             # Adversarial-pass repair (2026-07-27): consume the one attempt only
             # if a rung actually REACHED a model (transport-dead rounds — the
@@ -8140,6 +8916,25 @@ def _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:
     return REPO_ROOT / "bench" / "logs" / f"{cfg.experiment_name}_{ts}"
 
 
+def attach_survival_ledger(result: Dict[str, Any], ledger=None) -> Dict[str, Any]:
+    """Embed the survived-falsification ledger in a run report (T03, 2026-08-22).
+
+    The zero-plant control's whole difficulty is that a clean run and a run in
+    which nothing happened produce the same ABSENCE. The ledger's report section
+    distinguishes them — ``status`` is NEVER_INVOKED when it was never fed and
+    ACTIVE when it was — so the report must carry it unconditionally, including
+    on runs with the falsifier gate switched off. ``ledger=None`` therefore
+    reports a NEVER_INVOKED section rather than omitting the key: a missing key
+    reads as "no survivals" to every consumer, which is the exact
+    misreading this ledger exists to prevent.
+    """
+    from bench.evidence import SurvivedFalsificationLedger
+    if ledger is None:
+        ledger = SurvivedFalsificationLedger()
+    result[SurvivedFalsificationLedger.REPORT_KEY] = ledger.report_section()
+    return result
+
+
 def run_experiment(
     exp_config: ExperimentConfig,
     cdsfl_text: str,
@@ -8389,6 +9184,12 @@ def run_experiment(
 
     # Endocrine Layer
     endo = EndocrineLayer(source_paths=source_paths_str, test_cmd=None, max_fix_evals=20)
+
+    # Survived-falsification ledger (T03 wiring, 2026-08-22). One per run, fed
+    # by the falsifier gate, reported at the end. Created unconditionally so a
+    # gate-disabled run still reports NEVER_INVOKED rather than silence.
+    from bench.evidence import SurvivedFalsificationLedger as _SurvLedger
+    survival_ledger = _SurvLedger(experiment=cfg.experiment_name)
 
     # Finding registry
     registry = FindingRegistry()
@@ -9126,9 +9927,19 @@ def run_experiment(
         # one — which is every archived round.
         _ingest_corrected_copies(
             registry, responses, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
+        # Second supply (2026-08-22). The ask above has never once been
+        # answered, so the control has never once run. A finding's own proposed
+        # fix already carries the anchored passage the control needs, and it is
+        # verified by the same splice a model's passage goes through — see the
+        # note above `_derive_corrected_copy_from_fix`. Runs after the ask so a
+        # model-supplied passage always wins, and before the gate so a copy
+        # derived this round is controlled this round.
+        _supply_corrected_copies_from_fixes(
+            registry, cfg=cfg, repo_root=str(REPO_ROOT))
         # "tools decide" override (gated, default-off): the runner re-runs each
         # model-attached falsifier and lets that verdict win over the vote.
-        apply_falsifier_verdicts(registry, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
+        apply_falsifier_verdicts(registry, round_idx, cfg=cfg, repo_root=str(REPO_ROOT),
+                                 ledger=survival_ledger)
         # Capability-aware routing (gated, default-off): route the criticals
         # the gate escalated to HIL to a stronger writer before accepting the HIL.
         _apply_routing(registry, round_idx, exp_config, cfg=cfg,
@@ -10341,6 +11152,36 @@ def run_experiment(
         _log(f"  *** WARNING: verification chain NOT sealed ({_vc_exc}) — "
              f"this run is UNSIGNED and must be reported as such ***")
         result["merkle_chain"] = {"sealed": False, "error": str(_vc_exc)}
+
+    # The positive record: which claims were TESTED AND STOOD, and — when there
+    # are none — whether that is because nothing survived or because nothing was
+    # measured. Unconditional; never raises a run out of its own report.
+    try:
+        attach_survival_ledger(result, survival_ledger)
+    except Exception as _sl_exc:  # noqa: BLE001 — never lose a report to bookkeeping
+        _log(f"  WARNING: survival ledger section not attached ({_sl_exc})")
+
+    # Catalogue export (2026-08-22). One machine-readable record per finding
+    # carrying status, the evidence that decided it and the mechanism, plus the
+    # vocabulary that decodes them. Exception-safe: a completed run is never
+    # lost to a catalogue write.
+    try:
+        _cat_path = logs_dir / f"{cfg.experiment_name}_finding_catalogue.jsonl"
+        _vocab_path = logs_dir / f"{cfg.experiment_name}_status_vocabulary.json"
+        _records = export_finding_catalogue(registry, _cat_path)
+        export_status_vocabulary(_vocab_path)
+        result["finding_catalogue"] = {
+            "path": str(_cat_path),
+            "vocabulary_path": str(_vocab_path),
+            "records": len(_records),
+            "demonstrated": sum(1 for r in _records if r["demonstrated"]),
+            "vocabulary_version": STATUS_VOCABULARY_VERSION,
+        }
+        _log(f"  finding catalogue: {len(_records)} record(s) -> {_cat_path}")
+    except Exception as _cat_exc:  # noqa: BLE001
+        _log(f"  *** WARNING: finding catalogue NOT written ({_cat_exc}) ***")
+        result["finding_catalogue"] = {"written": False,
+                                       "error": str(_cat_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

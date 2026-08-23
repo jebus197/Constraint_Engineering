@@ -2498,7 +2498,7 @@ Constraint_Engineering/
     dm/                       -- Dynamic management modules (split from 6,890-line monolith)
       _types.py               -- Config, enums, dataclasses (shared vocabulary)
       _role_assignment.py     -- RoleAssignment (Area 1)
-      _load_balancer.py       -- Allocation, LoadBalancer (Area 2)
+      _load_balancer.py       -- Allocation, LoadBalancer (Area 2) [SHELVED 2026-08-22]
       _fsm.py                 -- RoundProgressionFSM (Area 3)
       _convergence.py         -- ConvergenceDetector, similarity (Area 4)
       _diminishing_returns.py -- DiminishingReturnsDetector (Area 5)

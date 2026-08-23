@@ -10,7 +10,7 @@ them so that existing imports continue to work unchanged:
 Module structure (bench/dm/):
     _types.py              Config, enums, dataclasses (all shared vocabulary)
     _role_assignment.py    RoleAssignment (Area 1)
-    _load_balancer.py      Allocation, LoadBalancer (Area 2)
+    _load_balancer.py      Allocation, LoadBalancer (Area 2) [SHELVED 2026-08-22]
     _fsm.py                RoundProgressionFSM (Area 3)
     _convergence.py        ConvergenceDetector, finding similarity (Area 4)
     _diminishing_returns.py DiminishingReturnsDetector (Area 5)

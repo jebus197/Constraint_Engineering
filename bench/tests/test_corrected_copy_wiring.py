@@ -13,8 +13,12 @@ WHAT IS WIRED NOW. The panel is ASKED for the corrected passage alongside the
 falsifier, in the SAME labelled form the falsifier itself uses, in all three
 prompts that solicit a falsifier (the round directive, the routing ladder, the
 post-convergence sweep). The reply is parsed, VERIFIED against the target, and
-spliced into a full corrected copy. It is never synthesised from the model's
-proposed fix — the route two reviews killed on 2026-08-04.
+spliced into a full corrected copy. This path never reads the model's proposed
+fix; a second supply that does — reading ONE SEARCH/REPLACE block as an anchored
+passage, through the same verified splice — was added on 2026-08-22 because no
+panel ever answered the ask, and it is pinned in
+`test_corrected_copy_from_proposed_fix.py`. Neither path APPLIES a fix as a
+patch, which is the route two reviews killed on 2026-08-04.
 
 WHY A SPLICE RATHER THAN A PASTED DOCUMENT. The field is consumed as the entire
 content of the target. A pasted whole document is one truncation away from a
@@ -810,9 +814,10 @@ class TestTheMechanismHasAProductionWriter:
         assert fns == {"_accept_corrected_copy", "_refresh_stale_corrected_copies"}, fns
 
     def test_the_ingest_never_reads_the_proposed_fix(self):
-        """The corrected copy is ASKED FOR, never synthesised from the model's
-        fix. Asserted structurally so a later edit cannot quietly re-introduce
-        the route two reviews rejected."""
+        """The ASK path is text-only, and stays that way. The fix is read by
+        `_derive_corrected_copy_from_fix`, which is deliberately not one of these
+        functions: asserted structurally so the two supplies cannot silently
+        merge, and so no edit can re-introduce APPLYING a fix as a patch."""
         tree = ast.parse(RUNNER_SRC)
         for node in ast.walk(tree):
             if not isinstance(node, ast.FunctionDef):

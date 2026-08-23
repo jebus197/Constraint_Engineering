@@ -21,11 +21,11 @@ L = REPO / "bench/logs/build_experiment_2026-08-22"
 IDX = json.loads((L / "RESPONSE_MODEL_INDEX.json").read_text())
 # task -> the response file whose patch the gate ACCEPTED
 ACCEPTED = {
-    "T01": "T01_rung3_response.md",   # fable, the panel's converged site
+    "T01": "T01_REBASED_response.md",   # fable; guard re-scoped per the item-5 amendment
     "T02": "T02_rung2_response.md", "T03": "T03_rung2_response.md",
     # rebased over T03's inserted ledger line, 2026-08-23
     "T04": "T04_REBASED_response.md",
-    "T05": "T05_rung2_response.md",
+    "T05": "T05_REBASED_response.md",   # rebased onto T04's guard, fall-through
     "T06": "T06_rung2_response.md", "T07": "T07_rung1_response.md",
     "T08": "T08_rung1_response.md", "T09": "T09_rung2_response.md",
     "T10": "T10_rung1_response.md",

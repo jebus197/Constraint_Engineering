@@ -189,7 +189,13 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="stop after N findings")
     ap.add_argument("--runs", default="", help="comma-separated run prefixes")
     ap.add_argument("--out", default=str(OUT), help="where to write the record")
+    ap.add_argument("--classify-route-a-failures", action="store_true",
+                    help=("classify NO_APPLICABLE_FIX and INDETERMINATE_ERROR "
+                          "rows in the archived record"))
     args = ap.parse_args()
+    if args.classify_route_a_failures:
+        print(json.dumps(classify_route_a_failures(args.out), indent=1, sort_keys=True))
+        return 0
     want = {r.strip() for r in args.runs.split(",") if r.strip()} or set(RUNS)
 
     findings = []
@@ -339,6 +345,102 @@ def _apply_fix(src: str, fix: str):
             out = out.replace(search, replace, 1)
             applied += 1
     return out if applied else None
+
+
+def _fix_blocks(fix: str) -> list[tuple[str, str]]:
+    """Parse archived fix blocks without applying them."""
+    return re.findall(r"<<<<\s*SEARCH[^\n]*\n(.*?)\n====\s*REPLACE[^\n]*\n(.*?)\n>>>>",
+                      fix or "", re.S)
+
+
+def _archive_entry_index(repo: pathlib.Path = REPO) -> dict[tuple[str, str], dict]:
+    """Map ``(run_directory, canonical_id)`` to the archived finding entry."""
+    idx = {}
+    for rp in sorted(p for p in (repo / "bench/logs").glob("*/*_report.json")
+                     if ".errata" not in str(p)):
+        nm = rp.parent.name
+        if nm.endswith("_latest"):
+            continue
+        d = json.loads(rp.read_text(encoding="utf-8", errors="replace"))
+        for cid, entry in ((d.get("registry") or {}).get("entries") or {}).items():
+            idx[(nm, cid)] = entry
+    return idx
+
+
+def classify_route_a_failures(record_path: str | pathlib.Path = OUT) -> dict:
+    """Classify the archived Route-A rows that could not be scored.
+
+    The 2026-08-22 archive has two unscored Route-A populations:
+    ``NO_APPLICABLE_FIX`` and ``INDETERMINATE_ERROR``. This explains each row by
+    inspecting the stored finding, its proposed fix, the stored target versions,
+    and whether the patched baseline is syntactically valid.
+    """
+    record = json.loads(pathlib.Path(record_path).read_text(encoding="utf-8"))
+    entries = _archive_entry_index()
+    rows = [r for r in record.get("rows", [])
+            if r.get("route_a") in ("NO_APPLICABLE_FIX", "INDETERMINATE_ERROR")]
+    counts: collections.Counter[str] = collections.Counter()
+    classified = []
+
+    for row in rows:
+        run, cid, target = row["run"], row["cid"], row["target"]
+        entry = entries.get((run, cid), {})
+        fix = (entry.get("proposed_fix") or "").strip()
+        blocks = _fix_blocks(fix)
+        versions = _versions(target)
+        baseline = next((txt for sha, txt in versions if sha == row.get("baseline_sha")), "")
+        cause = ""
+        detail = ""
+
+        if row["route_a"] == "NO_APPLICABLE_FIX":
+            if not fix:
+                cause = "no_proposed_fix_recorded"
+                detail = "the archived finding has an empty proposed_fix field"
+            elif not blocks:
+                cause = "malformed_patch_no_parseable_search_replace_block"
+                detail = "the proposed_fix text is not a parseable SEARCH/REPLACE block"
+            else:
+                searches = [search for search, _replace in blocks]
+                matched = [sha for sha, txt in versions
+                           if any(search and search in txt for search in searches)]
+                if not matched:
+                    cause = "search_block_matches_no_stored_target_version"
+                    detail = "no SEARCH block appears in any stored version of the target"
+                elif not any(search and search in baseline for search in searches):
+                    cause = "search_block_matches_stored_version_but_not_firing_baseline"
+                    detail = ("a SEARCH block appears in stored history, but not in the "
+                              "baseline version where the falsifier fired")
+                else:
+                    cause = "applicable_patch_would_not_change_text"
+                    detail = "a SEARCH block matched the baseline but replacement was a no-op"
+        else:
+            patched = _apply_fix(baseline, fix) if fix else None
+            if not patched or patched == baseline:
+                cause = "errored_route_had_no_effective_patch"
+                detail = "the archived row errored, but its proposed fix did not apply"
+            else:
+                try:
+                    compile(patched, target, "exec")
+                except SyntaxError as exc:
+                    cause = "proposed_fix_makes_target_syntax_error"
+                    detail = f"{exc.msg} at line {exc.lineno}"
+                else:
+                    cause = "patched_target_compiles_but_falsifier_errors_after_fix"
+                    detail = ("the proposed fix applies and compiles, but the archived "
+                              "Route-A rerun still returned ERROR")
+
+        counts[cause] += 1
+        classified.append({
+            "run": run,
+            "cid": cid,
+            "target": target,
+            "route_a": row["route_a"],
+            "baseline_sha": row.get("baseline_sha", ""),
+            "cause": cause,
+            "detail": detail,
+        })
+
+    return {"n": len(classified), "counts": dict(counts), "classifications": classified}
 
 
 def _progress(i, n, t0, tally):

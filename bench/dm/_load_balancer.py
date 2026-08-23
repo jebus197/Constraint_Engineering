@@ -1,4 +1,29 @@
-"""CDSFL Dynamic Management — Load Balancing (Area 2).
+"""CDSFL Dynamic Management — Load Balancing (Area 2). SHELVED 2026-08-22.
+
+SHELVED 2026-08-22 by founder ruling: shelved, NOT retired. Deleting the module
+would widen the error surface; quarantining it does not. Three grounds, each
+measured rather than asserted:
+
+  1. It has never run outside its own tests. No runner in the Experiment 40-54
+     arc constructs a ``LoadBalancer``: ``bench/reference_runner_v2.py``
+     contains no reference to it, and none of the helpers it imports from
+     ``bench/run_exp17_immune.py`` reaches it. Held by
+     ``bench/tests/test_load_balancer_shelved.py``.
+  2. It reports an impossible allocation as a success. When no model can hold a
+     task, ``_solve_greedy`` force-assigns it past the F1 token limit anyway and
+     ``solve()`` still returns a normal ``Allocation``. The violation reaches
+     the caller only as a ``warnings.warn`` and a string in
+     ``_allocation_warnings`` — never as a failure.
+  3. Its self-description was false for four and a half months. From 2 April
+     2026 the caller docstring in ``bench/dm/_manager.py`` claimed allocation
+     used LIVE capability fingerprints. Nothing in this module reads a
+     fingerprint: allocation depends only on token limits, costs, latency, role
+     admissibility and current loads. Corrected 2026-08-22.
+
+SHELVED means quarantined, not deleted and not disabled. The class still
+imports, still solves, and its 16 tests still run. What it forbids is a NEW
+caller, and treating any result it produces as commissioned evidence, until the
+three grounds above are re-examined.
 
 Implements multi-objective constrained task allocation (GAP variant).
 Extracted from ``bench/dynamic_management.py``.
@@ -22,6 +47,19 @@ from bench.dm._types import (
     Task,
 )
 from bench.dm._role_assignment import RoleAssignment
+
+
+# ── Shelving markers (machine-readable; see module docstring) ─────────────
+SHELVED = True
+SHELVED_DATE = "2026-08-22"
+SHELVED_REASON = (
+    "Founder ruling 2026-08-22: shelve, do not retire — deleting widens the "
+    "error surface, quarantining does not. It has never run outside its own "
+    "tests; it reports an impossible allocation as a success (the F1 "
+    "force-assign path returns a normal Allocation); and its self-description "
+    "was false for four and a half months (the caller claimed LIVE "
+    "fingerprints, this module reads none)."
+)
 
 
 @dataclass(frozen=True)

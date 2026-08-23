@@ -291,6 +291,20 @@ of 25 (Fisher exact p = 2.5×10⁻⁵).
 12. Next round begins or experiment terminates
 ```
 
+## Shelved Components
+
+A shelved component is quarantined, not deleted: it still imports, its tests still run, and no new caller may be added to it until the grounds for shelving are re-examined. Deleting widens the error surface; quarantining does not.
+
+### Load Balancer (`bench/dm/_load_balancer.py`) — SHELVED 2026-08-22
+
+Multi-objective constrained task allocation (Area 2 of dynamic management, reached through `DynamicManager.get_allocation` in `bench/dm/_manager.py`). Shelved on 2026-08-22 on three measured grounds:
+
+1. **It has never run outside its own tests.** `bench/reference_runner_v2.py`, the runner for the Experiment 40-54 arc, contains no reference to `LoadBalancer`, `Allocation` or `get_allocation`, and none of the helpers it imports from `bench/run_exp17_immune.py` reaches them. The 16 tests in `bench/tests/test_dynamic_management.py` are the only place it has executed.
+2. **It reports an impossible allocation as a success.** When no model can hold a task, the greedy solver force-assigns it past the F1 token limit and `solve()` still returns a normal `Allocation`; the violation surfaces only as a warning string.
+3. **Its self-description was false for four and a half months.** From 2 April 2026 the caller docstring claimed allocation used live capability fingerprints. The module reads no fingerprint at all — allocation depends only on token limits, costs, latency, role admissibility and current loads. Corrected 2026-08-22.
+
+`bench/tests/test_load_balancer_shelved.py` holds this state: it asserts the module carries its shelving marker, that this section says so, and that the runner does not call the component.
+
 ## Communication Topologies
 
 **Star / Blackboard**: Models interact only with the central registry. No model-to-model messaging. Runner owns all state. Used from Experiment 33 onwards as the default.

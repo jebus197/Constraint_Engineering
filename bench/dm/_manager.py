@@ -188,12 +188,16 @@ class DynamicManager:
     def get_allocation(
         self, tasks: Sequence[Task]
     ) -> Tuple[Allocation, float, bool]:
-        """Get task allocation for the current round.
+        """Get task allocation for the current round. SHELVED 2026-08-22.
 
-        Uses Area 2 (Load Balancing) with LIVE fingerprints — allocation
-        adapts to observed performance, not just initial estimates. Every
-        active model gets work matched to its demonstrated capability.
-        No model is excluded for being "weaker."
+        Area 2 (Load Balancing) is SHELVED — see ``bench/dm/_load_balancer.py``.
+        No runner calls this method; it is retained, not commissioned.
+
+        Correction 2026-08-22: this docstring claimed from 2 April 2026 that
+        allocation used LIVE fingerprints and adapted to observed performance.
+        It does not, and never did. ``LoadBalancer`` reads no fingerprint field:
+        allocation depends only on token limits, costs, latency, role
+        admissibility and current loads.
 
         Args:
             tasks: Tasks to allocate.

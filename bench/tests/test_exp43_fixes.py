@@ -172,7 +172,13 @@ class TestFix2ErrorRouting:
         _apply_routing(reg, 7, exp_config, cfg=cfg)
         assert calls == [cid, cid], "retry allowed while no model was reached"
 
-    def test_subcritical_untoolable_not_routed(self, monkeypatch):
+    def test_subcritical_untoolable_routed_once(self, monkeypatch):
+        """SUPERSEDED assertion (T04, founder ruling 2026-08-22). This used to
+        assert calls == [] — "only ERROR verdicts qualify for sub-critical
+        routing". The ruling widens FIX 2: ERROR (the test crashed) and
+        UNTOOLABLE (there was no test) are the same equipment failure, and
+        both are subject to re-routing. The one-attempt error_routed guard is
+        unchanged; see test_equipment_error_not_terminal.py."""
         unresolved = SimpleNamespace(verdict="", resolved=False,
                                      duplicate_of=None, falsifier_code="",
                                      model_used="")
@@ -181,7 +187,7 @@ class TestFix2ErrorRouting:
         cid = _register(reg, "F011", 0.3, "UNCONFIRMED", "UNTOOLABLE")
         reg.entries[cid]["escalated"] = True
         _apply_routing(reg, 6, exp_config, cfg=cfg)
-        assert calls == [], "only ERROR verdicts qualify for sub-critical routing"
+        assert calls == [cid], "UNTOOLABLE sub-critical must be re-routed"
 
     def test_routing_disabled_is_noop(self, monkeypatch):
         unresolved = SimpleNamespace(verdict="", resolved=False,

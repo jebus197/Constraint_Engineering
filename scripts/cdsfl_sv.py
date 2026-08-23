@@ -1249,6 +1249,107 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     return audit
 
 
+def _memory_ledger_section(text: str, heading: str) -> str:
+    """Return a top-level markdown section from ``heading`` to the next ``##``."""
+    start = text.index(heading)
+    end = text.find("\n## ", start + len(heading))
+    return text[start:] if end == -1 else text[start:end]
+
+
+def _memory_ledger_bucket_names(section: str) -> set[str]:
+    """Names counted by the public exclusion ledger.
+
+    This intentionally mirrors ``bench/tests/test_recovery_memory_doc_repairs.py``:
+    uppercase ``MEMORY.md`` prose mentions are not bucket entries, while the
+    lower-case private memory filenames are.
+    """
+    return set(re.findall(r"`([a-z0-9_.-]+\.md)`", section))
+
+
+def _replace_memory_ledger_count_row(text: str, label: str, count: int) -> str:
+    pattern = re.compile(
+        rf"(\|[^|\n]*{re.escape(label)}[^|\n]*\|\s*)(\**)\d+(\**)(\s*\|)"
+    )
+
+    def repl(match: re.Match[str]) -> str:
+        return f"{match.group(1)}{match.group(2)}{count}{match.group(3)}{match.group(4)}"
+
+    return pattern.sub(repl, text, count=1)
+
+
+def _update_memory_exclusions_ledger(
+    root: Path,
+    *,
+    mem_dir: Optional[Path] = None,
+    dry_run: bool = False,
+    counted_at: Optional[str] = None,
+) -> bool:
+    """Recount ``resources/MEMORY_EXCLUSIONS.md`` from the private memory dir.
+
+    The ledger's recurring failure mode was not the check; it was relying on an
+    author to bump the accounting table by hand after writing a memory file.
+    ``sv`` already knows the private memory directory for its completeness
+    checks, so the save path owns the recount.
+    """
+    ledger = root / "resources" / "MEMORY_EXCLUSIONS.md"
+    mem = _MEMORY_DIR if mem_dir is None else mem_dir
+    if not ledger.is_file() or not mem.is_dir():
+        return False
+
+    try:
+        text = ledger.read_text(encoding="utf-8")
+        excluded = _memory_ledger_bucket_names(
+            _memory_ledger_section(text, "## Excluded Entries")
+        )
+        unclassified = _memory_ledger_bucket_names(
+            _memory_ledger_section(text, "## Unclassified — awaiting review")
+        )
+    except (OSError, UnicodeDecodeError, ValueError):
+        return False
+
+    on_disk = sorted(p.name for p in mem.iterdir() if p.is_file())
+    if _MEMORY_INDEX_NAME not in on_disk:
+        return False
+
+    individual = [name for name in on_disk if name != _MEMORY_INDEX_NAME]
+    handoffs = {name for name in individual if name.startswith("handoff_")}
+    mirrored = set(individual) - excluded - unclassified - handoffs
+
+    counts = {
+        "Mirrored (in summarised form) in `MEMORY.md`": len(mirrored),
+        "Named as excluded, with a reason, below": len(excluded),
+        "Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored": len(handoffs),
+        "Unclassified — neither mirrored nor previously declared": len(unclassified),
+        "total": len(individual),
+    }
+
+    stamp = counted_at or datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    updated = re.sub(
+        r"## Accounting \(counted [^)]+\)",
+        f"## Accounting (counted {stamp})",
+        text,
+        count=1,
+    )
+    updated = re.sub(
+        r"The directory holds \*\*\d+ files\*\*, of which one is `MEMORY\.md` itself\s*\n"
+        r"\(the index\), leaving \*\*\d+ individual memory files\*\*\.",
+        (
+            f"The directory holds **{len(on_disk)} files**, of which one is `MEMORY.md` itself\n"
+            f"(the index), leaving **{len(individual)} individual memory files**."
+        ),
+        updated,
+        count=1,
+    )
+    for label, count in counts.items():
+        updated = _replace_memory_ledger_count_row(updated, label, count)
+
+    if updated == text:
+        return False
+    if not dry_run:
+        ledger.write_text(updated, encoding="utf-8")
+    return True
+
+
 def _print_memory_index_report(audit: _MemoryIndexAudit) -> None:
     """Print the RULING 7 reports. These inform; only size can refuse."""
     print(f"  Persistent-memory index: {audit.path}")
@@ -2051,7 +2152,15 @@ def main() -> None:
         else:
             print(f"Pending work unchanged: {recovery}")
 
-    # 5. NOW stamp the two documents, knowing whether their bodies changed.
+    # 5. Recount the public memory-exclusion ledger from the private memory
+    #    directory. This is mechanical accounting, not qualitative editing, and
+    #    belongs in sv so a new memory file cannot repeatedly leave the counts
+    #    stale until a test catches the author's missed manual bump.
+    if _update_memory_exclusions_ledger(root, dry_run=args.dry_run):
+        verb = "Would update" if args.dry_run else "Updated"
+        print(f"{verb} memory-exclusions ledger: {root / 'resources' / 'MEMORY_EXCLUSIONS.md'}")
+
+    # 6. NOW stamp the two documents, knowing whether their bodies changed.
     #    A stamp written before this point could only ever record when sv ran.
     for doc, status in ((onboarding, onboarding_status), (recovery, recovery_status)):
         regenerated = status == "regenerated"

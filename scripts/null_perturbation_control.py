@@ -133,6 +133,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--limit", type=int, default=0, help="cap the number tested")
     ap.add_argument("--out", default="experimental_notes/data/null_perturbation_control.json")
+    ap.add_argument("--dry-run", action="store_true", help="compute and print results without writing --out")
+    ap.add_argument("--force", action="store_true", help="allow a limited run to replace a larger existing --out")
     args = ap.parse_args()
 
     items = eligible()
@@ -176,9 +178,27 @@ def main() -> int:
         print(f"    {str(b)[:18]:18s} -> {str(c1)[:18]:18s} -> {str(c2)[:20]:20s} {c:4d}{flag}")
 
     dest = REPO / args.out
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps({"rows": rows}, indent=2), encoding="utf-8")
-    print(f"\n  written: {args.out}")
+    if args.dry_run:
+        print(f"\n  dry-run: not writing {args.out}")
+    else:
+        if args.limit and dest.exists() and not args.force:
+            try:
+                existing = json.loads(dest.read_text(encoding="utf-8"))
+                existing_rows = existing.get("rows")
+                existing_count = len(existing_rows) if isinstance(existing_rows, list) else None
+            except Exception:  # noqa: BLE001 — malformed existing output is not a larger record
+                existing_count = None
+            if existing_count is not None and existing_count > len(rows):
+                print(
+                    f"\n  refusing to overwrite {args.out}: existing record has "
+                    f"{existing_count} rows, this limited run has {len(rows)} rows "
+                    "(use --force to replace it)",
+                    file=sys.stderr,
+                )
+                return 2
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps({"rows": rows}, indent=2), encoding="utf-8")
+        print(f"\n  written: {args.out}")
     print("""
   READING IT. A falsifier that changes verdict when a comment is appended is not
   testing its claim - it is reacting to the file. A low rate means the instrument
