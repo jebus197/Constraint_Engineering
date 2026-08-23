@@ -1319,6 +1319,48 @@ class FindingRegistry:
         # rather than a wrong one. Read only by build_summary.
         self.target_kind: str = TARGET_KIND_PYTHON
 
+    def record_codiscovery(self, canonical_id: str, model_id: str,
+                           finding_id: str, similarity: float = 0.0) -> bool:
+        """Record that ANOTHER model independently raised this same defect.
+
+        THE DEFECT THIS CLOSES, MEASURED 2026-08-23. `source_aliases` was written
+        once at registration and NO CODE ANYWHERE APPENDED TO IT. Across the whole
+        modern arc: 566 findings, 566 aliases, exactly 1.00 per finding, and ZERO
+        raised by two or more models. `_alias_map` is keyed `model_id:finding_id`,
+        so `lookup_alias` can only ever match the SAME model re-raising its own
+        finding across rounds -- never a different model raising the same defect.
+        Two models finding one defect therefore minted two unlinked canonicals.
+
+        The project HAS measured co-discovery, expensively and after the fact: of
+        the 133 similarity pairs adjudicated by counterfactual repair, 106 were
+        cross-model and 21 were called SAME in both directions by the tool. Those
+        21 are co-discovery that the registry could not see. This makes the
+        registry record for free what that adjudication recovers for 0.287s a pair.
+
+        DELIBERATELY NON-DESTRUCTIVE. This appends an alias and nothing else. It
+        does NOT suppress the duplicate's own registration, does NOT touch
+        `novel_this_round`, and therefore CANNOT move gamma or any convergence
+        decision. Suppressing registration would be the natural "fix" and it would
+        alter core schema behaviour, which is a founder ruling, not an engineering
+        choice. Recording is free; deciding is not.
+
+        Returns True if an alias was actually added.
+        """
+        entry = self.entries.get(canonical_id)
+        if entry is None or not finding_id:
+            return False
+        alias = f"{model_id}:{finding_id}"
+        aliases = entry.setdefault("source_aliases", [])
+        if alias in aliases or finding_id in aliases:
+            return False
+        aliases.append(alias)
+        entry.setdefault("codiscovery", []).append({
+            "model": model_id,
+            "finding_id": finding_id,
+            "similarity": round(float(similarity), 4),
+        })
+        return True
+
     def register(self, finding: Finding, model_id: str) -> str:
         canonical_id = f"C{self._next_id:04d}"
         self._next_id += 1
@@ -6651,6 +6693,25 @@ def _build_feedback_for_next_round(
                      triaged.duplicate_of,
                      float(getattr(triaged, "similarity", 0.0))),
                 )
+                # CO-DISCOVERY, RECORDED 2026-08-23. The immune pipeline already
+                # knows two findings are the same defect; until now that knowledge
+                # died here, and `source_aliases` stayed at exactly 1.00 per
+                # finding across all 566 in the modern arc. Recording it costs
+                # nothing and changes nothing: registration, the novelty count and
+                # therefore gamma are all untouched. See
+                # FindingRegistry.record_codiscovery for why that separation is
+                # deliberate rather than timid.
+                _reg = locals().get("registry") or kwargs.get("registry")
+                if _reg is not None:
+                    _cid = _reg.lookup_alias(
+                        getattr(triaged.finding, "model_id", ""),
+                        triaged.duplicate_of) or triaged.duplicate_of
+                    if _cid in getattr(_reg, "entries", {}):
+                        _reg.record_codiscovery(
+                            _cid,
+                            getattr(triaged.finding, "model_id", "?"),
+                            triaged.finding.finding_id,
+                            float(getattr(triaged, "similarity", 0.0)))
 
         # Parse admissibility blocks from each model's raw response. The
         # parser is permissive (see bench/dm/_feedback.py) — missing blocks

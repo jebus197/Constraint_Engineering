@@ -3392,8 +3392,17 @@ if not _shadow_log.handlers:
     # override exists for the case where someone genuinely wants the test output.
     _shadow_log_dir = _os.environ.get("CDSFL_SHADOW_LOG_DIR") or _shadow_log_dir
     if "pytest" in _sys.modules and not _os.environ.get("CDSFL_SHADOW_LOG_DIR"):
+        import atexit as _atexit
+        import shutil as _shutil
         import tempfile as _tempfile
         _shadow_log_dir = _tempfile.mkdtemp(prefix="cdsfl_test_shadow_logs_")
+        # CLEAN UP AFTER YOURSELF. Measured 2026-08-23: 971 of these directories
+        # had accumulated in the system temp area, one per Python process that
+        # imported this module under pytest, with no teardown anywhere. Small in
+        # bytes (3.1 MB) and unbounded in count, which is the shape that makes a
+        # machine slowly unusable. ignore_errors so a cleanup failure at
+        # interpreter exit can never mask a real test result.
+        _atexit.register(_shutil.rmtree, _shadow_log_dir, True)
     _os.makedirs(_shadow_log_dir, exist_ok=True)
     _shadow_fh = _logging.FileHandler(
         _os.path.join(_shadow_log_dir, "immune_pipeline.log"),

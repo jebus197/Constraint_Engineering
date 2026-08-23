@@ -1,0 +1,154 @@
+"""Commissioning tests for the three gaps plugged on 2026-08-23.
+
+Each is driven with a known-good AND a known-bad input, per the standard the
+instrument inventory sets: a test that only ever exercises the happy path cannot
+detect the failure mode this project keeps shipping.
+
+  GAP 1  co-discovery was never recorded. 566 findings, 566 aliases, exactly 1.00
+         per finding, zero raised by two or more models.
+  GAP 2  no cost ledger was wired to either runner, so no experiment's spend was
+         recorded anywhere.
+  GAP 3  971 temp directories had accumulated, one per pytest process, no teardown.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import tempfile
+
+import pytest
+
+from bench.cost_ledger import CostLedger, UNMETERED_ROUTES
+from bench.reference_runner_v2 import FindingRegistry
+
+
+# ── GAP 1 ────────────────────────────────────────────────────────────────────
+def _reg():
+    r = FindingRegistry()
+    r.entries["C0001"] = {
+        "canonical_id": "C0001", "source_model": "Gemini",
+        "source_aliases": ["F001"], "status": "OPEN", "severity": 0.8,
+    }
+    return r
+
+
+def test_a_second_model_raising_the_same_defect_is_recorded():
+    r = _reg()
+    assert r.record_codiscovery("C0001", "Codex", "F007", 0.91) is True
+    e = r.entries["C0001"]
+    assert "Codex:F007" in e["source_aliases"]
+    assert e["codiscovery"] == [
+        {"model": "Codex", "finding_id": "F007", "similarity": 0.91}]
+
+
+def test_recording_the_same_co_discovery_twice_is_a_no_op():
+    """Rounds repeat. An alias list that grows on every round is not a record of
+    who found it, it is a record of how many rounds ran."""
+    r = _reg()
+    assert r.record_codiscovery("C0001", "Codex", "F007", 0.91) is True
+    assert r.record_codiscovery("C0001", "Codex", "F007", 0.91) is False
+    assert len(r.entries["C0001"]["source_aliases"]) == 2
+
+
+def test_an_unknown_canonical_id_is_refused():
+    assert FindingRegistry().record_codiscovery("C9999", "Codex", "F1") is False
+
+
+def test_an_empty_finding_id_is_refused():
+    assert _reg().record_codiscovery("C0001", "Codex", "") is False
+
+
+def test_recording_co_discovery_CANNOT_change_the_finding_s_status_or_severity():
+    """THE POINT OF THE WHOLE DESIGN. Recording must never decide anything.
+
+    Suppressing the duplicate's registration would be the natural 'fix' and would
+    move `novel_this_round`, which feeds gamma, which ends runs. Recording is free;
+    deciding is a founder ruling.
+    """
+    r = _reg()
+    before = {k: v for k, v in r.entries["C0001"].items()
+              if k in ("status", "severity", "canonical_id", "source_model")}
+    r.record_codiscovery("C0001", "Codex", "F007", 0.91)
+    after = {k: v for k, v in r.entries["C0001"].items()
+             if k in ("status", "severity", "canonical_id", "source_model")}
+    assert before == after
+
+
+# ── GAP 2 ────────────────────────────────────────────────────────────────────
+def test_the_ledger_records_a_dispatch(tmp_path):
+    led = CostLedger(tmp_path)
+    led.record(model="cx", route="openrouter", prompt_chars=4000,
+               response_chars=800, elapsed_s=12.5, round_idx=3)
+    d = json.loads((tmp_path / "cost_ledger.json").read_text())
+    assert d["totals"]["dispatches"] == 1
+    assert d["dispatches"][0]["est_input_tokens"] == 1000
+
+
+def test_a_max_plan_route_is_counted_but_never_costed(tmp_path):
+    led = CostLedger(tmp_path, prices={"cc2": {"in": 2.0, "out": 10.0}})
+    led.record(model="cc2", route="claude_cli", prompt_chars=8000,
+               response_chars=4000, elapsed_s=30.0)
+    t = led.totals()
+    assert "claude_cli" in UNMETERED_ROUTES
+    assert t["unmetered_dispatches"] == 1
+    assert t["metered_dispatches"] == 0
+    assert "est_cost_usd" not in t, "a free route must contribute nothing to cost"
+
+
+def test_no_price_means_NO_COST_FIGURE_not_a_guessed_one(tmp_path):
+    """The known-bad input for this instrument: a metered dispatch with no price.
+
+    A ledger that invents a number would be believed. It must instead make the gap
+    visible.
+    """
+    led = CostLedger(tmp_path)                 # PRICES is empty by default
+    led.record(model="unknown-model", route="openrouter", prompt_chars=4000,
+               response_chars=400, elapsed_s=5.0)
+    t = led.totals()
+    assert "est_cost_usd" not in t
+    assert t["unpriced_dispatches"] == 1
+    assert t["est_input_tokens"] == 1000, "usage is still recorded without a price"
+
+
+def test_a_supplied_price_produces_a_labelled_estimate(tmp_path):
+    led = CostLedger(tmp_path, prices={"cx": {"in": 2.0, "out": 10.0}})
+    led.record(model="cx", route="openrouter", prompt_chars=4_000_000,
+               response_chars=400_000, elapsed_s=9.0)
+    t = led.totals()
+    assert t["est_cost_usd"] == pytest.approx(1.0 * 2.0 + 0.1 * 10.0, rel=1e-6)
+    assert "ESTIMATED" in t["caveat"]
+    assert "invoice is the authority" in t["caveat"]
+
+
+def test_a_ledger_failure_never_raises(tmp_path):
+    """A cost record must never be able to kill an experiment."""
+    led = CostLedger(tmp_path)
+    out = led.record(model="x", route="openrouter", prompt_chars="not-a-number",
+                     response_chars=1, elapsed_s=1.0)
+    assert "error" in out
+
+
+def test_the_ledger_survives_a_resume(tmp_path):
+    CostLedger(tmp_path).record(model="cx", route="openrouter", prompt_chars=400,
+                                response_chars=40, elapsed_s=1.0)
+    again = CostLedger(tmp_path)               # a resumed run reopens the file
+    again.record(model="ge", route="openrouter", prompt_chars=400,
+                 response_chars=40, elapsed_s=1.0)
+    assert again.totals()["dispatches"] == 2, "a resume must not lose earlier rows"
+
+
+# ── GAP 3 ────────────────────────────────────────────────────────────────────
+def test_the_shadow_log_dir_registers_a_teardown():
+    src = pathlib.Path(__file__).resolve().parents[1] / "immune_agents.py"
+    text = src.read_text(encoding="utf-8")
+    i = text.index('mkdtemp(prefix="cdsfl_test_shadow_logs_")')
+    window = text[i:i + 700]
+    assert "atexit.register" in window.replace("_atexit", "atexit"), (
+        "the temp dir is created with no teardown — this is the 971-directory leak")
+
+
+def test_no_stale_shadow_log_dirs_are_left_by_this_test_session():
+    """Weak by construction and deliberately so: it asserts a bound, not zero,
+    because a concurrently running pytest process legitimately owns one."""
+    n = len(list(pathlib.Path(tempfile.gettempdir()).glob("cdsfl_test_shadow_logs_*")))
+    assert n < 200, f"{n} shadow-log temp dirs present; the teardown is not working"
