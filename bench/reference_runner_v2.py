@@ -3005,6 +3005,23 @@ def _resolve_finding_key(registry, model_id: str, key: str) -> str:
     return ""
 
 
+def _prose_normalise(text: str) -> str:
+    """Strip markdown emphasis and collapse whitespace, for PROSE anchoring only.
+
+    Transcribed from `scripts/adjudicate_by_repair._md_normalise`, whose measured
+    justification applies verbatim here: on prose targets the models' SEARCH blocks
+    matched almost nothing -- 2 of 33 for exp48, 7 of 32 for exp49 -- and it was NOT
+    paraphrase. Median similarity between a block and its true paragraph is 0.99 and
+    the whole difference is markdown emphasis: the document says `**CT-01.**` and the
+    model quotes `CT-01.`. Models strip formatting when they quote. Normalising both
+    sides took the locatable share from 14% to 80% with no fuzzy threshold to tune.
+    """
+    t = re.sub(r"\*\*(.+?)\*\*", r"\1", text or "")
+    t = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"\1", t)
+    t = re.sub(r"`([^`]*)`", r"\1", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
 def _splice_corrected_copy(
     target_text: str, original: str, corrected: str, target_rel: str = "",
 ) -> Tuple[str, str]:
@@ -3026,6 +3043,33 @@ def _splice_corrected_copy(
         return "", ("the original and corrected passages are identical, so "
                     "nothing was corrected and the control would decide nothing")
     n = target_text.count(original)
+    if n == 0 and not str(target_rel or "").lower().endswith(".py"):
+        # PROSE FALLBACK, ADDED 2026-08-23 MID-RUN. Exp 55 round 0 declined ALL TEN
+        # candidates with "does not occur verbatim", so T02 derived nothing and the
+        # discrimination control did not fire -- pre-registered prediction 1,
+        # failing. The cause is not paraphrase: models strip markdown emphasis when
+        # they quote. `_apply_prose_fix` in scripts/adjudicate_by_repair.py already
+        # solved this and measured it, and was never wired here.
+        #
+        # PRECEDENCE IS THE SAME AND AMBIGUITY IS STILL REFUSED, NEVER GUESSED:
+        # a unique EXACT match wins (handled above); otherwise a unique match on
+        # NORMALISED form; anything else refuses. Exact outranks normalised on
+        # purpose. Restricted to non-.py targets: on code, exact is both correct
+        # and achievable, and loosening it would let a patch land in the wrong place.
+        _want = _prose_normalise(original)
+        if _want:
+            _paras = re.split(r"\n\s*\n", target_text)
+            _hits = [q for q in _paras if _prose_normalise(q) == _want]
+            if len(_hits) == 1:
+                copy = target_text.replace(_hits[0], corrected, 1)
+                if copy != target_text:
+                    return copy, ("located by NORMALISED prose match (markdown "
+                                  "emphasis and whitespace ignored); the model's "
+                                  "quote differs from the target only in formatting")
+            elif len(_hits) > 1:
+                return "", (f"the original passage matches {len(_hits)} paragraphs "
+                            f"once formatting is ignored, so the runner cannot tell "
+                            f"which claim this is about; quote more surrounding text")
     if n == 0:
         return "", ("the original passage does not occur in the target "
                     "verbatim, so it could not be located; copy it character "

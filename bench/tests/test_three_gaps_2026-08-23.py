@@ -152,3 +152,62 @@ def test_no_stale_shadow_log_dirs_are_left_by_this_test_session():
     because a concurrently running pytest process legitimately owns one."""
     n = len(list(pathlib.Path(tempfile.gettempdir()).glob("cdsfl_test_shadow_logs_*")))
     assert n < 200, f"{n} shadow-log temp dirs present; the teardown is not working"
+
+
+# ── The prose fallback, found mid-run in Exp 55 ──────────────────────────────
+class TestProseAnchorFallback:
+    """Exp 55 round 0 declined ALL TEN corrected-copy candidates with "does not
+    occur verbatim", so T02 derived nothing and the discrimination control did not
+    fire -- pre-registered prediction 1, failing. The cause was not paraphrase:
+    models strip markdown emphasis when they quote. `_apply_prose_fix` in
+    scripts/adjudicate_by_repair.py had already solved and measured this and was
+    never wired into the runner.
+    """
+
+    TARGET = ("# Note\n\n"
+              "**Claim CT-01.** The rate satisfies the criterion, because\n"
+              "`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n"
+              "**Claim CT-02.** The resolution is `1.5625 Hz`.\n")
+    CORRECTED = "Claim CT-01. The rate satisfies the criterion, because f_s > 2 * f_max."
+
+    def test_a_bare_quote_of_a_marked_up_passage_now_derives(self):
+        from bench.reference_runner_v2 import _splice_corrected_copy
+        bare = ("Claim CT-01. The rate satisfies the criterion, because "
+                "f_s = 400 Hz exceeds f_max = 180 Hz.")
+        copy, reason = _splice_corrected_copy(self.TARGET, bare, self.CORRECTED,
+                                              "notes/control.md")
+        assert copy, f"declined: {reason}"
+        assert "NORMALISED" in reason
+
+    def test_an_exact_quote_still_takes_the_exact_path(self):
+        from bench.reference_runner_v2 import _splice_corrected_copy
+        exact = ("**Claim CT-01.** The rate satisfies the criterion, because\n"
+                 "`f_s = 400 Hz` exceeds `f_max = 180 Hz`.")
+        copy, reason = _splice_corrected_copy(self.TARGET, exact, self.CORRECTED,
+                                              "notes/control.md")
+        assert copy and "NORMALISED" not in reason, (
+            "an exact match must win outright; normalised is the FALLBACK")
+
+    def test_an_ambiguous_normalised_match_is_REFUSED_not_guessed(self):
+        from bench.reference_runner_v2 import _splice_corrected_copy
+        # BOTH paragraphs carry the markdown, so the EXACT count is 0 and the
+        # normalised count is 2. A first version of this test used one marked-up
+        # and one bare paragraph, which is exact-count 1 -- the exact path
+        # correctly won and the fallback was never reached. The test was wrong,
+        # not the code.
+        doc = "**A.** the same words here.\n\n**A.** the same words here.\n"
+        copy, reason = _splice_corrected_copy(doc, "A. the same words here.",
+                                              "A. different words.", "notes/x.md")
+        assert not copy, "two paragraphs match once formatting is ignored"
+        assert "cannot tell which claim" in reason
+
+    def test_the_fallback_does_NOT_apply_to_code(self):
+        """On .py, exact is both correct and achievable. Loosening it would let a
+        patch land somewhere it was never meant to, which is far worse than a
+        decline."""
+        from bench.reference_runner_v2 import _splice_corrected_copy
+        code = "def compute(x):\n    # a comment here\n    return x * 2\n"
+        loose = "def compute(x):\n        # a comment here\n        return x * 2"
+        copy, reason = _splice_corrected_copy(code, loose, "def compute(x):\n    return x * 3",
+                                              "bench/x.py")
+        assert not copy and "verbatim" in reason
