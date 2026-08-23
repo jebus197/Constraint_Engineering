@@ -2852,6 +2852,42 @@ def _retarget_falsifier(code: str, repo_root: Path, overlay_root: Path) -> Tuple
     return (code or "").replace(real, str(overlay_root)), n
 
 
+def _absolute_target(target_rel: str, repo_root=None) -> str:
+    """The FULL path a model is given for its target. NEVER a relative fragment.
+
+    FOUNDER RULING, 2026-08-23: "Models should never be fed just relative names.
+    They should always be fed the full direct path and file name to the target under
+    consideration... Leave nothing open to the models for either interpretation, or
+    potential hallucination."
+
+    WHY THIS IS A CORRECTNESS FIX AND NOT A HOUSE-STYLE PREFERENCE. `_retarget_falsifier`
+    directly above redirects a falsifier into the discrimination control's overlay by
+    substituting the ABSOLUTE repo root. A falsifier that reached its target by a
+    repo-relative name could therefore never be redirected -- and, executed in the
+    sandbox's throwaway working directory, could never find the target either. The
+    prompt was instructing models to use the one path form the machinery cannot handle.
+
+    MEASURED, Exp 55, 2026-08-23. Six relative-path falsifiers returned ERROR at the
+    gate; the two DETACHED falsifiers, which open nothing and so do not care where they
+    run, returned CONFIRMED. The gate was selecting FOR the falsifiers that ignore the
+    document. Six criticals then locked irreducible against a bound of two and the run
+    halted at round 0, twice. Given the absolute path instead, the same falsifiers
+    return CONFIRMED (5) and REFUTED (1), and `retarget_substitutions` moves 0 -> 1 so
+    the discrimination control can redirect them into its overlay.
+
+    The internal canonical form stays RELATIVE: `_build_discrimination_overlay` requires
+    it and rejects an absolute path outright, and `_fix_block_targets` matches a fix
+    header by full path OR basename, so a model answering with the absolute path still
+    resolves. This function is for MODEL-FACING PROMPTS ONLY.
+    """
+    rel = (target_rel or "").strip()
+    if not rel:
+        return ""
+    if os.path.isabs(rel):
+        return rel
+    return str((Path(repo_root or REPO_ROOT) / rel).resolve())
+
+
 def _normalise_probe_output(text: str, roots) -> str:
     """Strip run-to-run noise so two probe outputs are comparable.
 
@@ -3994,7 +4030,7 @@ def _routing_resolve_prompt(
             src = src[:_ROUTING_TARGET_LIMIT]
         begin, end = _routing_sentinels(src)
         header = (
-            f"TARGET DOCUMENT: {target_rel}\n"
+            f"TARGET DOCUMENT: {_absolute_target(target_rel)}\n"
             f"It is a PROSE DOCUMENT, not Python source — there is NO module to "
             f"import. It is reproduced verbatim between the two sentinel lines "
             f"below. It contains its own ``` fenced listings; those fences belong "
@@ -4364,7 +4400,7 @@ def _sweep_prompt(residuals: dict, target_rel: str, target_src: str) -> str:
         end = f"<<<CDSFL_TARGET_END {_nonce}>>>"
     if is_prose:
         _header = (
-            f"TARGET DOCUMENT ({target_rel}) — a PROSE DOCUMENT, not Python "
+            f"TARGET DOCUMENT ({_absolute_target(target_rel)}) — a PROSE DOCUMENT, not Python "
             f"source. It is reproduced verbatim between the two sentinel lines "
             f"below. It contains its own ``` fenced listings; those fences "
             f"belong to the document and do NOT end it. Only the closing "
@@ -4377,7 +4413,7 @@ def _sweep_prompt(residuals: dict, target_rel: str, target_src: str) -> str:
         )
     else:
         _header = (
-            f"TARGET MODULE ({target_rel}) — Python source, reproduced verbatim "
+            f"TARGET MODULE ({_absolute_target(target_rel)}) — Python source, reproduced verbatim "
             f"between the two sentinel lines below."
         )
         _template = (
@@ -9170,7 +9206,7 @@ def run_experiment(
         )
 
     full_code = (
-        f"=== TARGET FILE (REVIEW THIS): {target_rel} "
+        f"=== TARGET FILE (REVIEW THIS): {_absolute_target(target_rel)} "
         f"({len(target_text):,} chars) ===\n{target_text}\n\n"
         + "\n\n".join(context_parts)
     )
@@ -9744,7 +9780,7 @@ def run_experiment(
             _new_src = _apply_back_promote(registry, round_idx - 1)
             if _new_src is not None:
                 full_code = (
-                    f"=== TARGET FILE (REVIEW THIS): {target_rel} "
+                    f"=== TARGET FILE (REVIEW THIS): {_absolute_target(target_rel)} "
                     f"({len(_new_src):,} chars) ===\n{_new_src}\n\n"
                     + "\n\n".join(context_parts)
                 )

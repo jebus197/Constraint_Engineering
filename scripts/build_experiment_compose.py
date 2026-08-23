@@ -75,6 +75,10 @@ def main() -> int:
     suite = ["python3", "-m", "pytest", "bench/tests/", "-q", "--netguard-strict",
              "-p", "no:randomly"]
     baseline = BA.suite_baseline(parent, suite, 1800)
+    if baseline is None:                      # unmeasured != clean (2026-08-23)
+        raise RuntimeError(
+            "parent baseline could not be measured; refusing to compose against an "
+            "unmeasured baseline, which would render every pre-existing failure as new.")
     print(f"  parent {parent[:8]}; it already fails {len(baseline)} test(s) in a worktree")
     print(f"  composing {len(accepted)} accepted patch(es)\n")
 

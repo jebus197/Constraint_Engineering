@@ -8,7 +8,7 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-08-08 07:40 BST)
+## Accounting (counted 2026-08-23 23:10 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
@@ -19,11 +19,11 @@ The directory holds **103 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 55 |
+| Mirrored (in summarised form) in `MEMORY.md` | 56 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 112 |
+| total | 113 |
 
 > **[Correction 2026-08-22.]** Mirrored 51 -> 55, total 108 -> 112 for
 > `cdsfl_session_2026-08-18_to_22.md`, `cdsfl_bugzilla_design_2026-08-21.md`,

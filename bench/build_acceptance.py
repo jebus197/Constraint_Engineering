@@ -40,6 +40,7 @@ same file cannot collide.
 from __future__ import annotations
 
 import dataclasses
+import os
 import re
 import shutil
 import subprocess
@@ -117,9 +118,47 @@ def _run(cmd: list, cwd: Path, timeout: int = 900) -> tuple:
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 
+def _confine(wt: Path, rel: str) -> Optional[Path]:
+    """Resolve a MODEL-SUPPLIED path inside the worktree, or refuse.
+
+    WHY (2026-08-23, CC2). `test_path` comes from the model's ``TEST_FILE:`` line and
+    each patch's `rel` from its SEARCH header. Neither was validated, and pathlib
+    DISCARDS the left operand when the right one is absolute::
+
+        Path('/tmp/wt_abc') / '/Users/.../reference_runner_v2.py'
+            -> PosixPath('/Users/.../reference_runner_v2.py')
+
+    So a model emitting an absolute path -- by confusion, which is enough -- would have
+    had `write_text` overwrite the live runner in the real tree, voiding this module's
+    stated guarantee that a rejected patch cannot leave a trace. `..` escapes the same
+    way. `_build_discrimination_overlay` in the runner already carries this guard;
+    this file was written later and did not. Returns None when the path is unusable.
+    """
+    r = (rel or "").strip()
+    if not r or os.path.isabs(r) or ".." in Path(r).parts:
+        return None
+    resolved = (wt / r).resolve()
+    root = wt.resolve()
+    if root != resolved and root not in resolved.parents:
+        return None
+    return resolved
+
+
 def failing_nodeids(out: str) -> frozenset:
-    """The set of failing test node-ids in a pytest run."""
-    return frozenset(re.findall(r"^FAILED\s+(\S+)", out or "", re.M))
+    """The set of failing test node-ids in a pytest run.
+
+    ``ERROR`` IS COUNTED ALONGSIDE ``FAILED`` (2026-08-23, found by CC2 and Fable
+    independently). A pytest COLLECTION error emits no ``FAILED`` line at all -- it
+    aborts the session with ``ERROR <file>`` and ``Interrupted: N errors during
+    collection``. Matching only ``FAILED`` therefore returned an EMPTY set for a
+    patch that broke every test in the repository, and step (3) read that empty set
+    as "nothing went red" and ACCEPTED the patch. The module docstring's own rule --
+    "it failed" and "it crashed" must never render identically -- was violated by
+    the function the rule exists to protect.
+    """
+    text = out or ""
+    return frozenset(re.findall(r"^FAILED\s+(\S+)", text, re.M)
+                     ) | frozenset(re.findall(r"^ERROR\s+(\S+)", text, re.M))
 
 
 _BASELINE: dict = {}
@@ -148,16 +187,23 @@ def suite_baseline(parent: str, suite_cmd: list, timeout: int) -> frozenset:
     key = (parent, tuple(suite_cmd))
     if key in _BASELINE:
         return _BASELINE[key]
+    # AN UNMEASURED BASELINE IS NOT A GREEN BASELINE (2026-08-23; found by CC2 and
+    # Fable independently). This returned frozenset() on a failed worktree-add or on
+    # ANY exception including a timeout, and CACHED it. An empty baseline makes every
+    # PRE-EXISTING failure read as newly caused, so every later candidate is rejected
+    # and the acceptance rate collapses towards zero -- which this file's own
+    # docstring names as the pre-registered tell for "the models cannot do the task".
+    # A harness fault would have become a published verdict about six models. Now the
+    # failure returns None, is NOT cached, and `evaluate` refuses rather than judging.
     wt = Path(tempfile.mkdtemp(prefix="cdsfl_base_")) / f"wt_{uuid.uuid4().hex[:8]}"
     try:
         rc, _ = _run(["git", "worktree", "add", "--detach", str(wt), parent], REPO)
         if rc != 0:
-            _BASELINE[key] = frozenset()
-            return _BASELINE[key]
+            return None
         _, out = _run(suite_cmd, wt, timeout)
         _BASELINE[key] = failing_nodeids(out)
     except Exception:                              # noqa: BLE001
-        _BASELINE[key] = frozenset()
+        return None
     finally:
         subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
                        cwd=str(REPO), capture_output=True)
@@ -188,6 +234,11 @@ def evaluate(response: str, *, parent: str = "HEAD",
     suite_cmd = suite_cmd or ["python3", "-m", "pytest", "bench/tests/", "-q",
                               "--netguard-strict", "-p", "no:randomly"]
     baseline = suite_baseline(parent, suite_cmd, suite_timeout)
+    if baseline is None:
+        return Verdict(ERR_HARNESS,
+                       "the parent's own failing-test set could not be measured, so "
+                       "there is nothing to judge this patch against. Refusing rather "
+                       "than treating an unmeasured baseline as a clean one.")
     wt = Path(tempfile.mkdtemp(prefix="cdsfl_build_")) / f"wt_{uuid.uuid4().hex[:8]}"
     try:
         rc, out = _run(["git", "worktree", "add", "--detach", str(wt), parent], REPO)
@@ -195,7 +246,11 @@ def evaluate(response: str, *, parent: str = "HEAD",
             return Verdict(ERR_HARNESS, f"worktree add failed: {out[-300:]}")
 
         # ---- (1) the test must FAIL at the parent ---------------------------
-        tp = wt / test_path
+        tp = _confine(wt, test_path)
+        if tp is None:
+            return Verdict(ERR_HARNESS,
+                           f"the model's TEST_FILE path escapes the worktree and was "
+                           f"refused unwritten: {test_path!r}")
         tp.parent.mkdir(parents=True, exist_ok=True)
         tp.write_text(test_src, encoding="utf-8")
         rc_before, out_before = _run(
@@ -229,7 +284,12 @@ def evaluate(response: str, *, parent: str = "HEAD",
         # ---- apply the patch ------------------------------------------------
         touched = []
         for rel, search, replace in patches:
-            f = wt / rel
+            f = _confine(wt, rel)
+            if f is None:
+                return Verdict(ERR_HARNESS,
+                               f"a patch SEARCH header names a path outside the "
+                               f"worktree and was refused unapplied: {rel!r}",
+                               test_at_parent=_summarise_pytest(out_before))
             if not f.is_file():
                 return Verdict(REJ_PATCH_DID_NOT_APPLY, f"target not present: {rel}",
                                test_at_parent=_summarise_pytest(out_before))
@@ -276,7 +336,32 @@ def evaluate(response: str, *, parent: str = "HEAD",
 
         # ---- (3) the full suite must stay green -----------------------------
         rc_suite, out_suite = _run(suite_cmd, wt, suite_timeout)
+        # THE EXIT CODE IS READ, symmetric with `rc_before` at the top of this
+        # function. It was assigned and never examined until 2026-08-23. pytest:
+        # 0=passed, 1=tests failed, 2=interrupted/collection error, 3=internal,
+        # 4=usage, 5=nothing collected. Anything but 0 or 1 means the suite did not
+        # run to a verdict, and an unmeasured suite is NOT a green suite.
+        if rc_suite in (2, 3, 4, 5):
+            return Verdict(ERR_HARNESS,
+                           f"the full-suite run did not reach a verdict (pytest exit "
+                           f"{rc_suite}); the suite did not run, so it cannot be "
+                           f"called green. Nothing is concluded about this patch.",
+                           test_at_parent=_summarise_pytest(out_before),
+                           test_with_patch=_summarise_pytest(out_after),
+                           suite_after=_summarise_pytest(out_suite),
+                           files_touched=tuple(touched))
         new_failures = failing_nodeids(out_suite) - baseline
+        # rc 1 means tests FAILED. If the regex captured none of them, the failures
+        # are in a form this parser cannot see, and silence is not evidence.
+        if rc_suite == 1 and not failing_nodeids(out_suite):
+            return Verdict(ERR_HARNESS,
+                           "the full suite reported failures (pytest exit 1) that "
+                           "this parser could not enumerate. Refusing to call it "
+                           "green on an empty failure list.",
+                           test_at_parent=_summarise_pytest(out_before),
+                           test_with_patch=_summarise_pytest(out_after),
+                           suite_after=_summarise_pytest(out_suite),
+                           files_touched=tuple(touched))
         if new_failures:
             return Verdict(REJ_SUITE_WENT_RED,
                            "the patch makes its own test pass but breaks "

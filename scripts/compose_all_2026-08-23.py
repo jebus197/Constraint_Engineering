@@ -92,6 +92,11 @@ def try_order(name, order, parent):
         res["suite"] = BA._summarise_pytest(o)
         base = BA.suite_baseline(parent, ["python3","-m","pytest","bench/tests/","-q",
                                           "--netguard-strict","-p","no:randomly"], 2400)
+        if base is None:                      # unmeasured != clean (2026-08-23)
+            res["new_failures"] = None
+            res["error"] = "parent baseline unmeasurable; nothing concluded"
+            print("    parent baseline UNMEASURABLE — nothing concluded for this order")
+            return res
         res["new_failures"] = sorted(BA.failing_nodeids(o) - base)
         print(f"    full suite: {res['suite']}")
         print(f"    failures the parent does NOT have: {len(res['new_failures'])}")

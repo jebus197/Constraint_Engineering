@@ -137,6 +137,10 @@ Central blackboard data structure in star topology. Maintains canonical finding 
 
 Four-dimensional capability profile per model: (D, v-bar, A, C). D equals decay rate, v-bar equals verification score (fraction confirmed by SymPy or similar), A equals total verified findings, C equals coverage of constraint space. Used by ITC for targeted interventions.
 
+### Mechanical acceptance gate
+
+The two-sided test that decides whether a model's proposed patch is admitted, in `bench/build_acceptance.py`. Three conditions, all mechanical, no model vote and no assistant judgment: (1) the model's own new test must FAIL at the parent commit, (2) the same test must PASS with the patch applied, (3) the full suite must not gain a failure the parent does not already have. Condition (1) is the discrimination control's logic applied to patches: a test that passes without the fix was not testing the defect, so firing alone proves nothing. Named in the module's first line since 2026-08-22 and in project notes since 20 April 2026, but absent from this glossary until 2026-08-23, which is why the founder did not recognise it. Distinct from the **falsifier gate**, which judges a model's falsifier against a target document rather than a patch against a test suite.
+
 ### Gamma (gamma)
 
 Duane NHPP convergence parameter. Estimated from cumulative novel findings via log-log regression. Gamma greater than 0 indicates discovery rate depletion (convergence). Gamma approximately 0 indicates churn. Gamma less than 0 indicates divergence. Gap 1 in the model audit: gamma misclassifies system-level churn because it only sees novel rate, not raw-to-novel divergence.
