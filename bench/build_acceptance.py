@@ -63,6 +63,7 @@ REJ_PATCH_DID_NOT_APPLY = "REJECTED_PATCH_DID_NOT_APPLY"
 REJ_TEST_PASSED_BEFORE = "REJECTED_TEST_PASSED_AT_PARENT"     # test proves nothing
 REJ_TEST_FAILED_AFTER = "REJECTED_TEST_STILL_FAILS_WITH_PATCH"
 REJ_SUITE_WENT_RED = "REJECTED_SUITE_WENT_RED"
+REJ_TEST_DOES_NOT_COLLECT = "REJECTED_TEST_DOES_NOT_COLLECT"   # broken on BOTH sides
 ERR_HARNESS = "INDETERMINATE_HARNESS_ERROR"
 
 
@@ -88,11 +89,26 @@ def parse_patch(text: str) -> list:
 
 
 def parse_test(text: str) -> tuple:
-    """Extract the model's new test: a ```python fence tagged TEST_FILE: <path>."""
-    m = re.search(r"TEST_FILE:\s*([^\n]+)\n+```(?:python)?\n(.*?)```", text or "", re.S)
+    """Extract the model's new test: a ```python fence tagged TEST_FILE: <path>.
+
+    THE CLOSING FENCE MUST BE LINE-ANCHORED. The first version matched
+    ```(?:python)?\n(.*?)``` non-greedily with NO anchor, so it stopped at the first
+    ``` ANYWHERE -- including one inside a Python string literal. Every T01 test
+    embedded a ```python fence, because a fence is exactly what the code under test
+    parses, and all three were truncated mid-string: 1403 / 5390 / 2853 characters
+    extracted, all three SyntaxError "unterminated string literal". The harness then
+    reported REJECTED_TEST_STILL_FAILS_WITH_PATCH on three patches that were sound.
+    Found independently by CC2 and Fable, 2026-08-23. Fourth harness defect, three
+    more false verdicts about models' work.
+
+    A fence closing a block sits alone on its own line. Requiring that is the whole
+    fix, and it is a fix to the READER, not a loosening of anything downstream.
+    """
+    m = re.search(r"TEST_FILE:\s*([^\n]+)\n+```(?:python)?[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|$)",
+                  text or "", re.S)
     if not m:
         return "", ""
-    return m.group(1).strip(), m.group(2)
+    return m.group(1).strip(), m.group(2) + "\n"
 
 
 def _run(cmd: list, cwd: Path, timeout: int = 900) -> tuple:
@@ -184,6 +200,26 @@ def evaluate(response: str, *, parent: str = "HEAD",
         tp.write_text(test_src, encoding="utf-8")
         rc_before, out_before = _run(
             ["python3", "-m", "pytest", test_path, "-q", "--netguard-strict"], wt, 600)
+        # pytest: 0=passed, 1=tests FAILED, 2=interrupted/collection error,
+        # 3=internal, 4=usage, 5=nothing collected. Only 1 is a test that RAN and
+        # FAILED. Accepting any non-zero (the first version) let a test that cannot
+        # even be imported count as "demonstrates the defect" -- and a test that
+        # errors identically before and after has discriminated nothing, which is
+        # this gate's own principle turned on itself. CC2, 2026-08-23.
+        # 3, 4 and 5 are pytest's internal / usage / nothing-collected codes. None
+        # of them is a statement about the artefact, so none may be read as one.
+        if rc_before in (3, 4, 5):
+            return Verdict(ERR_HARNESS,
+                           f"the test could not RUN at the parent (pytest exit "
+                           f"{rc_before}), which says nothing about the defect",
+                           test_at_parent=_summarise_pytest(out_before))
+        # 2 is a COLLECTION ERROR, and it is deliberately allowed here. A test for a
+        # new symbol legitimately fails to import at the parent -- that IS the
+        # demonstration that the feature is absent. What is illegitimate is erroring
+        # IDENTICALLY on both sides, which discriminates nothing; that is caught at
+        # step 2 below and reported as its own outcome rather than as a failed fix.
+        # (A first version of this check refused 2 outright and the commissioning
+        # suite caught it: it rejected the known-good case.)
         if rc_before == 0:
             return Verdict(REJ_TEST_PASSED_BEFORE,
                            "the test passes at the parent commit, so it does not "
@@ -198,9 +234,20 @@ def evaluate(response: str, *, parent: str = "HEAD",
                 return Verdict(REJ_PATCH_DID_NOT_APPLY, f"target not present: {rel}",
                                test_at_parent=_summarise_pytest(out_before))
             src = f.read_text(encoding="utf-8", errors="replace")
-            if search not in src:
+            n_match = src.count(search)
+            if n_match == 0:
                 return Verdict(REJ_PATCH_DID_NOT_APPLY,
                                f"SEARCH block does not match {rel}",
+                               test_at_parent=_summarise_pytest(out_before))
+            if n_match > 1:
+                # An ambiguous anchor silently patches the FIRST occurrence, which
+                # may not be the one the model meant. Refuse rather than guess.
+                # CC2, 2026-08-23: none of the eight accepted patches hit this, and
+                # it was still live.
+                return Verdict(REJ_PATCH_DID_NOT_APPLY,
+                               f"SEARCH block matches {rel} {n_match} times, so the "
+                               f"anchor is ambiguous and the patch could land in the "
+                               f"wrong place; widen it",
                                test_at_parent=_summarise_pytest(out_before))
             f.write_text(src.replace(search, replace, 1), encoding="utf-8")
             touched.append(rel)
@@ -208,6 +255,18 @@ def evaluate(response: str, *, parent: str = "HEAD",
         # ---- (2) the same test must now PASS --------------------------------
         rc_after, out_after = _run(
             ["python3", "-m", "pytest", test_path, "-q", "--netguard-strict"], wt, 600)
+        if rc_before == 2 and rc_after == 2:
+            # Broken on both sides. "The defect persists" and "the model's test does
+            # not import" are different findings and must never render alike -- this
+            # project's single most repeated lesson. Logged as a labelling defect
+            # during the 2026-08-22 run and fixed here.
+            return Verdict(REJ_TEST_DOES_NOT_COLLECT,
+                           "the test fails to collect both at the parent and with the "
+                           "patch, so it demonstrates nothing either way -- this is a "
+                           "broken test, not a failed fix",
+                           test_at_parent=_summarise_pytest(out_before),
+                           test_with_patch=_summarise_pytest(out_after),
+                           files_touched=tuple(touched))
         if rc_after != 0:
             return Verdict(REJ_TEST_FAILED_AFTER,
                            "the patch does not make the model's own test pass",

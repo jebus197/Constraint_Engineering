@@ -167,6 +167,67 @@ def test_a_new_suite_failure_is_still_rejected(anchor):
     assert "test_brand_new" in v.detail
 
 
+def test_a_fence_inside_a_string_literal_does_not_truncate_the_test():
+    """Defect 4, found by CC2 and Fable on 2026-08-23, pinned here.
+
+    The extractor matched the closing fence non-greedily with no line anchor, so it
+    stopped at the first ``` ANYWHERE -- including one inside a Python string. All
+    three T01 tests embedded a ```python fence (a fence is what the code under test
+    parses) and all three were truncated mid-string. Three sound patches were
+    rejected as REJECTED_TEST_STILL_FAILS_WITH_PATCH.
+    """
+    inner = "```python\\nFINDING_ID: F001\\n```"
+    body = (f'STUB_REPLY = """{inner}"""\n\n'
+            "def test_it():\n    assert 'FINDING_ID' in STUB_REPLY\n")
+    path, src = BA.parse_test(_test_block(body))
+    assert path.endswith(".py")
+    compile(src, path, "exec")          # would raise on a truncated extraction
+    assert "def test_it" in src, "the extractor stopped at the embedded fence"
+
+
+def test_a_test_broken_on_BOTH_sides_is_not_recorded_as_a_failed_fix(anchor):
+    """Defect 6, CC2, refined by this suite.
+
+    A collection error AT THE PARENT is legitimate -- a test for a new symbol
+    cannot import it before the patch, and that IS the demonstration. What is
+    illegitimate is erroring identically on both sides, which discriminates
+    nothing. A first version of the fix refused exit code 2 outright and this
+    suite caught it rejecting the known-good case.
+    """
+    resp = _patch(anchor, anchor + MARKER) + _test_block(
+        "import nonexistent_module_xyz\n"
+        "def test_probe():\n    assert True\n")
+    v = BA.evaluate(resp, suite_cmd=FAST_SUITE)
+    # Broken on BOTH sides -> its own outcome, never "the fix did not work".
+    assert v.outcome == BA.REJ_TEST_DOES_NOT_COLLECT, f"{v.outcome}: {v.detail}"
+    assert "broken test, not a failed fix" in v.detail
+
+
+def test_an_ambiguous_SEARCH_anchor_is_refused(anchor):
+    """Defect 7, CC2. A SEARCH matching twice silently patched the FIRST
+    occurrence, which may not be the site the model meant."""
+    txt = (BA.REPO / TARGET).read_text(encoding="utf-8")
+    dup = next((l for l in txt.splitlines()
+                if l.strip() and txt.count(l) > 1 and len(l.strip()) > 3), None)
+    if dup is None:
+        pytest.skip(f"no line occurs twice in {TARGET} to build the case from")
+    resp = _patch(dup, dup + "  # x") + _test_block(
+        "def test_probe():\n    assert False\n")
+    v = BA.evaluate(resp, suite_cmd=FAST_SUITE)
+    assert v.outcome == BA.REJ_PATCH_DID_NOT_APPLY
+    assert "ambiguous" in v.detail
+
+
+def test_the_composer_reverts_a_partially_applied_patch():
+    """Defect 5, Fable. Breaking on a failed hunk without reverting left a
+    half-applied patch in the tree and manufactured the NEXT patch's conflict."""
+    src = (BA.REPO / "scripts/build_experiment_compose.py").read_text(encoding="utf-8")
+    i = src.index("for rel, search, replace in patches:")
+    block = src[i:i + 1400]
+    assert "snapshot" in block, "no snapshot taken before applying hunks"
+    assert "write_text(original" in block, "no revert of already-applied hunks"
+
+
 def test_no_model_vote_appears_anywhere_in_the_gate():
     """The gate must contain no path where agreement decides anything.
 

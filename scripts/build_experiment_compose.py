@@ -105,7 +105,15 @@ def main() -> int:
             resp = src.read_text(encoding="utf-8")
             patches = BA.parse_patch(resp)
             tpath, tsrc = BA.parse_test(resp)
-            ok, why = True, ""
+            # ROLLBACK ON PARTIAL APPLICATION. The first version broke on a failed
+            # hunk WITHOUT reverting the hunks already written, so a half-applied
+            # patch stayed in the tree and the NEXT patch was matched against it.
+            # That manufactured a conflict: the T05 conflict reported on 2026-08-22
+            # was against a half-applied T04, not against T02/T03 as the report said.
+            # On a clean tree Fable measured T05 matching 14/14. Found by Fable,
+            # 2026-08-23. Without this, every conflict downstream of the first is
+            # untrustworthy.
+            ok, why, snapshot = True, "", {}
             for rel, search, replace in patches:
                 f = wt / rel
                 if not f.is_file():
@@ -115,7 +123,11 @@ def main() -> int:
                     ok, why = False, (f"SEARCH no longer matches {rel} once earlier "
                                       f"patches are applied")
                     break
+                snapshot.setdefault(rel, text)          # first state of this file
                 f.write_text(text.replace(search, replace, 1), encoding="utf-8")
+            if not ok:
+                for rel, original in snapshot.items():  # revert THIS patch entirely
+                    (wt / rel).write_text(original, encoding="utf-8")
             if not ok:
                 report["conflicts"].append({"task": tid, "model": idx.get(src.name, "?"),
                                             "why": why})
