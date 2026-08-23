@@ -206,6 +206,35 @@ shows they are right — which is exactly the position the falsifier gate was in
 before it was tested on 22 August and found to accept `print('FALSIFIED')` as a
 confirmation.
 
+
+### I08 budget extension: it HAS fired, and the founder's recollection is exact
+
+CC1 told the founder in conversation that budget extension *"has never fired, not
+once"*. **That was wrong, and it was a scope error — the measurement covered
+exp42–49 only.** Across the whole archive it fired **five times**, all in April 2026:
+
+| run | rounds | budget | extension | outcome |
+|---|---|---|---|---|
+| exp33 | 24 | 21 | +3 | no convergence |
+| exp34 | 24 | 21 | +3 | no convergence |
+| exp35 | 23 | 21 | +2 | converged at 22, reason **EXTENSION_STALLED** |
+| exp36 | 45 | 21 | **+24** | **STATE_CONVERGED at round 45** |
+| exp38 | 24 | 21 | +3 | no convergence |
+
+**One clean success in five, and it cost 45 rounds against a budget of 21.** The
+founder's recollection — that it rarely worked — is exactly right and is now
+quantified. Three of the five produced no convergence at all; one stalled after
+extending.
+
+It has fired **zero times since April**, because `extension_cap == max_rounds` in
+every modern config, so extension is arithmetically impossible. Its own docstring
+also records that it raised `NameError` on every call after 27 July.
+
+Note that exp36's success used `consecutive_required = 2`. The rule became **3
+consecutive passes at exp41** and has been 3 ever since. **The one success this
+component can claim was under a weaker convergence criterion than the current one.**
+
+
 ---
 
 ## What T01 was, and why it matters that it failed
