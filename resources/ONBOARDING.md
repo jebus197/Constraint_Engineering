@@ -96,6 +96,22 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 55: THE FALSIFIER GATE WAS SELECTING FOR FALSIFIERS THAT NEVER READ THE DOCUMENT (2026-08-23):**
+
+  Exp 55 is the v3 control, a 623-char prose note carrying two deliberately planted defects (CT-01 justifies Nyquist by `f_s > f_max` instead of `f_s > 2*f_max`; CT-02 a resolution claim), with its answer key split into a separate file that was never staged. It ran twice and **halted at round 0 both times** on the irreducible-queue alarm, 1152 s and 1178 s of paid dispatch.
+
+  **The cause was ours, and it inverted the instrument.** Every falsifier executes in the sandbox's throwaway working directory, empty by design so a falsifier cannot write into the real tree. A falsifier told to open its target by a repo-relative name resolved against an empty folder, died on `FileNotFoundError`, and was recorded `ERROR`. A DETACHED falsifier — one that opens nothing and restates the document's numbers from memory — does not care where it runs, executed cleanly, and was recorded `CONFIRMED`. **The gate was discarding the falsifiers that examined the evidence and keeping the ones that faked the reading**, which is exactly the pathology the discrimination control exists to catch. Six criticals then locked irreducible against a bound of two and the alarm halted the run — correctly, and its own text named the layer: *"a gate that cannot speak to this target."*
+
+  **The repair was a founder ruling and it beat the panel's proposal.** Both external reviewers (CC2 and Fable, separate disposable worktrees, no contact, convergence compelled) proposed populating a scratch working directory and overriding `cwd`. The founder ruled instead that models must never be handed relative names at all. That is strictly better: `_retarget_falsifier` already redirects a falsifier into the discrimination control's overlay by substituting the ABSOLUTE repo root, so **relative was the one path form NEITHER layer supported** — the prompt was contradicting machinery that was already correct. Measured: absolute path takes the gate `ERROR -> CONFIRMED` and `retarget_substitutions` 0 -> 1, with no new code path. Landed `dcbcf68`, five model-facing prompt sites, 12 regression tests; nothing in the suite had pinned this behaviour.
+
+  **With the obstruction removed the discrimination control returns `DISCRIMINATES`** — the verdict it was built for and had never once produced on a live run. CC2 produced it six times against Exp 55's own findings; Fable produced it on C0009 and recorded it as the first in the project's history.
+
+  **Three further repairs to the mechanical acceptance gate**, two found independently by both reviewers: a pytest collection error emitted no `FAILED` line so a patch breaking the whole suite read as green; an unmeasurable parent baseline was cached as an empty set, which would drive acceptance towards zero and read as *"the models cannot do the task"*; and model-supplied paths were joined unvalidated, so an absolute path would have escaped the worktree.
+
+  **Three CC1 claims were refuted in review:** that `retarget_substitutions == 0` detects detachment (false — it counts absolute-root substitutions only, and reads 0 for every relative reader); that the control caught "2 of 2, 100%" (count right, inference invalid — the sample was selected by the very defect under investigation); and that 7 of 34 instruments remain uncommissioned (wrong by ~4x in the reassuring direction — 5 are measured, the true open count is **29 of 34**).
+
+  Full unfiltered reviews with file/line references intact: *Panel Gate Defect CC2 FULL* (643 lines) and *Panel Gate Defect Fable FULL* (405 lines); convergence record and plain-English companion alongside. Suite **3813 passed, 28 skipped, 0 failed**.
+
 - **THE CONTROL WAS NEVER CLEAN, AND THE EXTRACTOR PENALISED RIGOUR (2026-08-12):**
 
   An overnight programme (14 agents, 6 build streams, 6 adversarial checks, 2 research
