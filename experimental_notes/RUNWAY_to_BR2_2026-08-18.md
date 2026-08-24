@@ -503,6 +503,15 @@ than found later.
    the floor and the bound is tight only at q = 1. Verified 2026-08-24 by SymPy plus 40-decimal-place
    iteration agreeing to twelve decimals, valid inside the convergent regime. **This is a small new
    result and it currently lives only in a note and a tool.**
+   **And a second, added 2026-08-25 00:14: the crossing is a TRANSCRITICAL bifurcation.** `R = 1` is a fixed point
+   for all parameter values (verified symbolically), so nothing annihilates; the interior fixed point
+   crosses it exactly where ν crosses ν\* evaluated at `R = 1`, and the two exchange stability. Measured
+   at σ=1, ν=0.05: at q=0.20 the interior point sits at 0.25 and attracts while |f′(1)|=1.188 repels; at
+   q=0.03 the interior point has left [0,1] and |f′(1)|=0.979 attracts; at the crossing the multiplier at
+   `R = 1` is exactly 1.000. An earlier description of this as a saddle-node collision was WRONG and is
+   withdrawn — a fold destroys both fixed points, and these persist. The six anomalies in the 600-point
+   sweep all sat within ~1e-3 of this boundary, which is expected near a transcritical crossing and was
+   at first mistaken for measurement error. **The appendix classifies the crossing nowhere.**
 4. **The three checks that are available and NOT BUILT**, each recorded as not built: that the note
    standard version named in the project instructions matches the version named in memory (these
    drifted two versions and four months); that each document's declared Desktop mirror matches its
