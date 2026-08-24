@@ -313,6 +313,78 @@ flags all 85 pairs at 47% precision, which is the base rate.
 
 ---
 
+## STAGE 5 — THE REVIEWER REPRODUCTION PACK. **The final item. After BR2.**
+
+**Recorded 2026-08-24 20:54 BST on founder instruction, so it is not lost. Status: DEFERRED BY DECISION.**
+
+**Founder ruling (2026-08-24 20:54):** defer. *"You can't build a test suite for something that is yet to be built."*
+Sharpened in discussion, and this is the operative reason: the pack would technically work today,
+because it reproduces measurements that are already complete. What defeats it is that **the set of
+headline numbers is still moving** — the discrimination result is days old, Stage 1's exit test has
+only just landed, exp50/51/52 have not run, and BR2 supersedes much of it. Assembling now creates a
+SECOND ESTATE pinned to a snapshot that is about to change, which is the drift failure this project
+hit twice on 2026-08-24 (a RUNWAY hold left standing after it was lifted, and `MEMORY.md` line 31
+carrying a figure the file it pointed at had never held).
+
+**Trigger:** after BR2, and not before handover item 9 clears — nothing publishes while the branch
+cannot push.
+
+### 5.1 — What it is, and what it is NOT
+
+Three different things get called a test suite and they cost wildly different amounts. Naming them
+apart is the point of this row.
+
+| | what it is | state |
+|---|---|---|
+| (a) software suite | proves the harness code does what it says | **EXISTS** — `bench/tests/`, 3840 passing. Wrong audience: it tests the instrument, not the theory |
+| **(b) reproduction pack** | lets a reviewer re-derive the project's published numbers, offline, free | **THIS ROW.** Largely exists already and is invisible |
+| (c) theory-testing kit | lets a reviewer apply CDSFL to their own artefact | **OUT OF SCOPE, deferred past BR2 with no date.** Needs keys and paid dispatch, and — the real objection — a strange result from it would be uninterpretable: neither party could tell a refutation of CDSFL from an unvalidated instrument. That confusion has already happened once, when a mis-specified zero-plant control read as a substantive false-positive result |
+
+### 5.2 — The asset that already exists and is signposted NOWHERE
+
+**This is the part that must not be lost.** Eight scripts regenerate headline numbers at zero cost.
+Verified 2026-08-24 by reading each: **zero network references, zero dispatch references, zero key
+references**; five read only the local archive. Meanwhile the only signposted route for an outsider
+is `docs/REPRODUCING.md`, which is organised around *Prerequisites → Running an Experiment → Cost
+Estimates* and carries 16 references to API keys and paid dispatch. **The cheap path exists and the
+expensive one is the only one documented.**
+
+| script | reproduces |
+|---|---|
+| `scripts/replay_accounting.py` | Stage 1's exit test — 8 of 8 archived series reproduce exactly |
+| `scripts/discrimination_control_archive.py` | the 132-of-263 discrimination result |
+| `scripts/track_record_audit.py` | 85.3% of terminal verdicts carry a tool verdict; 97.4% of closures |
+| `scripts/instrument_inventory.py` | 34 instruments, and the detector that scored itself wrong |
+| `scripts/null_perturbation_control.py` | 397 findings, 360 fired, 0 moved on an irrelevant change |
+| `scripts/harness_defect_rate.py` | the harness-defect rate curve |
+| `scripts/competence_provenance.py` | the routing-ladder provenance guard |
+| `scripts/note_vagueness_lint.py` | the note-standard vagueness check |
+
+### 5.3 — Design constraints agreed 2026-08-24, before anything is built
+
+1. **The explorer is the FRONT DOOR, not the backbone.** Zero install, zero cost, works without
+   Python, gives a reviewer something to hold in thirty seconds. But it demonstrates one stage's
+   internal dynamics at d = 1 and says in its own words that it is not evidence. A pack centred on it
+   leads with the least evidential artefact in the project. **The eight scripts are the spine,**
+   because they regenerate measurements and measurements are what a reviewer came to attack.
+2. **Runnable things plus one short index. Links, never copies.** A folder that accumulates copies of
+   explanatory documents becomes a second documentation estate that drifts from the first. One copy
+   of every explanation, always.
+3. **Point at the instruments, not at their outputs.** A list of scripts stays true when the numbers
+   move; a list of numbers rots. Same lesson as the `MEMORY.md` index line.
+4. **Two README links, different jobs:** one near the top of the 540-line README (the anti-wading
+   fix — adding *more* to that README cannot itself be the fix), and one in context at the end of §6
+   after the mathematical core, before §7. §11 is the natural home for the reproduction link, since
+   that is where a sceptical reader goes.
+
+### 5.4 — The smallest useful version, if it is ever wanted early
+
+Twenty lines in `docs/REPRODUCING.md` listing the eight scripts, one line each, naming what each
+reproduces and **not quoting any value**. Creates no new estate and does not rot. Offered and
+deferred 2026-08-24 20:54; recorded here rather than lost.
+
+---
+
 ## HELD IN RESERVE
 
 **Full live re-run of exp44-49 with fixes in place.** Founder decision
