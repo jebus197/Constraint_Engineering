@@ -2,11 +2,19 @@
 
 *A Metacognitive Framework For Multi-Vendor LLM Co-ordination.*
 
-> **New here?** This page is the project's full argument and it is long.
-> **[START_HERE.md](START_HERE.md)** is a one-page map: what the project is, which
+> **New here?** This page is the full argument — about fifty minutes.
+> **[START_HERE.md](START_HERE.md)** is the three-minute map: what the project is, which
 > document answers which question, and what to skip. Automated readers should fetch
 > named files directly rather than walking the tree — `bench/logs/` is machine output
 > and will exhaust an API rate limit before reaching anything meaningful.
+
+**What this supports, and what it does not.** *The full argument follows; this is its conclusion, stated first. §11 gives both halves at length.*
+
+**Supported strongly.** That a Popperian core of the scientific method can be encoded three ways at once — as explicit analytical procedure, as mathematical formalism, and as executable control architecture. That the encoding generates formal models of several distinct analytical regimes rather than one. And that this is not a proposal: it is a running system with a substantial experimental record and a maintained bench suite behind it.
+
+**Open, and named here as open.** How far the framework generalises to human and hybrid teams in practice, notwithstanding that the formal machinery is substrate-agnostic by design. Whether the strongest emergence claims survive larger and harder datasets. How much historical precedent exists for an architecture of this exact kind. And how far the formalism extends beyond its Popperian and literature-calibrated centre.
+
+These are not concessions extracted from the project. They are the research programme it generated, and it states them itself.
 
 ---
 
@@ -320,6 +328,18 @@ Any new mechanism added to the framework must declare which of these three chann
 One further risk was named explicitly during the review and is worth stating in the open. The dominant failure mode under §18 is what the panel called **compliance theatre**: models produce nominally-distinct alternatives that satisfy the dimension-tagging surface check while remaining semantically identical. Under compliance theatre, *ν_k* would rise, template language would converge, and the system would be measuring its own formalism rather than any real divergence. The defensive instrument is a per-round cross-model diversity metric — mean pairwise Jaccard across all alternatives across all models — which, if it trends toward 1.0, signals that the templates have collapsed. The metric is specified in the framework's directive layer as a standing telemetry requirement, so that any future run configured under §18 can be audited for this failure mode against a quantitative record rather than an impression.
 
 Full implementation synthesis: [experimental_notes/Divergence_Directive_Implementation_2026-04-15.md](experimental_notes/Divergence_Directive_Implementation_2026-04-15.md), [experimental_notes/Feedback_Channel_Explanation_2026-04-15.md](experimental_notes/Feedback_Channel_Explanation_2026-04-15.md), and the panel convergence record at [experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md](experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md).
+
+### 6.8 The Model, As Something You Can Steer
+
+[![The Stage 5 residual-risk recursion under a sweep of fix efficacy: the achieved floor climbs away from the nu bound as fixes get worse, then vanishes as the loop stops converging](explorer/stage5_explorer.gif)](https://jebus197.github.io/Constraint_Engineering/explorer/)
+
+*Fix efficacy σ swept from 0.95 down to 0. The green line is the floor the process actually reaches; watch it climb away from the ν bound (purple) as fixes get worse, then vanish altogether when the loop stops converging and risk climbs to certainty. The grey curve is the naive intuition — "each pass removes a fixed fraction of the risk above the floor" — which sits placidly at ν throughout.*
+
+**[Open the interactive version →](https://jebus197.github.io/Constraint_Engineering/explorer/)** Five sliders, every intermediate value inspectable per pass, nothing to install.
+
+It computes the recursion set out above — detection, resolution, re-injection — together with the break-even threshold ν\*, which is the rule deciding when a review loop stops paying for itself and the finding should go to a human instead. The arithmetic is checked against an independent implementation, and ν\* is obtained by solving ΔR = 0 rather than copied from the appendix, so the threshold is a consequence of the model rather than a separate assertion.
+
+**[OPEN]** What it shows is the model's internal dynamics. It is not evidence that real review pipelines behave this way: whether p, σ and ν are meaningful, measurable and reasonably stable for a given process is untested, and no parameter in the tool has been estimated from a real run. The sliders are hypotheses.
 
 ---
 
