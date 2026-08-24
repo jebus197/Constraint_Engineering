@@ -321,6 +321,18 @@ One further risk was named explicitly during the review and is worth stating in 
 
 Full implementation synthesis: [experimental_notes/Divergence_Directive_Implementation_2026-04-15.md](experimental_notes/Divergence_Directive_Implementation_2026-04-15.md), [experimental_notes/Feedback_Channel_Explanation_2026-04-15.md](experimental_notes/Feedback_Channel_Explanation_2026-04-15.md), and the panel convergence record at [experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md](experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md).
 
+### 6.8 The Model, As Something You Can Steer
+
+[![The Stage 5 residual-risk recursion under a sweep of fix efficacy: the achieved floor climbs away from the nu bound as fixes get worse, then vanishes as the loop stops converging](explorer/stage5_explorer.gif)](https://jebus197.github.io/Constraint_Engineering/explorer/)
+
+*Fix efficacy σ swept from 0.95 down to 0. The green line is the floor the process actually reaches; watch it climb away from the ν bound (purple) as fixes get worse, then vanish altogether when the loop stops converging and risk climbs to certainty. The grey curve is the naive intuition — "each pass removes a fixed fraction of the risk above the floor" — which sits placidly at ν throughout.*
+
+**[Open the interactive version →](https://jebus197.github.io/Constraint_Engineering/explorer/)** Five sliders, every intermediate value inspectable per pass, nothing to install.
+
+It computes the recursion set out above — detection, resolution, re-injection — together with the break-even threshold ν\*, which is the rule deciding when a review loop stops paying for itself and the finding should go to a human instead. The arithmetic is checked against an independent implementation, and ν\* is obtained by solving ΔR = 0 rather than copied from the appendix, so the threshold is a consequence of the model rather than a separate assertion.
+
+**[OPEN]** What it shows is the model's internal dynamics. It is not evidence that real review pipelines behave this way: whether p, σ and ν are meaningful, measurable and reasonably stable for a given process is untested, and no parameter in the tool has been estimated from a real run. The sliders are hypotheses.
+
 ---
 
 ## 7. Beyond Defect Detection: Mathematical Models of Organised Cognition
