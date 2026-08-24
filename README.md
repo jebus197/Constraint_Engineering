@@ -335,7 +335,7 @@ Full implementation synthesis: [experimental_notes/Divergence_Directive_Implemen
 
 *Fix efficacy σ swept from 0.95 down to 0. The green line is the floor the process actually reaches; watch it climb away from the ν bound (purple) as fixes get worse, then vanish altogether when the loop stops converging and risk climbs to certainty. The grey curve is the naive intuition — "each pass removes a fixed fraction of the risk above the floor" — which sits placidly at ν throughout.*
 
-**[Open the interactive version →](https://jebus197.github.io/Constraint_Engineering/explorer/)** Five sliders, every intermediate value inspectable per pass, nothing to install.
+**[Open the interactive version →](https://jebus197.github.io/Constraint_Engineering/explorer/)** Seven sliders, every intermediate value inspectable per pass, nothing to install.
 
 It computes the recursion set out above — detection, resolution, re-injection — together with the break-even threshold ν\*, which is the rule deciding when a review loop stops paying for itself and the finding should go to a human instead. The arithmetic is checked against an independent implementation, and ν\* is obtained by solving ΔR = 0 rather than copied from the appendix, so the threshold is a consequence of the model rather than a separate assertion.
 
