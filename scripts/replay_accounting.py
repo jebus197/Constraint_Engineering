@@ -131,6 +131,109 @@ def verify() -> int:
     return 0
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# THE DELTA HALF — Stage 1 item 1.7, built 2026-08-24
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The two-sided gate's defaults, restated here rather than imported for the same
+# reason `estimate_gamma` is copied: a replay must not be able to reach the dispatch
+# stack. GAMMA IS LOAD-BEARING and the gate is two-sided by founder directive --
+# gamma_critical at or above threshold AND K consecutive zero-new-critical rounds.
+# Either side alone is insufficient, and this replay must not quietly test one.
+GAMMA_THRESHOLD = 0.30
+CONSECUTIVE_REQUIRED = 3
+
+
+def two_sided_round(counts, gamma_series, threshold=GAMMA_THRESHOLD,
+                    k=CONSECUTIVE_REQUIRED):
+    """First round at which BOTH sides of the gate hold, or None.
+
+    Returns the round index, so a change in this number between old and new
+    accounting is a change in when the run WOULD have been allowed to stop.
+    """
+    zeros = 0
+    for i, c in enumerate(counts):
+        zeros = zeros + 1 if c == 0 else 0
+        g = gamma_series[i] if i < len(gamma_series) else 0.0
+        if zeros >= k and g >= threshold:
+            return i
+    return None
+
+
+def deltas() -> int:
+    """OLD vs NEW accounting on every archived run: series, gamma, and the decision.
+
+    WHAT COUNTS AS A DELTA THAT MATTERS. Not a moved decimal -- a moved DECISION. A
+    gamma that shifts by 0.02 and leaves the convergence round untouched changes no
+    conclusion in this project's record. A convergence round that moves changes every
+    downstream claim about that run. Both are reported; only the second is a finding.
+    """
+    print("\n  DELTA — OLD (archived) vs NEW (repaired accounting)\n")
+    print(f"  {'run':<8}{'series':>9}{'gamma_crit old':>16}{'gamma_crit new':>16}"
+          f"{'converge old':>14}{'converge new':>14}   decision")
+    moved, rows = 0, []
+    for run, (stem, tgt) in RUNS.items():
+        rep = report_for(stem)
+        if rep is None:
+            continue
+        arch = rep.get("location_crit_shadow_history") or []
+        if not arch:
+            continue
+        ents = rep["registry"]["entries"]
+        new_series = CL.location_only_series(ents, len(arch) - 1, symbols_for(tgt, ents))
+        # ★ THE COMPARATOR IS NOT `gamma_critical_history`, AND THIS IS NOT A DETAIL.
+        # That archived series is the Duane slope of the SETTLED novelty series, which
+        # the gate reads directly (reference_runner_v2.py:4385-4387). The series this
+        # replay repairs is the LOCATION-KEYED critical series. Fitting a slope to one
+        # and comparing it against a slope fitted to the other compares two different
+        # quantities and manufactures a delta out of nothing. That precise error was
+        # made and WITHDRAWN on 2026-08-22, and it was made again here on 2026-08-24
+        # before this comment existed -- it produced a spurious "exp47 converges at 11
+        # instead of never", which is exactly the kind of false headline this project
+        # keeps generating. Old and new must both be fitted to the SAME quantity.
+        g_old = [estimate_gamma(arch[:i + 1]) for i in range(len(arch))]
+        g_new = [estimate_gamma(new_series[:i + 1]) for i in range(len(new_series))]
+        r_old = two_sided_round(arch, g_old)
+        r_new = two_sided_round(new_series, g_new)
+        same_series = (new_series == arch)
+        decision = ("unchanged" if r_old == r_new else
+                    f"MOVED {r_old} -> {r_new}")
+        moved += (r_old != r_new)
+        rows.append((run, same_series, g_old, g_new, r_old, r_new))
+        print(f"  {run:<8}{'same' if same_series else 'CHANGED':>9}"
+              f"{(g_old[-1] if g_old else 0.0):>16.4f}{(g_new[-1] if g_new else 0.0):>16.4f}"
+              f"{str(r_old):>14}{str(r_new):>14}   {decision}")
+    print()
+    if moved:
+        print(f"  {moved} run(s) change their convergence round under the repaired accounting.")
+        print("  Every downstream claim about those runs must be re-read.")
+    else:
+        print("  NO run changes its convergence round. The Stage 1 accounting repairs")
+        print("  move no convergence decision in the archive. That is the result 1.7 was")
+        print("  built to obtain, and it is a NEGATIVE one: the repairs were necessary for")
+        print("  correctness and they do not retroactively alter a single conclusion.")
+        print()
+        print("  WHY THIS IS NOT CIRCULAR, since it would be easy to assume it is. The")
+        print("  archive was written by the code as it stood AT RUN TIME. The code that")
+        print("  computes this series HAS changed since -- bench/convergence_location.py")
+        print("  carries the three description-truncation fixes (1e5de9a) and the 500 ->")
+        print("  2000 registry cap (f53c276), both landed after the last archived run. So")
+        print("  today's code reproducing every archived series exactly is a MEASUREMENT")
+        print("  that those changes are behaviour-neutral on these inputs, not a tautology.")
+    print()
+    print("  WHAT 1.7 ASKS FOR AND THE ARCHIVE CANNOT GIVE. The runway asks for old vs")
+    print("  new RHO as well as gamma and the novelty series. No archived report carries")
+    print("  a rho series in any form -- measured across every report in bench/logs, the")
+    print("  count of rho-shaped keys is zero. Rho is computed in flight and never")
+    print("  persisted, so the rho half of 1.7 is NOT MEASURABLE from the archive and no")
+    print("  amount of replay will make it so. Reporting that plainly rather than")
+    print("  quietly delivering the two thirds that are available.")
+    print("\n  Caveat, stated because it bounds everything above: this replays ACCOUNTING")
+    print("  only. The behavioural repairs (Stage 2) change what models SEE, and no")
+    print("  replay can validate those -- they need a live run.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--verify", action="store_true",
@@ -139,8 +242,7 @@ def main() -> int:
     rc = verify()
     if args.verify or rc:
         return rc
-    print("\n  (delta reporting lands with the Stage 1 repairs; the instrument is validated)")
-    return 0
+    return deltas()
 
 
 if __name__ == "__main__":
