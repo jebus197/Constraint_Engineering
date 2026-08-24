@@ -10,13 +10,28 @@
 
 **★ RESUME POINTER (2026-08-24 02:20 BST). SUPERSEDES EVERY POINTER BELOW.**
 
-**START HERE. THREE COMMANDS, THEN THE HANDOVER.**
+**★ START HERE — FRESH INSTANCE, COLD START. FOLLOW IN THIS ORDER.**
+
+**Step 1 — run these two commands.** Together they take about six seconds and report LIVE state that no document can (current commit, dirty files, whether a runner is still executing).
 ```
 cd /Users/georgejackson/Developer_Projects/Constraint_Engineering
 git log --oneline -5 && git status --short
 python3 scripts/cdsfl_recover.py --full
 ```
-Then read `~/Desktop/CDSFL_HANDOVER_2026-08-24.txt` — **nine numbered decisions waiting for the founder**, four of which need their key or judgement. That file plus this pointer is the whole live state. Everything below this block is trail.
+`cdsfl_recover.py --full` is the authority on git state and running processes; where any document disagrees with its `## GIT STATE` or `## RUNNING NOW` blocks, **the script wins**. Two more exist and are not needed at cold start: `python3 scripts/cdsfl_qc.py` (documentation consistency; currently 18 checks, 0 stale, 0 missing, 10 broken refs all of one known false-positive class) and `python3 scripts/cdsfl_sv.py` (state save — do NOT run at start).
+
+**Step 2 — read these four, in this order. About 280 lines in total; everything else in all of them is dated trail.**
+
+| # | file | read | what it gives you |
+|---|---|---|---|
+| 1 | *this file* — `experimental_notes/CDSFL_Agent_Operational_Plan.md` | this pointer block only, to the `---` below | the resume point and the five things not to get wrong |
+| 2 | `~/Desktop/CDSFL_HANDOVER_2026-08-24.txt` | all 98 lines | **nine numbered decisions waiting for the founder**, four needing their key or judgement. This is the live work queue |
+| 3 | `resources/RECOVERY.md` | lines 1-190: the two standing corrections at the top (the test-suite offline figure, and the simulated-panel mislabelling), then the **SESSION STATE — 2026-08-24 02:15 BST** block that begins at line 129 | pending work, blockers, and two corrections that are permanently in force |
+| 4 | `resources/ONBOARDING.md` | the **Current State** block under `<!-- SV:LATEST_EXP_START -->` only | what the last two days established and why it mattered |
+
+Both `RECOVERY.md` and `ONBOARDING.md` were updated by the state save at commit `4d4f58f` on 2026-08-24 and **do reflect current state**; each is a long append-only record, so read only the newest block at the top of each and treat everything beneath as history.
+
+**Step 3 — do not act before reading the five prohibitions immediately below.** Each is a mistake this project has already made once.
 
 **WHERE THE PROJECT IS.** Stage 1 of the runway is complete bar one ruling. Its exit test passes 8 of 8 (`python3 scripts/replay_accounting.py --verify`) and no archived run changes its convergence round under the repaired accounting. Stage 3 — exp50/51/52 — is **blocked on a scientific ruling, not on code and not on missing files.**
 
