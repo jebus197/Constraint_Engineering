@@ -2,11 +2,19 @@
 
 *A Metacognitive Framework For Multi-Vendor LLM Co-ordination.*
 
-> **New here?** This page is the project's full argument and it is long.
-> **[START_HERE.md](START_HERE.md)** is a one-page map: what the project is, which
+> **New here?** This page is the full argument — about fifty minutes.
+> **[START_HERE.md](START_HERE.md)** is the three-minute map: what the project is, which
 > document answers which question, and what to skip. Automated readers should fetch
 > named files directly rather than walking the tree — `bench/logs/` is machine output
 > and will exhaust an API rate limit before reaching anything meaningful.
+
+**What this supports, and what it does not.** *The full argument follows; this is its conclusion, stated first. §11 gives both halves at length.*
+
+**Supported strongly.** That a Popperian core of the scientific method can be encoded three ways at once — as explicit analytical procedure, as mathematical formalism, and as executable control architecture. That the encoding generates formal models of several distinct analytical regimes rather than one. And that this is not a proposal: it is a running system with a substantial experimental record and a maintained bench suite behind it.
+
+**Open, and named here as open.** How far the framework generalises to human and hybrid teams in practice, notwithstanding that the formal machinery is substrate-agnostic by design. Whether the strongest emergence claims survive larger and harder datasets. How much historical precedent exists for an architecture of this exact kind. And how far the formalism extends beyond its Popperian and literature-calibrated centre.
+
+These are not concessions extracted from the project. They are the research programme it generated, and it states them itself.
 
 ---
 
