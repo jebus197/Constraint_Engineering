@@ -8,7 +8,37 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
-**★ RESUME POINTER (2026-08-17 01:45 BST). SUPERSEDES EVERY POINTER BELOW.**
+**★ RESUME POINTER (2026-08-24 02:20 BST). SUPERSEDES EVERY POINTER BELOW.**
+
+**START HERE. THREE COMMANDS, THEN THE HANDOVER.**
+```
+cd /Users/georgejackson/Developer_Projects/Constraint_Engineering
+git log --oneline -5 && git status --short
+python3 scripts/cdsfl_recover.py --full
+```
+Then read `~/Desktop/CDSFL_HANDOVER_2026-08-24.txt` — **nine numbered decisions waiting for the founder**, four of which need their key or judgement. That file plus this pointer is the whole live state. Everything below this block is trail.
+
+**WHERE THE PROJECT IS.** Stage 1 of the runway is complete bar one ruling. Its exit test passes 8 of 8 (`python3 scripts/replay_accounting.py --verify`) and no archived run changes its convergence round under the repaired accounting. Stage 3 — exp50/51/52 — is **blocked on a scientific ruling, not on code and not on missing files.**
+
+**FIVE THINGS THAT MUST NOT BE GOT WRONG BY A FRESH INSTANCE.**
+
+1. **NEVER delete `exp39-experimental` before the encrypted bundle is verified.** Commits `ddd74bde` and `eecdb0f` are reachable from that branch **and nothing else**. They hold all three unrun exam articles and all five answer keys. Deleting the branch and running `gc` destroys the only local copies. The bundle (`~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle.enc`) is date-complete but only the founder's passphrase proves it opens.
+
+2. **NEVER push this branch.** `bench/cdsfl_registry/targets/control_two_distinct_defects_KEY.md` is Exp 55's answer key, tracked at HEAD. Pushing publishes it — the identical mechanism that exposed exp50/51/52. Handover item 9.
+
+3. **exp53 must NOT be dropped.** It is the **zero-plant** control and measures stopping-decision contamination. exp55 is a **two-plant** harness control. Two plants is not zero plants.
+
+4. **The three unrun articles are NOT lost.** They recover from `ddd74bde^` as `exp50_physics.md` / `exp51_biology.md` / `exp52_factorial.md`, matching the target MANIFEST's published hashes. The configs point at *staging* names (`PX-12-REF-05.md` and siblings) that were never committed. Searching the staging names and concluding data loss is a mistake already made once.
+
+5. **Models are given ABSOLUTE target paths, never relative** (founder ruling, `dcbcf68`). The falsifier gate runs falsifiers in an empty working directory, so a relative-path reader ERRORs while a detached falsifier CONFIRMs — the gate then selects FOR falsifiers that never read the document. `_absolute_target` in the runner handles this at all five model-facing prompt sites; `bench/tests/test_absolute_target_paths_2026-08-23.py` pins it.
+
+**MEASURED STATE.** Suite **3840 passed, 34 skipped, 0 failed**. qc **18 checks, 0 stale, 0 missing**, 10 broken refs all of one known false-positive class (non-path tokens read as paths). Branch `build-experiment-2026-08-22`, 34 commits ahead of `origin/main`, **not pushed and must not be**.
+
+**LAST RUN.** exp55, twice on 2026-08-23, both `HALTED_IRREDUCIBLE_QUEUE_ALARM` at round 0. Cause found and fixed. **exp50/51/52 never started; exp53 started twice with no report; exp54 has no config.** exp55 sits *outside* the planned 40–54 arc as a harness control — do not read the numbering as sequential.
+
+---
+
+**★ RESUME POINTER (2026-08-17 01:45 BST). Superseded by the block above; retained as trail.**
 **★ exp39-experimental ARCHIVE: `~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle`**
 **(676 commits, 107 not in main, restore-tested). Holds the per-run TARGET STATES that
 counterfactual-repair adjudication needs. The REMOTE branch exposes 17 answer-key blobs
