@@ -446,6 +446,67 @@ Work up from there. Building the ladder is agent work; deciding it is the founde
 
 ---
 
+## STAGE 7 — DOCUMENTATION CANNOT CLOSE BEFORE PoC FINAL. **Recorded 2026-08-24 23:22 BST.**
+
+**Founder position, 2026-08-24 23:22:** the README and many project documents are *not complete and cannot be*
+until final proof-of-concept status is reached. There will almost certainly be more to say. This row
+exists so that "the README is finished" is never inferred from the fact that nobody has edited it.
+
+### 7.1 — ★ THE COUPLING INTRODUCED ON 2026-08-24, WHICH WILL ROT IF NOTHING WATCHES IT
+
+**README section 11 and the opening block are now the same content at two depths.** On 2026-08-24 a
+short block was added at README line 11, above section 1, stating what the project supports strongly
+and what it names as open. It is a faithful condensation of **section 11**, which sits at line 473.
+
+**If section 11 changes and the opening block does not, the front page states a superseded
+conclusion in the most prominent position in the project.** That is not a hypothetical failure mode;
+it is the same shape as all three defects found on 2026-08-24 — a RUNWAY hold that outlived its
+rulings by two days, a `MEMORY.md` line pointing at a figure its target never held, and a Desktop
+mirror 127 lines stale. Every one of them was a copy or a derivation that nothing checked.
+
+**BR2 will change section 11.** Its "remains open" list explicitly includes whether the strongest
+emergence claims survive larger and harder datasets, which is what BR2 tests. So this coupling is
+guaranteed to be exercised, not merely at risk.
+
+**NOT BUILT:** a check that the opening block and section 11 have not diverged. Recorded as not
+built rather than claimed.
+
+### 7.2 — What else must be revisited when the PoC closes
+
+| item | why it will need changing |
+|---|---|
+| README §11 and the opening block | BR2 answers part of the open list. Both, in lockstep |
+| The discrimination control result | 132 of 263 is the most concrete self-found limitation the project has and it postdates §11, so it appears in neither. Deliberately left out on 2026-08-24 rather than smuggled into the front page |
+| Test and experiment counts throughout | every figure carries a date and a commit and ages the moment either moves |
+| The explorer's own README | its calibration proposal becomes either done or refuted once the archive fit is attempted |
+| `START_HERE.md` | the three-minute map describes a project whose arc stops at experiment 49 |
+
+### 7.3 — Recommendations accumulated 2026-08-24, all post-BR2 unless marked
+
+1. **Do not announce before BR2.** Topics and a homepage URL are catalogue hygiene, reversible, and
+   were applied on 2026-08-24. An *announcement* — a post, a mailing list, a link from anywhere with
+   traffic — is one-shot. Someone arriving now meets an arc that stops at 49 and nine open rulings;
+   after BR2 they meet the same project with its central question answered.
+2. **Zenodo over social.** A citable archived deposit with a DOI reaches people who cite rather than
+   people who scroll, and it is the right register for this work. Partly set up already — the token
+   rotation is decision nine on the founder's desk.
+3. **Put the closed-form floor into the Mathematical Appendix.** The appendix states only the bound
+   `lim R ≥ ν` at line 232 and gives no closed form. Solving the Stage 5 recursion for its fixed
+   point yields `R* = ν / (q(σ + ν(1−σ)))`, which is `ν/q` at σ = 1, so detection quality MULTIPLIES
+   the floor and the bound is tight only at q = 1. Verified 2026-08-24 by SymPy plus 40-decimal-place
+   iteration agreeing to twelve decimals, valid inside the convergent regime. **This is a small new
+   result and it currently lives only in a note and a tool.**
+4. **The three checks that are available and NOT BUILT**, each recorded as not built: that the note
+   standard version named in the project instructions matches the version named in memory (these
+   drifted two versions and four months); that each document's declared Desktop mirror matches its
+   canonical copy (the runway's was 127 lines stale); and deriving the memory ledger inside `sv`
+   instead of typing it (seven consecutive manual bumps, two in one session).
+5. **An archive scheme for the TTS folder.** Roughly four hundred files going back to March sit in
+   one directory the founder reads from. Offered 2026-08-24 and not taken up; recorded so it is not
+   lost.
+
+---
+
 ## HELD IN RESERVE
 
 **Full live re-run of exp44-49 with fixes in place.** Founder decision
