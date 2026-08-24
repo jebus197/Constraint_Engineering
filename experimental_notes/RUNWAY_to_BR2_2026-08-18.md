@@ -471,6 +471,13 @@ guaranteed to be exercised, not merely at risk.
 **NOT BUILT:** a check that the opening block and section 11 have not diverged. Recorded as not
 built rather than claimed.
 
+**Provenance, recorded because this project counts these.** The coupling was introduced by CC1 on
+2026-08-24 *while repairing a different instance of the same class* — the front page was reordered
+to surface the project's limitations earlier, and the reordering created a second copy of them.
+`scripts/harness_defect_rate.py` already records that all eleven harness defects to date were
+authored by CC1; this is a twelfth of the same lineage, disclosed at the moment of creation rather
+than found later.
+
 ### 7.2 — What else must be revisited when the PoC closes
 
 | item | why it will need changing |
@@ -504,6 +511,38 @@ built rather than claimed.
 5. **An archive scheme for the TTS folder.** Roughly four hundred files going back to March sit in
    one directory the founder reads from. Offered 2026-08-24 and not taken up; recorded so it is not
    lost.
+
+### 7.4 — Editorial principles for the final pass, established 2026-08-24 23:35 BST
+
+Recorded because they were argued out in discussion and would otherwise survive only in a transcript.
+
+1. **Length is not the problem; ordering is.** The two have opposite remedies — "too long" says cut,
+   "badly ordered" says re-sequence and keep everything. The README is 12,047 words, which is a long
+   journal article and defensible for the content. **Do not cut it.**
+2. **The audience triages; it is not short of attention.** Frontier researchers read enormous
+   quantities of difficult material under inbound volume that forces rationing. A document gets about
+   sixty seconds to establish it deserves an hour. This is the actionable diagnosis; "attention spans
+   have collapsed" is not, because it leads to writing it anyway rather than to earning the hour.
+3. **Lead with the limitations.** To this audience a project that states plainly what it has NOT
+   established is doing something almost nobody does, so the open list buys more trust in thirty
+   seconds than forty minutes of argument can. Applied on 2026-08-24; keep it applied.
+4. **Open with the concrete and earn the abstraction.** *Origin of Species* is 150,000 words and its
+   first chapter is pigeon breeding. Darwin opened with the most checkable thing he had and earned
+   the theory rather than leading with it.
+5. **State the convention, never the stance.** Never write that the project is careful or does not
+   over-claim; that is an unfalsifiable assertion about oneself of exactly the shape this project
+   exists to catch. Labelling is governed by note standard v1.6 Rule 26, used sparingly — peppering
+   reads as irrational doubt rather than as care.
+6. **Describing the explorer publicly.** Two analogies, each covering half. The Sinclair Executive
+   for the FORM — an existing capability made portable rather than a new capability added, which is
+   what it did to Stage 5. An engineering design chart drawn *before its correlation was calibrated*
+   for the EPISTEMIC STATUS — the mathematics is right, the chart is usable, and the experimental
+   programme that would say whether it describes anything real is the one still to run. Neither
+   analogy alone is honest. Full argument in *Assessment of the Stage 5 Explorer*, 2026-08-24.
+7. **A note on where the new result came from.** The closed-form floor at 7.3 item 3 was found by
+   *using* the explorer rather than by reading the appendix. That is the strongest available argument
+   for the tool earning a place in the documentation, and it is worth stating when the tool is
+   described.
 
 ---
 
