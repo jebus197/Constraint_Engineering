@@ -1,0 +1,866 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001",
+          "ChatGPT:ChatGPT_F002"
+        ],
+        "severity": 0.78,
+        "description": "CT-01 gives the correct Nyquist conclusion for the wrong stated criterion. Location: `bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-01. The text says the sampling rate satisfies Nyquist \u201cbecause `f_s = 400 Hz` exceeds `f_max = 180 Hz`.\u201d Evidence: the Nyquist sampling condition for a band-limited signal with maximum frequency `f_max` is `f_s >= 2 f_max`, equivalently `f_s / 2 >= f_max`. For the concrete values here, `2 f_max = 360 Hz`, and `400 Hz >= 360 Hz`, so the system does satisfy Nyquist, but not merely because `400 > 180`. The written reasoning omits the factor of two and would accept invalid cases such as `f_s = 250 Hz`, `f_max = 180 Hz`, because `250 > 180` while `250 < 360`.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz` (equivalently, the Nyquist frequency\nis `f_s / 2 = 200 Hz`, which exceeds `f_max = 180 Hz`).\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.",
+          "corrected": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "codiscovery": [
+          {
+            "model": "ChatGPT",
+            "finding_id": "ChatGPT_F002",
+            "similarity": 0.503
+          }
+        ],
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0003.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz` (equivalently, the Nyquist frequency\nis `f_s / 2 = 200 Hz`, which exceeds `f_max = 180 Hz`).\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.88,
+        "description": "CT-02 correctly computes the FFT bin spacing but falsely concludes that a `1 Hz` feature separation is resolved. Location: `bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-02. The artifact states `df = f_s / N = 400 / 256 = 1.5625 Hz`, then says the buffer \u201ctherefore resolves features separated by 1 Hz.\u201d Evidence: with bin spacing `1.5625 Hz`, two features separated by `1 Hz` are closer than one bin spacing. The stated conclusion does not follow from the computed `df`; the computed value directly contradicts it.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency bin spacing of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`; therefore, this buffer does not resolve\nfeatures separated by 1 Hz by bin spacing alone.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.",
+          "corrected": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0004.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency bin spacing of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`; therefore, this buffer does not resolve\nfeatures separated by 1 Hz by bin spacing alone.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.8,
+        "description": "Claim CT-01 incorrectly justifies satisfying the Nyquist criterion by stating `f_s = 400 Hz` exceeds `f_max = 180 Hz`. The Nyquist-Shannon sampling theorem requires the sampling rate to strictly exceed twice the maximum frequency (`2 * f_max`).",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>",
+        "falsifier_code": "def falsifier_ct01():\n    f_max = 180\n    f_s_test = 200\n    # The text claims Nyquist is satisfied because f_s > f_max.\n    assert f_s_test > f_max, \"Condition in text met\"\n    assert f_s_test < 2 * f_max, \"But Nyquist actually fails\"\n    print(\"FALSIFIED: The justification f_s > f_max is mathematically insufficient.\")\nfalsifier_ct01()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.",
+          "corrected": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`."
+        },
+        "corrected_copy_source": "Gemini",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "discrimination": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+          "target": "bench/cdsfl_registry/targets/control_two_distinct_defects.md",
+          "falsifier_sha": "cf7b8ebf935a8bba",
+          "corrected_sha": "45919a88e2d9fd08",
+          "baseline_verdict": "CONFIRMED",
+          "corrected_verdict": "",
+          "intercepted": false,
+          "deterministic": true,
+          "retarget_substitutions": 0,
+          "round": 0,
+          "target_sha": "37d095524a338be0"
+        },
+        "computed_evidence": [
+          {
+            "kind": "discrimination_control:INDETERMINATE_NOT_INTERCEPTED",
+            "by": "discrimination_control",
+            "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+            "falsifier_code": "def falsifier_ct01():\n    f_max = 180\n    f_s_test = 200\n    # The text claims Nyquist is satisfied because f_s > f_max.\n    assert f_s_test > f_max, \"Condition in text met\"\n    assert f_s_test < 2 * f_max, \"But Nyquist actually fails\"\n    print(\"FALSIFIED: The justification f_s > f_max is mathematically insufficient.\")\nfalsifier_ct01()",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0001",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true,
+        "discrimination_indeterminate": true,
+        "hil_escalated": true,
+        "hil_reason": "discrimination control INDETERMINATE_NOT_INTERCEPTED: this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ]
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.8,
+        "description": "Claim CT-02 incorrectly concludes that a frequency resolution of `df = 1.5625 Hz` can resolve features separated by 1 Hz. The frequency bin width is 1.5625 Hz, meaning any two features separated by only 1 Hz will fall into the same or adjacent bins and cannot be resolved.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore cannot resolve features\nseparated by 1 Hz.\n>>>>",
+        "falsifier_code": "def falsifier_ct02():\n    df = 1.5625\n    target_resolution = 1.0\n    assert target_resolution < df, \"1 Hz is smaller than the bin width\"\n    print(\"FALSIFIED: Cannot resolve features separated by less than the bin width.\")\nfalsifier_ct02()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore cannot resolve features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.",
+          "corrected": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore cannot resolve features\nseparated by 1 Hz."
+        },
+        "corrected_copy_source": "Gemini",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "discrimination": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+          "target": "bench/cdsfl_registry/targets/control_two_distinct_defects.md",
+          "falsifier_sha": "e90b3fcad6431def",
+          "corrected_sha": "9c93b3304f17bf60",
+          "baseline_verdict": "CONFIRMED",
+          "corrected_verdict": "",
+          "intercepted": false,
+          "deterministic": true,
+          "retarget_substitutions": 0,
+          "round": 0,
+          "target_sha": "37d095524a338be0"
+        },
+        "computed_evidence": [
+          {
+            "kind": "discrimination_control:INDETERMINATE_NOT_INTERCEPTED",
+            "by": "discrimination_control",
+            "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+            "falsifier_code": "def falsifier_ct02():\n    df = 1.5625\n    target_resolution = 1.0\n    assert target_resolution < df, \"1 Hz is smaller than the bin width\"\n    print(\"FALSIFIED: Cannot resolve features separated by less than the bin width.\")\nfalsifier_ct02()",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore cannot resolve features\nseparated by 1 Hz.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0002",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore cannot resolve features\nseparated by 1 Hz.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true,
+        "discrimination_indeterminate": true,
+        "hil_escalated": true,
+        "hil_reason": "discrimination control INDETERMINATE_NOT_INTERCEPTED: this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ]
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.78,
+        "description": "In `bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-01 states: \u201cThe sampling rate satisfies the Nyquist criterion, because `f_s = 400 Hz` exceeds `f_max = 180 Hz`.\u201d The conclusion is true for the given numbers, but the stated criterion is wrong. Nyquist requires `f_s >= 2 * f_max`, not merely `f_s > f_max`.\n\nPremises:\n- Given `f_s = 400 Hz`.\n- Given `f_max = 180 Hz`.\n- Nyquist criterion for a real sampled signal band-limited to `f_max` is `f_s >= 2 f_max`.\n- Therefore the required minimum sampling rate is `2 * 180 = 360 Hz`.\n- `400 >= 360`, so this specific setup satisfies Nyquist.\n- But the document\u2019s justification, `400 > 180`, uses the wrong threshold.\n\nConcrete counterexample to the document\u2019s rule:\n- If `f_s = 250 Hz` and `f_max = 180 Hz`, then `f_s > f_max` is true.\n- But `f_s >= 2 f_max` is `250 >= 360`, false.\n- Therefore the rule stated in CT-01 would incorrectly approve an undersampled signal.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.",
+          "corrected": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0001",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0003.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.86,
+        "description": "In `bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-02 correctly computes the DFT bin spacing as `df = f_s / N = 400 / 256 = 1.5625 Hz`, but then incorrectly concludes that the buffer \u201ctherefore resolves features separated by 1 Hz.\u201d A 256-point window at 400 Hz has bin spacing of 1.5625 Hz, so 1 Hz separation is below the nominal frequency-bin spacing.\n\nPremises:\n- Given `f_s = 400 Hz`.\n- Given `N = 256`.\n- Frequency-bin spacing is `df = f_s / N`.\n- `400 / 256 = 1.5625 Hz`.\n- A feature separation of `1 Hz` is smaller than `1.5625 Hz`.\n- Therefore the stated buffer does not nominally resolve 1 Hz-separated features by bin spacing.\n\nConcrete example:\n- Two tones at `100 Hz` and `101 Hz` are separated by `1 Hz`.\n- The DFT bin spacing for the stated buffer is `1.5625 Hz`.\n- Since `1 < 1.5625`, the claim \u201ctherefore resolves features separated by 1 Hz\u201d does not follow from the stated transform resolution.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency bin spacing of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer does not by bin spacing alone\nresolve features separated by 1 Hz.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.",
+          "corrected": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0002",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency bin spacing of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer does not by bin spacing alone\nresolve features separated by 1 Hz.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0004.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency bin spacing of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer does not by bin spacing alone\nresolve features separated by 1 Hz.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.55,
+        "description": "`bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-01, last line:\n\n> Claim CT-01. The sampling rate satisfies the Nyquist criterion, because\n> `f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\nThe stated reason is wrong. The Nyquist criterion for a signal band-limited to `f_max` is `f_s > 2 * f_max`, not merely `f_s > f_max`. Here `400 Hz > 180 Hz` is true, and `400 Hz > 360 Hz` is also true, so the conclusion happens to be correct for these specific numbers, but the stated justification does not prove it.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>",
+        "falsifier_code": "from pathlib import Path\n\ntext = Path(\"bench/cdsfl_registry/targets/control_two_distinct_defects.md\").read_text()\nwrong_condition = '`f_s = 400 Hz` exceeds `f_max = 180 Hz`'\ncorrect_condition = 'exceeds `2 * f_max = 360 Hz`'\n\nif wrong_condition in text and correct_condition not in text:\n    raise AssertionError(\"FALSIFIED: CT-01 cites f_s > f_max instead of f_s > 2*f_max\")",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.",
+          "corrected": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "withdrawn_by_sweep": "Gemini",
+        "withdraw_reason": "Duplicate of C0001",
+        "equipment_failure": true
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.7,
+        "description": "`bench/cdsfl_registry/targets/control_two_distinct_defects.md`, Claim CT-02:\n\n> Claim CT-02. The frequency resolution of the transform is\n> `df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\n> separated by 1 Hz.\n\nThe second clause is false. For a `N = 256`-sample rectangular window at `f_s = 400 Hz`, the DFT bin spacing is `400 / 256 = 1.5625 Hz`. Two spectral features separated by only `1 Hz` are closer than one bin and cannot be resolved as distinct peaks by this analysis window. Zero-padding does not increase this resolution; it only interpolates.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz; resolving features 1 Hz apart would require `N >= f_s / 1 Hz = 400`\nsamples, an observation window of at least 1 s at this sampling rate.\n>>>>",
+        "falsifier_code": "from pathlib import Path\n\ntext = Path(\"bench/cdsfl_registry/targets/control_two_distinct_defects.md\").read_text()\nneedle = \"the buffer therefore resolves features\"\n\nif needle in text:\n    raise AssertionError(\"FALSIFIED: CT-02 claims 1 Hz features are resolved by 1.5625 Hz bin spacing\")",
+        "falsifier_verdict": "ERROR",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.",
+          "corrected": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0002",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz; resolving features 1 Hz apart would require `N >= f_s / 1 Hz = 400`\nsamples, an observation window of at least 1 s at this sampling rate.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0004.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz; resolving features 1 Hz apart would require `N >= f_s / 1 Hz = 400`\nsamples, an observation window of at least 1 s at this sampling rate.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.75,
+        "description": "`bench/cdsfl_registry/targets/control_two_distinct_defects.md:13-14`. Claim CT-01 states the Nyquist criterion is satisfied \"because `f_s = 400 Hz` exceeds `f_max = 180 Hz`\". The Nyquist\u2013Shannon criterion is `f_s > 2\u00b7f_max`, not `f_s > f_max`. The stated justification is a different (and always-weaker) inequality than the one the criterion requires.\n\nThe conclusion is coincidentally true \u2014 `2 \u00d7 180 = 360` and `400 > 360` \u2014 but it is true by a margin the note never computes, and the argument as written would license `f_s = 200 Hz` for the same signal, which aliases everything above 100 Hz. Tool evidence:\nfs=400 fmax=180 2*fmax=360  Nyquist actually satisfied: True\nCT-01 justifies Nyquist by f_s > f_max; criterion is f_s > 2*f_max = 360 Hz",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.",
+          "corrected": "**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 f_max = 360 Hz`."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0001",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0003.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n==== REPLACE\nClaim CT-01. The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `2 * f_max = 360 Hz`.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.8,
+        "description": "`bench/cdsfl_registry/targets/control_two_distinct_defects.md:16-18`. Claim CT-02 computes `df = f_s / N = 400 / 256 = 1.5625 Hz` \u2014 correct \u2014 and then concludes \"the buffer therefore resolves features separated by 1 Hz\". This inverts the inequality. A bin spacing of 1.5625 Hz cannot resolve a 1 Hz separation; two tones 1 Hz apart fall inside a single bin. The word \"therefore\" makes the error explicit: the note derives a *smaller* resolvable separation from a *larger* bin spacing.\n\nTool evidence:\ndf = fs/N = 400/256 = 1.5625 Hz\nclaimed resolvable separation = 1 Hz\nclaims resolving 1 Hz with bin spacing 1.5625 Hz (needs N>=400 at f_s=400)\nCompounding this, the Setup states \"the analysis window is applied before the transform\", which makes the true resolving power *worse* than the bin spacing, not better. Measured \u22123 dB main-lobe widths (NumPy, N=1024, 32\u00d7 zero-pad):\nrect:     0.938 bins   hann:  1.500 bins\nhamming:  1.312 bins   blackman: 1.688 bins\nA Hann window therefore gives an effective resolution of `1.5 \u00d7 1.5625 \u2248 2.34 Hz`, further from the claimed 1 Hz.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz. The smallest resolvable separation is `df` itself, and the\nanalysis window widens it further: a Hann window has a -3 dB main-lobe width of\nabout 1.5 bins, i.e. about 2.3 Hz. Resolving 1 Hz at `f_s = 400 Hz` needs at least\n`N = 400` samples with a rectangular window, and roughly `N = 600` with a Hann\nwindow.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "corrected_copy": "# Sampling and Resolution Note: 400 Hz Acquisition Chain\n\nA short technical note for review.\n\n## 1. Setup\n\nA sensor samples a signal at `f_s = 400 Hz`. The signal of interest is band-limited\nto `f_max = 180 Hz`. A buffer holds `N = 256` samples and the analysis window is\napplied before the transform.\n\n## 2. The claims under test\n\n**Claim CT-01.** The sampling rate satisfies the Nyquist criterion, because\n`f_s = 400 Hz` exceeds `f_max = 180 Hz`.\n\n**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.",
+          "corrected": "**Claim CT-02.** The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so this buffer does not, on bin spacing alone, resolve features\nseparated by 1 Hz."
+        },
+        "corrected_copy_source": "ChatGPT",
+        "corrected_copy_target_sha": "37d095524a338be0",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "located by NORMALISED prose match (markdown emphasis and whitespace ignored); the model's quote differs from the target only in formatting"
+        },
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0002",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz. The smallest resolvable separation is `df` itself, and the\nanalysis window widens it further: a Hann window has a -3 dB main-lobe width of\nabout 1.5 bins, i.e. about 2.3 Hz. Resolving 1 Hz at `f_s = 400 Hz` needs at least\n`N = 400` samples with a rectangular window, and roughly `N = 600` with a Hann\nwindow.\n>>>>"
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini",
+            "detail": "Duplicate of C0004.",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/targets/control_two_distinct_defects.md\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, and the buffer therefore resolves features\nseparated by 1 Hz.\n==== REPLACE\nClaim CT-02. The frequency resolution of the transform is\n`df = f_s / N = 400 / 256 = 1.5625 Hz`, so the buffer cannot resolve features\nseparated by 1 Hz. The smallest resolvable separation is `df` itself, and the\nanalysis window widens it further: a Hann window has a -3 dB main-lobe width of\nabout 1.5 bins, i.e. about 2.3 Hz. Resolving 1 Hz at `f_s = 400 Hz` needs at least\n`N = 400` samples with a rectangular window, and roughly `N = 600` with a Hann\nwindow.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true
+      }
+    },
+    "next_id": 11,
+    "alias_map": {
+      "ChatGPT:ChatGPT_F001": "C0001",
+      "ChatGPT:ChatGPT_F002": "C0002",
+      "Gemini:Gemini_F001": "C0003",
+      "Gemini:Gemini_F002": "C0004",
+      "Codex:Codex_F001": "C0005",
+      "Codex:Codex_F002": "C0006",
+      "DeepSeek:DeepSeek_F001": "C0007",
+      "DeepSeek:DeepSeek_F002": "C0008",
+      "CC2:CC2_F001": "C0009",
+      "CC2:CC2_F002": "C0010"
+    }
+  },
+  "novelty_counts": [
+    10
+  ],
+  "raw_counts": [
+    10
+  ],
+  "novelty_counts_per_model": {
+    "Gemini": [
+      2
+    ],
+    "CC2": [
+      2
+    ],
+    "Codex": [
+      2
+    ],
+    "ChatGPT": [
+      2
+    ],
+    "DeepSeek": [
+      2
+    ]
+  },
+  "raw_counts_per_model": {
+    "Gemini": [
+      2
+    ],
+    "CC2": [
+      2
+    ],
+    "Codex": [
+      2
+    ],
+    "ChatGPT": [
+      2
+    ],
+    "DeepSeek": [
+      2
+    ]
+  },
+  "rho_history": [
+    1.0
+  ],
+  "gamma_history": [
+    0.0
+  ],
+  "gate_history": [
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 7,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    9
+  ],
+  "cumulative_context_chars": 59314,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "Gemini": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "CC2": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "ChatGPT": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "DeepSeek": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null,
+  "post_convergence_sweep": {
+    "cleared": 0,
+    "withdrawn": 1,
+    "rounds": 2,
+    "remaining": 8,
+    "computed_evidence": 14,
+    "items": {
+      "C0007": {
+        "disposition": "withdrawn",
+        "by": "Gemini",
+        "reason": "Duplicate of C0001"
+      }
+    }
+  }
+}

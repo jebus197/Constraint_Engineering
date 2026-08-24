@@ -51688,3 +51688,112 @@
 2026-08-01T06:49:00 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] 5/5 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed for 3 consecutive rounds — possible systematic bias
 2026-08-01T06:49:00 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] 5/5 (100%) findings from Gemini removed for 3 consecutive rounds — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed for 3 consecutive rounds — possible systematic bias)
 2026-08-01T06:49:00 INFO Autoimmune override: resurrected 0 findings, kept 11 locked rejections
+2026-08-23T15:29:18 INFO Domain config loaded: engineering (1 sections)
+2026-08-23T15:29:18 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-08-23T15:29:18 INFO DC v2 (v2): 0/10 findings reclassified
+2026-08-23T15:29:18 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-08-23T15:29:55 INFO LLM classifier OVERRIDE: Codex_F001 — regex=logical → llm=mathematical (conf=0.95, threshold=0.70 cleared, 11.1s)
+2026-08-23T15:30:33 INFO LLM classifier OVERRIDE: ChatGPT_F002 — regex=logical → llm=mathematical (conf=0.85, threshold=0.70 cleared, 12.3s)
+2026-08-23T15:30:55 INFO LLM classifier OVERRIDE: CC2_F002 — regex=logical → llm=mathematical (conf=0.88, threshold=0.70 cleared, 12.3s)
+2026-08-23T15:31:17 INFO LLM classifier: 7/10 agree with regex (70.0%), 3 overrides applied
+2026-08-23T15:31:17 INFO CT v2 (v2): no code findings to investigate
+2026-08-23T15:31:17 INFO B Cell v2 (v2): 10 claims checked, 0 grounded proofs
+2026-08-23T15:31:17 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T15:31:17 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T15:31:17 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T15:31:17 INFO   DeepSeek_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T15:31:29 INFO NK v2 (v2): 7 verdicts (7 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-23T15:31:41 INFO B-Cell specialist (LIVE, domain=engineering): 10 verdicts
+2026-08-23T15:31:41 INFO Formalisation agent: Codex_F002 — 1 preconditions extracted, B-Cell verdict=CONFIRMED. Z3 translatable=True
+2026-08-23T15:31:41 INFO Formalisation agent: CC2_F002 — 2 preconditions extracted, B-Cell verdict=CONFIRMED. Z3 translatable=True
+2026-08-23T15:31:41 INFO Formalisation agent: 3 math/logic findings, 2 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-23T15:31:41 INFO Helper T v2 (v2): 10 findings — 3 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 7 DUPLICATE
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.50, v2=0.50, max=0.50 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.58, v2=0.58, max=0.58 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.78, v2=0.78, max=0.78 >= 0.5)
+2026-08-23T15:31:41 INFO Reconciliation locked 7 finding(s): CC2_F001, ChatGPT_F001, ChatGPT_F002, Codex_F001, DeepSeek_F001, DeepSeek_F002, Gemini_F002
+2026-08-23T15:31:41 INFO RT v2: depletion (not autoimmune) — removal rate 7/10 (70.0%), all duplicates, rejected=0
+2026-08-23T15:31:41 INFO RT v2 (v2): depletion — 70.0% removal rate (all duplicates)
+2026-08-23T15:31:41 INFO Fix NOT verified: Gemini_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T15:31:41 INFO Fix NOT verified: Codex_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T15:31:41 INFO Fix NOT verified: CC2_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T16:03:24 INFO Domain config loaded: engineering (1 sections)
+2026-08-23T16:03:24 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-08-23T16:03:24 INFO DC v2 (v2): 0/10 findings reclassified
+2026-08-23T16:03:24 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-08-23T16:05:10 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-08-23T16:05:10 INFO CT v2 (v2): no code findings to investigate
+2026-08-23T16:05:10 INFO B Cell v2 (v2): 10 claims checked, 0 grounded proofs
+2026-08-23T16:05:10 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:05:10 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:05:10 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   DeepSeek_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:10 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:05:26 INFO NK v2 (v2): 8 verdicts (8 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-23T16:05:37 INFO B-Cell specialist (LIVE, domain=engineering): 10 verdicts
+2026-08-23T16:05:37 INFO Formalisation agent: Codex_F002 — 3 preconditions extracted, B-Cell verdict=CONFIRMED. Z3 translatable=False
+2026-08-23T16:05:37 INFO Formalisation agent: 2 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-23T16:05:37 INFO Helper T v2 (v2): 10 findings — 2 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 8 DUPLICATE
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.79, v2=0.79, max=0.79 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.53, v2=0.53, max=0.53 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.57, v2=0.57, max=0.57 >= 0.5)
+2026-08-23T16:05:37 INFO Reconciliation locked 8 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F002, Codex_F001, DeepSeek_F001, DeepSeek_F002, Gemini_F002
+2026-08-23T16:05:37 INFO RT v2: depletion (not autoimmune) — removal rate 8/10 (80.0%), all duplicates, rejected=0
+2026-08-23T16:05:37 INFO RT v2 (v2): depletion — 80.0% removal rate (all duplicates)
+2026-08-23T16:05:37 INFO Fix NOT verified: Gemini_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T16:05:37 INFO Fix NOT verified: Codex_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T16:57:06 INFO Domain config loaded: engineering (1 sections)
+2026-08-23T16:57:06 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-08-23T16:57:06 INFO DC v2 (v2): 0/10 findings reclassified
+2026-08-23T16:57:06 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-08-23T16:58:10 INFO LLM classifier OVERRIDE: Codex_F001 — regex=logical → llm=mathematical (conf=0.90, threshold=0.70 cleared, 11.3s)
+2026-08-23T16:59:05 INFO LLM classifier: 9/10 agree with regex (90.0%), 1 overrides applied
+2026-08-23T16:59:05 INFO CT v2 (v2): no code findings to investigate
+2026-08-23T16:59:05 INFO B Cell v2 (v2): 10 claims checked, 0 grounded proofs
+2026-08-23T16:59:05 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:05 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:59:05 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:59:05 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:59:05 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:05 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:05 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:05 INFO   DeepSeek_F002: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-23T16:59:05 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:05 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-08-23T16:59:22 INFO NK v2 (v2): 8 verdicts (8 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-23T16:59:33 INFO B-Cell specialist (LIVE, domain=engineering): 10 verdicts
+2026-08-23T16:59:33 INFO Formalisation agent: 2 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-23T16:59:33 INFO Helper T v2 (v2): 10 findings — 2 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 8 DUPLICATE
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.50, v2=0.50, max=0.50 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.57, v2=0.57, max=0.57 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.74, v2=0.74, max=0.74 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-08-23T16:59:33 INFO Reconciliation locked 8 finding(s): CC2_F001, CC2_F002, ChatGPT_F002, Codex_F001, Codex_F002, DeepSeek_F001, DeepSeek_F002, Gemini_F001
+2026-08-23T16:59:33 INFO RT v2: depletion (not autoimmune) — removal rate 8/10 (80.0%), all duplicates, rejected=0
+2026-08-23T16:59:33 INFO RT v2 (v2): depletion — 80.0% removal rate (all duplicates)
+2026-08-23T16:59:33 INFO Fix NOT verified: ChatGPT_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-23T16:59:33 INFO Fix NOT verified: Gemini_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)

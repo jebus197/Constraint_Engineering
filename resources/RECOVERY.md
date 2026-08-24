@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 22 August 2026 00:18 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 24 August 2026 02:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -123,6 +123,30 @@ honest answer was: never. A result attributed to a model that never produced it 
 downstream indistinguishable from a fabricated one, in a project that documents
 tamper-evident provenance as a core property. Standing rule added to
 `.claude/CLAUDE.md` and to memory.
+
+---
+
+## SESSION STATE — 2026-08-24 02:15 BST (READ THIS FIRST)
+
+**STAGE 1'S EXIT TEST PASSES, 8 OF 8, AND THE ARC IS BLOCKED ON A RULING RATHER THAN ON CODE OR FILES.**
+
+**Runway 1.7 is delivered as far as the archive permits.** `python3 scripts/replay_accounting.py --verify` reproduces every archived location-keyed critical series exactly, so the replay is a valid instrument. The delta half was a stub and is now built: **no run changes its convergence round** under the repaired accounting. Not circular — `bench/convergence_location.py` changed after the last archived run (`1e5de9a`, `f53c276`), so exact reproduction is a measurement of behaviour-neutrality. **One third of 1.7 is permanently unavailable:** no archived report carries a rho series in any form. Decide whether to persist rho from the next run.
+
+**THE THREE UNRUN ARTICLES WERE NEVER LOST. The earlier "not on this machine" report is WITHDRAWN.** Recover from `ddd74bde^` as `exp50_physics.md` / `exp51_biology.md` / `exp52_factorial.md`, each matching the target MANIFEST's published SHA-256; five answer keys at `eecdb0f^`. The failure was mine: I searched the *staging* names the configs point at (`PX-12-REF-05.md` and siblings), which were never committed under those names.
+
+**★ DO NOT DELETE `exp39-experimental` BEFORE THE ENCRYPTED BUNDLE IS VERIFIED.** `ddd74bde` and `eecdb0f` are reachable from that branch **and from nothing else** — not `main`, not any other ref. Deleting it and running `gc` destroys the only local copies of all three articles and all five keys. The bundle at `~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle.enc` is date-complete (branch tip 15 Aug, bundle 17 Aug, zero commits between) but **only the founder's passphrase can prove it decrypts**. Verify, then delete. The previously issued deletion never executed and no branch-delete event appears in the reflog.
+
+**THE BLOCKER ON STAGE 3 IS THE HELD-OUT RULING, OUTSTANDING SINCE 2026-08-08.** The articles and keys were committed to a branch that was public for a window. That branch is gone from the remote (`git ls-remote origin` returns only `main`) and neither commit is an ancestor of `origin/main`, so the live route is shut — but `exp52_factorial.md` matched its published hash byte-for-byte along with its 48-claim key while it was open. Accept the exposure, regenerate, or rewrite history: founder's call.
+
+**exp52 regeneration is SPECIFIED, NOT AUTHORED.** 23,724-byte cs_software article, 304 lines, 13 headings; key of 48 claims, 36 true / 12 planted-false, fields `truth` / `verify_tool` / `why`. **There is no target generator** — the runway's claim that the clean control was script-generated is inaccurate; it was hand-authored with a ground-truth file. The planted set *is* what the factorial measures, so authoring it unsupervised would be an agent arming a founder decision.
+
+**★ exp53 MUST NOT BE DROPPED.** An instruction to drop it came from reading a CC1 *question* as a recommendation. exp53 is the **zero-plant** control and measures stopping-decision contamination — a panel model once reverse-engineered the chemistry exam's design from its structure. exp55 is a **two-plant** harness control. Two plants is not zero plants.
+
+**THE GATE WAS SELECTING FOR FALSIFIERS THAT NEVER READ THE DOCUMENT.** It ran every falsifier in an empty working directory, so genuine readers ERRORed and DETACHED ones CONFIRMED. Fixed by the founder's absolute-path ruling at all five model-facing prompt sites (`dcbcf68`), which beat both reviewers' scratch-directory proposal because `_retarget_falsifier` was already built for absolute paths. **The defect was one day old and I introduced it**: 10 of 11 prose configs already used absolute paths.
+
+**NUMBERING.** Ground truth from run directories: exp29–49 ran; **exp50/51/52 never started; exp53 started twice with zero reports; exp54 has no config; exp55 ran twice on 2026-08-23**. Recommendation is to record exp55 as a harness control outside the arc rather than renumber.
+
+**Suite 3840 passed, 34 skipped, 0 failed.** Eight decisions on the founder's desk: *Handover Decisions 2026-08-24*.
 
 ---
 

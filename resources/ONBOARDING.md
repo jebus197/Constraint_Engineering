@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 22 August 2026 00:18 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 24 August 2026 02:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -96,6 +96,28 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **RUNWAY 1.7 DELIVERED, THE ARTICLES WERE NEVER LOST, AND THE ARC IS BLOCKED ON A RULING (2026-08-24):**
+
+  **Stage 1's exit test passes, 8 of 8.** Every archived location-keyed critical series reproduces exactly through `scripts/replay_accounting.py`, so the replay is a valid instrument rather than one measuring itself. The delta half was an unimplemented stub and is now built: **no run changes its convergence round** under the repaired accounting. The Stage 1 repairs were necessary for correctness and retroactively alter no conclusion in the archive. That is not circular — `bench/convergence_location.py` has changed since the last archived run (three truncation fixes `1e5de9a`, the 500→2000 cap `f53c276`), so reproducing every series exactly is a measurement that those changes are behaviour-neutral. **A third of 1.7 is not deliverable at all:** no archived report carries a rho series in any form, so old-vs-new rho cannot be computed from the archive and never will be.
+
+  **THE THREE UNRUN ARTICLES ARE NOT LOST, AND THE CLAIM THAT THEY WERE IS WITHDRAWN.** They recover from `ddd74bde^` as `exp50_physics.md` (29,378 bytes), `exp51_biology.md` (27,931) and `exp52_factorial.md` (23,740), each reproducing the target MANIFEST's published SHA-256 exactly; all five answer keys are at `eecdb0f^`. The earlier "not on this machine" report was a **search failure** — the configs name *staging* paths (`PX-12-REF-05.md`, `BX-14-REF-04.md`, `SW-14-REF-01.md`) that were never committed under those names, while the repository holds the same articles under `expNN_*.md`.
+
+  **The public leak is closed and the ruling is still owed.** `git ls-remote origin` returns exactly one head, `main`; both experimental branches are gone from the remote and neither commit is an ancestor of `origin/main`. But the branch was public for a window, and `exp52_factorial.md` matched its published hash byte-for-byte along with its 48-claim key. **Whether Exp 50/51/52 may still be reported as blind exams is the blocker on the remaining arc** — a scientific judgement about that window, asked for by the MANIFEST on 2026-08-08 and never given.
+
+  **`exp39-experimental` still exists locally; the deletion never executed.** It matters more than it looks: `ddd74bde` and `eecdb0f` are reachable from that branch **and nothing else**, so deleting it and running `gc` removes the only local copies of all three articles and all five keys. The encrypted bundle is date-complete (branch tip 15 Aug, bundle 17 Aug, zero commits between) but only the founder can prove it decrypts. **Verify, then delete — not the reverse.**
+
+  **THE ABSOLUTE-PATH RULING (founder, 2026-08-23) BEAT THE PANEL'S PROPOSAL.** The falsifier gate ran every falsifier in an empty working directory, so falsifiers that opened the target ERRORed and DETACHED ones (which open nothing) CONFIRMED — **the gate was selecting FOR the pathology the discrimination control exists to catch**. Both reviewers proposed populating a scratch directory and overriding `cwd`; the founder ruled that models must never be handed relative names. Strictly better, because `_retarget_falsifier` already redirects by substituting the ABSOLUTE repo root, so relative was the one form *neither* layer supported. Measured: gate `ERROR → CONFIRMED`, `retarget_substitutions` 0 → 1, no new code path. **The defect was one day old and CC1 introduced it** — 10 of 11 prose configs already used absolute paths; the single relative one was `55_v3_control.json`, written 2026-08-23. CC2's "every prose target in the archive is affected" is overstated.
+
+  **Three repairs to the mechanical acceptance gate**, two found independently by both reviewers: a pytest collection error emitted no `FAILED` line so a patch breaking the entire suite read as green; an unmeasurable parent baseline was cached as an empty set, which drives acceptance towards zero and reads as *"the models cannot do the task"*; and model-supplied paths were joined unvalidated, so an absolute path escaped the worktree.
+
+  **Three record-only instruments, none of which drives anything:** the harness-defect rate curve (`scripts/harness_defect_rate.py`, gamma one level up — 11 defects, all authored by CC1, 7 of 11 rendering as model failures; it refuses to fit a slope to 2 points); the competence-provenance check (`scripts/competence_provenance.py`, from a founder observation neither reviewer raised — re-deriving the routing ladder from Exp 55 would rank Gemini FIRST at 2/2 because its falsifiers never open the document, and DeepSeek LAST at 0/2 because its do; the current order is SOUND because Exp 42's target was `composer.py` and imports travel by PYTHONPATH); and a vagueness linter (`scripts/note_vagueness_lint.py`) that fails on its own motivating sentence.
+
+  **Note standard v1.5** — Rule 24 (a quantity carries a NAME as the system names it, a DIRECTION and a VALUE) and Rule 25 (never hard-wrap). Backed by the linter, because the founder's objection was *"you already said several times that you had fixed it"*.
+
+  **exp53 MUST NOT BE DROPPED.** An instruction to drop it came from reading a CC1 *question* as a recommendation. exp53 is the zero-plant control and measures **stopping-decision** contamination; exp55 is a two-plant harness control. Two plants is not zero plants.
+
+  Suite **3840 passed, 34 skipped, 0 failed**. Handover of eight outstanding decisions: *Handover Decisions 2026-08-24*.
+
 - **EXP 55: THE FALSIFIER GATE WAS SELECTING FOR FALSIFIERS THAT NEVER READ THE DOCUMENT (2026-08-23):**
 
   Exp 55 is the v3 control, a 623-char prose note carrying two deliberately planted defects (CT-01 justifies Nyquist by `f_s > f_max` instead of `f_s > 2*f_max`; CT-02 a resolution claim), with its answer key split into a separate file that was never staged. It ran twice and **halted at round 0 both times** on the irreducible-queue alarm, 1152 s and 1178 s of paid dispatch.

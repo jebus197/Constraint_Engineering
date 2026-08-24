@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 22 August 2026 00:18 BST (2026-08-22T00:18:16+01:00)
+Generated: 24 August 2026 02:17 BST (2026-08-24T02:17:48+01:00)
 
 ---
 
@@ -17,20 +17,32 @@ Generated: 22 August 2026 00:18 BST (2026-08-22T00:18:16+01:00)
 > commit this file actually lives in and its real contents, run
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
-- **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `4f786a4` Design reviews: the Bugzilla question answered at last, and perturbation assessed.
-- **Committed:** 2026-08-21 21:27:14 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
+- **Branch:** build-experiment-2026-08-22
+- **Last commit (the PARENT of the commit containing this file):** `8c57b11` Handover: eight decisions waiting, three of which need the founder's key or judgement and cannot be done by an assistant.
+- **Committed:** 2026-08-24 01:06:48 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 33 [no upstream configured]
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M bench/fingerprints/CC2.json`
+- `M bench/fingerprints/ChatGPT.json`
+- `M bench/fingerprints/Codex.json`
+- `M bench/fingerprints/DeepSeek.json`
+- `M bench/fingerprints/Gemini.json`
+- `M bench/logs/immune_pipeline.log`
+- `M experimental_notes/Handover_Decisions_2026-08-24.md`
+- `M resources/MEMORY_EXCLUSIONS.md`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
+- `?? .cdsfl_tmp/`
+- `?? bench/logs/exp55_v3_control_20260823T144624Z/`
+- `?? bench/logs/exp55_v3_control_20260823T153955Z/`
 
 ---
 
 ## Tests
 
-**3607 tests collected** at 22 August 2026 00:18 BST, HEAD `4f786a4` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**3874 tests collected** at 24 August 2026 02:17 BST, HEAD `8c57b11` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -40,33 +52,33 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Latest Experiment
 
-- **Experiment:** exp49_engineering_exam_live (#49)
-- **Status:** CONVERGED
+- **Experiment:** exp55_v3_control (#55)
+- **Status:** INCOMPLETE
 - **Topology:** star
-- **Target:** `/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md`
-- **Rounds:** 7
-- **Total findings:** 40
-- **Gamma:** 0.7738
+- **Target:** `bench/cdsfl_registry/targets/control_two_distinct_defects.md`
+- **Rounds:** 1
+- **Total findings:** 10
+- **Gamma:** 0.0000
 - **Models:** CC2, ChatGPT, Codex, DeepSeek, Gemini
 - **Per model:**
-  - Gemini: 13
-  - Codex: 8
-  - ChatGPT: 7
-  - CC2: 6
-  - DeepSeek: 6
-- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp49_engineering_exam_live_20260729T062320Z`
+  - ChatGPT: 2
+  - Gemini: 2
+  - Codex: 2
+  - DeepSeek: 2
+  - CC2: 2
+- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp55_v3_control_20260823T153955Z`
 
 ---
 
 ## Recent Commits
 
-- `4f786a4 Design reviews: the Bugzilla question answered at last, and perturbation assessed.`
-- `247ee33 Runway: correct three stale rows and finally record the future-work items (item 9).`
-- `b1a9ed4 Bugzilla verbatim compendium: every source from the last 3 days, unedited.`
-- `5b3043f Fix list from the independent review. Nine defects, six of them CC1's own from this week.`
-- `2a422b5 Independent read-only review, verbatim record: Fable 5 and CC2.`
-- `ce6337a Items 10 and 13: the fix-complexity measurer (shadow only) and the pre-registration draft.`
-- `bd9c569 Items 8, 9, 11, 14: the gate's own count input, exp47's lost rounds, the prose control, and rho's floor in shadow.`
-- `3c96d29 Item 7: no voting. Remove every model-vote path to MERGED.`
-- `3660816 Items 1-6: repair the R_k reader, the feedback wording and priority, and clamp the similarity map.`
-- `210d21d Rescue the one file that existed in no ref: the Exp 39 -> 40-52 renumbering record.`
+- `8c57b11 Handover: eight decisions waiting, three of which need the founder's key or judgement and cannot be done by an assistant.`
+- `cefe165 Runway 1.7: the replay's delta half, built and run. No convergence decision moves — and the rho third of the item is not measurable from the archive at all.`
+- `95c9d36 RUNWAY: withdraw the 'targets not on this machine' claim — it was a search failure, and the blocker is a ruling not a file.`
+- `3ef50d4 MANIFEST: the articles are not lost and the public leak is closed — both halves of the 8 August correction re-measured.`
+- `fa4a86b RUNWAY: the arc is blocked on missing target files, not on code — and the 23 August work did not advance this list.`
+- `bd9584d Three record-only instruments: the defect-rate curve, the competence-provenance check, and a vagueness linter that fails on its own motivating sentence.`
+- `4ed783a ONBOARDING: Exp 55 and the gate inversion. QC stale count 1 -> 0.`
+- `dcbcf68 Absolute paths only: the prompt was telling models to use the one path form the machinery cannot handle.`
+- `66de417 Exp 55: the control halted at round 0, the alarm diagnosed itself correctly, and the relative-path fix it demanded is in.`
+- `5690203 The co-discovery wiring was in a function with no registry, and its NameError vanished into a handler. Caught live by the cy monitor.`

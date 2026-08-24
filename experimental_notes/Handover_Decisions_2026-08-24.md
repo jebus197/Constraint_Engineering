@@ -1,6 +1,6 @@
 DECISIONS WAITING FOR THE FOUNDER, MORNING OF 24 AUGUST 2026
 
-Written 24 August 2026, 01:40 BST. Eight items. Three need a key or a judgement only the founder can give. Nothing below has been acted on.
+Written 24 August 2026, 01:06 BST. Eight items. Three need a key or a judgement only the founder can give. Nothing below has been acted on.
 
 
 ## One. Experiment 53 Must not Be Dropped, and the Instruction to Drop it Came from a Misreading of Something the Assistant Said
