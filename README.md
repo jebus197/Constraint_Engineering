@@ -339,7 +339,7 @@ Full implementation synthesis: [experimental_notes/Divergence_Directive_Implemen
 
 It computes the recursion set out above — detection, resolution, re-injection — together with the break-even threshold ν\*, which is the rule deciding when a review loop stops paying for itself and the finding should go to a human instead. The arithmetic is checked against an independent implementation, and ν\* is obtained by solving ΔR = 0 rather than copied from the appendix, so the threshold is a consequence of the model rather than a separate assertion.
 
-**[OPEN]** What it shows is the model's internal dynamics. It is not evidence that real review pipelines behave this way: whether p, σ and ν are meaningful, measurable and reasonably stable for a given process is untested, and no parameter in the tool has been estimated from a real run. The sliders are hypotheses.
+**Scope.** This is a bifurcation diagram, not a data plot: it shows where the qualitative behaviour of the recursion changes as fix efficacy varies — a property of the equations, not an observation of any process. The change is transcritical, the interior fixed point and the fixed point at R = 1 exchanging stability where ν crosses ν\* evaluated at R = 1. Parameters are indicative, and the tool exists so that measured values can be substituted for them. **[OPEN]** Estimating p, σ and ν from the project's archived runs, and testing whether the estimates hold across runs, is live work.
 
 ---
 
