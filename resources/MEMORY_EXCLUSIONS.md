@@ -15,16 +15,21 @@ The source index lives privately at
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
 The directory holds **116 files**, of which one is `MEMORY.md` itself
-(the index), leaving **116 individual memory files**. They partition as:
+(the index), leaving **117 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 59 |
+| Mirrored (in summarised form) in `MEMORY.md` | 60 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 116 |
+| total | 117 |
 
+> **[Correction 2026-08-24, second of the day.]** Mirrored 59 -> 60, total 116 -> 117
+> for `cdsfl_note_standard_v1.6.md`. **SEVENTH consecutive manual bump**, and the
+> second inside one session — which is the clearest argument yet for the 2026-08-17
+> remedy of deriving this table inside `sv` instead of typing it. Still NOT BUILT.
+>
 > **[Correction 2026-08-24.]** Mirrored 58 -> 59, total 115 -> 116 for
 > `feedback_true_sentence_wrong_frame.md`. **This is the SIXTH consecutive manual
 > bump.** The remedy recorded on 2026-08-17 — move the ledger update into the `sv`
