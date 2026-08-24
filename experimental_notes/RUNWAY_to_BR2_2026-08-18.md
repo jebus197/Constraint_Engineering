@@ -385,6 +385,67 @@ deferred 2026-08-24 20:54; recorded here rather than lost.
 
 ---
 
+## STAGE 6 — OUTREACH. **Also after BR2. Recorded 2026-08-24 21:57 BST.**
+
+**Status: DEFERRED BY DECISION, same slot as Stage 5.** Founder policy, recorded in persistent
+memory and honoured since: outreach begins only once Genesis, OpenBrain and CDSFL are near
+complete, because *"starting outreach before finishing would be a distraction and risk never
+completing the work."* First emails were planned for **2026-03-17**; that date passed and the hold
+was kept deliberately. It is discipline, not slippage.
+
+### 6.1 — What already exists, and what it is NOT
+
+| document | date | what it actually covers |
+|---|---|---|
+| `~/Developer_Projects/Outreach.docx` | 2026-03-21 | **The substantial one.** ~48,500 characters. Verified-contact dossier: Hinton, Bengio, Russell, the IASR network, each with role, fit rationale, interests, and published contact addresses |
+| `~/Developer_Projects/outreach_plan.md` | 2026-02-07 | **Candela / Guardian, NOT CDSFL** — Mini-BERT, on-chain anchoring, Sepolia. Predates this repo by five weeks |
+| `~/Developer_Projects/Gemini Candela Outreach.docx` | 2026-02-07 | Candela again |
+| `Project_Genesis/cw_handoff/OUTREACH_STRATEGY.md` | 2026-03-07 | Genesis |
+
+**Do not treat the February files as a CDSFL plan.** Two of the four are for a different project.
+
+### 6.2 — The agent's role, and the line it does not cross
+
+Founder question, 2026-08-24 21:57: whether an autonomous agent can handle most of the initial outreach. The
+concern behind it is **volume**, and the volume concern is well founded — a tailored approach to
+each name in the dossier is more drafting than one person completes by hand.
+
+**Agreed split: the agent researches, drafts, tracks and prepares. The founder reads and sends.
+Every time.**
+
+Three reasons, and the first is the one that would be raised publicly:
+
+1. **The medium would refute the message.** The pitch is a methodology for keeping AI work honest
+   and human-supervised. Delivered autonomously to Stuart Russell, who works on bounded oversight,
+   it contradicts its own thesis in the act of announcing it.
+2. **This project's own architecture forbids it.** CDSFL keeps the human in the loop for decisions
+   that carry consequences. Autonomous sending is the project violating its own principle.
+3. **These contacts are one-shot and non-renewable.** A failed experiment re-runs; a first email to
+   Hinton does not. In a small field the impression does not reset.
+
+Separately and independently: an assistant cannot send on the founder's behalf without explicit
+per-message permission, so a fully autonomous sender is not available regardless of the argument.
+
+### 6.3 — What the agent SHOULD do. This is the volume answer.
+
+1. **Freshness pass.** The dossier is five months old; affiliations move. Re-verify every contact
+   and role before anything sends. Unglamorous, high-value, exactly what an agent is for.
+2. **Per-target preparation, never templating.** Read each person's recent output, identify the
+   specific overlap, draft the one paragraph proving they were actually read. Ten tailored openings
+   is agent-days and human-minutes; ten templated ones are worthless.
+3. **A tracker that is generated, not maintained** — who, when, what was said, what came back. This
+   file's own history is the argument: three separate stale-document defects on 2026-08-24 alone.
+4. **Materials**, pointing at the Stage 5 reviewer pack rather than at the 540-line README.
+
+### 6.4 — Reorder the ladder. Do not open with Hinton.
+
+Persistent memory already names the **Stanford/Harvard POPPER team** as priority contact: nearest
+methodological neighbour, complementary statistical approach (e-values against this project's
+Bayesian R_k), most likely to engage on substance, and a survivable place to learn what lands.
+Work up from there. Building the ladder is agent work; deciding it is the founder's.
+
+---
+
 ## HELD IN RESERVE
 
 **Full live re-run of exp44-49 with fixes in place.** Founder decision
