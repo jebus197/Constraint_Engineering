@@ -25,8 +25,38 @@
 > **The nearest item that can actually be done is 1.7** — replay exp44-49 through the
 > repaired accounting. Zero dispatch, no missing files, and it is Stage 1's exit test.
 
+> **★★★ THE HOLD IS LIFTED. ALL NINE WERE RULED ON 2026-08-22 AT 16:49 BST, COMMIT `d713379`.**
+> **Do not act on the hold below — it is answered, and the table under it records the
+> recommendations put TO the founder, not the rulings that came back.** The rulings are
+> appended at the foot of `experimental_notes/Decisions_Inventory_2026-08-22.md` under
+> *FOUNDER RULINGS, 22 August 2026*, and three of the nine changed shape there:
+> **#1** use the mechanism that already exists (retry → stronger model → HIL), **#3**
+> re-routed so tool-undecidable pairs enter the normal guarded HIL queue and the 30-pair
+> sitting is WITHDRAWN, **#6** SHELVE the load balancer rather than retire it, and **#7**
+> reverses the recommendation below — the survived-falsification ledger is to be WIRED,
+> not withdrawn.
+>
+> **The work this block gates was then done the same day.** The instrument inventory it
+> names as the next thing to build landed at 17:41 BST in `239d5c8`
+> (`scripts/instrument_inventory.py`, `experimental_notes/Instrument_Inventory_2026-08-22.md`,
+> 34 instruments). Spot-checked in code 2026-08-24: ruling 1 is live —
+> a discrimination failure now writes `NON_DISCRIMINATING` / `verified=False` /
+> `escalated=True` and demotes CONFIRMED to UNCONFIRMED at `reference_runner_v2.py:3729`,
+> which is what carries it into `_apply_routing`'s existing `escalated=True, not CONFIRMED`
+> trigger; ruling 6 is marked SHELVED in `docs/ARCHITECTURE.md`,
+> `bench/dynamic_management.py` and the inventory; ruling 7's ledger is wired at
+> `reference_runner_v2.py:9053`.
+>
+> **Why this marker exists.** The block below was written at 03:47 on 22 August and the
+> rulings arrived that afternoon. This file was edited twice on 24 August (`fa4a86b`,
+> `95c9d36`) and the block was not touched, so it went on declaring the project frozen
+> pending answers that already existed — while a SEPARATE list of nine new decisions
+> accumulated in the 24 August handover, which cites these rulings nowhere. Two decision
+> surfaces, neither pointing at the other. Marked superseded 2026-08-24 03:31 BST.
+
 **★★★ EVERYTHING IS ON HOLD PENDING NINE FOUNDER DECISIONS, 2026-08-22 03:47 BST.**
 **The list is `experimental_notes/Decisions_Inventory_2026-08-22.md` (+ Desktop TTS).**
+**SUPERSEDED — see the block immediately above. Retained as the record of what was ASKED.**
 **Nothing is built and nothing is run until it is answered. This supersedes every
 ordering below, including the one written two hours earlier on this same page.**
 

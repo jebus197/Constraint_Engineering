@@ -1,3 +1,11 @@
+> **★ CORRECTED 2026-08-24 03:33 BST. Three things in this file were wrong or missing, and the TTS companion `~/Desktop/CDSFL_tts/Decisions_Awaiting_Founder_2026-08-24.txt` carries the corrected version.**
+>
+> **1. The nine rulings of 22 August are CLOSED, and this file cites them nowhere.** Its single mention of 22 August is about a repeated arithmetic error. The rulings landed at 16:49 BST that day in `d713379`, and four were verified against running code on 24 August: ruling 1 is live (a discrimination failure writes `NON_DISCRIMINATING`, `verified=False`, `escalated=True` and demotes CONFIRMED to UNCONFIRMED at `reference_runner_v2.py:3729`, which carries it into `_apply_routing`'s existing trigger); ruling 6 is marked SHELVED in `docs/ARCHITECTURE.md`, `bench/dynamic_management.py` and the instrument inventory; ruling 7's ledger is wired at `reference_runner_v2.py:9053`; ruling 2's equipment-error branch escalates without vetoing. **The nine below are a DIFFERENT set, not a re-presentation.**
+>
+> **2. Item FIVE is not open.** A founder position on numbering is already recorded in `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` section E: *"Numbering: keep the new sequence; docs to match. Founder: cosmetic."* This file raised it as though it were undecided and did not cite that.
+>
+> **3. Item EIGHT is not a decision.** It is an overnight status report occupying a numbered slot in a list headed *decisions waiting*. Seven of the nine are genuinely open; four of those seven need the founder's key or judgement (items two, three, four and nine).
+
 DECISIONS WAITING FOR THE FOUNDER, MORNING OF 24 AUGUST 2026
 
 Written 24 August 2026, 01:06 BST. Nine items. Four need a key or a judgement only the founder can give. Nothing below has been acted on.
