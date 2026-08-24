@@ -15,16 +15,23 @@ The source index lives privately at
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
 The directory holds **116 files**, of which one is `MEMORY.md` itself
-(the index), leaving **115 individual memory files**. They partition as:
+(the index), leaving **116 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 58 |
+| Mirrored (in summarised form) in `MEMORY.md` | 59 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 115 |
+| total | 116 |
 
+> **[Correction 2026-08-24.]** Mirrored 58 -> 59, total 115 -> 116 for
+> `feedback_true_sentence_wrong_frame.md`. **This is the SIXTH consecutive manual
+> bump.** The remedy recorded on 2026-08-17 — move the ledger update into the `sv`
+> path so it is derived rather than typed — is still NOT BUILT, and the accounting
+> test in `bench/tests/test_recovery_memory_doc_repairs.py` went red again to catch
+> it. The test is working; the automation it substitutes for does not exist.
+>
 > **[Correction 2026-08-22.]** Mirrored 51 -> 55, total 108 -> 112 for
 > `cdsfl_session_2026-08-18_to_22.md`, `cdsfl_bugzilla_design_2026-08-21.md`,
 > `feedback_check_the_whole_set.md` and `cdsfl_session_2026-08-22_track_record.md`.
