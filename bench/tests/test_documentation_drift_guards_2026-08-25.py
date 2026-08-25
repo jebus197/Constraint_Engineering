@@ -112,13 +112,31 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
     try:
         b = desktop.read_text(encoding="utf-8", errors="replace")
     except (PermissionError, OSError) as exc:
-        # A FAILED MEASUREMENT IS NOT A RESULT. Found 2026-08-25, by this guard
-        # reporting a macOS Desktop-access permission lapse as mirror drift. That
-        # is the same error class the guard exists to catch, one level up: a lookup
-        # failure rendered as a substantive finding. Unreadable is neither "in sync"
-        # nor "drifted" — it is "not measured", and must not read as either.
-        pytest.skip(f"cannot read {desktop.name}: {type(exc).__name__}: {exc}. "
-                    "Not evidence of drift — the comparison did not happen.")
+        # CONTENT DENIED, METADATA AVAILABLE. Measured 2026-08-25: this machine's
+        # sandbox denies read() on ~/Desktop (6 of 6 attempts) while stat() and
+        # write() both succeed. A first version of this branch SKIPPED, which was
+        # honest but weak — and skipping is how a guard quietly stops guarding.
+        #
+        # Size is a real comparison, not a proxy for one, and it would have caught
+        # the drift this guard exists for: the RUNWAY mirror was 326 lines against
+        # the repo's 453 on 2026-08-24. Equal size is weaker than equal bytes, and
+        # the message says so rather than claiming parity.
+        try:
+            desk_size = desktop.stat().st_size
+        except (PermissionError, OSError):
+            pytest.skip(f"{desktop.name} is inaccessible to read AND stat: "
+                        f"{type(exc).__name__}. The comparison did not happen; this "
+                        "is not evidence of drift.")
+        repo_size = len(a.encode("utf-8"))
+        if desk_size != repo_size:
+            pytest.fail(
+                f"mirror SIZE MISMATCH: {repo_rel} is {repo_size} bytes, "
+                f"{desktop.name} is {desk_size}. Content could not be compared "
+                f"(read denied) but the sizes differ, so they are NOT in sync. "
+                f"The repo copy is canonical (founder ruling 2026-08-06)."
+            )
+        pytest.skip(f"{desktop.name}: content unreadable, but sizes MATCH at "
+                    f"{repo_size} bytes — consistent with parity, weaker than proof.")
     if a != b:
         la, lb = len(a.splitlines()), len(b.splitlines())
         pytest.fail(

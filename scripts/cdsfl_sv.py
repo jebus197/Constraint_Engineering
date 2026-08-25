@@ -707,19 +707,39 @@ def _check_tracker_mirror(root: Path, desktop: Path | None = None) -> bool:
     try:
         desk_bytes = desk.read_bytes()
     except (PermissionError, OSError) as exc:
-        # A FAILED MEASUREMENT IS NOT A RESULT. Added 2026-08-25 after this line
-        # crashed an entire save: the Desktop copy EXISTS and is readable to the
-        # user, but was not readable from the running process, and read_bytes()
-        # raised. The branches above handle MISSING; PRESENT-BUT-UNREADABLE is a
-        # third state that was falling through as a crash.
+        # CONTENT IS UNREADABLE BUT METADATA IS NOT. Measured 2026-08-25: on this
+        # machine ~/Desktop denies read() to this process (6 of 6 attempts) while
+        # stat() and write() both succeed. Content comparison was the ONE operation
+        # unavailable, and both this check and _reconcile_tracker were built on it.
         #
-        # Same defect class this project spent the day correcting, occurring in the
-        # saving tool itself: a lookup failure rendered as anything other than "not
-        # measured". It must not block the save, and must not claim parity either.
+        # Falling back to size gives a determinate answer rather than an unknown one,
+        # and it would have caught the real drift this check exists for: on
+        # 2026-08-24 the RUNWAY mirror was 326 lines against the repo's 453, which is
+        # a large size difference, not a subtle one. Equal size is weaker evidence
+        # than equal bytes and is reported as such rather than as parity.
+        try:
+            desk_size = desk.stat().st_size
+        except (PermissionError, OSError):
+            _tracker_warn([
+                f"Tracker parity NOT MEASURED: {type(exc).__name__} on read AND stat.",
+                f"{desk} is present but wholly inaccessible to this process.",
+                "The REPO copy is canonical and unaffected. Parity is UNKNOWN.",
+            ])
+            return True
+        try:
+            mirror_size = mirror.stat().st_size
+        except OSError:
+            return True
+        if desk_size == mirror_size:
+            print("  Tracker mirror: sizes match (content unreadable — weaker than "
+                  "byte parity, but consistent with it).")
+            return True
         _tracker_warn([
-            f"Tracker parity NOT MEASURED this save: {type(exc).__name__}",
-            f"{desk} is PRESENT but unreadable from this process.",
-            "Parity is UNKNOWN, not confirmed. Re-run when the path is readable.",
+            f"Tracker mirror SIZE MISMATCH: repo {mirror_size} bytes, "
+            f"Desktop {desk_size} bytes.",
+            "Content could not be compared (read denied); size says they differ.",
+            "The REPO copy is canonical (founder ruling 2026-08-06) — refresh the "
+            "Desktop copy from it, never the reverse.",
         ])
         return True
     mirror_bytes = mirror.read_bytes()
@@ -1754,16 +1774,69 @@ def _reconcile_tracker(
     try:
         desk_bytes = desk.read_bytes()
     except (PermissionError, OSError) as exc:
-        # Same third state as in _check_tracker_mirror above: the mirror is PRESENT
-        # but unreadable from this process. Absent is already handled; unreadable was
-        # falling through as a crash and took the whole save with it on 2026-08-25.
-        # Report it as not-measured rather than as drift or as parity.
-        say("UNMEASURABLE", f"cannot read the Desktop tracker: {type(exc).__name__}")
+        # Content unreadable, metadata available — see _check_tracker_mirror. This
+        # reconciler exists to REFRESH the Desktop copy FROM the repo, and the repo
+        # copy is canonical by founder ruling 2026-08-06, so the read was only ever
+        # a safety check against clobbering a newer Desktop edit. mtime answers that
+        # question without reading a byte, and write() is permitted, so the save can
+        # complete DETERMINISTICALLY instead of reporting an unknown.
+        try:
+            desk_mtime = desk.stat().st_mtime
+            repo_mtime = repo.stat().st_mtime
+        except (PermissionError, OSError):
+            say("UNMEASURABLE", "cannot read or stat the Desktop tracker")
+            return _Check(
+                name, True, why=why, expected=expected,
+                observed=(f"NOT COMPARED - {desk} is wholly inaccessible to this "
+                          "process. The REPO copy is canonical and unaffected."),
+                look_at=str(desk),
+            )
+        if desk_mtime > repo_mtime + 1:
+            say("DESKTOP-NEWER", "refusing to overwrite a newer Desktop copy")
+            return _Check(
+                name, False, why=why, expected=expected,
+                observed=(f"The Desktop copy is NEWER than the repo copy and its "
+                          f"content cannot be read to merge. Resolve by hand: the "
+                          f"repo copy is canonical, so confirm nothing is only on "
+                          f"the Desktop before it is overwritten."),
+                look_at=str(desk),
+            )
+        if apply:
+            try:
+                desk.write_bytes(repo_bytes)
+            except (PermissionError, OSError) as werr:
+                # MEASURED 2026-08-25, and the reason the first version of this fix
+                # was wrong. This machine's sandbox permits CREATING a new file under
+                # ~/Desktop and permits stat(), but denies read() AND denies
+                # overwriting an existing file. So the mirror cannot be maintained
+                # from this process at all.
+                #
+                # That is a definite, explainable state, not an unknown one, and the
+                # save must report it as such and COMPLETE. The repo copy is canonical
+                # by founder ruling 2026-08-06; a convenience mirror that cannot be
+                # written is not a reason to fail a save of canonical state.
+                say("MIRROR-NOT-WRITABLE",
+                    f"cannot refresh the Desktop copy: {type(werr).__name__}")
+                return _Check(
+                    name, True, why=why, expected=expected,
+                    observed=(f"NOT REFRESHED - {desk} cannot be overwritten by this "
+                              f"process ({type(werr).__name__}). The Desktop copy is "
+                              f"therefore STALE from this save onward. The repo copy "
+                              f"is canonical and is fully saved. Re-sync by hand, or "
+                              f"grant this process write access to ~/Desktop."),
+                    look_at=str(desk),
+                )
+            say("REFRESHED", "Desktop copy rewritten from the canonical repo copy")
+            return _Check(
+                name, True, why=why, expected=expected,
+                observed=(f"refreshed from the repo copy ({len(repo_bytes)} bytes); "
+                          "content comparison unavailable, mtime confirmed the repo "
+                          "copy was not older"),
+                look_at=str(desk), wrote=str(desk),
+            )
         return _Check(
             name, True, why=why, expected=expected,
-            observed=(f"NOT COMPARED - {desk} is present but unreadable from this "
-                      f"process ({type(exc).__name__}). Tracker parity is UNKNOWN for "
-                      f"this save, not confirmed."),
+            observed="would refresh the Desktop copy from the canonical repo copy",
             look_at=str(desk),
         )
     if desk_bytes == repo_bytes:
