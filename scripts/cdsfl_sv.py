@@ -1016,8 +1016,101 @@ def _commit_and_push(
         branch = _git("branch", "--show-current", root=root)
         _git("push", "origin", branch, root=root, timeout=120)
         print(f"  Pushed to origin/{branch}")
+        # Do not take the push command's exit code as the answer. Measure.
+        _print_sync_verdict(_verify_remote_sync(root))
 
     return True
+
+
+def _sync_sentence(root, gs, pushed: bool) -> str:
+    """The summary's one sentence about sync, MEASURED after the push."""
+    try:
+        sy = _verify_remote_sync(root)
+    except Exception as exc:  # never raise: sv has already succeeded by now
+        return (f"Branch: {gs['branch']}. Pushed: {'yes' if pushed else 'no'}. "
+                f"Post-push sync NOT VERIFIED ({type(exc).__name__}).")
+    head = f"Branch: {sy['branch'] or gs['branch']}. Pushed: {'yes' if pushed else 'no'}."
+    if sy["error"] and sy["upstream_ahead"] is None:
+        body = f" Remote sync NOT VERIFIED: {sy['error']}."
+    elif sy["in_sync"]:
+        body = f" Remote AFTER this sv: origin/{sy['branch']} == HEAD, fully in sync."
+    else:
+        body = (f" Remote AFTER this sv: NOT in sync -- origin/{sy['branch']} is "
+                f"{sy['upstream_ahead']} behind, {sy['upstream_behind']} ahead.")
+    if sy.get("main_behind"):
+        body += f" Public main is {sy['main_behind']} commits behind this branch."
+    return head + body
+
+
+def _verify_remote_sync(root) -> dict:
+    """Re-MEASURE local vs remote after a push. Never raises.
+
+    FOUNDER INSTRUCTION 2026-08-26, verbatim: "a push/commit should cause both
+    local and remote to be *fully* in sync. Surely that is the point of the
+    entire exercise? Whatever you are doing that might be preventing this, you
+    should fix it." And: sv must complete with "zero errors and zero ambiguity
+    about the completed sv state".
+
+    THE DEFECT THIS REPLACES. The session summary said "Remote before this sv:
+    <N ahead>" and "Pushed: yes", and stopped. Both statements were true and
+    neither answered the only question being asked, because the before-state
+    plus a boolean is not an after-state -- a push that silently pushed nothing,
+    or pushed a branch nobody reads, produced the same two lines as a push that
+    worked. The remedy is not better wording. It is to measure again afterwards.
+
+    Returns keys: branch, upstream_ahead, upstream_behind, in_sync,
+    main_behind (how far public main trails this branch), error.
+    """
+    out = {"branch": "", "upstream_ahead": None, "upstream_behind": None,
+           "in_sync": False, "main_behind": None, "error": ""}
+    try:
+        out["branch"] = _git("branch", "--show-current", root=root, check=False) or ""
+        b = out["branch"]
+        if not b:
+            out["error"] = "detached HEAD: no branch to compare"
+            return out
+        # Refresh the remote-tracking refs, or the counts describe a stale view.
+        _git("fetch", "origin", "--quiet", root=root, check=False, timeout=60)
+        ref = f"origin/{b}"
+        exists = _git("rev-parse", "--verify", "--quiet", ref, root=root, check=False)
+        if not exists:
+            out["error"] = f"{ref} does not exist: this branch has never been pushed"
+        else:
+            a = _git("rev-list", "--count", f"{ref}..HEAD", root=root, check=False)
+            d = _git("rev-list", "--count", f"HEAD..{ref}", root=root, check=False)
+            out["upstream_ahead"] = int(a) if a.isdigit() else None
+            out["upstream_behind"] = int(d) if d.isdigit() else None
+            out["in_sync"] = out["upstream_ahead"] == 0 and out["upstream_behind"] == 0
+        if b != "main":
+            m = _git("rev-list", "--count", "origin/main..HEAD", root=root, check=False)
+            out["main_behind"] = int(m) if m.isdigit() else None
+    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        out["error"] = f"{type(exc).__name__}: {exc}"
+    return out
+
+
+def _print_sync_verdict(sync: dict) -> None:
+    """One unambiguous line about where the work now is. Loud when it is not
+    where the founder expects it."""
+    print()
+    print("=" * 74)
+    if sync["error"] and sync["upstream_ahead"] is None:
+        print(f"  REMOTE SYNC: NOT VERIFIED -- {sync['error']}")
+        print("  This is a failed measurement, NOT evidence that the push worked.")
+    elif sync["in_sync"]:
+        print(f"  REMOTE SYNC: origin/{sync['branch']} == local HEAD. Fully in sync.")
+    else:
+        print(f"  REMOTE SYNC: NOT IN SYNC -- origin/{sync['branch']} is "
+              f"{sync['upstream_ahead']} behind and {sync['upstream_behind']} ahead "
+              "of local HEAD.")
+    if sync.get("main_behind"):
+        print(f"  PUBLIC main IS {sync['main_behind']} COMMITS BEHIND this branch.")
+        print(f"  Pushing '{sync['branch']}' does NOT update main. Anyone reading the")
+        print("  public repository sees main, not this branch. Merge to update it.")
+    elif sync["branch"] and sync["branch"] != "main":
+        print(f"  Public main is level with this branch.")
+    print("=" * 74)
+    print()
 
 
 # ── Open Brain session capture (REPAIR S3) ────────────────────────────────
@@ -1125,8 +1218,7 @@ def _open_brain_summary(
     parts = [
         f"CDSFL sv {timestamp_now()}. {message.splitlines()[0] if message else ''}".strip(),
         f"Commit: {head}." if head else "Commit: unknown.",
-        f"Branch: {gs['branch']}. Remote before this sv: {gs['remote_sync']}. "
-        f"Pushed: {'yes' if pushed else 'no'}.",
+        _sync_sentence(root, gs, pushed),
         f"Tests collected: {tests if tests else 'unknown'} "
         "(collection count, NOT a pass count).",
     ]
