@@ -20,10 +20,20 @@ Number four is the argument for this file. A correction that is not a check is a
 promise, and this project's own note standard exists because a restated promise had
 already failed.
 
-WHAT IS NOT GUARDED HERE. Cross-document supersession — a document asserting
-something a later ruling overturned — is not mechanically detectable and is not
-attempted. Defect 1 above would still not be caught. That limit is stated rather
-than papered over.
+CLAIM WITHDRAWN 2026-08-26. This paragraph previously read: "Cross-document
+supersession — a document asserting something a later ruling overturned — is not
+mechanically detectable and is not attempted. Defect 1 above would still not be
+caught." The founder asked "For sure?", and it was too strong.
+
+GENERAL supersession is not detectable. Defect 1 is not general: it is a hold
+assertion plus a NAMED file that already carries a rulings marker, and both halves
+are machine-readable. `scripts/supersession_check.py` detects that pair and fires
+on the real historical file (git c8f63ec~1) this paragraph said it could not.
+Defect 1 IS now caught, by that script and by
+test_supersession_check_commissioned_2026-08-26.py, not by this file.
+
+The residual limit, stated narrowly this time: a hold that names no file, or that
+paraphrases the decision list instead of pointing at it, is still invisible.
 """
 import pathlib
 import re
