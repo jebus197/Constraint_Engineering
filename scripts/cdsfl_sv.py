@@ -1022,6 +1022,52 @@ def _commit_and_push(
     return True
 
 
+
+def _print_final_state(root, push: bool) -> None:
+    """The ONE block that describes the state sv actually finished in.
+
+    Everything printed before the commit is a pre-commit reading. This runs
+    after the commit and, if requested, after the push, and it re-measures
+    rather than restating. Never raises: sv has already succeeded by the time
+    this runs, and a traceback here would turn a completed save into a failure.
+    """
+    bar = "=" * 74
+    try:
+        head = _git("log", "--oneline", "-1", root=root, check=False) or "unknown"
+        branch = _git("branch", "--show-current", root=root, check=False) or "unknown"
+        dirty = _git("status", "--porcelain", root=root, check=False)
+    except (subprocess.SubprocessError, OSError):
+        head, branch, dirty = "unknown", "unknown", ""
+    print(bar)
+    print("  SV COMPLETE — state AFTER the save, re-measured:")
+    print(f"    Commit:       {head}")
+    print(f"    Branch:       {branch}")
+    print(f"    Working tree: {'clean' if not dirty else 'DIRTY (' + str(len(dirty.splitlines())) + ' path(s) still uncommitted)'}")
+    if not push:
+        print("    Remote:       NOT PUSHED (no --push). Local is ahead of the remote.")
+        print(bar)
+        return
+    try:
+        sy = _verify_remote_sync(root)
+    except Exception as exc:
+        print(f"    Remote:       NOT VERIFIED ({type(exc).__name__}) — this is a "
+              "failed measurement, not evidence the push worked.")
+        print(bar)
+        return
+    if sy["error"] and sy["upstream_ahead"] is None:
+        print(f"    Remote:       NOT VERIFIED — {sy['error']}")
+        print("                  A failed check is NOT evidence the push worked.")
+    elif sy["in_sync"]:
+        print(f"    Remote:       origin/{sy['branch']} == HEAD. Fully in sync.")
+    else:
+        print(f"    Remote:       NOT IN SYNC — origin/{sy['branch']} is "
+              f"{sy['upstream_ahead']} behind, {sy['upstream_behind']} ahead.")
+    if sy.get("main_behind"):
+        print(f"    PUBLIC main:  {sy['main_behind']} COMMITS BEHIND this branch. "
+              "The public repository does NOT show this work.")
+    print(bar)
+
+
 def _sync_sentence(root, gs, pushed: bool) -> str:
     """The summary's one sentence about sync, MEASURED after the push."""
     try:
@@ -2374,6 +2420,15 @@ def main() -> None:
         print("Every line below describes what WOULD change on a real run.")
         print(bar)
         print("State save dry run complete — no files written.")
+    elif args.commit:
+        # NOT "complete": the commit and push have not run yet, and every line
+        # below is a PRE-COMMIT reading. Printing "State save complete." here
+        # and then doing more work is the same defect as reporting the remote
+        # state from before a push -- a before-state under a final-sounding
+        # heading. Founder, 2026-08-26: sv must finish with "zero errors and
+        # zero ambiguity about the completed sv state".
+        print("State files written. Commit and push STILL TO RUN — "
+              "the lines below are the state BEFORE that.")
     else:
         print("State save complete.")
     print(f"  Branch: {gs['branch']} @ {gs['last_hash']}")
@@ -2388,7 +2443,8 @@ def main() -> None:
           f"For health run: python3 -m pytest bench/tests/ -q --netguard-strict)")
     print(f"  Latest exp: {exp['name'] if exp else 'none'}")
     print(f"  Working tree: {'clean' if gs['clean'] else 'DIRTY'}")
-    print(f"  Remote: {gs['remote_sync']}")
+    print(f"  Remote{' BEFORE this sv' if args.commit and not args.dry_run else ''}: "
+          f"{gs['remote_sync']}")
     print(f"  ONBOARDING.md: {onboarding_status}")
     print(f"  RECOVERY.md: {recovery_status}")
 
@@ -2405,8 +2461,7 @@ def main() -> None:
                 validate_message=not args.no_validate_message,
             ):
                 print()
-                suffix = " and pushed" if args.push else ""
-                print(f"State save committed{suffix}.")
+                _print_final_state(root, push=args.push)
                 # REPAIR S3: the sv spec names the Open Brain session summary
                 # FIRST. Only on a successful commit, never under --dry-run
                 # (this whole branch is gated on `not args.dry_run`), and it

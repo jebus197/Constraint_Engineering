@@ -140,3 +140,63 @@ def test_sync_verification_never_raises_on_a_non_repo(tmp_path):
     a successful sv into a non-zero exit."""
     s = sv._verify_remote_sync(tmp_path)
     assert isinstance(s, dict) and s["in_sync"] is False
+
+
+class TestTheFinalStateBlockIsTheOnlyCompletionClaim:
+    """sv printed "State save complete." and a pre-commit `Remote:` line BEFORE
+    it committed and pushed. Same defect one level up: a before-state under a
+    final-sounding heading. The completion claim now runs last and re-measures.
+    """
+
+    def test_a_pushed_save_ends_saying_fully_in_sync(self, repo_with_remote, capsys):
+        sv._print_final_state(repo_with_remote, push=True)
+        out = capsys.readouterr().out
+        assert "SV COMPLETE" in out
+        assert "Fully in sync" in out, f"a level remote did not report in sync:\n{out}"
+        assert "NOT PUSHED" not in out
+
+    def test_an_unpushed_save_says_NOT_PUSHED_not_in_sync(self, repo_with_remote, capsys):
+        """KNOWN-BAD: without --push the work is local only, and the block must
+        never imply otherwise."""
+        sv._print_final_state(repo_with_remote, push=False)
+        out = capsys.readouterr().out
+        assert "NOT PUSHED" in out, f"an unpushed save did not say so:\n{out}"
+        assert "Fully in sync" not in out
+
+    def test_it_names_the_public_main_gap_on_a_side_branch(self, repo_with_remote, capsys):
+        """The case that bit this project on 2026-08-26: the branch push
+        succeeds and the public repository still shows nothing."""
+        _run("git", "checkout", "-b", "sidework", cwd=repo_with_remote)
+        for i in range(2):
+            (repo_with_remote / f"s{i}.txt").write_text(f"{i}\n")
+            _run("git", "add", "-A", cwd=repo_with_remote)
+            _run("git", "commit", "-m", f"s{i}", cwd=repo_with_remote)
+        _run("git", "push", "-q", "origin", "sidework", cwd=repo_with_remote)
+        sv._print_final_state(repo_with_remote, push=True)
+        out = capsys.readouterr().out
+        assert "Fully in sync" in out, "the branch itself IS synced and should say so"
+        assert "PUBLIC main" in out and "2 COMMITS BEHIND" in out, (
+            f"a synced side branch reported success without saying the public "
+            f"repository is stale:\n{out}"
+        )
+
+    def test_a_never_pushed_branch_reads_as_NOT_VERIFIED(self, repo_with_remote, capsys):
+        _run("git", "checkout", "-b", "never", cwd=repo_with_remote)
+        (repo_with_remote / "n.txt").write_text("n\n")
+        _run("git", "add", "-A", cwd=repo_with_remote)
+        _run("git", "commit", "-m", "n", cwd=repo_with_remote)
+        sv._print_final_state(repo_with_remote, push=True)
+        out = capsys.readouterr().out
+        assert "NOT VERIFIED" in out, f"an unmeasurable remote read as a verdict:\n{out}"
+        assert "Fully in sync" not in out
+
+    def test_it_reports_a_still_dirty_tree(self, repo_with_remote, capsys):
+        """A save that left files uncommitted must not print 'clean'."""
+        (repo_with_remote / "left_behind.txt").write_text("x\n")
+        sv._print_final_state(repo_with_remote, push=True)
+        out = capsys.readouterr().out
+        assert "DIRTY" in out, f"an uncommitted path was reported as clean:\n{out}"
+
+    def test_it_never_raises_outside_a_repo(self, tmp_path, capsys):
+        sv._print_final_state(tmp_path, push=True)
+        assert "SV COMPLETE" in capsys.readouterr().out
