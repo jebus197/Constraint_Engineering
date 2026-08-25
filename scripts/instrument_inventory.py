@@ -44,7 +44,7 @@ TESTS = REPO / "bench/tests"
 # (id, human name, symbol or module to grep, file, what it emits, config flag or "")
 INSTRUMENTS = [
     ("I01", "Duane/Crow-AMSAA gamma estimator", "_estimate_gamma", "bench/reference_runner_v2.py", "number", ""),
-    ("I02", "Two-sided gamma gate", "_check_gamma_gate", "bench/reference_runner_v2.py", "verdict", ""),
+    ("I02", "Two-sided gamma gate", "_check_gamma_alt_convergence", "bench/reference_runner_v2.py", "verdict", ""),
     ("I03", "Churn detector (rho)", "_compute_rho", "bench/reference_runner_v2.py", "number", ""),
     ("I04", "State-convergence check", "_check_state_convergence", "bench/reference_runner_v2.py", "verdict", ""),
     ("I05", "Gamma-alt convergence", "_check_gamma_alt_convergence", "bench/reference_runner_v2.py", "verdict", ""),
@@ -61,21 +61,21 @@ INSTRUMENTS = [
     ("I16", "Discrimination control", "run_discrimination_control", "bench/reference_runner_v2.py", "verdict", "(presence-gated)"),
     ("I17", "Routing/escalation ladder", "_apply_routing", "bench/reference_runner_v2.py", "routing decision", "routing_enabled"),
     ("I18", "Status transitions", "_update_finding_statuses", "bench/reference_runner_v2.py", "status", ""),
-    ("I19", "Similarity function (3 tiers)", "signature_similarity", "bench/dm/_similarity.py", "number+verdict", ""),
-    ("I20", "Outcome agreement (tier 3)", "outcome_agreement", "bench/dm/_similarity.py", "verdict", ""),
+    ("I19", "Similarity function (3 tiers)", "signature_similarity", "bench/convergence_location.py", "number+verdict", ""),
+    ("I20", "Outcome agreement (tier 3)", "outcome_agreement", "bench/convergence_location.py", "verdict", ""),
     ("I21", "Location keying", "location_only_series", "bench/convergence_location.py", "series", ""),
     ("I22", "Divergence measure", "_divergence", "bench/dm/_divergence.py", "number", ""),
     ("I23", "Diversity measure", "_diversity", "bench/dm/_diversity.py", "number", ""),
-    ("I24", "Fix complexity (nu), shadow", "_fix_complexity", "bench/dm/_fix_complexity.py", "number", "(shadow)"),
+    ("I24", "Fix complexity (nu), shadow", "fix_complexity_features", "bench/dm/_fix_complexity.py", "number", "(shadow)"),
     ("I25", "Immune memory prior", "_memory", "bench/dm/_memory.py", "number", ""),
     ("I26", "Load balancer  [SHELVED 2026-08-22]", "_load_balancer", "bench/dm/_load_balancer.py", "allocation", "(shelved)"),
-    ("I27", "Shadow stage-6", "_shadow_stage6", "bench/dm/_shadow_stage6.py", "number", "(shadow)"),
+    ("I27", "Shadow stage-6", "ShadowStage6Calibrator", "bench/dm/_shadow_stage6.py", "number", "(shadow)"),
     ("I28", "Near-duplicate feedback into the prompt", "_feedback", "bench/dm/_feedback.py", "prompt text", ""),
     ("I29", "Claim-type classifier", "_classify_claim_v2", "bench/immune_agents.py", "class", ""),
     ("I30", "Immune removal decision", "immune", "bench/immune_agents.py", "verdict", ""),
     ("I31", "Health monitor", "health", "bench/immune_agents.py", "alarm", ""),
     ("I32", "Finding parser / description extractor", "parse_findings", "bench/runner_core.py", "structured findings", ""),
-    ("I33", "Survived-falsification ledger", "SurvivedFalsificationLedger", "bench/evidence.py", "positive record", "(NOT WIRED)"),
+    ("I33", "Survived-falsification ledger", "SurvivedFalsificationLedger", "bench/evidence.py", "positive record", "(wired 2026-08-22)"),
     ("I34", "Null-perturbation control", "null_perturbation", "scripts/null_perturbation_control.py", "verdict", "(offline script)"),
 ]
 
@@ -93,9 +93,12 @@ MEASURED = {
                    "separated 132 discriminating from 131 non-discriminating."),
     "I34": (True,  "MEASURED 2026-08-21: 397 findings, 360 fired, 0 moved on either "
                    "an irrelevant comment or an unaccused function rename."),
-    "I33": (False, "MEASURED 2026-08-22: has a full test suite but is NOT READ BY THE "
-                   "RUNNER. A tested component that nothing calls is not commissioned; "
-                   "it is shelved."),
+    "I33": (True, "MEASURED 2026-08-25: EXERCISED, not merely wired. REFUTED writes a "
+            "survival row; CONFIRMED, ERROR and UNTOOLABLE write none; the verdict "
+            "denominator is kept so an empty ledger can state why it is empty; the "
+            "report carries its own not-proof-of-truth caveat; the gate signature "
+            "still accepts a ledger. Supersedes the 2026-08-22 reading of NOT "
+            "COMMISSIONED, which was correct when taken -- nothing called it then."),
     "I26": (False, "SHELVED by founder ruling 2026-08-22. Never ran outside its own "
                    "tests; reports an impossible allocation as a success."),
 }
@@ -109,6 +112,38 @@ def _grep_tests(symbol: str) -> list:
     out = subprocess.run(["grep", "-rl", symbol, str(TESTS)],
                          capture_output=True, text=True).stdout.split()
     return [pathlib.Path(p) for p in out if p.endswith(".py")]
+
+
+def _symbol_resolves(symbol: str, file_path: str) -> tuple:
+    """Does this row's symbol actually exist in the file the row names?
+
+    ADDED 2026-08-25, because five of thirty-four rows named a symbol that could
+    never be found. Four of them used the MODULE name as the symbol — and a module
+    almost never contains its own name — so the search below could not match no
+    matter how well the component was tested. Those rows reported "no commissioning
+    candidate" for a reason that had nothing to do with the component.
+
+    That is the reassuring-direction failure again, one level up: the instrument
+    that measures instruments was quietly reporting a lookup failure as an absence
+    of evidence. This check makes the two distinguishable by construction.
+
+    Corrected on the same day: I02 (pointed at _check_gamma_gate, which is a
+    different function from the two-sided gate it is named after),
+    I19 and I20 (named the wrong file — they live in convergence_location.py),
+    I24 (module name instead of fix_complexity_features),
+    I27 (module name instead of ShadowStage6Calibrator).
+    """
+    if not symbol:
+        return True, ""
+    p = REPO / file_path
+    if not p.exists():
+        return False, f"file absent: {file_path}"
+    try:
+        if symbol not in p.read_text(encoding="utf-8", errors="replace"):
+            return False, f"symbol {symbol!r} not found in {file_path}"
+    except OSError as exc:
+        return False, f"unreadable: {exc}"
+    return True, ""
 
 
 def _commissioning_candidate(files: list, symbol: str) -> tuple:
@@ -158,14 +193,20 @@ def main() -> int:
     rows = []
     for iid, name, sym, path, emits, flag in INSTRUMENTS:
         exists = (REPO / path).is_file()
+        resolves, resolve_why = _symbol_resolves(sym, path)
         files = _grep_tests(sym) if exists else []
         comm, which = _commissioning_candidate(files, sym)
         heuristic = comm
+        # A row whose symbol cannot be resolved has NOT been shown to lack a test.
+        # It has not been looked at. Those are different and must not render alike.
+        if not resolves:
+            comm, which = None, f"UNRESOLVED: {resolve_why}"
         if iid in MEASURED:
             comm, which = MEASURED[iid]
             which = "MEASURED: " + which
         rows.append({"id": iid, "name": name, "symbol": sym, "file": path,
                      "emits": emits, "flag": flag, "file_exists": exists,
+                     "symbol_resolves": resolves,
                      "naming_tests": len(files),
                      "commissioning_candidate": comm, "evidence": which,
                      "heuristic_said": heuristic,
@@ -173,7 +214,14 @@ def main() -> int:
                      "panel_verdict": ""})
 
     n = len(rows)
-    c = sum(1 for r in rows if r["commissioning_candidate"])
+    c = sum(1 for r in rows if r["commissioning_candidate"] is True)
+    unresolved = [r for r in rows if r.get("symbol_resolves") is False]
+    if unresolved:
+        print("\n  ** ROWS WHOSE SYMBOL COULD NOT BE RESOLVED — these have NOT been")
+        print("     shown to lack a test; they have not been looked at at all: **")
+        for r in unresolved:
+            print(f"       {r['id']}  {r['name'][:40]:42s} {r['evidence']}")
+        print()
     if args.md:
         print("| id | instrument | emits | live flag | tests naming it | commissioning candidate | panel |")
         print("|---|---|---|---|---|---|---|")
