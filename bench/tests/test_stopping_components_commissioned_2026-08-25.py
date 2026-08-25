@@ -80,6 +80,71 @@ class TestI02TwoSidedGammaGate:
             "the best. This is the vacuous-curve degeneracy repaired in 2887106."
         )
 
+    def test_it_fires_for_the_STATED_reason_not_merely_fires(self):
+        """This project's own central lesson applied to its own test suite.
+
+        The falsifier gate measured that a test FIRED and never that it fired
+        BECAUSE of the claim. A commissioning test can commit the same error: pass
+        because the component answered correctly by accident. So the reason string
+        is asserted, not just the boolean."""
+        ok, reason = rr._check_gamma_alt_convergence(
+            round_idx=8, gamma=0.55, novel_critical_history=[4, 2, 0, 0, 0],
+            cfg=_cfg(**self.BASE), gamma_critical=0.55)
+        assert ok is True
+        assert "gamma_critical" in reason and ">=" in reason, (
+            f"converged without citing the decay arm: {reason}")
+        assert "zero-new-critical" in reason, (
+            f"converged without citing the quiescence arm: {reason}")
+
+        bad_ok, bad_reason = rr._check_gamma_alt_convergence(
+            round_idx=8, gamma=0.55, novel_critical_history=[2, 2, 2, 2, 2],
+            cfg=_cfg(**self.BASE), gamma_critical=0.55)
+        assert bad_ok is False
+        assert "novel_crit_recent" in bad_reason, (
+            "refused for an unstated reason — it must fail on the COUNT arm here, "
+            f"since gamma is above threshold: {bad_reason}")
+
+    def test_implementation_matches_its_stated_rule_exhaustively(self):
+        """`sy`: enumerate the input space rather than sampling two points of it.
+
+        Two hand-picked inputs prove the gate discriminates. They do not prove it
+        implements the rule it documents. This enumerates 8 gamma values against
+        1,344 history patterns and compares every answer against the stated rule:
+        converge if and only if the decay slope is at or above threshold AND K
+        consecutive rounds produced no new critical finding.
+        """
+        import itertools
+        th, k = 0.30, 3
+        cfg = _cfg(gamma_alt_threshold=th, gamma_alt_consecutive_zero_crit=k)
+        gammas = [0.0, 0.15, 0.29, 0.30, 0.31, 0.55, 0.99, 1.0]
+        patterns = [list(p) for n in (3, 4, 5)
+                    for p in itertools.product([0, 1, 2, 5], repeat=n)]
+        disagreements = []
+        for g in gammas:
+            for h in patterns:
+                got, _ = rr._check_gamma_alt_convergence(
+                    round_idx=9, gamma=g, novel_critical_history=h,
+                    cfg=cfg, gamma_critical=g)
+                want = (g >= th and len(h) >= k and all(v == 0 for v in h[-k:]))
+                if got != want:
+                    disagreements.append((g, h, got, want))
+        assert not disagreements, (
+            f"{len(disagreements)} of {len(gammas)*len(patterns)} cases disagree with "
+            f"the stated rule; first: {disagreements[:3]}")
+
+    def test_neither_vacuous_series_converges_on_the_decay_arm_alone(self):
+        """Commit 2887106 repaired a degeneracy in which two OPPOSITE series both
+        drive a Duane fit to about zero: no critical ever found, which is the best
+        possible outcome, and criticals arriving at a constant rate, which is the
+        worst. Neither may converge on the slope alone."""
+        cfg = _cfg(**self.BASE)
+        for label, hist in [("no critical ever", [0] * 5),
+                            ("constant arrival", [2] * 5)]:
+            ok, _ = rr._check_gamma_alt_convergence(
+                round_idx=9, gamma=0.0, novel_critical_history=hist,
+                cfg=cfg, gamma_critical=0.0)
+            assert ok is False, f"{label} converged on a flat curve alone"
+
     def test_discriminates_between_the_two_inputs(self):
         """The commissioning assertion proper: same gate, different answers."""
         good, _ = rr._check_gamma_alt_convergence(
