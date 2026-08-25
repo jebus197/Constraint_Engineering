@@ -1,0 +1,28 @@
+# GitHub Pages build configuration.
+#
+# Added 2026-08-24, after enabling Pages surfaced a problem nothing had ever
+# exercised. Without this file Jekyll builds the ENTIRE repository as a website:
+# 7,580 tracked files and 405.5 MB on main, of which 385 MB in 6,433 files is the
+# experiment archive under bench/logs/. The first build ran past the documented
+# 10-minute Pages timeout and never completed. Excluding the archive takes the
+# published site to 20.5 MB across 1,147 files, and the build to seconds.
+#
+# NOTE: `exclude` REPLACES Jekyll's default list rather than adding to it, so the
+# defaults are restated below. Removing them would start publishing vendor and
+# cache directories if any are ever added.
+
+exclude:
+  # Jekyll defaults, restated because setting `exclude` overrides them
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  # This repository: the experiment archive is data, not a website.
+  - bench/logs/
+  - logs/
