@@ -109,7 +109,16 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
     if not desktop.is_file():
         pytest.skip(f"Desktop mirror absent on this machine: {desktop.name}")
     a = canonical.read_text(encoding="utf-8", errors="replace")
-    b = desktop.read_text(encoding="utf-8", errors="replace")
+    try:
+        b = desktop.read_text(encoding="utf-8", errors="replace")
+    except (PermissionError, OSError) as exc:
+        # A FAILED MEASUREMENT IS NOT A RESULT. Found 2026-08-25, by this guard
+        # reporting a macOS Desktop-access permission lapse as mirror drift. That
+        # is the same error class the guard exists to catch, one level up: a lookup
+        # failure rendered as a substantive finding. Unreadable is neither "in sync"
+        # nor "drifted" — it is "not measured", and must not read as either.
+        pytest.skip(f"cannot read {desktop.name}: {type(exc).__name__}: {exc}. "
+                    "Not evidence of drift — the comparison did not happen.")
     if a != b:
         la, lb = len(a.splitlines()), len(b.splitlines())
         pytest.fail(

@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 24 August 2026 02:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 25 August 2026 22:44 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -96,6 +96,22 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **COMMISSIONING, THE CHEATING AUDIT, AND TWO OVER-STATEMENTS WITHDRAWN (2026-08-25):**
+
+  **The founder ruled on every open decision, and the headline ruling is that history is not rewritten.** Instead the completed experiments are audited for evidence of cheating, the result stated plainly, and the residual risk recorded as non-zero. exp52 regenerated; exp53 STAYS because it buys runway on which to prove the recent fixes; rho persisted from the next run; runs renumbered by actual run order; keys moved outside the repository with unencrypted study copies published for researchers; panel confirmation of instruments BEFORE the next run; one clean run under the repaired instrument as the immediate next experiment.
+
+  **THE CHEATING AUDIT: blast radius is ONE run, already excluded.** 6,596 files across 167 run directories searched for every answer-key filename that has ever existed. exp47 is a false alarm — the matches are a function name in the code under review. exp55 is a model declining to look, in writing. **exp48 is the only real access, and the record missed its reason**: the model read the key to decide whether a wrong molar mass was an accidental defect to fix or a planted item to leave alone, its own comment noting that editing it "destroys a seeded fault the panel is scored on". Carefulness expressed the worst possible way; the consequence is unchanged. exp42–46, 49 and 53 contain zero references. Three limits are stated rather than hidden, including that the planted count equalled sections-minus-one on 48/49/50, so the design was inferable **without touching a key at all**.
+
+  **★ THE SAME OVER-STATEMENT WAS MADE TWICE AND THE FOUNDER CAUGHT BOTH.** "29 of 34 never commissioned" and "none of the four stopping components has been shown to distinguish a converged run from an unconverged one" each conflated NOT COMMISSIONED with NOT WORKING. The founder had watched the gamma gate fire and was right: exp40_slice_admissibility closed at gamma=0.305 ≥ 0.30, exp41c on three zero-critical rounds, four more on critical quiescence — and it does not fire on everything. Measured: **2 proven working, 3 proven not commissioned, 29 NOT VERIFIED.** Both withdrawn.
+
+  **The four stopping components are now commissioned** — 17 tests, five deliberate breaks all caught. **I33, the survived-falsification ledger, moves from NOT COMMISSIONED to COMMISSIONED** after being exercised rather than inspected. **The instrument inventory itself had bad reference data for 5 of 34 rows**, four because the row named a module while the search reads file content; `_symbol_resolves` now reports a lookup failure loudly as *unlooked-at* rather than silently as *absent*. Candidates 27 → 32 of 34.
+
+  **`sy` caught what mutation testing could not.** Asked whether the work was `f`- and `sy`-checked, the honest answer was: FFAFP only partly, `sy` not at all. Closing it produced an exhaustive check of the gate against its own specification — **10,752 cases, zero disagreements** — which then caught a boundary-only fault that **16 tests including every hand-picked one waved through**.
+
+  **Three drift guards built**, each falsified by introducing the drift; and a `UserPromptSubmit` clock hook that supplies the time AND the gap since the previous message, written after "it's gone five" was said during a fifteen-hour absence. Three new local git repositories, none with a remote: the Claude configuration, the memory directory, and the explorer.
+
+  **Live on `main`:** the Stage 5 explorer, README §6.8 with an animation captured from the live canvas, the Pages config that took a timing-out 405 MB build down to 49 seconds, and `docs/WORKING_DIRECTIVES.md`. Suite **3868 passed, 34 skipped, 0 failed**. The branch remains unpushed.
+
 - **RUNWAY 1.7 DELIVERED, THE ARTICLES WERE NEVER LOST, AND THE ARC IS BLOCKED ON A RULING (2026-08-24):**
 
   **Stage 1's exit test passes, 8 of 8.** Every archived location-keyed critical series reproduces exactly through `scripts/replay_accounting.py`, so the replay is a valid instrument rather than one measuring itself. The delta half was an unimplemented stub and is now built: **no run changes its convergence round** under the repaired accounting. The Stage 1 repairs were necessary for correctness and retroactively alter no conclusion in the archive. That is not circular — `bench/convergence_location.py` has changed since the last archived run (three truncation fixes `1e5de9a`, the 500→2000 cap `f53c276`), so reproducing every series exactly is a measurement that those changes are behaviour-neutral. **A third of 1.7 is not deliverable at all:** no archived report carries a rho series in any form, so old-vs-new rho cannot be computed from the archive and never will be.

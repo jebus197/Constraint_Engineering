@@ -8,23 +8,31 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-08-24 02:17 BST)
+## Accounting (counted 2026-08-25 22:44 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **116 files**, of which one is `MEMORY.md` itself
-(the index), leaving **117 individual memory files**. They partition as:
+The directory holds **119 files**, of which one is `MEMORY.md` itself
+(the index), leaving **118 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 60 |
+| Mirrored (in summarised form) in `MEMORY.md` | 61 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 117 |
+| total | 118 |
 
+> **[Correction 2026-08-25.]** Mirrored 60 -> 61, total 117 -> 118 for
+> `cdsfl_session_2026-08-25_commissioning.md`. **EIGHTH consecutive manual bump.** The
+> accounting test caught it again, and a SECOND independent guard added today in
+> `bench/tests/test_documentation_drift_guards_2026-08-25.py` now asserts the same
+> quantity, so the discrepancy cannot hide if either test is skipped or moved. The
+> 2026-08-17 remedy — derive this inside `sv` rather than typing it — is STILL NOT
+> BUILT, and eight consecutive corrections is the strongest argument on record for it.
+>
 > **[Correction 2026-08-24, second of the day.]** Mirrored 59 -> 60, total 116 -> 117
 > for `cdsfl_note_standard_v1.6.md`. **SEVENTH consecutive manual bump**, and the
 > second inside one session — which is the clearest argument yet for the 2026-08-17

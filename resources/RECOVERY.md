@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 24 August 2026 02:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 25 August 2026 22:44 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -123,6 +123,32 @@ honest answer was: never. A result attributed to a model that never produced it 
 downstream indistinguishable from a fabricated one, in a project that documents
 tamper-evident provenance as a core property. Standing rule added to
 `.claude/CLAUDE.md` and to memory.
+
+---
+
+## SESSION STATE — 2026-08-25 22:37 BST (READ THIS FIRST)
+
+**THE FOUNDER RULED ON EVERY OPEN DECISION FROM 24 AUGUST, AND THE ONE THAT MATTERS MOST IS THAT HISTORY IS NOT REWRITTEN.** Rulings returned annotated in two documents: history stands; instead audit the completed experiments for evidence of cheating, state the result plainly, and record that the risk of trusting the data is non-zero. exp52 is regenerated. exp53 STAYS — it buys runway on which to prove the recent fixes. Rho is persisted from the next run and reported at termination, in the experimental notes and in the documentation. Runs are numbered by the order they actually ran, with the documentation refactored carefully to match. All keys and planted defects move outside the repository into an encrypted archive, with unencrypted study copies published for researchers. The panel confirmation of unverified instruments happens BEFORE the next run. A single clean run under the repaired instrument is the immediate next experiment.
+
+**THE CHEATING AUDIT IS DONE AND THE BLAST RADIUS IS ONE RUN.** 6,596 stored files across 167 run directories searched for every answer-key filename that has ever existed. Six directories matched; three are audits or reviews that discuss keys rather than read one. **exp47 is a FALSE ALARM** — all sixteen matches are the function name `validate_alternative_with_ground_truth` in the code under review. **exp55 is a model DECLINING to look, in writing.** **exp48 is the one real case and was already excluded** — but the record missed why: the model read the key to decide whether a wrong molar mass was an accidental defect to repair or a planted item to leave alone. Its own comment: editing the file "destroys a seeded fault the panel is scored on". Carefulness, expressed the worst possible way. **exp42, 43, 44, 45, 46, 49 and 53 contain ZERO references of any kind.** Three limits stated: a model that read a key without naming it leaves no trace this method finds; the planted count equalled sections-minus-one on 48/49/50, so the design was inferable without touching a key; and exp55 rests on a model's own claim.
+
+**THE FOUR COMPONENTS THAT DECIDE WHEN A RUN STOPS ARE NOW COMMISSIONED.** I02/I04/I07/I08 — none was named by any test while every archived convergence verdict was declared by one of them. 17 tests, each feeding a known-good and known-bad input and asserting different answers. Five deliberate breaks introduced; all five caught. **`bench/tests/test_stopping_components_commissioned_2026-08-25.py`.**
+
+**★ A CORRECTION THE FOUNDER FORCED, TWICE, AND IT IS THE SAME ERROR BOTH TIMES.** "29 of 34 never commissioned" and "none of the four has been shown to distinguish a converged run from an unconverged one" both conflated NOT COMMISSIONED with NOT WORKING. The founder had seen the gamma gate fire with their own eyes and was right: `exp40_slice_admissibility` closed at gamma=0.305 ≥ 0.30 at round 7, `exp41c` on three consecutive zero-critical rounds, four more on critical quiescence — and it does NOT fire on everything, which is evidence it discriminates. Measured position: **2 proven working, 3 proven not commissioned, 29 NOT VERIFIED — which is not the same as broken.** Both over-statements withdrawn.
+
+**`sy` CAUGHT A DEFECT CLASS MUTATION TESTING COULD NOT.** Founder asked whether the work was `f`- and `sy`-checked. Honest answer: FFAFP only partly (the Analyse step used pytest, grep and mutation alone) and `sy` not at all. Closing it: the gate's stated REASON is now asserted, not just its boolean, and the implementation was checked against its specification **exhaustively** — 8 gamma values × 1,344 history patterns, **10,752 cases, zero disagreements**. Then a fault was introduced that flips the verdict ONLY at gamma exactly equal to threshold: **16 tests passed including every hand-picked one; only the exhaustive check failed.** Sampling two points cannot catch a boundary defect.
+
+**THE INSTRUMENT INVENTORY HAD BAD REFERENCE DATA FOR 5 OF ITS 34 ROWS**, four with one uniform cause: the row named the MODULE, and the search looks inside file CONTENT, where a module never contains its own name. Those rows reported "no candidate" for a reason unrelated to the component — the reassuring-direction failure one level up, in the instrument that measures instruments. Corrected, and `_symbol_resolves` now reports lookup failures LOUDLY as *unlooked-at* rather than silently as *absent*. Candidates **27 → 32 of 34**; heuristic disagreement **3 of 5 → 2 of 5**.
+
+**I33 SURVIVED-FALSIFICATION LEDGER: NOT COMMISSIONED → COMMISSIONED.** Exercised rather than inspected. REFUTED writes a survival row; CONFIRMED, ERROR and UNTOOLABLE write none, so equipment failure cannot read as corroboration; the denominator is kept so an empty ledger can state *why* it is empty.
+
+**THREE DRIFT GUARDS BUILT** (`test_documentation_drift_guards_2026-08-25.py`), all falsified by introducing each drift: note-standard version parity (had drifted two versions and four months AFTER `e49a021` recorded a "structural fix" — that fix corrected the instance, not the class), declared Desktop-mirror parity (RUNWAY's was 127 lines stale), and memory-ledger derivation (seven consecutive manual corrections). **Stated limit: cross-document supersession is NOT detectable by these and is not attempted.**
+
+**A `UserPromptSubmit` CLOCK HOOK NOW SUPPLIES THE TIME AND THE GAP SINCE THE LAST MESSAGE ON EVERY TURN.** Written after saying "it's gone five" while the founder was away roughly fifteen hours. The old "check every 25 turns" rule measured the wrong variable: turns are not time. `~/.claude/hooks/prompt_clock.py`, 48 ms, tested against malformed input and a 15h02m gap. **Three new local git repos, none with a remote:** `~/.claude` (config, deny-all allowlist because `projects/` is 355 MB of transcripts), the memory directory (118 files), and the explorer.
+
+**PUBLISHED TO `main` THIS SESSION:** the Stage 5 explorer live at `jebus197.github.io/Constraint_Engineering/explorer/`, README §6.8 with a 32-frame animation captured from the live canvas, `_config.yml` (Pages was building 405 MB and timing out), `docs/WORKING_DIRECTIVES.md` (67% of the working configuration, portable and personal-free). **Suite 3868 passed, 34 skipped, 0 failed.** **The BRANCH is still not pushed** — 51+ commits — because `control_two_distinct_defects_KEY.md` is tracked at HEAD.
+
+**FIVE THINGS WAIT ON THE FOUNDER:** the key-policy tension (move all out AND publish study copies — compatible only if applied to different sets; assumed reading is unrun-sealed / completed-published); the three-model panel's scope; who authors exp52's planted set; the merge-semantics choice; and the archive decryption instructions, held for a message of their own.
 
 ---
 

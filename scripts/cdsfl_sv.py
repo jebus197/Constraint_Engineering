@@ -704,7 +704,24 @@ def _check_tracker_mirror(root: Path, desktop: Path | None = None) -> bool:
         ])
         return False
 
-    desk_bytes = desk.read_bytes()
+    try:
+        desk_bytes = desk.read_bytes()
+    except (PermissionError, OSError) as exc:
+        # A FAILED MEASUREMENT IS NOT A RESULT. Added 2026-08-25 after this line
+        # crashed an entire save: the Desktop copy EXISTS and is readable to the
+        # user, but was not readable from the running process, and read_bytes()
+        # raised. The branches above handle MISSING; PRESENT-BUT-UNREADABLE is a
+        # third state that was falling through as a crash.
+        #
+        # Same defect class this project spent the day correcting, occurring in the
+        # saving tool itself: a lookup failure rendered as anything other than "not
+        # measured". It must not block the save, and must not claim parity either.
+        _tracker_warn([
+            f"Tracker parity NOT MEASURED this save: {type(exc).__name__}",
+            f"{desk} is PRESENT but unreadable from this process.",
+            "Parity is UNKNOWN, not confirmed. Re-run when the path is readable.",
+        ])
+        return True
     mirror_bytes = mirror.read_bytes()
     if desk_bytes == mirror_bytes:
         print("  Tracker mirror: in sync with the Desktop canonical copy.")
@@ -1734,7 +1751,21 @@ def _reconcile_tracker(
             wrote=str(desk) if apply else "",
         )
 
-    desk_bytes = desk.read_bytes()
+    try:
+        desk_bytes = desk.read_bytes()
+    except (PermissionError, OSError) as exc:
+        # Same third state as in _check_tracker_mirror above: the mirror is PRESENT
+        # but unreadable from this process. Absent is already handled; unreadable was
+        # falling through as a crash and took the whole save with it on 2026-08-25.
+        # Report it as not-measured rather than as drift or as parity.
+        say("UNMEASURABLE", f"cannot read the Desktop tracker: {type(exc).__name__}")
+        return _Check(
+            name, True, why=why, expected=expected,
+            observed=(f"NOT COMPARED - {desk} is present but unreadable from this "
+                      f"process ({type(exc).__name__}). Tracker parity is UNKNOWN for "
+                      f"this save, not confirmed."),
+            look_at=str(desk),
+        )
     if desk_bytes == repo_bytes:
         say("IN-SYNC", "both copies are byte-identical")
         return _Check(
