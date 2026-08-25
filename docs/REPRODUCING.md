@@ -5,6 +5,11 @@ ARCHITECTURE.md first if you are new to the project.
 
 ---
 
+> **Working directives.** The rules governing how claims are made, checked, withdrawn and written
+> down under CDSFL are in [WORKING_DIRECTIVES.md](WORKING_DIRECTIVES.md). They were in force throughout
+> the experimental record, so a run cannot be fully understood without them. This document covers how to
+> RUN an experiment; that one covers how the work is conducted.
+
 ## Prerequisites
 
 ### Python
