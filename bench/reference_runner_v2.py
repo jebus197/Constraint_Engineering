@@ -11089,6 +11089,21 @@ def run_experiment(
     result["total_elapsed_s"] = round(total_elapsed, 1)
     result["end_time"] = datetime.now(timezone.utc).isoformat()
     result["gamma_history"] = [round(g, 4) for g in gamma_history]
+    # FOUNDER RULING 2026-08-27: "Persist it." rho_history was ALREADY tracked
+    # here -- declared at :9340, appended at :10030, checkpoint-restored at
+    # :9433 -- and simply never reached the report, while every gamma series
+    # did. One line closes it.
+    #
+    # AND THE RECORD IT CORRECTS. resources/RECOVERY.md:159 states "no archived
+    # report carries a rho series in any form", and concludes that one third of
+    # Runway 1.7 is PERMANENTLY unavailable. Measured 2026-08-27 across all 31
+    # archived reports: 22 carry per-round `rho` AND `rho_avg` for EVERY round
+    # (exp42 through exp55, complete). What is absent is only this top-level
+    # convenience array -- 0 of 31 -- the same hoisting gamma already gets.
+    # exp44 recovers as 13 rounds, mean 0.7536, sd 0.2233, Spearman rs=-0.477
+    # (p=0.099, n=13). The rho work is therefore RETROACTIVELY available on 22
+    # runs, not permanently lost.
+    result["rho_history"] = [round(r, 4) for r in rho_history]
     # Dual-series γ report (panel redesign 2026-05-23): reported, never gates.
     result["gamma_all_history"] = [round(g, 4) for g in gamma_all_history]
     result["gamma_critical_history"] = [
