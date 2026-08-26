@@ -128,6 +128,20 @@ class BrainState:
     convergence_reason: str = ""
     failed: bool = False
     failure_reason: str = ""
+    # WHY A THIRD FIELD RATHER THAN REUSING convergence_reason. Measured
+    # 2026-08-26: 20 of 31 archived completion signals carry an EMPTY reason,
+    # and in 7 the run report DOES name the cause the signal lost -- exp35
+    # EXTENSION_STALLED, exp36/37 STATE_CONVERGED, exp40 twice, and both exp55
+    # runs HALTED_IRREDUCIBLE_QUEUE_ALARM. The runner writes the cause to its
+    # result dict but only copies it to convergence_reason inside `if
+    # converged:`, so every NON-convergence stop loses its reason here.
+    #
+    # convergence_reason is not the place to fix that, because signal_complete
+    # keys status off its CONTENTS ("BUDGET_EXHAUSTED" in ...). Widening what
+    # goes into it would make the status depend on the wording of an unrelated
+    # stop. A separate field leaves the status logic untouched by construction
+    # rather than by argument.
+    stop_reason: str = ""
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1084,6 +1098,7 @@ class InsectBrain:
             "active_models": self.state.active_models,
             "converged": self.state.converged,
             "convergence_reason": self.state.convergence_reason,
+            "stop_reason": self.state.stop_reason,
             "failed": self.state.failed,
             "failure_reason": self.state.failure_reason,
         }
@@ -1391,7 +1406,13 @@ class InsectBrain:
 
         signal = {
             "status": status,
-            "reason": self.state.convergence_reason or self.state.failure_reason,
+            # convergence_reason first (a converged run), then stop_reason (a
+            # named non-convergence halt), then failure_reason (a crash). An
+            # empty string here means nothing anywhere recorded WHY, which is a
+            # different and worse condition than any of the three.
+            "reason": (self.state.convergence_reason
+                       or self.state.stop_reason
+                       or self.state.failure_reason),
             "total_rounds": total_rounds,
             "total_findings": total_findings,
             "active_models": list(self.state.active_models),
@@ -1495,6 +1516,7 @@ class InsectBrain:
         self.state.active_models = data.get("active_models", [])
         self.state.converged = data.get("converged", False)
         self.state.convergence_reason = data.get("convergence_reason", "")
+        self.state.stop_reason = data.get("stop_reason", "")
         self.state.failed = data.get("failed", False)
         self.state.failure_reason = data.get("failure_reason", "")
 

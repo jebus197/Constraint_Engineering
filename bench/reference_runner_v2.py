@@ -11006,6 +11006,10 @@ def run_experiment(
                     # convergence as INCOMPLETE. Guarded on `converged`
                     # so churn/stall stops keep their own status.
                     # (Exp 40 Unit B->C seam, 2026-05-18.)
+                    # stop_reason is set for EVERY stop, converged or not, so
+                    # completion_signal.json can never again say INCOMPLETE with
+                    # an empty reason when the runner knew the cause.
+                    brain.state.stop_reason = f"BURST_{reason_type}"
                     if converged:
                         brain.state.converged = True
                         brain.state.convergence_reason = f"BURST_{reason_type}"
@@ -11020,6 +11024,10 @@ def run_experiment(
                 # status=CONVERGED (not INCOMPLETE). Guarded on
                 # `converged` so churn/stall stops keep their own
                 # status. (Exp 40 Unit B->C seam, 2026-05-18.)
+                # Set for EVERY stop. The `converged` guard below still gates
+                # the STATUS, so a churn or stall stop keeps its own; it no
+                # longer gates the REASON, which it was never meant to.
+                brain.state.stop_reason = reason_str
                 if converged:
                     brain.state.converged = True
                     brain.state.convergence_reason = reason_str
