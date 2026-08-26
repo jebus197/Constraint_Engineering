@@ -104,6 +104,37 @@ class TestItDiscriminates:
             f"An append-only history would fire forever. Output:\n{out}"
         )
 
+    def test_known_good_prose_COUNTING_pending_rulings_is_not_a_rulings_record(self, tmp_path):
+        """The false positive found 2026-08-26, hours after this file was written.
+
+        The checker fired on a tracker line reading "FOUR OLDER **OPEN**
+        RULINGS" -- reading a statement that four things are OPEN as evidence
+        they were CLOSED. The cause was an unanchored RULED pattern matching the
+        prose "6 delete + ~17 archive candidates + 4 founder rulings" inside
+        RECOVERY.md, a sentence COUNTING pending rulings.
+
+        The pattern this tool exists for is a DECLARATION, not a mention: the
+        real 2026-08-24 case was the heading "# FOUNDER RULINGS, 22 August
+        2026". A heading is anchored to line start; prose is not.
+        """
+        ruled = tmp_path / "ruled.md"
+        ruled.write_text(
+            "# Recovery\n\nInventory delivered: 6 delete + ~17 archive candidates "
+            "+ 4 founder rulings; execution = ONE post-arc commit.\n",
+            encoding="utf-8")
+        body = (f"# Tracker\n\n**FOUR OLDER OPEN RULINGS**, named not imported. "
+                f"See `{ruled.name}`.\n")
+        f = tmp_path / "tracker.md"; f.write_text(body, encoding="utf-8")
+        # point the checker at both: the hold names a file whose only "rulings"
+        # text is prose counting OPEN ones.
+        r = subprocess.run([sys.executable, str(SCRIPT), "--path", str(f),
+                            "--path", str(ruled)],
+                           capture_output=True, text=True, cwd=REPO)
+        assert "tracker.md" not in r.stdout, (
+            "a line saying four rulings are OPEN was reported as a stale hold, "
+            f"i.e. read as evidence they were closed:\n{r.stdout}"
+        )
+
     def test_known_good_a_hold_on_a_file_with_no_rulings_stands(self, tmp_path):
         code, _ = _run(tmp_path, "unruled.md", HOLD_ON_AN_UNRULED_FILE)
         assert code == 0, (

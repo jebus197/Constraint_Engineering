@@ -38,8 +38,18 @@ HOLD = re.compile(
     re.I,
 )
 # A marker that decisions in a file have been answered.
-RULED = re.compile(r"\b(FOUNDER RULINGS|## Disposition|RULINGS? (?:GIVEN|RECORDED)"
-                   r"|\bRULED:)\b", re.I)
+# ANCHORED TO LINE START, and this matters. The unanchored form matched the
+# PROSE "6 delete + ~17 archive candidates + 4 founder rulings" in RECOVERY.md
+# -- a sentence COUNTING rulings that are still pending -- and concluded from it
+# that the decisions had been given. Found 2026-08-26 when the checker fired on
+# a tracker line reading "FOUR OLDER **OPEN** RULINGS", i.e. it read a statement
+# that four things are open as evidence they were closed.
+#
+# The pattern this exists for is a DECLARATION, not a mention: the real case was
+# a heading, "# FOUNDER RULINGS, 22 August 2026". A heading is anchored; prose
+# is not. That is the whole discriminator.
+RULED = re.compile(r"^\s{0,3}#{1,6}\s*(FOUNDER RULINGS|RULINGS? (?:GIVEN|RECORDED)|Disposition)\b"
+                   r"|^\s{0,3}\*{0,2}RULED:", re.I | re.M)
 # An explicit supersession marker excuses the block.
 SUPERSEDED = re.compile(r"\b(SUPERSEDED|HOLD IS LIFTED|NO LONGER (?:IN )?FORCE"
                         r"|RETAINED AS (?:THE )?(?:RECORD|TRAIL))\b", re.I)
