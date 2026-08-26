@@ -40,9 +40,25 @@ import re
 
 import pytest
 
+import sys as _sys
+_sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _private_memory  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[2]
 HOME = pathlib.Path.home()
-MEMORY = HOME / ".claude/projects/-Users-georgejackson-Developer-Projects/memory"
+MEMORY = _private_memory.MEMORY_DIR
+
+
+def _require_readable_memory():
+    """EXISTENCE IS NOT READABILITY. Measured 2026-08-26: this process kept
+    exists()==True on the memory directory while iterdir/read raised
+    PermissionError and glob() returned an EMPTY LIST. Three tests below then
+    reported files as ABSENT that were merely unreadable -- a failed
+    measurement rendered as a finding, inside the guard written to catch that
+    class. Skip says the comparison did not happen; it never says all clear."""
+    ok, why = _private_memory.probe(MEMORY)
+    if not ok:
+        pytest.skip(why)
 
 
 # ---------------------------------------------------------------------------
@@ -59,14 +75,13 @@ def _latest_memory_standard_version():
     return best
 
 
-@pytest.mark.skipif(not MEMORY.exists(),
-                    reason="private memory directory is outside the repo and absent here")
 def test_project_instructions_name_the_current_note_standard():
     """The project CLAUDE.md must name the newest standard that exists in memory.
 
     This is the check that commit e49a021 said it was making on 13 August and did
     not: it fixed the pointer and left nothing behind to compare them again.
     """
+    _require_readable_memory()
     latest = _latest_memory_standard_version()
     assert latest, "no cdsfl_note_standard_vN.N.md found in the memory directory"
     claude_md = (REPO / ".claude/CLAUDE.md").read_text(encoding="utf-8")
@@ -80,10 +95,18 @@ def test_project_instructions_name_the_current_note_standard():
     )
 
 
-@pytest.mark.skipif(not MEMORY.exists(), reason="memory directory absent")
 def test_foot_line_convention_names_the_current_standard():
     """The foot-line every compliant note must carry was itself three versions
-    stale on 2026-08-25 — it still said v1.2 while v1.5 was current."""
+    stale on 2026-08-25 — it still said v1.2 while v1.5 was current.
+
+    Before 2026-08-26 this ran unguarded and, when the memory directory became
+    unreadable mid-session, died with `TypeError: 'NoneType' object is not
+    subscriptable` — because glob() returned [] rather than raising, so `latest`
+    was None. A permission denial surfaced as a type error in a message about
+    document drift. That is worse than a plain failure: it is a failed
+    measurement wearing the costume of a different defect.
+    """
+    _require_readable_memory()
     latest = _latest_memory_standard_version()
     claude_md = (REPO / ".claude/CLAUDE.md").read_text(encoding="utf-8")
     m = re.search(r"Written under CDSFL note standard v(\d+)\.(\d+)", claude_md)
@@ -159,7 +182,6 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
 # ---------------------------------------------------------------------------
 # GUARD 3 — the memory ledger must be derived, not typed
 # ---------------------------------------------------------------------------
-@pytest.mark.skipif(not MEMORY.exists(), reason="memory directory absent")
 def test_memory_ledger_total_matches_the_directory():
     """Duplicates the existing accounting assertion deliberately.
 
@@ -169,11 +191,12 @@ def test_memory_ledger_total_matches_the_directory():
     is a second, independent place the discrepancy surfaces, so that a green suite
     cannot coexist with a wrong ledger if the other test is ever moved or skipped.
     """
+    _require_readable_memory()
     ledger = (REPO / "resources/MEMORY_EXCLUSIONS.md").read_text(encoding="utf-8")
     m = re.search(r"\|\s*total\s*\|\s*(\d+)\s*\|", ledger)
     assert m, "MEMORY_EXCLUSIONS.md states no total"
     stated = int(m.group(1))
-    on_disk = len([p for p in MEMORY.iterdir() if p.is_file() and p.name != "MEMORY.md"])
+    on_disk = len([p for p in _private_memory.files(MEMORY) if p.name != "MEMORY.md"])
     assert stated == on_disk, (
         f"memory ledger drift: {on_disk} individual files on disk, ledger says "
         f"{stated}. Seven consecutive manual corrections say this wants deriving "

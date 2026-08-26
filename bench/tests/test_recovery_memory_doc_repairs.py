@@ -22,6 +22,10 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 RECOVERY = REPO / "resources" / "RECOVERY.md"
 MIRROR = REPO / "resources" / "MEMORY.md"
+import sys as _sys
+_sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _private_memory  # noqa: E402
+
 EXCLUSIONS = REPO / "resources" / "MEMORY_EXCLUSIONS.md"
 PRIVATE_MEMORY = (
     pathlib.Path.home()
@@ -261,12 +265,11 @@ class TestMemoryExclusionsAccounting:
         assert not (excluded & unclassified)
 
     def test_every_named_file_exists_on_disk(self):
-        if not PRIVATE_MEMORY.is_dir():
-            pytest.skip(
-                f"private memory index not present at {PRIVATE_MEMORY} — this "
-                f"directory is deliberately outside the repository, so the "
-                f"accounting cannot be re-derived on this machine"
-            )
+        _ok, _why = _private_memory.probe(PRIVATE_MEMORY)
+        if not _ok:
+            # is_dir() alone is NOT a readability test: measured 2026-08-26,
+            # it returned True while iterdir() raised PermissionError.
+            pytest.skip(_why)
         on_disk = {p.name for p in PRIVATE_MEMORY.iterdir() if p.is_file()}
         named = set(
             _bucket_names(_section(self._doc(), "## Excluded Entries"))
@@ -281,12 +284,11 @@ class TestMemoryExclusionsAccounting:
         nobody classifies it, the residual (files in no named bucket) stops
         equalling the stated "mirrored" count and this goes red.
         """
-        if not PRIVATE_MEMORY.is_dir():
-            pytest.skip(
-                f"private memory index not present at {PRIVATE_MEMORY} — this "
-                f"directory is deliberately outside the repository, so the "
-                f"accounting cannot be re-derived on this machine"
-            )
+        _ok, _why = _private_memory.probe(PRIVATE_MEMORY)
+        if not _ok:
+            # is_dir() alone is NOT a readability test: measured 2026-08-26,
+            # it returned True while iterdir() raised PermissionError.
+            pytest.skip(_why)
         on_disk = sorted(p.name for p in PRIVATE_MEMORY.iterdir() if p.is_file())
         individual = [n for n in on_disk if n != "MEMORY.md"]
         assert len(individual) == self._stated("total"), (

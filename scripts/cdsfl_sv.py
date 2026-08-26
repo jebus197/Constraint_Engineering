@@ -1404,7 +1404,14 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     targets = {t for _title, t, _n in audit.entries if t.endswith(".md")}
     audit.broken = sorted(t for t in targets if not (mem_dir / t).is_file())
 
-    on_disk = {p.name for p in mem_dir.glob("*.md")} - {_MEMORY_INDEX_NAME}
+    # glob() returns [] on a permission denial instead of raising, which
+    # would report every indexed file as missing. Enumerate explicitly.
+    try:
+        on_disk = {p.name for p in _memory_files(mem_dir)
+                   if p.name.endswith(".md")} - {_MEMORY_INDEX_NAME}
+    except MemoryUnreadable as exc:
+        audit.error = str(exc)
+        return audit
     for name in sorted(on_disk - targets):
         # A name that appears in the prose but not as an index entry is a
         # weaker fault than one that appears nowhere, so they are separated
@@ -1452,6 +1459,40 @@ def _replace_memory_ledger_count_row(text: str, label: str, count: int) -> str:
     return pattern.sub(repl, text, count=1)
 
 
+class MemoryUnreadable(Exception):
+    """The private memory directory could not be READ, as distinct from absent.
+
+    MEASURED 2026-08-26 01:45 BST, mid-session: this process lost read access to
+    the memory directory while running. Under that state `exists()` and
+    `is_dir()` both return True, `iterdir()` and `read_text()` raise
+    PermissionError, and `glob()` returns an EMPTY LIST without raising.
+
+    sv guarded every one of those sites with `is_dir()`, so the guard did not
+    fire, and `_update_memory_exclusions_ledger` crashed sv outright with a
+    traceback and exit 1. An hour earlier the same command exited 0.
+
+    Absent and unreadable must not share a code path: absent means there is
+    nothing to count, unreadable means the count DID NOT HAPPEN. The second must
+    never produce a fresh "counted <date>" stamp, because a stamp is a claim
+    about when the number was last verified.
+    """
+
+
+def _memory_files(mem: Path) -> list:
+    """Every file in the memory directory, or raise MemoryUnreadable.
+
+    Never returns an empty list to mean "denied" -- that is the glob() defect
+    this exists to remove.
+    """
+    try:
+        return [p for p in mem.iterdir() if p.is_file()]
+    except (PermissionError, OSError) as exc:
+        raise MemoryUnreadable(
+            f"{mem} cannot be enumerated: {type(exc).__name__}. The count did "
+            "not happen; this is not evidence that the directory is empty."
+        ) from exc
+
+
 def _update_memory_exclusions_ledger(
     root: Path,
     *,
@@ -1482,7 +1523,9 @@ def _update_memory_exclusions_ledger(
     except (OSError, UnicodeDecodeError, ValueError):
         return False
 
-    on_disk = sorted(p.name for p in mem.iterdir() if p.is_file())
+    # Raises MemoryUnreadable rather than crashing sv or, worse, counting a
+    # denial as an empty directory and writing 0 into the ledger.
+    on_disk = sorted(p.name for p in _memory_files(mem))
     if _MEMORY_INDEX_NAME not in on_disk:
         return False
 
@@ -2398,9 +2441,20 @@ def main() -> None:
     #    directory. This is mechanical accounting, not qualitative editing, and
     #    belongs in sv so a new memory file cannot repeatedly leave the counts
     #    stale until a test catches the author's missed manual bump.
-    if _update_memory_exclusions_ledger(root, dry_run=args.dry_run):
-        verb = "Would update" if args.dry_run else "Updated"
-        print(f"{verb} memory-exclusions ledger: {root / 'resources' / 'MEMORY_EXCLUSIONS.md'}")
+    try:
+        if _update_memory_exclusions_ledger(root, dry_run=args.dry_run):
+            verb = "Would update" if args.dry_run else "Updated"
+            print(f"{verb} memory-exclusions ledger: {root / 'resources' / 'MEMORY_EXCLUSIONS.md'}")
+    except MemoryUnreadable as exc:
+        # LOUD, and explicitly not a pass. The ledger keeps its previous counts
+        # AND its previous "counted <date>" stamp, because restamping would
+        # assert a freshness this run cannot support.
+        print()
+        print("  MEMORY LEDGER NOT RECOUNTED — the directory is unreadable:")
+        print(f"    {exc}")
+        print("    Counts and the 'counted' date are LEFT AS THEY WERE. This is a")
+        print("    failed measurement, not a clean bill of health.")
+        print()
 
     # 6. NOW stamp the two documents, knowing whether their bodies changed.
     #    A stamp written before this point could only ever record when sv ran.
