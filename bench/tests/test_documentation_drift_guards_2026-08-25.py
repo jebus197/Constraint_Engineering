@@ -145,9 +145,12 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
     try:
         b = desktop.read_text(encoding="utf-8", errors="replace")
     except (PermissionError, OSError) as exc:
-        # CONTENT DENIED, METADATA AVAILABLE. Measured 2026-08-25: this machine's
-        # sandbox denies read() on ~/Desktop (6 of 6 attempts) while stat() and
-        # write() both succeed. A first version of this branch SKIPPED, which was
+        # CONTENT DENIED, METADATA AVAILABLE -- a state observed on 2026-08-25
+        # (read denied 6 of 6, stat and create permitted) and NO LONGER TRUE on
+        # 2026-08-26, when stat, read and overwrite all succeeded. The fallback
+        # below is kept because access can evidently change in either direction,
+        # and a guard that assumes today's permissions is a guard that misreports
+        # tomorrow. A first version of this branch SKIPPED, which was
         # honest but weak — and skipping is how a guard quietly stops guarding.
         #
         # Size is a real comparison, not a proxy for one, and it would have caught

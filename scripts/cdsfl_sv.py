@@ -708,7 +708,7 @@ def _check_tracker_mirror(root: Path, desktop: Path | None = None) -> bool:
         desk_bytes = desk.read_bytes()
     except (PermissionError, OSError) as exc:
         # CONTENT IS UNREADABLE BUT METADATA IS NOT. Measured 2026-08-25: on this
-        # machine ~/Desktop denies read() to this process (6 of 6 attempts) while
+        # machine ~/Desktop denied read() on 2026-08-25 (6 of 6 attempts) while
         # stat() and write() both succeed. Content comparison was the ONE operation
         # unavailable, and both this check and _reconcile_tracker were built on it.
         #
@@ -1995,11 +1995,19 @@ def _reconcile_tracker(
             try:
                 desk.write_bytes(repo_bytes)
             except (PermissionError, OSError) as werr:
-                # MEASURED 2026-08-25, and the reason the first version of this fix
-                # was wrong. This machine's sandbox permits CREATING a new file under
-                # ~/Desktop and permits stat(), but denies read() AND denies
-                # overwriting an existing file. So the mirror cannot be maintained
-                # from this process at all.
+                # RE-MEASURED 2026-08-26: stat(), read() AND overwrite all SUCCEED.
+                # The 2026-08-25 observation -- create-new and stat permitted,
+                # read and overwrite denied, 6 of 6 -- no longer holds. Access was
+                # evidently granted in between.
+                #
+                # THE CLAIM WAS RECORDED IN FIVE PLACES and each lent authority to
+                # the others, so it was repeated to the founder three times in one
+                # day without being retested. A measurement of a permission is a
+                # measurement of a MOMENT, not a property.
+                #
+                # This branch is retained deliberately. The write is ATTEMPTED every
+                # save and this path runs only if it actually fails, so the code was
+                # always right; only the comment asserted a permanent state.
                 #
                 # That is a definite, explainable state, not an unknown one, and the
                 # save must report it as such and COMPLETE. The repo copy is canonical

@@ -28,7 +28,7 @@
 
 **★ EXISTENCE IS NOT READABILITY.** This process lost read access to the private memory directory mid-session on 2026-08-26. Under that state `exists()`/`is_dir()` return True, `iterdir()`/`read_text()` raise, and **`glob()` returns an EMPTY LIST without raising**. sv crashed (exit 1) an hour after exiting 0 on the same tree. Guarded now in `scripts/cdsfl_sv.py` (`MemoryUnreadable`) and `bench/tests/_private_memory.py`. A failed count must never refresh the ledger's "counted" stamp.
 
-**★ ONE COMMAND FOR THE FOUNDER:** this file's Desktop mirror is stale and this process cannot overwrite it (denied 6/6). `cp ~/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md ~/Desktop/CDSFL_Agent_Operational_Plan.md`
+**★ CLOSED 2026-08-26 22:36 BST — NO COMMAND NEEDED.** This line asked the founder to refresh the Desktop mirror by hand because "this process cannot overwrite it (denied 6/6)". **Re-measured: stat, read and overwrite ALL succeed.** The 25 Aug denial was a moment, not a property, and it had been recorded in five places that each lent authority to the others. Mirror refreshed, byte-identical at 185,069 bytes; `sv` attempts the write every save and always did.
 
 **★ RESUME POINTER (2026-08-24 02:20 BST). Superseded by the block above; retained as trail.**
 
