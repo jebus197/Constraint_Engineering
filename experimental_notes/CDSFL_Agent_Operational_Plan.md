@@ -8,7 +8,23 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
-**★ RESUME POINTER (2026-08-24 02:20 BST). SUPERSEDES EVERY POINTER BELOW.**
+**★ RESUME POINTER (2026-08-26 02:40 BST). SUPERSEDES EVERY POINTER BELOW.**
+
+**SIX DECISIONS SIT WITH THE FOUNDER.** Full statement with options and one recommendation each: `experimental_notes/Decisions_Awaiting_The_Founder_2026-08-26.md` (+ Desktop TTS `CDSFL_tts/Decisions_Awaiting_The_Founder_2026-08-26.txt`). Summarised: (1) permission to rewrite branch history to purge the exp55 key blob — **18 of 59 commits are cited by hash in markdown and would need remapping**; this environment refuses `git filter-branch` without an explicit instruction; (2) merge to `main` or push the branch — **public main is 59 commits behind and the branch has NEVER been pushed**; (3) who authors exp55's replacement target AND exp52's planted set; (4) the two approved panel dispatches, unrun because they spend money and produce output needing a rested reader; (5) merge semantics / Bugzilla; (6) archive decryption instructions, held for a message of their own, LAST.
+
+**★ exp55's TARGET IS SPENT — see rule 2 below.** Its answers were on public `main` from `bd9c569`, 2026-08-20 01:21 BST, three days before both runs. Keys now live OUTSIDE any git tree in `../CDSFL_experiment_keys/`. A re-run needs a NEW target.
+
+**★ THE RENUMBER WAS NOT DONE, AND SHOULD NOT BE.** Measured: experiment number is already **perfectly monotonic in start time across all 44 non-empty run directories, 0 violations**. The three apparent exceptions are EMPTY directories from aborted 2026-08-07 re-invocations. Renumbering would rename 56 directories and sever every doc reference, since the directory name AND the report filename both embed the number. What IS wrong: four numbers never ran (50/51/52 have configs, 54 has none), and status is recorded twice and disagrees (**20 of 31 completion signals carry an EMPTY reason; 7 of those have a report that names the outcome the signal lost**). Derived, never typed: `python3 scripts/experiment_run_ledger.py --check`.
+
+**★ SCALING HAS A NUMBER NOW.** Measured inter-architecture correlation **rho = 0.564 across 289 observations in 31 run directories**. At that rho the 5th architecture contributes **3.6%** of the 1st, and going 5 -> 50 architectures gains **+0.002 to +0.005** coverage across every plausible p. n* lands in **3-6**, which DERIVES the saturation figure the parking lot carried as an observation. Spec: `experimental_notes/Scaling_Spec_GlobalMind_2026-08-26.md`. Panel size is not the scaling axis; rho and artefact-count are.
+
+**★ CORRECTED IN MEMORY:** "five straight convergences 42-46" is **FOUR**. exp43 did NOT formally converge — `resources/RECOVERY.md` said so all along, and exp43's report holds no `converged_at` at all.
+
+**★ EXISTENCE IS NOT READABILITY.** This process lost read access to the private memory directory mid-session on 2026-08-26. Under that state `exists()`/`is_dir()` return True, `iterdir()`/`read_text()` raise, and **`glob()` returns an EMPTY LIST without raising**. sv crashed (exit 1) an hour after exiting 0 on the same tree. Guarded now in `scripts/cdsfl_sv.py` (`MemoryUnreadable`) and `bench/tests/_private_memory.py`. A failed count must never refresh the ledger's "counted" stamp.
+
+**★ ONE COMMAND FOR THE FOUNDER:** this file's Desktop mirror is stale and this process cannot overwrite it (denied 6/6). `cp ~/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md ~/Desktop/CDSFL_Agent_Operational_Plan.md`
+
+**★ RESUME POINTER (2026-08-24 02:20 BST). Superseded by the block above; retained as trail.**
 
 **★ START HERE — FRESH INSTANCE, COLD START. FOLLOW IN THIS ORDER.**
 

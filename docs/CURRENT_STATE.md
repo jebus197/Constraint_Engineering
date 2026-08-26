@@ -1,34 +1,28 @@
 # CDSFL Current State
 
-Generated: 26 August 2026 01:17 BST (2026-08-26T01:17:08+01:00)
+Generated: 26 August 2026 01:21 BST (2026-08-26T01:21:33+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** build-experiment-2026-08-22
-- **Last commit:** `370d9f2` Scaling spec: at the measured correlation, fifty architectures do the work of about four.
-- **Committed:** 2026-08-26 01:09:59 +0100
-- **Remote:** ahead of origin/main by 63 [no upstream configured]
+- **Last commit:** `80faf11` sv crashed mid-session because existence is not readability -- and I had just told the founder sv works.
+- **Committed:** 2026-08-26 01:17:33 +0100
+- **Remote:** ahead of origin/main by 64 [no upstream configured]
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/tests/test_documentation_drift_guards_2026-08-25.py`
-- `M bench/tests/test_recovery_memory_doc_repairs.py`
 - `M docs/CURRENT_STATE.md`
-- `M resources/MEMORY_EXCLUSIONS.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `M scripts/cdsfl_sv.py`
-- `?? bench/tests/_private_memory.py`
-- `?? bench/tests/test_sv_memory_unreadable_2026-08-26.py`
 - `?? tmp49uop3i9.py`
 
 ---
 
 ## Tests
 
-**3966 tests collected** at 26 August 2026 01:17 BST, HEAD `370d9f2` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**3966 tests collected** at 26 August 2026 01:21 BST, HEAD `80faf11` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -58,6 +52,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `80faf11 sv crashed mid-session because existence is not readability -- and I had just told the founder sv works.`
 - `370d9f2 Scaling spec: at the measured correlation, fifty architectures do the work of about four.`
 - `e8123ff Measuring first refuted the renumbering premise: the order is already correct, and two other things are not.`
 - `730dac4 sv printed "State save complete." BEFORE committing and pushing. Same defect, one level up.`
@@ -67,4 +62,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `a26e758 "Not mechanically detectable" was wrong: withdraw the claim and build the checker that refutes it.`
 - `d35703e sv tooling: the Desktop mirror cannot be maintained from this process, and the save now says so instead of crashing.`
 - `0fe5b19 Merge origin/main: pick up the three commits published directly tonight.`
-- `83033b6 sv 2026-08-25: NOT COMMISSIONED IS NOT NOT WORKING. The founder caught the same over-statement twice; the cheating audit closed at a blast radius of ONE run; sy caught a boundary defect sixteen tests waved through; and the same failed-measurement defect turned up twice more, in the tools themselves.`
