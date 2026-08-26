@@ -1,8 +1,8 @@
 """sv must survive a memory directory it can see but cannot read.
 
-WHAT HAPPENED. 2026-08-26 ~01:45 BST, mid-session, this process lost read access
-to ~/.claude/projects/.../memory. Edits to files in it had succeeded forty
-minutes earlier. Under that state:
+WHAT HAPPENED. Mid-session, between 00:53 and 01:27 BST on 2026-08-26 (the successful recount is stamped 00:53 in the ledger and the failure was observed before 01:27; the exact minute was NOT captured -- see the note below),
+this process lost read access to ~/.claude/projects/.../memory. Edits to files in
+it had succeeded earlier in the same window. Under that state:
 
     exists() -> True    is_dir() -> True
     iterdir() -> PermissionError
@@ -11,8 +11,17 @@ minutes earlier. Under that state:
 
 sv guarded every memory access with is_dir(), so no guard fired, and
 _update_memory_exclusions_ledger crashed the whole save with a traceback and
-exit 1. Measured: `python3 scripts/cdsfl_sv.py` exited 1 at 01:52 having exited
-0 at 00:53 on the same tree.
+exit 1. Measured: `python3 scripts/cdsfl_sv.py` exited 0 with the ledger stamped
+00:53, and exited 1 on the same tree later in the same window. The failing run's
+minute was not captured.
+    THE MINUTE IS NOT RECORDED, AND THAT IS ITSELF THE DEFECT. Earlier drafts of
+    this comment said "01:45" and "01:52". Both were typed, not captured, and
+    both were LATER than the clock actually read when they were written. This
+    project has a rule -- never emit a temporal expression without the clock in
+    hand -- and a hook that supplies it on every user turn. During a long
+    autonomous stretch there are no user turns, so the hook is silent and the
+    rule has to be honoured by running `date`. It was not.
+
 
 THE DISTINCTION THIS ENFORCES. Absent and unreadable are not the same:
 
@@ -132,11 +141,11 @@ class TestTheLedgerIsNotFalselyStamped:
         """KNOWN-GOOD: the guard must not have disabled the feature."""
         root = self._ledger(tmp_path, total=999)
         changed = sv._update_memory_exclusions_ledger(
-            root, mem_dir=readable_dir, counted_at="2026-08-26 02:00 BST")
+            root, mem_dir=readable_dir, counted_at="RECOUNT-STAMP")
         text = (root / "resources/MEMORY_EXCLUSIONS.md").read_text()
         assert changed is True, "a readable directory produced no recount"
         assert "| total | 1 |" in text, f"count not rewritten:\n{text}"
-        assert "counted 2026-08-26 02:00 BST" in text
+        assert "counted RECOUNT-STAMP" in text
 
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="running as root bypasses chmod")

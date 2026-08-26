@@ -1,6 +1,6 @@
 # Decisions awaiting the founder, and what was done overnight
 
-2026-08-26, 02:20 BST (UTC+1)
+2026-08-26, 01:26 BST (UTC+1)
 
 
 ## Why this file exists
@@ -76,7 +76,7 @@ Refreshing it is one command:
 cp ~/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md ~/Desktop/CDSFL_Agent_Operational_Plan.md
 ```
 
-Separately, and requiring no action unless the founder wants it: this session lost read access to the persistent memory folder at about a quarter to two in the morning, roughly forty minutes after edits to files in that folder had succeeded. Nothing was lost. The save routine and the drift guards were both hardened to report that condition rather than crash or misreport it, which is described in section three. If the founder wants the memory folder readable again in future sessions, that is an environment setting rather than a project change.
+Separately, and requiring no action unless the founder wants it: this session lost read access to the persistent memory folder part way through the window, after edits to files in that folder had already succeeded. The exact minute was not captured, which is itself a lapse against this project's rule that a time is read from the clock and never typed. Nothing was lost. The save routine and the drift guards were both hardened to report that condition rather than crash or misreport it, which is described in section three. If the founder wants the memory folder readable again in future sessions, that is an environment setting rather than a project change.
 
 
 ## Section three — what was done overnight

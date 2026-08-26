@@ -1462,14 +1462,23 @@ def _replace_memory_ledger_count_row(text: str, label: str, count: int) -> str:
 class MemoryUnreadable(Exception):
     """The private memory directory could not be READ, as distinct from absent.
 
-    MEASURED 2026-08-26 01:45 BST, mid-session: this process lost read access to
-    the memory directory while running. Under that state `exists()` and
-    `is_dir()` both return True, `iterdir()` and `read_text()` raise
-    PermissionError, and `glob()` returns an EMPTY LIST without raising.
+    MEASURED mid-session on 2026-08-26, between 00:53 and 01:27 BST: this process
+    lost read access to the memory directory while running. Under that state
+    `exists()` and `is_dir()` both return True, `iterdir()` and `read_text()`
+    raise PermissionError, and `glob()` returns an EMPTY LIST without raising.
 
     sv guarded every one of those sites with `is_dir()`, so the guard did not
     fire, and `_update_memory_exclusions_ledger` crashed sv outright with a
-    traceback and exit 1. An hour earlier the same command exited 0.
+    traceback and exit 1. Earlier in the same window the same command exited 0,
+    stamping the ledger 00:53.
+
+    THE EXACT MINUTE IS NOT RECORDED, AND THAT IS ITSELF A DEFECT. Earlier drafts
+    of this docstring said "01:45", and the test file said the crash was at
+    "01:52". Both were typed rather than captured, and both were LATER than the
+    clock actually read at the moment of writing. This project's rule is that a
+    time is read from the clock and never typed; the hook that supplies it fires
+    on user turns, and a long autonomous stretch has none, so `date` has to be
+    run deliberately. It was not. The bracket above is what the evidence supports.
 
     Absent and unreadable must not share a code path: absent means there is
     nothing to count, unreadable means the count DID NOT HAPPEN. The second must

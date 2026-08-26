@@ -1,9 +1,18 @@
 """Readability probe for the private memory directory, which lives outside the repo.
 
-WHY THIS EXISTS. Measured 2026-08-26 01:45 BST, mid-session: this process lost
-read access to ~/.claude/projects/.../memory while the session was running. Edits
-to files in that directory had succeeded roughly forty minutes earlier. The
-access change is environmental, not a project event.
+WHY THIS EXISTS. Measured mid-session, between 00:53 and 01:27 BST on 2026-08-26 (the successful recount is stamped 00:53 in the ledger and the failure was observed before 01:27; the exact minute was NOT captured -- see the note below):
+this process lost read access to ~/.claude/projects/.../memory while the session was
+running. Edits to files in that directory had succeeded earlier in the same
+window. The access change is environmental, not a project event.
+
+    THE MINUTE IS NOT RECORDED, AND THAT IS ITSELF THE DEFECT. Earlier drafts of
+    this comment said "01:45" and "01:52". Both were typed, not captured, and
+    both were LATER than the clock actually read when they were written. This
+    project has a rule -- never emit a temporal expression without the clock in
+    hand -- and a hook that supplies it on every user turn. During a long
+    autonomous stretch there are no user turns, so the hook is silent and the
+    rule has to be honoured by running `date`. It was not.
+
 
 WHAT THAT BROKE, AND IT IS THE HOUSE FAILURE MODE. Four tests guarded themselves
 with `if not MEMORY.exists(): skip` or `if not PRIVATE_MEMORY.is_dir(): skip`.
