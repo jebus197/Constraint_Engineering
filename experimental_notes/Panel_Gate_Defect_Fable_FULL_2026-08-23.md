@@ -1,5 +1,5 @@
 # FABLE ADVERSARIAL REVIEW — Exp 55 discrimination control
-Reviewer: Fable (independent adversarial pass, isolated worktree at HEAD 66de417).
+Reviewer: Fable (independent adversarial pass, isolated worktree at HEAD f9d4f5b).
 Status: IN PROGRESS — Q1 and Q4 complete, Q2/Q3 being appended.
 
 ## Q1. Claims 1-4 — VERDICT: Claims 1 and 2 TRUE. Claim 3 TRUE-BUT-VACUOUS. Claim 4 FALSE.
@@ -134,10 +134,10 @@ Measured consequences in the archived run (bench/logs/exp55_v3_control_20260823T
   harness-manufactured ERRORs (severities 0.82, 0.88, 0.75, 0.85; the other 2
   are the genuinely UNTOOLABLE C0005/C0006). The halt was caused by the
   harness, not by model irreducibility.
-* The commit message of 66de417 ("the alarm diagnosed itself correctly, and the
+* The commit message of f9d4f5b ("the alarm diagnosed itself correctly, and the
   relative-path fix it demanded is in") is wrong on the second clause: the fix
   commit threaded `cwd` into the discrimination control's five sites ONLY
-  (verified against `git show 66de417 -- bench/reference_runner_v2.py`; the
+  (verified against `git show f9d4f5b -- bench/reference_runner_v2.py`; the
   gate line 3819 is untouched). The discrimination control only runs on
   falsifiers that already reached CONFIRMED — which relative-path readers can
   never do. **A re-run at HEAD will halt at round 0 again, identically.** The
@@ -275,7 +275,7 @@ was minted.
 ### Commissioning is not monotone — measured instruments un-measure
 
 I14 (the falsifier gate) was marked `measured` on 22 August. Defect 8 sits
-inside it on 23 August (reference_runner_v2.py:3819). The 66de417 fix shipped
+inside it on 23 August (reference_runner_v2.py:3819). The f9d4f5b fix shipped
 with `bench/tests/test_three_gaps_2026-08-23.py`, which pins co-discovery, the
 cost ledger, and temp-dir teardown — NOT the cwd behaviour it was named for;
 no test anywhere pins "a relative-path falsifier reaches CONFIRMED through the
@@ -397,9 +397,9 @@ FIX 5 — inventory hygiene: add a `commissioned` field distinct from
 * Q4: eighth defect FOUND at reference_runner_v2.py:3819 (+4547,
   routing.py:128): the gate runs falsifiers where the target does not exist
   while the prompt orders them to open it by path; it caused the halt, it
-  selects FOR detached falsifiers, and the 66de417 fix did not touch it. A
+  selects FOR detached falsifiers, and the f9d4f5b fix did not touch it. A
   ninth found in build_acceptance.py:155/160.
 
 Review completed 2026-08-23T17:0x+01:00 in the isolated worktree; every
 executed claim above was produced by running the repository's own code at HEAD
-66de417.
+f9d4f5b.

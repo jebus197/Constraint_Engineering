@@ -1,7 +1,7 @@
 # CC2 ADVERSARIAL REVIEW — Exp 55 discrimination control
 
 Reviewer: CC2 (Claude Opus 5, 1M context), read-only disposable worktree
-`/private/tmp/.../scratchpad/cc2_review_wt` at HEAD `66de417`.
+`/private/tmp/.../scratchpad/cc2_review_wt` at HEAD `f9d4f5b`.
 Date: 2026-08-23T17:02:35+01:00.
 Convergence compelled per founder override. Every claim below is backed by a
 tool run reproduced inline. Nothing in the live tree was touched.

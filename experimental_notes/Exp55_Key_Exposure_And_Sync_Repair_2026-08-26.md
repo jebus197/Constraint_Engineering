@@ -60,11 +60,11 @@ The first statement is a model's own claim about its conduct and is recorded as 
 
 ## What has been changed
 
-Both files now live in `/Users/georgejackson/Developer_Projects/CDSFL_experiment_keys/`, outside any git tree, with a README that records why the target is spent. `.gitignore` now refuses `*_KEY.md`, `*_GROUND_TRUTH.json` and `*_ANSWER_KEY*`, so the class cannot recur by accident. No Python file references either path, verified by `git grep`, so nothing breaks. Operational-tracker item 2 has been rewritten from "NEVER push this branch" to a statement of what is actually true. Commit `0cfcb8b`. **[MEASURED]**
+Both files now live in `/Users/georgejackson/Developer_Projects/CDSFL_experiment_keys/`, outside any git tree, with a README that records why the target is spent. `.gitignore` now refuses `*_KEY.md`, `*_GROUND_TRUTH.json` and `*_ANSWER_KEY*`, so the class cannot recur by accident. No Python file references either path, verified by `git grep`, so nothing breaks. Operational-tracker item 2 has been rewritten from "NEVER push this branch" to a statement of what is actually true. Commit `20d2ccf`. **[MEASURED]**
 
 ## What has NOT been changed, and needs a ruling
 
-History was not rewritten. The key blob remains reachable in commit `28725d2` on the working branch, and the ground-truth blob remains reachable on main, where it is already published.
+History was not rewritten. The key blob remains reachable in commit `f823959` on the working branch, and the ground-truth blob remains reachable on main, where it is already published.
 
 Removing the key from the branch's history was attempted and was refused by this environment's command guard, which treats `git filter-branch` as destructive. That refusal is reasonable and the decision belongs to the founder in any case, because it is not free: **18 of the branch's 59 commits are cited by their hash in markdown**, most of them in `docs/CURRENT_STATE.md`, and rewriting changes every one of those hashes. The citations can be remapped mechanically from the rewrite's own old-to-new map, but that is work, and it must be verified rather than assumed.
 
@@ -90,7 +90,7 @@ That is the answer. Nothing was failing in the push itself. The branch had never
 
 A divergence that cannot be measured is now reported as `None` and rendered as NOT VERIFIED — never as zero, and never as "in sync". A failed check that reads as a pass is the defect class this project keeps rediscovering.
 
-Commissioned by `bench/tests/test_sv_sync_verification_2026-08-26.py`: nine tests against a real bare git remote, covering the synced case, the behind case, the never-pushed case and the side-branch gap, asserting that the three verdicts differ from one another. Three deliberate breaks — forcing `in_sync` true, reporting the never-pushed case as zero divergence, and dropping the main-gap measurement — fail 1, 3 and 1 tests respectively. Commit `1cb88fc`. **[MEASURED]**
+Commissioned by `bench/tests/test_sv_sync_verification_2026-08-26.py`: nine tests against a real bare git remote, covering the synced case, the behind case, the never-pushed case and the side-branch gap, asserting that the three verdicts differ from one another. Three deliberate breaks — forcing `in_sync` true, reporting the never-pushed case as zero divergence, and dropping the main-gap measurement — fail 1, 3 and 1 tests respectively. Commit `53edabe`. **[MEASURED]**
 
 ## A claim withdrawn
 
@@ -98,9 +98,9 @@ On 2026-08-25 this assistant wrote, in `bench/tests/test_documentation_drift_gua
 
 It was too strong. General supersession is not detectable. The defect in question was not general: the runway document asserted a hold and **named** the file holding the decisions, and that file had carried the heading "FOUNDER RULINGS" for two days. Both halves are machine-readable.
 
-`scripts/supersession_check.py` detects that pair and fires on the real historical file, recovered from `git show c8f63ec~1`. Its first version also fired on `resources/ONBOARDING.md` line 514 — a genuine hold naming a genuine file, recorded inside a dated 2026-04-22 log entry with four months of later entries beneath it. A record of what was pending in April is not a claim that it is pending now. Rather than exclude that file, which would have silenced the check, the tool follows the document's own convention: a hold is live only inside the newest dated entry, or inside none at all, which is where the runway's banner sits.
+`scripts/supersession_check.py` detects that pair and fires on the real historical file, recovered from `git show c93f050~1`. Its first version also fired on `resources/ONBOARDING.md` line 514 — a genuine hold naming a genuine file, recorded inside a dated 2026-04-22 log entry with four months of later entries beneath it. A record of what was pending in April is not a claim that it is pending now. Rather than exclude that file, which would have silenced the check, the tool follows the document's own convention: a hold is live only inside the newest dated entry, or inside none at all, which is where the runway's banner sits.
 
-Commissioned by `bench/tests/test_supersession_check_commissioned_2026-08-26.py`: one known-bad fixture and three known-good ones, plus the real historical file. Three deliberate breaks fail 5, 5 and 3 tests. Commit `a26e758`. The residual limit, stated narrowly this time: a hold that names no file, or that paraphrases the decision list instead of pointing at it, remains invisible. **[MEASURED]**
+Commissioned by `bench/tests/test_supersession_check_commissioned_2026-08-26.py`: one known-bad fixture and three known-good ones, plus the real historical file. Three deliberate breaks fail 5, 5 and 3 tests. Commit `914a11d`. The residual limit, stated narrowly this time: a hold that names no file, or that paraphrases the decision list instead of pointing at it, remains invisible. **[MEASURED]**
 
 ## Test state
 

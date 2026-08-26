@@ -168,7 +168,7 @@ tamper-evident provenance as a core property. Standing rule added to
 
 **★ exp53 MUST NOT BE DROPPED.** An instruction to drop it came from reading a CC1 *question* as a recommendation. exp53 is the **zero-plant** control and measures stopping-decision contamination — a panel model once reverse-engineered the chemistry exam's design from its structure. exp55 is a **two-plant** harness control. Two plants is not zero plants.
 
-**THE GATE WAS SELECTING FOR FALSIFIERS THAT NEVER READ THE DOCUMENT.** It ran every falsifier in an empty working directory, so genuine readers ERRORed and DETACHED ones CONFIRMED. Fixed by the founder's absolute-path ruling at all five model-facing prompt sites (`dcbcf68`), which beat both reviewers' scratch-directory proposal because `_retarget_falsifier` was already built for absolute paths. **The defect was one day old and I introduced it**: 10 of 11 prose configs already used absolute paths.
+**THE GATE WAS SELECTING FOR FALSIFIERS THAT NEVER READ THE DOCUMENT.** It ran every falsifier in an empty working directory, so genuine readers ERRORed and DETACHED ones CONFIRMED. Fixed by the founder's absolute-path ruling at all five model-facing prompt sites (`0c93e2b`), which beat both reviewers' scratch-directory proposal because `_retarget_falsifier` was already built for absolute paths. **The defect was one day old and I introduced it**: 10 of 11 prose configs already used absolute paths.
 
 **NUMBERING.** Ground truth from run directories: exp29–49 ran; **exp50/51/52 never started; exp53 started twice with zero reports; exp54 has no config; exp55 ran twice on 2026-08-23**. Recommendation is to record exp55 as a harness control outside the arc rather than renumber.
 

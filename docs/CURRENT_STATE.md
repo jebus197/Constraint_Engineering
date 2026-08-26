@@ -7,7 +7,7 @@ Generated: 26 August 2026 01:28 BST (2026-08-26T01:28:16+01:00)
 ## Git
 
 - **Branch:** build-experiment-2026-08-22
-- **Last commit:** `f3323cd` Overnight window closes: six decisions consolidated, tracker resume pointer advanced.
+- **Last commit:** `4354eab` Overnight window closes: six decisions consolidated, tracker resume pointer advanced.
 - **Committed:** 2026-08-26 01:26:06 +0100
 - **Remote:** ahead of origin/main by 65 [no upstream configured]
 - **Working tree:** DIRTY — uncommitted changes present
@@ -26,7 +26,7 @@ Uncommitted files:
 
 ## Tests
 
-**3966 tests collected** at 26 August 2026 01:28 BST, HEAD `f3323cd` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**3966 tests collected** at 26 August 2026 01:28 BST, HEAD `4354eab` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -56,13 +56,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `f3323cd Overnight window closes: six decisions consolidated, tracker resume pointer advanced.`
-- `80faf11 sv crashed mid-session because existence is not readability -- and I had just told the founder sv works.`
-- `370d9f2 Scaling spec: at the measured correlation, fifty architectures do the work of about four.`
-- `e8123ff Measuring first refuted the renumbering premise: the order is already correct, and two other things are not.`
-- `730dac4 sv printed "State save complete." BEFORE committing and pushing. Same defect, one level up.`
-- `5d038fc Note: exp55's answers were public three days before it ran, and the sync repair.`
-- `1cb88fc sv now MEASURES the remote after pushing, and says public main is 58 commits behind.`
-- `0cfcb8b Keys move out of the repository -- and the door they were guarding has been open since 20 August.`
-- `a26e758 "Not mechanically detectable" was wrong: withdraw the claim and build the checker that refutes it.`
-- `d35703e sv tooling: the Desktop mirror cannot be maintained from this process, and the save now says so instead of crashing.`
+- `4354eab Overnight window closes: six decisions consolidated, tracker resume pointer advanced.`
+- `8f9fe35 sv crashed mid-session because existence is not readability -- and I had just told the founder sv works.`
+- `012b8c8 Scaling spec: at the measured correlation, fifty architectures do the work of about four.`
+- `14b2df3 Measuring first refuted the renumbering premise: the order is already correct, and two other things are not.`
+- `1cbc337 sv printed "State save complete." BEFORE committing and pushing. Same defect, one level up.`
+- `0bec80b Note: exp55's answers were public three days before it ran, and the sync repair.`
+- `53edabe sv now MEASURES the remote after pushing, and says public main is 58 commits behind.`
+- `20d2ccf Keys move out of the repository -- and the door they were guarding has been open since 20 August.`
+- `914a11d "Not mechanically detectable" was wrong: withdraw the claim and build the checker that refutes it.`
+- `3ec8003 sv tooling: the Desktop mirror cannot be maintained from this process, and the save now says so instead of crashing.`

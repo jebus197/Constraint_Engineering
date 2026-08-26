@@ -1,6 +1,6 @@
 # The falsifier gate rewards falsifiers that never read the document
 
-**23 August 2026, 17:13 BST.** Panel: CC1, CC2, Fable. Convergence COMPELLED by founder override. Both external reviewers worked read-only in separate disposable worktrees at HEAD `66de417`, with no contact with each other.
+**23 August 2026, 17:13 BST.** Panel: CC1, CC2, Fable. Convergence COMPELLED by founder override. Both external reviewers worked read-only in separate disposable worktrees at HEAD `f9d4f5b`, with no contact with each other.
 
 Full unfiltered reviews, file/line references intact: `Panel_Gate_Defect_CC2_FULL_2026-08-23.md` (643 lines), `Panel_Gate_Defect_Fable_FULL_2026-08-23.md` (405 lines).
 

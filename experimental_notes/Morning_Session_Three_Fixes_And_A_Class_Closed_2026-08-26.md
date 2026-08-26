@@ -6,7 +6,7 @@
 
 Three items were agreed as unblocked work; all three are done. Following the third uncovered a fourth defect that **closes the class the second was only an instance of**. Two issues raised from a screenshot were also examined: one was real and had two layers, the other was transient but surfaced a 16-day deadline.
 
-Full suite: **4138 passed, 1 failed, 34 skipped, 221.88 s**. The lone failure is the operational tracker's Desktop mirror, which this process cannot overwrite. Commits `de6f3f9`, `b0b3e2d`, `2f2a1d4`, `5808fd8`.
+Full suite: **4138 passed, 1 failed, 34 skipped, 221.88 s**. The lone failure is the operational tracker's Desktop mirror, which this process cannot overwrite. Commits `ebc8f4a`, `9a2f626`, `3c1689b`, `6cbb0ea`.
 
 ## 1 — `stop_reason`: the cause was guarded by a flag that only meant "converged"
 
@@ -38,7 +38,7 @@ Full suite: **4138 passed, 1 failed, 34 skipped, 221.88 s**. The lone failure is
 ## Accounting (counted BROKEN-STAMP ;OLD: 2026-08-26 00:53 BST)
 ```
 
-`BROKEN-STAMP` appears in **no Python source anywhere** — not a fixture, not a constant. Typed by hand while checking that sv refuses to advance a stamp on a failed count, then swept into `80faf11`.
+`BROKEN-STAMP` appears in **no Python source anywhere** — not a fixture, not a constant. Typed by hand while checking that sv refuses to advance a stamp on a failed count, then swept into `8f9fe35`.
 
 **Why it survived.** Three guards watch that file — in `test_documentation_drift_guards_2026-08-25.py`, `test_recovery_memory_doc_repairs.py`, and a bucket-sum assertion. All three check **numbers**. Nothing checked the **date beside them**.
 
