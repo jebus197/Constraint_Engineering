@@ -51,9 +51,19 @@ NAMED = re.compile(
     r"|[a-z_]{3,}_[a-z_]{3,}"                      # snake_case
     r"|gamma|rho|nu|Exp\s*\d+|CT-\d+|C\d{4}|H\d{2}"
     r"|Codex|Gemini|DeepSeek|ChatGPT|CC1|CC2|Fable)\b")
-# A VALUE MAY BE SPELLED. TTS files write numbers as words by standard ("twenty nine
-# of thirty four"), so a bare digit test misfires on exactly the file type this linter
-# exists to check. Found by running the linter on its own motivating example.
+# CORRECTED 2026-08-26. This comment previously read "TTS files write numbers as
+# words by standard". THAT WAS NEVER THE STANDARD. v1.5 says a value may be
+# "spelled or in digits", and Rule 11 governs SCIENTIFIC-NOTATION EXPONENTS ONLY.
+# The blanket practice was invented by generalising Rule 11, then written into
+# this file as fact -- so the tool taught the habit back to whoever read it.
+#
+# The founder, who reads by text-to-speech, has asked repeatedly for it to stop:
+# "three thousand eight hundred and seventy eight passed" for 3878, and
+# "five six four" for rho = 0.564, are HARDER to follow aloud, not easier.
+# Rule 27 (v1.7) now requires digits. WORD_NUMBER below reports the violation.
+#
+# A spelled value still SATISFIES the quantity test, because an old compliant
+# note is not retroactively vague. Rule 27 is reported separately.
 # "one", "none", "half", "twice" are DELIBERATELY ABSENT. Including them made the
 # linter miss its own motivating sentence -- "Every ONE of them debited the models'
 # measured competence" read as though it carried a value. A word that is this common
@@ -65,6 +75,33 @@ _NUMWORDS = ("zero two three four five six seven eight nine ten eleven twelve "
 DIGIT = re.compile(r"\d|\b(?:" + "|".join(_NUMWORDS) + r")\b", re.I)
 HEDGE = ("somewhat", "essentially", "in some sense", "to some extent",
          "relatively speaking", "more or less", "fairly clearly")
+
+# RULE 27 (v1.7) -- NUMERALS STAY NUMERALS.
+# Only COMPOUND spelled numbers are flagged: two or more number-words joined, or
+# any use of hundred/thousand/million with a companion. "one command" and "three
+# fixes" are prose and stay; "twenty seven", "one hundred and seventy eight
+# thousand", "five six four" are DATA wearing a costume. Keeping the test to
+# compounds is what stops this becoming a linter nobody runs.
+_NW = (r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
+       r"thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|"
+       r"thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)")
+WORD_NUMBER = re.compile(rf"\b{_NW}(?:[ -](?:and[ -])?{_NW})+\b", re.I)
+# Ordinals and dates read naturally aloud and are NOT data: "the twenty sixth of
+# August", "the first of three". Excluded so the check keeps its credibility.
+WORD_NUMBER_OK = re.compile(
+    r"\b(?:twenty|thirty)[ -](?:first|second|third|fourth|fifth|sixth|seventh|"
+    r"eighth|ninth)\b|\bone of (?:two|three|four|five)\b", re.I)
+
+# RULE 28 (v1.7) -- CALL IT WHAT THE FOUNDER CALLS IT.
+# A category noun standing where the project's own name belongs. Rule 19 bans
+# "the mechanism"; this is the same fault one level up, where a thing that HAS a
+# short name the founder types daily is described by its job instead.
+CATEGORY_NOUN = {
+    "the save routine": "sv", "the save script": "sv",
+    "the state save routine": "sv", "the state-save script": "sv",
+    "the recovery script": "rs", "the quality control script": "qc",
+    "the decay curve measure": "gamma", "the convergence measure": "gamma",
+}
 
 
 def sentences(text: str):
@@ -80,7 +117,12 @@ def sentences(text: str):
 def lint(path: pathlib.Path) -> list:
     out = []
     for para_no, s in sentences(path.read_text()):
-        low = s.lower()
+        # Quote-stripping applies to EVERY rule, not only 27 and 28. A note that
+        # quotes someone else's vagueness in order to name it is not being vague.
+        # Applying it to only some rules was an inconsistency in this fix,
+        # caught by running the linter on the first note written under v1.7.
+        unquoted = re.sub(r'"[^"]*"', " ", s)
+        low = unquoted.lower()
         named = bool(NAMED.search(s))
         for v in VAGUE_SUBJECTS:
             # WORD BOUNDARY. A substring test matched "the measure" inside "the
@@ -101,6 +143,21 @@ def lint(path: pathlib.Path) -> list:
         for h in HEDGE:
             if h in low:
                 out.append((para_no, "HEDGE", h, s)); break
+        # QUOTED VIOLATIONS ARE NOT VIOLATIONS. A note that names a bad form in
+        # order to correct it -- the standard file itself, or any note quoting
+        # what was written before -- is doing the opposite of committing the
+        # fault. Found immediately: the first v1.7 note reported 4 findings, all
+        # four being the sentences that QUOTE the wording they are banning. A
+        # linter that fires on the document explaining the rule gets ignored,
+        # which this file's own header warns about.
+        m = WORD_NUMBER.search(unquoted)
+        if m and not WORD_NUMBER_OK.search(m.group(0)):
+            out.append((para_no, "SPELLED NUMBER (Rule 27: use digits)",
+                        m.group(0), s))
+        for phrase, name in CATEGORY_NOUN.items():
+            if phrase in low:
+                out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",
+                            phrase, s)); break
     return out
 
 

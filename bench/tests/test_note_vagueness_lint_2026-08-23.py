@@ -51,9 +51,32 @@ class TestTheMotivatingSentence:
 
 class TestTheTwoRegressionsMadeWhileWritingIt:
     def test_spelled_numbers_count_as_values(self, tmp_path):
-        """TTS files spell numbers by standard; a bare digit test misfires on them."""
+        """A spelled value still SATISFIES the quantity check.
+
+        NARROWED 2026-08-26. This assertion used to demand ZERO findings, on the
+        docstring "TTS files spell numbers by standard" -- which was never the
+        standard. v1.5 says a value may be "spelled or in digits" and Rule 11
+        governs scientific-notation exponents only. The blanket habit was a
+        generalisation of Rule 11, and it had been written into THREE places as
+        fact: this docstring, a comment in note_vagueness_lint.py, and the habit
+        itself. All three are now corrected.
+
+        The original INTENT was right and is preserved: a spelled figure is
+        still a figure, so an old compliant note is not retroactively vague.
+        What changed is that Rule 27 (v1.7) now ALSO reports the sentence,
+        because the founder reads by text-to-speech and "twenty nine of thirty
+        four" is harder to follow aloud than "29 of 34", not easier.
+        """
         s = "The correct open count is twenty nine of thirty four instruments."
-        assert not _lint(s, tmp_path), "a spelled-out value must satisfy the check"
+        hits = _lint(s, tmp_path)
+        assert not [h for h in hits if "QUANTITY WITHOUT A VALUE" in h[1]], (
+            "a spelled-out value no longer satisfies the quantity check; an old "
+            "compliant note would be retroactively marked vague"
+        )
+        assert [h for h in hits if "SPELLED NUMBER" in h[1]], (
+            "Rule 27 did not fire on a spelled figure; the founder's repeated "
+            "request would go unenforced again"
+        )
 
     @pytest.mark.parametrize("word", ["one", "none", "half", "twice"])
     def test_common_words_do_NOT_count_as_values(self, tmp_path, word):
