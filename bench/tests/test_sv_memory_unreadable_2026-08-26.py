@@ -156,7 +156,18 @@ def test_sv_exits_zero_and_says_so_when_memory_is_unreadable(denied_dir):
         [sys.executable, "-c",
          "import sys, pathlib; sys.path.insert(0, 'scripts'); "
          "import cdsfl_sv as sv; sv._MEMORY_DIR = pathlib.Path(sys.argv[1]); "
-         "sys.argv = ['cdsfl_sv.py']; sys.exit(sv.main())",
+         # --dry-run, because cwd=REPO below is the REAL repository. Without
+         # it, sv regenerates docs/CURRENT_STATE.md, resources/ONBOARDING.md
+         # and resources/RECOVERY.md in the working tree on EVERY suite run --
+         # measured 2026-08-26, three canonical files dirtied per run, which is
+         # why they were perpetually modified in git status and kept being
+         # swept into unrelated commits by sv's auto-staging.
+         #
+         # Dry run still exercises the whole path under test: it prints
+         # "MEMORY LEDGER NOT RECOUNTED", "failed measurement", and exits 0.
+         # Verified by running both ways -- dry-run dirties 0 files, the live
+         # run dirties 3.
+         "sys.argv = ['cdsfl_sv.py', '--dry-run']; sys.exit(sv.main())",
          str(denied_dir)],
         capture_output=True, text=True, cwd=REPO, env=env, timeout=300)
     assert r.returncode == 0, (
