@@ -124,12 +124,32 @@ class TestItCreatesNothing:
         assert self._snapshot() == before, "fifty gate calls changed the tree"
 
 
-def test_no_stray_temp_python_files_are_committed_or_left_in_the_root():
-    """A guard for the symptom as well as the cause. Catches an interrupted run
-    that died before its finally, which is how these survive at all."""
-    strays = sorted(p.name for p in REPO.glob("tmp*.py"))
+def test_no_stray_temp_files_anywhere_a_gate_can_anchor():
+    """A guard for the symptom as well as the cause.
+
+    WIDENED 2026-08-26, same day it was written. The first version scanned the
+    repository ROOT only. But _anchor_dir_for returns the TARGET's directory,
+    and real experiment targets live in bench/ -- which is where 371 of the 505
+    leaked bytecode entries were found. A killed run leaves its .py in bench/,
+    and the root-only scan would never have seen it.
+
+    Measured after the fix: _run_effect_ruff and _run_effect_bandit each leave
+    NOTHING behind in normal operation, and _run_hard_gate_compile writes no
+    file at all. This guard exists for the abnormal case -- a run killed before
+    its `finally`, which this project has had (a host restart killed the tracked
+    Exp 47 runner on 2026-07-29).
+    """
+    strays = []
+    for d in (REPO, REPO / "bench", REPO / "scripts",
+              REPO / "bench" / "cdsfl_registry" / "targets"):
+        if d.is_dir():
+            strays += [str(p.relative_to(REPO)) for p in d.glob("tmp*.py")]
+            pc = d / "__pycache__"
+            if pc.is_dir():
+                strays += [str(p.relative_to(REPO)) for p in pc.glob("tmp*")]
     assert not strays, (
-        f"stray temp Python file(s) in the repository root: {strays}. "
-        "A gate run was interrupted before its cleanup, or a new writer anchors "
-        "to the working directory."
+        f"stray temp artefact(s) where a gate anchors: {sorted(strays)}. "
+        "Either a gate run was interrupted before its cleanup, or a writer "
+        "anchors somewhere it should not. Root AND bench/ are both checked "
+        "because real targets live in bench/."
     )
