@@ -313,6 +313,70 @@ flags all 85 pairs at 47% precision, which is the base rate.
 
 ---
 
+## STAGE 4B — THE BR2 BRIDGE. **Immediately before BR2. Recorded 2026-08-27 00:04 BST.**
+
+**Placed here on the founder's ruling of 2026-08-26: after the arc and the open decisions, immediately before BR2.**
+
+**BR2 IS the external target source, and it was specified on 8 April 2026** — 27 frontier STEM tasks across 8 domains. A discussion on 26 August briefly reasoned about external targets as though they needed inventing; that was wrong and BR2 is the answer to it.
+
+### The tasks are NOT the gap. They exist.
+
+**MEASURED 2026-08-26.** All **27** encodings are present in `bench/tasks_frontier/`, `ft-001.json` … `ft-027.json`, median **5,096 bytes**. Domain spread: mathematics 7, software 6, cross-domain 5, chemistry 3, hardware 2, structural 2, industrial 1, physics 1. Every one carries `id`, `domain`, `title`, `prompt`, `ground_truth_notes`; **26 of 27** also carry `verification_method`, `why_frontier_hard` and **`expected_single_pass_accuracy`** — a pre-registered prediction written months before any run, which is exactly what a hostile reviewer looks for. **One of the 27 uses a different schema** (`hard_constraints` / `soft_constraints` / `status` instead) and needs reconciling.
+
+### INCONSISTENCY 1 — the tasks are wired to a runner generation we replaced.
+
+```
+reference_runner_v2.py   last commit 2026-08-26   references tasks_frontier   0 times
+run_benchmark.py         last commit 2026-04-13   consumes them
+run_phase2.py            last commit 2026-03-19   consumes them
+run_experiment.py        last commit 2026-03-18   consumes them
+run_round_robin.py       last commit 2026-08-15   consumes them
+```
+
+**BR2 as currently wired would run on machinery predating the two-sided gamma gate (10 June), the falsifier-gate hardening, location-keyed convergence, the v3 patches (23 August), and every fix of 16–26 August.** The entire Exp 40–55 arc hardened a runner BR2 would not use. **This is the work, and it was on no stage, in no queue, and had never been named.**
+
+### INCONSISTENCY 2 — [OPEN] prompt and ground truth share a file, in all 27.
+
+`prompt` and `ground_truth_notes` sit in the same JSON object in **every** task. That is the structure that removed exp48 and exp49 from every headline figure and burned exp55's target three days before it ran.
+
+**Labelled [OPEN], not [MEASURED]:** it has NOT been shown that any loader stages ground truth into a model prompt. What is shown is that the structure permits it, in all 27, and this project has been bitten by that exact structure three times. **Splitting the keys needs nothing from the rewiring and can be done at any time, for free.** Do it first; it is unrecoverable if discovered after 27 runs.
+
+### The work, in order
+
+| # | Item | Cost | Note |
+|---|---|---|---|
+| 4B.1 | **Split `ground_truth_notes` out of all 27** into the outside key store | zero, offline | Do NOW — needs nothing from 4B.2 |
+| 4B.2 | Reconcile the one off-schema task to the 26-task schema | zero | |
+| 4B.3 | Wire `reference_runner_v2` to the frontier schema | zero dispatch | Decide how `verification_method` maps onto the falsifier gate |
+| 4B.4 | **C5 — dry-run all 27 for tool availability, graceful degradation, answer leakage** | zero dispatch | In the 8 April plan, never done |
+| 4B.5 | Live burn-in on **ONE** BR2 task | 1 BR2 task | Validates 4B.3. Does NOT consume internal runway |
+
+### Runway calculus after 4B
+
+Internal shots remain **three**: exp50 physics, exp51 biology, exp52 factorial — and exp52 is a 2×2, so it spends 4–5 runs as ONE experiment. exp53 needs a re-run; exp55's target is spent. Stage 2 already books exp50. **4B costs roughly one BR2 task, not internal runway.**
+
+### ★ THE INFINITE-LOOP QUESTION, and a stopping rule instead of an argument
+
+The founder's concern, 2026-08-26: BR2 becomes a shakeout test in its own right, generating its own defects and fixes, and the project never terminates.
+
+**MEASURED — machinery commits to `bench/` between consecutive live runs:**
+
+```
+exp43  10    exp46  4    exp49  0    exp55  32   <- v3 runner, FIRST run
+exp44   1    exp47  7    exp53  0    now    26
+exp45   4    exp48  0
+```
+
+**The decay was real and then broke, and the break has a cause: a new instrument generation resets the defect curve.** Caveat, stated: commits-between-runs is a proxy confounded by cadence — exp48 and exp49 ran 100 minutes apart, so their zeros mean "no time to fix", not "nothing to fix". The **32-commit spike after a new runner generation** is the clean signal.
+
+**Consequence for BR2: 4B.3 creates a new instrument generation. Running BR2 immediately after it means running at the PEAK of a fresh defect curve** — the trap precisely located.
+
+**The escape is not more hardening. It is refusing to let BR2 absorb the shakeout.** The free simulated experiment (founder decision 7) plus the 4B.5 burn-in are the shock absorber, and both are cheap.
+
+**STOPPING RULE, pre-registered here rather than argued later:** after 4B, run the cheap probes. **If the fix curve flattens across two consecutive probes, the generation is stable enough to spend BR2 on. If it does not flatten, that is the answer — bought for the price of a simulated run rather than 27 real ones.** This is the project's own diminishing-returns criterion applied to the project.
+
+---
+
 ## STAGE 5 — THE REVIEWER REPRODUCTION PACK. **The final item. After BR2.**
 
 **Recorded 2026-08-24 20:54 BST on founder instruction, so it is not lost. Status: DEFERRED BY DECISION.**
