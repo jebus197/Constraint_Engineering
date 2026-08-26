@@ -7710,6 +7710,13 @@ def _anchor_dir_for(source_path: str) -> Optional[str]:
     if not source_path:
         return None
     parent = Path(source_path).parent
+    # A bare filename ("x.py") has parent "." -- the process working directory,
+    # which during a test run is the repository root. Anchoring there dropped
+    # stray tmpXXXXXXXX.py files into the project root; one was caught in the
+    # act on 2026-08-26. There is no directory context to gain from a path that
+    # names no directory, so fall through to the system temp dir instead.
+    if str(parent) in (".", ""):
+        return None
     if source_path.endswith(".py") and os.access(parent, os.W_OK):
         return str(parent)
     return None
@@ -7720,24 +7727,28 @@ def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int,
     modified_source, why = _gateable_source(modified_source, source_path)
     if modified_source is None:
         return 1, f"py_compile not applicable ({why})"
-    # Anchor to source directory for context parity with ruff/bandit gates
-    anchor_dir = _anchor_dir_for(source_path)
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False, encoding="utf-8",
-        dir=anchor_dir,
-    ) as tmp:
-        tmp.write(modified_source)
-        tmp_path = tmp.name
+    # NO TEMPORARY FILE. This gate only asks "does this source compile", and
+    # the builtin compile() answers that from a string.
+    #
+    # WHAT THE FILE VERSION COST, MEASURED 2026-08-26. It wrote a temp .py into
+    # _anchor_dir_for(source_path) and unlinked it in a finally -- but
+    # py_compile ALSO writes bytecode beside it, and nothing removed that. The
+    # repository root's __pycache__ held 17,848 entries totalling 70 MB, and
+    # every single one was named tmp*. bench/__pycache__ held a further 368
+    # (29 MB) from real runs, whose targets live in bench/. The .py was
+    # transient; the .pyc was permanent and grew with every gate call.
+    #
+    # The anchoring was pointless here in any case. It exists so ruff and
+    # bandit discover the repository's config by walking up from the file --
+    # py_compile discovers nothing and needed no directory at all.
     try:
-        py_compile.compile(tmp_path, doraise=True)
+        compile(modified_source, source_path or "<gate>", "exec")
         return 1, "py_compile succeeded"
-    except py_compile.PyCompileError as e:
+    except SyntaxError as e:
         return 0, f"CompileError: {e}"
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except FileNotFoundError:
-            pass
+    except ValueError as e:
+        # source containing null bytes: a real compile failure, not a crash
+        return 0, f"CompileError: {e}"
 
 
 def _run_effect_regression(
