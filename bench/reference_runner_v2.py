@@ -10542,10 +10542,33 @@ def run_experiment(
                 _log(f"  [shadow] location-keyed novelty skipped: "
                      f"{type(_loc_exc).__name__}: {_loc_exc} (telemetry only this run)")
 
-        # Gamma — REPORTED, NEVER a trigger or blocker (panel redesign
-        # 2026-05-23). Telemetry-only in the state gate (config:
-        # gamma_telemetry_only_until >= max_rounds) and deleted as a
-        # convergence trigger on the critical-quiescence path. Reported on
+        # ★ CORRECTED 2026-08-27. This comment previously read "Gamma —
+        # REPORTED, NEVER a trigger or blocker (panel redesign 2026-05-23) …
+        # deleted as a convergence trigger on the critical-quiescence path."
+        # HALF OF THAT WAS TRUE AND THE FALSE HALF WAS THE DANGEROUS ONE.
+        #
+        # TRUE: gamma_all is telemetry-only in the STATE gate. Verified — every
+        # live config has gamma_telemetry_only_until >= max_rounds (14>=12,
+        # 20>=16 …), and _check_gamma_gate references only that setting.
+        #
+        # FALSE: "deleted as a convergence trigger on the critical-quiescence
+        # path." The TWO-SIDED GATE (founder ruling 2026-06-10) at
+        # _check_gamma_alt_convergence requires gamma_critical >=
+        # gamma_alt_threshold on EXACTLY that path, and says so in its own
+        # comment: "gamma is an ACTIVE convergence condition, NOT merely
+        # 'reported'".
+        #
+        # These are TWO DIFFERENT GATES on TWO DIFFERENT SERIES:
+        #   _check_gamma_gate            gamma_all      state gate, telemetry
+        #   _check_gamma_alt_convergence gamma_critical critical-quiescence, ACTIVE
+        # The old wording collapsed them, so anyone grepping for gamma and
+        # landing here before the gate would "helpfully" restore a demotion the
+        # founder ruled against. Flagged by Fable 5 on 2026-08-27, which had
+        # repeated this very comment back in an earlier stale report — proof the
+        # vector works. See the standing directive in .claude/CLAUDE.md:
+        # "GAMMA IS LOAD-BEARING — DO NOT DEMOTE IT".
+        #
+        # Reported on
         # BOTH series each round: gamma_all (all-severity decay) and
         # gamma_critical (critical-only decay; reads ~1.0 at a clean
         # convergence where critical discovery has stopped). Both computed
