@@ -104,6 +104,45 @@ CATEGORY_NOUN = {
 }
 
 
+# RULE 1 GUARD -- A NOTE MAY NOT CLAIM A TIME IT HAS NOT REACHED.
+# Added 2026-08-27 01:12 BST, immediately after writing two notes stamped 01:30
+# and 01:35 when the clock read 01:11. That is 18 and 23 minutes in the FUTURE.
+#
+# THIS IS A DIFFERENT DEFECT FROM THE ONE FIXED ON 2026-08-26, and the difference
+# is the whole point. That night, five timestamps were TYPED instead of read, and
+# the UserPromptSubmit clock hook was written to fix it. The hook worked: it gave
+# the time at turn start, 00:40.
+#
+# Tonight the failure was extrapolation. The time was known once and then guessed
+# forward across a 30-minute turn. A hook that fires at turn START cannot fix a
+# turn that runs for half an hour. Only comparing the claim against the file
+# itself can.
+STAMP_LINE = re.compile(r"^\s*(\d{4}-\d{2}-\d{2})[,]?\s+(\d{2}):(\d{2})\s+([A-Z]{2,5})", re.M)
+
+
+def future_stamp(path: pathlib.Path):
+    """Return (claimed, actual) when the note's own stamp is ahead of its mtime."""
+    import datetime as _dt
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        mtime = _dt.datetime.fromtimestamp(path.stat().st_mtime)
+    except OSError:
+        return None
+    m = STAMP_LINE.search(text[:800])
+    if not m:
+        return None
+    try:
+        claimed = _dt.datetime.strptime(f"{m.group(1)} {m.group(2)}:{m.group(3)}",
+                                        "%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
+    # 2 minutes of slack: writing a file takes a moment, and rounding to the
+    # minute can legitimately land one minute ahead.
+    if claimed > mtime + _dt.timedelta(minutes=2):
+        return (claimed.strftime("%Y-%m-%d %H:%M"), mtime.strftime("%Y-%m-%d %H:%M"))
+    return None
+
+
 def sentences(text: str):
     for para_no, para in enumerate(text.split("\n\n"), 1):
         flat = " ".join(para.split())
@@ -170,6 +209,10 @@ def main() -> int:
         if not p.is_file():
             print(f"  missing: {p}"); continue
         hits = lint(p)
+        fs = future_stamp(p)
+        if fs:
+            hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
+                     fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
         total += len(hits)
         print(f"\n  {p.name}: {len(hits)} finding(s)")
         for para_no, kind, token, s in hits:
