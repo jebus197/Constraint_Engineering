@@ -209,8 +209,14 @@ def main() -> int:
         if not p.is_file():
             print(f"  missing: {p}"); continue
         hits = lint(p)
+        # `is not None`, not a bare truth test. future_stamp returns Optional
+        # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a
+        # glance from the (bool, message) pattern that this project's own guard
+        # test_no_script_discards_a_verdict_by_testing_the_tuple exists to catch,
+        # and that guard flagged this line within twenty minutes of it being
+        # written. Being right is not the same as being readable.
         fs = future_stamp(p)
-        if fs:
+        if fs is not None:
             hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
                      fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
         total += len(hits)
