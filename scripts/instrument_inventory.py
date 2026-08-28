@@ -84,6 +84,35 @@ INSTRUMENTS = [
 # exists it OVERRIDES the heuristic, because a heuristic that disagrees with a
 # measurement is wrong by definition.
 MEASURED = {
+    # ---- 2026-08-28 instrument confirmation panel -------------------------- #
+    # Two reviewers (cc2, fable) independently mutation-tested ALL 34 rows: break
+    # the component toward a plausible constant, run the named test, record
+    # whether it went red. Both refuted the heuristic's 32-of-34. Where they
+    # agree, the row below is the measurement, not a reading.
+    "I11": (False, "MEASURED 2026-08-28 (both reviewers): check_sk_threshold "
+                   "hardwired to `return True` -- 321 tests passed, and all 93 "
+                   "tests across the 3 files naming it passed. The Valley of Bad "
+                   "Fixes gate, live in 19/19 configs, could admit every fix "
+                   "silently. CLOSED the same day by "
+                   "test_instrument_gaps_from_panel_2026-08-28.py."),
+    "I18": (False, "MEASURED 2026-08-28 (both reviewers): silencing CHALLENGE "
+                   "votes in _update_finding_statuses left all 156 tests across "
+                   "the 5 files naming it green. A model disagreeing with a "
+                   "CONFIRMED finding would vanish, `contested` would undercount, "
+                   "and gate condition (c) would open early. CLOSED the same day."),
+    "I10": (False, "MEASURED 2026-08-28 (both reviewers): the NAMED test file "
+                   "computed its own skip guard by CALLING compute_sk. Blinding "
+                   "the component took the file from 45 passed to 33 passed, 12 "
+                   "SKIPPED, exit code 0 -- it switched itself off rather than "
+                   "failing. Guard rewritten to check ruff/bandit; the same break "
+                   "now yields 11 failures. The component IS protected, by "
+                   "test_target_kind_and_no_score.py, not by the row's named file."),
+    "I08": (False, "MEASURED 2026-08-28 (both reviewers): `return False` AND "
+                   "`return True` both leave its only test at 17 passed. The test "
+                   "pins callability and config-inertness, which are real claims, "
+                   "but it does not commission the component. Low consequence: "
+                   "inert in every exp40+ config, and that inertness IS pinned. "
+                   "The founder's stated preference is removal."),
     "I14": (False, "MEASURED 2026-08-22: reverify_falsifier(\"print('FALSIFIED')\") "
                    "returns CONFIRMED, and so does \"assert False, 'FALSIFIED'\". The "
                    "gate has never required a falsifier to depend on its target. NOT "
@@ -91,8 +120,19 @@ MEASURED = {
     "I16": (True,  "MEASURED 2026-08-22: run against 372 archived falsifiers with a "
                    "tripwire, a baseline requirement and a determinism check; it "
                    "separated 132 discriminating from 131 non-discriminating."),
-    "I34": (True,  "MEASURED 2026-08-21: 397 findings, 360 fired, 0 moved on either "
-                   "an irrelevant comment or an unaccused function rename."),
+    "I34": (False, "MEASURED 2026-08-21: 397 findings, 360 fired, 0 moved on either "
+                   "an irrelevant comment or an unaccused function rename. "
+                   "REINTERPRETED 2026-08-28 by cc2, and the reading inverts: a "
+                   "corpus of TARGET-INDEPENDENT falsifiers produces exactly this "
+                   "result, so 0-of-360 is not evidence of a healthy control. "
+                   "Demonstrated by running the control on a real archived item "
+                   "with the code swapped for print('FALSIFIED') -- zero flips, a "
+                   "pass. Two further details the 08-21 row omitted: 56 of the 360 "
+                   "had no unrelated definition to rename, so only 304 received "
+                   "the meaningful perturbation; and the machinery has no "
+                   "commissioning test at all, because test_null_perturbation_"
+                   "control.py monkeypatches run_one wholesale and tests the CLI's "
+                   "file-overwrite safety instead. Reads together with I14."),
     "I33": (True, "MEASURED 2026-08-25: EXERCISED, not merely wired. REFUTED writes a "
             "survival row; CONFIRMED, ERROR and UNTOOLABLE write none; the verdict "
             "denominator is kept so an empty ledger can state why it is empty; the "
@@ -108,8 +148,16 @@ NEG = re.compile(r"assert[^\n]*(!=|is False|is None|not in |pytest\.raises|== ?0
 
 
 def _grep_tests(symbol: str) -> list:
-    """Test files naming this symbol."""
-    out = subprocess.run(["grep", "-rl", symbol, str(TESTS)],
+    """Test files naming this symbol.
+
+    WORD-BOUNDARY, not substring. Both reviewers on the 2026-08-28 instrument
+    confirmation panel found the same defect here: a plain substring search made
+    the row for `immune` claim 39 test files and the row for `health` claim
+    similar numbers, because those strings occur inside unrelated identifiers.
+    The count column was noise, and a noisy count in the reassuring direction is
+    the failure this whole inventory exists to detect one level down.
+    """
+    out = subprocess.run(["grep", "-rlw", symbol, str(TESTS)],
                          capture_output=True, text=True).stdout.split()
     return [pathlib.Path(p) for p in out if p.endswith(".py")]
 
