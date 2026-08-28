@@ -11143,6 +11143,17 @@ def run_experiment(
     # (p=0.099, n=13). The rho work is therefore RETROACTIVELY available on 22
     # runs, not permanently lost.
     result["rho_history"] = [round(r, 4) for r in rho_history]
+    # THE NUMERATOR rho WAS ACTUALLY COMPUTED FROM. Added 2026-08-28 after
+    # scripts/replay_rho.py failed its exit test on 10 of 18 archived runs:
+    # replaying rho as novel_this_round/findings_count does NOT reproduce the
+    # archived rho. exp42 round 9 archived 0.4 = 2/5 while the report records
+    # novel_this_round = 1; round 11 archived 0.875 = 7/8 against a recorded 3.
+    # So the report's novelty figure and rho's numerator are different
+    # quantities -- one settled, one not -- which is the same all-versus-settled
+    # split that made gamma look wrong on exp41c. Persisting the actual inputs
+    # makes the rho third of Runway 1.7 replayable instead of arguable.
+    result["rho_novelty_counts"] = list(novelty_counts)
+    result["rho_raw_counts"] = list(raw_counts)
     # Dual-series γ report (panel redesign 2026-05-23): reported, never gates.
     result["gamma_all_history"] = [round(g, 4) for g in gamma_all_history]
     result["gamma_critical_history"] = [
