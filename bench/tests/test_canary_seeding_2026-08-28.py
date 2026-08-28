@@ -160,3 +160,67 @@ def test_an_unknown_split_is_rejected():
     with pytest.raises(ValueError, match="split must be one of"):
         Canary(id="K1", domain="d", defect_class="c", generator="g",
                split="whatever", find="a", replace="b", summary="s")
+
+
+# --------------------------------------------------------------------------- #
+# The in-repo guard, attacked rather than assumed                              #
+# --------------------------------------------------------------------------- #
+def _write_probe():
+    from bench.canary_seeding import REPO_ROOT
+    probe = REPO_ROOT / "_canary_guard_probe.json"
+    probe.write_text(json.dumps({"canaries": []}), encoding="utf-8")
+    return probe
+
+
+def test_a_symlink_pointing_into_the_repo_is_refused(tmp_path):
+    """The guard resolves before comparing, so a symlink cannot launder a path."""
+    probe = _write_probe()
+    try:
+        link = tmp_path / "outside_looking.json"
+        link.symlink_to(probe)
+        with pytest.raises(CanaryIntegrityError, match="inside the repository"):
+            load_catalogue(link)
+    finally:
+        probe.unlink()
+
+
+def test_a_symlinked_directory_into_the_repo_is_refused(tmp_path):
+    from bench.canary_seeding import REPO_ROOT
+    probe = _write_probe()
+    try:
+        d = tmp_path / "innocent_dir"
+        d.symlink_to(REPO_ROOT)
+        with pytest.raises(CanaryIntegrityError, match="inside the repository"):
+            load_catalogue(d / probe.name)
+    finally:
+        probe.unlink()
+
+
+def test_dot_dot_traversal_back_into_the_repo_is_refused():
+    """Built from OUTSIDE /private: on macOS /var is a symlink, so a traversal
+    rooted in a /var temp dir lands in /private/Users and fails for the wrong
+    reason -- it does not exist. That would have looked like the guard working."""
+    import shutil, tempfile
+    from bench.canary_seeding import REPO_ROOT
+    probe = _write_probe()
+    td = pathlib.Path(tempfile.mkdtemp(dir=str(pathlib.Path.home())))
+    try:
+        ups = [".."] * len(td.resolve().parts[1:])
+        trav = td.joinpath(*ups).joinpath(*REPO_ROOT.parts[1:]) / probe.name
+        assert trav.is_file(), "the traversal must actually reach the file, or this proves nothing"
+        with pytest.raises(CanaryIntegrityError, match="inside the repository"):
+            load_catalogue(trav)
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+        probe.unlink()
+
+
+def test_a_relative_path_resolved_against_the_repo_cwd_is_refused(monkeypatch):
+    from bench.canary_seeding import REPO_ROOT
+    probe = _write_probe()
+    try:
+        monkeypatch.chdir(REPO_ROOT)
+        with pytest.raises(CanaryIntegrityError, match="inside the repository"):
+            load_catalogue(probe.name)
+    finally:
+        probe.unlink()
