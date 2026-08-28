@@ -78,12 +78,36 @@ def widen(value):
 # to compare against and the pipeline reaches the S* decision rather than
 # escalating for want of evidence.
 _BASELINE = _capture_baseline(TARGET_SRC, source_path="toy_target.py")
-_PIPELINE_LIVE = compute_sk(GOOD_FIX, TARGET_SRC, "toy_target.py",
-                            baseline=_BASELINE).tristate == "ADMISSIBLE"
+def _linters_present() -> bool:
+    """Is the external tooling S_k needs actually installed?
+
+    This guard used to be computed by CALLING `compute_sk` and asking whether it
+    returned ADMISSIBLE. That cannot distinguish "ruff is missing" from "the
+    component under test is broken", so breaking `compute_sk` turned 12 of these
+    tests into SKIPS and the file exited 0. Measured 2026-08-28: blinding
+    compute_sk took the file from 45 passed to 33 passed, 12 skipped, rc=0.
+    Found independently by both reviewers on the instrument confirmation panel.
+
+    A skip guard must never ask the component under test whether to run. It asks
+    the environment.
+    """
+    import subprocess
+    for mod in ("ruff", "bandit"):
+        try:
+            r = subprocess.run([sys.executable, "-m", mod, "--version"],
+                               capture_output=True, timeout=30)
+        except Exception:                                  # noqa: BLE001
+            return False
+        if r.returncode != 0:
+            return False
+    return True
+
+
+_PIPELINE_LIVE = _linters_present()
 _needs_pipeline = pytest.mark.skipif(
     not _PIPELINE_LIVE,
-    reason="S_k effect gates unavailable here (ruff/bandit missing?) — the "
-           "S* decision this suite exercises cannot be reached")
+    reason="ruff and/or bandit are not installed, so the S_k effect gates "
+           "cannot run. This guard checks the TOOLING, never the component.")
 
 
 def _mk_registry(flaw_classes):
