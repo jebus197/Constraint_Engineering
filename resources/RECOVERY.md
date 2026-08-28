@@ -371,7 +371,7 @@ see more than 120 chars" is false — that is the registry SUMMARY only.
 one alone makes the measurement WORSE. When a repair degrades a measurement, check for
 a second defect the first was hiding before reverting.
 
-**STILL OPEN:** the 133 unadjudicated pairs (was 120) — **PENDING FOUNDER RULING**;
+**★ CORRECTED 2026-08-28. The 133 were NOT pending a founder ruling — they were ADJUDICATED BY TOOL ON 2026-08-18 and this line never caught up.** `scripts/adjudicate_by_repair.py` decided them by **counterfactual repair** (apply A's fix, re-run B's falsifier, both directions must agree), output in `experimental_notes/data/adjudication_by_repair.json`. **Tool evidence exists for 85 of 133 (64%)**: 33 decided in BOTH directions (23 SAME, 10 DIFFERENT) and 52 in one direction. **48 undecided**, of which **7 are NO_BASELINE — the falsifier did not reproduce, an equipment failure rather than a hard case** — leaving **at most 41 candidates for genuine irreducibility, and those are UNDECIDABLE (33) or DISAGREE (8), which are TOOL outcomes, not HIL questions.** The script's own docstring says asking the founder was wrong: *"it is not an HIL-irreducible question… a panel eyeballing pairs and voting is the free pass the whole project exists to refuse."* CC1 read this stale line on 2026-08-27 and recommended routing all 133 to the founder — the problem-generator failure the founder has named repeatedly. **Remaining work is the 41, and it is tool work, not adjudication.**
 471 unverifiable backfill joins; 44 descriptions still carrying falsifier source (was
 190); registry cap still 500 while the routing ladder asks for 1200.
 
