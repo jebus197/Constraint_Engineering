@@ -10833,9 +10833,21 @@ def run_experiment(
             "unverified_critical": _unresolved_crit,
             "models_responded": list(responses.keys()),
             "elapsed_s": round(round_elapsed, 1),
+            # "gamma" is the LEGACY name and carries the ALL-SEVERITY series.
+            # It is NOT what the gate reads. Kept unchanged because 22 archived
+            # reports carry it under this meaning and redefining it would
+            # silently change what those reports say -- the same reason
+            # location_crit_shadow was deprecated in place rather than renamed.
             "gamma": round(gamma, 4),
             "gamma_all": round(gamma_all, 4),
             "gamma_critical": round(gamma_critical, 4),
+            # WHICH NUMBER ACTUALLY DECIDED. Added 2026-08-28 after measuring
+            # the gap on exp44: its final rounds report gamma 0.253, below the
+            # 0.30 threshold, while the gate was reading gamma_critical 0.453
+            # and passing. A reader taking "gamma" as the headline concludes the
+            # gamma condition failed when it held. That misreading is the whole
+            # source of the impression that gamma "does not work".
+            "gamma_gate_series": "gamma_critical",
             "location_crit_shadow": (location_crit_history[round_idx]
                                      if round_idx < len(location_crit_history) else 0),
             "rho": round(rho_current, 4),
@@ -11111,6 +11123,10 @@ def run_experiment(
     result["total_rounds"] = len(brain.state.all_findings)
     result["total_elapsed_s"] = round(total_elapsed, 1)
     result["end_time"] = datetime.now(timezone.utc).isoformat()
+    # NAMES THE AUTHORITATIVE SERIES rather than duplicating it. gamma_history
+    # below is the all-severity series under its legacy name; the gate reads
+    # gamma_critical_history. Both are reported; this says which one decided.
+    result["gamma_gate_series"] = "gamma_critical_history"
     result["gamma_history"] = [round(g, 4) for g in gamma_history]
     # FOUNDER RULING 2026-08-27: "Persist it." rho_history was ALREADY tracked
     # here -- declared at :9340, appended at :10030, checkpoint-restored at
