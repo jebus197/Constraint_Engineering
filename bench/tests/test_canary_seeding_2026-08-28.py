@@ -124,28 +124,28 @@ def test_p_hat_is_held_out_only():
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated"),
           _c("C1", "e", "f", split=CALIBRATION)]
     # alpha killed one held-out and the calibration one; only the held-out counts.
-    r = detection_rate({"alpha": ["H1", "C1"]}, cs, models=["alpha"])
+    r = detection_rate({"alpha": ["H1", "C1"]}, cs, models=["alpha"], seeded_ids=[c.id for c in cs])
     assert r == {"alpha": 0.5}, "calibration canaries must not inflate p_hat"
 
 
 def test_p_hat_refuses_a_single_generator_held_out_set():
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d")]        # both handwritten
     with pytest.raises(CanaryIntegrityError, match="single generator"):
-        detection_rate({"alpha": ["H1"]}, cs, models=["alpha"])
+        detection_rate({"alpha": ["H1"]}, cs, models=["alpha"], seeded_ids=[c.id for c in cs])
 
 
 def test_p_hat_refuses_when_there_is_nothing_held_out():
     cs = [_c("C1", "a", "b", split=CALIBRATION)]
     with pytest.raises(CanaryIntegrityError, match="no held-out canaries"):
-        detection_rate({"alpha": []}, cs, models=["alpha"])
+        detection_rate({"alpha": []}, cs, models=["alpha"], seeded_ids=[c.id for c in cs])
 
 
 def test_p_hat_is_per_domain_when_asked():
     cs = [_c("D1", "a", "b", domain="dsp"), _c("D2", "c", "d", domain="dsp", gen="generated"),
           _c("B1", "e", "f", domain="bio"), _c("B2", "g", "h", domain="bio", gen="generated")]
     caught = {"alpha": ["D1", "D2", "B1"]}
-    assert detection_rate(caught, cs, models=["alpha"], domain="dsp") == {"alpha": 1.0}
-    assert detection_rate(caught, cs, models=["alpha"], domain="bio") == {"alpha": 0.5}
+    assert detection_rate(caught, cs, models=["alpha"], seeded_ids=[c.id for c in cs], domain="dsp") == {"alpha": 1.0}
+    assert detection_rate(caught, cs, models=["alpha"], seeded_ids=[c.id for c in cs], domain="bio") == {"alpha": 0.5}
 
 
 # --------------------------------------------------------------------------- #
@@ -234,11 +234,151 @@ def test_a_model_that_caught_nothing_scores_zero_rather_than_vanishing():
     this instrument exists to surface.
     """
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
-    r = detection_rate({"alpha": ["H1"]}, cs, models=["alpha", "beta"])
+    r = detection_rate({"alpha": ["H1"]}, cs, models=["alpha", "beta"], seeded_ids=[c.id for c in cs])
     assert r == {"alpha": 0.5, "beta": 0.0}, "a reviewer that caught nothing went missing"
 
 
 def test_p_hat_refuses_an_empty_roster():
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
     with pytest.raises(CanaryIntegrityError, match="no model roster"):
-        detection_rate({"alpha": ["H1"]}, cs, models=[])
+        detection_rate({"alpha": ["H1"]}, cs, models=[], seeded_ids=[c.id for c in cs])
+
+
+# --------------------------------------------------------------------------- #
+# Defects found by the independent build panel, 2026-08-28. Each is pinned      #
+# with the attack the reviewer actually ran.                                    #
+# --------------------------------------------------------------------------- #
+def test_case_mangled_root_component_is_refused():
+    """Path.resolve() does not case-normalise on macOS, and relative_to is a
+    string comparison, so a path whose ROOT components differ in case resolved to
+    "outside" and the catalogue was read.
+
+    The two reviewers disagreed here and both were right about what they ran:
+    mangling a component BELOW the root was already refused; mangling a component
+    OF the root read the key. This pins the second.
+    """
+    from bench.canary_seeding import REPO_ROOT
+    probe = _write_probe()
+    try:
+        variant = pathlib.Path(str(probe).replace("/Constraint_Engineering/",
+                                                  "/CONSTRAINT_ENGINEERING/"))
+        if not variant.exists():
+            pytest.skip("filesystem is case-sensitive, so this attack does not apply")
+        with pytest.raises(CanaryIntegrityError):
+            load_catalogue(variant)
+    finally:
+        probe.unlink()
+
+
+def test_a_hardlink_to_a_tracked_file_is_refused(tmp_path):
+    """resolve() cannot see through a hardlink, so a link made outside a tracked
+    tree reads the tracked bytes. Both reviewers demonstrated it."""
+    import os
+    probe = _write_probe()
+    link = tmp_path / "innocent.json"
+    try:
+        os.link(probe, link)
+        with pytest.raises(CanaryIntegrityError, match="hard link"):
+            load_catalogue(link)
+    finally:
+        probe.unlink()
+
+
+def test_the_guard_protects_any_worktree_not_just_this_modules_tree(tmp_path):
+    """REPO_ROOT was parents[1] of THIS FILE, so a copy running in a throwaway
+    worktree -- which is how panels are dispatched -- would read a catalogue in
+    the canonical tracked tree. Containment is now decided by finding a .git."""
+    from bench.canary_seeding import _in_a_git_worktree
+    fake = tmp_path / "some_other_repo"
+    (fake / ".git").mkdir(parents=True)
+    (fake / "cat.json").write_text("{}", encoding="utf-8")
+    assert _in_a_git_worktree(fake / "cat.json") == fake
+    plain = tmp_path / "not_a_repo"
+    plain.mkdir()
+    assert _in_a_git_worktree(plain / "cat.json") is None
+
+
+def test_an_id_in_both_splits_is_refused(tmp_path):
+    """A calibration kill scored as held-out detection -- the exact Goodhart
+    failure the split exists to prevent."""
+    cat = tmp_path / "cat.json"
+    cat.write_text(json.dumps({"canaries": [
+        {"id": "X1", "domain": "d", "defect_class": "c", "generator": "g",
+         "split": CALIBRATION, "find": "a", "replace": "b", "summary": "s"},
+        {"id": "X1", "domain": "d", "defect_class": "c", "generator": "h",
+         "split": HELD_OUT, "find": "c", "replace": "d", "summary": "s"}]}), encoding="utf-8")
+    with pytest.raises(CanaryIntegrityError, match="duplicate canary id"):
+        load_catalogue(cat)
+
+
+@pytest.mark.parametrize("gen", ["", "   "])
+def test_an_empty_generator_name_is_refused(gen):
+    """An empty generator counted as a second generator and defeated the guard."""
+    with pytest.raises(ValueError, match="generator is empty"):
+        _c("K1", "a", "b", gen=gen)
+
+
+def test_generators_differing_only_in_case_or_padding_are_one_generator():
+    cs = [_c("H1", "a", "b", gen="gpt"), _c("H2", "c", "d", gen="GPT ")]
+    with pytest.raises(CanaryIntegrityError, match="single generator"):
+        detection_rate({"alpha": ["H1"]}, cs, models=["alpha"], seeded_ids=["H1", "H2"])
+
+
+def test_legitimate_prose_containing_seeded_or_mutant_is_not_refused():
+    """Confirmed false refusal that would have bitten the biology corpus: a clean
+    document saying "a seeded random number generator" was rejected outright."""
+    doc = ("Results used a seeded random number generator.\n"
+           "The mutant strain grew faster than the wild type.\n"
+           "The filter has unity gain in the passband.\n")
+    seeded, _ = seed(doc, [_c("K1", "unity gain", "zero gain")])
+    assert "seeded random number generator" in seeded
+
+
+def test_a_tell_the_edit_introduces_is_still_refused():
+    """The known-GOOD half of the pair above: introducing the word must still fail."""
+    doc = "Results used a seeded random number generator.\nThe filter has unity gain.\n"
+    with pytest.raises(CanaryIntegrityError, match="announces the exercise"):
+        seed(doc, [_c("K1", "unity gain", "zero gain, a seeded mutant")])
+
+
+def test_plural_tells_are_caught():
+    with pytest.raises(CanaryIntegrityError, match="announces the exercise"):
+        seed(DOC, [_c("K1", "unity gain", "zero gain  # canaries")])
+
+
+def test_unseeded_canaries_cannot_deflate_the_score():
+    """An unseeded canary is unkillable by construction. Counting it in k lowers
+    every model's rate by an amount nobody can see."""
+    cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated"),
+          _c("H3", "e", "f", gen="generated")]
+    r = detection_rate({"alpha": ["H1", "H2"]}, cs, models=["alpha"], seeded_ids=["H1", "H2"])
+    assert r == {"alpha": 1.0}, "the panel caught everything actually seeded"
+
+
+def test_scoring_with_no_seeded_ids_is_refused():
+    cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
+    with pytest.raises(CanaryIntegrityError, match="no seeded ids"):
+        detection_rate({"alpha": ["H1"]}, cs, models=["alpha"], seeded_ids=[])
+
+
+def test_a_catch_for_an_unknown_id_is_refused():
+    """Silently intersecting these away would hide id drift upstream."""
+    cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
+    with pytest.raises(CanaryIntegrityError, match="in no catalogue"):
+        detection_rate({"alpha": ["H1", "GHOST"]}, cs, models=["alpha"],
+                       seeded_ids=["H1", "H2"])
+
+
+def test_seeding_a_target_under_version_control_is_refused():
+    """The seeded document IS an answer key: git diff returns the planted set at
+    precision 1.000, no key required (MANIFEST.md, measured 2026-07-29)."""
+    with pytest.raises(CanaryIntegrityError, match="git work tree"):
+        seed(DOC, [_c("K1", "unity gain", "zero gain")],
+             target_path=REPO / "bench" / "canary_seeding.py")
+
+
+def test_seeding_a_target_outside_version_control_is_allowed(tmp_path):
+    t = tmp_path / "target.md"
+    t.write_text(DOC, encoding="utf-8")
+    seeded, man = seed(DOC, [_c("K1", "unity gain", "zero gain")], target_path=t)
+    assert "zero gain" in seeded and man["canaries"][0]["id"] == "K1"
