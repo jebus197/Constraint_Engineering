@@ -5,6 +5,28 @@ Last updated: 26 August 2026 01:28 BST — state files only; the narrative below
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
+### 2026-08-28 overnight — three panels, and the instrument inventory does not survive contact
+
+**Instrument confirmation panel (cc2 + fable, both Max-plan, free).** Both mutation-tested all 34 inventory rows and independently refuted the "32 of 34 commissioned" headline. CC2: 23 confirmed, 9 refuted at the named test, 2 refuted outright. **Now recorded as MEASURED in `scripts/instrument_inventory.py`, which reports 27 of 34 and 6 confident-direction disagreements** (was 32 and 2).
+
+* **I11** — `check_sk_threshold` hardwired to `return True` passed **321 tests**. The Valley-of-Bad-Fixes gate, live in 19/19 configs, could admit every fix silently. **CLOSED.**
+* **I18** — silencing CHALLENGE votes left **all 156 tests** naming `_update_finding_statuses` green. A model's disagreement with a CONFIRMED finding would vanish and gate condition (c) would open early. **CLOSED.**
+* **I10 — the worst one, found by both.** `test_immune_memory_consumption.py` computed its own skip guard by **calling `compute_sk`, the component under test**. Blinding it took the file from 45 passed to **33 passed, 12 SKIPPED, exit code 0** — it switched itself off rather than failing. Guard now checks ruff/bandit; the same break gives 11 failures. **A suite-wide test now forbids any skipif condition, or a module-level name it resolves to, from calling a runner-defined function.**
+* `_grep_tests` used `grep -rl`, plain substring: `immune` claimed **40** test files against a true **17**, `health` **17** against **2**, `_memory` **20** against **6**. Word-boundary now.
+
+**★ The 346-of-372 scare is 9 of 372.** `scripts/target_independence_probe.py` replaces each falsifier's target with unrelated but VALID python and re-runs. Verdict pairs: CONFIRMED→ERROR **346** (coupled), REFUTED→ERROR **10** (coupled), **CONFIRMED→CONFIRMED 9 (TARGET-INDEPENDENT)**, ERROR→ERROR 5, CONFIRMED→REFUTED 2. So **348 of 372 are coupled and 9 are provably not — 2.4%, not 93%.** The two figures answer different questions and do not conflict; "fired on every historical version" remains unexplained. The 9: exp44 C0007/C0008/C0022/C0023/C0078 (`bench/evidence.py`), exp46 C0023 (`bench/dm/_shadow_stage6.py`), exp47 C0010/C0058/C0061 (`bench/dm/_divergence.py`). **CAVEAT THAT MUST TRAVEL WITH THE NUMBER: coupling is established by IMPORT, not by test content, so this rules out only the crudest failure and is not a clean bill of health for the other 348.**
+
+**Adjudicator.** `SAME` was the **fall-through** in `_direction`, so an ERRORed leg did not contaminate a verdict — it **produced** one, and the fall-through reaches `DIFFERENT` too. **40 of 178 leg-bearing directions across 34 of 133 pairs.** Fixed; `INCONCLUSIVE_EQUIPMENT` added. Archived JSON still carries pre-fix verdicts and a test pins the counts.
+
+**ERROR legs are two classes.** exp45 C0003/C0022 error because the target's own guard **raises** — the defect is ABSENT and the right verdict is REFUTED. The other 7 are missing targets, 6 of them on already-excluded exp48. **16 of 25 probed do not error on the pristine tree at all, and exp44/exp49 remain unexplained.**
+
+**Canary seeding built, tested and panel-reviewed** (founder ruling 2026-08-27). `bench/canary_seeding.py`, **42 tests**. CC1's own position was committed BEFORE either reviewer returned. The panel found **9 defects in a module CC1 had already attacked**: the guard used `parents[1]` of the MODULE so a worktree copy could read the canonical tree; `Path.resolve()` does not case-normalise, so a case-mangled ROOT component read the key (**the reviewers disagreed here and both were right — below-root was refused, of-root was not**); hardlink bypass; **the SEEDED DOCUMENT is itself an answer key** (`git diff` → planted set at precision 1.000, MANIFEST.md, Fisher p=1.3e-05) and `seed()` now refuses a target in a work tree; cross-split duplicate ids; empty generator names; unseeded canaries deflating the denominator; blinding scanning the whole document, which falsely refused a clean target containing "a seeded random number generator". **CC1's own defect, found before the panel: a model that caught nothing was ABSENT from p_hat rather than scoring 0.0** — the blind reviewer, invisible.
+
+**Provenance correction.** CC1's docstring said exp48 happened "through a path that looked innocuous at the call site". The record says a **MODEL** wrote a falsifier that opened the key, because editing the file would destroy "a seeded fault the panel is scored on". **Seeding created the motive**, which indicts the canary design rather than excusing it.
+
+**OPEN FOR THE FOUNDER:** the **31 plaintext key files** (`bash bench/vault_keys.sh vault`, needs the passphrase); **the push**, ruled to go last; whether a missed canary should BLOCK convergence; and whether target-independent falsifiers should be excluded from the corpus.
+
+
 ## TEST-SUITE OFFLINE CORRECTION (2026-07-31 18:57 BST) — supersedes every earlier pass-count figure
 
 Measured on 2026-07-31: `python3 -m pytest bench/tests/` was making real
