@@ -124,28 +124,28 @@ def test_p_hat_is_held_out_only():
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated"),
           _c("C1", "e", "f", split=CALIBRATION)]
     # alpha killed one held-out and the calibration one; only the held-out counts.
-    r = detection_rate({"alpha": ["H1", "C1"]}, cs)
+    r = detection_rate({"alpha": ["H1", "C1"]}, cs, models=["alpha"])
     assert r == {"alpha": 0.5}, "calibration canaries must not inflate p_hat"
 
 
 def test_p_hat_refuses_a_single_generator_held_out_set():
     cs = [_c("H1", "a", "b"), _c("H2", "c", "d")]        # both handwritten
     with pytest.raises(CanaryIntegrityError, match="single generator"):
-        detection_rate({"alpha": ["H1"]}, cs)
+        detection_rate({"alpha": ["H1"]}, cs, models=["alpha"])
 
 
 def test_p_hat_refuses_when_there_is_nothing_held_out():
     cs = [_c("C1", "a", "b", split=CALIBRATION)]
     with pytest.raises(CanaryIntegrityError, match="no held-out canaries"):
-        detection_rate({"alpha": []}, cs)
+        detection_rate({"alpha": []}, cs, models=["alpha"])
 
 
 def test_p_hat_is_per_domain_when_asked():
     cs = [_c("D1", "a", "b", domain="dsp"), _c("D2", "c", "d", domain="dsp", gen="generated"),
           _c("B1", "e", "f", domain="bio"), _c("B2", "g", "h", domain="bio", gen="generated")]
     caught = {"alpha": ["D1", "D2", "B1"]}
-    assert detection_rate(caught, cs, domain="dsp") == {"alpha": 1.0}
-    assert detection_rate(caught, cs, domain="bio") == {"alpha": 0.5}
+    assert detection_rate(caught, cs, models=["alpha"], domain="dsp") == {"alpha": 1.0}
+    assert detection_rate(caught, cs, models=["alpha"], domain="bio") == {"alpha": 0.5}
 
 
 # --------------------------------------------------------------------------- #
@@ -224,3 +224,21 @@ def test_a_relative_path_resolved_against_the_repo_cwd_is_refused(monkeypatch):
             load_catalogue(probe.name)
     finally:
         probe.unlink()
+
+
+def test_a_model_that_caught_nothing_scores_zero_rather_than_vanishing():
+    """The silent-omission defect, found by attacking my own module.
+
+    Deriving the result from the catch list alone dropped any reviewer that
+    detected nothing -- the totally blind reviewer, which is the single result
+    this instrument exists to surface.
+    """
+    cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
+    r = detection_rate({"alpha": ["H1"]}, cs, models=["alpha", "beta"])
+    assert r == {"alpha": 0.5, "beta": 0.0}, "a reviewer that caught nothing went missing"
+
+
+def test_p_hat_refuses_an_empty_roster():
+    cs = [_c("H1", "a", "b"), _c("H2", "c", "d", gen="generated")]
+    with pytest.raises(CanaryIntegrityError, match="no model roster"):
+        detection_rate({"alpha": ["H1"]}, cs, models=[])

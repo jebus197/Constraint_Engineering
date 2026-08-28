@@ -206,13 +206,26 @@ def catches(findings: Sequence[dict], canaries: Sequence[Canary],
 
 
 def detection_rate(caught: dict[str, list[str]], canaries: Sequence[Canary],
-                   *, domain: str | None = None) -> dict[str, float]:
+                   *, models: Sequence[str], domain: str | None = None) -> dict[str, float]:
     """p_hat = catches / k per model, over HELD-OUT canaries only.
 
     Held-out only, because a canary the panel has already been scored on is a
     canary it can have learned. Calibration canaries set the threshold; held-out
     canaries measure. Reporting both together is the Goodhart failure this design
     exists to avoid.
+
+    `models` is the roster of reviewers actually dispatched, and it is REQUIRED.
+    An earlier version derived the result from `caught` alone, so a model that
+    detected NOTHING was simply absent from the output rather than scoring 0.0 --
+    and a reviewer that has stopped detecting altogether is the exact thing this
+    instrument exists to find. Silent omission in the reassuring direction, in the
+    module written to catch silent omission in the reassuring direction.
+
+    KNOWN LIMIT, not fixable here: blinding covers the CONTENT of the seeded
+    document. It cannot survive a reviewer that can read the target's version
+    history, where the seeded edit is one `git diff` away. Seeding must therefore
+    happen on a copy with no history, and that is a property of how the target is
+    presented, not of this module.
     """
     pool = [c for c in canaries if c.split == HELD_OUT and (domain is None or c.domain == domain)]
     if not pool:
@@ -224,6 +237,11 @@ def detection_rate(caught: dict[str, list[str]], canaries: Sequence[Canary],
         raise CanaryIntegrityError(
             f"held-out set uses a single generator ({generators.pop()!r}). p_hat would "
             "measure whether reviewers have learned that generator. Use at least two.")
+    if not models:
+        raise CanaryIntegrityError(
+            "no model roster supplied. p_hat derived from the catch list alone "
+            "omits any reviewer that caught nothing, which is the one result that "
+            "must never go missing.")
     ids = {c.id for c in pool}
     k = len(ids)
-    return {m: len(set(hits) & ids) / k for m, hits in caught.items()}
+    return {m: len(set(caught.get(m, ())) & ids) / k for m in models}
