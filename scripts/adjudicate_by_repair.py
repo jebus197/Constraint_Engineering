@@ -219,11 +219,22 @@ def _direction(fixer: dict, other: dict, target: pathlib.Path,
         v_other = _verdict(other.get("falsifier_code") or "", state)
     finally:
         target.write_text(orig, encoding="utf-8")
+    d = f"self={v_self} other={v_other}"
     if v_self == "CONFIRMED":
-        return "FIX_INEFFECTIVE", f"self={v_self} other={v_other}"
+        # The fix does not cure its own falsifier. A real observation about the
+        # FIX, and it holds whatever `other` did.
+        return "FIX_INEFFECTIVE", d
+    # SAME used to be the fall-through, so an ERRORed leg did not merely
+    # contaminate a verdict -- it PRODUCED one. Panel-flagged 2026-08-28 for the
+    # 12 contaminated SAME rows; following it into this function found 40 of 178
+    # leg-bearing directions affected across 34 of 133 pairs, because the
+    # fall-through reaches DIFFERENT too. A verdict now requires legs that can
+    # carry it: an equipment failure is reported as equipment failure.
+    if v_self != "REFUTED" or v_other not in ("REFUTED", "CONFIRMED"):
+        return "INCONCLUSIVE_EQUIPMENT", d
     if v_other == "CONFIRMED":
-        return "DIFFERENT", f"self={v_self} other={v_other}"
-    return "SAME", f"self={v_self} other={v_other}"
+        return "DIFFERENT", d
+    return "SAME", d
 
 
 def adjudicate(run: str, stem: str, target_rel: str, band: list) -> list:
