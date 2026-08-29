@@ -47,13 +47,30 @@ So the fixes genuinely apply and genuinely fail to silence their own tests.
 
 | outcome | n | meaning |
 |---|---|---|
-| `INDETERMINATE_OTHER` | 29 | the falsifier ERRORed on the patched target — the fix broke the file it was meant to repair, or the test cannot survive the edit |
-| `INDETERMINATE_NO_APPLICABLE_FIX` | 22 | the proposed fix did not apply to the target at all |
+| `INDETERMINATE_OTHER` | 17 | the falsifier ERRORed on the patched target |
+| `INDETERMINATE_NO_APPLICABLE_FIX` | 34 | the proposed fix did not apply to the target at all |
 | `INDETERMINATE_NO_BASELINE` | 10 | the falsifier did not reproduce on the UNMODIFIED target, so there was nothing for a fix to cure |
 | `INDETERMINATE_NOT_INTERCEPTED` | 6 | the falsifier reaches its target by no route the overlay controls, so no verdict is available |
 
-The 29 are worth their own look: a fix that makes its own target un-runnable is a distinct and more serious
-condition than a fix that merely does not work, and nothing currently reports it.
+**The first group WAS 29, and looking at it found a defect in the applier rather than in the fixes.**
+
+12 of those 29 left the target **syntactically broken**. Traced to `_apply_fix_to_source`, which matched
+SEARCH text as a raw substring: a block whose first line lost its indentation matched *inside* the
+indentation of the real line, the replacement was spliced in, and the original line survived. On exp42
+C0051 that produced a file with the `def` line duplicated.
+
+**Every one of those 12 was the applier's doing, not the model's** — and each was then judged by the next
+step as though the wreckage were the model's proposal.
+
+Fixed 2026-08-30 (`bench/endocrine.py`, `test_fix_applier_cannot_corrupt_2026-08-30.py`): a patch that
+leaves a Python target unparseable is not applied, and the guard abstains when the original did not parse,
+because prose and markdown targets exist here. Line-anchoring the match was tried first and **rejected on
+measurement** — it refused 210 of 313, since models routinely emit SEARCH text with indentation stripped and
+those matches are mostly harmless.
+
+Effect, exactly as designed: `INDETERMINATE_OTHER` 29 → 17, `NO_APPLICABLE_FIX` 22 → 34. Twelve silent
+corruptions became twelve honest non-applications. **The 126/120 verdict counts did not move**, so the
+headline never rested on the corrupted cases.
 
 ## Why nothing had measured this before
 
