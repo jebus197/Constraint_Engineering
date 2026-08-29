@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import ast
 import re
 import shutil
 import statistics
@@ -562,6 +563,25 @@ def _create_sandbox(
         raise
 
 
+def _still_parses(before: str, after: str) -> bool:
+    """Did a patch leave a Python source file syntactically intact?
+
+    Only meaningful when the ORIGINAL parsed. A target that was already
+    unparseable -- prose, markdown, a deliberately broken article -- is not made
+    worse by a patch, and refusing every fix on such a target would be a new
+    defect rather than a guard.
+    """
+    try:
+        ast.parse(before)
+    except SyntaxError:
+        return True          # not Python, or already broken: this guard abstains
+    try:
+        ast.parse(after)
+        return True
+    except SyntaxError:
+        return False
+
+
 def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
     """Attempt to apply a proposed fix to source text.
 
@@ -596,6 +616,27 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
         # is skipped below regardless. So the label requirement is dropped and
         # the structure does the validating.
         if line.strip().startswith("<<<<"):
+            # THE MARKER LINE MAY CARRY THE FIRST LINE OF THE SEARCH TEXT.
+            #
+            # The comment above records that 207 archive blocks "carry code
+            # rather than a label" on this line, and the gate was relaxed to
+            # ACCEPT them -- but the line was still skipped whole, so that code
+            # was silently dropped from the search text. The remainder then
+            # matched, the replacement was spliced in, and the original first
+            # line SURVIVED. Measured 2026-08-30: `<<<< SEARCH def foo():`
+            # produces `def foo():\ndef foo():\n    return 99`, which does not
+            # parse. 12 of 313 archived fixes leave the target syntactically
+            # broken this way, and it is the applier's doing, not the model's.
+            #
+            # Label or code cannot be told apart reliably -- `<<<< SEARCH x.py`
+            # is a file hint and `<<<< SEARCH x = 1` is code. So this does not
+            # guess. It carries the remainder as a CANDIDATE first line and lets
+            # the source text decide which reading matches, below.
+            _marker_tail = line.strip()[4:].lstrip()
+            for _lbl in ("SEARCH", "OLD"):
+                if _marker_tail.upper().startswith(_lbl):
+                    _marker_tail = _marker_tail[len(_lbl):].lstrip()
+                    break
             i += 1
             search_lines: list = []
             while i < len(sr_lines):
@@ -627,6 +668,15 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
                 continue
             search_text = "\n".join(search_lines)
             replace_text = "\n".join(replace_lines)
+            # The source decides. If the marker line carried code, prepending it
+            # makes the search text match; if it carried a label or a file hint,
+            # prepending it makes the match fail and the plain reading stands.
+            if _marker_tail and search_text:
+                with_tail = _marker_tail + "\n" + search_text
+                if with_tail in source_text and search_text not in source_text:
+                    search_text = with_tail
+                elif with_tail in source_text and source_text.count(with_tail) == 1:
+                    search_text = with_tail
             if search_text:
                 sr_blocks.append((search_text, replace_text))
         else:
@@ -640,7 +690,25 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
                 patched = patched.replace(search_text, replace_text, 1)
                 applied += 1
         if applied > 0:
-            return patched
+            # DO NOT RETURN A FILE THAT NO LONGER PARSES.
+            #
+            # `search_text in patched` is a raw substring test, so a SEARCH block
+            # whose first line lost its indentation matches INSIDE the
+            # indentation of the real line; the replacement is spliced in and the
+            # original line survives. Measured 2026-08-30 on exp42 C0051: the
+            # result had the `def` line duplicated and did not parse. 12 of 313
+            # archived fixes are corrupted this way, and every one is the
+            # applier's doing rather than the model's.
+            #
+            # Line-anchoring the match was tried and rejected: it refuses 210 of
+            # 313, because models routinely emit SEARCH text with indentation
+            # stripped, and those matches are mostly harmless. Validating the
+            # RESULT is the simplest rule that separates the two -- a fix that
+            # leaves the target unparseable did not apply, and saying so is
+            # honest where returning the wreckage is not.
+            if _still_parses(source_text, patched):
+                return patched
+            return None
 
     # Strategy 1: search-replace pattern
     # Look for patterns like "Replace X with Y" or "Change X to Y"
