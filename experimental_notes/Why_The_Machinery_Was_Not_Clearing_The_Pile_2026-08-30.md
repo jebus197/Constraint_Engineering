@@ -30,7 +30,41 @@ The corrective lines it already emits, verbatim from the source:
 So the founder's *"just 'check your work, it appears to be wrong'"* already exists for broken and missing
 falsifiers. It is neither absent nor switched off.
 
-## The one thing that is NOT computed, and the reason
+## CORRECTION, 2026-08-30 00:40 — the section below was wrong when first written
+
+**The original text of this section claimed "a fix is never applied and its own falsifier re-run during a
+live experiment." That is false and is withdrawn.**
+
+`bench/bugzilla_loop.py::attempt_close` already extracts a proposed fix, applies it to a **sandbox copy**
+via `apply_fix_to_sandbox`, runs verification against that copy, and deletes the copy in a `finally`. It is
+called from `_update_finding_statuses` at `reference_runner_v2.py:2596` and it **runs in flight today**.
+
+CC1 asserted the absence after reading `reference_runner_v2.py` and finding `apply_fixes_back_enabled=False`,
+and never opened `bugzilla_loop.py`. This is the *check the whole set* failure again: a universal claimed
+after checking one member.
+
+Worse, the evidence was already in hand. CC2 stated it plainly in the convergence-gate panel of 2026-08-28
+— *"That is apply-a-fix-and-re-run, in scope, already running"* — in a document CC1 had read and versioned
+two days earlier.
+
+**The gap, stated accurately this time**, is narrower and more specific:
+
+`run_verification` runs **ruff, mypy, bandit and the experiment's generic `test_cmd`** against the sandbox.
+It does **not** run *that finding's own falsifier*. So the machinery asks "did this fix break anything, and
+do the project's tests still pass" — it never asks **"does this fix actually cure the defect this finding's
+own falsifier demonstrates?"**
+
+That is the `FIX_INEFFECTIVE` condition, and it is why 16 of the 48 undecided pairs are invisible to the
+live loop.
+
+**The repair is correspondingly smaller than first proposed.** Not a new subsystem: one additional check
+inside the existing sandbox verification, running the finding's attached falsifier against the sandbox copy
+that `apply_fix_to_sandbox` has already produced. The sandbox, the apply, the cleanup and the call site all
+exist.
+
+---
+
+## Original section, retained for the record (its claim is withdrawn above)
 
 **A fix is never applied and its own falsifier re-run during a live experiment.** That is the counterfactual
 test, and it is the only way to detect the `FIX_INEFFECTIVE` condition — a fix that does not cure the defect
