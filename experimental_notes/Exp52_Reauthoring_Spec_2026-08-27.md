@@ -62,7 +62,7 @@ The residual, stated so it is not discovered later: **if decision 7 later goes a
 
 **Architecture diversity is lower than the panel's.** CC2 is Opus 4.7, CC1 is Opus 5, Fable 5 is a third Anthropic model. Three models from one vendor. The scaling spec measured inter-architecture correlation at **rho = 0.564 across 289 observations** on the five-model panel, which spans four vendors. **[OPEN]** — the correlation among three Anthropic models has never been measured and is very likely HIGHER, which would make the effective independent contribution smaller than three. Worth measuring during this run rather than assuming either way.
 
-**CC1 cannot both find and curate on the same target.** Curating exp52 means seeing its plants, so CC1 is disqualified as a blind finder on exp52 specifically. That is coherent as long as the roles are separated per target rather than per session.
+~~**CC1 cannot both find and curate on the same target.** Curating exp52 means seeing its plants, so CC1 is disqualified as a blind finder on exp52 specifically.~~ **WITHDRAWN 2026-08-30, founder ruling.** CC1 has never been a finder: it is the source of **0 of 1,154** archived findings, and the dispatched panel is CC2/ChatGPT/Codex/DeepSeek/Gemini. The objection disqualified CC1 from a role it has never held, and conflated *panel review* with *panel member*. CC1 curates, as in exp40–51. See `Exp52_Roles_Answered_2026-08-30.md`. That is coherent as long as the roles are separated per target rather than per session.
 
 **`cy` — live monitoring.** A terminal tailing the run, checks every 60 seconds, pause on anything odd, FFAFP it, fix, resume.
 
