@@ -126,12 +126,29 @@ class TestOrdinaryPathUnchanged:
     @pytest.mark.parametrize("kwargs,marker", [
         ({"unresolved_critical": 1}, "A4 BLOCK"),
         ({"contested": 2}, "contested"),
-        ({"rho_churn": True}, "churn"),
     ])
     def test_the_other_gates_still_bind_on_a_vacuous_series(self, kwargs, marker):
-        """Vacuity satisfies the gamma side only. Every other gate still applies."""
+        """Vacuity satisfies the gamma side only. Every other BLOCKING gate applies.
+
+        `rho_churn` was a third case here until the founder ruling of 2026-08-29
+        made churn contributory rather than a veto. It is covered below by its
+        own test instead of being silently dropped from this list.
+        """
         cfg = _cfg()
         conv, reason = _check_gamma_alt_convergence(
             5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18, **kwargs)
         assert conv is False
         assert marker.lower() in reason.lower()
+
+    def test_churn_is_reported_but_does_not_bind_on_a_vacuous_series(self):
+        """The case removed from the list above, kept rather than dropped.
+
+        Churn must no longer change the verdict, and must still appear on it.
+        """
+        cfg = _cfg()
+        with_churn, reason = _check_gamma_alt_convergence(
+            5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18, rho_churn=True)
+        without_churn, _ = _check_gamma_alt_convergence(
+            5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18, rho_churn=False)
+        assert with_churn == without_churn, "churn is still acting as a veto"
+        assert "churn" in reason.lower(), "churn stopped being reported as well as blocking"

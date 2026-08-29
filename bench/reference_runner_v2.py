@@ -4670,8 +4670,27 @@ def _evaluate_gate_conditions(
     if round_idx < cfg.earliest_stop_round:
         return False, f"Too early (round {round_idx} < {cfg.earliest_stop_round})"
     failures = []
-    if rho_churn:
-        failures.append(f"rho_avg={rho_rolling_avg:.3f} < {cfg.rho_threshold} (churn)")
+    # FOUNDER RULING 2026-08-29: "It is a contributory condition of convergence,
+    # not a veto. It was never intended as this."
+    #
+    # churn used to be appended to `failures` here, so low discovery efficiency
+    # BLOCKED the state gate. That inverts what rho is for. rho detects that no
+    # new meaningful discoveries are being made -- which, taken together with a
+    # flattened gamma, is EVIDENCE THAT THE PROBLEM SPACE IS EXHAUSTED, not
+    # evidence against it. Blocking on it made rho anti-correlated with the
+    # outcome it certifies: the closer a run got to genuine convergence, the
+    # closer it got to being refused for churning.
+    #
+    # Nothing is hidden by this: churn is still computed, still recorded, and
+    # still reported in the reason string below. It simply no longer vetoes.
+    # The guard against a recycling panel converting recycling into a false
+    # convergence remains the TWO-SIDED GATE, which independently requires
+    # gamma_critical >= threshold AND K consecutive zero-new-critical rounds.
+    # churn alone can neither cause nor prevent that.
+    churn_signal = (
+        f"rho_avg={rho_rolling_avg:.3f} < {cfg.rho_threshold} (churn: contributory, not blocking)"
+        if rho_churn else ""
+    )
     # F7/F23 contextual gate (GE EXHAUSTED design): gate threshold stays fixed.
     # EXHAUSTED marking now done by _update_finding_statuses() pre-pass.
     open_ch = registry.open_crit_high_count()
@@ -4715,11 +4734,12 @@ def _evaluate_gate_conditions(
     gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
     if not gamma_passed:
         failures.append(f"gamma={gamma:.3f} ({gate_level})")
+    _churn_tail = f"; {churn_signal}" if churn_signal else ""
     if failures:
-        return False, f"Gate failed: {', '.join(failures)}"
+        return False, f"Gate failed: {', '.join(failures)}{_churn_tail}"
     return True, (
         f"All conditions met: open_ch={open_ch} (stable), novel={novel_this_round}, "
-        f"contested={contested}, gamma={gamma:.3f} ({gate_level})"
+        f"contested={contested}, gamma={gamma:.3f} ({gate_level}){_churn_tail}"
     )
 
 
@@ -4976,12 +4996,15 @@ def _check_gamma_alt_convergence(
             f"critical-quiescence blocked: contested={contested} at round "
             f"{round_idx} (novel_crit_recent={recent_tail})"
         )
-    if rho_churn:
-        return False, (
-            f"critical-quiescence blocked: churn (rho_avg below "
-            f"{cfg.rho_threshold}) at round {round_idx} "
-            f"(novel_crit_recent={recent_tail})"
-        )
+    # FOUNDER RULING 2026-08-29: churn is contributory, not a veto. This was an
+    # EARLY RETURN, so it fired before the two-sided gate was ever evaluated --
+    # a run could satisfy both halves of the gate and still be refused for the
+    # very quiescence the gate exists to certify. Removed. churn is carried into
+    # the reason string instead, so it remains visible on every verdict.
+    _churn_note = (
+        f"; churn present (rho_avg below {cfg.rho_threshold}) -- contributory, not blocking"
+        if rho_churn else ""
+    )
 
     # Convergence (a): K consecutive rounds with zero novel CRITICAL on
     # the settled/genuine series — the only trigger on this path.
@@ -5038,7 +5061,7 @@ def _check_gamma_alt_convergence(
                         f"The critical error space was exhausted before round one; the "
                         f"{window}-round zero-critical condition holds. REVIEW THIS RUN: a "
                         f"clean target and a broken severity classifier look alike from here."
-                        + _queue_note
+                        + _queue_note + _churn_note
                     )
                 return False, (
                     f"two-sided gate: gamma_critical={gamma_critical:.3f} < threshold "
@@ -5046,27 +5069,27 @@ def _check_gamma_alt_convergence(
                     f"panel produced NO findings of any severity either. That is a dead "
                     f"panel or a broken review, not an exhausted error space, so the "
                     f"vacuous-curve path does NOT apply. Convergence refused at round "
-                    f"{round_idx}; diagnose the dispatch."
+                    f"{round_idx}; diagnose the dispatch." + _churn_note
                 )
             if gamma_critical < theta:
                 return False, (
                     f"two-sided gate: {window} zero-new-critical rounds met, but "
                     f"gamma_critical={gamma_critical:.3f} < threshold {theta} — the decay curve "
-                    f"has not yet flattened. BOTH sides of the gate must agree."
+                    f"has not yet flattened. BOTH sides of the gate must agree." + _churn_note
                 )
             return True, (
                 f"CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical="
                 f"{gamma_critical:.3f} >= {theta} (decay curve flattened) AND {window} "
                 f"consecutive zero-new-critical rounds (history tail={recent}) at round "
                 f"{round_idx} — the two sides of the same diminishing-returns measure agree"
-                + _queue_note
+                + _queue_note + _churn_note
             )
 
     return False, (
         f"two-sided gate not met: novel_crit_recent={recent_tail}, "
         f"gamma_critical={gamma_critical:.3f} (convergence needs gamma_critical >= "
         f"{cfg.gamma_alt_threshold} AND {window} consecutive zero-new-critical rounds)"
-        + _queue_note
+        + _queue_note + _churn_note
     )
 
 

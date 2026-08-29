@@ -309,17 +309,66 @@ class TestReviewCleanGates:
         assert converged is False
         assert "contested=2" in reason
 
-    def test_churn_blocks_clean_tail(self):
+    def test_churn_no_longer_blocks_a_clean_tail(self):
+        """FOUNDER RULING 2026-08-29: rho is contributory, not a veto.
+
+        This test previously asserted the opposite -- that churn BLOCKS a clean
+        critical tail. It was an early return, so it fired before the two-sided
+        gate was evaluated at all: a run could satisfy both halves of the gate
+        and still be refused for the very quiescence the gate exists to certify.
+        The founder's words: "It is a contributory condition of convergence, not
+        a veto. It was never intended as this."
+
+        Inverted rather than deleted, so the change of rule is visible in the
+        test that used to encode the old one.
+        """
         cfg = _default_cfg(gamma_alt_consecutive_zero_crit=3)
-        converged, reason = _check_gamma_alt_convergence(
+        with_churn, reason_churn = _check_gamma_alt_convergence(
             round_idx=6,
             gamma=0.20,
             novel_critical_history=[3, 0, 0, 0, 0, 0, 0],
             cfg=cfg,
+            unresolved_critical=0,
+            contested=0,
             rho_churn=True,
         )
-        assert converged is False
-        assert "churn" in reason
+        without_churn, _ = _check_gamma_alt_convergence(
+            round_idx=6,
+            gamma=0.20,
+            novel_critical_history=[3, 0, 0, 0, 0, 0, 0],
+            cfg=cfg,
+            unresolved_critical=0,
+            contested=0,
+            rho_churn=False,
+        )
+        assert with_churn == without_churn, (
+            "churn changed the verdict, so it is still acting as a veto")
+        assert "churn" in reason_churn, (
+            "churn stopped blocking but also stopped being REPORTED; it must stay "
+            "visible on the verdict, or the signal is merely hidden rather than demoted")
+        assert "contributory" in reason_churn or "not blocking" in reason_churn
+
+    def test_churn_cannot_manufacture_a_convergence_on_its_own(self):
+        """The guard that replaces the veto.
+
+        Demoting churn is only safe because the TWO-SIDED GATE is the real
+        guard: convergence still needs gamma_critical above threshold AND K
+        consecutive zero-new-critical rounds. A churning panel whose critical
+        findings are still arriving must not converge.
+        """
+        cfg = _default_cfg(gamma_alt_consecutive_zero_crit=3)
+        converged, reason = _check_gamma_alt_convergence(
+            round_idx=6,
+            gamma=0.20,
+            novel_critical_history=[3, 2, 1, 2, 1, 1, 2],   # critical still arriving
+            cfg=cfg,
+            unresolved_critical=0,
+            contested=0,
+            rho_churn=True,
+        )
+        assert converged is False, (
+            "a run still producing critical findings converged; the two-sided gate "
+            "is not holding, and it is the only thing left holding")
 
     def test_clean_and_uncontested_and_no_churn_converges(self):
         cfg = _default_cfg(gamma_alt_consecutive_zero_crit=3)
