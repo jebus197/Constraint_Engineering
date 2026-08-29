@@ -89,24 +89,24 @@ MEASURED = {
     # the component toward a plausible constant, run the named test, record
     # whether it went red. Both refuted the heuristic's 32-of-34. Where they
     # agree, the row below is the measurement, not a reading.
-    "I11": (False, "MEASURED 2026-08-28 (both reviewers): check_sk_threshold "
+    "I11": (True, "MEASURED 2026-08-28 (both reviewers): check_sk_threshold "
                    "hardwired to `return True` -- 321 tests passed, and all 93 "
                    "tests across the 3 files naming it passed. The Valley of Bad "
                    "Fixes gate, live in 19/19 configs, could admit every fix "
                    "silently. CLOSED the same day by "
-                   "test_instrument_gaps_from_panel_2026-08-28.py."),
-    "I18": (False, "MEASURED 2026-08-28 (both reviewers): silencing CHALLENGE "
+                   "test_instrument_gaps_from_panel_2026-08-28.py. **RE-MEASURED 2026-08-30: NOW COMMISSIONED.** Re-running the same mutation (`return True`) fails 2 of 3 assertions in test_instrument_gaps_from_panel_2026-08-28.py. Flag flipped, having been left False on 08-28 when the fix landed -- the inventory was under-reporting its own repair."),
+    "I18": (True, "MEASURED 2026-08-28 (both reviewers): silencing CHALLENGE "
                    "votes in _update_finding_statuses left all 156 tests across "
                    "the 5 files naming it green. A model disagreeing with a "
                    "CONFIRMED finding would vanish, `contested` would undercount, "
-                   "and gate condition (c) would open early. CLOSED the same day."),
-    "I10": (False, "MEASURED 2026-08-28 (both reviewers): the NAMED test file "
+                   "and gate condition (c) would open early. CLOSED the same day. **RE-MEASURED 2026-08-30: NOW COMMISSIONED.** Silencing CHALLENGE inside _update_finding_statuses now fails. Note the mutation must target the assignment INSIDE that function: the identical line occurs twice in the file, and patching the first occurrence hits a different function and wrongly exonerates the test."),
+    "I10": (True, "MEASURED 2026-08-28 (both reviewers): the NAMED test file "
                    "computed its own skip guard by CALLING compute_sk. Blinding "
                    "the component took the file from 45 passed to 33 passed, 12 "
                    "SKIPPED, exit code 0 -- it switched itself off rather than "
                    "failing. Guard rewritten to check ruff/bandit; the same break "
                    "now yields 11 failures. The component IS protected, by "
-                   "test_target_kind_and_no_score.py, not by the row's named file."),
+                   "test_target_kind_and_no_score.py, not by the row's named file. **RE-MEASURED 2026-08-30: NOW COMMISSIONED.** Restoring the self-disabling skip guard fails test_no_skip_guard_calls_the_code_it_guards."),
     "I08": (False, "MEASURED 2026-08-28 (both reviewers): `return False` AND "
                    "`return True` both leave its only test at 17 passed. The test "
                    "pins callability and config-inertness, which are real claims, "
