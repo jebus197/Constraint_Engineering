@@ -152,3 +152,41 @@ class TestOrdinaryPathUnchanged:
             5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18, rho_churn=False)
         assert with_churn == without_churn, "churn is still acting as a veto"
         assert "churn" in reason.lower(), "churn stopped being reported as well as blocking"
+
+
+class TestTheGuardIsReachableAgain:
+    """The gate panel's Q2, closed by the rho ruling rather than by a separate fix.
+
+    Fable called the vacuous-curve guard unreachable-when-churn-fires a defect.
+    CC2 called it confirmed as control flow but only partial as a defect, because
+    the ordering was deliberate and test-locked. CC1 recorded the disagreement
+    and resolved nothing.
+
+    The founder's response (2026-08-29) was the useful one: if two reviewers are
+    each looking at a different aspect of the whole problem, that IS the whole
+    problem, so the fix should address the whole of it. It now does -- not by a
+    targeted patch, but because the churn EARLY RETURN that made the branch
+    unreachable was removed when rho became contributory rather than a veto.
+
+    One fix, two findings closed. This test exists so the reachability cannot be
+    lost again silently if anyone reinstates an early return above it.
+    """
+
+    def test_a_vacuous_curve_is_still_judged_while_churn_is_firing(self):
+        cfg = _cfg()
+        conv, reason = _check_gamma_alt_convergence(
+            5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18,
+            unresolved_critical=0, contested=0, rho_churn=True)
+        assert "VACUOUS" in reason, (
+            "churn is short-circuiting before the vacuous-curve branch again; the "
+            "guard is unreachable and the gate panel's Q2 has regressed")
+        assert conv is True
+
+    def test_churn_is_still_named_on_that_verdict(self):
+        """Reachable is not enough -- the signal must remain visible, or it has
+        merely been hidden rather than demoted to contributory."""
+        cfg = _cfg()
+        _, reason = _check_gamma_alt_convergence(
+            5, 0.0, [0] * 6, cfg, gamma_critical=0.0, total_findings=18,
+            unresolved_critical=0, contested=0, rho_churn=True)
+        assert "churn" in reason.lower()
