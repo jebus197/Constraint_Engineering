@@ -151,3 +151,69 @@ def test_only_the_two_real_outcomes_count_as_verdicts():
         assert FixEfficacyResult(o).is_a_verdict
     for o in (NOT_INTERCEPTED, NO_BASELINE, NO_FIX, "INDETERMINATE_OTHER"):
         assert not FixEfficacyResult(o).is_a_verdict
+
+
+# --------------------------------------------------------------------------- #
+# Pair adjudication -- the tool verdict the MERGED status requires             #
+# --------------------------------------------------------------------------- #
+from bench.fix_efficacy import (           # noqa: E402
+    PAIR_DIFFERENT, PAIR_INCONCLUSIVE, PAIR_SAME, probe_pair,
+)
+
+TWO_BUGS = 'A = -1\nB = -2\n\n\ndef get():\n    return A, B\n'
+
+
+@pytest.fixture
+def repo2(tmp_path):
+    (tmp_path / "bench").mkdir()
+    (tmp_path / TARGET_REL).write_text(TWO_BUGS, encoding="utf-8")
+    return tmp_path
+
+
+def _f(repo_root, token):
+    return textwrap.dedent(f'''
+        import pathlib
+        src = pathlib.Path(r"{repo_root / TARGET_REL}").read_text()
+        if "{token}" in src:
+            raise AssertionError("FALSIFIED: {token} present")
+    ''').strip()
+
+
+def test_two_findings_of_the_SAME_defect(repo2):
+    """One fix removes both symptoms, in both directions -> SAME."""
+    both = _fix("A = -1\nB = -2", "A = 1\nB = 2")
+    a = {"falsifier_code": _f(repo2, "A = -1"), "proposed_fix": both}
+    b = {"falsifier_code": _f(repo2, "B = -2"), "proposed_fix": both}
+    r = probe_pair(a, b, TARGET_REL, repo_root=repo2)
+    assert r.outcome == PAIR_SAME, r.detail
+
+
+def test_two_findings_of_DIFFERENT_defects(repo2):
+    """Each fix cures only its own symptom -> DIFFERENT, both directions."""
+    a = {"falsifier_code": _f(repo2, "A = -1"), "proposed_fix": _fix("A = -1", "A = 1")}
+    b = {"falsifier_code": _f(repo2, "B = -2"), "proposed_fix": _fix("B = -2", "B = 2")}
+    r = probe_pair(a, b, TARGET_REL, repo_root=repo2)
+    assert r.outcome == PAIR_DIFFERENT, r.detail
+
+
+def test_an_ineffective_fix_yields_no_pair_verdict(repo2):
+    """The 2026-08-28 defect, which must not be reintroduced here: SAME used to be
+    the FALL-THROUGH in adjudicate_by_repair, so anything that was not a positive
+    confirmation PRODUCED a SAME verdict rather than merely contaminating one."""
+    a = {"falsifier_code": _f(repo2, "A = -1"),
+         "proposed_fix": _fix("def get():", "def get():  # tidied")}
+    b = {"falsifier_code": _f(repo2, "B = -2"), "proposed_fix": _fix("B = -2", "B = 2")}
+    r = probe_pair(a, b, TARGET_REL, repo_root=repo2)
+    assert r.outcome == PAIR_INCONCLUSIVE, r.detail
+    assert not r.is_a_verdict
+
+
+def test_a_pair_adjudication_never_touches_the_target(repo2):
+    before = (repo2 / TARGET_REL).read_bytes()
+    both = _fix("A = -1\nB = -2", "A = 1\nB = 2")
+    probe_pair({"falsifier_code": _f(repo2, "A = -1"), "proposed_fix": both},
+               {"falsifier_code": _f(repo2, "B = -2"), "proposed_fix": both},
+               TARGET_REL, repo_root=repo2)
+    assert (repo2 / TARGET_REL).read_bytes() == before, (
+        "the reviewed article changed; this is the exact property that makes the "
+        "overlay usable in flight and write-and-restore not")

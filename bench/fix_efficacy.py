@@ -188,3 +188,71 @@ FEEDBACK_LINE = (
     "test what the finding claims. Send a fix that makes your own test go quiet, "
     "or a test that actually exercises the defect you are describing."
 )
+
+
+# --------------------------------------------------------------------------- #
+# Pair adjudication, on the overlay                                            #
+# --------------------------------------------------------------------------- #
+#: Two findings are the SAME defect when each one's fix silences BOTH falsifiers.
+PAIR_SAME = "SAME"
+PAIR_DIFFERENT = "DIFFERENT"
+PAIR_INCONCLUSIVE = "INCONCLUSIVE_EQUIPMENT"
+
+
+def _one_direction(fixer: dict, other: dict, target_rel: str,
+                   original: str, root: pathlib.Path, timeout: int):
+    """Apply `fixer`'s fix on an overlay; report what happens to BOTH falsifiers."""
+    from endocrine import _apply_fix_to_source
+
+    patched = _apply_fix_to_source(original, fixer.get("proposed_fix") or "")
+    if not patched or patched == original:
+        return PAIR_INCONCLUSIVE, "no applicable fix"
+    v_self, _ = _overlay_verdict(target_rel, patched, fixer.get("falsifier_code") or "",
+                                 root, timeout)
+    v_other, _ = _overlay_verdict(target_rel, patched, other.get("falsifier_code") or "",
+                                  root, timeout)
+    d = f"self={v_self} other={v_other}"
+    if v_self == "CONFIRMED":
+        return PAIR_INCONCLUSIVE, d + " (fix ineffective)"
+    # A verdict requires legs that can carry it. An ERRORed leg is an equipment
+    # failure, not evidence -- the defect fixed in adjudicate_by_repair on
+    # 2026-08-28, where SAME was the FALL-THROUGH so an error PRODUCED a verdict
+    # rather than merely contaminating one. 40 of 178 directions were affected.
+    if v_self != "REFUTED" or v_other not in ("REFUTED", "CONFIRMED"):
+        return PAIR_INCONCLUSIVE, d
+    return (PAIR_DIFFERENT if v_other == "CONFIRMED" else PAIR_SAME), d
+
+
+def probe_pair(a: dict, b: dict, target_rel: str, *,
+               repo_root=None, timeout: int = 20) -> FixEfficacyResult:
+    """Are two findings the same defect? Counterfactual repair, BOTH directions.
+
+    This is `scripts/adjudicate_by_repair.py`'s question asked through the
+    overlay, instead of by writing to the live target and restoring in a
+    `finally`. That difference is what makes it usable DURING a run, which is the
+    obstacle CC2 identified on 2026-08-28:
+
+      * the runner hashes the reviewed article every round and raises
+        TARGET INTEGRITY WARNING on any change, which write-and-restore trips
+        on every single adjudication;
+      * a kill between the write and the restore corrupts the article under
+        review, permanently.
+
+    Both directions must agree. Disagreement is reported as disagreement and is
+    never resolved by preferring one side.
+
+    SAME is the evidence the `MERGED` status requires -- and `MERGED` is
+    TERMINAL, with no `REOPENED` exit, unlike REFUTED and CLOSED. A wrong merge
+    deletes findings permanently. Nothing here writes a status; that wiring is a
+    founder ruling and is not taken by this module.
+    """
+    root = repo_root or REPO_ROOT
+    original = (root / target_rel).read_text(encoding="utf-8")
+    fwd, d1 = _one_direction(a, b, target_rel, original, root, timeout)
+    rev, d2 = _one_direction(b, a, target_rel, original, root, timeout)
+    detail = f"{d1} | {d2}"
+    if fwd == rev and fwd in (PAIR_SAME, PAIR_DIFFERENT):
+        return FixEfficacyResult(fwd, detail)
+    if PAIR_INCONCLUSIVE in (fwd, rev):
+        return FixEfficacyResult(PAIR_INCONCLUSIVE, f"{fwd}/{rev}: {detail}")
+    return FixEfficacyResult(PAIR_INCONCLUSIVE, f"directions disagree ({fwd}/{rev}): {detail}")
