@@ -3055,7 +3055,16 @@ def _absolute_target(target_rel: str, repo_root=None) -> str:
     header by full path OR basename, so a model answering with the absolute path still
     resolves. This function is for MODEL-FACING PROMPTS ONLY.
     """
-    rel = (target_rel or "").strip()
+    # ACCEPT A PATH. `run_experiment` sets `target_rel` from
+    # `target_path.relative_to(REPO_ROOT)` -- a PosixPath, not a str -- and
+    # this called `.strip()` on it, raising AttributeError.
+    #
+    # Found 2026-08-30 by the first simulated run to drive run_experiment
+    # itself. `_absolute_target` landed 2026-08-23 and NO experiment has
+    # completed since: the only two runs after it, both exp55_v3_control,
+    # halted at round 0 on an alarm. The crash sat on the prompt-building
+    # path, unexercised, and Bench Run 2 would have met it.
+    rel = str(target_rel or "").strip()
     if not rel:
         return ""
     if os.path.isabs(rel):
@@ -9322,6 +9331,31 @@ def run_experiment(
     logs_dir = _find_or_create_logs_dir(cfg)
     logs_dir.mkdir(parents=True, exist_ok=True)
 
+    # THE TWO PANEL LISTS MUST AGREE, AND A MISMATCH MUST BE LOUD.
+    #
+    # `exp_config.models` holds the ModelConfigs that are actually dispatched.
+    # `cfg.models` is a separate List[str] whose default is a HARDCODED FIVE
+    # ['CC2', 'Codex', 'Gemini', 'DeepSeek', 'ChatGPT'] — the old panel, from
+    # before Fable joined. Every count, every per-model denominator and every
+    # `set(cfg.models) - {source}` in this file reads the second list.
+    #
+    # Found 2026-08-30 by the first simulated run to drive run_experiment: six
+    # ModelConfigs were supplied, `cfg.models` was left at its default, and the
+    # run reported a five-model panel while dispatching a sixth. Nothing warned.
+    # That is the launcher config-drop class this project has now hit seven times
+    # (feedback_launcher_config_drop), and it is silent by construction because
+    # the two lists are never compared.
+    _declared = {getattr(m, "label", str(m)) for m in getattr(exp_config, "models", [])}
+    if _declared and _declared != set(cfg.models):
+        _only_dispatched = sorted(_declared - set(cfg.models))
+        _only_counted = sorted(set(cfg.models) - _declared)
+        _log("  ** PANEL MISMATCH — the dispatched panel and the counted panel differ **")
+        if _only_dispatched:
+            _log(f"     dispatched but NOT counted: {_only_dispatched}")
+        if _only_counted:
+            _log(f"     counted but NOT dispatched: {_only_counted}")
+        _log("     every per-model denominator in this run uses the COUNTED list.")
+
     baseline = set(cfg.models)
 
     topo_desc = (
@@ -9896,6 +9930,12 @@ def run_experiment(
 
     result: Dict[str, Any] = {
         "experiment": cfg.experiment_name,
+        # WHICH CODE PRODUCED THIS RUN. The 2026-08-23 v3 note said "the VERSION
+        # is metadata, and it lands in each run's report, which is where a reader
+        # actually needs it." It never did: exp55_v3_control's report carries no
+        # version key at all, so its results cannot be attributed to the code
+        # that produced them without git archaeology. From v3.1 on, they can.
+        "runner_version": RUNNER_VERSION,
         "topology": cfg.topology,
         "relay_mode": cfg.relay_mode if cfg.topology == "relay" else None,
         "start_time": datetime.now(timezone.utc).isoformat(),

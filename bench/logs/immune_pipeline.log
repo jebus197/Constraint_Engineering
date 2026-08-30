@@ -51797,3 +51797,40 @@
 2026-08-23T16:59:33 INFO RT v2 (v2): depletion — 80.0% removal rate (all duplicates)
 2026-08-23T16:59:33 INFO Fix NOT verified: ChatGPT_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
 2026-08-23T16:59:33 INFO Fix NOT verified: Gemini_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-08-30T16:35:29 INFO Domain config loaded: software (1 sections)
+2026-08-30T16:35:29 INFO Skin barrier (v2): 9 passed, 0 failed out of 9 findings
+2026-08-30T16:35:29 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 reclassification: CC2_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 reclassification: Gemini_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T16:35:29 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T16:35:29 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-08-30T16:35:29 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:35:29 INFO DC v2 (v2): 9/9 findings reclassified
+2026-08-30T16:35:29 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 9 findings to classify.
+2026-08-30T16:35:45 INFO LLM classifier OVERRIDE: CC2_F001 — regex=code_behavioral → llm=code_structural (conf=0.88, llm-primary [software]: threshold N/A, 15.9s)
+2026-08-30T16:35:57 INFO LLM classifier OVERRIDE: CC2_F002 — regex=code_behavioral → llm=code_structural (conf=0.85, llm-primary [software]: threshold N/A, 12.3s)
+2026-08-30T16:36:25 INFO LLM classifier OVERRIDE: Codex_F001 — regex=code_behavioral → llm=code_structural (conf=0.84, llm-primary [software]: threshold N/A, 14.3s)
+2026-08-30T16:36:41 INFO LLM classifier: Codex_F002 — regex=code_behavioral llm=mathematical (conf=0.88, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 15.6s)
+2026-08-30T16:37:36 INFO LLM classifier: 5/9 agree with regex (55.6%), 3 overrides applied
+2026-08-30T16:37:36 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T16:37:45 INFO NK v2 (v2): 5 verdicts (5 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T16:40:44 INFO CT v2 (v2): 0 verdicts in 188.6s — none
+2026-08-30T16:40:44 INFO B-Cell specialist (LIVE, domain=software): 3 verdicts
+2026-08-30T16:40:44 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T16:40:44 INFO Helper T v2 (v2): 9 findings — 0 CONFIRMED, 2 REJECTED, 2 UNCERTAIN, 5 DUPLICATE
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.80, v2=0.56, max=0.80 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.82, v2=0.82, max=0.82 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.80, v2=0.56, max=0.80 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-08-30T16:40:44 INFO Reconciliation locked 7 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003
+2026-08-30T16:40:44 INFO RT v2: Codex at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-08-30T16:40:44 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 7/9 (77.8%) exceeds threshold (65%) [rejected=2, duplicated=5]
+2026-08-30T16:40:44 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 7/9 (77.8%) exceeds threshold (65%) [rejected=2, duplicated=5])
+2026-08-30T16:40:44 INFO Autoimmune override: resurrected 2 findings, kept 7 locked rejections
+2026-08-30T16:40:47 INFO Fix NOT verified: ChatGPT_F002 — verdict=HARMFUL (issues introduced)
