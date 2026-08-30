@@ -2551,6 +2551,30 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
         challenges = [v for v in entry["verdicts"] if v["verdict"] == "CHALLENGE"]
+
+        # ── EXTEND, READ AT LAST ────────────────────────────────────────────
+        # Founder ruling (Bugzilla question, 21 Aug 2026): "EXTEND is the answer
+        # to ledger vs instrument. Parsed, offered as the explicit alternative to
+        # duplicating, used 183-543 times, READ BY NOTHING." And 30 Aug: merge
+        # should function as specified, "but preceding/redundant fixes should be
+        # RECORDED, not simply discarded."
+        #
+        # Measured 2026-08-30: of the five verdict types models are instructed to
+        # emit, EXTEND is the ONLY one with zero consuming comparisons in this
+        # file -- CONFIRM 9, CHALLENGE 6, MERGE 3, REOPEN 1, EXTEND 0. There are
+        # 209 EXTEND verdicts in the archive across 15 runs and not one of them
+        # has ever influenced anything or reached a human.
+        #
+        # Recorded, never gating. An extension names a consequence the parent
+        # finding did not; it is evidence ABOUT the finding, not a vote on it.
+        extensions = [v for v in entry["verdicts"] if v["verdict"] == "EXTEND"]
+        if extensions:
+            entry["extensions"] = [
+                {"model": v["model"], "round": v["round"],
+                 "consequence": (v.get("evidence") or "").strip()}
+                for v in extensions if (v.get("evidence") or "").strip()
+            ]
+            entry["extension_count"] = len(entry["extensions"])
         latest_confirm_round = max((v["round"] for v in confirms), default=-1)
         # F24 fix: use >= so same-round challenges count as unresolved.
         # Previously strict > meant a challenge in the same round as the
@@ -4916,6 +4940,9 @@ def build_irreducible_queue_alarm(
             "falsifier_present": bool(e.get("falsifier_code")),
             "falsifier_verdict": e.get("falsifier_verdict") or "",
             "sk_tristate": sk.get("tristate", ""),
+            # Recorded, not discarded (founder ruling 2026-08-30).
+            "extension_count": e.get("extension_count", 0),
+            "extensions": e.get("extensions", []),
             "sk_gate_details": sk.get("gate_details", {}),
             "verdicts": e.get("verdicts", [])[-4:],
             "routing_history": e.get("routing_history", []),
@@ -8935,6 +8962,30 @@ def _rejection_lines(entry: dict) -> list:
             "FIX NOT SCORED: fix-admission is undefined on this target, so a "
             "fix cannot close this finding. Attach a runnable falsifier "
             "instead — that is what settles it here.")
+    # EXTENSIONS, SURFACED. A consequence another model named on this finding
+    # was stored and shown to nobody -- 209 of them across the archive. The
+    # founder's ruling is that they be RECORDED, not discarded; recording them
+    # where only a report can see them is halfway. The owning model is the one
+    # who can act.
+    #
+    # Paired with the fix-efficacy verdict deliberately. An ineffective fix PLUS
+    # named extensions is the founder's own design in the Bugzilla ruling --
+    # "still-fires-after-the-parent-fix means the parent fix is demonstrably
+    # insufficient and the system names what it misses". The extensions are what
+    # it misses.
+    _ext = entry.get("extensions") or []
+    if _ext:
+        _lines = "; ".join(f"[{e['model']} r{e['round']}] {e['consequence'][:160]}"
+                           for e in _ext[:4])
+        _fe_out = (entry.get("fix_efficacy") or {}).get("outcome")
+        _tail = ("  YOUR FIX ALSO DOES NOT CURE ITS OWN FALSIFIER, so these are very "
+                 "likely what it misses." if _fe_out == "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER"
+                 else "")
+        out.append(
+            f"{len(_ext)} EXTENSION(S) FILED AGAINST THIS FINDING by other reviewers — "
+            f"consequences your fix must also cover: {_lines}.{_tail} "
+            f"Either widen the fix to cover them, or say why each is out of scope.")
+
     # The fix-efficacy probe's one model-facing line. FIX_INEFFECTIVE ONLY.
     #
     # The four INDETERMINATE outcomes are deliberately silent. "The instrument

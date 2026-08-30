@@ -352,7 +352,28 @@ def main() -> int:
             raise AssertionError("the probe is not actually wired into the status pass")
         return "wired into the status pass; absent from BOTH gate functions"
 
-    for _s in (s_rho, s_apply, s_overlay, s_fe):
+    @stage("EXTEND is READ (founder ruling, 21 Aug — it was read by nothing)")
+    def s_extend():
+        import ast as _a
+        src = (REPO / "bench" / "reference_runner_v2.py").read_text()
+        kinds = ("CONFIRM", "CHALLENGE", "EXTEND", "MERGE", "REOPEN")
+        unread = [k for k in kinds if src.count(f'== "{k}"') == 0]
+        if unread:
+            raise AssertionError(f"verdict types offered to models and read by nothing: {unread}")
+        t = _a.parse(src)
+        upd = _a.unparse(next(n for n in _a.walk(t) if isinstance(n, _a.FunctionDef)
+                              and n.name == "_update_finding_statuses")).replace('"', "'")
+        if "v['verdict'] == 'EXTEND'" not in upd or "'extensions'" not in upd:
+            raise AssertionError("extensions are not collected onto the parent")
+        for g in ("_evaluate_gate_conditions", "_check_gamma_alt_convergence"):
+            b = _a.unparse(next(n for n in _a.walk(t) if isinstance(n, _a.FunctionDef)
+                                and n.name == g)).lower()
+            if "extension" in b:
+                raise AssertionError(f"{g} references extensions; they could gate")
+        return ("all 5 verdict types consumed; extensions recorded on the parent and "
+                "absent from both gates (209 archived EXTENDs were invisible)")
+
+    for _s in (s_rho, s_apply, s_overlay, s_fe, s_extend):
         _s()
 
     if args.findings:
