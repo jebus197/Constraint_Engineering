@@ -72,7 +72,7 @@ It was built for one job and never reused. That is the whole answer to your ques
 
 I built the check on that mechanism and ran it across every archived finding that has both a fix and a test: 313 of them.
 
-246 gave a clear answer. 120 fixes cure the defect their own test demonstrates. 126 do not. Slightly more than half fail.
+246 gave a clear answer. 120 fixes cure the defect their own test demonstrates. 126 do not. About half fail, and I have to be careful with that word, because when I finally ran the statistics this morning the honest range is 45 to 57 percent. That range includes exactly half, so "more than half", which is what I wrote to you last night, is not something the data supports. "About half" is.
 
 Before you take that number to mean half our fixes are bad, please read this next part, because I do not think it means that.
 
@@ -208,7 +208,30 @@ My own reading is that they are answering different questions and both answers s
 Neither can answer the question that actually decides it: does a recycling panel really miss a freshly planted defect? That is one experiment in Bench Run 2.
 
 
+## You Asked Whether I Have Been Using Your Command Set. I Measured It. You Are Right.
+
+You said you had seen little evidence of it despite calling these commands frequently, and that if true it is a bigger issue than any individual error. Rather than agree or defend, I counted, using the session record on disk.
+
+You issued 118 of these commands across the session. Analyse 49 times, discuss 48, and the ones that matter most here: five calls for the full falsification cycle, and five for the mathematical and scientific tools.
+
+Last night I made 226 tool calls. Three of them touched a mathematical or statistical tool. That is 1.3 percent. All three were the same tool, on the same single proof, inside one 40 minute block at the very start of the night. For everything after that, the fix checker, the half of all fixes figure, the applier defect, the re-judging of the pairs, the counting of tests that never read their target, I used none at all.
+
+So the answer to your question is yes, you are right, and here is the proof that it cost something concrete.
+
+This morning I ran one statistical check on the headline figure I gave you last night. 126 fixes out of 246 do not cure the defect their own test demonstrates. I reported that to you as slightly more than half. The honest range, once computed, is 45 to 57 percent. That range includes exactly half. So "more than half" is not something the data supports. "About half" is. One command, that I should have run last night and did not, falsified my own headline this morning.
+
+I want to be precise about the diagnosis though, because I think you are right in substance and slightly off in mechanism, and the difference matters for fixing it.
+
+Most of last night's errors were not failures to use mathematical tools specifically. They were failures at the same step one level up: the part of the cycle where you gather evidence with whatever tool fits before concluding anything. I said the repair machinery was not connected after reading one file and never opening the one beside it. I cleared the sandbox alarm after checking the copies were created and never checking whether the setting survived one reviewer finishing. I corrected nine to four by reading four tests and sorting them by their shape, when running them gives eight.
+
+Every one of those was recoverable by running something rather than reasoning about it. The mathematical tools are one instrument for that. Searching properly is another. Actually executing the code is a third. The common root is a single sentence, and it is already written in your own directives: the tool output is the evidence, and reasoning selects and interprets it but never substitutes for it.
+
+I have written that up as a standing correction in my own memory, with the measured figures in it, so it is not a promise but a record.
+
+
 ## What Remains For You
+
+First, the five items you asked me to close this morning are done. The three vagueness findings in notes I had linted the spoken version of but never the written one. The memory index, which had nothing in it since the 26th, so four sessions including last night were missing from the file that rebuilds context. The onboarding document, which still claimed all four stopping components were commissioned when one of them had been measured otherwise two days earlier. The audit tool I built to catch exactly that class, which missed this instance because it held three hand written claims and no general rule, and now reads the instrument record itself. And the fix checker, which was built, tested, used by two scripts, and called by nothing that runs. It is wired now, capped at five checks a round, structurally unable to block anything, and with a test that fails if either gate function so much as mentions it.
 
 The key files are still in plain text and still need your passphrase.
 
