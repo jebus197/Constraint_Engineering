@@ -2783,17 +2783,42 @@ def _disc_sha(text: str) -> str:
     return _hashlib.sha256((text or "").encode("utf-8", "replace")).hexdigest()[:16]
 
 
-def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str) -> None:
+#: Never mirrored at the OVERLAY ROOT. `.git` is the whole answer key.
+#
+# Measured 2026-08-30 by the cc2 reviewer and re-verified here on a live overlay:
+# with `.git` symlinked, `git -C <overlay> diff` returns the mutation under test,
+# `git -C <overlay> log` returns real history, and `git show HEAD:<target>`
+# recovers the pristine file. Every overlay differs from the tracked file by
+# exactly the mutation being tested, so that is the planted set at precision
+# 1.000 with no key required -- the identical leak `canary_seeding.seed` refuses
+# a tracked target to prevent (`canary_seeding.py`), arriving by a route that
+# guard cannot see because the overlay is not itself a tracked tree.
+#
+# It also had a second effect. `canary_seeding._in_a_git_worktree` walks for a
+# `.git` entry, the symlink satisfied it, and so `seed()` REFUSED the overlay --
+# the one place in-flight seeding could ever have been legitimate.
+#
+# Root only: that is the only level at which git resolves a repository, and a
+# `.git` deeper in the tree is ordinary content.
+_OVERLAY_NEVER_MIRROR = frozenset({".git"})
+
+
+def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str,
+                                  *, is_root: bool = False) -> None:
     """Mirror one directory as symlinks, omitting `skip`.
 
     Symlinks, not copies: the repo is large and the control runs per finding.
     The links are absolute, so they resolve identically from the sandbox's
     throwaway cwd. `shutil.rmtree` does not follow symlinks when deleting, so
     tearing an overlay down cannot reach the real tree.
+
+    At the root, `_OVERLAY_NEVER_MIRROR` is omitted as well -- see its comment.
     """
     over_dir.mkdir(parents=True, exist_ok=True)
     for child in real_dir.iterdir():
         if child.name == skip:
+            continue
+        if is_root and child.name in _OVERLAY_NEVER_MIRROR:
             continue
         link = over_dir / child.name
         if link.exists() or link.is_symlink():  # pragma: no cover — defensive
@@ -2822,11 +2847,13 @@ def _build_discrimination_overlay(repo_root: Path, target_rel: str,
         raise FileNotFoundError(f"discrimination control: target not found: {real_target}")
     root = Path(tempfile.mkdtemp(prefix="cdsfl_disc_"))
     real_dir, over_dir = repo_root, root
+    first = True
     for comp in parts[:-1]:
-        _discrimination_mirror_except(real_dir, over_dir, comp)
+        _discrimination_mirror_except(real_dir, over_dir, comp, is_root=first)
+        first = False
         real_dir = real_dir / comp
         over_dir = over_dir / comp
-    _discrimination_mirror_except(real_dir, over_dir, parts[-1])
+    _discrimination_mirror_except(real_dir, over_dir, parts[-1], is_root=first)
     leaf = over_dir / parts[-1]
     leaf.write_text(content, encoding="utf-8")
     if leaf.is_symlink() or leaf.read_text(encoding="utf-8") != content:  # pragma: no cover
