@@ -893,7 +893,8 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
         severity = float(sev_match.group(1)) if sev_match else 0.5
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
-        description = desc_match.group(1).strip() if desc_match else block[:200]
+        description = (desc_match.group(1).strip() if desc_match
+                       else _bounded_description(block))
         # Chevron format preferred: captures old→new as structured diff
         # group(1) = file path hint (from <<<< SEARCH path or <<<< path)
         # group(2) = old code, group(3) = new code
@@ -995,7 +996,7 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
             flaw_class=1,
             severity=0.3,
             abstraction_index=0.3,
-            description=response[:500],
+            description=_bounded_description(response),
             verified=False,
             origin_type="model",
         ))
@@ -1196,6 +1197,47 @@ def _normalise_field_labels(response: str) -> str:
     return _SEV_LINE.sub(
         lambda m: m.group(1) + _WORD_SEVERITY.get(m.group(2).lower(), m.group(2)),
         out)
+
+
+#: Registration caps a description at 2,000 characters
+#: (reference_runner_v2.py:1572), so keeping more here would be lost anyway.
+_DESCRIPTION_LIMIT = 2000
+
+
+def _bounded_description(text: str, limit: int = _DESCRIPTION_LIMIT) -> str:
+    """Keep the whole description, and SAY SO on the rare occasion it is cut.
+
+    FOUNDER RULING 2026-08-30: "Fix it now fully... Truncation has been the bane
+    of this project from the outset. If this is a new route to, or a new kind of
+    truncation, it should not be allowed to persist."
+
+    THE TWO CUTS THIS REPLACES, both measured live on 2026-08-31 by running the
+    parser rather than reading it:
+
+      * ``block[:200]``    fired when a finding block carries no DESCRIPTION
+                           field. 714 of 2,286 archived descriptions are exactly
+                           200 characters.
+      * ``response[:500]`` fired when a whole reply failed to parse at all.
+                           661 are exactly 500.
+
+    Together that is 1,375 of 2,286 -- 60.2%, Wilson CI [58.1%, 62.2%] -- sitting
+    exactly on a cut. Both are FALLBACK paths, which is what makes them worst:
+    they fire precisely when a model's reply did not match the expected shape,
+    so the finding we understand least is the one we recorded least of.
+
+    A well-formed DESCRIPTION field was never truncated here and still is not:
+    verified at 900 characters in and 900 out.
+
+    KNOWN AND ACCEPTED CONSEQUENCE: this changes how replies are parsed mid-arc.
+    Experiments 40-49 were recorded under the cut and later ones will not be, so
+    any measure derived from description TEXT is not comparable across that line.
+    The founder took that trade deliberately.
+    """
+    t = (text or "").strip()
+    if len(t) <= limit:
+        return t
+    return (t[:limit]
+            + f" [...TRUNCATED at {limit:,} of {len(t):,} characters]")
 
 
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:

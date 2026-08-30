@@ -101,19 +101,43 @@ class TestEveryRouteThatCanCarryToolsDoes:
         assert "subprocess" in body
 
 
-class TestTheKnownException:
-    """Delete this class the day Gemini gets function-calling."""
+class TestThereIsNoLongerAnException:
+    """The exception is closed. Founder ruling 2026-08-30: "There is to be no
+    exceptions from tool use. Not now, not in the future, just as there should
+    never have been in the past."
 
-    def test_gemini_still_has_no_tools_parameter(self):
-        params = inspect.signature(ORCH.call_gemini).parameters
-        assert "tools" not in params, (
-            "call_gemini now accepts tools — WIRE IT in dispatch() and delete "
-            "this class and the exception recorded in this file's docstring"
+    `call_gemini` now accepts tools and runs a Google function-calling loop.
+    VERIFIED WITH ONE PAID CALL on 2026-08-31, not by inspection: asked for the
+    Wilson interval of 126/246 -- a real project number no model recalls -- it
+    returned 0.4500, 0.5740 to four places in 6.4 seconds, which is only
+    obtainable by running statsmodels. See bench/tools/gemini_tool_switch_test.py.
+    """
+
+    def test_gemini_accepts_tools(self):
+        assert "tools" in inspect.signature(ORCH.call_gemini).parameters
+
+    def test_dispatch_passes_tools_on_the_google_route(self):
+        tree = ast.parse(ORCH_SRC)
+        fn = next(n for n in ast.walk(tree)
+                  if isinstance(n, ast.FunctionDef) and n.name == "dispatch")
+        body = ast.unparse(fn)
+        i = body.find("call_gemini(")
+        assert i > 0 and "tools=" in body[i:i + 500], (
+            "the google route stopped receiving tools — it is Gemini's FAILOVER "
+            "route and the one decomposed_dispatch uses, so this reintroduces a "
+            "silent loss of tool use exactly where it is hardest to notice"
         )
 
-    def test_the_gap_is_declared_in_this_files_docstring(self):
-        assert "call_gemini` has NO tools parameter" in __doc__ or \
-               "call_gemini" in __doc__
+    def test_the_gemini_tool_loop_exists(self):
+        assert hasattr(ORCH, "_run_gemini_tool_loop")
+
+    def test_one_tool_schema_serves_both_wire_formats(self):
+        """The OpenAI schema is translated, not duplicated, so a change to the
+        tool's description cannot drift between routes."""
+        assert hasattr(ORCH, "_openai_tools_to_gemini")
+
+    def test_dispatch_defaults_to_tools_on(self):
+        assert inspect.signature(ORCH.dispatch).parameters["enable_tools"].default is True
 
 
 class TestSimulatedAgentsGetTools:

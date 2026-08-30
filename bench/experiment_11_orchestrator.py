@@ -1005,6 +1005,80 @@ def call_codex(
     raise RuntimeError(f"Codex call failed after {max_retries} attempts. Last error: {last_error}")
 
 
+def _openai_tools_to_gemini(tools, genai_types):
+    """Translate the OpenAI-shaped tool schema into Google FunctionDeclarations.
+
+    One schema, two wire formats. Keeping a single source (EXECUTE_PYTHON_TOOL)
+    and converting here means a change to the tool's description or parameters
+    cannot drift between the two routes.
+    """
+    decls = []
+    for t in tools or []:
+        fn = t.get("function", t)
+        decls.append(genai_types.FunctionDeclaration(
+            name=fn.get("name"),
+            description=fn.get("description", ""),
+            parameters=fn.get("parameters") or {"type": "object", "properties": {}},
+        ))
+    return [genai_types.Tool(function_declarations=decls)] if decls else None
+
+
+def _run_gemini_tool_loop(client, genai_types, model_id, system_prompt,
+                          user_prompt, tools, tool_executor,
+                          max_iters=6, max_tokens=32768):
+    """Google function-calling loop, mirroring ``_run_openai_tool_loop``.
+
+    FOUNDER RULING 2026-08-30: "There is to be no exceptions from tool use. Not
+    now, not in the future, just as there should never have been in the past."
+
+    THE GAP THIS CLOSES. Gemini's PRIMARY panel route is openrouter, which
+    already carried tools -- an earlier report that Gemini had none was wrong,
+    and is corrected here. But `api="google"` is Gemini's SECONDARY (failover)
+    route (line ~179) and the route `decomposed_dispatch` uses. Both dropped
+    tools SILENTLY: a model that fails over, or a prompt large enough to
+    decompose, would quietly lose the ability to run anything and could then
+    only assert. CC2 measured decomposition firing on every model in every round
+    at Bench-Run-2 payload sizes, so this was not hypothetical.
+    """
+    contents = [genai_types.Content(role="user",
+                                    parts=[genai_types.Part(text=user_prompt)])]
+    gtools = _openai_tools_to_gemini(tools, genai_types)
+    text_out = ""
+    for _ in range(max_iters):
+        cfg = genai_types.GenerateContentConfig(
+            max_output_tokens=max_tokens,
+            system_instruction=system_prompt or None,
+            tools=gtools,
+        )
+        resp = client.models.generate_content(
+            model=model_id, contents=contents, config=cfg)
+        calls = []
+        for cand in (resp.candidates or []):
+            for part in (getattr(cand.content, "parts", None) or []):
+                if getattr(part, "function_call", None):
+                    calls.append(part.function_call)
+        if not calls:
+            return (resp.text or "").strip()
+        contents.append(resp.candidates[0].content)
+        for call in calls:
+            args = dict(call.args or {})
+            try:
+                result = tool_executor(call.name, args)
+            except Exception as exc:                       # noqa: BLE001
+                result = f"TOOL ERROR: {type(exc).__name__}: {exc}"
+            contents.append(genai_types.Content(
+                role="user",
+                parts=[genai_types.Part.from_function_response(
+                    name=call.name, response={"result": str(result)[:20000]})]))
+        text_out = (resp.text or "").strip() or text_out
+    # Iteration cap reached: ask once more WITHOUT tools so the model must answer.
+    cfg = genai_types.GenerateContentConfig(
+        max_output_tokens=max_tokens, system_instruction=system_prompt or None)
+    resp = client.models.generate_content(
+        model=model_id, contents=contents, config=cfg)
+    return (resp.text or "").strip() or text_out
+
+
 def call_gemini(
     model_id: str,
     system_prompt: str | None,
@@ -1013,7 +1087,9 @@ def call_gemini(
     timeout: int = 300,
     max_retries: int = 5,
     backoff_base: float = 3.0,
-) -> str:
+                tools: list[dict] | None = None,
+                tool_executor=None,
+                max_tool_iters: int = 6) -> str:
     """Call Gemini via Google API with CDSFL as system_instruction."""
     try:
         from google import genai
@@ -1044,6 +1120,21 @@ def call_gemini(
             _log(f"  [gemini:{model_id}] retry {attempt}/{max_retries}")
         t0 = time.monotonic()
         try:
+            if tools:
+                # TOOL PATH (founder ruling 2026-08-30: no exceptions from tool
+                # use). This route is Gemini's FAILOVER and the decomposed-
+                # dispatch route; both used to drop tools silently.
+                text = _run_gemini_tool_loop(
+                    client, genai_types, model_id, system_prompt, user_prompt,
+                    tools, tool_executor or default_tool_executor,
+                    max_iters=max_tool_iters, max_tokens=max_tokens)
+                elapsed = time.monotonic() - t0
+                if not text:
+                    raise CircuitBreakerTripped(
+                        f"gemini:{model_id} returned empty text on the tool path")
+                _log(f"  [gemini:{model_id}] done (tools, {elapsed:.1f}s, "
+                     f"{len(text)} chars)")
+                return text
             config = genai_types.GenerateContentConfig(
                 max_output_tokens=max_tokens,
                 system_instruction=system_prompt if system_prompt else None,
@@ -1320,7 +1411,7 @@ def dispatch(
     cdsfl_system_prompt: str,
     use_output_schema: bool = False,
     use_secondary: bool = False,
-    enable_tools: bool = False,
+    enable_tools: bool = True,
 ) -> str:
     """Dispatch a prompt to any model based on its config. Returns response text.
 
@@ -1396,14 +1487,16 @@ def dispatch(
             use_output_schema=use_output_schema,
         )
     elif config.api == 'google':
-        # LOUD (founder ruling 2026-08-30: tools enabled "without exception").
-        # `call_gemini` has no tools parameter, so this route dispatches a model
-        # that can assert but cannot RUN anything. A panellist that cannot run a
-        # falsifier can only vote. Recorded at dispatch time so a live run says
-        # so in its own log rather than leaving it to be rediscovered.
-        _log("  ** TOOLS UNAVAILABLE on the google route — this panellist "
-             "cannot execute a falsifier. TOOLS DECIDE, NOT VOTES is not "
-             "satisfied for it. **")
+        # TOOLS ON THIS ROUTE TOO (founder ruling 2026-08-30: "There is to be no
+        # exceptions from tool use. Not now, not in the future, just as there
+        # should never have been in the past.").
+        #
+        # This is Gemini's FAILOVER route and the route decomposed_dispatch
+        # uses; its PRIMARY panel route is openrouter, which already carried
+        # tools. Both fallbacks dropped them silently, so a model that failed
+        # over -- or a prompt large enough to decompose, which CC2 measured as
+        # every model in every round at Bench-Run-2 payload sizes -- would
+        # quietly lose the ability to run anything and could then only assert.
         return call_gemini(
             model_id=config.model_id,
             system_prompt=cdsfl_system_prompt if config.system_prompt_path else None,
@@ -1412,6 +1505,7 @@ def dispatch(
             timeout=config.timeout,
             max_retries=config.max_retries,
             backoff_base=config.backoff_base,
+            tools=[EXECUTE_PYTHON_TOOL] if enable_tools else None,
         )
     elif config.api == "deepseek":
         return call_deepseek(
