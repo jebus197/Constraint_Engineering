@@ -87,16 +87,45 @@ def scripted_findings(fx, S) -> List[Dict[str, Any]]:
              description=("VERDICT: CONFIRM. AL-03 overstates the comparison count: "
                           "`dedup` performs 2016 comparisons on 64 distinct inputs, "
                           "not the at-most-k the document claims. Listing A."),
-             falsifier_code=fx.falsifier_template.replace(
-                 S.DOC_PATH_TOKEN, str(S.DOC_DIR / fx.doc_name)),
-             proposed_fix=""),
+             # Overlay-compatible: reads the target by ABSOLUTE path, so
+             # `_retarget_falsifier` can redirect it into the disposable copy.
+             # The shared template is not, which is itself a true reading and
+             # is left on F002 so the run covers BOTH outcomes.
+             falsifier_code=(
+                 'import pathlib\n'
+                 f'src = pathlib.Path(r"{S.DOC_DIR / fx.doc_name}").read_text()\n'
+                 'if "cost is linear in the input length" in src:\n'
+                 '    raise AssertionError("FALSIFIED: the linear claim is still present")\n'
+             ),
+             # A REAL fix repairing the planted claim, so the fix-efficacy probe
+             # has something to test. SEARCH text verified present in the target.
+             proposed_fix=("<<<< SEARCH\n"
+                           "most k element comparisons in total and its cost is linear in the input length. On the\n"
+                           "==== REPLACE\n"
+                           "most k*(k-1)/2 element comparisons in total and its cost is quadratic in the input length. On the\n"
+                           ">>>>")),
         dict(finding_id="F002", model_id="SIM-B", severity=0.82, round_idx=0,
-             description=("AL-03: the linear-time claim for `dedup` fails. Membership "
+             description=("CONFIRM C0001 | AL-03: the linear-time claim for `dedup` fails. Membership "
                           "on a list is O(n), so Listing A is quadratic — 2016 "
                           "comparisons at n=64."),
              falsifier_code=fx.falsifier_template.replace(
                  S.DOC_PATH_TOKEN, str(S.DOC_DIR / fx.doc_name)),
-             proposed_fix=""),
+             # A fix that APPLIES and changes nothing that matters — the
+             # FIX_INEFFECTIVE condition, 126 of 246 in the archive.
+             proposed_fix=("<<<< SEARCH\n"
+                           "On the\n"
+                           "==== REPLACE\n"
+                           "On the\n"
+                           ">>>>")),
+        # SIM-F EXTENDs C0001. Before 2026-08-30 the scripted fixtures emitted
+        # ZERO parseable verdicts, so EXTEND -- and everything consuming it --
+        # was unreachable in this bench. C0001 because the registry assigns
+        # canonical ids in registration order and F001 registers first.
+        dict(finding_id="F00E", model_id="SIM-F", severity=0.40, round_idx=0,
+             description=("EXTEND C0001 | the same membership test also makes the "
+                          "worst case quadratic for inputs that are ALL duplicates, "
+                          "which the finding's fix does not mention."),
+             falsifier_code="", proposed_fix=""),
         dict(finding_id="F003", model_id="SIM-D", severity=0.88, round_idx=0,
              description=("Listing A's `dedup` conflates equal-but-distinct values: "
                           "`1`, `1.0` and `True` compare equal, so dedup([1, 1.0, True]) "
@@ -205,6 +234,48 @@ def main() -> int:
         assert "RUNNABLE FALSIFIER" in b, "prose briefing does not name the route"
         return f"{len(reg.entries)} findings registered; prose briefing correct"
     s_brief()
+
+    # ── verdict parse -> registry, the path the runner runs at :10157 ─────
+    # Without this the simulated run never produced a single CONFIRM, EXTEND,
+    # MERGE or REOPEN, so four of the five verdict types -- and every piece of
+    # machinery that consumes them -- were unreachable here. Measured
+    # 2026-08-30: the scripted fixtures emitted 0 EXTEND verdicts, which is why
+    # the EXTEND wiring could not be exercised by this bench at all.
+    @stage("verdict parse -> registry (CONFIRM / EXTEND reach the entry)")
+    def s_verdicts():
+        seen = {}
+        for r in rows:
+            for vt, cid, ev in R._parse_verdicts(r["description"], r["model_id"], 0):
+                if cid in reg.entries:
+                    reg.add_verdict(cid, r["model_id"], vt, 0, ev)
+                    seen[vt] = seen.get(vt, 0) + 1
+        if not seen:
+            raise AssertionError("no verdicts parsed; the fixtures emit none")
+        R._update_finding_statuses(reg, 0, cfg=cfg)
+        ext = {cid: e.get("extension_count", 0) for cid, e in reg.entries.items()
+               if e.get("extension_count")}
+        if "EXTEND" in seen and not ext:
+            raise AssertionError("EXTEND was parsed but no extension was recorded "
+                                 "on any entry — the wiring does not reach")
+        return f"parsed {seen}; extensions recorded on {ext or 'none'}"
+    s_verdicts()
+
+    # Did the probe actually FIRE inside the status pass, or is it merely wired?
+    # An earlier check looked for "fix_efficacy" in the run record and found
+    # nothing -- but the record holds STAGES, not entry keys, so its absence
+    # proved nothing at all. This asks the registry.
+    @stage("fix-efficacy probe FIRES inside the pipeline (not just wired)")
+    def s_fe_fired():
+        fired = {cid: e["fix_efficacy"]["outcome"]
+                 for cid, e in reg.entries.items() if e.get("fix_efficacy")}
+        attempted = sum(1 for e in reg.entries.values() if e.get("fix_efficacy_attempted"))
+        if not attempted:
+            raise AssertionError("the probe was never even attempted; it is unreachable")
+        if not fired:
+            raise AssertionError(f"attempted on {attempted} finding(s) and produced NO "
+                                 f"result on any -- silently unreachable")
+        return f"attempted on {attempted}, produced a verdict on {len(fired)}: {fired}"
+    s_fe_fired()
 
     # ── 6. falsifier gate — the real settlement path ──────────────────────
     @stage("falsifier gate (CONFIRM-only)")

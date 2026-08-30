@@ -26,19 +26,31 @@
   {
     "stage": "panel briefing branches on target kind",
     "ok": true,
-    "detail": "4 findings registered; prose briefing correct",
+    "detail": "5 findings registered; prose briefing correct",
+    "error": ""
+  },
+  {
+    "stage": "verdict parse -> registry (CONFIRM / EXTEND reach the entry)",
+    "ok": true,
+    "detail": "parsed {'CONFIRM': 1, 'EXTEND': 1}; extensions recorded on {'C0001': 1}",
+    "error": ""
+  },
+  {
+    "stage": "fix-efficacy probe FIRES inside the pipeline (not just wired)",
+    "ok": true,
+    "detail": "attempted on 2, produced a verdict on 2: {'C0001': 'FIX_CURES_ITS_OWN_FALSIFIER', 'C0002': 'INDETERMINATE_NOT_INTERCEPTED'}",
     "error": ""
   },
   {
     "stage": "falsifier gate (CONFIRM-only)",
     "ok": true,
-    "detail": "verdicts={'C0001': 'CONFIRMED', 'C0002': 'CONFIRMED', 'C0003': 'UNTOOLABLE', 'C0004': 'UNTOOLABLE'}, escalated=2",
+    "detail": "verdicts={'C0001': 'CONFIRMED', 'C0002': 'CONFIRMED', 'C0003': '', 'C0004': 'UNTOOLABLE', 'C0005': 'UNTOOLABLE'}, escalated=2",
     "error": ""
   },
   {
     "stage": "A10 rejection reasons rendered",
     "ok": true,
-    "detail": "2 line(s); e.g. NO FALSIFIER: nothing runnable was attached, so nothing was demonstrat",
+    "detail": "3 line(s); e.g. 1 EXTENSION(S) FILED AGAINST THIS FINDING by other reviewers \u2014 consequ",
     "error": ""
   },
   {
@@ -56,13 +68,13 @@
   {
     "stage": "scored against fixture ground truth",
     "ok": true,
-    "detail": "registered=4 CONFIRMED=2 | planted defect DETECTED=True (2 demonstration(s)) | FALSE POSITIVES CONFIRMED=0 | unclassified=0",
+    "detail": "registered=5 CONFIRMED=2 | planted defect DETECTED=True (2 demonstration(s)) | FALSE POSITIVES CONFIRMED=0 | unclassified=0",
     "error": ""
   },
   {
     "stage": "residue: what reached the human, and why",
     "ok": true,
-    "detail": "unsettled=2 {'UNTOOLABLE': 2}; escalated=2",
+    "detail": "unsettled=3 {'none': 1, 'UNTOOLABLE': 2}; escalated=2",
     "error": ""
   },
   {

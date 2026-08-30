@@ -2675,30 +2675,40 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
             # model: "the instrument could not look" is a statement about the
             # apparatus, and telling a model that invites it to rewrite a fix
             # nothing found fault with.
-            if (entry.get("proposed_fix") and entry.get("falsifier_code")
-                    and not entry.get("fix_efficacy_attempted")
-                    and _fix_efficacy_this_call < FIX_EFFICACY_PER_ROUND_LIMIT):
-                entry["fix_efficacy_attempted"] = True
-                _fix_efficacy_this_call += 1
-                try:
-                    _fe_target = (entry.get("target_file")
-                                  or (cfg.test_article if cfg else None))
-                    if _fe_target:
-                        from fix_efficacy import probe as _fe_probe
-                        _fe_rel = str(_fe_target)
-                        if _fe_rel.startswith(str(REPO_ROOT)):
-                            _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
-                        if (REPO_ROOT / _fe_rel).is_file():
-                            _fe = _fe_probe(
-                                {"falsifier_code": entry.get("falsifier_code") or "",
-                                 "proposed_fix": entry.get("proposed_fix") or ""},
-                                _fe_rel, repo_root=REPO_ROOT, timeout=20)
-                            entry["fix_efficacy"] = {
-                                "outcome": _fe.outcome, "detail": _fe.detail[:300]}
-                            _log(f"  fix-efficacy {canonical_id}: {_fe.outcome}")
-                except Exception as _fe_exc:                  # noqa: BLE001
-                    _log(f"  fix-efficacy probe error for {canonical_id}: "
-                         f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
+        # MOVED OUT of the `status in (CONFIRMED, CORROBORATED) and not verified`
+        # branch on 2026-08-30. The simulated run caught it: the falsifier gate
+        # sets `verified` True on CONFIRMED findings, so `not verified` was false
+        # and the probe was SKIPPED for exactly the findings most likely to carry
+        # a fix. Wired but unreachable -- which is the class this bench exists to
+        # find, and it found it on its first pass over the new code.
+        #
+        # The question "does this fix cure the defect its own falsifier
+        # demonstrates" is worth asking of ANY finding carrying both, whatever
+        # its status. Guarded now only by having both, and by the per-round cap.
+        if (entry.get("proposed_fix") and entry.get("falsifier_code")
+                and not entry.get("fix_efficacy_attempted")
+                and _fix_efficacy_this_call < FIX_EFFICACY_PER_ROUND_LIMIT):
+            entry["fix_efficacy_attempted"] = True
+            _fix_efficacy_this_call += 1
+            try:
+                _fe_target = (entry.get("target_file")
+                              or (cfg.test_article if cfg else None))
+                if _fe_target:
+                    from fix_efficacy import probe as _fe_probe
+                    _fe_rel = str(_fe_target)
+                    if _fe_rel.startswith(str(REPO_ROOT)):
+                        _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
+                    if (REPO_ROOT / _fe_rel).is_file():
+                        _fe = _fe_probe(
+                            {"falsifier_code": entry.get("falsifier_code") or "",
+                             "proposed_fix": entry.get("proposed_fix") or ""},
+                            _fe_rel, repo_root=REPO_ROOT, timeout=20)
+                        entry["fix_efficacy"] = {
+                            "outcome": _fe.outcome, "detail": _fe.detail[:300]}
+                        _log(f"  fix-efficacy {canonical_id}: {_fe.outcome}")
+            except Exception as _fe_exc:                  # noqa: BLE001
+                _log(f"  fix-efficacy probe error for {canonical_id}: "
+                     f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
 
         if (entry["status"] in ("CONFIRMED", "CORROBORATED")
                 and entry.get("verified")):
