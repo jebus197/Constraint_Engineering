@@ -120,3 +120,50 @@ uncommissioned and that genuinely matters. It already accepts a falsifier that n
 it also accepts one that could not find its target and said so.
 
 That is the item to put to the panel, and it is worth more than the corrected count.
+
+
+---
+
+# SECOND CORRECTION, same night — the figure is 8. The first correction was ALSO wrong.
+
+**Sequence: 9 asserted → 4 inferred → 8 measured.** The middle step is the one to learn from.
+
+The correction above reduced 9 to a "defensible floor of 4" by **reading the falsifiers statically** and
+sorting them by whether they import their target and whether they open with a precondition assertion. That
+was inference, not measurement, and it was wrong in the cautious direction.
+
+**Running them settles it.** Each of the four "uncertain" findings was executed against a target replaced
+wholesale, with stderr captured:
+
+| finding | what it did against a destroyed target |
+|---|---|
+| exp44 C0007 | `AssertionError: FALSIFIED: _check_monotonicity accepted bool True for numeric HARD threshold…` |
+| exp44 C0008 | `AssertionError: FALSIFIED: load_effective_policy accepted model='../evil_model'…` |
+| exp46 C0023 | `AssertionError: _compute_cid collapses distinct directive contents into the same cid…` |
+| exp47 C0058 | `AssertionError: F016 present: distinct order-sensitive contrast statements were collapsed…` |
+
+Every one printed **FALSIFIED** and raised with **the finding's own message** — its real demonstration, not
+a setup check — against a file sharing nothing with its target. They are genuinely target-independent.
+
+## Final count
+
+| | n |
+|---|---|
+| **genuinely target-independent** | **8** |
+| probe false positive (precondition assertion, exp47 C0010) | 1 |
+| **of 372** | **8, or 2.2%** |
+
+The eight: exp44 C0007, C0008, C0022, C0023, C0078; exp46 C0023; exp47 C0058, C0061.
+
+**The confound stands for these 8.** exp47 C0010 is removed from it.
+
+## What the middle step cost, and why it is recorded
+
+Nothing reached the founder wrongly — both corrections were made in the same session, before the morning.
+But the pattern is worth naming, because it is the *same* pattern in the opposite direction: **the first
+figure was asserted from one instrument without cross-checking; the second was inferred from source text
+without running anything.** Only the third was measured.
+
+The founder's standing rule covers both: the tool output is the evidence, and reasoning selects and
+interprets it but never substitutes for it. Reading four falsifiers and sorting them by shape is reasoning
+substituting for it.
