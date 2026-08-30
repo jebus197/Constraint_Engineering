@@ -62,3 +62,42 @@ What has changed is the **evidence**, not the ruling. The wiring is built and va
 would act on 2 confirmed pairs with 43 unchecked and a terminal, unrecoverable status at the other end. That
 is a decision for the founder awake, and the recommendation is to re-run the adjudication first with the
 targets for exp48/exp49 resolved, so the 43 stop being unknown.
+
+
+## Why the 43 cannot be re-checked, and what it would take — FOR THE FOUNDER
+
+The 43 are **exp48 (27) and exp49 (16)**, and their targets are absent from every map because they are
+absent from the working tree:
+
+```
+/Users/georgejackson/CDSFL_review_targets/exp48_chemistry.md    exists=False
+/Users/georgejackson/CDSFL_review_targets/exp49_engineering.md  exists=False
+```
+
+**This is the security design working, not a defect.** Both were moved out of the repository on
+`eecdb0f`, whose own message records why:
+
+> *"Reviewing panels carry Bash/Read/Grep/Glob — a co-located, name-derivable key made every seeded claim
+> discoverable by a single `ls` (precision 1.0, recall 1.0), defeating three rounds of prose/statistical
+> hardening."*
+
+**They are recoverable.** Verified by listing names only, with no content read:
+
+```
+git ls-tree -r --name-only eecdb0f | grep exp4[89]
+  bench/cdsfl_registry/targets/exp48_chemistry.md
+  bench/cdsfl_registry/targets/exp49_engineering.md
+```
+
+**★ Both `eecdb0f` and `ddd74bd` are reachable from `exp39-experimental` AND FROM NOTHING ELSE.** Confirmed
+again tonight with `git branch -a --contains`. That branch must not be deleted before the encrypted bundle
+is verified — the standing rule, re-verified rather than recited.
+
+**CC1 has not extracted them, and this is deliberate.** These are seeded exam targets: materialising them
+re-creates the exposure `eecdb0f` closed, and exp48 is separately the run excluded for the key read. The
+standing rule permits an unencrypted study copy only *after* an experiment has run, which both have — so it
+is permissible, but it is a decision at the security boundary and it belongs to the founder awake, not to
+CC1 at one in the morning.
+
+If the founder rules yes, the re-check needs no repository change: the targets can be extracted to a
+throwaway root and `probe_pair` pointed at it with `repo_root=`, leaving the tracked tree untouched.
