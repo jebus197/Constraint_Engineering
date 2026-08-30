@@ -136,6 +136,21 @@ def make_shim(model: str = "sonnet", timeout: int = 900):
         # prompt. The prompts already carry their own instructions, so one
         # handler serves every path without the shim second-guessing any of it.
         full = f"{cdsfl_text}\n\n{prompt}" if cdsfl_text else prompt
+        # TOOL-NAME BRIDGE (CC2, second-pass review 2026-08-30). The falsifier
+        # directive instructs "Run it with the execute_python tool first". A
+        # stand-in agent has Bash, not a tool of that name, so an agent taking
+        # the instruction literally could decline to write a falsifier at all --
+        # which is the exact failure this simulation exists to catch.
+        #
+        # Appended in the SIMULATION ONLY. The directive text itself is what the
+        # real paid models read and is left untouched, so this changes the
+        # rehearsal without changing the experiment.
+        if "execute_python" in full:
+            full += ("\n\n[SIMULATION NOTE: you do not have a tool literally named "
+                     "`execute_python`. Where the directive says to run code with it, "
+                     "run the code with Bash (`python3 - <<'PY' ... PY`) instead. The "
+                     "requirement to actually EXECUTE the falsifier before reporting "
+                     "on it is unchanged.]")
         budget = int(wall_clock_limit) if wall_clock_limit and wall_clock_limit > 0 else timeout
         try:
             r = subprocess.run(

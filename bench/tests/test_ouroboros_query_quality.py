@@ -254,7 +254,7 @@ class TestMetadataRetrievalStatus:
     NOT ``shadow_mock``. ``shadow_mock`` indicates the API call failed (no
     arxiv, network error, rate limit) — the exact pre-1E.8 failure mode."""
 
-    @pytest.mark.network
+    @pytest.mark.free_network
     def test_real_arxiv_query_returns_live_status(self):
         """Integration: hit the real arxiv API with the Bayesian query."""
         cell = OuroborosCell(shadow=True)
@@ -269,7 +269,7 @@ class TestMetadataRetrievalStatus:
         m = log.metadata_retrieved[0]
         # The status must be live or live_empty; shadow_mock means fallback.
         # In offline CI without network this may still fall back — the
-        # @pytest.mark.network marker lets CI skip this selectively.
+        # @pytest.mark.free_network marker lets CI skip this selectively.
         assert m["status"] in {"live", "live_empty", "shadow_mock"}
         # If shadow_mock, there must be an error recorded (not silent fail).
         if m["status"] == "shadow_mock":

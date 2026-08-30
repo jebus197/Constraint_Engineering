@@ -617,9 +617,11 @@ class TestRoutingExtractorAcceptsProseFalsifiers:
     """
 
     def test_a_prose_falsifier_is_kept(self, fixture, tmp_path):
-        if "```" in fixture.falsifier(fixture.doc_path):
-            pytest.skip("falsifier carries its own fence; see "
-                        "TestAFalsifierThatCarriesItsOwnFence")
+        # NO LONGER SKIPPED (2026-08-30). A falsifier carrying its own fence
+        # used to be truncated in transport, so this case could not be asserted
+        # here. `_extract_routing_falsifier` now requires the CLOSING fence to
+        # sit alone on its line, so the self-fenced fixtures survive intact and
+        # belong in the ordinary acceptance set like every other fixture.
         copy = _copy_for_edit(fixture, tmp_path)
         source = fixture.falsifier(copy)
         reply = ("I attach the falsifier for this finding.\n\n"
@@ -654,9 +656,11 @@ class TestRoutingExtractorAcceptsProseFalsifiers:
         Ties the acceptance test to the runner's own decision point rather than
         to a string comparison: the block that survived extraction is handed
         straight to reverify_falsifier."""
-        if "```" in fixture.falsifier(fixture.doc_path):
-            pytest.skip("falsifier carries its own fence; see "
-                        "TestAFalsifierThatCarriesItsOwnFence")
+        # NO LONGER SKIPPED (2026-08-30). A falsifier carrying its own fence
+        # used to be truncated in transport, so this case could not be asserted
+        # here. `_extract_routing_falsifier` now requires the CLOSING fence to
+        # sit alone on its line, so the self-fenced fixtures survive intact and
+        # belong in the ordinary acceptance set like every other fixture.
         copy = _copy_for_edit(fixture, tmp_path)
         kept = _extract_routing_falsifier(
             "```python\n" + fixture.falsifier(copy) + "\n```")
@@ -731,36 +735,46 @@ class TestAFalsifierThatCarriesItsOwnFence:
     backticks close the block early — the same failure A4 repaired for the
     sweep prompt, in the other direction.
 
-    What is NOT wrong: the truncated fragment does not fabricate a verdict. It
-    reaches ERROR, which ``reverify_falsifier`` treats as a broken falsifier to
+    What was NOT wrong: the truncated fragment never fabricated a verdict. It
+    reached ERROR, which ``reverify_falsifier`` treats as a broken falsifier to
     re-ask or escalate, never as CONFIRMED.
 
-    What IS wrong: a whole class of prose falsifier — the class needed for any
+    What WAS wrong: a whole class of prose falsifier — the class needed for any
     claim about a fenced listing, which is most claims in a document that prints
-    its own reference implementations — cannot cross the reply channel intact,
-    and the loss is silent. The extractor returns a fragment that parses and
-    carries an ``assert``, so it passes every runnability test and looks like a
-    falsifier. Reported, not repaired: the repair is a transport decision.
+    its own reference implementations — could not cross the reply channel
+    intact, and the loss was silent. The extractor returned a fragment that
+    parsed and carried an ``assert``, so it passed every runnability test and
+    looked like a falsifier.
+
+    REPAIRED 2026-08-30, using the precedent this codebase already held for the
+    opposite direction (``runner_core.py:1050``): the CLOSING fence must sit
+    alone on its line, which distinguishes a real fence from one quoted mid-line
+    inside a string. Both self-fenced fixtures now survive transport
+    byte-for-byte and reach CONFIRMED, and the four cases this class used to
+    excuse from the ordinary acceptance tests are no longer skipped there.
+
+    The tests below are kept and INVERTED rather than deleted: they are the only
+    place that records what the defect was, and they now fail if it returns.
     """
 
     def test_two_of_the_five_falsifiers_carry_a_fence(self):
         assert set(_SELF_FENCED) == {"algorithms", "numerical"}
 
     @pytest.mark.parametrize("key", _SELF_FENCED)
-    def test_the_block_does_not_survive_markdown_transport(self, key,
-                                                           tmp_path):
+    def test_the_block_now_survives_markdown_transport(self, key,
+                                                       tmp_path):
         f = next(x for x in FIXTURES if x.key == key)
         copy = _copy_for_edit(f, tmp_path)
         source = f.falsifier(copy)
         kept = _extract_routing_falsifier("```python\n" + source + "\n```\n")
-        assert kept.strip() != source.strip()
-        assert len(kept) < len(source)
-        # And the loss is silent: the fragment still looks like a falsifier.
-        assert kept.strip() != ""
+        assert kept.strip() == source.strip(), (
+            "the self-fenced falsifier no longer survives transport intact — "
+            "the closing-fence-alone-on-its-line rule has regressed"
+        )
 
     @pytest.mark.parametrize("key", _SELF_FENCED)
-    def test_and_the_fragment_errors_rather_than_confirming(self, key,
-                                                            tmp_path):
+    def test_and_it_now_confirms_rather_than_erroring(self, key,
+                                                      tmp_path):
         """The bound on the damage. A truncated falsifier must never come back
         CONFIRMED — that would confirm a finding from a fragment nobody wrote.
         Measured: ERROR, which is the safe reading."""
@@ -769,8 +783,10 @@ class TestAFalsifierThatCarriesItsOwnFence:
         kept = _extract_routing_falsifier(
             "```python\n" + f.falsifier(copy) + "\n```\n")
         verdict = reverify_falsifier(kept)
-        assert verdict != "CONFIRMED"
-        assert verdict == "ERROR"
+        assert verdict == "CONFIRMED", (
+            f"a self-fenced falsifier that survives transport must now reach "
+            f"the same verdict as the intact source; got {verdict}"
+        )
 
     @pytest.mark.parametrize("key", _SELF_FENCED)
     def test_the_intact_falsifier_would_have_confirmed(self, key, tmp_path):

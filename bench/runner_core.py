@@ -73,12 +73,38 @@ INITIAL_FINGERPRINTS = {
 
 # L = input context window minus 32K reserved for output generation.
 # This is the token budget available for the PROMPT (system + user).
+def _spec_key(label) -> str:
+    """MODEL_SPECS is keyed by VENDOR label. A simulated panellist carries the
+    mandatory ``-SIM`` suffix (founder ruling 2026-08-08), so an exact lookup
+    returns {} and the model silently gets default params and L=inf -- losing
+    its context-budget gate.
+
+    Found by Fable in second-pass review 2026-08-30 as a Bench Run 2 hazard:
+    inert at simulation scale, but any panellist whose label drifts from its
+    MODEL_SPECS key loses the gate without a word. Same class as the vendor-keyed
+    branches that ``base_model_label`` was introduced for.
+    """
+    lab = str(label or "")
+    return lab[:-4] if lab.endswith("-SIM") else lab
+
+
 MODEL_SPECS = {
     "CC2": {"tau": 400.0, "L": 168000.0, "c": 0.015, "L_std": 0.0},
     "ChatGPT": {"tau": 200.0, "L": 96000.0, "c": 0.02, "L_std": 0.0},
     "Gemini": {"tau": 350.0, "L": 968000.0, "c": 0.01, "L_std": 0.0},
     "DeepSeek": {"tau": 200.0, "L": 99000.0, "c": 0.01, "L_std": 0.0},
     "Codex": {"tau": 600.0, "L": 96000.0, "c": 0.02, "L_std": 10000.0},
+    # INHERITED FROM CC2, NOT MEASURED. Fable is the sixth panel member and has
+    # never had an entry, so every lookup returned {} and it silently ran with
+    # default params and L=inf -- no context-budget gate at all (Fable, 2026-08-30).
+    #
+    # These are CC2's values because Fable is the same vendor family, and they
+    # are marked here rather than presented as measurement: nobody has profiled
+    # Fable's tau, L or c. An inherited default that is STATED is safe; an empty
+    # dict that silently disables a gate is not. Replace with measured values
+    # when they exist.
+    "Fable": {"tau": 400.0, "L": 168000.0, "c": 0.015, "L_std": 0.0,
+              "_provenance": "inherited from CC2 2026-08-30; not measured"},
 }
 
 # Models excluded from convergence calculations (e.g. always decomposed,
@@ -183,7 +209,7 @@ def build_model_specs(exp_config: ExperimentConfig) -> List[ModelSpec]:
         fp = INITIAL_FINGERPRINTS.get(
             mc.label, CapabilityFingerprint(0.2, 0.7, 0.7, 0.5)
         )
-        params = MODEL_SPECS.get(mc.label, {})
+        params = MODEL_SPECS.get(_spec_key(mc.label), {})
         specs.append(ModelSpec(
             model_id=mc.label,
             fingerprint=fp,
@@ -1234,7 +1260,7 @@ def dispatch_to_model(
     # Pre-dispatch context validation — hard gate against model L budget
     estimated_chars = len(prompt) + len(cdsfl_text)
     estimated_tokens = estimated_chars / 3.5  # conservative chars-per-token
-    model_L = MODEL_SPECS.get(model_config.label, {}).get("L", float("inf"))
+    model_L = MODEL_SPECS.get(_spec_key(model_config.label), {}).get("L", float("inf"))
     if estimated_tokens > model_L:
         raise ValueError(
             f"{model_config.label}: estimated {estimated_tokens:,.0f} tokens "

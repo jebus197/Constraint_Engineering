@@ -99,6 +99,44 @@ def run(tag, model_id):
                 carried["tracked_diff_bytes"] = len(_d.stdout)
             _u = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"],
                                 cwd=str(REPO), capture_output=True, text=True, timeout=120)
+            # IGNORED-BUT-LOAD-BEARING FILES ALSO TRAVEL (Fable, second-pass
+            # review 2026-08-30, its own first action item).
+            #
+            # `git status` never lists ignored files, so the carry fixed earlier
+            # today was still incomplete one layer down: tests that depend on
+            # gitignored artefacts (e.g. bench/logs/**/RESPONSE_MODEL_INDEX.json,
+            # 692 bytes) failed inside a reviewer's copy and passed here. Both
+            # reviewers correctly diagnosed it as sandbox noise -- but a reviewer
+            # who has learned to discount failures is a reviewer who will
+            # discount a real one. This is the direct successor to the
+            # worktree-HEAD bug: the same class, one layer deeper.
+            #
+            # SIZE-CAPPED, and the cap is stated. bench/logs alone is 405 MB;
+            # carrying everything would make each dispatch unusable. Measured
+            # 2026-08-30: 622 ignored files are under 1 MB, totalling 18.7 MB.
+            _ig = subprocess.run(
+                ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
+                cwd=str(REPO), capture_output=True, text=True, timeout=180)
+            _carried_ig, _skipped_ig = 0, 0
+            for _rel in (_ig.stdout or "").splitlines():
+                _rel = _rel.strip()
+                if not _rel:
+                    continue
+                _src = REPO / _rel
+                try:
+                    if not _src.is_file():
+                        continue
+                    if _src.stat().st_size > 1_000_000:
+                        _skipped_ig += 1
+                        continue
+                    _dst = pathlib.Path(wt) / _rel
+                    _dst.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(_src, _dst)
+                    _carried_ig += 1
+                except OSError:
+                    _skipped_ig += 1
+            carried["ignored_files"] = _carried_ig
+            carried["ignored_skipped_over_1mb"] = _skipped_ig
             for _rel in (_u.stdout or "").split():
                 _src = REPO / _rel
                 if not _src.is_file() or _src.stat().st_size > 2_000_000:
@@ -110,7 +148,9 @@ def run(tag, model_id):
                 carried["untracked_files"] += 1
             print(f"  [{tag}] carried uncommitted work into the sandbox: "
                   f"{carried['tracked_diff_bytes']:,} diff bytes, "
-                  f"{carried['untracked_files']} untracked file(s)"
+                  f"{carried['untracked_files']} untracked file(s), "
+                  f"{carried.get('ignored_files', 0)} ignored file(s) "
+                  f"({carried.get('ignored_skipped_over_1mb', 0)} over the 1 MB cap)"
                   + (f", SKIPPED {len(carried['skipped'])}" if carried["skipped"] else ""),
                   flush=True)
         except Exception as _ce:                              # noqa: BLE001

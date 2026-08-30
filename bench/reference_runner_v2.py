@@ -135,6 +135,7 @@ import ast
 import json
 import math
 import os
+import pathlib
 import py_compile
 import re
 import shlex
@@ -333,6 +334,56 @@ def fix_efficacy_decision(entry: dict, calls_this_round: int,
     return "PROBE" if calls_this_round < limit else "SKIP"
 
 
+def repo_relative_target(target: str, repo_root=None) -> str:
+    """Normalise a target path to repo-relative, ONCE, at ingestion.
+
+    THE DEFECT (CC2, panel review 2026-08-30, ranked 5th). `cfg.test_article`
+    was consumed RAW at eight sites and normalised at only one, so an absolute
+    value diverged depending on which site read it. Concretely,
+    `_build_discrimination_overlay` raises "target must be repo-relative" on an
+    absolute path, so passing one silently disabled the discrimination control
+    while every other consumer carried on working -- the failure showed up as a
+    control that never fired, not as an error.
+
+    Normalising here means no downstream site can diverge, whatever a caller
+    passes.
+    """
+    root = pathlib.Path(repo_root or REPO_ROOT).resolve()
+    t = str(target or "").strip()
+    if not t:
+        return t
+    p = pathlib.Path(t)
+    if not p.is_absolute():
+        return t
+    try:
+        return str(p.resolve().relative_to(root))
+    except ValueError:
+        raise ValueError(
+            f"target {t!r} is outside the repository root {root} — a run cannot "
+            f"be attributed to a target it does not contain"
+        ) from None
+
+
+def _declare_truncation(text: str, limit: int) -> str:
+    """Truncate, and SAY SO in the text the model reads.
+
+    THE DEFECT (Fable, second-pass review 2026-08-30, listed as a Bench Run 2
+    hazard). ``_verification_step`` sliced the target to 80,000 chars with no
+    declaration, unlike the sweep prompt (60k, declared) and the routing prompt
+    (declared). At exp45 scale (20.6 KB) it is unreachable; on a large external
+    target CC2v would verify findings against a PREFIX while reporting a full
+    verification -- a false negative that looks like a clean pass.
+    """
+    text = text or ""
+    if len(text) <= limit:
+        return text
+    return (text[:limit]
+            + f"\n\n[TRUNCATED: this target is {len(text):,} characters and you "
+              f"have been shown the first {limit:,}. Any finding whose location "
+              f"lies beyond that point CANNOT be verified from this excerpt — "
+              f"say so rather than reporting it unverified.]\n")
+
+
 def base_model_label(label: str) -> str:
     """Vendor base of a panel label. ``CC2-SIM`` -> ``CC2``.
 
@@ -489,6 +540,23 @@ DIRECTIVE_FACTOR_FIELDS: Dict[str, Tuple[str, str]] = {
 # pattern) so _dispatch_single_model need not have cfg threaded into it.
 # Empty tuple => every factor's directive text ships, i.e. legacy behaviour.
 _DIRECTIVE_OMISSION: Dict[str, Any] = {"factors": ()}
+
+# Module mirror of `RunnerConfig.discrimination_control_ask`, same pattern and
+# same reason as _DIRECTIVE_OMISSION above.
+#
+# THE DEFECT THIS CLOSES, DIAGNOSED IN THIS PROJECT'S OWN RECORD ON 2026-08-21
+# AND UNFIXED UNTIL NOW: `discrimination_control_ask` was defined on
+# RunnerConfig and read by NOTHING -- 1 write, 0 reads -- so setting it in a
+# config was a placebo. `_gate_falsifier_directive` takes `ask_corrected_copy`
+# and its single caller passed nothing, so THE MAIN PANEL WAS NEVER ASKED for a
+# corrected copy. Only the routing prompt and the residual sweep asked.
+#
+# That is why the discrimination control has never fired in the project's life.
+# It needs a falsifier AND a corrected copy on the same finding, and CC2
+# measured the consequence on 2026-08-30: across the real exp45 and the
+# simulated run, entries carrying BOTH are 0 of 58, Wilson CI [0.0000, 0.0621].
+# The control was not idle and not broken -- it had never been fed.
+_ASK_CORRECTED_COPY: Dict[str, Any] = {"on": False}
 
 
 def _directive_factor_state(cfg: "RunnerConfig", factor: str) -> Tuple[bool, bool]:
@@ -4434,7 +4502,20 @@ def _extract_routing_falsifier(text: str) -> str:
     """
     import ast as _ast
     import re as _re
-    blocks = _re.findall(r"```[^\n]*\n(.*?)```", text or "", _re.S)
+    # THE CLOSING FENCE MUST SIT ALONE ON ITS LINE (2026-08-30, CC2 ranked this
+    # 4th and named the in-tree precedent: runner_core.py:1050).
+    #
+    # THE DEFECT: the old pattern let ``` close a block ANYWHERE, including
+    # mid-line inside a string literal. A falsifier whose own source quotes a
+    # fenced listing -- which is the ONLY shape available for a claim about a
+    # document that prints code -- was truncated at its first inner backtick.
+    # The fragment still parsed and still carried an assert, so it passed every
+    # runnability check and looked like a falsifier. Measured in
+    # test_prose_acceptance_stem: 2 of the 5 prose fixtures, and the selection
+    # pressure ran the wrong way -- a falsifier that correctly opens and parses
+    # its target was destroyed while one pasting an inline copy survived.
+    blocks = _re.findall(r"```[^\n]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
+                         text or "", _re.S)
     cand = []
     for raw in blocks:
         block = raw.strip()
@@ -4673,6 +4754,14 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
     if any(tally.values()):
         _log(f"  routing: {tally['resolved']} resolved by strong writer, "
              f"{tally['dup']} dedup'd, {tally['hil']} -> HIL")
+    # PERSISTED, not just logged (CC2, panel review 2026-08-30, ranked 7th).
+    # `_routing_attempts` is the ONLY record of whether a rung actually reached
+    # a model, and it died with this function. That is why "0 resolved by strong
+    # writer" was indistinguishable from a dead transport for four rounds: the
+    # log said what happened, and nothing said WHY.
+    return {"round": round_idx, "tally": dict(tally),
+            "rungs_reached": list(_routing_attempts),
+            "rungs_reached_count": len(_routing_attempts)}
 
 
 _SWEEP_SYSTEM = (
@@ -6804,7 +6893,12 @@ def _dispatch_single_model(
     # I1 fix (gate-aware): when the falsifier gate is on, redefine §2 FALSIFICATION
     # from prose to a runnable falsifier (the 14-HIL fix). Gate-off => unchanged.
     if enable_tools:
-        model_cdsfl = _gate_falsifier_directive(model_cdsfl)
+        # The flag is resolved FIRST so the assignment and its read share a
+        # line: test_omission_precedes_every_use_of_the_prompt asserts that the
+        # only pre-omission reads of `model_cdsfl` are assembly steps, and a
+        # multi-line call puts the read on a different line from the assignment.
+        _ask_cc = bool(_ASK_CORRECTED_COPY.get("on"))
+        model_cdsfl = _gate_falsifier_directive(model_cdsfl, _ask_cc)
     # Exp 52 factorial: directive-section selection. Applied LAST, to the fully
     # assembled prompt (composer phenotype + operational directive + any gate
     # rewrite), so it has the final say on what text reaches the model and so a
@@ -7726,7 +7820,8 @@ def _verification_step(
         for cid, entry in batch
     )
     prompt = _VERIFICATION_PROMPT_TEMPLATE.format(
-        source_code=source_code[:80_000], findings_block=findings_block,
+        source_code=_declare_truncation(source_code, 80_000),
+        findings_block=findings_block,
     )
 
     cc2_config = None
@@ -9554,6 +9649,12 @@ def run_experiment(
     _log(f"  Pattern: {cfg.pattern}")
     _log(f"  Max rounds: {cfg.max_rounds} (extension to {cfg.extension_cap})")
     _log(f"  Convergence: state-based, earliest R{cfg.earliest_stop_round}")
+    # NORMALISED ONCE, HERE, before any consumer reads it. Eight sites consume
+    # cfg.test_article raw; only one normalised. See repo_relative_target.
+    cfg.test_article = repo_relative_target(cfg.test_article)
+    # Wire the ask (see _ASK_CORRECTED_COPY). Without this the discrimination
+    # control cannot receive its second input from the main panel.
+    _ASK_CORRECTED_COPY["on"] = bool(getattr(cfg, "discrimination_control_ask", False))
     _log(f"  Target: {cfg.test_article}")
     _log(f"  Context: {cfg.context_files}")
     _log(f"  Models: {sorted(baseline)}")
@@ -10542,7 +10643,7 @@ def run_experiment(
                                  ledger=survival_ledger)
         # Capability-aware routing (gated, default-off): route the criticals
         # the gate escalated to HIL to a stronger writer before accepting the HIL.
-        _apply_routing(registry, round_idx, exp_config, cfg=cfg,
+        _routing_telemetry = _apply_routing(registry, round_idx, exp_config, cfg=cfg,
                        repo_root=str(REPO_ROOT))
         registry.auto_resolve_contested(round_idx)
 
@@ -11334,6 +11435,10 @@ def run_experiment(
             "shadow_cells": shadow_cell_data,
             "cross_model_diversity": cross_model_diversity,
             "recidivism_hits": recidivism_hits,
+            # Whether a routing rung actually REACHED a model, per round. Without
+            # it, "0 resolved by strong writer" reads identically whether the
+            # panel was weak or the transport was dead (CC2, 2026-08-30).
+            "routing": locals().get("_routing_telemetry"),
         }
         result["rounds"].append(round_data)
 

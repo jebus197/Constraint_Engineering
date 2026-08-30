@@ -157,7 +157,23 @@ def main() -> int:
         stall_gamma_advisory=1.01,
         earliest_stop_round=3,
         merge_arbitration_enabled=True,
-        post_convergence_sweep_rounds=0,
+        # DELIBERATE SIMULATION-ONLY DIVERGENCES, so that machinery the real
+        # exp45 never reaches is still stress-tested. Each is stated rather
+        # than silently inherited:
+        #
+        #  verification_min_round  exp45 uses 6 and rounds are 0-based, so a run
+        #                          converging at 3 NEVER fires the verification
+        #                          stage -- true of the real exp45 too. Lowered
+        #                          here so the stage is exercised at all.
+        #  post_convergence_sweep  0 in the earlier sim, which left one of the
+        #                          dispatch paths permanently dark.
+        #  discrimination_control_ask  wired 2026-08-30 and enabled here: the
+        #                          main panel has NEVER been asked for a
+        #                          corrected copy, which is why the control has
+        #                          0 of 58 entries carrying both its inputs.
+        verification_min_round=2,
+        post_convergence_sweep_rounds=1,
+        discrimination_control_ask=True,
         extension_cap=args.rounds,
         # Set so S_k's e2_regression is a reading rather than a null. Measured
         # 2026-08-30: e2_regression was None on all 19 entries because no test
@@ -183,6 +199,25 @@ def main() -> int:
     print(f"    logs    {logs}", flush=True)
     print(f"    started {datetime.now().strftime('%H:%M:%S')}", flush=True)
 
+    # PAID-DISPATCH TRIPWIRE (CC2, panel review 2026-08-30, ranked 7th).
+    # If the shim ever fails to install, or a path is added that bypasses the
+    # seam, this run would dispatch to REAL models and bill for it. The whole
+    # point of a simulated run is that it cannot. So the harness refuses at the
+    # transport layer rather than trusting the seam.
+    import socket as _sock
+    _PAID = ("openrouter.ai", "api.openai.com", "api.anthropic.com",
+             "api.deepseek.com", "generativelanguage.googleapis.com")
+    _orig_gai = _sock.getaddrinfo
+
+    def _no_paid(host, port, *a, **kw):
+        h = str(host).lower().rstrip(".")
+        if any(h == d or h.endswith("." + d) for d in _PAID):
+            raise RuntimeError(
+                f"SIMULATED RUN ATTEMPTED A PAID DISPATCH to {h}. The seam has "
+                f"a hole. Refusing rather than billing.")
+        return _orig_gai(host, port, *a, **kw)
+
+    _sock.getaddrinfo = _no_paid
     original = SHIM.install(timeout=args.timeout)
     t0 = time.monotonic()
     try:

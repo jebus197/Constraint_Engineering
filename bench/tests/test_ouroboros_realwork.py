@@ -40,7 +40,7 @@ def test_bad_scheme_download_never_raises():
     assert out["error"] == "bad-scheme" and out["chars"] == 0
 
 
-@pytest.mark.network
+@pytest.mark.free_network
 def test_real_paper_fetched_read_and_briefed():
     """Network: fetch a stable fully-OA arXiv paper, parse its PDF, brief it."""
     c = OuroborosCell(shadow=True, reader_backend="none", enable_fulltext=True)
@@ -68,7 +68,7 @@ def test_real_paper_fetched_read_and_briefed():
     assert b["brief"]                         # a real brief exists
 
 
-@pytest.mark.network
+@pytest.mark.free_network
 def test_shadow_log_captures_briefs():
     """Network: the shadow log serialises real briefs for post-hoc study, and the
     candidate description is a real brief (never the old placeholder string)."""

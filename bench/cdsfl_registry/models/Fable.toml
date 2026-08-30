@@ -1,0 +1,24 @@
+# CDSFL Registry — Layer 4: Claude Fable 5
+# Model-specific tuning for the sixth panel member.
+#
+# PROVENANCE, 2026-08-30: these values are INHERITED FROM opus_4_6, not measured.
+# Fable is the same vendor family. Nobody has profiled its timeout tolerance or
+# reasoning-effort response, and this file says so rather than presenting the
+# numbers as findings.
+#
+# WHY IT EXISTS AT ALL. Fable had no entry, so `_compose_for_model` raised
+# FileNotFoundError, the caller fell back to `cdsfl_text`, and the harness
+# supplied "" — so one panellist of six ran on an EMPTY system prompt, silently.
+# CC2 measured the split on 2026-08-30: CC2/Gemini/ChatGPT composed 6,787 chars,
+# DeepSeek/Codex 3,731, Fable 0. The fallback is loud now; this makes it
+# unnecessary. Replace with measured values when they exist.
+
+[model]
+name = "claude-fable-5"
+alias = "fable"
+timeout = 180
+reasoning_effort = "xhigh"
+
+[protocol]
+# Same vendor family as opus: structured output is handled natively.
+structured_output_native = true

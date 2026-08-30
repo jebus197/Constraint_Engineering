@@ -200,13 +200,79 @@ _orig = {
 }
 
 
+#: Endpoints that COST MONEY. This is the guard's real subject and it is
+#: untouched by anything below.
+#:
+#: Founder ruling 2026-08-30: "the internet here is always enabled... ouroboros
+#: outreach clearly only needs to cost money during a real experimental run.
+#: Testing it here, or before an experimental run, clearly needs to cost nothing
+#: more than my Max subscription."
+#:
+#: So the free window is a PAID DENY-LIST, not a free ALLOW-LIST. An allow-list
+#: was tried first and was the wrong shape: literature retrieval follows a DOI
+#: to whichever publisher happens to host the paper (measured: www.mdpi.com),
+#: so the set of hosts it legitimately needs cannot be enumerated in advance.
+#: Enumerating it would have produced a guard that passes by denying the very
+#: fetch the test exists to exercise -- which is how these 3 tests spent 49 days
+#: "passing" without ever running.
+_PAID_HOSTS = frozenset({
+    "openrouter.ai", "api.openai.com", "api.anthropic.com",
+    "api.deepseek.com", "generativelanguage.googleapis.com",
+    "api.groq.com", "api.mistral.ai", "api.cohere.ai",
+})
+#: Metered model CLIs. `claude` is DELIBERATELY absent: it runs on the Max
+#: subscription, which the ruling above names as the permitted cost floor.
+_PAID_BINARIES = frozenset({"codex", "gemini", "chatgpt", "llm"})
+
+#: Open ONLY while a `free_network`-marked test is executing.
+_free_window = False
+#: IPs resolved during the window, so a follow-up connect() -- which sees an IP,
+#: not a name -- is matched to the name that was checked.
+_free_ips: set = set()
+
+
+def _free_allowed(host) -> bool:
+    """True inside a free_network test for any host that is not PAID.
+
+    The money guard is unchanged: a paid endpoint is denied here exactly as it
+    is outside the window.
+    """
+    if not _free_window:
+        return False
+    h = str(host).lower().rstrip(".").strip("'\"")
+    if h.startswith("b'") or h.startswith('b"'):     # bytes hostname repr
+        h = h[2:].rstrip("'\"")
+    if h in _free_ips:
+        return True
+    return not any(h == d or h.endswith("." + d) for d in _PAID_HOSTS)
+
+
+def set_free_window(on: bool) -> None:
+    global _free_window
+    _free_window = bool(on)
+    if not on:
+        _free_ips.clear()
+
+
 def _guard_getaddrinfo(host, port, *a, **kw):
+    if _free_allowed(host):
+        res = _orig["getaddrinfo"](host, port, *a, **kw)
+        for entry in res:                       # remember the resolved IPs
+            try:
+                _free_ips.add(str(entry[4][0]).lower())
+            except Exception:                   # noqa: BLE001
+                pass
+        return res
     if _is_loopback(host):
         return _orig["getaddrinfo"](host, port, *a, **kw)
     _deny("dns", str(host), f"getaddrinfo({host!r}, {port!r})")
 
 
 def _guard_gethostbyname(host):
+    if _free_allowed(host):
+        ip = _orig["gethostbyname"](host)
+        _free_ips.add(str(ip).lower())
+        return ip
     if _is_loopback(host):
         return _orig["gethostbyname"](host)
     _deny("dns", str(host), f"gethostbyname({host!r})")
@@ -214,6 +280,8 @@ def _guard_gethostbyname(host):
 
 def _guard_create_connection(address, *a, **kw):
     host = address[0] if isinstance(address, (tuple, list)) else address
+    if _free_allowed(host):
+        return _orig["create_connection"](address, *a, **kw)
     if _is_loopback(host):
         return _orig["create_connection"](address, *a, **kw)
     _deny("tcp", str(host), f"create_connection({address!r})")
@@ -222,7 +290,7 @@ def _guard_create_connection(address, *a, **kw):
 def _guard_connect(self, address):
     if self.family in (socket.AF_INET, socket.AF_INET6):
         host = address[0] if isinstance(address, (tuple, list)) else address
-        if not _is_loopback(host):
+        if not _is_loopback(host) and not _free_allowed(host):
             _deny("tcp", str(host), f"socket.connect({address!r})")
     return _orig["connect"](self, address)
 
@@ -230,7 +298,7 @@ def _guard_connect(self, address):
 def _guard_connect_ex(self, address):
     if self.family in (socket.AF_INET, socket.AF_INET6):
         host = address[0] if isinstance(address, (tuple, list)) else address
-        if not _is_loopback(host):
+        if not _is_loopback(host) and not _free_allowed(host):
             _deny("tcp", str(host), f"socket.connect_ex({address!r})")
     return _orig["connect_ex"](self, address)
 
@@ -239,6 +307,10 @@ def _guard_popen_init(self, args, *a, **kw):
     argv = [str(x) for x in args] if isinstance(args, (list, tuple)) else [str(args)]
     exe = os.path.basename(argv[0]) if argv else "<empty>"
     joined = " ".join(argv)
+    if _free_window and exe not in _PAID_BINARIES:
+        # Inside a free_network test, a Max-plan CLI and a plain fetch are the
+        # permitted cost floor. Metered CLIs stay denied.
+        return _orig["popen_init"](self, args, *a, **kw)
     if exe in _NETWORK_BINARIES or "http://" in joined or "https://" in joined:
         _deny("subprocess", exe, joined)
     return _orig["popen_init"](self, args, *a, **kw)
@@ -289,6 +361,13 @@ def pytest_configure(config):
         "--netguard-strict (it is still denied unless "
         "CDSFL_ALLOW_LIVE_DISPATCH=1).",
     )
+    config.addinivalue_line(
+        "markers",
+        "free_network: reaches only FREE external services (arXiv, Semantic "
+        "Scholar, OpenAlex, Unpaywall, doi.org). No API key, no metered call, "
+        "no paid model. Runs by default; the guard opens a host allow-list for "
+        "the duration of the test only.",
+    )
     if not _LIVE:
         install_netguard()
 
@@ -315,6 +394,10 @@ def pytest_collection_modifyitems(config, items):
                f"set {OPT_IN_ENV}=1 to run network tests"
     )
     for item in items:
+        # `free_network` is NOT gated: it reaches only _FREE_HOSTS, which cost
+        # nothing. `network` still means "this may cost money" and stays gated.
+        if item.get_closest_marker("free_network"):
+            continue
         if item.get_closest_marker("network") and not item.get_closest_marker(
             "allow_outbound"
         ):
@@ -329,8 +412,14 @@ def pytest_unconfigure(config):
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_protocol(item, nextitem):
     _state.current_nodeid = item.nodeid
-    yield
-    _state.current_nodeid = None
+    # The free-host window is open ONLY for the duration of a test that
+    # declares `free_network`, and closes in every exit path below.
+    set_free_window(item.get_closest_marker("free_network") is not None)
+    try:
+        yield
+    finally:
+        set_free_window(False)
+        _state.current_nodeid = None
 
 
 def _is_known_outbound(nodeid: str) -> bool:
