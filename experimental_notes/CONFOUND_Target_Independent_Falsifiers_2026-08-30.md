@@ -151,7 +151,7 @@ a setup check — against a file sharing nothing with its target. They are genui
 |---|---|
 | **genuinely target-independent** | **8** |
 | probe false positive (precondition assertion, exp47 C0010) | 1 |
-| **of 372** | **8, or 2.2%** |
+| **of 372** | **8, or 2.2%**, 95% Wilson CI **[1.1%, 4.2%]** |
 
 The eight: exp44 C0007, C0008, C0022, C0023, C0078; exp46 C0023; exp47 C0058, C0061.
 

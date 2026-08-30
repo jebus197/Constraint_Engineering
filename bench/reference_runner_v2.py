@@ -261,6 +261,11 @@ MODEL_ROSTER = {
 # re-attempting the same finding repeatedly).
 BUGZILLA_PER_ROUND_LIMIT = 5
 
+#: Fix-efficacy probes per round. The probe costs one overlay build plus up to
+#: three falsifier runs; measured at 0.255 s per probe over 313 archived
+#: findings, so five is about 1.3 s per round.
+FIX_EFFICACY_PER_ROUND_LIMIT = 5
+
 # Operational directive — R_k(i) self-assessment equation and working protocol.
 # Appended AFTER composer phenotype transforms to bypass char caps. Models MUST
 # compute R_k on their own output (§3, §6). Without this directive, models
@@ -2347,6 +2352,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     # per round) so the per-round cap is enforced independently of any
     # caller-side state.
     _bugzilla_attempts_this_call = 0
+    _fix_efficacy_this_call = 0
 
     # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
     # Derived fresh each call — not sticky. Requires review activity.
@@ -2627,6 +2633,48 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                         f"{canonical_id}: "
                         f"{type(_bz_exc).__name__}: {str(_bz_exc)[:160]}"
                     )
+
+            # ── FIX-EFFICACY PROBE ─────────────────────────────────────────
+            # Does this finding's fix cure the defect its OWN falsifier
+            # demonstrates? Nothing else asks that. `run_verification` next door
+            # runs ruff, mypy, bandit and the experiment's generic test_cmd --
+            # "did this fix break anything" -- and never "does this fix cure the
+            # defect this finding claims". Measured 2026-08-30 over 313 archived
+            # findings: 126 of 246 verdicts are that the fix does NOT cure it.
+            #
+            # CONTRIBUTORY, NEVER A VETO, per the rho ruling of 2026-08-29. It
+            # writes ONE key and no status. `_evaluate_gate_conditions` and
+            # `_check_gamma_alt_convergence` must never mention it, and a test
+            # reads their source and fails if either does.
+            #
+            # The four INDETERMINATE outcomes are recorded and NEVER shown to a
+            # model: "the instrument could not look" is a statement about the
+            # apparatus, and telling a model that invites it to rewrite a fix
+            # nothing found fault with.
+            if (entry.get("proposed_fix") and entry.get("falsifier_code")
+                    and not entry.get("fix_efficacy_attempted")
+                    and _fix_efficacy_this_call < FIX_EFFICACY_PER_ROUND_LIMIT):
+                entry["fix_efficacy_attempted"] = True
+                _fix_efficacy_this_call += 1
+                try:
+                    _fe_target = (entry.get("target_file")
+                                  or (cfg.test_article if cfg else None))
+                    if _fe_target:
+                        from fix_efficacy import probe as _fe_probe
+                        _fe_rel = str(_fe_target)
+                        if _fe_rel.startswith(str(REPO_ROOT)):
+                            _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
+                        if (REPO_ROOT / _fe_rel).is_file():
+                            _fe = _fe_probe(
+                                {"falsifier_code": entry.get("falsifier_code") or "",
+                                 "proposed_fix": entry.get("proposed_fix") or ""},
+                                _fe_rel, repo_root=REPO_ROOT, timeout=20)
+                            entry["fix_efficacy"] = {
+                                "outcome": _fe.outcome, "detail": _fe.detail[:300]}
+                            _log(f"  fix-efficacy {canonical_id}: {_fe.outcome}")
+                except Exception as _fe_exc:                  # noqa: BLE001
+                    _log(f"  fix-efficacy probe error for {canonical_id}: "
+                         f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
 
         if (entry["status"] in ("CONFIRMED", "CORROBORATED")
                 and entry.get("verified")):
@@ -8887,6 +8935,22 @@ def _rejection_lines(entry: dict) -> list:
             "FIX NOT SCORED: fix-admission is undefined on this target, so a "
             "fix cannot close this finding. Attach a runnable falsifier "
             "instead — that is what settles it here.")
+    # The fix-efficacy probe's one model-facing line. FIX_INEFFECTIVE ONLY.
+    #
+    # The four INDETERMINATE outcomes are deliberately silent. "The instrument
+    # could not look" is a statement about the apparatus, and telling a model
+    # that invites it to rewrite a fix nothing found fault with -- the
+    # cannot-verify-becomes-verified inversion, pointed the other way.
+    _fe = entry.get("fix_efficacy") or {}
+    if _fe.get("outcome") == "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER":
+        out.append(
+            "YOUR FIX DOES NOT CURE YOUR OWN FALSIFIER. It was applied to a "
+            "disposable copy of the target and your own test was re-run against "
+            "it; the test still demonstrates the defect. Either the fix is "
+            "incomplete, or the test does not test what the finding claims. Send "
+            "a fix that makes your own test go quiet, or a test that actually "
+            "exercises the defect you are describing.")
+
     v = entry.get("falsifier_verdict")
     if v == "ERROR":
         out.append(

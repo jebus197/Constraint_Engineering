@@ -1,4 +1,4 @@
-# Half the proposed fixes in the archive do not silence their own test
+# About half the proposed fixes in the archive do not silence their own test
 
 **2026-08-30.** First run of `scripts/fix_efficacy_sweep.py`, using the overlay probe in
 `bench/fix_efficacy.py`. This is the measurement the founder asked for when they asked why the reducible
@@ -12,7 +12,9 @@ still exists. **246 produced a verdict.** The other 67 were equipment and are br
 | outcome | n | share of verdicts |
 |---|---|---|
 | the fix **cures** the defect its own falsifier demonstrates | **120** | 49% |
-| the fix **does not cure** it | **126** | **51%** |
+| the fix **does not cure** it | **126** | **51.2%**, 95% Wilson CI **[45.0%, 57.4%]** |
+
+**The interval spans 50%.** "More than half" is NOT supported; "about half" is. Computed 2026-08-30 with `statsmodels`, after the founder observed that the `sy` directive was going unhonoured — measured at **3 genuine STEM-tool uses in 226 tool calls** on the night this figure was produced. One invocation falsified the headline wording.
 
 By run: exp42 79 of 165, exp43 9 of 33, exp44 11 of 47, exp45 1 of 13, exp46 7 of 14, exp47 19 of 41. The
 rate varies from 8% to 50% across runs, so it is not an artefact of one target.
