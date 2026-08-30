@@ -142,13 +142,56 @@ The six places I made you guess. All answered plainly in a note called Six Thing
 Your briefing criticism. You said I ask the panel to find problems and never to propose fixes. I checked all three briefs before accepting it: zero of three asked for a repair. You were exactly right. The new brief asks for the fix and for the reviewer's confidence in it.
 
 
+## The Panel Reported, And It Found The Most Important Thing Of The Night
+
+Fable came back after 29 minutes with a substantial review. The other reviewer hit its 40 minute limit and is on its final retry as I write, so what follows is one reviewer, not two, and I will add the second if it lands.
+
+On the canaries you were right and so was the design. Fable's judgement is that your correction invalidates what the module said it was for, not what it actually measures. Detection capacity is exactly what separates a panel that has genuinely run out of things to find from one that has stopped reading, because both look identical to the gate. It rewrote the module's stated purpose, added a contributory layer that reports three states rather than a yes or no, and built it so that it structurally cannot block anything, with a test asserting that no result it produces carries a field a gate could act on.
+
+It also caught a hard constraint I had missed entirely and that you would have caught: a canary must never be planted in the live document or mid run, because that changes what the other measures are measuring and destroys comparability between rounds. It has to be a separate one off probe, run when the gate first says converged, against a copy with no history.
+
+Its recommendation is keep, not retire, with a named condition for retiring it later: run one probe in Bench Run 2 and measure whether it actually separates the two states. If it does not, retire it then, with data, rather than now without.
+
+Then it attacked my repair proposal and landed three hits, one of which is the most important finding of the night.
+
+The first two I had already found myself during the evening, which is reassuring rather than otherwise: the offline tool I cited as precedent does not use a safe copy, it edits the live document, and a plain copy elsewhere is invisible to most tests because they load their target as a module.
+
+The third is new and it matters a great deal.
+
+Since the 23rd of August there has been a step that builds the control's "corrected" version of the document from the finding's own proposed fix. It is allowed to skip an ownership check, and the code says why, in these words: a finding's own proposed fix corrects this claim by construction.
+
+Tonight I measured that assumption. It is false about half the time. 126 of 246.
+
+So when the fix is the broken half, the control looks at a document that was never actually corrected, sees the test still firing, and concludes the test is defective. It then stamps the test as non discriminating, marks it a mechanical fault, escalates it to you, and un-confirms a finding that was demonstrated. Three false statements about a working instrument attached to a real defect. And the un-confirm is not behind the safety switch you might expect; that switch guards a different place.
+
+The comment above that code names this exact harm, minting a false fault against a sound instrument, and then rules it out using the premise that measurement refutes.
+
+Now the part that matters for how alarmed to be, which I checked myself and the reviewer did not report. It has never happened. Across every archived run, that stamp appears zero times. The step was wired on the 23rd of August and the only runs since are two that halted at round zero. So no past result is contaminated and nothing needs re-scoring.
+
+But Bench Run 2 is its first real exposure, and at a measured one in two rate for the triggering condition it would not be a rare event. This misattribution is what I would want settled before that run starts.
+
+Fable built a repair for it in its sandbox, which is thrown away by design, so the code did not survive but the design did and I have written it down. I have not applied it. It supersedes an assumption from August, it changes what a verdict means, and the reviewer itself lists three things it says need your ruling, including that the remaining ambiguity now fails in the opposite direction. That is a decision, not a repair.
+
+On the smaller question of tests that break in the final round, it measured the actual population rather than arguing: zero to two on every healthy run, and the large counts are all from an old parsing era or from a defect already fixed. Its recommendation is not to build anything, and to switch on the existing routing mechanism instead if a real run ever shows more. I think that is right and it is the kind of scope discipline I have not always shown.
+
+
 ## What Remains For You
 
 The key files are still in plain text and still need your passphrase.
 
-The push, which you ruled goes last. It is 116 commits spanning a week, not one night, so it deserves you awake.
+The push, which you ruled goes last. It is now over 140 commits spanning a week, not one night, so it deserves you awake.
 
-And two decisions when you are ready: whether to switch merging on, and whether the fix check should feed the model facing channel automatically or stay a measurement.
+Four decisions, in the order I would take them.
+
+First and most urgent, the misattribution described above, because Bench Run 2 is when it stops being theoretical. The design for the repair is written down and waiting.
+
+Second, whether to switch merging on. I would not yet. Of the 23 pairs originally judged the same defect, only 5 could be re-checked with the repairs in place: 2 survive and 3 fail. Merged is permanent.
+
+Third, whether to recover the two missing exam documents from the branch, so the 43 unchecked pairs stop being unknown. That sits on the answer key boundary, which is why it is yours.
+
+Fourth, whether the fix check should feed the model facing channel automatically or stay a measurement.
+
+Nothing is on fire, the suite is green, and everything is committed.
 
 
 Written under CDSFL note standard v1.7 (26 August 2026).
