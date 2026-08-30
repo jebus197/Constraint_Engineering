@@ -14,6 +14,7 @@ import glob as globmod
 import json
 import os
 import shutil
+import pathlib
 import subprocess
 import threading
 import sys
@@ -319,6 +320,46 @@ EXECUTE_PYTHON_TOOL = {
 # cannot unsandbox another. Single-threaded callers are unaffected: the default is
 # still None and the semantics are identical.
 _PANEL_CWD_TLS = threading.local()
+
+#: Where to write a dispatch's tool-call log, or None. Thread-local for the same
+#: reason the cwd is: the confer dispatcher runs reviewers concurrently, and a
+#: module global would let one reviewer's cleanup clobber another's (measured
+#: 2026-08-30 -- it unsandboxed a live reviewer).
+_TOOL_LOG_TLS = threading.local()
+
+
+def set_tool_log_sink(path: "str | None") -> None:
+    """Record this thread's dispatch tool calls to `path` (JSON), or stop."""
+    _TOOL_LOG_TLS.value = path
+
+
+def _get_tool_log_sink() -> "str | None":
+    return getattr(_TOOL_LOG_TLS, "value", None)
+
+
+def _parse_stream_json(raw: str):
+    """(final_text, [{"name":..., "input_preview":...}, ...]) from a stream-json run."""
+    final, calls = "", []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        for blk in ((rec.get("message") or {}).get("content") or []):
+            if not isinstance(blk, dict):
+                continue
+            if blk.get("type") == "tool_use":
+                calls.append({"name": blk.get("name"),
+                              "input_preview": json.dumps(blk.get("input") or {})[:400]})
+            elif blk.get("type") == "text" and rec.get("type") == "assistant":
+                final = blk.get("text") or final
+        if rec.get("type") == "result" and isinstance(rec.get("result"), str):
+            final = rec["result"] or final
+    return final.strip(), calls
+
 
 
 def _get_panel_cwd_raw() -> str | None:
@@ -781,7 +822,14 @@ def call_claude_cli(
         # chain. Pointer in context, detected on use, exactly the layered position
         # taken everywhere else.
         "--model", model_id,
-        "--output-format", "text",
+        # stream-json, not text, WHEN A TOOL-LOG SINK IS SET. `text` returns only
+        # the final message, so a dispatch left NO EVIDENCE that the reviewer ran
+        # anything at all. The founder, 2026-08-30: "I have yet to see any
+        # evidence of them using tools either." That was not a doubt about the
+        # models -- it was a real gap in what we record. Verified the same day:
+        # stream-json surfaces `tool_use` blocks, text does not.
+        *(["--output-format", "stream-json", "--verbose"]
+          if _get_tool_log_sink() else ["--output-format", "text"]),
         "--no-session-persistence",
         # Write/Edit REMOVED 2026-07-29 (founder directive). A reviewing model
         # must not be able to modify the artefact it is reviewing: on 2026-07-29
@@ -816,6 +864,17 @@ def call_claude_cli(
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
+            _sink = _get_tool_log_sink()
+            if _sink and text:
+                text, _calls = _parse_stream_json(text)
+                try:
+                    pathlib.Path(_sink).write_text(json.dumps(
+                        {"model": model_id, "elapsed_s": round(elapsed, 1),
+                         "tool_calls": len(_calls), "calls": _calls}, indent=2),
+                        encoding="utf-8")
+                    _log(f"  [claude-cli:{model_id}] {len(_calls)} tool call(s) logged")
+                except OSError as _e:                       # noqa: BLE001
+                    _log(f"  [claude-cli:{model_id}] tool log not written: {_e}")
             if result.returncode != 0:
                 stderr = result.stderr.strip()[:200]
                 raise RuntimeError(

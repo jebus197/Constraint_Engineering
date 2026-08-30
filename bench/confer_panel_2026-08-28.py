@@ -29,7 +29,7 @@ if _env.is_file():
         _k, _, _v = _l.partition("=")
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
-from experiment_11_orchestrator import call_claude_cli, set_panel_cwd  # noqa: E402
+from experiment_11_orchestrator import call_claude_cli, set_panel_cwd, set_tool_log_sink  # noqa: E402
 
 if len(sys.argv) < 2:
     print("usage: confer_panel_2026-08-28.py <log-dir-name> [--dry-run]", file=sys.stderr)
@@ -69,6 +69,8 @@ def run(tag, model_id):
         if rc != 0:
             raise RuntimeError("sandbox worktree could not be created")
         set_panel_cwd(str(wt))
+        # Evidence that the reviewer actually RAN things, not just wrote.
+        set_tool_log_sink(str(LOGS / f"{tag}.tools.json"))
         txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400, max_retries=2) or ""
         ok = bool(txt.strip()) and "<invoke" not in txt and len(txt) > 800
         rec = {"reviewer": tag, "ok": ok, "chars": len(txt),
@@ -80,6 +82,7 @@ def run(tag, model_id):
                "elapsed_s": round(time.time() - t0, 1), "response": ""}
     finally:
         set_panel_cwd(None)
+        set_tool_log_sink(None)
         subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
                        cwd=str(REPO), capture_output=True)
         shutil.rmtree(wt.parent, ignore_errors=True)
