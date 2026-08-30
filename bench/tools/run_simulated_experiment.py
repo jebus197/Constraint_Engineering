@@ -173,7 +173,32 @@ def main() -> int:
         #                          0 of 58 entries carrying both its inputs.
         verification_min_round=2,
         post_convergence_sweep_rounds=1,
-        discrimination_control_ask=True,
+        # OFF PENDING A FOUNDER RULING (2026-08-30, 22:30).
+        #
+        # The wire itself is correct and stays: `discrimination_control_ask` had
+        # 1 write and 0 reads for 9 days. But ENABLING it here arms a known
+        # high-severity latent defect, recorded this morning in
+        # experimental_notes/LATENT_Discrimination_Control_Misattribution_2026-08-30.md
+        # and re-verified tonight at reference_runner_v2.py:4119-4120:
+        #
+        #   if entry.get("status") == "CONFIRMED":
+        #       registry.resolve(cid, "UNCONFIRMED", round_idx)
+        #
+        # That un-confirm is UNCONDITIONAL. `discrimination_control_blocks`
+        # guards a DIFFERENT site (:4249), so setting it False does not stop it
+        # — CC2's third-pass claim that the control "will record an outcome and
+        # change no verdict" is wrong on this branch, and the morning note is
+        # right.
+        #
+        # The branch fires when a finding's own proposed fix does not silence
+        # its own falsifier, on the stated premise that a fix "corrects THIS
+        # claim by construction". Measured at commit adb566b: 126 of 246
+        # archived findings refute that premise. So a SOUND falsifier on a REAL
+        # defect would be stamped non-discriminating and un-confirmed.
+        #
+        # Wiring the ask was the repair. Arming it before that branch is ruled
+        # on would convert a dormant defect into a live one on the next run.
+        discrimination_control_ask=False,
         extension_cap=args.rounds,
         # Set so S_k's e2_regression is a reading rather than a null. Measured
         # 2026-08-30: e2_regression was None on all 19 entries because no test
