@@ -1217,7 +1217,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue,
-                     enable_tools=False):
+                     enable_tools=True):
     """Worker function for multiprocessing watchdog.
 
     ``enable_tools`` (GATED, default OFF) is forwarded to ``dispatch`` so the
@@ -1237,7 +1237,7 @@ def dispatch_to_model(
     prompt: str,
     cdsfl_text: str,
     wall_clock_limit: float = 0,
-    enable_tools: bool = False,
+    enable_tools: bool = True,
 ) -> tuple[str, float]:
     """Dispatch prompt to model, return (response_text, elapsed_seconds).
 

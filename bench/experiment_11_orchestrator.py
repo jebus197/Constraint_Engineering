@@ -1395,7 +1395,15 @@ def dispatch(
             max_retries=config.max_retries,
             use_output_schema=use_output_schema,
         )
-    elif config.api == "google":
+    elif config.api == 'google':
+        # LOUD (founder ruling 2026-08-30: tools enabled "without exception").
+        # `call_gemini` has no tools parameter, so this route dispatches a model
+        # that can assert but cannot RUN anything. A panellist that cannot run a
+        # falsifier can only vote. Recorded at dispatch time so a live run says
+        # so in its own log rather than leaving it to be rediscovered.
+        _log("  ** TOOLS UNAVAILABLE on the google route — this panellist "
+             "cannot execute a falsifier. TOOLS DECIDE, NOT VOTES is not "
+             "satisfied for it. **")
         return call_gemini(
             model_id=config.model_id,
             system_prompt=cdsfl_system_prompt if config.system_prompt_path else None,

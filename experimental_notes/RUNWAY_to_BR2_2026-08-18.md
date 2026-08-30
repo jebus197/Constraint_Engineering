@@ -352,6 +352,8 @@ run_round_robin.py       last commit 2026-08-15   consumes them
 | 4B.3 | Wire `reference_runner_v2` to the frontier schema | zero dispatch | Decide how `verification_method` maps onto the falsifier gate |
 | 4B.4 | **C5 — dry-run all 27 for tool availability, graceful degradation, answer leakage** | zero dispatch | In the 8 April plan, never done |
 | 4B.5 | Live burn-in on **ONE** BR2 task | 1 BR2 task | Validates 4B.3. Does NOT consume internal runway |
+| 4B.6 | **Audit the 27 targets for prose/markdown documents that print fenced code listings** | zero, offline | Founder ruling 2026-08-30. A falsifier about such a document must quote the listing, so its own source carries three backticks. The extractor was repaired that day and now survives 7 reply shapes plus both self-fenced fixtures — but the RE-ASK path uses the same transport, so if any of the 27 is that shape it wants one live check, not just a unit test |
+| 4B.7 | **Gemini has no tool path** | needs implementation | Founder ruling 2026-08-30: tools enabled "without exception". 5 of 6 panellists carry tools (claude_cli native, openrouter and deepseek passed a tools list, codex_exec agentic). `call_gemini` has NO tools parameter, so Gemini can assert but cannot RUN. Pinned by `test_tools_are_enabled_without_exception_2026-08-30.py`, which goes RED the day the parameter appears |
 
 ### Runway calculus after 4B
 

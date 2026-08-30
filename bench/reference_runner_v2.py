@@ -6641,7 +6641,7 @@ def _compose_for_model(
 def _multiturn_fallback(
     mc: ModelConfig, prompt: str, cdsfl_text: str,
     full_code: str, round_idx: int, pattern_text: str,
-    logs_dir: Path, enable_tools: bool = False,
+    logs_dir: Path, enable_tools: bool = True,
 ) -> Optional[Tuple[str, float]]:
     # enable_tools (GATED, default OFF): forwarded to decomposed_dispatch so the
     # FINAL synthesis turn can give OpenAI-compatible / CLI models the
@@ -6882,13 +6882,14 @@ def _dispatch_single_model(
     mc: ModelConfig, mgr: DynamicManager, prompt: str,
     cdsfl_text: str, full_code: str, round_idx: int,
     pattern_name: str, domain: str, logs_dir: Path,
-    enable_tools: bool = False,
+    enable_tools: bool = True,
 ) -> Tuple[List[Finding], Optional[str]]:
-    # enable_tools (GATED, default OFF): when the falsifier gate is on, the
-    # primary dispatch gives OpenAI-compatible models the execute_python tool
-    # loop so they can attach runnable falsifiers. Threaded in by the dispatch-
-    # round callers from cfg.falsifier_gate_enabled (cfg is not in this scope).
-    # Default OFF => byte-identical to vote-based behaviour.
+    # enable_tools DEFAULTS ON (founder ruling 2026-08-30). It was GATED and
+    # defaulted OFF, forwarded from cfg.falsifier_gate_enabled, so any gate-off
+    # configuration dispatched panellists with no execute_python loop -- able to
+    # assert, unable to run anything, i.e. able only to vote. The standing
+    # directive is TOOLS DECIDE, NOT VOTES, and the ruling extends it to "all
+    # models under all conditions ... without exception".
     try:
         # Resolve the SIM suffix: `CC2-SIM` must compose as CC2, or a simulated
         # panellist silently loses its per-model directive.
@@ -7135,7 +7136,16 @@ def _dispatch_round_star(
             future_to_label[pool.submit(
                 _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
-                getattr(cfg, "falsifier_gate_enabled", False),
+                # TOOLS ARE ALWAYS ON (founder ruling 2026-08-30): "all models
+                # under all conditions ... should always have tool use enabled
+                # and enforced without exception, as per the standing CDSFL
+                # directive: TOOLS DECIDE, NOT VOTES."
+                #
+                # This used to forward cfg.falsifier_gate_enabled, so with the
+                # gate off a panellist had NO execute_python loop and could only
+                # assert. A model that cannot run anything can only vote, which
+                # is the thing this project exists not to do.
+                True,
             )] = mc.label
 
         for future in as_completed(future_to_label):
@@ -7219,7 +7229,16 @@ def _dispatch_round_relay(
             future_to_label[pool.submit(
                 _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
-                getattr(cfg, "falsifier_gate_enabled", False),
+                # TOOLS ARE ALWAYS ON (founder ruling 2026-08-30): "all models
+                # under all conditions ... should always have tool use enabled
+                # and enforced without exception, as per the standing CDSFL
+                # directive: TOOLS DECIDE, NOT VOTES."
+                #
+                # This used to forward cfg.falsifier_gate_enabled, so with the
+                # gate off a panellist had NO execute_python loop and could only
+                # assert. A model that cannot run anything can only vote, which
+                # is the thing this project exists not to do.
+                True,
             )] = mc.label
 
         for future in as_completed(future_to_label):
