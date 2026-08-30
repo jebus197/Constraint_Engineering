@@ -210,6 +210,13 @@ def build_model_specs(exp_config: ExperimentConfig) -> List[ModelSpec]:
             mc.label, CapabilityFingerprint(0.2, 0.7, 0.7, 0.5)
         )
         params = MODEL_SPECS.get(_spec_key(mc.label), {})
+        # Underscore-prefixed keys are METADATA, not ModelSpec fields. Added
+        # 2026-08-31 after `_provenance` on the Fable entry -- a note recording
+        # that its values are inherited rather than measured -- was splatted
+        # into ModelSpec(**params) and killed the run in its first 55 seconds.
+        # A spec table that cannot carry a note about itself invites the note to
+        # be dropped instead, which is how provenance gets lost.
+        params = {k: v for k, v in params.items() if not k.startswith("_")}
         specs.append(ModelSpec(
             model_id=mc.label,
             fingerprint=fp,
