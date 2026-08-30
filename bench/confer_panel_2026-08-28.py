@@ -160,6 +160,12 @@ def run(tag, model_id):
                   f"  [{tag}] the reviewer is seeing COMMITTED HEAD ONLY.", flush=True)
             carried["error"] = str(_ce)
 
+        # OPTION B (founder ruling 2026-08-30): tell the reviewer where the
+        # CANONICAL tree is, while its cwd stays the disposable worktree. This
+        # removes the false INTEGRITY_VIOLATION rejections without widening the
+        # guard's allowlist in any other context -- experiments and ordinary
+        # suite runs never set this variable, so the guard there is unchanged.
+        os.environ["CDSFL_CANONICAL_REPO"] = str(REPO)
         set_panel_cwd(str(wt))
         # Evidence that the reviewer actually RAN things, not just wrote.
         set_tool_log_sink(str(LOGS / f"{tag}.tools.json"))

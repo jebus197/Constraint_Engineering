@@ -4116,8 +4116,29 @@ def _apply_discrimination_control(
             "the target, so it does not test this claim. The finding is NOT "
             "closed and NOT dropped — it returns to the human, and the "
             "instrument itself warrants attention.")
+        # GATED BY `discrimination_control_blocks` (founder ruling 2026-08-30,
+        # option A). This un-confirm used to run UNCONDITIONALLY, while the
+        # switch everyone assumed governed it guarded a DIFFERENT site. Both
+        # reviewing models read it as gated; it was not.
+        #
+        # WHY IT MATTERS: the branch fires on the premise that "a finding's own
+        # proposed fix corrects THIS claim by construction". Measured at commit
+        # adb566b across 246 archived findings, 126 of the fixes do NOT silence
+        # their own falsifier -- 51.2%, Wilson CI [45.0%, 57.4%], p = 0.75
+        # against a coin toss. So roughly half the time this branch fires, it is
+        # un-confirming a SOUND falsifier attached to a REAL defect.
+        #
+        # EVERYTHING ELSE STILL HAPPENS regardless of the flag: the finding is
+        # still marked NON_DISCRIMINATING, still escalated, still flagged as a
+        # mechanical fault, and still reaches a human with its reason. Only the
+        # silent reversal of a verdict now requires an explicit decision.
         if entry.get("status") == "CONFIRMED":
-            registry.resolve(cid, "UNCONFIRMED", round_idx)
+            if getattr(cfg, "discrimination_control_blocks", False):
+                registry.resolve(cid, "UNCONFIRMED", round_idx)
+            else:
+                _log(f"  discrimination control would UN-CONFIRM {cid}, but "
+                     f"discrimination_control_blocks=False — the finding stays "
+                     f"CONFIRMED and is escalated to a human instead.")
         _log(f"  ★ MECHANICAL FAULT {cid}: falsifier fires on a CORRECTED copy "
              f"— NOT closed, escalated to human. {rec['detail'][:200]}")
     elif outcome in DISC_INDETERMINATE:

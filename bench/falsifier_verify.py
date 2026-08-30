@@ -377,6 +377,30 @@ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str]
     roots = [os.path.normpath(repo_root or str(REPO_ROOT)),
              os.path.normpath(str(REPO_ROOT)),
              STAGED_TARGET_ROOT]
+    # THE CANONICAL TREE, WHEN A DISPATCHER NAMES IT (founder ruling 2026-08-30,
+    # option B). NOT a general widening: this is read from an environment
+    # variable that only the panel dispatcher sets, so it is inert in every
+    # experiment and in every ordinary suite run.
+    #
+    # THE DEFECT IT CLOSES. `REPO_ROOT` is derived from this file's own location,
+    # which inside a git worktree names THE WORKTREE. Archived falsifiers that
+    # name the canonical tree by absolute path were therefore rejected as
+    # INTEGRITY_VIOLATION -- 17 of 469 where the guard's own test expects 2
+    # (3.62%, Wilson CI [2.28%, 5.73%], p = 4.5e-11 against the expected rate).
+    # A rejection routes the finding to a human and NEVER to CONFIRMED, so the
+    # guard was quietly blocking honest work everywhere panels run.
+    #
+    # Option A -- deriving the canonical tree inside the guard via
+    # `git rev-parse --git-common-dir` -- would widen the allowlist in EVERY
+    # context, including live experiments. That allowlist was closed after the
+    # one run this project had to discard, because a model wrote a falsifier
+    # that opened the scoring key. This does not touch that.
+    #
+    # A model-authored falsifier cannot reach this: the value is read by the
+    # PARENT process that scans the source, and the falsifier runs as a child.
+    _canon = os.environ.get("CDSFL_CANONICAL_REPO", "").strip()
+    if _canon and os.path.isdir(_canon):
+        roots.append(os.path.normpath(_canon))
     for mod_name in ("bench.experiment_11_orchestrator", "experiment_11_orchestrator"):
         mod = sys.modules.get(mod_name)
         panel = getattr(mod, "_PANEL_CWD", None) if mod is not None else None
