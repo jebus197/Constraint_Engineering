@@ -83,6 +83,46 @@ def run(tag, model_id):
     finally:
         set_panel_cwd(None)
         set_tool_log_sink(None)
+        # EXTRACT THE REVIEWER'S WORK BEFORE TEARING THE SANDBOX DOWN.
+        #
+        # Founder, 2026-08-30: "why are you throwing sandbox repairs away? Sure
+        # sandboxes should be deleted after we are done with them and after you
+        # have extracted fixes, not before!"
+        #
+        # He is right and the cost was real. On the 2026-08-30 repair-loop panel,
+        # fable wrote three changes to canary_seeding.py plus 7 tests, and cc2
+        # wrote four edits to reference_runner_v2.py plus 8 tests and two further
+        # fixes. Every line was deleted here before anyone read it, and the
+        # reviews had to be re-implemented from their prose descriptions.
+        #
+        # A reviewer is dispatched WITHOUT Write/Edit, but Bash can write, and
+        # both reviewers used it. The diff is the most valuable thing a review
+        # produces and it was the one thing being discarded.
+        try:
+            diff = subprocess.run(["git", "diff", "HEAD"], cwd=str(wt),
+                                  capture_output=True, text=True, timeout=60)
+            untracked = subprocess.run(["git", "ls-files", "--others",
+                                        "--exclude-standard"], cwd=str(wt),
+                                       capture_output=True, text=True, timeout=60)
+            patch = LOGS / f"{tag}.patch"
+            body = diff.stdout or ""
+            for rel in (untracked.stdout or "").split():
+                f = pathlib.Path(wt) / rel
+                try:
+                    if f.is_file() and f.stat().st_size < 400_000:
+                        body += (f"\n=== NEW FILE: {rel} ===\n"
+                                 + f.read_text(encoding="utf-8", errors="replace"))
+                except OSError:
+                    pass
+            if body.strip():
+                patch.write_text(body, encoding="utf-8")
+                print(f"  [{tag}] extracted {len(body):,} chars of work -> {patch.name}",
+                      flush=True)
+            else:
+                print(f"  [{tag}] no file changes to extract", flush=True)
+        except Exception as _e:                              # noqa: BLE001
+            print(f"  [{tag}] EXTRACTION FAILED, sandbox kept at {wt}: {_e}", flush=True)
+            return rec          # do NOT destroy work we could not extract
         subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
                        cwd=str(REPO), capture_output=True)
         shutil.rmtree(wt.parent, ignore_errors=True)
