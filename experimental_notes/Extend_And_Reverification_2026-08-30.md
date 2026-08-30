@@ -57,7 +57,7 @@ The headline about fixes not curing their own tests remains 126 out of 246, and 
 
 The tests that never read their target remain eight out of 372, with a range of roughly one to four percent.
 
-And one new result, which I had not looked at before. I compared the rate of ineffective fixes between experiments, worst against best: about 64 percent in one and about 32 percent in another. The test gives 0.15, which is not significant. So the proportion of ineffective fixes is consistent across experiments, somewhere near half in each, rather than being driven by one bad run. That makes the finding stronger, not weaker: it is a property of the whole corpus, not an artefact.
+And one new result, which I had not looked at before. I compared the rate of ineffective fixes between experiments, worst against best: about 64 percent in one and about 32 percent in another. The test gives 0.15, which is not significant. So ineffective fixes run at somewhere near half in every experiment, rather than the figure being driven by one bad run. That makes the finding stronger, not weaker: it is a property of the whole corpus, not an artefact.
 
 
 ## The Simulated Run
