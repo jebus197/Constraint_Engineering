@@ -69,3 +69,54 @@ Making it mandatory for critical CONFIRMs is the repair, and it is a **behaviour
 verdict path**. It is specified but NOT applied here, for the same reason the merge enable is not: it
 changes what a verdict means, the review panel is unavailable tonight (`BLOCKED_Panel_Auth_2026-08-30.md`),
 and the founder's own instruction is to take that route when the best fix is not obvious.
+
+
+---
+
+# CORRECTION, 2026-08-30 01:47 — the figure of 9 is an OVERCOUNT
+
+**The "9 of 372" above is withdrawn as a confirmed count. The defensible floor is 4.**
+
+Found by cross-verifying against a second, independent instrument — the overlay tripwire built the same
+night — which disagreed on one finding. Chasing the disagreement instead of preferring a side showed the
+substitution probe has a **false-positive mode**.
+
+## The false-positive mode
+
+`reverify_falsifier` records **any** `AssertionError` as CONFIRMED. Several falsifiers open with a
+**precondition assertion** — *am I looking at the right module?* — before testing anything:
+
+```python
+from bench.dm import _divergence as div
+source = inspect.getsource(div)
+assert "_ALT_HEADER_RE" in source          # precondition, not the test
+```
+
+Replace the target with an unrelated file and **that precondition fires**. The probe sees CONFIRMED and
+concludes "it never read the target", when the truth is the opposite: it read the target, found the wrong
+one, and said so — and the harness translated *"I cannot examine this"* into *"the defect is present"*.
+
+exp47 C0010 is confirmed as exactly this.
+
+## Revised breakdown of the 9
+
+| | n | findings |
+|---|---|---|
+| **no `bench` import at all — genuinely detached** | **4** | exp44 C0022, C0023, C0078; exp47 C0061 |
+| confirmed probe false positive | 1 | exp47 C0010 |
+| imports the target; CONFIRMED-on-unrelated may be a precondition firing | 4 | exp44 C0007, C0008; exp46 C0023; exp47 C0058 |
+
+**So: 4 confirmed, up to 9, and 4 need individual examination.** The confound stands for the 4; for the
+other 5 it is unproven either way.
+
+## The finding underneath is worth more than the count
+
+**A falsifier whose setup fails is recorded as demonstrating the defect.** That is not a defect in any
+individual falsifier — it is the verdict rule in `reverify_falsifier`, which cannot distinguish a
+precondition assertion from the designed demonstration, because both arrive as `AssertionError`.
+
+This is **I14, the falsifier gate** — the single component the instrument inventory still lists as
+uncommissioned and that genuinely matters. It already accepts a falsifier that never touches its target;
+it also accepts one that could not find its target and said so.
+
+That is the item to put to the panel, and it is worth more than the corrected count.
