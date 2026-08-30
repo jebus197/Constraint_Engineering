@@ -148,20 +148,46 @@ def probe(finding: dict, target_rel: str, *,
     # target by no route this apparatus controls, and no verdict is available.
     tw, tw_subs = _overlay_verdict(target_rel, DISC_TRIPWIRE_BODY, code, root, timeout)
     intercepted_by_import = DISC_TRIPWIRE_TOKEN in tw or tw == "ERROR"
-    if not (intercepted_by_import or tw_subs > 0):
-        return FixEfficacyResult(
-            NOT_INTERCEPTED,
-            f"falsifier returned {tw} against a target that only raises, and no "
-            f"absolute path was rewritten, so it reaches its target by no route "
-            f"this apparatus controls; no verdict is available")
 
     # 2 -- does the falsifier still reproduce, through this same apparatus?
     base, _ = _overlay_verdict(target_rel, original, code, root, timeout)
+
+    # A PATH SUBSTITUTION PROVES THE PATH WAS MENTIONED, NOT THAT IT WAS READ.
+    #
+    # An earlier version accepted `tw_subs > 0` as interception on its own. It is
+    # not enough, and cross-verification caught it: exp47 C0010 was scored
+    # FIX_CURES here while the independent target-substitution probe measured it
+    # as reading nothing at all (CONFIRMED against a file sharing nothing with
+    # its target). Its absolute path was merely rewritten, so the weak check
+    # passed and a verdict was minted on a falsifier that never looks.
+    #
+    # The strong form: if the verdict is IDENTICAL against a target that only
+    # raises and against the real target, the falsifier is not sensitive to the
+    # target's content by any route, whatever paths it happens to name.
+    # BASELINE FIRST. A falsifier that is simply quiet on the real target gives
+    # the same verdict against the tripwire, and diagnosing that as "not reading
+    # the target" would be less true than "it never demonstrated the defect".
     if base != "CONFIRMED":
         return FixEfficacyResult(
             NO_BASELINE,
             f"falsifier returned {base} on the UNMODIFIED target, so it does not "
             f"demonstrate the defect it accuses; there is nothing for a fix to cure")
+
+    # INTERCEPTION SECOND, now that the falsifier is known to fire on the real
+    # target. A PATH SUBSTITUTION PROVES THE PATH WAS MENTIONED, NOT THAT IT WAS
+    # READ. An earlier version accepted `tw_subs > 0` on its own; cross-checking
+    # against the independent target-substitution probe caught it. If the verdict
+    # is IDENTICAL against the real content and against a target that only
+    # raises, the falsifier is not sensitive to the target by any route,
+    # whatever paths it happens to name.
+    if not intercepted_by_import and (tw_subs == 0 or tw == base):
+        why = ("no absolute path was rewritten" if tw_subs == 0 else
+               f"its verdict is {tw} whether the target holds its real content or "
+               f"nothing but a raise, so it is not reading the target at all")
+        return FixEfficacyResult(
+            NOT_INTERCEPTED,
+            f"falsifier returned {tw} against a target that only raises, and {why}; "
+            f"no verdict is available")
 
     # 3 -- apply the fix and ask again.
     patched = _apply_fix_to_source(original, fix)
