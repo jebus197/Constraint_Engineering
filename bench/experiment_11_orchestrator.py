@@ -876,9 +876,23 @@ def call_claude_cli(
                 except OSError as _e:                       # noqa: BLE001
                     _log(f"  [claude-cli:{model_id}] tool log not written: {_e}")
             if result.returncode != 0:
-                stderr = result.stderr.strip()[:200]
+                # KEEP THE TAIL, NOT JUST THE HEAD.
+                #
+                # This kept the first 200 characters, and this project's own
+                # note of 2026-08-30 00:32
+                # (experimental_notes/BLOCKED_Panel_Auth_2026-08-30.md) records
+                # that the FIRST line of a Claude CLI failure is a RED HERRING:
+                # "Ignoring N permissions.allow entries ... this workspace has
+                # not been trusted" is a warning about a fresh worktree, and the
+                # real cause is the line AFTER it. 200 characters is entirely
+                # consumed by the red herring, so the cause was cut off every
+                # time. On 2026-08-30 a reviewer failed, the recorded error named
+                # only the trust warning, and the wrong remedy was reported.
+                _err = result.stderr.strip()
+                if len(_err) > 700:
+                    _err = _err[:200] + "\n  ...[elided]...\n" + _err[-450:]
                 raise RuntimeError(
-                    f"claude CLI returned {result.returncode}: {stderr}")
+                    f"claude CLI returned {result.returncode}: {_err}")
             _log(f"  [claude-cli:{model_id}] done ({elapsed:.1f}s, {len(text)} chars)")
             if not text:
                 raise CircuitBreakerTripped(
