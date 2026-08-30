@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import subprocess
+import threading
 import sys
 import time
 from dataclasses import dataclass, field
@@ -296,7 +297,32 @@ EXECUTE_PYTHON_TOOL = {
 #
 # Exam configs set panel_cwd to the staged target directory. Unset (None) keeps
 # the previous behaviour exactly, so code experiments are unaffected.
-_PANEL_CWD: str | None = None
+# THREAD-LOCAL, NOT GLOBAL. Measured failure, 2026-08-30.
+#
+# This was a module-level global, and `confer_panel_2026-08-28.py` dispatches its
+# reviewers concurrently through a ThreadPoolExecutor. Each reviewer sets the cwd
+# to its own throwaway worktree and clears it in a `finally`. So the FIRST
+# reviewer to finish cleared the cwd for the one still running:
+#
+#   01:01:49  both worktrees created, cwd set twice
+#   01:30:34  fable finishes -> its finally sets the shared cwd to None
+#   01:41:49  cc2 times out and RETRIES -- now with cwd None, i.e. THE CANONICAL
+#             REPOSITORY, with Bash in its allowed tools
+#
+# cc2 caught it itself (`git worktree list` said `main`), built its own worktree
+# and verified the tracked tree byte-clean either side. CC1 had examined the same
+# "(inherited -- repo)" log line earlier that night and cleared it as a false
+# alarm, having checked that the worktrees were CREATED and never that the shared
+# state survived a concurrent completion. Checked one member, again.
+#
+# A thread-local makes each dispatch own its own value, so one reviewer's cleanup
+# cannot unsandbox another. Single-threaded callers are unaffected: the default is
+# still None and the semantics are identical.
+_PANEL_CWD_TLS = threading.local()
+
+
+def _get_panel_cwd_raw() -> str | None:
+    return getattr(_PANEL_CWD_TLS, "value", None)
 
 
 def set_panel_cwd(path: str | None) -> None:
@@ -307,19 +333,18 @@ def set_panel_cwd(path: str | None) -> None:
     here would put the panel back in the repo, which is the exposure this
     exists to close.
     """
-    global _PANEL_CWD
     if path is not None:
         p = Path(path).expanduser()
         if not p.is_dir():
             raise NotADirectoryError(f"panel_cwd is not a directory: {path}")
         path = str(p.resolve())
-    _PANEL_CWD = path
+    _PANEL_CWD_TLS.value = path
     _log(f"[panel] working directory: {path or '(inherited — repo)'}")
 
 
 def get_panel_cwd() -> str | None:
     """Current panel working directory, or None if inherited."""
-    return _PANEL_CWD
+    return _get_panel_cwd_raw()
 
 
 def default_tool_executor(name: str, args: dict) -> str:
@@ -787,7 +812,7 @@ def call_claude_cli(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=_PANEL_CWD,
+                cwd=_get_panel_cwd_raw(),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
@@ -879,7 +904,7 @@ def call_codex(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=_PANEL_CWD,
+                cwd=_get_panel_cwd_raw(),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
