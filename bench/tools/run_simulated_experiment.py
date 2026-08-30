@@ -173,32 +173,20 @@ def main() -> int:
         #                          0 of 58 entries carrying both its inputs.
         verification_min_round=2,
         post_convergence_sweep_rounds=1,
-        # OFF PENDING A FOUNDER RULING (2026-08-30, 22:30).
+        # RE-ARMED (founder ruling 2026-08-30, decision 2 option A).
         #
-        # The wire itself is correct and stays: `discrimination_control_ask` had
-        # 1 write and 0 reads for 9 days. But ENABLING it here arms a known
-        # high-severity latent defect, recorded this morning in
-        # experimental_notes/LATENT_Discrimination_Control_Misattribution_2026-08-30.md
-        # and re-verified tonight at reference_runner_v2.py:4119-4120:
+        # It was disarmed for exactly one reason: the DISC_FAILED branch ran
+        # registry.resolve(cid, "UNCONFIRMED", ...) UNCONDITIONALLY, so supplying
+        # the control its missing input would have let it reverse sound verdicts
+        # about half the time it fired (126 of 246 archived fixes do not silence
+        # their own falsifier -- 51.2%, Wilson [45.0%, 57.4%]).
         #
-        #   if entry.get("status") == "CONFIRMED":
-        #       registry.resolve(cid, "UNCONFIRMED", round_idx)
-        #
-        # That un-confirm is UNCONDITIONAL. `discrimination_control_blocks`
-        # guards a DIFFERENT site (:4249), so setting it False does not stop it
-        # — CC2's third-pass claim that the control "will record an outcome and
-        # change no verdict" is wrong on this branch, and the morning note is
-        # right.
-        #
-        # The branch fires when a finding's own proposed fix does not silence
-        # its own falsifier, on the stated premise that a fix "corrects THIS
-        # claim by construction". Measured at commit adb566b: 126 of 246
-        # archived findings refute that premise. So a SOUND falsifier on a REAL
-        # defect would be stamped non-discriminating and un-confirmed.
-        #
-        # Wiring the ask was the repair. Arming it before that branch is ruled
-        # on would convert a dormant defect into a live one on the next run.
-        discrimination_control_ask=False,
+        # That reversal is now behind discrimination_control_blocks, which
+        # defaults False. The control can therefore RUN and RECORD -- which it
+        # has never once done in this project's life, for want of a corrected
+        # copy -- without being able to silently un-confirm anything. That is the
+        # whole point of the ruling, so the ask goes back on.
+        discrimination_control_ask=True,
         extension_cap=args.rounds,
         # Set so S_k's e2_regression is a reading rather than a null. Measured
         # 2026-08-30: e2_regression was None on all 19 entries because no test
