@@ -249,9 +249,19 @@ def main() -> int:
                 if cid in reg.entries:
                     reg.add_verdict(cid, r["model_id"], vt, 0, ev)
                     seen[vt] = seen.get(vt, 0) + 1
-        if not seen:
-            raise AssertionError("no verdicts parsed; the fixtures emit none")
+        # ORDER MATTERS, and getting it wrong disabled a later stage. This
+        # raised BEFORE _update_finding_statuses, so on the first agent run
+        # the status pass never executed and the fix-efficacy stage reported
+        # the probe "unreachable" when it had never been given a chance. One
+        # stage's early failure silently disabled another stage's subject --
+        # the cascading-skip class, inside the harness built to catch it.
         R._update_finding_statuses(reg, 0, cfg=cfg)
+        if not seen:
+            raise AssertionError(
+                "no verdicts parsed — the panel emitted no CONFIRM/EXTEND "
+                "cross-references at all. That is a finding about the PANEL, "
+                "not the wiring: the archive holds 5282 CONFIRMs, so a run "
+                "with zero is unrealistic.")
         ext = {cid: e.get("extension_count", 0) for cid, e in reg.entries.items()
                if e.get("extension_count")}
         if "EXTEND" in seen and not ext:
@@ -290,12 +300,30 @@ def main() -> int:
     @stage("A10 rejection reasons rendered")
     def s_a10():
         lines = [l for e in reg.entries.values() for l in R._rejection_lines(e)]
-        assert lines, "no rejection reasons rendered for any finding"
+        # A run where every finding settles CONFIRMED has nothing to reject, and
+        # asserting otherwise fails a GOOD run. Assert the renderer works only
+        # when there is something for it to render.
+        _need = [e for e in reg.entries.values()
+                 if e.get("falsifier_verdict") in ("ERROR", "UNTOOLABLE")
+                 or e.get("corrected_copy_rejected") or e.get("fix_efficacy")]
+        assert lines or not _need, (
+            f"{len(_need)} finding(s) needed a rejection line and none rendered")
         b = reg.build_summary(1)
-        assert any(t in b for t in ("FALSIFIER ERROR", "NO FALSIFIER",
-                                    "FIX REJECTED", "NOT SCORED")), \
-            "reasons exist on entries but do not reach the round prompt"
-        return f"{len(lines)} line(s); e.g. {lines[0][:70]}"
+        # The token list predated the two line types added 2026-08-30 and so
+        # failed a run in which the renderer worked perfectly -- there were simply
+        # no ERROR or UNTOOLABLE findings, and the new lines were not in its
+        # vocabulary. An assertion whose vocabulary is stale reports a defect that
+        # is not there, which is as costly as missing one that is.
+        _tokens = ("FALSIFIER ERROR", "NO FALSIFIER", "FIX REJECTED", "NOT SCORED",
+                   "EXTENSION(S) FILED", "YOUR FIX DOES NOT CURE")
+        _st = sorted({e["status"] for e in reg.entries.values() if R._rejection_lines(e)})
+        assert any(t in b for t in _tokens), (
+            f"statuses carrying lines: {_st}. "
+            f"{len(lines)} rejection line(s) exist on entries and NONE reaches the "
+            f"round prompt — the panel cannot answer a rejection it cannot read")
+        return (f"{len(lines)} line(s) on statuses "
+                f"{sorted({e['status'] for e in reg.entries.values() if R._rejection_lines(e)})}; "
+                f"e.g. {lines[0][:60]}")
     s_a10()
 
     # ── 8. novelty: both series + where they disagree ─────────────────────

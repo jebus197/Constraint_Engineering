@@ -1713,9 +1713,30 @@ class FindingRegistry:
         """A1 fix: windowed registry summary with overflow cap."""
         if not self.entries:
             return "(No findings registered yet.)"
-        full_detail_statuses = ("OPEN", "CONTESTED", "REOPENED")
-        compact_statuses = ("CONFIRMED", "UNCONFIRMED", "CLOSED", "MERGED")
+        # THE PARTITION MUST COVER EVERY STATUS. Found by the agent-mode
+        # simulated run, 2026-08-30: CORROBORATED, ESCALATED and WITHHELD were in
+        # NONE of these three lists, so a finding in any of them was dropped from
+        # the round summary entirely -- not shown, not compacted, not even
+        # counted in `hidden_count`. The panel simply never saw it.
+        #
+        # CORROBORATED is the founder's own Bugzilla split of 21 Aug 2026
+        # ("CORROBORATED (model-attested, scheduling only) vs CONFIRMED (tool
+        # re-executed the falsifier)"). It was added to the vocabulary and this
+        # function was never updated, so every corroborated finding has been
+        # invisible to the panel since. ESCALATED and WITHHELD likewise.
+        #
+        # CORROBORATED goes to FULL DETAIL because it is an ACTIVE finding the
+        # panel can still act on. ESCALATED and WITHHELD are compact: the panel
+        # should know they exist and that they are not its to settle.
+        full_detail_statuses = ("OPEN", "CONTESTED", "REOPENED", "CORROBORATED")
+        compact_statuses = ("CONFIRMED", "UNCONFIRMED", "CLOSED", "MERGED",
+                            "ESCALATED", "WITHHELD")
         hidden_statuses = ("REFUTED", "DUPLICATE")
+        _uncovered = sorted(set(FINDING_STATUS_VOCABULARY) - set(full_detail_statuses)
+                            - set(compact_statuses) - set(hidden_statuses))
+        if _uncovered:                                    # pragma: no cover
+            _log(f"  ** STATUS PARTITION INCOMPLETE: {_uncovered} would be "
+                 f"invisible to the panel **")
         full_detail = [e for e in self.entries.values() if e["status"] in full_detail_statuses]
         compact = [e for e in self.entries.values() if e["status"] in compact_statuses]
         hidden_count = sum(1 for e in self.entries.values() if e["status"] in hidden_statuses)
@@ -1832,6 +1853,19 @@ class FindingRegistry:
                     f"  [{tag}] {e['canonical_id']}{merged_note}: "
                     f"{e['description'][:80]}"
                 )
+                # A REJECTION THE PANEL CANNOT READ IS A REJECTION IT CANNOT
+                # ANSWER — the whole point of A10, and it did not hold here.
+                #
+                # Found by the agent-mode simulated run, 2026-08-30. Rejection
+                # lines were rendered ONLY in the full-detail section, and the
+                # falsifier gate promotes findings to CONFIRMED, which is
+                # compact. So a CONFIRMED finding carrying a failed-fix verdict
+                # or a filed EXTENSION got no feedback at all — and CONFIRMED is
+                # where most findings end up. The A10 note itself says the
+                # machinery "rejected 50 proposed fixes across 4 rounds of Exp 53
+                # and told no model why". This is that same hole, one section over.
+                for _line in _rejection_lines(e):
+                    lines.append(f"    {_line}")
             lines.append("")
         if hidden_count > 0:
             lines.append(f"({hidden_count} findings hidden: refuted or duplicate)")

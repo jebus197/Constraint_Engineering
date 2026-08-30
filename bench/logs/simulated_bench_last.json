@@ -26,37 +26,37 @@
   {
     "stage": "panel briefing branches on target kind",
     "ok": true,
-    "detail": "5 findings registered; prose briefing correct",
+    "detail": "12 findings registered; prose briefing correct",
     "error": ""
   },
   {
     "stage": "verdict parse -> registry (CONFIRM / EXTEND reach the entry)",
     "ok": true,
-    "detail": "parsed {'CONFIRM': 1, 'EXTEND': 1}; extensions recorded on {'C0001': 1}",
+    "detail": "parsed {'CONFIRM': 6, 'EXTEND': 6}; extensions recorded on {'C0001': 6}",
     "error": ""
   },
   {
     "stage": "fix-efficacy probe FIRES inside the pipeline (not just wired)",
     "ok": true,
-    "detail": "attempted on 2, produced a verdict on 2: {'C0001': 'FIX_CURES_ITS_OWN_FALSIFIER', 'C0002': 'INDETERMINATE_NOT_INTERCEPTED'}",
+    "detail": "attempted on 5, produced a verdict on 5: {'C0001': 'INDETERMINATE_OTHER', 'C0002': 'INDETERMINATE_NOT_INTERCEPTED', 'C0003': 'INDETERMINATE_NOT_INTERCEPTED', 'C0004': 'INDETERMINATE_NOT_INTERCEPTED', 'C0005': 'FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER'}",
     "error": ""
   },
   {
     "stage": "falsifier gate (CONFIRM-only)",
     "ok": true,
-    "detail": "verdicts={'C0001': 'CONFIRMED', 'C0002': 'CONFIRMED', 'C0003': '', 'C0004': 'UNTOOLABLE', 'C0005': 'UNTOOLABLE'}, escalated=2",
+    "detail": "verdicts={'C0001': 'CONFIRMED', 'C0002': 'CONFIRMED', 'C0003': 'CONFIRMED', 'C0004': 'CONFIRMED', 'C0005': 'CONFIRMED', 'C0006': 'REFUTED', 'C0007': 'CONFIRMED', 'C0008': 'REFUTED', 'C0009': 'CONFIRMED', 'C0010': 'CONFIRMED', 'C0011': 'CONFIRMED', 'C0012': 'CONFIRMED'}, escalated=0",
     "error": ""
   },
   {
     "stage": "A10 rejection reasons rendered",
     "ok": true,
-    "detail": "3 line(s); e.g. 1 EXTENSION(S) FILED AGAINST THIS FINDING by other reviewers \u2014 consequ",
+    "detail": "2 line(s) on statuses ['CONFIRMED']; e.g. 6 EXTENSION(S) FILED AGAINST THIS FINDING by other reviewers",
     "error": ""
   },
   {
     "stage": "novelty series (location + hierarchical shadow)",
     "ok": true,
-    "detail": "symbols=17 location=[3, 0] hierarchical=[3, 0] blind-spot candidates=0",
+    "detail": "symbols=17 location=[1, 0] hierarchical=[1, 0] blind-spot candidates=0",
     "error": ""
   },
   {
@@ -68,13 +68,13 @@
   {
     "stage": "scored against fixture ground truth",
     "ok": true,
-    "detail": "registered=5 CONFIRMED=2 | planted defect DETECTED=True (2 demonstration(s)) | FALSE POSITIVES CONFIRMED=0 | unclassified=0",
+    "detail": "registered=12 CONFIRMED=10 | planted defect DETECTED=True (10 demonstration(s)) | FALSE POSITIVES CONFIRMED=0 | unclassified=0",
     "error": ""
   },
   {
     "stage": "residue: what reached the human, and why",
     "ok": true,
-    "detail": "unsettled=3 {'none': 1, 'UNTOOLABLE': 2}; escalated=2",
+    "detail": "unsettled=2 {'REFUTED': 2}; escalated=0",
     "error": ""
   },
   {
@@ -105,6 +105,12 @@
     "stage": "EXTEND is READ (founder ruling, 21 Aug \u2014 it was read by nothing)",
     "ok": true,
     "detail": "all 5 verdict types consumed; extensions recorded on the parent and absent from both gates (209 archived EXTENDs were invisible)",
+    "error": ""
+  },
+  {
+    "stage": "agent claim vs runner verdict (honesty check)",
+    "ok": true,
+    "detail": "2 finding(s) the agent said RAN but the runner could not confirm: [('C0006', 'REFUTED'), ('C0008', 'REFUTED')]",
     "error": ""
   }
 ]
