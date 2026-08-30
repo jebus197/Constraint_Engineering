@@ -68,13 +68,34 @@ def _sim_label(mc_label: str) -> str:
                          else f"{mc_label}-SIM")
 
 
+def _record(label: str, elapsed: float, chars: int, budget: int,
+            failure: str | None) -> None:
+    """Telemetry, recorded BEFORE any raise.
+
+    The shim now raises on transport death rather than returning a sentinel, so
+    a failure leaves this function by exception and would take its own telemetry
+    with it. The v3.1 timeout rate (7 of 20 dispatches) was only measurable
+    because failures were recorded; losing that would make the next run's
+    reliability invisible.
+    """
+    with _LOCK:
+        _CALLS.append({"model": label, "seconds": round(elapsed, 1),
+                       "chars": chars, "budget_s": budget,
+                       "failed": failure is not None, "failure": failure})
+    print(f"    [{label}] {chars} chars, {elapsed:.0f}s"
+          + (f" FAILED: {failure}" if failure else ""), flush=True)
+
+
 def make_shim(model: str = "sonnet", timeout: int = 900):
     """Return a drop-in replacement for ``dispatch_to_model``.
 
     THE SEAM MOVED DOWN ONE LEVEL, 2026-08-30, AND THIS IS WHY
     ----------------------------------------------------------
-    The first version patched ``_dispatch_single_model``. That is ONE of NINE
-    functions in ``reference_runner_v2`` that dispatch to a model:
+    The first version patched ``_dispatch_single_model``. That is ONE of EIGHT
+    call sites, in SEVEN enclosing functions, that dispatch to a model
+    (``_apply_routing`` and ``run_experiment`` reach it only through the nested
+    ``resolve_fn`` and ``_arb_dispatch``; the count was stated as nine here and
+    CC2 corrected it by AST on 2026-08-30):
 
         _apply_routing, _post_convergence_sweep, _inround_reask,
         _dispatch_single_model, _verification_step, run_preflight,
@@ -126,20 +147,42 @@ def make_shim(model: str = "sonnet", timeout: int = 900):
             )
             text = (r.stdout or "").strip()
             if r.returncode != 0 and not text:
-                text = f"__DISPATCH_FAILED__:rc={r.returncode}"
+                _record(label, time.monotonic() - t0, 0, budget,
+                        f"rc={r.returncode}")
+                raise RuntimeError(
+                    f"{label} dispatch process exited without result "
+                    f"(exit code {r.returncode})")
         except subprocess.TimeoutExpired:
-            text = "__DISPATCH_FAILED__:TimeoutExpired"
-        except Exception as e:                              # noqa: BLE001
-            text = f"__DISPATCH_FAILED__:{type(e).__name__}: {e}"
+            # RAISE, DO NOT RETURN A SENTINEL (Fable, second-pass review
+            # 2026-08-30). THE ERROR CONTRACT IS PART OF THE SEAM.
+            #
+            # The real `dispatch_to_model` RAISES on transport death
+            # (runner_core.py:1271 TimeoutError, :1277 RuntimeError, :1284
+            # re-raised payload). `_dispatch_single_model` catches that and
+            # converts it to the `__DISPATCH_FAILED__` sentinel ITSELF
+            # (reference_runner_v2.py:6947) -- so the sentinel belongs to the
+            # findings path alone.
+            #
+            # Returning the sentinel instead of raising made every OTHER path
+            # read a dead subprocess as a successful dispatch. `resolve_fn`
+            # detects transport death by EXCEPTION; a normal return reaches
+            # `_routing_attempts.append(model_label)  # a model was genuinely
+            # reached`. So a `claude -p` timeout burned the sub-critical
+            # one-attempt and, with every rung timing out, minted
+            # irreducible_escalation=True on a critical -- which
+            # unverified_critical_count skips. THE SIMULATED RUN COULD CONVERGE
+            # BECAUSE SUBPROCESSES TIMED OUT, and the transport-dead guard
+            # hoisted in v3.2 could never fire in simulation, so the sim could
+            # not exercise the repair that most needed exercising.
+            #
+            # Measured: the v3.1 run lost 7 of 20 dispatches to timeout at 300s.
+            _record(label, time.monotonic() - t0, 0, budget, "TimeoutExpired")
+            raise TimeoutError(
+                f"{label} dispatch exceeded wall-clock limit ({budget:.0f}s). "
+                f"Process forcibly terminated.")
 
         el = time.monotonic() - t0
-        with _LOCK:
-            _CALLS.append({"model": label, "seconds": round(el, 1),
-                           "chars": len(text), "budget_s": budget,
-                           "failed": text.startswith("__DISPATCH_FAILED__")})
-        print(f"    [{label}] {len(text)} chars, {el:.0f}s"
-              + (" FAILED" if text.startswith("__DISPATCH_FAILED__") else ""),
-              flush=True)
+        _record(label, el, len(text), budget, None)
         return text, el
 
     return _dispatch

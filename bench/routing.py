@@ -83,9 +83,27 @@ def rank_falsifier_writers(
     Models not in ``strength_order`` are appended (in input order) after the ranked
     ones — unknown models are tried, but only after the known-strong ones. ``exclude``
     drops models (e.g. the finding's own source model, which already failed)."""
+    # A ``-SIM`` label RANKS AS ITS VENDOR (Fable, second-pass review
+    # 2026-08-30). `strength_order` holds bare vendor names, and this matched
+    # labels exactly, so with a simulated panel `ranked` came out EMPTY and all
+    # six members fell into `extras` in panel order. Routing still ran, but it
+    # exercised the unknown-model fallback instead of the ranked ladder Bench
+    # Run 2 will run -- so ladder ORDER was unrehearsed by every simulation.
+    #
+    # Normalised locally rather than importing `base_model_label`, which lives
+    # in reference_runner_v2 and would make this module import its own caller.
+    def _base(m: str) -> str:
+        m = str(m or "")
+        return m[:-4] if m.endswith("-SIM") else m
+
     excl = set(exclude)
-    ranked = [m for m in strength_order if m in labels and m not in excl]
-    extras = [m for m in labels if m not in strength_order and m not in excl]
+    by_base = {}
+    for m in labels:
+        by_base.setdefault(_base(m), []).append(m)
+    ranked = [m for name in strength_order
+              for m in by_base.get(name, []) if m not in excl]
+    ranked_set = set(ranked)
+    extras = [m for m in labels if m not in ranked_set and m not in excl]
     return ranked + extras
 
 

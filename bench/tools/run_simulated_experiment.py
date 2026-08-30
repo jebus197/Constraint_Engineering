@@ -20,6 +20,7 @@ the two-sided gate — so there is a clean reference outcome to compare against.
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import pathlib
 import sys
@@ -52,7 +53,13 @@ def main() -> int:
     # EVERY round of the v3.1 run and `verified` was False on all 19 entries.
     # Raising the harness rather than lowering the runner's threshold keeps the
     # simulation faithful to what Bench Run 2 will actually do.
-    ap.add_argument("--rounds", type=int, default=7)
+    # 16, matching the real exp45 (which converged at round 3, so this costs
+    # nothing in practice and lets convergence rather than the cap decide).
+    # NOTE: `verification_min_round` is 6 and rounds are 0-based, so CC2v will
+    # NOT fire on a run that converges at 3 -- and that is FAITHFUL: the real
+    # exp45 never fired it either, reaching verified 24/39 through the
+    # falsifier path. Recorded so the absence is not read as a defect.
+    ap.add_argument("--rounds", type=int, default=16)
     ap.add_argument("--models", type=int, default=6)
     # 300s timed out 7 of 20 dispatches (35%, Wilson CI [18.1%, 56.7%]) on a
     # 20KB target, and two of those left a model with three consecutive ITC
@@ -65,6 +72,13 @@ def main() -> int:
     ap.add_argument("--name", default="sim45_memory")
     args = ap.parse_args()
 
+    if os.path.isabs(args.target):
+        # `REPO / <absolute>` lets the absolute path WIN, which would then reach
+        # _build_discrimination_overlay and be rejected there. The default is
+        # safe; the flag was not (Fable, 2026-08-30).
+        print(f"    FATAL: --target must be repo-relative, got {args.target!r}",
+              flush=True)
+        return 2
     target = REPO / args.target
     if not target.is_file():
         print(f"target not found: {target}", file=sys.stderr)
@@ -109,12 +123,40 @@ def main() -> int:
         # fired in ANY simulated run. Verified by forcing both forms:
         # relative -> DISCRIMINATES, absolute -> INDETERMINATE_ERROR.
         test_article=str(args.target),
-        domain="software",
+        # "statistics", matching the REAL exp45 this run is compared against
+        # (verified in its report). The composer renders domain-specific
+        # directives, so "software" briefed the simulated panel differently
+        # from the run it is measured against (Fable, 2026-08-30).
+        domain="statistics",
         max_rounds=args.rounds,
         falsifier_gate_enabled=True,
         routing_enabled=True,
         sk_enabled=True,
         location_keyed_convergence=True,
+        # PARITY WITH THE REAL exp45 CONFIG (bench/exp45_configs/
+        # 45_memory_statistics_live.json), measured by CC2 in second-pass
+        # review 2026-08-30. Every value below differed, and each difference
+        # let the simulation behave in a way the run it is compared against
+        # structurally could not:
+        #   earliest_stop_round   default 12 > max_rounds, so the STATE GATE
+        #                         returned "too early" every round and only ONE
+        #                         of the two convergence gates was ever exercised
+        #   stall_gamma_*         exp45 pins both at 1.01, ABOVE the gamma
+        #                         ceiling, so its stall detector can never fire
+        #                         via gamma; the sim left them live at
+        #                         0.45/0.30 and could halt on a path the real
+        #                         run cannot reach
+        #   merge_arbitration     exp45 True, default False -- a second seam
+        #                         path (_arb_dispatch) was permanently dark
+        pattern="four_layer",
+        consecutive_rounds_required=3,
+        max_contested_rounds=3,
+        burst_mode="off",
+        gamma_telemetry_only_until=20,
+        stall_gamma_terminate=1.01,
+        stall_gamma_advisory=1.01,
+        earliest_stop_round=3,
+        merge_arbitration_enabled=True,
         post_convergence_sweep_rounds=0,
         extension_cap=args.rounds,
         # Set so S_k's e2_regression is a reading rather than a null. Measured
@@ -144,7 +186,14 @@ def main() -> int:
     original = SHIM.install(timeout=args.timeout)
     t0 = time.monotonic()
     try:
-        result = R.run_experiment(exp_cfg, "", cfg)
+        # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).
+        # `system_prompt_path` is read ZERO times in reference_runner_v2 and
+        # runner_core -- the panel's directive arrives only via the composer, or
+        # via THIS argument when the composer fails. Passing "" meant the loud
+        # composer fallback handed a panellist NOTHING: Fable-SIM has no
+        # composer .toml, so it would have run on an empty system prompt while
+        # the core directive sat verified-on-disk in this same function.
+        result = R.run_experiment(exp_cfg, cdsfl_path.read_text(encoding="utf-8"), cfg)
     finally:
         SHIM.restore(original)
     el = time.monotonic() - t0
