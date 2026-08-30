@@ -128,9 +128,22 @@ def main():
         return
     prompt = payload.get("prompt") or ""
     cmds = commands_in(prompt)
+
+    # THE STANDING PAIR. Founder, 2026-08-30, verbatim: "you should use 'f' on
+    # all your work exclusively, and 'sy' on all work that can be computationally
+    # checked and determined! This is a hard constraint and should never be
+    # bypassed!" So `f` and `sy` are UNCONDITIONAL -- they apply whether or not
+    # the founder types them, and this fires on every turn.
+    standing = [
+        "[mc] STANDING HARD CONSTRAINT (founder 2026-08-30, never bypassed):",
+        f"  • {_OBLIGATION['f']}",
+        f"  • {_OBLIGATION['sy']}",
+    ]
     if not cmds:
+        print("\n".join(standing))
         return
-    lines = [f"[mc] {len(cmds)} MC command(s) issued: {', '.join(cmds)}", "", _ALWAYS, ""]
+    lines = standing + ["", f"[mc] {len(cmds)} MC command(s) ALSO issued: {', '.join(cmds)}",
+                        "", _ALWAYS, ""]
     for c in cmds:
         ob = _OBLIGATION.get(c)
         if ob:

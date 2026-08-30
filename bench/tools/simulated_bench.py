@@ -274,6 +274,87 @@ def main() -> int:
         return f"unsettled={len(unsettled)} {dict(why)}; escalated={esc}"
     s_res()
 
+    # ── THE 2026-08-29/30 REPAIRS, EXERCISED HERE RATHER THAN TRUSTED ────────
+    # Founder, 2026-08-30: "BR2 is not strictly just a test. It is the entire
+    # machinery of the schema turned against a large number of meaningful
+    # external targets for the first time. It is not a good place to find out
+    # something we built doesn't work as intended." So every repair from that
+    # window gets a stage here first.
+
+    @stage("rho is CONTRIBUTORY, not a veto (founder ruling 2026-08-29)")
+    def s_rho():
+        from reference_runner_v2 import _check_gamma_alt_convergence
+        kw = dict(cfg=cfg, novel_critical_history=[3, 0, 0, 0, 0, 0, 0],
+                  unresolved_critical=0, contested=0)
+        with_churn, why = _check_gamma_alt_convergence(6, 0.20, rho_churn=True, **kw)
+        without, _ = _check_gamma_alt_convergence(6, 0.20, rho_churn=False, **kw)
+        if with_churn != without:
+            raise AssertionError("churn changed the verdict; it is still a veto")
+        if "churn" not in why.lower():
+            raise AssertionError("churn stopped being REPORTED as well as blocking")
+        # and it must not be able to MANUFACTURE a convergence
+        still, _ = _check_gamma_alt_convergence(
+            6, 0.20, rho_churn=True, cfg=cfg,
+            novel_critical_history=[3, 2, 1, 2, 1, 1, 2],
+            unresolved_critical=0, contested=0)
+        if still:
+            raise AssertionError("a run still producing criticals converged")
+        return (f"verdict identical with/without churn ({with_churn}); churn still named; "
+                f"cannot manufacture a convergence")
+
+    @stage("the fix applier refuses a patch that would break the target")
+    def s_apply():
+        from endocrine import _apply_fix_to_source
+        src = 'def f():\n    """doc."""\n    x = 1\n'
+        bad = ('<<<< SEARCH def f():\n"""doc."""\n    x = 1\n==== REPLACE\n'
+               'def f():\n    """doc."""\n    x = 2\n>>>>')
+        good = "<<<< SEARCH\n    x = 1\n==== REPLACE\n    x = 2\n>>>>"
+        if _apply_fix_to_source(src, bad) is not None:
+            raise AssertionError("a corrupting patch was applied and returned")
+        if "x = 2" not in (_apply_fix_to_source(src, good) or ""):
+            raise AssertionError("a sound patch was refused")
+        return "corrupting patch refused; sound patch applied (12 of 313 archived fixes were corrupted this way)"
+
+    @stage("the discrimination overlay leaks no git history")
+    def s_overlay():
+        import shutil as _sh, subprocess as _sp
+        from reference_runner_v2 import _build_discrimination_overlay
+        ov = _build_discrimination_overlay(REPO, "bench/evidence.py", "# MUTATED\n")
+        try:
+            if (ov / ".git").exists():
+                raise AssertionError(".git is reachable from the overlay")
+            r = _sp.run(["git", "-C", str(ov), "log", "--oneline", "-1"],
+                        capture_output=True, text=True)
+            if r.returncode == 0:
+                raise AssertionError("git resolves a repository inside the overlay: "
+                                     "the plant is recoverable at precision 1.0")
+            leaf = ov / "bench" / "evidence.py"
+            if leaf.is_symlink() or leaf.read_text() != "# MUTATED\n":
+                raise AssertionError("the substituted leaf did not take")
+        finally:
+            _sh.rmtree(ov, ignore_errors=True)
+        return "no .git; git log rc!=0; mirror intact; substituted leaf is a real file"
+
+    @stage("fix-efficacy probe: runs, and is structurally unable to gate")
+    def s_fe():
+        import ast as _ast
+        from fix_efficacy import probe as _probe, FIX_CURES, FIX_INEFFECTIVE
+        src = (REPO / "bench" / "reference_runner_v2.py").read_text()
+        tree = _ast.parse(src)
+        for g in ("_evaluate_gate_conditions", "_check_gamma_alt_convergence"):
+            fn = next(n for n in _ast.walk(tree)
+                      if isinstance(n, _ast.FunctionDef) and n.name == g)
+            if "fix_efficacy" in _ast.unparse(fn):
+                raise AssertionError(f"{g} references the probe; it could gate")
+        upd = next(n for n in _ast.walk(tree)
+                   if isinstance(n, _ast.FunctionDef) and n.name == "_update_finding_statuses")
+        if "fix_efficacy" not in _ast.unparse(upd):
+            raise AssertionError("the probe is not actually wired into the status pass")
+        return "wired into the status pass; absent from BOTH gate functions"
+
+    for _s in (s_rho, s_apply, s_overlay, s_fe):
+        _s()
+
     if args.findings:
         @stage("agent claim vs runner verdict (honesty check)")
         def s_hon():

@@ -69,9 +69,13 @@ def test_it_fires_on_real_command_forms(msg):
     "Please do a full review of the divergence code",
     "So the answer is that we need to test it and then decide",
 ])
-def test_it_does_not_fire_on_ordinary_prose(msg):
+def test_it_does_not_report_COMMANDS_on_ordinary_prose(msg):
+    """Superseded in scope 2026-08-30. The hook now ALWAYS emits the standing
+    f/sy pair, so "no output" is no longer the right assertion. What must still
+    hold is that ordinary prose is not misread as an issued command list."""
     out, rc = _fires(msg)
-    assert not out, f"false positive on ordinary prose: {msg!r}"
+    assert "MC command(s) ALSO issued" not in out, (
+        f"ordinary prose was parsed as a command list: {msg!r}")
     assert rc == 0
 
 
@@ -90,8 +94,18 @@ def test_f_surfaces_all_five_ffafp_steps():
 
 
 def test_every_issued_command_gets_an_obligation_line():
+    """Six issued commands, plus the two standing ones that fire unconditionally.
+
+    `f` and `sy` appear in both sets, and the obligation text is identical, so the
+    bullet count is 6 issued + 2 standing = 8 with two duplicated lines. Asserting
+    on the SET of obligations rather than a raw count keeps this honest."""
     out, _ = _fires("check\n\nrg, a, f, sy, d, t")
-    assert out.count("  • ") == 6, f"not every command produced an obligation:\n{out}"
+    bullets = [ln.strip()[2:].split(" — ")[0].strip()
+               for ln in out.splitlines() if ln.strip().startswith("• ")]
+    for cmd in ("RG", "A", "F", "SY", "D", "T"):
+        assert cmd in bullets, f"command {cmd} produced no obligation line:\n{out}"
+    assert bullets.count("F") == 2 and bullets.count("SY") == 2, (
+        "the standing pair should appear in addition to the issued ones")
 
 
 def test_the_hook_never_blocks_a_prompt():
@@ -109,3 +123,31 @@ def test_t_is_defined_as_the_artefact_pair():
     times. It is the TTS + markdown notes pair."""
     out, _ = _fires("check\n\nt")
     assert "TTS" in out and "experimental_notes" in out
+
+
+# --------------------------------------------------------------------------- #
+# The standing pair — unconditional, per the founder's hard constraint         #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("msg", [
+    "Good morning. Is it all done?",
+    "I saw a dentist and a doctor",
+    "",
+    "Please review the divergence code",
+])
+def test_f_and_sy_fire_on_every_turn_even_with_no_commands(msg):
+    """Founder 2026-08-30, verbatim: "you should use 'f' on all your work
+    exclusively, and 'sy' on all work that can be computationally checked and
+    determined! This is a hard constraint and should never be bypassed!"
+
+    So they are NOT conditional on the letters being typed."""
+    out, rc = _fires(msg)
+    assert "STANDING HARD CONSTRAINT" in out, f"the standing pair did not fire on {msg!r}"
+    assert "FFAFP" in out and "STEM-tool invocation" in out
+    assert rc == 0
+
+
+def test_issued_commands_still_arrive_alongside_the_standing_pair():
+    out, _ = _fires("check\n\nrg, a, d")
+    assert "STANDING HARD CONSTRAINT" in out
+    assert "3 MC command(s) ALSO issued" in out
+    assert "rg, a, d" in out
