@@ -115,9 +115,11 @@ hold:
    store. These do not belong in the CDSFL public record.
 2. **Personal or accessibility context.** The entry documents the
    founder's working style, accessibility needs, health context, or
-   a specific tool used to compensate for those (e.g. TTS output for
-   dyslexia-related reading accommodation). These are not appropriate
-   for public project docs.
+   a specific tool used to compensate for those. These are not
+   appropriate for public project docs — INCLUDING IN THIS FILE, which
+   is itself public. Name the CATEGORY, never the particular. Corrected
+   2026-08-30 after a pre-push scan found this document stating the very
+   information the rule exists to exclude.
 3. **Founder-personal ideology or political motivation.** The
    founder's personal political or philosophical framing is private
    context for CC1 only, and the explicit standing rule is that only
@@ -144,8 +146,8 @@ operational-feedback.
 ### Personal or accessibility context
 
 - **`feedback_accessibility_recovery.md`** — use TTS files for
-  context recovery. Describes a personal accommodation for
-  dyslexia-related text consumption.
+  context recovery. Describes a personal accommodation; the
+    particulars stay in the private memory store.
 - **`feedback_tts_format.md`** — TTS plain-text format conventions
   for Firefox Read Aloud (reference file, zero-markdown rules,
   section-break conventions). The format exists because of the

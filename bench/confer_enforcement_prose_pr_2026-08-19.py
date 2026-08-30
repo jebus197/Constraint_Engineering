@@ -68,7 +68,7 @@ SYSTEM = (
     "If you have file-reading tools, USE THEM: the repository is at "
     "/Users/georgejackson/Developer_Projects/Constraint_Engineering and the primary "
     "source pack below is an extract, not a substitute. Verify rather than accept.\n\n"
-    "Do not pad. The founder is dyslexic and reads every word."
+    "Do not pad. Every word is read, so make every word carry weight."
 )
 
 _REPO = Path(__file__).resolve().parent.parent

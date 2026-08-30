@@ -1,7 +1,36 @@
 #!/usr/bin/env python3
 """Parameterised reference runner for CDSFL experiments (Exp 37+, Bench Run 2).
 
-RUNNER VERSION v3 (2026-08-23). A DIRECT DERIVATION OF v2, NOT A REBUILD.
+RUNNER VERSION v3.1 (2026-08-30). A DIRECT DERIVATION OF v2, NOT A REBUILD.
+
+v3.0 was v2 plus ten mechanically-validated patches (b312b84, 2026-08-23).
+v3.1 is v3.0 plus SEVENTEEN further commits — +493/-49 lines, 4.2% of this file —
+made between 2026-08-23 and 2026-08-30 and, until now, carrying no version at all.
+Measured, not estimated. The headline changes:
+
+  * rho is a CONTRIBUTORY convergence condition, not a veto (founder ruling
+    2026-08-29). Two veto sites removed; one was an EARLY RETURN that fired
+    before the two-sided gate was evaluated at all.
+  * EXTEND is READ. It was the only parsed verdict type with zero consuming
+    comparisons, and 209 of them sat in the archive influencing nothing.
+  * The fix-efficacy probe: does a fix cure the defect its OWN falsifier
+    demonstrates? Contributory, never gating.
+  * The discrimination overlay no longer mirrors `.git`, which had made the
+    planted set recoverable at precision 1.000 with no key.
+  * `_apply_fix_to_source` no longer returns a patch that leaves the target
+    unparseable — it was corrupting 12 of 313 archived fixes.
+  * build_summary's status partition covers every status. CORROBORATED,
+    ESCALATED and WITHHELD were in none of its three lists, so findings in those
+    states were invisible to the panel.
+  * Rejection lines render in the compact section too. The gate promotes findings
+    to CONFIRMED, which is compact, so a CONFIRMED finding carrying a failed-fix
+    verdict or a filed EXTENSION got no feedback at all.
+
+THE VERSION LANDS IN THE REPORT. The 2026-08-23 note said "the VERSION is
+metadata, and it lands in each run's report, which is where a reader actually
+needs it." It never did — `exp55_v3_control`'s report carries no version key of
+any kind. `RUNNER_VERSION` below is written into every report from v3.1 on, so a
+run can always be attributed to the code that produced it.
 
 v3 is v2 with ten mechanically-validated patches applied. Each was accepted by a
 gate requiring the patch's own test to FAIL at the parent, PASS with the patch, and
@@ -259,6 +288,9 @@ MODEL_ROSTER = {
 # Findings not attempted this round remain CONFIRMED and become
 # candidates next round (entry["bugzilla_attempted"] flag prevents
 # re-attempting the same finding repeatedly).
+#: Written into every run report. See the version banner at the top of this file.
+RUNNER_VERSION = "v3.1"
+
 BUGZILLA_PER_ROUND_LIMIT = 5
 
 #: Fix-efficacy probes per round. The probe costs one overlay build plus up to

@@ -114,4 +114,4 @@ For each question: **VERDICT** (CONFIRMED / REFUTED / PARTIAL, with what you
 ran), **EVIDENCE** (commands and their output), **RECOMMENDATION** (concrete,
 naming files and lines). Then a final section: **WHAT I COULD NOT CHECK**.
 
-Do not pad. The founder is dyslexic and reads every word.
+Do not pad. Every word is read, so make every word carry weight.

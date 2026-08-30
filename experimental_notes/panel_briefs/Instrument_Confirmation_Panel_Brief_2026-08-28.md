@@ -126,4 +126,4 @@ clean-run readiness verdict. Then **WHAT I COULD NOT CHECK AND WHY**.
 Coverage matters less than honesty about coverage. Ten rows genuinely tested
 beats thirty asserted.
 
-Do not pad. The founder is dyslexic and reads every word.
+Do not pad. Every word is read, so make every word carry weight.

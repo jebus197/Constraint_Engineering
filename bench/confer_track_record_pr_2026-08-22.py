@@ -43,7 +43,7 @@ _BASE = (
     "work to date is unsound you should say so plainly -- agreement is not the goal and "
     "reassurance is worth nothing here. Equally, do not manufacture a problem to appear "
     "rigorous. Report what the evidence supports.\n\n"
-    "Do not pad. The founder is dyslexic and reads every word.\n\n"
+    "Do not pad. Every word is read, so make every word carry weight.\n\n"
 )
 SYSTEM_TOOLS = _BASE + (
     "You have Bash, Read, Grep and Glob and the repository is at "

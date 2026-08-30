@@ -38,7 +38,7 @@ SYSTEM = (
     "The founder has explicitly required a SINGLE converged answer to Q1 and has "
     "overridden this project's usual no-compelled-convergence rule for that question "
     "only. On Q2 and Q3 disagreement is preserved as information.\n\n"
-    "Do not pad. The founder is dyslexic and reads every word."
+    "Do not pad. Every word is read, so make every word carry weight."
 )
 MODELS = [("cc2", "opus"), ("fable", "fable")]
 

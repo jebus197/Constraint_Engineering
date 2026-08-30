@@ -93,7 +93,7 @@ _SYSTEM_TEMPLATE = (
     "Then at most 10 lines saying what you changed and why the test could not pass before.\n"
     "Documentation tasks still need a test -- assert the document's content; this project "
     "already does that for its memory ledger and its qc checks.\n\n"
-    "Do not pad. The founder is dyslexic and reads every word."
+    "Do not pad. Every word is read, so make every word carry weight."
 )
 
 # TWO VARIANTS, because the routes differ. Sending one SYSTEM to every route is the

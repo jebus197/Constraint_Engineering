@@ -55,7 +55,7 @@ SYSTEM = (
     "report leaves this session.\n\n"
     "Disagreement between reviewers is preserved as information, not smoothed into "
     "consensus. Where you differ from what the brief asserts, say so and show why.\n\n"
-    "Do not pad. The founder is dyslexic and reads every word."
+    "Do not pad. Every word is read, so make every word carry weight."
 )
 MODELS = [("cc2", "opus"), ("fable", "fable")]
 
