@@ -280,6 +280,29 @@ MODEL_ROSTER = {
     "ChatGPT": "GPT-5.5 (OpenAI)",
 }
 
+def base_model_label(label: str) -> str:
+    """Vendor base of a panel label. ``CC2-SIM`` -> ``CC2``.
+
+    Simulated panel members carry the mandatory ``-SIM`` suffix (founder ruling
+    2026-08-08), so every vendor-keyed branch in this module must resolve them or
+    a simulated run silently loses whatever that branch gates. Measured
+    2026-08-30: without this, ``_verify_batch_with_cc2`` finds no config labelled
+    exactly ``CC2`` and returns ``{"skipped": True}`` -- a capability lost with no
+    error, which is the config-drop class this project has now hit 8 times.
+    """
+    label = str(label or "")
+    return label[:-4] if label.endswith("-SIM") else label
+
+
+def describe_model(label: str) -> str:
+    """Roster description for a panel label, honest about simulated stand-ins."""
+    base = base_model_label(label)
+    if base != label:
+        return (f"SIMULATED stand-in for {MODEL_ROSTER.get(base, base)} "
+                f"-- no paid dispatch occurred")
+    return MODEL_ROSTER.get(label, label)
+
+
 # Bugzilla CLOSED-loop verification cap per round (15 May 2026).
 # Bounds wall-clock impact of programmatic fix verification — each
 # attempt runs ruff + mypy + bandit + test_cmd against a sandbox copy
@@ -6666,7 +6689,8 @@ def _dispatch_single_model(
                           "decomposed": True, "multiturn": True})
             return model_findings, text
 
-    wall_limit = mc.timeout * 5 if mc.label == "CC2" else mc.timeout * 3
+    wall_limit = (mc.timeout * 5 if base_model_label(mc.label) == "CC2"
+                  else mc.timeout * 3)
     try:
         text, elapsed = dispatch_to_model(
             mc, prompt, model_cdsfl, wall_clock_limit=wall_limit,
@@ -7560,7 +7584,7 @@ def _verification_step(
 
     cc2_config = None
     for mc in model_configs:
-        if mc.label == "CC2":
+        if base_model_label(mc.label) == "CC2":
             cc2_config = mc
             break
     if cc2_config is None:
@@ -9839,7 +9863,7 @@ def run_experiment(
 
     # Build awareness preamble
     roster_lines = "\n".join(
-        f"  - {label}: {MODEL_ROSTER.get(label, label)}"
+        f"  - {label}: {describe_model(label)}"
         for label in sorted(baseline)
     )
     topo_instruction = (
@@ -10985,6 +11009,11 @@ def run_experiment(
         # Checkpoint — atomic write to prevent corruption on interrupt
         ckpt_path = brain.logs_dir / "runner_state.json"
         _ckpt_data = json.dumps({
+            # Stamped here as well as in the report: the state file is what the
+            # archive guards walk, and a run that cannot say which runner wrote
+            # it has to be classified by its DIRECTORY NAME instead -- which
+            # misfiled this run as pre-v3 archive on 2026-08-30.
+            "runner_version": RUNNER_VERSION,
             "registry": registry.to_dict(),
             "novelty_counts": novelty_counts,
             "raw_counts": raw_counts,

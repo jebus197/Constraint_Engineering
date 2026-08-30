@@ -1,0 +1,204 @@
+{
+  "round": 0,
+  "domain": "software",
+  "final_verdicts": {
+    "CC2_F001": "REJECTED",
+    "Codex_F001": "DUPLICATE",
+    "Gemini_UNSTRUCTURED": "UNCERTAIN",
+    "ChatGPT_F002": "UNCERTAIN",
+    "ChatGPT_F001": "DUPLICATE",
+    "ChatGPT_F003": "DUPLICATE",
+    "Codex_F003": "DUPLICATE",
+    "CC2_F002": "REJECTED",
+    "Codex_F002": "DUPLICATE"
+  },
+  "verdicts": [
+    {
+      "round": 0,
+      "finding_id": "CC2_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "CC2_F001",
+      "canonical_id": "C0001",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "mypy",
+      "verdict": "REJECTED",
+      "confidence": 0.8,
+      "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"
+    },
+    {
+      "round": 0,
+      "finding_id": "CC2_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "CC2_F002",
+      "canonical_id": "C0002",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "mypy",
+      "verdict": "REJECTED",
+      "confidence": 0.8,
+      "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"
+    },
+    {
+      "round": 0,
+      "finding_id": "Gemini_UNSTRUCTURED",
+      "canonical_id": "C0003",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F001",
+      "canonical_id": "C0004",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F001",
+      "canonical_id": "C0004",
+      "cell_type": "CellType.B_CELL",
+      "claim_type": "",
+      "tool_used": "mypy",
+      "verdict": "REJECTED",
+      "confidence": 0.8,
+      "evidence": "mypy: TYPE_CLEAN: no type errors found [specialist:type_checker]"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F001",
+      "canonical_id": "C0004",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_intra_round_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.797476396560669,
+      "evidence": "[NK_v2] Intra-round dup of CC2_F002 (sim=0.797)"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F002",
+      "canonical_id": "C0005",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F002",
+      "canonical_id": "C0005",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_intra_round_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6085829257965089,
+      "evidence": "[NK_v2] Intra-round dup of CC2_F001 (sim=0.609)"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F003",
+      "canonical_id": "C0006",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "Codex_F003",
+      "canonical_id": "C0006",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_intra_round_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.5512200832366944,
+      "evidence": "[NK_v2] Intra-round dup of Gemini_UNSTRUCTURED (sim=0.551)"
+    },
+    {
+      "round": 0,
+      "finding_id": "ChatGPT_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "ChatGPT_F001",
+      "canonical_id": "C0007",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_intra_round_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.6436732292175293,
+      "evidence": "[NK_v2] Intra-round dup of Gemini_UNSTRUCTURED (sim=0.644)"
+    },
+    {
+      "round": 0,
+      "finding_id": "ChatGPT_F002",
+      "canonical_id": "C0008",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "ChatGPT_F003",
+      "canonical_id": "C0009",
+      "cell_type": "CellType.CYTOTOXIC_T",
+      "claim_type": "",
+      "tool_used": "ct_mechanical",
+      "verdict": "UNCERTAIN",
+      "confidence": 0.0,
+      "evidence": "CT agent did not investigate this finding"
+    },
+    {
+      "round": 0,
+      "finding_id": "ChatGPT_F003",
+      "canonical_id": "C0009",
+      "cell_type": "CellType.NK_CELL",
+      "claim_type": "",
+      "tool_used": "v2_intra_round_dedup",
+      "verdict": "DUPLICATE",
+      "confidence": 0.8248075103759767,
+      "evidence": "[NK_v2] Intra-round dup of CC2_F001 (sim=0.825)"
+    }
+  ]
+}

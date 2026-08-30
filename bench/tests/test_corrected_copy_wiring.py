@@ -428,9 +428,21 @@ class TestTheArchiveIsUntouched:
     """
         carried = []
         for f in sorted((REPO / "bench" / "logs").rglob("runner_state.json")):
+            # Classify by the run's OWN recorded version, not by its directory
+            # name. The name rule fails CLOSED on anything not called exp<N>:
+            # on 2026-08-30 a v3.1 run in sim45_memory_* was filed as pre-v3
+            # archive and its 14 legitimate corrected copies read as the wiring
+            # reaching backwards into the record. Version first, name second.
+            try:
+                _v = json.loads(f.read_text(encoding="utf-8",
+                                            errors="replace")).get("runner_version")
+            except Exception:  # noqa: BLE001
+                _v = None
+            if isinstance(_v, str) and re.match(r"v[3-9]", _v):
+                continue          # v3-era: corrected copies are the feature
             m = re.match(r"exp(\d+)", f.parent.name)
             if m and int(m.group(1)) >= 55:
-                continue          # v3-era: corrected copies are the feature
+                continue          # pre-version-stamp v3 runs, by number
             try:
                 data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
             except Exception:  # noqa: BLE001

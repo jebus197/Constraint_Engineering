@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a REAL experiment with agents standing in for the paid models.
 
-    PANEL LABELS STAY `SIM-A`..`SIM-F`. They stand in for CC2, DeepSeek, ChatGPT,
+    PANEL LABELS CARRY THE MANDATORY `-SIM` SUFFIX. They stand in for CC2, DeepSeek, ChatGPT,
     Gemini, Codex and Fable and are NOT those models. Labelling a simulated agent
     with a vendor name on 2026-08-04 put two indistinguishable panels into the
     record and results were reported as though vendors had produced them.
@@ -50,15 +50,19 @@ for p in (str(REPO), str(REPO / "bench")):
 import reference_runner_v2 as R   # noqa: E402
 
 #: Vendor label -> simulated stand-in. Order fixed so a run is reproducible.
-LABEL_MAP = {"CC2": "SIM-A", "DeepSeek": "SIM-B", "ChatGPT": "SIM-C",
-             "Gemini": "SIM-D", "Codex": "SIM-E", "Fable": "SIM-F"}
+#: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
+#: the mandated names are ``CC2-SIM``, ``DeepSeek-SIM`` and so on. The suffix
+#: carries the role information the bare letter threw away.
+LABEL_MAP = {v: f"{v}-SIM" for v in
+             ("CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable")}
 
 _LOCK = threading.Lock()
 _CALLS: list = []
 
 
 def _sim_label(mc_label: str) -> str:
-    return LABEL_MAP.get(mc_label, f"SIM-{mc_label[:1].upper()}")
+    return LABEL_MAP.get(mc_label, mc_label if mc_label.endswith("-SIM")
+                         else f"{mc_label}-SIM")
 
 
 def make_shim(model: str = "sonnet", timeout: int = 300):
@@ -91,7 +95,12 @@ def make_shim(model: str = "sonnet", timeout: int = 300):
         # THE RUNNER'S OWN PARSER. Fabricating Finding objects here would mean the
         # parse path — the thing that has broken most often in this project — was
         # the one path a simulated run never exercised.
-        findings = R.parse_findings(mc.label, round_idx, text)
+        # The SIM label, never ``mc.label``: this is the single call that stamps
+# model_id and finding_id into every persisted artefact. Measured
+# 2026-08-30: passing mc.label here put 123 bare vendor names into the
+# record while the terminal showed the SIM name -- cosmetic in the log,
+# absent from the artefact, which is the 2026-08-04 provenance failure.
+        findings = R.parse_findings(label, round_idx, text)
         with _LOCK:
             _CALLS.append({"round": round_idx, "model": mc.label, "sim": label,
                            "seconds": round(el, 1), "chars": len(text),

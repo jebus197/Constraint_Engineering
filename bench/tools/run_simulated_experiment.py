@@ -32,7 +32,13 @@ for p in (str(REPO), str(REPO / "bench")):
 import reference_runner_v2 as R                       # noqa: E402
 from bench.tools import sim_dispatch_shim as SHIM     # noqa: E402
 
-VENDORS = ["CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable"]
+#: Named with the mandatory ``-SIM`` suffix AT SOURCE (founder ruling
+#: 2026-08-08) so every downstream consumer -- ModelConfig labels,
+#: cfg.models, parse_findings, finding IDs, the log directory and the report
+#: -- carries it by construction. A relabelling map has somewhere to be
+#: dropped; a correct name at source does not.
+VENDORS = [f"{v}-SIM" for v in
+           ("CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable")]
 
 
 def main() -> int:

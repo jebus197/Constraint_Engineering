@@ -51882,3 +51882,118 @@
 2026-08-30T17:00:15 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
 2026-08-30T17:00:15 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
 2026-08-30T17:00:15 INFO Helper T v2 (v2): 0 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-08-30T17:21:29 INFO Domain config loaded: software (1 sections)
+2026-08-30T17:21:29 INFO Skin barrier (v2): 14 passed, 1 failed out of 15 findings
+2026-08-30T17:21:29 INFO   BLOCKED: CC2-SIM_F001 — Cited file not found: (`reference_runner_v2.py
+2026-08-30T17:21:29 INFO DC v2 reclassification: Fable-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:21:29 INFO DC v2 reclassification: Fable-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:21:29 INFO DC v2 reclassification: Gemini-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: Gemini-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: CC2-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:21:29 INFO DC v2 reclassification: DeepSeek-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: DeepSeek-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: DeepSeek-SIM_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: Codex-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: Codex-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:21:29 INFO DC v2 reclassification: ChatGPT-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-08-30T17:21:29 INFO DC v2 (v2): 11/14 findings reclassified
+2026-08-30T17:21:29 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 14 findings to classify.
+2026-08-30T17:22:23 INFO LLM classifier OVERRIDE: Fable-SIM_F003 — regex=mathematical → llm=code_behavioral (conf=0.78, llm-primary [software]: threshold N/A, 15.9s)
+2026-08-30T17:23:12 INFO LLM classifier: DeepSeek-SIM_F001 — regex=code_behavioral llm=mathematical (conf=0.76, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 16.5s)
+2026-08-30T17:24:48 INFO LLM classifier: 12/14 agree with regex (85.7%), 1 overrides applied
+2026-08-30T17:24:48 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-08-30T17:24:48 INFO   ChatGPT-SIM_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-08-30T17:24:57 INFO NK v2 (v2): 7 verdicts (7 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T17:25:59 INFO CT v2 (v2): 0 verdicts in 70.1s — none
+2026-08-30T17:25:59 INFO B-Cell specialist (LIVE, domain=software): 1 verdicts
+2026-08-30T17:25:59 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T17:25:59 INFO Helper T v2 (v2): 14 findings — 0 CONFIRMED, 0 REJECTED, 7 UNCERTAIN, 7 DUPLICATE
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: CC2-SIM_F002 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: Codex-SIM_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: DeepSeek-SIM_F001 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: DeepSeek-SIM_F003 — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: ChatGPT-SIM_F002 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: ChatGPT-SIM_F003 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation LOCKED: Codex-SIM_F002 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+2026-08-30T17:25:59 INFO Reconciliation locked 7 finding(s): CC2-SIM_F002, ChatGPT-SIM_F002, ChatGPT-SIM_F003, Codex-SIM_F001, Codex-SIM_F002, DeepSeek-SIM_F001, DeepSeek-SIM_F003
+2026-08-30T17:25:59 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] UNCERTAIN rate 7/14 (50.0%) exceeds 30% — verification tools may be non-functional (fail-open)
+2026-08-30T17:25:59 INFO Autoimmune override: resurrected 7 findings, kept 7 locked rejections
+2026-08-30T17:26:15 INFO Fix NOT verified: Fable-SIM_F001 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: Fable-SIM_F002 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: Fable-SIM_F003 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: Gemini-SIM_F001 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: Gemini-SIM_F002 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: DeepSeek-SIM_F002 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO Fix NOT verified: ChatGPT-SIM_F001 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:26:15 INFO UNCERTAIN-ESCALATED to HIL: ChatGPT-SIM_F001 (B-Cell cannot ground claim in source)
+2026-08-30T17:26:15 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-08-30T17:31:38 INFO Domain config loaded: software (1 sections)
+2026-08-30T17:31:38 INFO Skin barrier (v2): 8 passed, 0 failed out of 8 findings
+2026-08-30T17:31:38 INFO DC v2 reclassification: DeepSeek-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:31:38 INFO DC v2 reclassification: DeepSeek-SIM_F003 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-08-30T17:31:38 INFO DC v2 reclassification: Codex-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:31:38 INFO DC v2 reclassification: Gemini-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:31:38 INFO DC v2 reclassification: Gemini-SIM_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:31:38 INFO DC v2 reclassification: ChatGPT-SIM_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:31:38 INFO DC v2 (v2): 6/8 findings reclassified
+2026-08-30T17:31:38 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 8 findings to classify.
+2026-08-30T17:31:54 INFO LLM classifier: DeepSeek-SIM_F001 — regex=code_behavioral llm=mathematical (conf=0.85, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 16.4s)
+2026-08-30T17:32:10 INFO LLM classifier OVERRIDE: DeepSeek-SIM_F002 — regex=mathematical → llm=code_behavioral (conf=0.80, llm-primary [software]: threshold N/A, 16.1s)
+2026-08-30T17:32:47 INFO LLM classifier OVERRIDE: CC2-SIM_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 11.4s)
+2026-08-30T17:33:36 INFO LLM classifier: 5/8 agree with regex (62.5%), 2 overrides applied
+2026-08-30T17:33:36 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T17:33:38 INFO NK v2 (v2): 7 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T17:35:24 INFO CT v2 (v2): 0 verdicts in 108.2s — none
+2026-08-30T17:35:24 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-08-30T17:35:24 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T17:35:24 INFO Helper T v2 (v2): 8 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 7 DUPLICATE
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: CC2-SIM_F001 — both pipelines REJECTED (v1=0.69, v2=0.69, max=0.69 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: ChatGPT-SIM_F004 — both pipelines REJECTED (v1=0.65, v2=0.65, max=0.65 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: Codex-SIM_F002 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: Gemini-SIM_F001 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: DeepSeek-SIM_F001 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: DeepSeek-SIM_F002 — both pipelines REJECTED (v1=0.80, v2=0.80, max=0.80 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation LOCKED: Gemini-SIM_F002 — both pipelines REJECTED (v1=0.72, v2=0.72, max=0.72 >= 0.5)
+2026-08-30T17:35:24 INFO Reconciliation locked 7 finding(s): CC2-SIM_F001, ChatGPT-SIM_F004, Codex-SIM_F002, DeepSeek-SIM_F001, DeepSeek-SIM_F002, Gemini-SIM_F001, Gemini-SIM_F002
+2026-08-30T17:35:24 INFO RT v2: depletion (not autoimmune) — removal rate 7/8 (87.5%), all duplicates, rejected=0
+2026-08-30T17:35:24 INFO RT v2 (v2): depletion — 87.5% removal rate (all duplicates)
+2026-08-30T17:35:27 INFO Fix NOT verified: DeepSeek-SIM_F003 — verdict=HARMFUL (issues introduced)
+2026-08-30T17:40:44 INFO Domain config loaded: software (1 sections)
+2026-08-30T17:40:44 INFO Skin barrier (v2): 3 passed, 0 failed out of 3 findings
+2026-08-30T17:40:44 INFO DC v2 reclassification: Fable-SIM_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:40:44 INFO DC v2 reclassification: DeepSeek-SIM_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:40:44 INFO DC v2 (v2): 2/3 findings reclassified
+2026-08-30T17:40:44 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 3 findings to classify.
+2026-08-30T17:41:11 INFO LLM classifier OVERRIDE: Gemini-SIM_F003 — regex=code_structural → llm=code_behavioral (conf=0.95, llm-primary [software]: threshold N/A, 12.3s)
+2026-08-30T17:41:22 INFO LLM classifier: 2/3 agree with regex (66.7%), 1 overrides applied
+2026-08-30T17:41:22 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T17:41:23 INFO NK v2 (v2): 3 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T17:43:27 INFO CT v2 (v2): 0 verdicts in 125.5s — none
+2026-08-30T17:43:27 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-08-30T17:43:27 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T17:43:27 INFO Helper T v2 (v2): 3 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 3 DUPLICATE
+2026-08-30T17:43:27 INFO Reconciliation LOCKED: Gemini-SIM_F003 — both pipelines REJECTED (v1=0.57, v2=0.57, max=0.57 >= 0.5)
+2026-08-30T17:43:27 INFO Reconciliation LOCKED: DeepSeek-SIM_F003 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+2026-08-30T17:43:27 INFO Reconciliation LOCKED: Fable-SIM_F001 — both pipelines REJECTED (v1=0.53, v2=0.53, max=0.53 >= 0.5)
+2026-08-30T17:43:27 INFO Reconciliation locked 3 finding(s): DeepSeek-SIM_F003, Fable-SIM_F001, Gemini-SIM_F003
+2026-08-30T17:46:58 INFO Domain config loaded: software (1 sections)
+2026-08-30T17:46:58 INFO Skin barrier (v2): 3 passed, 0 failed out of 3 findings
+2026-08-30T17:46:58 INFO DC v2 reclassification: ChatGPT-SIM_C0017 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T17:46:58 INFO DC v2 reclassification: CC2-SIM_C0017 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:46:58 INFO DC v2 reclassification: Gemini-SIM_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T17:46:58 INFO DC v2 (v2): 3/3 findings reclassified
+2026-08-30T17:46:58 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 3 findings to classify.
+2026-08-30T17:47:11 INFO LLM classifier OVERRIDE: ChatGPT-SIM_C0017 — regex=code_behavioral → llm=code_structural (conf=0.75, llm-primary [software]: threshold N/A, 12.5s)
+2026-08-30T17:47:27 INFO LLM classifier OVERRIDE: CC2-SIM_C0017 — regex=code_behavioral → llm=code_structural (conf=0.80, llm-primary [software]: threshold N/A, 16.2s)
+2026-08-30T17:47:45 INFO LLM classifier OVERRIDE: Gemini-SIM_F003 — regex=code_behavioral → llm=code_structural (conf=0.70, llm-primary [software]: threshold N/A, 18.1s)
+2026-08-30T17:47:45 INFO LLM classifier: 0/3 agree with regex (0.0%), 3 overrides applied
+2026-08-30T17:47:45 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T17:47:49 INFO NK v2 (v2): 3 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T17:49:13 INFO CT v2 (v2): 0 verdicts in 87.7s — none
+2026-08-30T17:49:13 INFO B-Cell specialist (LIVE, domain=software): 3 verdicts
+2026-08-30T17:49:13 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T17:49:13 INFO Helper T v2 (v2): 3 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 3 DUPLICATE
+2026-08-30T17:49:13 INFO Reconciliation LOCKED: Gemini-SIM_F003 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-08-30T17:49:13 INFO Reconciliation LOCKED: CC2-SIM_C0017 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+2026-08-30T17:49:13 INFO Reconciliation LOCKED: ChatGPT-SIM_C0017 — both pipelines REJECTED (v1=0.71, v2=0.71, max=0.71 >= 0.5)
+2026-08-30T17:49:13 INFO Reconciliation locked 3 finding(s): CC2-SIM_C0017, ChatGPT-SIM_C0017, Gemini-SIM_F003

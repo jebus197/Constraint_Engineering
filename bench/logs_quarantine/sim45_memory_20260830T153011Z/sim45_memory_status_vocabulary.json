@@ -1,0 +1,278 @@
+{
+  "vocabulary_version": "2026-08-22",
+  "source": "experimental_notes/Design_Reviews_Bugzilla_And_Perturbation_2026-08-21.md",
+  "tool_only_statuses": [
+    "CLOSED",
+    "CONFIRMED",
+    "DUPLICATE",
+    "MERGED",
+    "REFUTED"
+  ],
+  "model_assertable_statuses": [
+    "CONTESTED",
+    "CORROBORATED",
+    "OPEN",
+    "REOPENED"
+  ],
+  "live_statuses": [
+    "CONFIRMED",
+    "CONTESTED",
+    "CORROBORATED",
+    "ESCALATED",
+    "OPEN",
+    "REOPENED",
+    "WITHHELD"
+  ],
+  "model_assertion_substitute": {
+    "CONFIRMED": "CORROBORATED",
+    "MERGED": "WITHHELD"
+  },
+  "statuses": {
+    "OPEN": {
+      "meaning": "Filed, not adjudicated.",
+      "who_may_assert": [
+        "model"
+      ],
+      "in_from": [
+        "REOPENED",
+        "WITHHELD",
+        "CORROBORATED"
+      ],
+      "out_to": [
+        "CORROBORATED",
+        "CONFIRMED",
+        "REFUTED",
+        "MERGED",
+        "WITHHELD",
+        "CONTESTED",
+        "UNCONFIRMED",
+        "ESCALATED"
+      ],
+      "evidence_required": "none",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "CORROBORATED": {
+      "meaning": "At least one independent model also asserts the finding exists. NOT a truth claim — a scheduling signal only.",
+      "who_may_assert": [
+        "model"
+      ],
+      "in_from": [
+        "OPEN",
+        "WITHHELD",
+        "CONTESTED"
+      ],
+      "out_to": [
+        "CONFIRMED",
+        "REFUTED",
+        "CLOSED",
+        "UNCONFIRMED",
+        "WITHHELD",
+        "CONTESTED",
+        "MERGED"
+      ],
+      "evidence_required": "model attestations, counted and named",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "CONFIRMED": {
+      "meaning": "A falsifier was executed by the runner and fired against the target.",
+      "who_may_assert": [
+        "tool"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED",
+        "CONTESTED"
+      ],
+      "out_to": [
+        "CLOSED",
+        "CONTESTED",
+        "REOPENED"
+      ],
+      "evidence_required": "falsifier source + exit status + target hash",
+      "terminal": false,
+      "live": true,
+      "tool_only": true,
+      "deprecated": false
+    },
+    "REFUTED": {
+      "meaning": "A falsifier was executed and did not fire.",
+      "who_may_assert": [
+        "tool"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED"
+      ],
+      "out_to": [
+        "REOPENED"
+      ],
+      "evidence_required": "falsifier source + exit status + target hash",
+      "terminal": true,
+      "live": false,
+      "tool_only": true,
+      "deprecated": false
+    },
+    "CLOSED": {
+      "meaning": "A proposed fix was applied to a scratch copy and the falsifier stopped firing.",
+      "who_may_assert": [
+        "tool"
+      ],
+      "in_from": [
+        "CONFIRMED",
+        "CORROBORATED"
+      ],
+      "out_to": [
+        "REOPENED"
+      ],
+      "evidence_required": "pre/post falsifier verdicts + diff + target hash",
+      "terminal": true,
+      "live": false,
+      "tool_only": true,
+      "deprecated": false
+    },
+    "MERGED": {
+      "meaning": "Counterfactual repair says two findings are one defect.",
+      "who_may_assert": [
+        "tool"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED",
+        "CONFIRMED"
+      ],
+      "out_to": [],
+      "evidence_required": "adjudicate_by_repair verdict SAME in BOTH directions",
+      "terminal": true,
+      "live": false,
+      "tool_only": true,
+      "deprecated": false
+    },
+    "WITHHELD": {
+      "meaning": "A merge was proposed and no tool verdict decided it. The finding stays live and countable — withholding is the safe direction.",
+      "who_may_assert": [
+        "runner"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED"
+      ],
+      "out_to": [
+        "OPEN",
+        "CORROBORATED",
+        "CONFIRMED",
+        "MERGED",
+        "UNCONFIRMED"
+      ],
+      "evidence_required": "the refused proposal, its proposer(s), and the reason no tool decided it",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "CONTESTED": {
+      "meaning": "A CONFIRMED or CORROBORATED finding drew a challenge carrying new evidence.",
+      "who_may_assert": [
+        "model"
+      ],
+      "in_from": [
+        "CONFIRMED",
+        "CORROBORATED"
+      ],
+      "out_to": [
+        "CONFIRMED",
+        "CORROBORATED",
+        "REFUTED",
+        "ESCALATED",
+        "UNCONFIRMED"
+      ],
+      "evidence_required": "the challenge text and its falsifier if any",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "ESCALATED": {
+      "meaning": "No tool can decide and it matters. The SOLE arbiter state — do not widen it.",
+      "who_may_assert": [
+        "human"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED",
+        "CONFIRMED",
+        "CONTESTED",
+        "UNCONFIRMED"
+      ],
+      "out_to": [
+        "OPEN",
+        "CONFIRMED",
+        "REFUTED",
+        "CLOSED"
+      ],
+      "evidence_required": "the exhaustion record",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "UNCONFIRMED": {
+      "meaning": "Aged out without decision. Reopenable on new evidence.",
+      "who_may_assert": [
+        "mechanical"
+      ],
+      "in_from": [
+        "OPEN",
+        "CORROBORATED",
+        "CONTESTED",
+        "WITHHELD"
+      ],
+      "out_to": [
+        "REOPENED",
+        "OPEN"
+      ],
+      "evidence_required": "none — it is the ABSENCE of evidence",
+      "terminal": false,
+      "live": false,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "REOPENED": {
+      "meaning": "New evidence arrived after a terminal or aged-out state.",
+      "who_may_assert": [
+        "model"
+      ],
+      "in_from": [
+        "CLOSED",
+        "REFUTED",
+        "UNCONFIRMED"
+      ],
+      "out_to": [
+        "OPEN"
+      ],
+      "evidence_required": "the new verdict that reopened it",
+      "terminal": false,
+      "live": true,
+      "tool_only": false,
+      "deprecated": false
+    },
+    "DUPLICATE": {
+      "meaning": "DEPRECATED — collapse into MERGED + merged_into. Written zero times across the archive; retained only because eleven terminal-status filters still name it.",
+      "who_may_assert": [
+        "tool"
+      ],
+      "in_from": [],
+      "out_to": [],
+      "evidence_required": "n/a — deprecated",
+      "terminal": true,
+      "live": false,
+      "tool_only": true,
+      "deprecated": true
+    }
+  }
+}
