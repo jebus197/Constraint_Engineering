@@ -1,25 +1,33 @@
 # CDSFL Current State
 
-Generated: 30 August 2026 14:09 BST (2026-08-30T14:09:06+01:00)
+Generated: 31 August 2026 00:42 BST (2026-08-31T00:42:11+01:00)
 
 ---
 
 ## Git
 
-- **Branch:** main
-- **Last commit:** `a2ce923` Wire EXTEND, the only parsed verdict nothing read, and re-verify the rest under sy.
-- **Committed:** 2026-08-30 14:04:02 +0100
-- **Remote:** ahead of origin/main by 156
-- **Working tree:** DIRTY — uncommitted changes present
+> **SNAPSHOT TAKEN IMMEDIATELY BEFORE THE sv COMMIT — NOT CURRENT TRUTH.**
+> This file is generated first and committed second, so it cannot describe
+> the commit that carries it. Read the block below as follows:
+> **"Last commit" is the PARENT** of the commit containing this file, and
+> **the uncommitted list is the working tree at snapshot time — it is NOT
+> that commit's file list.** The two differ in both directions: sv rewrites
+> docs/CURRENT_STATE.md, resources/ONBOARDING.md and resources/RECOVERY.md
+> *after* this snapshot, and it stages only whitelisted paths. For the
+> commit this file actually lives in and its real contents, run
+> `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
-Uncommitted files:
-- `?? experimental_notes/Extend_And_Reverification_2026-08-30.md`
+- **Branch:** main
+- **Last commit (the PARENT of the commit containing this file):** `e766935` Pre-push privacy scan: remove 2 new personal-detail additions
+- **Committed:** 2026-08-31 00:41:26 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**4436 tests collected** at 30 August 2026 14:09 BST, HEAD `a2ce923` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**4599 tests collected** at 31 August 2026 00:42 BST, HEAD `e766935` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -49,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `a2ce923 Wire EXTEND, the only parsed verdict nothing read, and re-verify the rest under sy.`
-- `43896fd Run sv again after a second memory write: 124 -> 125.`
-- `38c458f The simulated run already exists: exercise the 2026-08-29/30 repairs in it, 15/15 stages green.`
-- `c898988 Extract a reviewer s work BEFORE tearing the sandbox down.`
-- `757cea3 Capture reviewer tool calls, and deliver the t artefact pair.`
-- `862ff7c Enforce the MC command set with a hook, because marking it in six places has not worked since April.`
-- `81bef2e Run sv to derive the memory ledger rather than hand-correct it an eighth time.`
-- `9e12f2d Complete the morning TTS: the MC measurement, the five tasks, and the corrected headline.`
-- `2a1ca72 Task 5: wire the fix-efficacy probe, and let sy falsify my own headline.`
-- `60fa5e0 Tasks 1, 3, 4: lint the notes, sweep the stale ONBOARDING claim, and generalise the audit that missed it.`
+- `e766935 Pre-push privacy scan: remove 2 new personal-detail additions`
+- `11ad4a9 Three more rulings applied: truncation fixed, Gemini tooled and PAID-tested, 133 pairs folded in`
+- `1631202 Backlog TTS pair: two older decisions, currency verified first`
+- `8b73653 Rulings 3, 4 and 5: tools enforced without exception, bar one recorded gap`
+- `5be7584 Founder rulings 1 and 2 applied: option B, and option A`
+- `a6559fe One consolidated decisions document, replacing three`
+- `6f111d6 Actually apply the error-tail fix (the previous commit's edit never ran)`
+- `2a6187d Disarm the sim ask pending a ruling; stop truncating panel errors at the red herring`
+- `75cb00d Report pair, retitled: not a green light yet`
+- `7380736 CC2's third pass said NOT a green light, and it was right on 9 of 10 counts`
