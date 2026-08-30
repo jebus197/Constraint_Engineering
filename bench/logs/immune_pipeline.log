@@ -51834,3 +51834,51 @@
 2026-08-30T16:40:44 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 7/9 (77.8%) exceeds threshold (65%) [rejected=2, duplicated=5])
 2026-08-30T16:40:44 INFO Autoimmune override: resurrected 2 findings, kept 7 locked rejections
 2026-08-30T16:40:47 INFO Fix NOT verified: ChatGPT_F002 — verdict=HARMFUL (issues introduced)
+2026-08-30T16:45:58 INFO Domain config loaded: software (1 sections)
+2026-08-30T16:45:58 INFO Skin barrier (v2): 4 passed, 1 failed out of 5 findings
+2026-08-30T16:45:58 INFO   BLOCKED: ChatGPT_F002 — Cited file not found: `reference_runner_v2.py
+2026-08-30T16:45:58 INFO DC v2 reclassification: CC2_C0001 — v1=logical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:45:58 INFO DC v2 reclassification: CC2_C0002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:45:58 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-08-30T16:45:58 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-08-30T16:45:58 INFO DC v2 (v2): 4/4 findings reclassified
+2026-08-30T16:45:58 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 4 findings to classify.
+2026-08-30T16:46:56 INFO LLM classifier: ChatGPT_F003 — regex=code_behavioral llm=mathematical (conf=0.72, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 12.2s)
+2026-08-30T16:46:56 INFO LLM classifier: 3/4 agree with regex (75.0%), 0 overrides applied
+2026-08-30T16:46:56 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T16:46:58 INFO NK v2 (v2): 3 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T16:48:10 INFO CT v2 (v2): 0 verdicts in 74.0s — none
+2026-08-30T16:48:10 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-08-30T16:48:10 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T16:48:10 INFO Helper T v2 (v2): 4 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 3 DUPLICATE
+2026-08-30T16:48:10 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-08-30T16:48:10 INFO Reconciliation LOCKED: CC2_C0001 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-08-30T16:48:10 INFO Reconciliation LOCKED: CC2_C0002 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-08-30T16:48:10 INFO Reconciliation locked 3 finding(s): CC2_C0001, CC2_C0002, ChatGPT_F001
+2026-08-30T16:53:17 INFO Domain config loaded: software (1 sections)
+2026-08-30T16:53:17 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-08-30T16:53:17 INFO DC v2 reclassification: ChatGPT_UNSTRUCTURED — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-08-30T16:53:17 INFO DC v2 reclassification: Gemini_F012 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-08-30T16:53:17 INFO DC v2 (v2): 2/2 findings reclassified
+2026-08-30T16:53:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-08-30T16:53:29 INFO LLM classifier: ChatGPT_UNSTRUCTURED — regex=code_behavioral llm=uncategorised (conf=0.50, llm=uncategorised: no valid reclass target, 12.2s)
+2026-08-30T16:53:39 INFO LLM classifier: 1/2 agree with regex (50.0%), 0 overrides applied
+2026-08-30T16:53:39 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T16:53:40 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T16:55:11 INFO CT v2 (v2): 0 verdicts in 92.5s — none
+2026-08-30T16:55:11 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-08-30T16:55:11 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T16:55:11 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-08-30T16:55:11 INFO Reconciliation LOCKED: Gemini_F012 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+2026-08-30T16:55:11 INFO Reconciliation locked 1 finding(s): Gemini_F012
+2026-08-30T17:00:15 INFO Domain config loaded: software (1 sections)
+2026-08-30T17:00:15 INFO Skin barrier (v2): 0 passed, 0 failed out of 0 findings
+2026-08-30T17:00:15 INFO DC v2 (v2): 0/0 findings reclassified
+2026-08-30T17:00:15 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 0 findings to classify.
+2026-08-30T17:00:15 INFO LLM classifier: 0/0 agree with regex (0.0%), 0 overrides applied
+2026-08-30T17:00:15 INFO CT v2 (v2): no code findings to investigate
+2026-08-30T17:00:15 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-08-30T17:00:15 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-08-30T17:00:15 INFO B-Cell specialist (LIVE, domain=software): 0 verdicts
+2026-08-30T17:00:15 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-08-30T17:00:15 INFO Helper T v2 (v2): 0 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 0 DUPLICATE

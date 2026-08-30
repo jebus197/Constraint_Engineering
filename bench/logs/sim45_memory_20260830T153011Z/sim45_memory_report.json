@@ -1,4 +1,1042 @@
 {
+  "experiment": "sim45_memory",
+  "runner_version": "v3.1",
+  "topology": "star",
+  "relay_mode": null,
+  "start_time": "2026-08-30T15:30:11.672786+00:00",
+  "pattern": "fff",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/dm/_memory.py",
+  "target_kind": {
+    "kind": "python_module",
+    "reason": "suffix .py",
+    "declared_in_config": null,
+    "sk_enabled_requested": true,
+    "sk_enabled_effective": true,
+    "sk_forced_off_by_target_kind": false
+  },
+  "context_files": [],
+  "max_rounds": 4,
+  "extension_cap": 4,
+  "domain": "software",
+  "convergence_config": {
+    "earliest_stop": 12,
+    "consecutive_required": 2,
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "critical_series": "location_keyed",
+    "location_keyed_convergence": true,
+    "gamma_alt_threshold": 0.3,
+    "gamma_alt_consecutive_zero_crit": 3,
+    "gamma_alt_earliest_round": 3,
+    "hardened_gate_enabled": false,
+    "critical_severity_threshold": 0.7,
+    "known_limitation": "location-keyed counting cannot distinguish a second distinct defect in an already-flagged function from a re-find, so a zero tail means 'no new criticals at previously unflagged locations'. Fired at the closing round in Exp 45 (C0031) and Exp 47 (C0070). See bench/audit_closing_window.py."
+  },
+  "directive_factors": {
+    "feedback": {
+      "enabled": true,
+      "off_mode": "absent",
+      "directive_text_present": true,
+      "runner_pass_active": true
+    },
+    "divergence": {
+      "enabled": true,
+      "off_mode": "absent",
+      "directive_text_present": true,
+      "runner_pass_active": true
+    }
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 9,
+      "findings": [
+        {
+          "finding_id": "CC2_F001",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.6,
+          "description": "`blended_prior()` (`bench/dm/_memory.py:222-241`) computes `(1.0 - rho) * pi_base + rho * pm` with no validation on `rho` or `pi_base`. The docstring states \"Returns: Blended prior in [0, 1],\" but neither argument is checked against that range, unlike every other numeric input in this module (`decay_rate` goes through `_check_count`; `confirmed`/`rejected` go through `_check_count`).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "CC2_F002",
+          "model_id": "CC2",
+          "flaw_class": 6,
+          "severity": 0.5,
+          "description": "`ImmuneMemory.__init__` (`bench/dm/_memory.py:150-151`) validates `decay_rate` through `_check_count` but assigns `drift_threshold` directly with zero validation: `self.drift_threshold = drift_threshold`. `load()` (`bench/dm/_memory.py:~395`) reads `drift_threshold` straight from persisted JSON (`data.get(\"drift_threshold\", 2.0)`) into the same unchecked constructor path.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "Gemini_UNSTRUCTURED",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "## FINDING F001\n\nSEVERITY: 0.78\nFLAW_CLASS: 5 (correctness \u2014 silent data loss masquerading as success)\nABSTRACTION_INDEX: 0.60\n\nFIND: `ImmuneMemory.load()` (`bench/dm/_memory.py`, the `try: data = json.load(f) except (json.JSONDecodeError, OSError) as exc: logger.warning(...); return cls()` block) treats a corrupted or unreadable memory file exactly like a missing one \u2014 silent return of an empty, valid-looking instance, no exception. `save()` (same file) is non-atomic (`open(path,\"w\"); json.dump",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 6,
+          "severity": 0.5,
+          "description": "`ImmuneMemory.__init__` (bench/dm/_memory.py:158-172) validates `decay_rate` through `_check_count` (finite, non-negative) but assigns `self.drift_threshold = drift_threshold` with no validation at all. `drift_threshold` is read straight from untrusted persisted JSON in `load()` (`data.get(\"drift_threshold\", 2.0)`, line ~436/444) exactly the same way `decay_rate` is, but only `decay_rate` is protected.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 4,
+          "severity": 0.35,
+          "description": "`blended_prior` (bench/dm/_memory.py:~236-252) is documented to return \"Blended prior in [0, 1]\" and takes `pi_base` and `rho` as plain floats with no internal clamping: `return (1.0 - rho) * pi_base + rho * pm`. `pi_mem` similarly has no guard on its own inputs beyond what callers supply.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "Codex_F003",
+          "model_id": "Codex",
+          "flaw_class": 2,
+          "severity": 0.25,
+          "description": "`FlawClassRecord.from_dict` (bench/dm/_memory.py:107-113) accesses `d[\"flaw_class\"]` directly with no key-existence handling, so a `records` entry in a persisted memory JSON that is missing `flaw_class` raises a bare `KeyError`. `ImmuneMemory.load`'s own docstring (line ~382) states its `Raises:` contract is `MemoryIntegrityError` \u2014 the module's dedicated exception family for exactly this situation (\"a count that is not a finite non-negative number\") \u2014 but a malformed record here raises a differ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 6,
+          "severity": 0.8,
+          "description": "`save()` (`bench/dm/_memory.py:379-396`) writes JSON directly to the target `path` with `open(path, \"w\")` + `json.dump`. There is no temp-file-plus-rename. If the process is interrupted mid-write (killed, OOM, disk full, power loss \u2014 all realistic for long unattended experiment runs under this project's `cy` monitoring discipline), `path` is left containing a truncated, syntactically invalid JSON fragment. `load()` (`:402-467`) catches exactly that condition (`json.JSONDecodeError, OSError`) and",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.55,
+          "description": "`load()`, `record_experiment()`, and `save()` are three independent public calls with no synchronization between them. The module docstring itself says the runner performs \"load \u2192 record \u2192 save against one shared file.\" If two processes each execute that cycle concurrently against the same path (plausible in this project given the parallel-agent dispatch patterns referenced elsewhere in the repo), both load the same on-disk state, both append their own distinct experiment in memory, and both cal",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.45,
+          "description": "`blended_prior()` (`bench/dm/_memory.py:292-310`) computes `(1.0 - rho) * pi_base + rho * pm` with no validation that `rho` or `pi_base` fall in `[0, 1]`, despite the docstring's explicit contract: \"Returns: Blended prior in [0, 1].\" Every other numeric input in this module (`decay_rate`, all confirmed/rejected counts) is validated via `_check_count` \u2014 this is the one arithmetic entry point that isn't.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        }
+      ],
+      "novel_this_round": 9,
+      "registry_total": 9,
+      "open_crit_high": 1,
+      "unverified_critical": 0,
+      "models_responded": [
+        "CC2",
+        "Gemini",
+        "Codex",
+        "ChatGPT"
+      ],
+      "elapsed_s": 300.5,
+      "gamma": 0.0,
+      "gamma_all": 0.0,
+      "gamma_critical": 0.0,
+      "gamma_gate_series": "gamma_critical",
+      "location_crit_shadow": 1,
+      "rho": 1.0,
+      "rho_avg": 1.0,
+      "verification": {
+        "skipped": true,
+        "reason": "round 0 < 6"
+      },
+      "sk_pipeline": {
+        "round": 0,
+        "evaluated": 8,
+        "admissible": 8,
+        "rejected": 0,
+        "escalated": 0,
+        "no_score": 0,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0004": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0005": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0006": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.9667,
+            "A": 1,
+            "E": 0.9667,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 0.9,
+                "detail": "2 total, 1 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.37612205181666664
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0009": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 0,
+        "open_ch": 1,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 0 < 15"
+      },
+      "shadow_cells": {},
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 5,
+      "findings": [
+        {
+          "finding_id": "CC2_C0001",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.6,
+          "description": "`blended_prior()` (`bench/dm/_memory.py:292-310`) computes `(1.0 - rho) * pi_base + rho * pm` and its docstring states \"Returns: Blended prior in [0, 1].\" Neither `rho` nor `pi_base` is checked. Live execution: `mem.blended_prior(flaw_class=0, pi_base=0.0, rho=3.0)` returns `2.4230769230769234`; `mem.blended_prior(flaw_class=1.0, pi_base=1.0, rho=-2.0)` returns `1.3846153846153846`. Both violate the stated invariant.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "CC2_C0002",
+          "model_id": "CC2",
+          "flaw_class": 4,
+          "severity": 0.5,
+          "description": "`ImmuneMemory.__init__` (`bench/dm/_memory.py:150-152`) validates `decay_rate` through `_check_count` (finite, non-negative) but assigns `self.drift_threshold = drift_threshold` with zero validation. Live execution: `ImmuneMemory(drift_threshold=-1.0)` constructs successfully; `update_drift(0, 0.5)` immediately returns `True` with `CUSUM+ = 0.000, CUSUM- = 0.000` (i.e., `0.0 > -1.0`), a spurious drift alarm on the very first observation. `ImmuneMemory(drift_threshold=float('nan'))` constructs su",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.75,
+          "description": "`save()` (`bench/dm/_memory.py`, the `def save(self, path: str) -> None:` block) writes directly to the target path: `with open(path, \"w\") as f: json.dump(data, f, indent=2)`. No temp-file-plus-rename. If the process is killed, the disk fills, or power is lost mid-write, `path` is left holding a partial/truncated JSON document \u2014 there is no other copy.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 6,
+          "severity": 0.5,
+          "description": "`load()`, `record_experiment()`, and `save()` are independent public methods with no locking between them. The documented usage pattern (module docstring example, and both call sites in `reference_runner_v2.py:9264-9273` and `:11524-11550`) is load \u2192 mutate \u2192 save against one shared path.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "FINDING_ID: F003 (= C0009) \u2014 WITHDRAWN\n\nPer schema feedback (cosine 0.82 to C0001) and my own re-check: C0009 and C0001 target the identical code (`blended_prior`'s missing `rho`/`pi_base` bound valid",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 2,
+      "registry_total": 11,
+      "open_crit_high": 1,
+      "unverified_critical": 0,
+      "models_responded": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek"
+      ],
+      "elapsed_s": 300.7,
+      "gamma": 0.0,
+      "gamma_all": 0.0,
+      "gamma_critical": 0.0,
+      "gamma_gate_series": "gamma_critical",
+      "location_crit_shadow": 0,
+      "rho": 0.4,
+      "rho_avg": 0.7,
+      "verification": {
+        "skipped": true,
+        "reason": "round 1 < 6"
+      },
+      "sk_pipeline": {
+        "round": 1,
+        "evaluated": 5,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 0,
+        "no_score": 0,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.9667,
+            "A": 1,
+            "E": 0.9667,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 0.9,
+                "detail": "2 total, 1 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.37612205181666664
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0011": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 1,
+        "open_ch": 1,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 1 < 15"
+      },
+      "shadow_cells": {},
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 2,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_UNSTRUCTURED",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "I need to flag a conflict before doing anything else, rather than comply silently.\n\nThis prompt asks me to act as \"ChatGPT: GPT-5.5 (OpenAI)\" \u2014 one of five named vendor models in a \"distributed code review\" \u2014 and to produce fabricated cross-model verdicts (CC2:CONFIRM, ChatGPT:CONFIRM, etc.), fabricated statistical self-assessments (R_k residual-risk arithmetic, novelty scores with citations like `arXiv:2502.09858`), and a fabricated \"SCHEMA FEEDBACK\" round history. No actual dispatch to OpenAI,",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F012",
+          "model_id": "Gemini",
+          "flaw_class": 2,
+          "severity": 0.35,
+          "description": "In `record_experiment` (`bench/dm/_memory.py:248`), `validated[int(fc)] = (...)` calls `int(fc)` outside the preceding `try/except (TypeError, ValueError)` block that guards the tuple-unpack on the same line group. If `fc` (a `flaw_counts` dict key) is not int-convertible (e.g., a string like `\"not-a-number\"`), `int(fc)` raises a bare builtin `ValueError`, not the `MemoryIntegrityError` the method's docstring promises (\"Raises: MemoryIntegrityError: on an unnamed experiment, a count that is not ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_memory.py"
+        }
+      ],
+      "novel_this_round": 2,
+      "registry_total": 13,
+      "open_crit_high": 1,
+      "unverified_critical": 0,
+      "models_responded": [
+        "ChatGPT",
+        "Gemini",
+        "Codex"
+      ],
+      "elapsed_s": 301.8,
+      "gamma": 0.6702,
+      "gamma_all": 0.6702,
+      "gamma_critical": 1.0,
+      "gamma_gate_series": "gamma_critical",
+      "location_crit_shadow": 0,
+      "rho": 1.0,
+      "rho_avg": 0.8,
+      "verification": {
+        "skipped": true,
+        "reason": "round 2 < 6"
+      },
+      "sk_pipeline": {
+        "round": 2,
+        "evaluated": 2,
+        "admissible": 2,
+        "rejected": 0,
+        "escalated": 0,
+        "no_score": 0,
+        "results": {
+          "C0010": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0013": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded (python target)"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": null,
+                "detail": "no test command configured"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "1 total, 0 new (baseline: 1)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 2,
+        "open_ch": 1,
+        "contested": 0,
+        "gamma": 0.6702,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 2 < 15"
+      },
+      "shadow_cells": {},
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 0,
+      "findings": [],
+      "novel_this_round": 0,
+      "registry_total": 13,
+      "open_crit_high": 1,
+      "unverified_critical": 0,
+      "models_responded": [
+        "ChatGPT",
+        "DeepSeek",
+        "Codex"
+      ],
+      "elapsed_s": 301.7,
+      "gamma": 0.7149,
+      "gamma_all": 0.7149,
+      "gamma_critical": 1.0,
+      "gamma_gate_series": "gamma_critical",
+      "location_crit_shadow": 0,
+      "rho": 0.0,
+      "rho_avg": 0.4667,
+      "verification": {
+        "skipped": true,
+        "reason": "round 3 < 6"
+      },
+      "sk_pipeline": {
+        "round": 3,
+        "evaluated": 0,
+        "admissible": 0,
+        "rejected": 0,
+        "escalated": 0,
+        "no_score": 0,
+        "results": {}
+      },
+      "stall_detector": {
+        "round": 3,
+        "open_ch": 1,
+        "contested": 0,
+        "gamma": 0.7149,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 3 < 15"
+      },
+      "shadow_cells": {},
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    }
+  ],
+  "target_hashes": {
+    "0": "989a14056762b5b5037abf25df758c3e377d390d14dd5a33d6f4d804bd32e2fb",
+    "1": "989a14056762b5b5037abf25df758c3e377d390d14dd5a33d6f4d804bd32e2fb",
+    "2": "989a14056762b5b5037abf25df758c3e377d390d14dd5a33d6f4d804bd32e2fb",
+    "3": "989a14056762b5b5037abf25df758c3e377d390d14dd5a33d6f4d804bd32e2fb"
+  },
+  "converged_at": 3,
+  "convergence_reason": "CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical=1.000 >= 0.3 (decay curve flattened) AND 3 consecutive zero-new-critical rounds (history tail=[0, 0, 0]) at round 3 \u2014 the two sides of the same diminishing-returns measure agree",
+  "total_findings": 16,
+  "total_rounds": 4,
+  "total_elapsed_s": 1804.0,
+  "end_time": "2026-08-30T16:00:15.418784+00:00",
+  "gamma_gate_series": "gamma_critical_history",
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.6702,
+    0.7149
+  ],
+  "rho_history": [
+    1.0,
+    0.4,
+    1.0,
+    0.0
+  ],
+  "rho_novelty_counts": [
+    9,
+    2,
+    2,
+    0
+  ],
+  "rho_raw_counts": [
+    9,
+    5,
+    2,
+    0
+  ],
+  "gamma_all_history": [
+    0.0,
+    0.0,
+    0.6702,
+    0.7149
+  ],
+  "gamma_critical_history": [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+  ],
+  "hierarchical_crit_series": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "hierarchical_crit_series_is_gating": false,
+  "hierarchical_within_threshold": 0.2,
+  "novelty_rule_divergence": {
+    "hierarchical_splits_location_merges": [],
+    "location_splits_hierarchical_merges": [],
+    "n_split": 0,
+    "n_merged": 0,
+    "within_threshold": 0.2
+  },
+  "location_crit_series": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "location_crit_series_is_gating": true,
+  "location_crit_shadow_history": [
+    1,
+    0,
+    0,
+    0
+  ],
   "registry": {
     "entries": {
       "C0001": {
@@ -1384,9 +2422,9 @@
         "proposed_fix": "",
         "falsifier_code": "",
         "falsifier_verdict": "",
-        "status": "OPEN",
+        "status": "UNCONFIRMED",
         "open_since_round": 2,
-        "last_status_change_round": 2,
+        "last_status_change_round": 3,
         "verdicts": [
           {
             "model": "DeepSeek",
@@ -1403,7 +2441,21 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0
+        "source_diversity": 0.0,
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ]
       },
       "C0013": {
         "canonical_id": "C0013",
@@ -1532,245 +2584,7 @@
       "Gemini:Gemini_F012": "C0013"
     }
   },
-  "novelty_counts": [
-    9,
-    2,
-    2,
-    0
-  ],
-  "raw_counts": [
-    9,
-    5,
-    2,
-    0
-  ],
-  "novelty_counts_per_model": {
-    "Gemini": [
-      1,
-      0,
-      1,
-      0
-    ],
-    "Codex": [
-      3,
-      0,
-      0,
-      0
-    ],
-    "DeepSeek": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "ChatGPT": [
-      3,
-      0,
-      1,
-      0
-    ],
-    "CC2": [
-      2,
-      2,
-      0,
-      0
-    ]
-  },
-  "raw_counts_per_model": {
-    "Gemini": [
-      1,
-      0,
-      1,
-      0
-    ],
-    "Codex": [
-      3,
-      0,
-      0,
-      0
-    ],
-    "DeepSeek": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "ChatGPT": [
-      3,
-      3,
-      1,
-      0
-    ],
-    "CC2": [
-      2,
-      2,
-      0,
-      0
-    ]
-  },
-  "rho_history": [
-    1.0,
-    0.4,
-    1.0,
-    0.0
-  ],
-  "gamma_history": [
-    0.0,
-    0.0,
-    0.670151,
-    0.714911
-  ],
-  "gate_history": [
-    false,
-    false,
-    false,
-    false
-  ],
-  "open_ch_history": [],
-  "stall_history": [
-    {
-      "open_ch": 1,
-      "contested": 0
-    },
-    {
-      "open_ch": 1,
-      "contested": 0
-    },
-    {
-      "open_ch": 1,
-      "contested": 0
-    },
-    {
-      "open_ch": 1,
-      "contested": 0
-    }
-  ],
-  "novel_critical_history": [
-    1,
-    0,
-    0,
-    0
-  ],
-  "cumulative_context_chars": 156703,
-  "consecutive_churn_rounds": 0,
-  "itc_model_state": {
-    "Codex": {
-      "history": [
-        {
-          "round": 1,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 2,
-          "classification": "CAPABILITY_MISMATCH",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 3,
-          "classification": "CAPABILITY_MISMATCH",
-          "suppressed": null,
-          "findings": 0
-        }
-      ],
-      "adaptation": "section_assign",
-      "retry_count": 1,
-      "escalation_level": 0,
-      "parse_yield_history": [
-        1.0
-      ],
-      "last_adaptive_threshold": 0.5
-    },
-    "DeepSeek": {
-      "history": [
-        {
-          "round": 0,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 1,
-          "classification": "CAPABILITY_MISMATCH",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 2,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        }
-      ],
-      "adaptation": null,
-      "retry_count": 0,
-      "escalation_level": 0
-    },
-    "ChatGPT": {
-      "history": [
-        {
-          "round": 1,
-          "classification": null,
-          "suppressed": "DEGRADATION",
-          "findings": 0
-        }
-      ],
-      "adaptation": null,
-      "retry_count": 0,
-      "escalation_level": 0,
-      "parse_yield_history": [
-        1.0,
-        2.3333333333333335
-      ],
-      "last_adaptive_threshold": 0.5
-    },
-    "CC2": {
-      "history": [
-        {
-          "round": 2,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 3,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        }
-      ],
-      "adaptation": "strip_context",
-      "retry_count": 0,
-      "escalation_level": 0,
-      "parse_yield_history": [
-        1.0,
-        3.5
-      ],
-      "last_adaptive_threshold": 0.5
-    },
-    "Gemini": {
-      "history": [
-        {
-          "round": 1,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        },
-        {
-          "round": 3,
-          "classification": "TRANSIENT_FAILURE",
-          "suppressed": null,
-          "findings": 0
-        }
-      ],
-      "adaptation": "retry",
-      "retry_count": 1,
-      "escalation_level": 0
-    }
-  },
-  "itc_hil_flags": [
+  "hil_flags": [
     {
       "model": "DeepSeek",
       "round": 2,
@@ -1786,5 +2600,226 @@
       "message": "Codex has 3 consecutive ITC interventions (latest: CAPABILITY_MISMATCH). Flagged for HIL review."
     }
   ],
-  "burst_state": null
+  "secondary_route_usage": [],
+  "persistent_empty_flags": [],
+  "merkle_chain": {
+    "path": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/sim45_memory_20260830T153011Z/experiment_chain.json",
+    "records": 9,
+    "merkle_root": "sha256:8f8efb2f12cb9a4bab05bd0741cf933d8d3a2d6b62b489c9105bb5288d4c0e69"
+  },
+  "survived_falsification": {
+    "ledger": "survived_falsification",
+    "experiment": "sim45_memory",
+    "meaning": "A falsifier that ran to a clean exit is evidence that the claim survived THAT test, written by THAT model, on THAT round. It is NOT proof the claim is true. Absence of a demonstration is not a demonstration of absence: the test may have been too weak to find a real defect, may have probed the wrong property, or may have been broken in a way that still exits cleanly. The only reading an entry licenses is 'not refuted by the tests put to it so far'. Any reading of the form 'verified true', 'confirmed correct', 'validated' or 'proven' overstates the evidence and misreports the result.",
+    "not_proof_of_truth": true,
+    "weak_evidence_caveat": "Survivals on CRITICAL-severity findings are the weak case and must not be counted as equivalent to the rest. The Exp 42 audit measured 2 of 3 clean-exit verdicts on critical findings to be FALSE \u2014 the falsifier cleared a defect that was real (C0028, C0040). This is why the runner escalates a clean-exit critical to a human rather than dropping it. A critical-severity row here is a prompt for human review, not a clearance.",
+    "discrimination_limitation": "This ledger records that a falsifier did not fire. It does NOT establish that the falsifier tested the claim at all \u2014 a falsifier that probes the wrong property, or nothing whatever, also exits cleanly and is recorded here identically to a sound one. The full falsifier text and its digest are retained on every row so that this can be checked by inspection. Rows are a starting point for review, not a substitute for it.",
+    "verdict_semantics": {
+      "REFUTED": "the falsifier ran to a clean exit and did NOT demonstrate the alleged defect \u2014 the claim survived this test",
+      "CONFIRMED": "the falsifier demonstrated the alleged defect \u2014 the claim did NOT survive; no survival entry is written",
+      "ERROR": "the falsifier could not be trusted to decide (timeout, harness fault, or a broken falsifier) \u2014 evidence in NEITHER direction",
+      "UNTOOLABLE": "no falsifier was supplied \u2014 nothing was tested, so nothing is recorded",
+      "INTEGRITY_VIOLATION": "the falsifier reached for the material that decides the answer, so it was refused and never ran \u2014 a MACHINERY fault, evidence in NEITHER direction, and never a survival"
+    },
+    "status": "ACTIVE",
+    "alarms": [
+      "NO SURVIVALS: 4 falsifier verdict(s) were observed and none was a clean exit (tally={'CONFIRMED': 0, 'ERROR': 0, 'INTEGRITY_VIOLATION': 0, 'REFUTED': 0, 'UNTOOLABLE': 4}). The ledger ran; it simply has nothing positive to record."
+    ],
+    "falsifier_verdicts_observed": 4,
+    "verdict_tally": {
+      "CONFIRMED": 0,
+      "ERROR": 0,
+      "INTEGRITY_VIOLATION": 0,
+      "REFUTED": 0,
+      "UNTOOLABLE": 4
+    },
+    "rows_recorded": 0,
+    "standing_rows": 0,
+    "standing_claims": 0,
+    "distinct_claims_standing": [],
+    "rows_note": "A row is one falsifier re-execution, not one claim. Several rows may attest the same claim across rounds. Use 'standing_claims' for a count of claims.",
+    "overturned_rows": 0,
+    "weak_evidence_standing_rows": 0,
+    "malformed_rows": 0,
+    "rows": []
+  },
+  "finding_catalogue": {
+    "path": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/sim45_memory_20260830T153011Z/sim45_memory_finding_catalogue.jsonl",
+    "vocabulary_path": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/sim45_memory_20260830T153011Z/sim45_memory_status_vocabulary.json",
+    "records": 13,
+    "demonstrated": 0,
+    "vocabulary_version": "2026-08-22"
+  },
+  "_simulated": true,
+  "_sim_label_map": {
+    "CC2": "SIM-A",
+    "DeepSeek": "SIM-B",
+    "ChatGPT": "SIM-C",
+    "Gemini": "SIM-D",
+    "Codex": "SIM-E",
+    "Fable": "SIM-F"
+  },
+  "_sim_dispatches": [
+    {
+      "round": 0,
+      "model": "CC2",
+      "sim": "SIM-A",
+      "seconds": 166.9,
+      "chars": 10751,
+      "findings": 2
+    },
+    {
+      "round": 0,
+      "model": "Gemini",
+      "sim": "SIM-D",
+      "seconds": 220.0,
+      "chars": 10235,
+      "findings": 1
+    },
+    {
+      "round": 0,
+      "model": "Codex",
+      "sim": "SIM-E",
+      "seconds": 250.3,
+      "chars": 13917,
+      "findings": 3
+    },
+    {
+      "round": 0,
+      "model": "ChatGPT",
+      "sim": "SIM-C",
+      "seconds": 253.3,
+      "chars": 16597,
+      "findings": 3
+    },
+    {
+      "round": 0,
+      "model": "DeepSeek",
+      "sim": "SIM-B",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 1,
+      "model": "CC2",
+      "sim": "SIM-A",
+      "seconds": 208.0,
+      "chars": 12903,
+      "findings": 2
+    },
+    {
+      "round": 1,
+      "model": "ChatGPT",
+      "sim": "SIM-C",
+      "seconds": 239.4,
+      "chars": 13950,
+      "findings": 3
+    },
+    {
+      "round": 1,
+      "model": "DeepSeek",
+      "sim": "SIM-B",
+      "seconds": 261.6,
+      "chars": 18778,
+      "findings": 0
+    },
+    {
+      "round": 1,
+      "model": "Gemini",
+      "sim": "SIM-D",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 1,
+      "model": "Codex",
+      "sim": "SIM-E",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 2,
+      "model": "ChatGPT",
+      "sim": "SIM-C",
+      "seconds": 45.0,
+      "chars": 2454,
+      "findings": 1
+    },
+    {
+      "round": 2,
+      "model": "Gemini",
+      "sim": "SIM-D",
+      "seconds": 204.7,
+      "chars": 11482,
+      "findings": 1
+    },
+    {
+      "round": 2,
+      "model": "Codex",
+      "sim": "SIM-E",
+      "seconds": 243.7,
+      "chars": 9890,
+      "findings": 0
+    },
+    {
+      "round": 2,
+      "model": "CC2",
+      "sim": "SIM-A",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 2,
+      "model": "DeepSeek",
+      "sim": "SIM-B",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 3,
+      "model": "ChatGPT",
+      "sim": "SIM-C",
+      "seconds": 173.3,
+      "chars": 8794,
+      "findings": 0
+    },
+    {
+      "round": 3,
+      "model": "DeepSeek",
+      "sim": "SIM-B",
+      "seconds": 228.9,
+      "chars": 10189,
+      "findings": 0
+    },
+    {
+      "round": 3,
+      "model": "Codex",
+      "sim": "SIM-E",
+      "seconds": 255.6,
+      "chars": 16763,
+      "findings": 0
+    },
+    {
+      "round": 3,
+      "model": "Gemini",
+      "sim": "SIM-D",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    },
+    {
+      "round": 3,
+      "model": "CC2",
+      "sim": "SIM-A",
+      "seconds": 300.0,
+      "chars": 34,
+      "findings": 0
+    }
+  ],
+  "_wall_seconds": 1804.1
 }

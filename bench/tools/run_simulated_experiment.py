@@ -41,7 +41,10 @@ def main() -> int:
     ap.add_argument("--target", default="bench/dm/_memory.py")
     ap.add_argument("--rounds", type=int, default=4)
     ap.add_argument("--models", type=int, default=6)
-    ap.add_argument("--timeout", type=int, default=300)
+    # 300s timed out 7 of 20 dispatches (35%, Wilson CI [18.1%, 56.7%]) on a
+    # 20KB target, and two of those left a model with three consecutive ITC
+    # interventions. 900 matches the live CC2 timeout in the real panel.
+    ap.add_argument("--timeout", type=int, default=900)
     ap.add_argument("--name", default="sim45_memory")
     args = ap.parse_args()
 
