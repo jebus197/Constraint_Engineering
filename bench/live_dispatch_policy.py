@@ -46,6 +46,27 @@ import sys
 
 __all__ = ["live_dispatch_allowed", "under_pytest", "OPT_IN_ENV"]
 
+#: THE canonical set of metered endpoints. ONE copy, imported by everything
+#: that needs it.
+#:
+#: CC2, third-pass review 2026-08-30: the test netguard and the simulated-run
+#: tripwire each held their own hand-maintained copy, they had ALREADY diverged
+#: (8 hosts vs 5), and BOTH omitted api.groq.com and models.inference.ai.azure.com
+#: -- which bench/run_benchmark.py:650 and :686 actually dispatch to. Two copies
+#: of a money-critical constant is one copy too many.
+#:
+#: NOT claimed to be exhaustive. Fable proved on the same day that a provider
+#: deny-list cannot be completed; this is defence in depth, and the primary
+#: control is that billable credentials are held aside for the duration of a
+#: free-network test.
+PAID_HOSTS = frozenset({
+    "openrouter.ai", "api.openai.com", "api.anthropic.com",
+    "api.deepseek.com", "generativelanguage.googleapis.com",
+    "api.groq.com", "api.mistral.ai", "api.cohere.ai",
+    "models.inference.ai.azure.com", "api.x.ai", "api.together.xyz",
+    "api.fireworks.ai", "api.perplexity.ai",
+})
+
 OPT_IN_ENV = "CDSFL_ALLOW_LIVE_DISPATCH"
 
 _logger = logging.getLogger(__name__)

@@ -205,8 +205,7 @@ def main() -> int:
     # point of a simulated run is that it cannot. So the harness refuses at the
     # transport layer rather than trusting the seam.
     import socket as _sock
-    _PAID = ("openrouter.ai", "api.openai.com", "api.anthropic.com",
-             "api.deepseek.com", "generativelanguage.googleapis.com")
+    from live_dispatch_policy import PAID_HOSTS as _PAID   # ONE canonical copy
     _orig_gai = _sock.getaddrinfo
 
     def _no_paid(host, port, *a, **kw):

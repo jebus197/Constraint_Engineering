@@ -4502,42 +4502,53 @@ def _extract_routing_falsifier(text: str) -> str:
     """
     import ast as _ast
     import re as _re
-    # THE CLOSING FENCE MUST SIT ALONE ON ITS LINE (2026-08-30, CC2 ranked this
-    # 4th and named the in-tree precedent: runner_core.py:1050).
+    # TWO PASSES: STRICT OVER THE WHOLE REPLY, THEN PERMISSIVE ONLY IF THE
+    # STRICT PASS YIELDS NOTHING RUNNABLE (2026-08-30).
     #
-    # THE DEFECT: the old pattern let ``` close a block ANYWHERE, including
-    # mid-line inside a string literal. A falsifier whose own source quotes a
-    # fenced listing -- which is the ONLY shape available for a claim about a
-    # document that prints code -- was truncated at its first inner backtick.
-    # The fragment still parsed and still carried an assert, so it passed every
-    # runnability check and looked like a falsifier. Measured in
-    # test_prose_acceptance_stem: 2 of the 5 prose fixtures, and the selection
-    # pressure ran the wrong way -- a falsifier that correctly opens and parses
-    # its target was destroyed while one pasting an inline copy survived.
-    blocks = _re.findall(r"```[^\n]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
-                         text or "", _re.S)
-    cand = []
-    for raw in blocks:
-        block = raw.strip()
+    # Round 1 required the closing fence to sit alone on its line, per the
+    # precedent at runner_core.py:1050. That kept a SELF-FENCED falsifier intact
+    # -- the only shape available for a claim about a document that prints code
+    # -- and CC2 then measured it as a NET REGRESSION on the routing ladder:
+    # with a malformed first closer ("``` -- run that.") the non-greedy body
+    # scanned past it and past the SECOND block's opening fence, so ONE trailing
+    # word destroyed EVERY block in the reply. Measured: old 2 blocks, new 0.
+    # That fails CLOSED and SILENTLY into a ladder whose failure mode is a false
+    # "ladder exhausted" -- the defect this function exists to prevent.
+    #
+    # Round 2 scanned block-by-block with a permissive fallback, which recovered
+    # the malformed closers and BROKE the self-fenced fixtures again, because
+    # the fallback grabs the falsifier's own inner backticks.
+    #
+    # The two requirements only conflict per-block, not per-reply. So: take the
+    # strict reading of the WHOLE reply first, and only if it produces no
+    # runnable candidate at all, re-read permissively. A self-fenced falsifier
+    # is strict-readable, so it never reaches the fallback; a reply whose
+    # closers are malformed is not, so it does.
+    def _runnable(raw: str) -> bool:
+        block = (raw or "").strip()
         if not block:
-            continue
+            return False
         try:
             tree = _ast.parse(block)
         except Exception:  # noqa: BLE001 — SyntaxError/ValueError/etc: not code
-            continue
-        runnable = False
+            return False
         for node in _ast.walk(tree):
             if isinstance(node, (_ast.Assert, _ast.Raise,
                                  _ast.Import, _ast.ImportFrom)):
-                runnable = True
-                break
+                return True
             if (isinstance(node, _ast.Constant)
                     and isinstance(node.value, str)
                     and "FALSIFIED" in node.value):
-                runnable = True
-                break
-        if runnable:
-            cand.append(block)
+                return True
+        return False
+
+    _STRICT = r"```[^\n]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)"
+    _LOOSE = r"```[^\n]*\n(.*?)```"
+    cand = [b.strip() for b in _re.findall(_STRICT, text or "", _re.S)
+            if _runnable(b)]
+    if not cand:
+        cand = [b.strip() for b in _re.findall(_LOOSE, text or "", _re.S)
+                if _runnable(b)]
     return cand[-1] if cand else ""
 
 
@@ -6892,6 +6903,14 @@ def _dispatch_single_model(
         model_cdsfl += "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
     # I1 fix (gate-aware): when the falsifier gate is on, redefine §2 FALSIFICATION
     # from prose to a runnable falsifier (the 14-HIL fix). Gate-off => unchanged.
+    # The ask is NESTED under the falsifier gate, and that combination is now
+    # stated rather than silent (CC2, 2026-08-30): with ask=True and the gate
+    # OFF, no ask is emitted, which is the same placebo shape the wire was
+    # written to remove.
+    if not enable_tools and bool(_ASK_CORRECTED_COPY.get("on")):
+        _log("  discrimination_control_ask=True but falsifier_gate_enabled=False "
+             "— the corrected-copy ask rides on the gate's §2 rewrite, so NO ask "
+             "is being made this round.")
     if enable_tools:
         # The flag is resolved FIRST so the assignment and its read share a
         # line: test_omission_precedes_every_use_of_the_prompt asserts that the
@@ -9622,21 +9641,12 @@ def run_experiment(
             _log(f"     counted but NOT dispatched: {_only_counted}")
         _log("     every per-model denominator in this run uses the COUNTED list.")
 
-    # A CONFIG FLAG THAT ACCEPTS `true` AND DOES NOTHING IS A CONFIG THAT LIES.
-    # `discrimination_control_ask` is defined on RunnerConfig and read NOWHERE
-    # in production (CC2, panel review 2026-08-30; confirmed by AST: 1 write, 0
-    # reads). Someone setting it in a config would believe they had armed the
-    # discrimination control, and nothing whatever would happen.
-    #
-    # NOT deleted, because arming that control settles an open founder decision
-    # and the flag is where that decision would land. Made LOUD instead, so the
-    # silent-no-op hazard is closed without pre-empting the ruling.
-    if getattr(cfg, "discrimination_control_ask", False):
-        _log("  ** discrimination_control_ask=True IS NOT WIRED — it is read by "
-             "no code in this runner. **")
-        _log("     The discrimination control is presence-gated on the overlay "
-             "sections, not on this flag. Setting it arms nothing.")
-
+    # `discrimination_control_ask` IS WIRED (2026-08-30). It was defined with
+    # 1 write and 0 reads from 2026-08-21 until today; this runner used to print
+    # a warning here saying so, and after the wire landed that warning became a
+    # false statement printed 23 lines before the runner armed the flag (CC2,
+    # third-pass review). Removed rather than reworded: the honest signal is the
+    # arming line below.
     baseline = set(cfg.models)
 
     topo_desc = (

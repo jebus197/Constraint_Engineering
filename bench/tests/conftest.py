@@ -77,7 +77,10 @@ live path is disabled by default; it is never unreachable.
 
 from __future__ import annotations
 
+import ipaddress
 import os
+import pathlib
+import sys
 import socket
 import subprocess
 import sys
@@ -215,14 +218,19 @@ _orig = {
 #: Enumerating it would have produced a guard that passes by denying the very
 #: fetch the test exists to exercise -- which is how these 3 tests spent 49 days
 #: "passing" without ever running.
-_PAID_HOSTS = frozenset({
-    "openrouter.ai", "api.openai.com", "api.anthropic.com",
-    "api.deepseek.com", "generativelanguage.googleapis.com",
-    "api.groq.com", "api.mistral.ai", "api.cohere.ai",
-})
+# `bench/` on the path FIRST, or the import below silently falls back to a
+# truncated copy — which it did on the first attempt, so the running netguard
+# held 5 hosts while the canonical list held 13. A fallback that degrades a
+# money-critical constant without a word is the defect this import was meant to
+# remove.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from live_dispatch_policy import PAID_HOSTS as _PAID_HOSTS  # noqa: E402
 #: Metered model CLIs. `claude` is DELIBERATELY absent: it runs on the Max
 #: subscription, which the ruling above names as the permitted cost floor.
 _PAID_BINARIES = frozenset({"codex", "gemini", "chatgpt", "llm"})
+#: The ONLY network-capable binaries a free_network test may launch. An
+#: allow-list, because the deny-list let `curl` through to a paid endpoint.
+_FREE_WINDOW_BINARIES = frozenset({"claude"})
 
 #: Open ONLY while a `free_network`-marked test is executing.
 _free_window = False
@@ -231,27 +239,101 @@ _free_window = False
 _free_ips: set = set()
 
 
-def _free_allowed(host) -> bool:
-    """True inside a free_network test for any host that is not PAID.
-
-    The money guard is unchanged: a paid endpoint is denied here exactly as it
-    is outside the window.
-    """
-    if not _free_window:
-        return False
+def _normalise_host(host) -> str:
     h = str(host).lower().rstrip(".").strip("'\"")
     if h.startswith("b'") or h.startswith('b"'):     # bytes hostname repr
         h = h[2:].rstrip("'\"")
-    if h in _free_ips:
+    return h
+
+
+def _looks_like_ip(h: str) -> bool:
+    try:
+        ipaddress.ip_address(h)
         return True
+    except ValueError:
+        return False
+
+
+def _free_allowed(host) -> bool:
+    """Permission inside a free_network window.
+
+    REBUILT 2026-08-30 AFTER FABLE BROKE THE FIRST VERSION IN ONE PASS. Its
+    three falsifiers all succeeded against a plain paid-host deny-list:
+
+      1. `curl https://openrouter.ai/...` returned HTTP 200 inside the window,
+         because curl was not on the metered-BINARY list.
+      2. `dig` resolved openrouter.ai out-of-process and a raw-IP
+         `create_connection(("104.18.2.115", 443))` connected, because the
+         deny-list holds NAMES and an IP matches none of them.
+      3. api.x.ai, api.together.xyz, api.fireworks.ai, api.perplexity.ai and
+         AWS Bedrock were all allowed — a deny-list of paid providers cannot be
+         exhaustive, because the set grows without notice.
+
+    So the control is no longer "which hosts are paid". It is bounded by
+    CAPABILITY instead:
+
+      * a NAME is permitted unless it is a known paid host, and resolving it
+        records its addresses;
+      * an IP is permitted ONLY if THIS guard resolved it during THIS window.
+        A raw-IP connect to an address obtained out-of-process is refused, which
+        closes (2) without needing to know every provider's address range;
+      * network BINARIES are an allow-list of one (`claude`, the Max-plan CLI),
+        which closes (1).
+
+    The paid-host list is retained as defence in depth and is NOT claimed to be
+    exhaustive — Fable proved it cannot be.
+    """
+    if not _free_window:
+        return False
+    h = _normalise_host(host)
+    if _looks_like_ip(h):
+        # Only an address this guard resolved for an allowed NAME in this window.
+        return h in _free_ips
     return not any(h == d or h.endswith("." + d) for d in _PAID_HOSTS)
+
+
+#: Env vars that can AUTHORISE A CHARGE. Held aside for the duration of a
+#: free_network test and restored afterwards.
+_CREDENTIAL_SUFFIXES = ("_API_KEY", "_TOKEN", "_SECRET", "_ACCESS_KEY",
+                        "_SECRET_KEY")
+_CREDENTIAL_NAMES = ("CDSFL_KEY_DIR", "AWS_ACCESS_KEY_ID",
+                     "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+_held_credentials: dict = {}
+
+
+def _hold_credentials() -> None:
+    """Remove billable credentials from the environment for the window.
+
+    WHY THIS AND NOT A LONGER DENY-LIST (Fable, 2026-08-30). Its third falsifier
+    showed api.x.ai, api.together.xyz, api.fireworks.ai, api.perplexity.ai and
+    AWS Bedrock all permitted, and that list cannot be completed: new providers
+    appear without notice, so a host deny-list is a losing race.
+
+    Spending money requires a CREDENTIAL, not a hostname. With the credentials
+    held aside, reaching a metered endpoint yields 401 and bills nothing,
+    whichever host it is and whether the call is in-process or a subprocess.
+    The Max-plan `claude` CLI is unaffected: it authenticates from its own
+    stored session, not from these variables.
+    """
+    for k in list(os.environ):
+        if k.endswith(_CREDENTIAL_SUFFIXES) or k in _CREDENTIAL_NAMES:
+            _held_credentials[k] = os.environ.pop(k)
+
+
+def _restore_credentials() -> None:
+    while _held_credentials:
+        k, v = _held_credentials.popitem()
+        os.environ[k] = v
 
 
 def set_free_window(on: bool) -> None:
     global _free_window
     _free_window = bool(on)
-    if not on:
+    if on:
+        _hold_credentials()
+    else:
         _free_ips.clear()
+        _restore_credentials()
 
 
 def _guard_getaddrinfo(host, port, *a, **kw):
@@ -307,9 +389,10 @@ def _guard_popen_init(self, args, *a, **kw):
     argv = [str(x) for x in args] if isinstance(args, (list, tuple)) else [str(args)]
     exe = os.path.basename(argv[0]) if argv else "<empty>"
     joined = " ".join(argv)
-    if _free_window and exe not in _PAID_BINARIES:
-        # Inside a free_network test, a Max-plan CLI and a plain fetch are the
-        # permitted cost floor. Metered CLIs stay denied.
+    if _free_window and exe in _FREE_WINDOW_BINARIES:
+        # ALLOW-LIST OF ONE, not a deny-list (Fable, 2026-08-30). The previous
+        # rule permitted any binary not named as metered, so `curl` reached
+        # openrouter.ai with HTTP 200 from inside a free_network test.
         return _orig["popen_init"](self, args, *a, **kw)
     if exe in _NETWORK_BINARIES or "http://" in joined or "https://" in joined:
         _deny("subprocess", exe, joined)
@@ -372,6 +455,24 @@ def pytest_configure(config):
         install_netguard()
 
 
+_network_up_cache: dict = {}
+
+
+def _network_is_up() -> bool:
+    """One cheap reachability probe per session, cached.
+
+    Uses the real resolver directly, not the guarded one, so the answer does not
+    depend on whether a window happens to be open.
+    """
+    if "up" not in _network_up_cache:
+        try:
+            _orig["getaddrinfo"]("export.arxiv.org", 443)
+            _network_up_cache["up"] = True
+        except Exception:  # noqa: BLE001
+            _network_up_cache["up"] = False
+    return _network_up_cache["up"]
+
+
 def pytest_collection_modifyitems(config, items):
     """Skip `network`-marked tests while the guard is denying the network.
 
@@ -414,7 +515,23 @@ def pytest_runtest_protocol(item, nextitem):
     _state.current_nodeid = item.nodeid
     # The free-host window is open ONLY for the duration of a test that
     # declares `free_network`, and closes in every exit path below.
-    set_free_window(item.get_closest_marker("free_network") is not None)
+    _is_free = item.get_closest_marker("free_network") is not None
+    set_free_window(_is_free)
+    if _is_free and not _network_is_up():
+        # SKIP, NOT FAIL, WHEN THE WIRE IS DOWN (CC2, third-pass review
+        # 2026-08-30). Enabling these tests by default made the suite
+        # NETWORK-DEPENDENT: 2 of the 3 hard-fail with no network, so on a
+        # plane, in an egress-less CI, or during an arXiv outage
+        # `pytest bench/tests` went red and would read as a code defect. That
+        # destroyed this file's founding property -- "it simulates a machine
+        # with no network... and the suite stays green".
+        #
+        # Running when the wire is up and skipping with a stated reason when it
+        # is down satisfies both the founder's ruling and that property. It is
+        # NOT the old blanket skip: the default is to RUN.
+        item.add_marker(pytest.mark.skip(
+            reason="free_network: no route to the internet; these tests reach "
+                   "arXiv and are skipped rather than failed"))
     try:
         yield
     finally:
