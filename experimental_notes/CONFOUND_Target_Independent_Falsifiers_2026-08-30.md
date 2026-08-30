@@ -54,7 +54,7 @@ independently verified"* on those three runs must say N minus these.
 ## The caveat that must travel with the number
 
 Coupling here is established **by import**, not by test content. A falsifier that imports its target and
-then asserts something unrelated to the accused defect scores identically to a rigorous one. So 348
+then asserts something unrelated to the accused defect is recorded as coupled, exactly as a rigorous one is. So 348
 "coupled" is **not** a clean bill of health — it rules out only the crudest failure. The stronger question,
 whether a falsifier tests the defect it actually accuses, is not answered by this measurement and remains
 open.
@@ -119,7 +119,7 @@ This is **I14, the falsifier gate** — the single component the instrument inve
 uncommissioned and that genuinely matters. It already accepts a falsifier that never touches its target;
 it also accepts one that could not find its target and said so.
 
-That is the item to put to the panel, and it is worth more than the corrected count.
+That is the item to put to the panel, and it is worth more than the correction from 9 to 8.
 
 
 ---

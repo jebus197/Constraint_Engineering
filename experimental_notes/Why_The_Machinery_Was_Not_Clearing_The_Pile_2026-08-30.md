@@ -50,7 +50,7 @@ two days earlier.
 **The gap, stated accurately this time**, is narrower and more specific:
 
 `run_verification` runs **ruff, mypy, bandit and the experiment's generic `test_cmd`** against the sandbox.
-It does **not** run *that finding's own falsifier*. So the machinery asks "did this fix break anything, and
+It does **not** run *that finding's own falsifier*. So `run_verification` asks "did this fix break anything, and
 do the project's tests still pass" — it never asks **"does this fix actually cure the defect this finding's
 own falsifier demonstrates?"**
 

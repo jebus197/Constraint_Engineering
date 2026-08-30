@@ -112,6 +112,50 @@ def pairs_pending_founder():
 # ── the registry ─────────────────────────────────────────────────────────────
 # Each entry: the document, a pattern whose PRESENCE asserts the claim, and the
 # checker that says whether the claim still holds.
+
+def components_claimed_commissioned():
+    """CLAIM (general): no canonical document says a component is commissioned
+    that `instrument_inventory.MEASURED` records as NOT commissioned.
+
+    Written 2026-08-30 after the specific instance it would have caught. On
+    2026-08-28 both panel reviewers measured I08, budget extension, as NOT
+    commissioned -- `return False` AND `return True` both leave its only test at
+    17 passed. That was recorded in the inventory the same day. `ONBOARDING.md`
+    went on saying "The four stopping components are now commissioned" for two
+    further days, and this audit did not catch it, because its registry held
+    three hand-written claims and no general rule.
+
+    Deliberately general rather than one more hand-written row: a registry that
+    only ever contains the claims someone already noticed cannot surprise anyone.
+    """
+    inv = (REPO / "scripts" / "instrument_inventory.py").read_text(encoding="utf-8")
+    # MEASURED entries recorded as NOT commissioned: "I08": (False, ...
+    not_commissioned = set(re.findall(r'"(I\d+)":\s*\(False,', inv))
+    if not not_commissioned:
+        return True, "the inventory records no component as measured-not-commissioned"
+
+    docs = [REPO / "resources" / "ONBOARDING.md", REPO / "resources" / "RECOVERY.md"]
+    # A claim of the form "the N <something> components are now commissioned".
+    # Anchored on the ASSERTION form. "Three of the four stopping components are
+    # commissioned" -- the corrected sentence -- contains the same words, and an
+    # audit that fires on its own repair is an audit nobody will keep running.
+    pat = re.compile(r"\*\*The four stopping components are (?:now )?commissioned", re.I)
+    STOPPING = {"I02", "I04", "I07", "I08"}
+    bad = []
+    for d in docs:
+        if not d.is_file():
+            continue
+        text = d.read_text(encoding="utf-8", errors="replace")
+        if pat.search(text):
+            offenders = sorted(STOPPING & not_commissioned)
+            if offenders:
+                bad.append(f"{d.name} claims all four stopping components are "
+                           f"commissioned; the inventory measures {', '.join(offenders)} as NOT")
+    if bad:
+        return False, "; ".join(bad)
+    return True, (f"{len(not_commissioned)} component(s) measured not-commissioned "
+                  f"({', '.join(sorted(not_commissioned))}); no canonical document contradicts that")
+
 CLAIMS = [
     ("merge arbitration defaults OFF",
      [("bench/reference_runner_v2.py", r"defaults False and is unset in every")],
@@ -120,6 +164,9 @@ CLAIMS = [
      [("scripts/replay_accounting.py", r"count of rho-shaped keys is zero"),
       ("resources/RECOVERY.md", r"no archived report carries a rho series in any form\. Decide")],
      rho_series_absent),
+    ("no canonical document claims a measured-not-commissioned component IS commissioned",
+     [("resources/ONBOARDING.md", r"stopping components are (?:now )?commissioned")],
+     components_claimed_commissioned),
     ("the similarity pairs await a founder ruling",
      [("resources/RECOVERY.md", r"133 unadjudicated pairs \(was 120\) — \*\*PENDING FOUNDER RULING")],
      pairs_pending_founder),
