@@ -211,10 +211,49 @@ def name_marks_simulated(relative_path: str) -> bool:
     return bool(_NAME_MARK.search(relative_path))
 
 
+#: Fields in a REVIEW record that hold a reviewer's own words or commands.
+#: A `-SIM` string inside one of these is the reviewer TALKING ABOUT simulated
+#: labels, not an artefact declaring itself simulated.
+_QUOTATION_KEYS = ("response", "input_preview", "command", "prompt", "text",
+                   "brief", "evidence", "detail", "description", "stdout")
+
+
+def _strip_quoted_prose(data: bytes) -> bytes:
+    """Blank out reviewer-authored free text before looking for a self-declaration.
+
+    THE FALSE POSITIVE, 2026-08-30. `bench/logs/panel_*/cc2.tools.json` is the
+    tool log of the REAL CC2 reviewing this repository. It was selected as a
+    "simulated artefact" because CC2 had grepped for `CC2-SIM`, so the string
+    `-SIM` appeared inside a shell command in its own log -- and the guard then
+    flagged the FILENAME `cc2.tools.json` as a bare vendor name.
+
+    That is this file's own stated principle applied one level up: a vendor
+    token in free prose is not a violation, and by the same logic a SIM token in
+    free prose is not a self-declaration. A real panel that DISCUSSES simulated
+    labels must not be reclassified as a simulated run, or every future review
+    brief on this subject turns the guard red and the "repair" is an exclusion
+    list -- i.e. a dead guard, which is the outcome this file exists to prevent.
+
+    Structural declarations are untouched: `"models": ["CC2-SIM"]`,
+    `"model_id": "Gemini-SIM"`, `"simulated": true`, `simulated_bench` and any
+    SIM token in a path or an identity key all still select.
+    """
+    text = data.decode("utf-8", errors="replace")
+    for key in _QUOTATION_KEYS:
+        # Blank the VALUE of a quotation-bearing JSON key, leaving structure.
+        text = re.sub(
+            r'("' + key + r'"\s*:\s*")((?:[^"\\]|\\.)*)(")',
+            lambda m: m.group(1) + " " * len(m.group(2)) + m.group(3),
+            text,
+        )
+    return text.encode("utf-8", errors="replace")
+
+
 def content_marks_simulated(data: bytes) -> bool:
     if not any(tok in data for tok in _CONTENT_PREFILTER):
         return False
-    return bool(_CONTENT_MARK.search(data.decode("utf-8", errors="replace")))
+    structural = _strip_quoted_prose(data)
+    return bool(_CONTENT_MARK.search(structural.decode("utf-8", errors="replace")))
 
 
 # ────────────────────────── identity (label) positions ────────────────────────
@@ -758,3 +797,59 @@ class TestLiveArtefacts:
             f"{SIM_TOOL} exists but was not picked up as a simulated artefact; "
             f"the discovery pass has a hole."
         )
+
+
+class TestAReviewerQuotingSimLabelsIsNotASimulatedArtefact:
+    """The selector must not turn a REAL panel review into a simulated run.
+
+    THE FALSE POSITIVE, 2026-08-30. `bench/logs/panel_*/cc2.tools.json` is the
+    real CC2's tool log. CC2 had grepped for `CC2-SIM` while reviewing the
+    naming repair, so `-SIM` appeared inside a shell command in its own log; the
+    selector matched it anywhere in bytes, classified a real artefact as
+    simulated, and then flagged the filename `cc2.tools.json` as a bare vendor
+    name. Left unfixed, every future review brief on this subject turns the
+    guard red, and the obvious "repair" is an exclusion list -- a dead guard,
+    which is precisely what this file exists to prevent.
+
+    Both directions are pinned, because a selector that stops selecting is a
+    worse failure than one that over-selects.
+    """
+
+    STRUCTURAL = [
+        ('a models list',        b'{"models": ["CC2-SIM", "Gemini-SIM"]}'),
+        ('a model_id',           b'{"model_id": "Gemini-SIM", "x": 1}'),
+        ('an explicit flag',     b'{"simulated": true}'),
+        ('a SIM-x panel label',  b'{"label": "SIM-A"}'),
+        ('a bench reference',    b'{"src": "simulated_bench"}'),
+        ('quoted AND structural',
+         b'{"response": "about CC2-SIM", "models": ["CC2-SIM"]}'),
+    ]
+    QUOTED_ONLY = [
+        ('a reviewer command',   b'{"input_preview": "grep -rn CC2-SIM bench/"}'),
+        ('reviewer prose',       b'{"response": "I checked CC2-SIM and Fable-SIM."}'),
+    ]
+
+    @pytest.mark.parametrize("why,data", STRUCTURAL, ids=[c[0] for c in STRUCTURAL])
+    def test_a_structural_declaration_still_selects(self, why, data):
+        assert content_marks_simulated(data), (
+            f"{why} no longer selects — the guard has been weakened and a "
+            f"simulated artefact can now carry bare vendor names unnoticed"
+        )
+
+    @pytest.mark.parametrize("why,data", QUOTED_ONLY, ids=[c[0] for c in QUOTED_ONLY])
+    def test_a_reviewer_merely_quoting_a_sim_label_does_not_select(self, why, data):
+        assert not content_marks_simulated(data), (
+            f"{why} selects, so a real review that discusses simulated labels "
+            f"is misclassified as a simulated run"
+        )
+
+    def test_the_real_run_artefacts_are_still_selected(self):
+        """The strongest check available: the actual artefact that carried the
+        123 bare vendor names must still be caught."""
+        for rel in ("bench/logs_quarantine/sim45_memory_20260830T153011Z/"
+                    "sim45_memory_report.json",
+                    "bench/logs/sim45_memory_20260830T161215Z/"
+                    "sim45_memory_report.json"):
+            f = REPO_ROOT / rel
+            if f.is_file():
+                assert content_marks_simulated(f.read_bytes()), rel

@@ -101,7 +101,14 @@ def main() -> int:
         experiment_name=args.name,
         # BOTH lists, or the runner counts a different panel than it dispatches.
         models=VENDORS[:args.models],
-        test_article=str(target),
+        # REPO-RELATIVE, not absolute (CC2, panel review 2026-08-30).
+        # `_build_discrimination_overlay` raises
+        # "discrimination control: target must be repo-relative" on an absolute
+        # path, and `cfg.test_article` reaches it raw. So even with the
+        # falsifier supply repaired, the discrimination control could not have
+        # fired in ANY simulated run. Verified by forcing both forms:
+        # relative -> DISCRIMINATES, absolute -> INDETERMINATE_ERROR.
+        test_article=str(args.target),
         domain="software",
         max_rounds=args.rounds,
         falsifier_gate_enabled=True,

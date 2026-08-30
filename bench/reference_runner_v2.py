@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parameterised reference runner for CDSFL experiments (Exp 37+, Bench Run 2).
 
-RUNNER VERSION v3.1 (2026-08-30). A DIRECT DERIVATION OF v2, NOT A REBUILD.
+RUNNER VERSION v3.2 (2026-08-30). A DIRECT DERIVATION OF v2, NOT A REBUILD.
 
 v3.0 was v2 plus ten mechanically-validated patches (b312b84, 2026-08-23).
 v3.1 is v3.0 plus SEVENTEEN further commits — +493/-49 lines, 4.2% of this file —
@@ -25,6 +25,34 @@ Measured, not estimated. The headline changes:
   * Rejection lines render in the compact section too. The gate promotes findings
     to CONFIRMED, which is compact, so a CONFIRMED finding carrying a failed-fix
     verdict or a filed EXTENSION got no feedback at all.
+
+v3.2 is v3.1 plus the repairs made after the first simulated run was AUDITED
+rather than merely observed to converge. +145/-29 lines on this file. The run
+converged at round 3 matching the real exp45 — and 6 of 28 machinery items had
+run and produced nothing, 1 was unreachable, and the falsification core was
+silent for its entire duration. What changed:
+
+  * `base_model_label()`. Two sites compared `mc.label` to the literal "CC2",
+    one of them the verification stage, which otherwise returns
+    `{"skipped": True}` SILENTLY. Honouring the mandatory `-SIM` suffix would
+    have switched that stage off in every simulated run — the naming ruling and
+    the runner were in direct conflict, and the conflict was invisible.
+  * `lookup_alias_any()`. `record_codiscovery` (added 2026-08-23 to close a
+    measured defect: 566 findings, exactly 1.00 `source_aliases` each) resolved
+    with the DUPLICATE's model and the ORIGINAL's finding ID, which can never
+    match for a cross-model duplicate — the only case it exists for. 17
+    duplicate records in the v3.1 run, every `duplicate_of` a foreign-model ID,
+    zero recorded. The fix reproduced the defect its own docstring described.
+  * `fix_efficacy_decision()`. The probe reached 0 of 19 entries and left NO
+    TRACE of why, so "wired" and "unreachable" were indistinguishable in the
+    artefact. It is admitted on `proposed_fix` alone and records
+    `NOT_PROBED_NO_FALSIFIER` without consuming the per-round cap.
+  * `runner_version` is stamped into `runner_state.json` as well as the report,
+    because the archive guards walk the STATE file — a v3.1 run was misfiled as
+    pre-v3 archive on its directory name alone.
+  * The routing ladder's rung failures are NAMED in the log. A bare
+    `except: return ""` made a dead transport read as a weak panel: every rung
+    raised, and the only symptom anywhere was "0 resolved by strong writer".
 
 THE VERSION LANDS IN THE REPORT. The 2026-08-23 note said "the VERSION is
 metadata, and it lands in each run's report, which is where a reader actually
@@ -337,7 +365,7 @@ def describe_model(label: str) -> str:
 # candidates next round (entry["bugzilla_attempted"] flag prevents
 # re-attempting the same finding repeatedly).
 #: Written into every run report. See the version banner at the top of this file.
-RUNNER_VERSION = "v3.1"
+RUNNER_VERSION = "v3.2"
 
 BUGZILLA_PER_ROUND_LIMIT = 5
 
@@ -4554,9 +4582,23 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # 402-cascade class — must not burn the attempt nor mint a false
             # "ladder exhausted" record). _routing_attempts is appended by
             # resolve_fn on any successful dispatch return.
-            e["_error_route_pending"] = True
+            pass
         if e.get("falsifier_verdict") == "CONFIRMED":
             continue
+        # THE TRANSPORT-DEAD GUARD APPLIES AT EVERY SEVERITY (CC2, panel review
+        # 2026-08-30). This assignment used to sit INSIDE the sub-critical
+        # branch above, so for a CRITICAL it never happened: `e.pop(
+        # "_error_route_pending")` below was always falsy, the guard whose own
+        # comment says a round where no model was reached "must not burn the
+        # attempt nor mint a false 'ladder exhausted' record" never covered a
+        # critical, and a critical whose rungs all died on TRANSPORT was stamped
+        # irreducible_escalation=True. `unverified_critical_count` then skips
+        # exactly those entries -- so a dead transport could stop a critical
+        # blocking convergence. A run could converge because the network failed.
+        #
+        # Inert for sub-criticals (same value, one branch earlier) and inert for
+        # `error_routed`, which is only consulted in the sub-critical branch.
+        e["_error_route_pending"] = True
         finding = {
             "id": cid, "description": e.get("description", ""),
             "source_model": e.get("source_model"), "severity": e.get("severity"),
@@ -6727,10 +6769,32 @@ def _dispatch_single_model(
     # round callers from cfg.falsifier_gate_enabled (cfg is not in this scope).
     # Default OFF => byte-identical to vote-based behaviour.
     try:
-        composed = _compose_for_model(mc.label, pattern_name, domain)
+        # Resolve the SIM suffix: `CC2-SIM` must compose as CC2, or a simulated
+        # panellist silently loses its per-model directive.
+        composed = _compose_for_model(base_model_label(mc.label),
+                                      pattern_name, domain)
         model_cdsfl = composed.rendered_text
-    except Exception:
+    except Exception as _cmp_exc:                          # noqa: BLE001
+        # LOUD (CC2, panel review 2026-08-30). This fell back silently, and the
+        # fallback `cdsfl_text` is "" whenever the caller supplies none -- so a
+        # model with no composer entry ran on an EMPTY system prompt and nothing
+        # said so. Measured that day: Fable had no COMPOSER_MODEL_MAP entry and
+        # no .toml, so it composed to FileNotFoundError -> 0 chars, while CC2
+        # got 6,008 and Gemini 5,559.
         model_cdsfl = cdsfl_text
+        _log(f"  COMPOSER FALLBACK for {mc.label}: "
+             f"{type(_cmp_exc).__name__}: {str(_cmp_exc)[:140]}")
+        # `cdsfl_text`, NOT `model_cdsfl`. They are equal on this branch (the
+        # line above), and `test_omission_precedes_every_use_of_the_prompt`
+        # forbids ANY pre-omission read of `model_cdsfl` that is not an assembly
+        # step -- correctly, because that guard is what stops a prompt being
+        # consumed before the ablation omission is applied. It caught this
+        # diagnostic on the first run after it was added.
+        if not (cdsfl_text or "").strip():
+            _log(f"  WARNING: {mc.label} has an EMPTY system prompt "
+                 f"(composer failed and no cdsfl_text was supplied). It is "
+                 f"briefed by the round prompt and the operational directive "
+                 f"only.")
     # Append operational directive AFTER composer phenotype transforms.
     # The operational directive (R_k self-assessment, MUST-compute instruction)
     # is not subject to phenotype char caps — all models receive it in full.
@@ -9462,6 +9526,21 @@ def run_experiment(
         if _only_counted:
             _log(f"     counted but NOT dispatched: {_only_counted}")
         _log("     every per-model denominator in this run uses the COUNTED list.")
+
+    # A CONFIG FLAG THAT ACCEPTS `true` AND DOES NOTHING IS A CONFIG THAT LIES.
+    # `discrimination_control_ask` is defined on RunnerConfig and read NOWHERE
+    # in production (CC2, panel review 2026-08-30; confirmed by AST: 1 write, 0
+    # reads). Someone setting it in a config would believe they had armed the
+    # discrimination control, and nothing whatever would happen.
+    #
+    # NOT deleted, because arming that control settles an open founder decision
+    # and the flag is where that decision would land. Made LOUD instead, so the
+    # silent-no-op hazard is closed without pre-empting the ruling.
+    if getattr(cfg, "discrimination_control_ask", False):
+        _log("  ** discrimination_control_ask=True IS NOT WIRED — it is read by "
+             "no code in this runner. **")
+        _log("     The discrimination control is presence-gated on the overlay "
+             "sections, not on this flag. Setting it arms nothing.")
 
     baseline = set(cfg.models)
 
