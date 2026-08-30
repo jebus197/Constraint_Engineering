@@ -53,6 +53,9 @@ import reference_runner_v2 as R   # noqa: E402
 #: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
 #: the mandated names are ``CC2-SIM``, ``DeepSeek-SIM`` and so on. The suffix
 #: carries the role information the bare letter threw away.
+#: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
+#: the mandated names are ``CC2-SIM``, ``DeepSeek-SIM`` and so on. The suffix
+#: carries the role information the bare letter threw away.
 LABEL_MAP = {v: f"{v}-SIM" for v in
              ("CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable")}
 
@@ -61,26 +64,64 @@ _CALLS: list = []
 
 
 def _sim_label(mc_label: str) -> str:
-    return LABEL_MAP.get(mc_label, mc_label if mc_label.endswith("-SIM")
+    return LABEL_MAP.get(mc_label, mc_label if str(mc_label).endswith("-SIM")
                          else f"{mc_label}-SIM")
 
 
-def make_shim(model: str = "sonnet", timeout: int = 300):
-    """Return a drop-in replacement for `_dispatch_single_model`."""
+def make_shim(model: str = "sonnet", timeout: int = 900):
+    """Return a drop-in replacement for ``dispatch_to_model``.
 
-    def _dispatch(mc, mgr, prompt, cdsfl_text, full_code, round_idx,
-                  pattern_name, domain, logs_dir, enable_tools):
-        label = _sim_label(getattr(mc, "label", "?"))
+    THE SEAM MOVED DOWN ONE LEVEL, 2026-08-30, AND THIS IS WHY
+    ----------------------------------------------------------
+    The first version patched ``_dispatch_single_model``. That is ONE of NINE
+    functions in ``reference_runner_v2`` that dispatch to a model:
+
+        _apply_routing, _post_convergence_sweep, _inround_reask,
+        _dispatch_single_model, _verification_step, run_preflight,
+        run_experiment, resolve_fn, _arb_dispatch
+
+    Every one of the other eight therefore dispatched to a REAL, unconfigured
+    model during the v3.1 simulated run. The consequences were measured, not
+    assumed:
+
+      * ``resolve_fn`` is the routing ladder's FALSIFIER WRITER. Its call raised,
+        was swallowed by a bare ``except`` that returns "", and the run logged
+        "routing: 0 resolved by strong writer" in all 4 rounds. Result: 0 of 19
+        entries carried ``falsifier_code``, against 23 of 39 in the real exp45
+        on the same target (scipy Fisher p = 6.0e-06). The falsification core --
+        the point of the whole schema -- was silent for the entire run.
+      * ``_verification_step`` never ran, so ``verified`` was False on all 19
+        entries against 24 of 39 in the real run.
+      * the fix-efficacy probe depends on ``falsifier_code``, so it reached 0
+        of 19 as a downstream consequence of the same single cause.
+
+    Patching the PRIMITIVE fixes all nine by construction. There is no list of
+    call sites to keep in sync -- which is the failure this replaces.
+
+    The runner now does ALL of its own parsing, including
+    ``parse_findings``, ``_extract_routing_falsifier`` and
+    ``_extract_corrected_copies``. Provenance is correct by construction because
+    ``mc.label`` is already ``CC2-SIM`` at source; nothing here relabels
+    anything, so there is no longer a place where a label can be dropped.
+    """
+
+    def _dispatch(model_config, prompt, cdsfl_text,
+                  wall_clock_limit: float = 0, enable_tools: bool = False):
+        label = _sim_label(getattr(model_config, "label", "?"))
         t0 = time.monotonic()
-        # The agent gets the SAME prompt the paid model would get, plus the
-        # directive text, so the parse path and the briefing are both real.
+        # The agent receives the SAME prompt the paid model would, whichever of
+        # the nine paths asked for it -- a findings prompt, a routing prompt
+        # asking for a runnable falsifier, a sweep prompt, a verification
+        # prompt. The prompts already carry their own instructions, so one
+        # handler serves every path without the shim second-guessing any of it.
         full = f"{cdsfl_text}\n\n{prompt}" if cdsfl_text else prompt
+        budget = int(wall_clock_limit) if wall_clock_limit and wall_clock_limit > 0 else timeout
         try:
             r = subprocess.run(
                 ["claude", "-p", full, "--model", model, "--output-format", "text",
                  "--no-session-persistence",
                  "--allowedTools", "Bash", "Read", "Grep", "Glob"],
-                capture_output=True, text=True, timeout=timeout,
+                capture_output=True, text=True, timeout=budget,
                 cwd=str(REPO), stdin=subprocess.DEVNULL,
             )
             text = (r.stdout or "").strip()
@@ -89,38 +130,30 @@ def make_shim(model: str = "sonnet", timeout: int = 300):
         except subprocess.TimeoutExpired:
             text = "__DISPATCH_FAILED__:TimeoutExpired"
         except Exception as e:                              # noqa: BLE001
-            return [], f"__DISPATCH_FAILED__:{type(e).__name__}: {e}"
+            text = f"__DISPATCH_FAILED__:{type(e).__name__}: {e}"
 
         el = time.monotonic() - t0
-        # THE RUNNER'S OWN PARSER. Fabricating Finding objects here would mean the
-        # parse path — the thing that has broken most often in this project — was
-        # the one path a simulated run never exercised.
-        # The SIM label, never ``mc.label``: this is the single call that stamps
-# model_id and finding_id into every persisted artefact. Measured
-# 2026-08-30: passing mc.label here put 123 bare vendor names into the
-# record while the terminal showed the SIM name -- cosmetic in the log,
-# absent from the artefact, which is the 2026-08-04 provenance failure.
-        findings = R.parse_findings(label, round_idx, text)
         with _LOCK:
-            _CALLS.append({"round": round_idx, "model": mc.label, "sim": label,
-                           "seconds": round(el, 1), "chars": len(text),
-                           "findings": len(findings)})
-        print(f"    [r{round_idx} {label} as {mc.label}] {len(findings)} finding(s), "
-              f"{len(text)} chars, {el:.0f}s", flush=True)
-        return findings, text
+            _CALLS.append({"model": label, "seconds": round(el, 1),
+                           "chars": len(text), "budget_s": budget,
+                           "failed": text.startswith("__DISPATCH_FAILED__")})
+        print(f"    [{label}] {len(text)} chars, {el:.0f}s"
+              + (" FAILED" if text.startswith("__DISPATCH_FAILED__") else ""),
+              flush=True)
+        return text, el
 
     return _dispatch
 
 
-def install(model: str = "sonnet", timeout: int = 300):
-    """Patch the seam. Returns the original so a caller can restore it."""
-    original = R._dispatch_single_model
-    R._dispatch_single_model = make_shim(model, timeout)
+def install(model: str = "sonnet", timeout: int = 900):
+    """Patch the PRIMITIVE seam. Returns the original so a caller can restore."""
+    original = R.dispatch_to_model
+    R.dispatch_to_model = make_shim(model, timeout)
     return original
 
 
 def restore(original) -> None:
-    R._dispatch_single_model = original
+    R.dispatch_to_model = original
 
 
 def calls() -> list:

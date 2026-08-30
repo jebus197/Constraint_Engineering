@@ -27,7 +27,12 @@ def _fn(name):
 def test_the_probe_is_actually_called():
     body = ast.unparse(_fn("_update_finding_statuses"))
     assert "fix_efficacy" in body, "the probe is not called from the status pass"
-    assert "FIX_EFFICACY_PER_ROUND_LIMIT" in body, "the per-round cap is not applied"
+    # The cap MOVED into `fix_efficacy_decision()` on 2026-08-30 when the guard
+    # was extracted so it could be tested at all. The property is unchanged and
+    # is asserted behaviourally below and in
+    # test_fix_efficacy_records_why_it_did_not_run_2026-08-30.py; asserting the
+    # constant's TEXT here only ever pinned where the code happened to live.
+    assert "fix_efficacy_decision" in body, "the decision helper is not consulted"
 
 
 def test_the_probe_is_contributory_and_cannot_gate_anything():
@@ -47,8 +52,16 @@ def _probe_block():
     writes `verified`. It failed against correct code. Boundaries guessed from
     text are not boundaries.
     """
-    for node in ast.walk(_fn("_update_finding_statuses")):
+    fn = _fn("_update_finding_statuses")
+    for node in ast.walk(fn):
         if isinstance(node, ast.If) and "fix_efficacy_attempted" in ast.unparse(node.test):
+            return ast.unparse(node)
+    # 2026-08-30: the admission test moved into `fix_efficacy_decision()`, so the
+    # guard's condition no longer names `fix_efficacy_attempted` inline. The
+    # block is now the `if` on the decision's result -- same statement, same
+    # purpose, different (and testable) condition.
+    for node in ast.walk(fn):
+        if isinstance(node, ast.If) and "_fe_decision" in ast.unparse(node.test):
             return ast.unparse(node)
     raise AssertionError("the fix-efficacy probe block was not found")
 

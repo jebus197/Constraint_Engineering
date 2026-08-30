@@ -71,6 +71,11 @@ FIX_INEFFECTIVE = "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER"
 NOT_INTERCEPTED = "INDETERMINATE_NOT_INTERCEPTED"   # falsifier never read the target
 NO_BASELINE = "INDETERMINATE_NO_BASELINE"           # falsifier does not reproduce
 NO_FIX = "INDETERMINATE_NO_APPLICABLE_FIX"          # fix did not apply
+#: The finding carries a fix but NO falsifier, so there is nothing to run the
+#: fix against. Recorded rather than skipped: measured 2026-08-30, the probe
+#: reached 0 of 19 entries and left NO TRACE of why, so "the probe is wired"
+#: and "the probe is unreachable" looked identical in the artefact.
+NO_FALSIFIER = "NOT_PROBED_NO_FALSIFIER"
 INDETERMINATE = "INDETERMINATE_OTHER"
 
 

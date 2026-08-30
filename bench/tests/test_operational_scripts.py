@@ -1254,10 +1254,30 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
         thing whose absence let cdsfl_qc.py crash unnoticed for 105 days."""
         src = script.read_text(encoding="utf-8")
         if "ArgumentParser" not in src:
-            pytest.skip(
-                f"{script.name} defines no argument parser; the converse rule "
-                f"(it must then advertise no flags) is asserted above"
+            # NOT A BARE SKIP ANY MORE (2026-08-30). The flag rule IS asserted
+            # above for these scripts, so that half of the old skip message was
+            # true. But this test's OTHER property -- "the cheapest possible
+            # proof that the module still IMPORTS", the absence of which let
+            # cdsfl_qc.py crash unnoticed for 105 days -- was dropped silently
+            # for all 12 parser-less scripts. Measured 2026-08-30: all 12 do
+            # import, so the exposure was zero and the guard was still absent.
+            #
+            # Import-only, in a SUBPROCESS: a crash cannot take the suite with
+            # it, and nothing enters this session's module namespace. __main__
+            # bodies do not run, so this stays a check and never an execution.
+            proc = subprocess.run(
+                [sys.executable, "-c",
+                 "import importlib.util,sys;"
+                 "spec=importlib.util.spec_from_file_location('probe',sys.argv[1]);"
+                 "m=importlib.util.module_from_spec(spec);"
+                 "sys.modules['probe']=m;spec.loader.exec_module(m)",
+                 str(script)],
+                capture_output=True, text=True, timeout=60, cwd=str(REPO_ROOT),
             )
+            assert proc.returncode == 0, (
+                f"{script.name} no longer imports:\n{proc.stderr[-2000:]}"
+            )
+            return
 
         proc = subprocess.run(
             [sys.executable, str(script), "--help"],
@@ -1278,10 +1298,33 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
         no-op again."""
         src = script.read_text(encoding="utf-8")
         if "ArgumentParser" not in src:
-            pytest.skip(
-                f"{script.name} defines no argument parser; the converse rule "
-                f"(it must then advertise no flags) is asserted above"
+            # NOT A BARE SKIP ANY MORE (2026-08-30). Measured that day across
+            # the 12 parser-less scripts: 10 never read sys.argv at all, and 2
+            # do. Those are different properties and both are assertable, so
+            # neither needs skipping.
+            if "sys.argv" not in src:
+                # Argv-free: there is no unknown flag to reject because the
+                # script reads no arguments. Asserted as a POSITIVE property,
+                # so a later edit that starts reading argv lands in the branch
+                # below instead of quietly inheriting a pass.
+                assert "sys.argv" not in src
+                return
+            # Reads argv with no parser, so it must still refuse an argument it
+            # does not understand. Measured 2026-08-30:
+            # note_vagueness_lint.py printed "missing: --this-flag-does-not-
+            # exist" and exited 0 -- a typo'd filename therefore reported
+            # "0 findings" with a clean exit, and a caller would deliver an
+            # UNLINTED note believing it checked. Now exits 2.
+            proc = subprocess.run(
+                [sys.executable, str(script), "--this-flag-does-not-exist"],
+                capture_output=True, text=True, timeout=60, cwd=str(REPO_ROOT),
             )
+            assert proc.returncode != 0, (
+                f"{script.name} reads sys.argv, has no parser, and accepted "
+                f"--this-flag-does-not-exist with exit 0. An unrecognised "
+                f"argument that reads as success is the 118-day no-op again."
+            )
+            return
 
         proc = subprocess.run(
             [sys.executable, str(script), "--this-flag-does-not-exist"],

@@ -131,13 +131,33 @@ def test_the_real_target_is_never_modified(repo, fix_text, label):
         f"{label} left the target modified; the frozen-article guarantee is broken")
 
 
-def test_the_probe_leaves_no_overlay_behind(repo, tmp_path):
+def test_the_probe_leaves_no_overlay_behind(repo, tmp_path, monkeypatch):
+    """Scoped to a temp root this test OWNS.
+
+    THE DEFECT, 2026-08-30. This globbed the SHARED system temp directory, so it
+    asserted that no process anywhere on the machine had created a
+    `cdsfl_disc_*` directory during the call. It passed alone and failed in the
+    full suite -- `overlay directories leaked: ['cdsfl_disc_lzcubcn1']` -- while
+    a review panel was concurrently running pytest in its own sandboxes against
+    the same temp root. A guard that cannot tell "the probe leaked" from
+    "another process on this Mac made a directory" is a false-positive
+    generator, and this project runs panels alongside suites routinely.
+
+    `reference_runner_v2._discrimination_overlay` builds the overlay with
+    `tempfile.mkdtemp(prefix="cdsfl_disc_")` (line 3094), which honours
+    `tempfile.tempdir`. Pointing that at the test's own tmp_path confines the
+    measurement to directories THIS call created, which is the property the test
+    was always trying to assert.
+    """
     import tempfile
-    before = {p.name for p in pathlib.Path(tempfile.gettempdir()).glob("cdsfl_disc_*")}
+    own_root = tmp_path / "tmproot"
+    own_root.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(own_root))
+    before = {p.name for p in own_root.glob("cdsfl_disc_*")}
     probe({"falsifier_code": _falsifier(repo),
            "proposed_fix": _fix("VALUE = -1", "VALUE = 10")},
           TARGET_REL, repo_root=repo)
-    after = {p.name for p in pathlib.Path(tempfile.gettempdir()).glob("cdsfl_disc_*")}
+    after = {p.name for p in own_root.glob("cdsfl_disc_*")}
     assert after <= before, f"overlay directories leaked: {sorted(after - before)}"
 
 

@@ -68,11 +68,64 @@ def _calls_guard_first(body: list[ast.stmt]) -> bool:
     return False
 
 
+def _parse_args_reached_before_anything_costly(body: list[ast.stmt]) -> tuple[bool, str]:
+    """For an argparse runner, ``parse_args()`` IS the guard.
+
+    argparse answers ``--help`` and exits inside ``parse_args()`` -- but only if
+    execution REACHES it first. A runner that sources an env, loads a config or
+    dispatches a preflight before parsing has the same defect the hand-parsing
+    runners have, and the old blanket skip asserted nothing at all about it.
+
+    Allowed before the parse: imports, and building the parser itself
+    (``ArgumentParser(...)``, ``add_argument(...)``, group helpers). Anything
+    else is work that runs before ``--help`` can exit.
+    """
+    for stmt in body:
+        if isinstance(stmt, (ast.Import, ast.ImportFrom)):
+            continue
+        if isinstance(stmt, ast.Assign) and isinstance(stmt.value, ast.Call):
+            fn = stmt.value.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", "")
+            if "parse_args" in name:
+                return True, ""
+            if name in ("ArgumentParser", "add_argument_group",
+                        "add_mutually_exclusive_group", "add_subparsers"):
+                continue
+            return False, f"{name}() runs before parse_args()"
+        if isinstance(stmt, ast.Assign):
+            continue                      # literal / name assignment: harmless
+        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+            fn = stmt.value.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", "")
+            if "parse_args" in name:
+                return True, ""
+            if name in ("add_argument", "add_argument_group", "set_defaults",
+                        "add_mutually_exclusive_group", "add_subparsers"):
+                continue
+            return False, f"{name}() runs before parse_args()"
+        if isinstance(stmt, (ast.Expr,)):
+            continue                      # a bare docstring
+        return False, f"{type(stmt).__name__} runs before parse_args()"
+    return False, "parse_args() is never reached in the entry point"
+
+
 @pytest.mark.parametrize("path", _runners(), ids=lambda p: p.name)
 def test_every_runner_refuses_help_before_it_can_dispatch(path: Path) -> None:
     src = path.read_text(encoding="utf-8")
     if _uses_argparse(src):
-        pytest.skip(f"{path.name} uses argparse, which handles --help itself")
+        # NO LONGER A BLANKET SKIP (2026-08-30). The skip asserted NOTHING, and
+        # argparse only saves a reader if execution reaches parse_args() before
+        # anything that can dispatch. Still structural -- this file must not
+        # execute a runner, because executing a runner is the defect.
+        body = _entry_body(ast.parse(src))
+        assert body is not None, f"{path.name}: no main() and no __main__ block found"
+        ok, why = _parse_args_reached_before_anything_costly(body)
+        assert ok, (
+            f"{path.name} uses argparse, but {why}. argparse answers --help "
+            f"INSIDE parse_args(); anything preceding it runs first and can "
+            f"reach a paid model."
+        )
+        return
     assert GUARD in src, (
         f"{path.name} hand-parses sys.argv and does not call {GUARD}. "
         f"An unrecognised argument — including --help — will fall through to a "

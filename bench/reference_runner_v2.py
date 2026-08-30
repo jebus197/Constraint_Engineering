@@ -280,6 +280,31 @@ MODEL_ROSTER = {
     "ChatGPT": "GPT-5.5 (OpenAI)",
 }
 
+def fix_efficacy_decision(entry: dict, calls_this_round: int,
+                          limit: Optional[int] = None) -> str:
+    """Should the fix-efficacy probe run for this entry, and if not, why not?
+
+    Returns ``"PROBE"``, ``"NO_FALSIFIER"`` or ``"SKIP"``.
+
+    Extracted as a pure function on 2026-08-30 because the previous guard was an
+    inline condition inside a 2,363-line function, it was UNREACHABLE for every
+    entry of the v3.1 run (0 of 19), and no test could see that. A guard nothing
+    can test is how a probe stays wired and dead.
+    """
+    # Resolved at CALL time, not def time: this helper is defined above the
+    # constant and a default argument would raise NameError at import.
+    limit = FIX_EFFICACY_PER_ROUND_LIMIT if limit is None else limit
+    if not entry.get("proposed_fix"):
+        return "SKIP"
+    if entry.get("fix_efficacy_attempted"):
+        return "SKIP"
+    if not entry.get("falsifier_code"):
+        # Free to record and must stay probeable if a falsifier arrives later,
+        # so this neither consumes the per-round cap nor marks the entry tried.
+        return "NO_FALSIFIER"
+    return "PROBE" if calls_this_round < limit else "SKIP"
+
+
 def base_model_label(label: str) -> str:
     """Vendor base of a panel label. ``CC2-SIM`` -> ``CC2``.
 
@@ -1615,6 +1640,38 @@ class FindingRegistry:
     def lookup_alias(self, model_id: str, local_id: str) -> Optional[str]:
         return self._alias_map.get(f"{model_id}:{local_id}")
 
+    def lookup_alias_any(self, local_id: str) -> Optional[str]:
+        """Resolve a finding ID to its canonical WITHOUT knowing which model
+        raised it.
+
+        THE DEFECT THIS CLOSES, MEASURED 2026-08-30 ON THE FIRST RUN SINCE THE
+        CO-DISCOVERY RECORDER LANDED. ``_alias_map`` is keyed
+        ``model_id:finding_id``, and the co-discovery call site looked up
+        ``lookup_alias(<duplicate's model>, <original's finding_id>)``. In a
+        cross-model duplicate -- the ONLY case co-discovery exists for -- those
+        two belong to different models, so the lookup always missed, the
+        fallback was a finding_id absent from ``entries``, and the recorder was
+        never reached. The 2026-08-23 fix therefore reproduced the exact defect
+        its own docstring describes.
+
+        Measured on the v3.1 run: 17 duplicate records, every ``duplicate_of`` a
+        foreign-model finding ID (``Fable-SIM_F003``, ``DeepSeek-SIM_F002`` ...),
+        and ``source_aliases`` still exactly 1.00 per finding on all 19 entries.
+
+        AMBIGUITY IS REFUSED, NOT GUESSED. Finding IDs carry a model prefix so
+        collisions are not expected, but if two models ever mint the same local
+        ID this returns None rather than attributing the co-discovery to an
+        arbitrary one of them.
+        """
+        if not local_id:
+            return None
+        suffix = f":{local_id}"
+        hits = {cid for key, cid in self._alias_map.items()
+                if key.endswith(suffix)}
+        if len(hits) == 1:
+            return next(iter(hits))
+        return None
+
     def open_crit_high_count(self) -> int:
         """Count active non-terminal critical/high findings.
 
@@ -2774,30 +2831,48 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         # The question "does this fix cure the defect its own falsifier
         # demonstrates" is worth asking of ANY finding carrying both, whatever
         # its status. Guarded now only by having both, and by the per-round cap.
-        if (entry.get("proposed_fix") and entry.get("falsifier_code")
-                and not entry.get("fix_efficacy_attempted")
-                and _fix_efficacy_this_call < FIX_EFFICACY_PER_ROUND_LIMIT):
-            entry["fix_efficacy_attempted"] = True
-            _fix_efficacy_this_call += 1
-            try:
-                _fe_target = (entry.get("target_file")
-                              or (cfg.test_article if cfg else None))
-                if _fe_target:
-                    from fix_efficacy import probe as _fe_probe
-                    _fe_rel = str(_fe_target)
-                    if _fe_rel.startswith(str(REPO_ROOT)):
-                        _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
-                    if (REPO_ROOT / _fe_rel).is_file():
-                        _fe = _fe_probe(
-                            {"falsifier_code": entry.get("falsifier_code") or "",
-                             "proposed_fix": entry.get("proposed_fix") or ""},
-                            _fe_rel, repo_root=REPO_ROOT, timeout=20)
-                        entry["fix_efficacy"] = {
-                            "outcome": _fe.outcome, "detail": _fe.detail[:300]}
-                        _log(f"  fix-efficacy {canonical_id}: {_fe.outcome}")
-            except Exception as _fe_exc:                  # noqa: BLE001
-                _log(f"  fix-efficacy probe error for {canonical_id}: "
-                     f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
+        # ADMITTED ON `proposed_fix` ALONE (2026-08-30). Gating on
+        # `falsifier_code` too made the probe silently unreachable: measured on
+        # the v3.1 run, 19 of 19 entries carried a fix and 0 carried a
+        # falsifier, so the probe reached nothing AND left no trace of why.
+        # "Wired" and "unreachable" have to look different in the artefact.
+        _fe_decision = fix_efficacy_decision(entry, _fix_efficacy_this_call)
+        if _fe_decision != "SKIP":
+            if _fe_decision == "NO_FALSIFIER":
+                # Free: no probe runs, so this must NOT consume the per-round
+                # cap, and must NOT set `attempted` -- a falsifier arriving in a
+                # later round has to still be probeable.
+                try:
+                    from fix_efficacy import NO_FALSIFIER as _fe_nf
+                except Exception:                         # noqa: BLE001
+                    _fe_nf = "NOT_PROBED_NO_FALSIFIER"
+                entry["fix_efficacy"] = {
+                    "outcome": _fe_nf,
+                    "detail": ("finding carries a proposed fix but no falsifier, "
+                               "so there is nothing to run the fix against"),
+                }
+            else:
+                entry["fix_efficacy_attempted"] = True
+                _fix_efficacy_this_call += 1
+                try:
+                    _fe_target = (entry.get("target_file")
+                                  or (cfg.test_article if cfg else None))
+                    if _fe_target:
+                        from fix_efficacy import probe as _fe_probe
+                        _fe_rel = str(_fe_target)
+                        if _fe_rel.startswith(str(REPO_ROOT)):
+                            _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
+                        if (REPO_ROOT / _fe_rel).is_file():
+                            _fe = _fe_probe(
+                                {"falsifier_code": entry.get("falsifier_code") or "",
+                                 "proposed_fix": entry.get("proposed_fix") or ""},
+                                _fe_rel, repo_root=REPO_ROOT, timeout=20)
+                            entry["fix_efficacy"] = {
+                                "outcome": _fe.outcome, "detail": _fe.detail[:300]}
+                            _log(f"  fix-efficacy {canonical_id}: {_fe.outcome}")
+                except Exception as _fe_exc:                  # noqa: BLE001
+                    _log(f"  fix-efficacy probe error for {canonical_id}: "
+                         f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
 
         if (entry["status"] in ("CONFIRMED", "CORROBORATED")
                 and entry.get("verified")):
@@ -4427,7 +4502,15 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 _routing_system(_target_kind),
                 enable_tools=True,
             )
-        except Exception:  # noqa: BLE001 — a failed rung just advances the ladder
+        except Exception as _rf_exc:  # noqa: BLE001 — a failed rung advances the ladder
+            # NAMED, not swallowed (Fable, panel review 2026-08-30). A bare
+            # `return ""` makes a transport failure indistinguishable from a
+            # model that genuinely wrote no falsifier. In the v3.1 simulated run
+            # every rung raised here and the only symptom anywhere was
+            # "routing: 0 resolved by strong writer" -- which reads as a weak
+            # panel, not as a dead transport.
+            _log(f"  routing rung {model_label} raised "
+                 f"{type(_rf_exc).__name__}: {str(_rf_exc)[:160]}")
             return ""
         _routing_attempts.append(model_label)  # a model was genuinely reached
         offered = _extract_corrected_copies(resp or "")
@@ -10564,7 +10647,11 @@ def run_experiment(
                 if not (getattr(_tr, "is_duplicate", False) and _tr.duplicate_of):
                     continue
                 _model = getattr(_tr.finding, "model_id", "") or ""
-                _cid = registry.lookup_alias(_model, _tr.duplicate_of) or _tr.duplicate_of
+                # Model-keyed first (same-model re-raise), then model-agnostic
+                # (cross-model co-discovery -- the case this exists for).
+                _cid = (registry.lookup_alias(_model, _tr.duplicate_of)
+                        or registry.lookup_alias_any(_tr.duplicate_of)
+                        or _tr.duplicate_of)
                 if _cid in registry.entries:
                     registry.record_codiscovery(
                         _cid, _model, _tr.finding.finding_id,

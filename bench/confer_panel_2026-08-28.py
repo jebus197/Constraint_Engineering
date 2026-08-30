@@ -68,13 +68,66 @@ def run(tag, model_id):
                             cwd=str(REPO), capture_output=True).returncode
         if rc != 0:
             raise RuntimeError("sandbox worktree could not be created")
+
+        # CARRY THE UNCOMMITTED WORKING TREE INTO THE SANDBOX.
+        #
+        # THE DEFECT, FOUND BY FABLE ON 2026-08-30 AND IT INVALIDATED ITS OWN
+        # REVIEW. `git worktree add ... HEAD` checks out the COMMITTED head, so
+        # a reviewer sees none of the caller's uncommitted work -- and nothing
+        # anywhere said so. Fable was briefed on five repairs, correctly found
+        # four of them absent from the tree it was given, and reasonably
+        # concluded the brief "reports work that was planned rather than done".
+        # Twelve modified/untracked files were sitting in the parent repo at
+        # dispatch. The reviewer was right about its tree and wrong about the
+        # world, and the harness is what made those differ.
+        #
+        # Carrying the diff keeps the sandbox disposable AND makes the review
+        # about the code that actually exists. What is carried is STATED, in the
+        # log and in the record, so a reviewer is never guessing which tree it
+        # holds.
+        carried = {"tracked_diff_bytes": 0, "untracked_files": 0, "skipped": []}
+        try:
+            _d = subprocess.run(["git", "diff", "HEAD"], cwd=str(REPO),
+                                capture_output=True, text=True, timeout=120)
+            if (_d.stdout or "").strip():
+                _pf = pathlib.Path(wt).parent / "carry.patch"
+                _pf.write_text(_d.stdout, encoding="utf-8")
+                _ap = subprocess.run(["git", "apply", str(_pf)], cwd=str(wt),
+                                     capture_output=True, text=True, timeout=120)
+                if _ap.returncode != 0:
+                    raise RuntimeError(f"git apply failed: {_ap.stderr[:300]}")
+                carried["tracked_diff_bytes"] = len(_d.stdout)
+            _u = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"],
+                                cwd=str(REPO), capture_output=True, text=True, timeout=120)
+            for _rel in (_u.stdout or "").split():
+                _src = REPO / _rel
+                if not _src.is_file() or _src.stat().st_size > 2_000_000:
+                    carried["skipped"].append(_rel)
+                    continue
+                _dst = pathlib.Path(wt) / _rel
+                _dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(_src, _dst)
+                carried["untracked_files"] += 1
+            print(f"  [{tag}] carried uncommitted work into the sandbox: "
+                  f"{carried['tracked_diff_bytes']:,} diff bytes, "
+                  f"{carried['untracked_files']} untracked file(s)"
+                  + (f", SKIPPED {len(carried['skipped'])}" if carried["skipped"] else ""),
+                  flush=True)
+        except Exception as _ce:                              # noqa: BLE001
+            # LOUD. A reviewer silently given the wrong tree produces a review
+            # of code nobody is running -- which is what happened.
+            print(f"  [{tag}] COULD NOT CARRY UNCOMMITTED WORK: {_ce}\n"
+                  f"  [{tag}] the reviewer is seeing COMMITTED HEAD ONLY.", flush=True)
+            carried["error"] = str(_ce)
+
         set_panel_cwd(str(wt))
         # Evidence that the reviewer actually RAN things, not just wrote.
         set_tool_log_sink(str(LOGS / f"{tag}.tools.json"))
         txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400, max_retries=2) or ""
         ok = bool(txt.strip()) and "<invoke" not in txt and len(txt) > 800
         rec = {"reviewer": tag, "ok": ok, "chars": len(txt),
-               "elapsed_s": round(time.time() - t0, 1), "response": txt}
+               "elapsed_s": round(time.time() - t0, 1), "response": txt,
+               "tree_carried": carried}
         if not ok:
             rec["error"] = "empty, too short, or a tool-call block rather than a verdict"
     except Exception as e:  # noqa: BLE001
@@ -109,11 +162,23 @@ def run(tag, model_id):
             for rel in (untracked.stdout or "").split():
                 f = pathlib.Path(wt) / rel
                 try:
-                    if f.is_file() and f.stat().st_size < 400_000:
+                    if not f.is_file():
+                        continue
+                    size = f.stat().st_size
+                    if size < 400_000:
                         body += (f"\n=== NEW FILE: {rel} ===\n"
                                  + f.read_text(encoding="utf-8", errors="replace"))
-                except OSError:
-                    pass
+                    else:
+                        # LOUD, not silent. A dropped file that says nothing
+                        # reads identically to a review that produced nothing --
+                        # which is exactly how the 2026-08-30 losses looked.
+                        body += (f"\n=== NEW FILE NOT EXTRACTED: {rel} "
+                                 f"({size:,} bytes, over the 400,000 cap) ===\n"
+                                 f"Retrieve it from the sandbox before it is torn down.\n")
+                        print(f"  [{tag}] WARNING: {rel} is {size:,} bytes and was "
+                              f"NOT extracted", flush=True)
+                except OSError as _oe:
+                    body += f"\n=== NEW FILE UNREADABLE: {rel} ({_oe}) ===\n"
             if body.strip():
                 patch.write_text(body, encoding="utf-8")
                 print(f"  [{tag}] extracted {len(body):,} chars of work -> {patch.name}",

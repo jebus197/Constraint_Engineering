@@ -205,9 +205,17 @@ def main() -> int:
     if not paths:
         print("  usage: note_vagueness_lint.py <file> [file ...]"); return 1
     total = 0
+    # A NAMED FILE THAT IS NOT THERE IS A FAILURE, NOT A SKIP (2026-08-30).
+    # This returned 0 for a path it never opened, so a typo -- or an
+    # unrecognised flag, which lands here as a "path" -- produced
+    # "missing: X" followed by a clean exit. A caller sees success and
+    # delivers an UNLINTED note believing it checked. Measured the same day:
+    # `note_vagueness_lint.py --this-flag-does-not-exist` printed a missing
+    # line and exited 0.
+    missing = 0
     for p in paths:
         if not p.is_file():
-            print(f"  missing: {p}"); continue
+            print(f"  missing: {p}"); missing += 1; continue
         hits = lint(p)
         # `is not None`, not a bare truth test. future_stamp returns Optional
         # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a
@@ -225,6 +233,12 @@ def main() -> int:
             print(f"    para {para_no}  {kind}  ({token!r})")
             print(f"      {s[:150]}{'...' if len(s) > 150 else ''}")
     print(f"\n  {total} finding(s). Reported, not enforced — read before delivering.")
+    if missing:
+        # Findings stay advisory; a file that was never READ does not. Exiting 0
+        # here told the caller the note had been checked when it had not.
+        print(f"  {missing} named path(s) could not be read — NOTHING was linted "
+              f"for those. Exiting non-zero so a typo cannot read as a clean note.")
+        return 2
     return 0
 
 
