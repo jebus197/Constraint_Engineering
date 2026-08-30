@@ -4,18 +4,11 @@
 
 You were right that we already had the repair machinery. You were right about rho. You were right about my briefs. And following your machinery question all the way down found a defect that had been quietly corrupting model fixes and then blaming the models for the result.
 
-One thing needs you before anything else can continue, and it is small: the command line tool is logged out. More on that at the end.
+## The Login, Which You Already Fixed
 
+Both reviewers failed within ten seconds early on. The visible error mentioned an untrusted workspace, which was a red herring; the real line underneath was that the login session had expired. You logged back in at one minute past one, I detected it, and the panel was re-dispatched forty seconds later carrying your two questions: whether canaries can be re-pointed at churn rather than silence, and whether the repair I built is the right one.
 
-## First, The One That Blocks Things
-
-Both panel reviewers failed within ten seconds tonight. The visible error mentions an untrusted workspace, which is a red herring. The real line underneath is that the login session has expired and could not be refreshed. I checked it directly and the tool reports itself as not logged in.
-
-That blocks every panel dispatch, including the brief I wrote tonight carrying your two questions: whether canaries can be re-pointed at churn rather than silence, and whether the repair I built is the right one. That brief is written and ready and takes one command to send once you are logged back in.
-
-I cannot log in. It needs your credentials and that is not something I will ever do.
-
-One correction I want to make plainly, because I nearly reported a security problem that does not exist. When I first read the log I saw a line saying the working directory was the real repository rather than a sandbox, and I thought the isolation had failed and the reviewers had been let loose in the live tree. It had not. That line is the cleanup step running afterwards, and both reviewers did run inside their sandboxes. I checked before saying anything, and I am telling you about the false alarm because a scare that turns out to be nothing deserves the same clarity as a real one.
+One correction I want to make plainly, because I nearly reported a security problem that does not exist. When I first read the failure log I saw a line saying the working directory was the real repository rather than a sandbox, and I thought the isolation had failed and the reviewers had been let loose in the live tree. It had not. That line is the cleanup step running afterwards, and both reviewers did run inside their sandboxes. I checked before saying anything, and I am telling you about the false alarm because a scare that turns out to be nothing deserves the same clarity as a real one.
 
 
 ## Rho Is Now A Contributor, Not A Veto
@@ -71,7 +64,7 @@ I built the check on that mechanism and ran it across every archived finding tha
 
 Before you take that number to mean half our fixes are bad, please read this next part, because I do not think it means that.
 
-The check measures whether a pair is consistent: the fix, and the finding's own test. When the test still fires afterwards, either the fix is incomplete or the test does not test what the finding claims. This cannot tell those apart. Given that nine tests in this same archive were separately measured never to read their target at all, a real share of these is the test being wrong rather than the fix. And none of these fixes was ever applied or reviewed. They are proposals from finished runs, and a proposal that turns out not to work is a normal research result, not a scandal.
+The check measures whether a pair is consistent: the fix, and the finding's own test. When the test still fires afterwards, either the fix is incomplete or the test does not test what the finding claims. This cannot tell those apart. A real share of these is likely to be the test being wrong rather than the fix. And none of these fixes was ever applied or reviewed. They are proposals from finished runs, and a proposal that turns out not to work is a normal research result, not a scandal.
 
 I also tried to break my own finding before reporting it. The obvious way it could be an artefact is if the fixes were not really being applied. They were: not one of the 246 changed zero lines, none was a wholesale file replacement, and the failing fixes change a median of five real lines. They genuinely apply and genuinely fail to silence their own tests.
 
@@ -93,6 +86,47 @@ I tried a stricter rule first, anchoring every match to the start of a line. I m
 The headline figures did not move, which is the reassuring part. Half the fixes failing was never resting on the corrupted twelve.
 
 
+## A Correction To A Number I Gave You Earlier Tonight
+
+I reported that nine tests in the archive never read their target at all. That figure is an overcount and I am withdrawing it. The number I can defend is four.
+
+I found this by running a second, independent instrument over the same question and getting a disagreement on one finding. Rather than pick a side I chased it, and the first instrument turned out to have a false alarm mode.
+
+Here is what happens. Several tests begin by checking they are looking at the right file before they test anything, using an assertion. When I replaced the file with an unrelated one to see whether the test noticed, that opening check fired, exactly as it should. But the falsifier gate treats any assertion failure as a demonstration that the defect is present. So a test saying "I cannot examine this file" was recorded as "the defect is confirmed".
+
+Then I corrected my correction, because the first one was also wrong.
+
+I had reduced nine to four by reading the four uncertain tests and sorting them by their shape. That was reasoning, not measurement, and it was wrong in the cautious direction. So I ran them instead. All four produce their real demonstration, printing the finding's own message, against a file that shares nothing with their target. They genuinely never look.
+
+The measured figure is eight of 372, which is 2.2 percent. One of the original nine, and only one, was my false alarm. The confound stands for the other eight and I have named them in the notes.
+
+The sequence is worth your attention more than the number: nine asserted from a single instrument without cross-checking, four inferred from reading source code, eight measured by running it. Only the third was evidence. Both of the first two were me substituting reasoning for the tool output, once in each direction.
+
+What sits underneath is worth more than the correction from 9 to 4, and it is the same component I flagged as the one genuinely uncommissioned piece that matters. A test whose setup fails is recorded as confirming the defect. That is not a fault in any one test. It is the falsifier gate itself, which cannot tell a setup check from a real demonstration because both arrive the same way. That goes to the panel.
+
+
+## Re-Judging The 133 Pairs, Now That Both Defects Are Repaired
+
+Both of tonight's defects contaminated the original judgement of those pairs: the fall through that let a crashed test produce a verdict, and the applier that corrupted patches. So I re-ran the whole set through the safe overlay version.
+
+Of the 133 pairs, 90 could be re-checked and 43 could not. Of the 23 that were originally judged the same defect, 2 survive, 3 fail, and 18 could not be re-checked at all.
+
+I want to be careful with that. The 43 are not refuted. They are unchecked, and reporting them as refuted would be exactly the confident direction error I keep having to correct.
+
+The three failures are the applier repair working, and they close a chain I would want you to see. All three involve one finding whose proposed fix, run through the old applier, produces a file that does not even parse. So: the applier splices badly, the patch corrupts the file, the corrupted file is judged, the tests fall silent on wreckage, a false "same defect" verdict is recorded, and that verdict is exactly the evidence the merge step requires. Merged is permanent. Two of the original 23 rested on a corrupted patch.
+
+Had merging been switched on before tonight, that is the route by which it would have destroyed findings. Which is why I am glad it was not, and why I have still not switched it on.
+
+
+## Why 43 Could Not Be Checked, And What It Would Take
+
+Those 43 are experiments 48 and 49, and their review documents are simply not on the disk any more. They were deliberately moved out of the repository on the eighteenth of August, in the commit that closed the answer key exposure. Its own message says why: reviewing models carry shell access, and a key sitting next to the document with a guessable name made every planted claim findable with a single directory listing, at perfect precision, defeating three rounds of hardening.
+
+They are recoverable. I confirmed the documents exist in that commit by listing filenames only, reading no content. And I re-confirmed something you should know is still true: that commit, and the one beside it, are reachable from the experimental branch and from nowhere else. That branch still must not be deleted before the encrypted bundle is verified.
+
+I have not extracted them, deliberately. They are seeded exam documents, and materialising them re-creates the exposure that commit closed. Your own rule allows an unencrypted study copy once an experiment has run, and both have run, so it is permissible. But it sits on the security boundary, and that is a decision for you awake rather than me at one in the morning. If you rule yes it needs no change to the repository at all: extract to a scratch directory and point the checker at that.
+
+
 ## The Other Things You Ruled On
 
 Merge. You said wire it and prefer the second reviewer's answer, and that answer was that the receiving end is finished but the tool that supplies the evidence needs rebuilding, because it edits the live document. That obstacle is now gone: the same overlay makes it safe to run during a run. I validated it against the existing offline tool on every cleanly decided pair it can reach, and they agree ten times out of ten. What I have not done is switch merging on. The merged state is permanent, with no way back, so a wrong merge deletes findings for good. Turning it on should be your call with your eyes open, not mine at one in the morning. It is one line when you want it.
@@ -109,8 +143,6 @@ Your briefing criticism. You said I ask the panel to find problems and never to 
 
 
 ## What Remains For You
-
-Log the tool back in. One command, and it unblocks the panel.
 
 The key files are still in plain text and still need your passphrase.
 
