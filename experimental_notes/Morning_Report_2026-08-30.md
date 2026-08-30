@@ -8,7 +8,19 @@ You were right that we already had the repair machinery. You were right about rh
 
 Both reviewers failed within ten seconds early on. The visible error mentioned an untrusted workspace, which was a red herring; the real line underneath was that the login session had expired. You logged back in at one minute past one, I detected it, and the panel was re-dispatched forty seconds later carrying your two questions: whether canaries can be re-pointed at churn rather than silence, and whether the repair I built is the right one.
 
-One correction I want to make plainly, because I nearly reported a security problem that does not exist. When I first read the failure log I saw a line saying the working directory was the real repository rather than a sandbox, and I thought the isolation had failed and the reviewers had been let loose in the live tree. It had not. That line is the cleanup step running afterwards, and both reviewers did run inside their sandboxes. I checked before saying anything, and I am telling you about the false alarm because a scare that turns out to be nothing deserves the same clarity as a real one.
+## And Now The Part I Got Wrong, Which Is The One You Should Read Twice
+
+Earlier tonight I saw a line in the failure log saying the working directory was the real repository rather than a sandbox. I suspected the isolation had failed and the reviewers had been let loose in the live tree. I checked, concluded it was just the cleanup step running afterwards, and told you it was a false alarm.
+
+It was not a false alarm. It was real, and I reported it to you as nothing. Twice.
+
+The second reviewer opened its review by checking that claim instead of believing it, and found itself in the actual repository, on the main branch, with shell access. It built its own sandbox and confirmed the tracked files were untouched before and after, so nothing was damaged. But it should never have been there.
+
+Here is what happens. The two reviewers run at the same time, and the setting that says which directory they work in was one shared value rather than one each. Each reviewer sets it to its own sandbox and clears it when finished. So when the first reviewer finished at half past one, it cleared the setting for the second, which was still running. Ten minutes later that second reviewer hit its time limit and retried, and the retry ran with no sandbox at all.
+
+The reason I cleared it wrongly is worth more than the fault. I checked that the sandboxes had been created. They had. I never asked whether that setting survived one reviewer finishing while the other was still going. I checked one thing and concluded about all of them, which is the exact failure this project keeps naming and which I have now done three times in one night in three different places.
+
+It is fixed. Each reviewer now owns its own value, so one finishing cannot unsandbox another. Reverting the fix makes the new test fail, so the test is real rather than hopeful.
 
 
 ## Rho Is Now A Contributor, Not A Veto
@@ -144,7 +156,7 @@ Your briefing criticism. You said I ask the panel to find problems and never to 
 
 ## The Panel Reported, And It Found The Most Important Thing Of The Night
 
-Fable came back after 29 minutes with a substantial review. The other reviewer hit its 40 minute limit and is on its final retry as I write, so what follows is one reviewer, not two, and I will add the second if it lands.
+Both came back. Fable after 29 minutes, the second after 63, having hit its time limit once and retried.
 
 On the canaries you were right and so was the design. Fable's judgement is that your correction invalidates what the module said it was for, not what it actually measures. Detection capacity is exactly what separates a panel that has genuinely run out of things to find from one that has stopped reading, because both look identical to the gate. It rewrote the module's stated purpose, added a contributory layer that reports three states rather than a yes or no, and built it so that it structurally cannot block anything, with a test asserting that no result it produces carries a field a gate could act on.
 
@@ -175,13 +187,34 @@ Fable built a repair for it in its sandbox, which is thrown away by design, so t
 On the smaller question of tests that break in the final round, it measured the actual population rather than arguing: zero to two on every healthy run, and the large counts are all from an old parsing era or from a defect already fixed. Its recommendation is not to build anything, and to switch on the existing routing mechanism instead if a real run ever shows more. I think that is right and it is the kind of scope discipline I have not always shown.
 
 
+## The Second Reviewer Found Three More, And Disagreed With The First
+
+It opened by checking the brief's first sentence rather than believing it, which is how the sandbox failure above came to light.
+
+Then it found that our disposable review copies were carrying the repository's history into themselves. Every such copy differs from the real file by exactly the change being tested, so with the history reachable, a single command inside that copy returns the original file and another returns exactly what was changed. That is the planted material recoverable perfectly, with no key needed, and it is precisely the leak the canary module refuses to seed a tracked document in order to prevent. It arrived by a route that guard could not see.
+
+I verified it, and it is worse for me than for the project: the fix checker I built earlier tonight runs every single probe through those copies. The instrument I built to measure fixes was handing out the answer key alongside the question. Fixed and tested.
+
+It had a second effect that decides the canary question. The canary module refuses to plant anything in a tracked document, and it checks that by looking for the marker that identifies one. The copy carried that marker, so the module was refusing the one place where planting could ever have been legitimate. So the design the first reviewer proposed was, until tonight, mechanically impossible to run.
+
+Its third finding I have written up for you rather than acted on. When our machinery runs from a disposable copy it wrongly rejects seventeen honest tests as security violations, because it works out where the repository is from its own location. The reviewer's fix widens the list of places a model written test is allowed to read, and that list is the guard we closed after the one experiment we had to throw away, when a model opened the scoring key. It attacked its own widening from three directions and all three still refuse, but it says plainly it did not try them all. Widening that guard at half past two on three probes, with nobody else having seen the change, is not mine to do. There is a more conservative alternative in the note that widens nothing.
+
+And the two reviewers disagree about the canaries, which is the most useful page of the night.
+
+The first says the distinction is real and the instrument measures the right thing. The second proved, rather than argued, that the module has no way of knowing when anything happened: the words for our other measures appear zero times in it, nothing carries a round number, and it built two artificial panels, one genuinely exhausted and one purely recycling, and got byte identical output from both. I reproduced that myself and it is exactly right.
+
+My own reading is that they are answering different questions and both answers stand. The second is right that the module as written cannot tell the two apart. The first is right about the principle. What closes the gap is the first reviewer's own protocol, which neither of them connects because they wrote independently: the sense of time comes from when the probe is run, not from the module. One separate probe at the moment the gate first says converged needs no round number, because there is only one round. So the second reviewer's demonstration is not an argument for scrapping it. It is an argument that the module must never be handed a whole run's findings, which is exactly what the first reviewer's protocol forbids.
+
+Neither can answer the question that actually decides it: does a recycling panel really miss a freshly planted defect? That is one experiment in Bench Run 2.
+
+
 ## What Remains For You
 
 The key files are still in plain text and still need your passphrase.
 
 The push, which you ruled goes last. It is now over 140 commits spanning a week, not one night, so it deserves you awake.
 
-Four decisions, in the order I would take them.
+Five decisions, in the order I would take them.
 
 First and most urgent, the misattribution described above, because Bench Run 2 is when it stops being theoretical. The design for the repair is written down and waiting.
 
@@ -189,7 +222,9 @@ Second, whether to switch merging on. I would not yet. Of the 23 pairs originall
 
 Third, whether to recover the two missing exam documents from the branch, so the 43 unchecked pairs stop being unknown. That sits on the answer key boundary, which is why it is yours.
 
-Fourth, whether the fix check should feed the model facing channel automatically or stay a measurement.
+Fourth, whether to widen the read allowlist so our machinery stops rejecting honest tests when it runs from a disposable copy, or take the conservative route in the note instead. That guard is the one closed after the excluded experiment, which is why it is yours.
+
+Fifth, whether the fix check should feed the model facing channel automatically or stay a measurement.
 
 Nothing is on fire, the suite is green, and everything is committed.
 
