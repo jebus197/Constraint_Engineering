@@ -396,8 +396,24 @@ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str]
     # one run this project had to discard, because a model wrote a falsifier
     # that opened the scoring key. This does not touch that.
     #
-    # A model-authored falsifier cannot reach this: the value is read by the
-    # PARENT process that scans the source, and the falsifier runs as a child.
+    # WHAT ACTUALLY BOUNDS THIS -- the earlier comment here gave a reason that
+    # is FALSE about its own function, and both reviewers proved it by execution
+    # on 2026-08-31.
+    #
+    # The old claim was that a model-authored falsifier "cannot reach this"
+    # because the value is read by the parent. `_allow_roots` is ALSO called at
+    # the `_observer_source` site, which builds the CHILD's runtime allowlist,
+    # so with CDSFL_CANONICAL_REPO set the directory does appear in the child's
+    # allow list. Measured both ways.
+    #
+    # The conclusion survives for a DIFFERENT reason: `_denied` tests the
+    # PROTECTED set before the allow set, so a protected path under a widened
+    # root is still refused -- proved by executing a protected key under the
+    # widened root (denied) beside a sibling (allowed).
+    #
+    # The reason matters as much as the conclusion here. A wrong reason written
+    # beside the permission boundary closed after the one discarded run reads as
+    # clearance, and the next reader inherits it.
     _canon = os.environ.get("CDSFL_CANONICAL_REPO", "").strip()
     if _canon and os.path.isdir(_canon):
         roots.append(os.path.normpath(_canon))

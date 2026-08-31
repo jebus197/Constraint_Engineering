@@ -384,6 +384,18 @@ def _declare_truncation(text: str, limit: int) -> str:
               f"say so rather than reporting it unverified.]\n")
 
 
+def _bounded_description_rr(text: str, limit: int = 2000) -> str:
+    """Bound a description for the round record, declaring any cut.
+
+    Mirrors runner_core._bounded_description. Local rather than imported to keep
+    this module's dependency direction unchanged.
+    """
+    t = (text or "").strip()
+    if len(t) <= limit:
+        return t
+    return t[:limit] + f" [...TRUNCATED at {limit:,} of {len(t):,} characters]"
+
+
 def clear_stale_resolution_stamps(entry: dict) -> list:
     """Drop stamps that describe an instrument the entry no longer carries.
 
@@ -11422,7 +11434,11 @@ def run_experiment(
                 "model_id": f.model_id,
                 "flaw_class": f.flaw_class,
                 "severity": f.severity,
-                "description": f.description[:500],
+                # The per-round record built FOR HIL REVIEW -- the audience the
+                # founder ruled the truncation fix for. Missed in that sweep;
+                # found by both reviewers 2026-08-31. Same helper, same 2,000
+                # cap, and it declares a cut instead of trimming in silence.
+                "description": _bounded_description_rr(f.description),
                 "verified": f.verified,
                 "escalated": f.escalated,
                 "origin_type": getattr(f, "origin_type", ""),
