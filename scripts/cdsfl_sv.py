@@ -1309,6 +1309,32 @@ _MEMORY_INDEX_NAME = "MEMORY.md"
 # and em-dashes, and conflating the two units would itself be a silent
 # wrong answer.
 _MEMORY_INDEX_LIMIT_CHARS = 25_000
+
+# THE SECOND TRUNCATION TRIGGER, added 2026-09-01. The loader truncates on
+# EITHER of two conditions and this file guarded only one of them, so a save
+# could pass every check while the index was being cut on line count. Both
+# constants are read out of the installed binary rather than assumed:
+#
+#   $ python3 -c "...re.finditer(rb'PRe=\\d+', data)..."   -> PRe=25000
+#   $ python3 -c "...re.finditer(rb'fie=\\d+', data)..."   -> fie=200
+#   /opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe
+#   v2.1.220, re-confirmed 2026-09-01 (first extracted in the 2026-08-05
+#   recovery-resource audit, same values).
+#
+# The enforcing function is:
+#   function Rtr(e,t="index"){let{trimmed:r,lineCount:n,byteCount:o}=EDt(e),
+#                             i=n>fie, s=o>PRe; ...}
+#   function EDt(e){let t=e.trim();
+#                   return{trimmed:t,lineCount:au(t,'\\n')+1,byteCount:t.length}}
+#
+# Two details of EDt are load-bearing and were both measured wrongly here
+# before: it TRIMS first, and `t.length` is the JavaScript UTF-16 length, not
+# UTF-8 bytes and not Python code points. Those three units differ on this
+# file — 24,451 UTF-8 bytes against 24,040 code points — so a guard written in
+# bytes fires roughly 400 characters early, and one written in code points
+# agrees with the loader only while the index stays free of astral characters
+# (an emoji in a memory title would silently break the equivalence).
+_MEMORY_INDEX_LIMIT_LINES = 200
 _MEMORY_INDEX_REFUSE_FRACTION = 0.95
 _MEMORY_ENTRY_ONE_LINE_CHARS = 150
 
@@ -1350,6 +1376,7 @@ class _MemoryIndexAudit:
     path: Path
     error: str = ""
     chars: int = 0
+    lines: int = 0
     byte_len: int = 0
     entries: list[tuple[str, str, int]] = field(default_factory=list)
     broken: list[str] = field(default_factory=list)
@@ -1361,6 +1388,10 @@ class _MemoryIndexAudit:
     @property
     def headroom(self) -> int:
         return _MEMORY_INDEX_LIMIT_CHARS - self.chars
+
+    @property
+    def lines_headroom(self) -> int:
+        return _MEMORY_INDEX_LIMIT_LINES - self.lines
 
     @property
     def entries_left(self) -> int:
@@ -1392,7 +1423,11 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
         return audit
 
     audit.byte_len = len(raw)
-    audit.chars = len(text)
+    # EDt trims before measuring, and counts UTF-16 code units. Mirrored
+    # exactly so this audit and the loader cannot disagree about the same file.
+    trimmed = text.strip()
+    audit.chars = sum(2 if ord(ch) > 0xFFFF else 1 for ch in trimmed)
+    audit.lines = trimmed.count("\n") + 1 if trimmed else 0
 
     # Parse per line. A multiline regex would let ``\s`` swallow newlines and
     # silently mis-measure entry lengths.
@@ -1634,19 +1669,50 @@ def _print_memory_index_report(audit: _MemoryIndexAudit) -> None:
 def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
     """The one RULING 7 check that can refuse a save."""
     threshold = int(_MEMORY_INDEX_LIMIT_CHARS * _MEMORY_INDEX_REFUSE_FRACTION)
+    # THE ORIGINAL RATIONALE HERE WAS FALSIFIED, 2026-09-01. It read: "the
+    # index is truncated silently, and what is dropped is the END of the file
+    # — the NEWEST entries ... Nothing reports that it happened." Three claims,
+    # all wrong, and wrong in the alarming direction. The loader cuts at
+    # `lastIndexOf('\\n', PRe)`, so the loss is the END of the file, but the end
+    # of THIS file is the March 2026 handoffs the index itself labels
+    # "historical, read only if relevant" — new entries are written near the
+    # top. Measured 2026-09-01: the last six lines are dated 2026-03-19 to
+    # 2026-03-23, the first fifteen are dated 2026-08-30 to 2026-08-31, and the
+    # entry written that night landed at line 125 of 183. Nor is it silent:
+    # Rtr appends a visible "MEMORY.md is N bytes (limit: 25000)" warning into
+    # the context. The condition is real and worth refusing on, but it is
+    # housekeeping with announced failure, not silent loss of the newest work,
+    # and saying otherwise sends a reader hunting for the wrong remedy.
     why = (
-        "past the loader limit the index is truncated silently, and what is "
-        "dropped is the END of the file — the NEWEST entries, which is exactly "
-        "what a session is trying to save. Nothing reports that it happened."
+        "the loader truncates the index on EITHER limit — over "
+        f"{_MEMORY_INDEX_LIMIT_CHARS} characters or over {_MEMORY_INDEX_LIMIT_LINES} "
+        "lines — and what it drops is the tail, which on this file is the "
+        "oldest archival material. Truncation is announced by the loader, so "
+        "this is housekeeping rather than silent loss; it still refuses, "
+        "because a save should not be the thing that pushes the index over."
     )
     expected = (
-        f"the index under {threshold} characters, i.e. below "
-        f"{_MEMORY_INDEX_REFUSE_FRACTION:.0%} of the {_MEMORY_INDEX_LIMIT_CHARS}-character loader limit"
+        f"the index under {threshold} characters AND under "
+        f"{int(_MEMORY_INDEX_LIMIT_LINES * _MEMORY_INDEX_REFUSE_FRACTION)} lines, i.e. below "
+        f"{_MEMORY_INDEX_REFUSE_FRACTION:.0%} of both loader limits "
+        f"({_MEMORY_INDEX_LIMIT_CHARS} characters, {_MEMORY_INDEX_LIMIT_LINES} lines)"
     )
     if audit.error:
         return _Check(
             name="memory-index-headroom", passed=False, why=why, expected=expected,
             observed=f"the index could not be measured — {audit.error}",
+            look_at=str(audit.path),
+        )
+    line_threshold = int(_MEMORY_INDEX_LIMIT_LINES * _MEMORY_INDEX_REFUSE_FRACTION)
+    if audit.lines >= line_threshold:
+        return _Check(
+            name="memory-index-headroom", passed=False, why=why, expected=expected,
+            observed=(
+                f"{audit.lines} lines — {audit.lines_headroom} below the "
+                f"{_MEMORY_INDEX_LIMIT_LINES}-line loader limit. The LINE limit is "
+                f"the binding one here; the file is {audit.chars} characters "
+                f"({audit.headroom} left). Consolidate entries before saving."
+            ),
             look_at=str(audit.path),
         )
     if audit.chars >= threshold:
@@ -1661,7 +1727,8 @@ def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
         )
     return _Check(
         name="memory-index-headroom", passed=True, why=why, expected=expected,
-        observed=f"{audit.chars} characters, {audit.headroom} left",
+        observed=(f"{audit.chars} characters ({audit.headroom} left), "
+                  f"{audit.lines} lines ({audit.lines_headroom} left)"),
         look_at=str(audit.path),
     )
 

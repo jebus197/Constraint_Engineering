@@ -520,7 +520,14 @@ class TestMemoryIndexAudit:
         check = sv._check_memory_index_size(sv._audit_memory_index(memory_dir))
         assert check.passed is False
         assert str(threshold) in check.expected
-        assert "silently" in check.why and "NEWEST" in check.why
+        # WAS: assert "silently" in check.why and "NEWEST" in check.why
+        # Both claims were falsified on 2026-09-01 and the rationale was
+        # rewritten. The loader announces truncation, and the tail it cuts is
+        # this index's OLDEST material (the March 2026 handoffs), not the
+        # newest. What must stay asserted is that the reason names both loader
+        # limits, since guarding only one of them was the actual defect.
+        assert str(sv._MEMORY_INDEX_LIMIT_CHARS) in check.why
+        assert str(sv._MEMORY_INDEX_LIMIT_LINES) in check.why
 
     def test_size_check_passes_one_character_below_the_band(
         self, memory_dir: Path,
