@@ -147,3 +147,56 @@ class TestTheRationaleStatesWhatTheLoaderDoes:
         assert "announced" in low or "announces" in low, (
             "the rationale should say the loader announces truncation, since "
             "that is what makes this housekeeping rather than silent loss")
+
+
+class TestBoldTitlesAreEntriesToo:
+    """The audit's own blind spot, 2026-09-01.
+
+    _MEMORY_ENTRY_RE required "[" to follow the bullet directly, so every entry
+    written `- **[Title](file.md)**` was invisible to it. On the live index that
+    was 15 of 132 entries (11.4%, Wilson [7.0%, 17.9%]) -- and all 15 were over
+    the 150-character rule, carrying 4,050 characters of excess against 1,135 in
+    the entries the audit could see. The check for over-long entries could not
+    see the longest entries in the file, which were also the newest, because a
+    session note reaches for bold to mark itself important.
+    """
+
+    def _audit(self, tmp_path, body):
+        (tmp_path / "MEMORY.md").write_text(body, encoding="utf-8")
+        return sv._audit_memory_index(tmp_path)
+
+    def test_a_bold_titled_entry_is_counted(self, tmp_path):
+        (tmp_path / "a.md").write_text("body\n")
+        audit = self._audit(tmp_path, "- **[Bold](a.md)** — hook\n")
+        assert len(audit.entries) == 1, (
+            "an entry with a bold title was not counted as an entry")
+
+    def test_plain_and_bold_are_counted_together(self, tmp_path):
+        for n in ("a.md", "b.md"):
+            (tmp_path / n).write_text("body\n")
+        audit = self._audit(
+            tmp_path, "- [Plain](a.md) — hook\n- **[Bold](b.md)** — hook\n")
+        assert len(audit.entries) == 2
+        assert {t for _title, t, _n in audit.entries} == {"a.md", "b.md"}
+
+    def test_an_over_long_bold_entry_is_reported(self, tmp_path):
+        (tmp_path / "a.md").write_text("body\n")
+        line = "- **[Bold](a.md)** — " + "x" * 200
+        audit = self._audit(tmp_path, line + "\n")
+        assert audit.over_long, (
+            "a bold-titled entry over 150 chars was not reported. This is the "
+            "exact case that hid the five longest entries in the live index.")
+
+    def test_a_bold_entrys_broken_link_is_detected(self, tmp_path):
+        audit = self._audit(tmp_path, "- **[Bold](missing.md)** — hook\n")
+        assert audit.broken == ["missing.md"], (
+            "a bold-titled entry pointing at a missing file was not flagged")
+
+    def test_the_live_index_has_no_over_long_entries(self):
+        """Trimmed 2026-09-01: 40 entries rewritten, 24,040 -> 18,239 chars."""
+        audit = sv._audit_memory_index(sv._MEMORY_DIR)
+        if audit.error:
+            pytest.skip(audit.error)
+        assert not audit.over_long, (
+            f"{len(audit.over_long)} entries exceed the 150-character rule: "
+            + ", ".join(t for _n, t in audit.over_long[:5]))

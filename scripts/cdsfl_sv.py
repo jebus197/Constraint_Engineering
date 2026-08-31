@@ -1348,7 +1348,17 @@ _PREFLIGHT_TIMEOUT = 30
 _FLAG_ALLOW_INCOMPLETE = "--allow-incomplete-save"
 _FLAG_OVERWRITE_DESKTOP = "--overwrite-newer-desktop-tracker"
 
-_MEMORY_ENTRY_RE = re.compile(r"^\s*[-*]\s+\[([^\]]+)\]\(([^)]+)\)")
+# THE BLIND SPOT, 2026-09-01. This pattern required the "[" to follow the
+# bullet directly, so every entry written as `- **[Title](file.md)**` was not an
+# entry at all as far as this audit was concerned. Measured on the live index:
+# 15 of 132 entries invisible (11.4%, Wilson [7.0%, 17.9%]) -- and ALL 15 were
+# over the 150-character one-line rule, carrying 4,050 characters of excess
+# against 1,135 in the 117 entries the audit could see. The check built to
+# catch over-long entries was blind to the longest ones in the file, which were
+# also the newest, because bold is what a session note reaches for to mark
+# itself important. Entry counts, the median, headroom-in-entries and the
+# over-long report were all computed off the smaller set.
+_MEMORY_ENTRY_RE = re.compile(r"^\s*[-*]\s+\*{0,2}\[([^\]]+)\]\(([^)]+)\)")
 
 
 @dataclass
