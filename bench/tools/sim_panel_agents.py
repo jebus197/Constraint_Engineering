@@ -100,6 +100,7 @@ def _one_agent(label: str, target: str, timeout: int) -> list:
         r = subprocess.run(
             ["claude", "-p", prompt, "--model", "sonnet", "--output-format", "text",
              "--no-session-persistence",
+        "--setting-sources", "",  # panellists read the directive, not the operator config
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],
             capture_output=True, text=True, timeout=timeout,
             cwd=str(REPO), stdin=subprocess.DEVNULL,

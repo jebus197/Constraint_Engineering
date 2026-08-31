@@ -78,6 +78,7 @@ def test_cc2_sympy():
         "--model", "opus",
         "--output-format", "text",
         "--no-session-persistence",
+        "--setting-sources", "",  # panellists read the directive, not the operator config
         "--disallowed-tools", "Edit", "Write",
         "--system-prompt", system_prompt,
     ]

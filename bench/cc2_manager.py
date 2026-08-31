@@ -128,6 +128,12 @@ def _dispatch_cli(
         "--model", model_id,
         "--output-format", "text",
         "--no-session-persistence",
+        # Panellists are briefed by the directive, not by the operator's own
+        # instructions (founder ruling 2026-08-31). A `claude -p` subagent
+        # loads ~/.claude/CLAUDE.md and the project config before the brief;
+        # --system-prompt does NOT displace them. Measured 71.2% of a
+        # panellist's briefing was inherited config.
+        "--setting-sources", "",
         "--max-turns", str(max_turns),
     ]
     if allowed_tools:

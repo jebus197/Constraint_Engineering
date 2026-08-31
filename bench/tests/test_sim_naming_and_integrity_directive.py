@@ -80,8 +80,10 @@ import json
 import re
 import sys
 import warnings
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, List, NamedTuple, Sequence, Set, Tuple
+from typing import (Any, Iterable, List, NamedTuple, Optional, Sequence, Set,
+                    Tuple)
 
 import pytest
 
@@ -406,11 +408,25 @@ def scan_text(text: str, tokens: Iterable[str], artefact: str) -> List[Violation
     return out
 
 
+#: A reviewer's proposed diff. Scanned by path, never by body: see scan_artefact.
+_REVIEWER_PATCH_SUFFIXES = {".patch", ".diff"}
+
+
 def scan_artefact(path: Path, relative_path: str, data: bytes,
                   tokens: Iterable[str]) -> List[Violation]:
     out = scan_path(relative_path, tokens)
     text = data.decode("utf-8", errors="replace")
     suffix = path.suffix.lower()
+    if suffix in _REVIEWER_PATCH_SUFFIXES:
+        # THE REVIEWER'S OWN PATCH, 2026-08-31. A `.patch` is source code a
+        # reviewer is PROPOSING, not a record a run produced. Fable's patch for
+        # this very guard was flagged because the test fixture it adds contains
+        # the synthetic line `... INFO dispatch model: Codex done` -- the fixture
+        # a guard against bare vendor names necessarily has to contain. That is
+        # _strip_quoted_prose's documented principle one level up: a vendor token
+        # in reviewer-authored text is the reviewer TALKING ABOUT labels. The
+        # path is still scanned, so a patch NAMED for a bare vendor still fails.
+        return out
     if suffix == ".json":
         try:
             out.extend(scan_json(json.loads(text), tokens, relative_path))
@@ -433,6 +449,73 @@ def scan_artefact(path: Path, relative_path: str, data: bytes,
     else:
         out.extend(scan_text(text, tokens, relative_path))
     return out
+
+
+# ────────────── an append-only log is many artefacts, not one ─────────────────
+
+#: The simulation era. No simulated run can predate the harness that produces
+#: one, so a log line older than this was written by a run that COULD NOT have
+#: been simulated. Both independent sources agree on the date: the earliest
+#: self-declaring simulated artefact in bench/logs is
+#: sim45_memory_20260830T161215Z/round_03.json (16:12:15), and the first commit
+#: of both bench/tools/run_simulated_experiment.py and sim_dispatch_shim.py is
+#: 2026-08-30T16:44:01+01:00. The boundary is held at midnight of that day so it
+#: is generous toward GUARDING, never toward exempting.
+SIMULATION_ERA_BEGINS = datetime(2026, 8, 30)
+
+_LOG_TS = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
+
+#: Below this share of timestamped lines a file is not a run-partitioned log and
+#: is scanned whole, exactly as before.
+_MIN_STAMPED_SHARE = 0.95
+
+
+def simulation_era_lines(data: bytes) -> Optional[bytes]:
+    """Return only the lines an append-only log wrote during the simulation era.
+
+    THE WHOLESALE MIS-LABEL, 2026-08-31. ``bench/logs/immune_pipeline.log`` is
+    5.8 MB of append-only history spanning 2026-04-04 to the present across 33
+    runs. It was classified as ONE simulated artefact because ONE compliant
+    ``-SIM`` append matched the content marker -- so five months of real history
+    was re-labelled simulated, and the guard reported 335 "violations" of which
+    99.4% (Wilson [0.9923, 0.9959]) were real runs correctly carrying real
+    vendor names. exp38, exp40, exp41, exp42 and exp44 are not provenance
+    failures; they are the record of what actually happened.
+
+    An append-only log is not one artefact. Every line carries a timestamp
+    (52,162 of 52,162, 100%), so every line is attributable to the run that was
+    executing when it was written. That attribution is not a guess: matched
+    against the 8,502 lines whose runs also record their own start and end
+    times, the partition agreed 8,502 times and disagreed 0 times (accuracy
+    1.0000, Wilson [0.9995, 1.0000]).
+
+    The split is deliberately asymmetric. A line is exempted ONLY when it
+    predates any possible simulation; everything from the era onward is guarded
+    in full. A guard that wrongly exempts a simulated line is the failure that
+    matters, and this cannot produce one.
+
+    Returns None when the data is not a line-oriented timestamped log, in which
+    case the caller scans it whole.
+    """
+    text = data.decode("utf-8", errors="replace")
+    lines = text.splitlines()
+    if len(lines) < 2:
+        return None
+    stamped = sum(1 for line in lines if _LOG_TS.match(line))
+    if stamped < _MIN_STAMPED_SHARE * len(lines):
+        return None
+
+    kept: List[str] = []
+    in_era = False
+    for line in lines:
+        match = _LOG_TS.match(line)
+        if match:
+            # A continuation line inherits the era of the stamped line above it.
+            in_era = (datetime.strptime(match.group(1), "%Y-%m-%dT%H:%M:%S")
+                      >= SIMULATION_ERA_BEGINS)
+        if in_era:
+            kept.append(line)
+    return "\n".join(kept).encode("utf-8")
 
 
 # ───────────────────── artefact discovery (one pass, cached) ──────────────────
@@ -464,6 +547,14 @@ def survey_artefacts() -> Survey:
             unreadable.append(f"{relative}: {type(exc).__name__}: {exc}")
             return
         if name_marks_simulated(relative) or content_marks_simulated(data):
+            era = simulation_era_lines(data)
+            if era is not None:
+                # An append-only log spanning many runs: only the lines written
+                # during the simulation era are in scope. See
+                # simulation_era_lines for why, and for the validation.
+                if era.strip():
+                    simulated.append((path, relative, era))
+                return
             simulated.append((path, relative, data))
         elif b"imulated" in data:
             prose_only.append(relative)

@@ -604,6 +604,23 @@ _DIRECTIVE_OMISSION: Dict[str, Any] = {"factors": ()}
 # The control was not idle and not broken -- it had never been fed.
 _ASK_CORRECTED_COPY: Dict[str, Any] = {"on": False}
 
+# Module mirror of `RunnerConfig.falsifier_gate_enabled`, same idiom and same
+# reason as _ASK_CORRECTED_COPY above.
+#
+# WHY IT EXISTS (both reviewers, 2026-08-31). `enable_tools` was doing two jobs:
+# granting the execute_python tool loop AND switching the §2 prose-to-runnable
+# directive rewrite. The founder's ruling of 2026-08-30 -- tools on, without
+# exception -- correctly hardcoded the first to True, and silently took the
+# second with it. So a GATE-OFF arm now receives the gate's rewritten §2 prompt
+# while `apply_falsifier_verdicts` still returns early and executes nothing:
+# models are instructed to attach runnable falsifiers that nothing runs, and the
+# field's own docstring still promises gate-off is "byte-identical".
+#
+# That changes the DIRECTIVE TEXT of control arms mid-arc, which is an
+# experimental-validity problem, not a cosmetic one. Splitting them restores the
+# control while leaving tools unconditionally on, exactly as ruled.
+_FALSIFIER_GATE: Dict[str, Any] = {"on": True}
+
 
 def _directive_factor_state(cfg: "RunnerConfig", factor: str) -> Tuple[bool, bool]:
     """Return ``(directive_text_present, runner_pass_active)`` for `factor`.
@@ -7033,7 +7050,10 @@ def _dispatch_single_model(
         _log("  discrimination_control_ask=True but falsifier_gate_enabled=False "
              "— the corrected-copy ask rides on the gate's §2 rewrite, so NO ask "
              "is being made this round.")
-    if enable_tools:
+    # The §2 REWRITE follows the falsifier gate; the TOOL LOOP follows the
+    # founder's ruling and is unconditional. These were one flag until
+    # 2026-08-31 and must not be re-merged.
+    if bool(_FALSIFIER_GATE.get("on")):
         # The flag is resolved FIRST so the assignment and its read share a
         # line: test_omission_precedes_every_use_of_the_prompt asserts that the
         # only pre-omission reads of `model_cdsfl` are assembly steps, and a
@@ -9805,6 +9825,7 @@ def run_experiment(
     # Wire the ask (see _ASK_CORRECTED_COPY). Without this the discrimination
     # control cannot receive its second input from the main panel.
     _ASK_CORRECTED_COPY["on"] = bool(getattr(cfg, "discrimination_control_ask", False))
+    _FALSIFIER_GATE["on"] = bool(getattr(cfg, "falsifier_gate_enabled", False))
     _log(f"  Target: {cfg.test_article}")
     _log(f"  Context: {cfg.context_files}")
     _log(f"  Models: {sorted(baseline)}")
