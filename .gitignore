@@ -42,6 +42,14 @@ bench/logs/**
 !bench/logs/**/
 !bench/logs/**/*report*.json
 !bench/logs/**/runner_state.json
+# Provenance sidecars: <artefact>.PROVENANCE.jsonl declares which line ranges
+# of a TRACKED archival log were written by simulated runs. The log is
+# tracked; without this the sidecar was not, so a fresh clone lost the
+# declaration, _provenance_windows returned None, and the guard re-reported
+# 335 violations of which 99.4% were real runs. Found 2026-08-31 by checking
+# git status after writing one.
+!bench/logs/**/*.PROVENANCE.jsonl
+!bench/logs/*.PROVENANCE.jsonl
 
 # Answer keys and planted-defect records live OUTSIDE this repo
 # (founder ruling 2026-08-25). See ../CDSFL_experiment_keys/README.md

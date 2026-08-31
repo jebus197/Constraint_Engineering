@@ -88,6 +88,46 @@ def main() -> int:
     logs = REPO / "bench" / "logs" / f"{args.name}_{stamp}"
     logs.mkdir(parents=True, exist_ok=True)
 
+    # SEPARATION BY CONSTRUCTION, 2026-08-31.
+    #
+    # bench/logs/immune_pipeline.log is the ARCHIVAL immune record: 52,162 lines
+    # from 2026-04-04 onward, append-only, never edited. Every run resolves that
+    # ONE path at immune_agents.py:3393, so before this the simulated panel
+    # appended straight into it -- 363 lines across two runs on 2026-08-30. The
+    # separation between simulated and real records was then a naming CONVENTION
+    # (the -SIM suffix) rather than a property of where the bytes went, and one
+    # compliant append was enough to get five months of real history re-labelled
+    # simulated by the provenance guard.
+    #
+    # CDSFL_SHADOW_LOG_DIR is the isolation hook added 2026-07-31 for exactly
+    # this shape of problem, when pytest was found dirtying the archive. It
+    # existed the whole time; the simulated runner simply never set it.
+    os.environ["CDSFL_SHADOW_LOG_DIR"] = str(logs)
+
+    # VERIFY, DO NOT TRUST. immune_agents resolves that variable at IMPORT time,
+    # in module-level code guarded by `if not _shadow_log.handlers`, so setting
+    # it after the first import of that module is a silent no-op -- the run would
+    # look isolated and would not be. Measured 2026-08-31: importing
+    # reference_runner_v2 and sim_dispatch_shim leaves immune_agents unloaded, so
+    # here is early enough. That is a fact about today's import graph, not a
+    # guarantee, and one lazy import promoted to module level would break it
+    # without a symptom. So import it HERE, while the variable is set, and read
+    # back where the handler actually points.
+    import logging as _logging
+    import immune_agents as _immune  # noqa: F401  -- imported for its side effect
+    handlers = [getattr(h, "baseFilename", "")
+                for h in _logging.getLogger("immune.pipeline").handlers]
+    if not any(str(logs) in path for path in handlers):
+        print("    FATAL: the immune pipeline log is NOT isolated to this run.\n"
+              f"      expected under: {logs}\n"
+              f"      actually writing to: {handlers or '(no handler configured)'}\n"
+              "      Something imported immune_agents before CDSFL_SHADOW_LOG_DIR\n"
+              "      was set, so this simulated run would append to the archival\n"
+              "      record and mix simulated output into it. Refusing to start.",
+              flush=True)
+        return 2
+    print(f"    immune pipeline log isolated to {logs.name}/", flush=True)
+
     # Roles mirror the live panel: one player-manager, the rest players. The
     # labels are the VENDOR labels because the runner keys on them; the shim maps
     # each to its SIM- stand-in and the report records both.

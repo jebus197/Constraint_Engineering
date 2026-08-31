@@ -19,11 +19,11 @@ The directory holds **130 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 72 |
+| Mirrored (in summarised form) in `MEMORY.md` | 73 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 129 |
+| total | 130 |
 
 > **[Correction 2026-08-25.]** Mirrored 60 -> 61, total 117 -> 118 for
 > `cdsfl_session_2026-08-25_commissioning.md`. **EIGHTH consecutive manual bump.** The

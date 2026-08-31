@@ -80,10 +80,8 @@ import json
 import re
 import sys
 import warnings
-from datetime import datetime
 from pathlib import Path
-from typing import (Any, Iterable, List, NamedTuple, Optional, Sequence, Set,
-                    Tuple)
+from typing import Any, Iterable, List, NamedTuple, Sequence, Set, Tuple
 
 import pytest
 
@@ -296,6 +294,10 @@ def bare_vendor_hits(value: str, tokens: Iterable[str]) -> List[str]:
     return hits
 
 
+#: Shared by scan_mixed_log and Violation.render so the two cannot drift.
+OUTSIDE_DECLARED_WINDOW = "outside declared provenance window"
+
+
 class Violation(NamedTuple):
     artefact: str
     location: str
@@ -303,8 +305,18 @@ class Violation(NamedTuple):
     token: str
 
     def render(self) -> str:
-        return (f"  {self.artefact}\n      at {self.location}\n"
-                f"      value {self.value!r} carries bare vendor name "
+        head = f"  {self.artefact}\n      at {self.location}\n"
+        if self.location == OUTSIDE_DECLARED_WINDOW:
+            # The OPPOSITE fault to a bare vendor name, so it cannot share the
+            # sentence. Rendered through the bare-name template it read:
+            # "carries bare vendor name 'SIM-marked line not covered by the
+            # provenance sidecar' — must be SIM-marked line ...-SIM".
+            return (head + f"      line {self.value!r}\n"
+                    f"      is SIM-marked ({self.token}) but falls outside every "
+                    f"window the provenance sidecar declares. Either a simulated "
+                    f"run has written to this archive again, or the sidecar is "
+                    f"stale.")
+        return (head + f"      value {self.value!r} carries bare vendor name "
                 f"{self.token!r} — must be {self.token}{REQUIRED_SUFFIX}")
 
 
@@ -408,6 +420,75 @@ def scan_text(text: str, tokens: Iterable[str], artefact: str) -> List[Violation
     return out
 
 
+PROVENANCE_SIDECAR_SUFFIX = ".PROVENANCE.jsonl"
+
+
+def _provenance_windows(path: Path) -> "List[Tuple[int, int]] | None":
+    """Declared simulated line-windows for a MIXED archival log, or None.
+
+    THE MIXED-FILE CASE (2026-08-31, Fable, panel review).
+    bench/logs/immune_pipeline.log is a REAL archival log that simulated runs
+    appended 174 ``-SIM`` lines to. Classifying the whole file as simulated
+    applied the -SIM naming rule to REAL lines from real panels -- names that
+    are correct provenance, not violations: 99.4% of the 335 reported
+    violations, Wilson [0.9923, 0.9959]. Editing the archive is against its own
+    policy (the 2026-07-31 TestModel lines are still in place for the same
+    reason), so the separation lives in a sidecar:
+    ``<artefact>.PROVENANCE.jsonl`` declares which line ranges are simulated.
+
+    The sidecar does not weaken the guard; ``scan_mixed_log`` makes it
+    BIDIRECTIONAL: bare vendor names inside a declared window still fail, and a
+    structurally sim-marked line OUTSIDE every declared window fails too -- so
+    the contamination this machinery exists to catch re-reddens the guard the
+    moment it recurs, sidecar or no sidecar.
+
+    WHY THE WINDOWS ARE CLOSED, NOT GROWING (2026-08-31). A hand-maintained
+    declaration that grows with the log is a second source of truth that drifts.
+    These two windows cannot grow: the simulated runner now sets
+    CDSFL_SHADOW_LOG_DIR to its own run directory, so no simulated run can
+    append to this file again. The sidecar records a finite past, not a policy.
+    """
+    sidecar = path.with_name(path.name + PROVENANCE_SIDECAR_SUFFIX)
+    if not sidecar.is_file():
+        return None
+    windows: List[Tuple[int, int]] = []
+    try:
+        for line in sidecar.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            if record.get("artefact", "").rsplit("/", 1)[-1] != path.name:
+                continue
+            for w in record.get("simulated_windows", []):
+                lo, hi = w["lines"]
+                windows.append((int(lo), int(hi)))
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None      # an unreadable sidecar declares nothing
+    return windows or None
+
+
+def scan_mixed_log(relative_path: str, text: str, tokens: Iterable[str],
+                   windows: "List[Tuple[int, int]]") -> List[Violation]:
+    out: List[Violation] = []
+    lines = text.splitlines()
+    for i, line in enumerate(lines, start=1):
+        inside = any(lo <= i <= hi for lo, hi in windows)
+        if inside:
+            out.extend(scan_text(line, tokens, f"{relative_path}:{i}"))
+        # NOT _CONTENT_MARK here: its `-SIM\b` arm misses `Fable-SIM_F009`
+        # (M and _ are both word chars, so there is no boundary), and that is
+        # the commonest shape a sim line takes in this log -- a finding ID.
+        # Measured 2026-08-31 over the two declared windows: this arm matches
+        # 174 lines where `-SIM\b` matches 2.
+        else:
+            marker = re.search(r"[A-Za-z0-9-]*-SIM(?![A-Za-z])", line)
+            if marker:
+                out.append(Violation(
+                    f"{relative_path}:{i}", OUTSIDE_DECLARED_WINDOW,
+                    line[:120], marker.group(0)))
+    return out
+
+
 #: A reviewer's proposed diff. Scanned by path, never by body: see scan_artefact.
 _REVIEWER_PATCH_SUFFIXES = {".patch", ".diff"}
 
@@ -416,6 +497,10 @@ def scan_artefact(path: Path, relative_path: str, data: bytes,
                   tokens: Iterable[str]) -> List[Violation]:
     out = scan_path(relative_path, tokens)
     text = data.decode("utf-8", errors="replace")
+    windows = _provenance_windows(path)
+    if windows is not None:
+        out.extend(scan_mixed_log(relative_path, text, tokens, windows))
+        return out
     suffix = path.suffix.lower()
     if suffix in _REVIEWER_PATCH_SUFFIXES:
         # THE REVIEWER'S OWN PATCH, 2026-08-31. A `.patch` is source code a
@@ -451,73 +536,6 @@ def scan_artefact(path: Path, relative_path: str, data: bytes,
     return out
 
 
-# ────────────── an append-only log is many artefacts, not one ─────────────────
-
-#: The simulation era. No simulated run can predate the harness that produces
-#: one, so a log line older than this was written by a run that COULD NOT have
-#: been simulated. Both independent sources agree on the date: the earliest
-#: self-declaring simulated artefact in bench/logs is
-#: sim45_memory_20260830T161215Z/round_03.json (16:12:15), and the first commit
-#: of both bench/tools/run_simulated_experiment.py and sim_dispatch_shim.py is
-#: 2026-08-30T16:44:01+01:00. The boundary is held at midnight of that day so it
-#: is generous toward GUARDING, never toward exempting.
-SIMULATION_ERA_BEGINS = datetime(2026, 8, 30)
-
-_LOG_TS = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
-
-#: Below this share of timestamped lines a file is not a run-partitioned log and
-#: is scanned whole, exactly as before.
-_MIN_STAMPED_SHARE = 0.95
-
-
-def simulation_era_lines(data: bytes) -> Optional[bytes]:
-    """Return only the lines an append-only log wrote during the simulation era.
-
-    THE WHOLESALE MIS-LABEL, 2026-08-31. ``bench/logs/immune_pipeline.log`` is
-    5.8 MB of append-only history spanning 2026-04-04 to the present across 33
-    runs. It was classified as ONE simulated artefact because ONE compliant
-    ``-SIM`` append matched the content marker -- so five months of real history
-    was re-labelled simulated, and the guard reported 335 "violations" of which
-    99.4% (Wilson [0.9923, 0.9959]) were real runs correctly carrying real
-    vendor names. exp38, exp40, exp41, exp42 and exp44 are not provenance
-    failures; they are the record of what actually happened.
-
-    An append-only log is not one artefact. Every line carries a timestamp
-    (52,162 of 52,162, 100%), so every line is attributable to the run that was
-    executing when it was written. That attribution is not a guess: matched
-    against the 8,502 lines whose runs also record their own start and end
-    times, the partition agreed 8,502 times and disagreed 0 times (accuracy
-    1.0000, Wilson [0.9995, 1.0000]).
-
-    The split is deliberately asymmetric. A line is exempted ONLY when it
-    predates any possible simulation; everything from the era onward is guarded
-    in full. A guard that wrongly exempts a simulated line is the failure that
-    matters, and this cannot produce one.
-
-    Returns None when the data is not a line-oriented timestamped log, in which
-    case the caller scans it whole.
-    """
-    text = data.decode("utf-8", errors="replace")
-    lines = text.splitlines()
-    if len(lines) < 2:
-        return None
-    stamped = sum(1 for line in lines if _LOG_TS.match(line))
-    if stamped < _MIN_STAMPED_SHARE * len(lines):
-        return None
-
-    kept: List[str] = []
-    in_era = False
-    for line in lines:
-        match = _LOG_TS.match(line)
-        if match:
-            # A continuation line inherits the era of the stamped line above it.
-            in_era = (datetime.strptime(match.group(1), "%Y-%m-%dT%H:%M:%S")
-                      >= SIMULATION_ERA_BEGINS)
-        if in_era:
-            kept.append(line)
-    return "\n".join(kept).encode("utf-8")
-
-
 # ───────────────────── artefact discovery (one pass, cached) ──────────────────
 
 class Survey(NamedTuple):
@@ -547,14 +565,6 @@ def survey_artefacts() -> Survey:
             unreadable.append(f"{relative}: {type(exc).__name__}: {exc}")
             return
         if name_marks_simulated(relative) or content_marks_simulated(data):
-            era = simulation_era_lines(data)
-            if era is not None:
-                # An append-only log spanning many runs: only the lines written
-                # during the simulation era are in scope. See
-                # simulation_era_lines for why, and for the validation.
-                if era.strip():
-                    simulated.append((path, relative, era))
-                return
             simulated.append((path, relative, data))
         elif b"imulated" in data:
             prose_only.append(relative)
