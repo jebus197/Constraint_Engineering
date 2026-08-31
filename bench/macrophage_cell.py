@@ -126,6 +126,14 @@ class MacrophageCell:
     VERDICT_CLUSTER_THRESHOLD: float = 0.8  # >80% same verdict = cluster
     SEVERITY_SHIFT_THRESHOLD: float = 0.3   # >0.3 shift between rounds
     TIMING_SPIKE_FACTOR: float = 3.0        # >3x median = spike
+    #: Rounds of history a stage needs before it can raise a timing alarm.
+    #: CC2, 2026-08-31: with 1 prior round the "median" IS that round, and at
+    #: n=2 `vals[len//2]` returns the UPPER value -- measured, a resumed cell
+    #: fired at 4.2x off a single observation. Calibrated by Fable against 62
+    #: real stage-rounds from 7 paid experiments: the largest genuine ratio
+    #: against a stage's own prior median is 1.9x, so the 3.0 factor keeps
+    #: ~1.6x headroom and fired 0 false alarms on that data.
+    TIMING_MIN_HISTORY: int = 3
     MIN_FINDINGS_FOR_ANALYSIS: int = 3      # Need at least 3 findings
 
     def __init__(
@@ -314,9 +322,12 @@ class MacrophageCell:
         # the first post-resume round is silent for that stage.
         if timings:
             baselines = self._stage_baselines()
+            counts = self._stage_sample_counts()
             for stage, t in timings.items():
                 median_t = baselines.get(stage)
-                if median_t and t > median_t * self.TIMING_SPIKE_FACTOR and t > 0.5:
+                if (median_t
+                        and counts.get(stage, 0) >= self.TIMING_MIN_HISTORY
+                        and t > median_t * self.TIMING_SPIKE_FACTOR and t > 0.5):
                     obs = MacrophageObservation(
                         observation_id=self._next_id(),
                         mode=self.mode,
@@ -331,6 +342,36 @@ class MacrophageCell:
                         is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,
                     )
                     summary.observations.append(obs)
+
+    def _stage_sample_counts(self) -> Dict[str, int]:
+        """How many prior rounds each stage has been seen in."""
+        out: Dict[str, int] = {}
+        for rec in self._round_history:
+            for stage, t in (rec.get("timings") or {}).items():
+                try:
+                    if float(t) > 0:
+                        out[stage] = out.get(stage, 0) + 1
+                except (TypeError, ValueError):
+                    continue
+        return out
+
+    def rehydrate_timings(self, rounds: List[Dict[str, Any]]) -> int:
+        """Restore stage-timing history after a checkpoint resume.
+
+        The cell is a module-level singleton and does not survive a resume, so
+        without this every stage restarts at zero history and the detector is
+        silent for TIMING_MIN_HISTORY rounds. Fable, 2026-08-31, also noted the
+        baseline change removed the only raw-timing record the project had --
+        the old alarms WERE that record -- so timings are now persisted per
+        round and can be read back.
+        """
+        n = 0
+        for rec in rounds or []:
+            t = rec.get("timings") or rec.get("stage_timings")
+            if t:
+                self._round_history.append({"timings": dict(t)})
+                n += 1
+        return n
 
     def _stage_baselines(self) -> Dict[str, float]:
         """Median duration per stage across this cell's PRIOR rounds.

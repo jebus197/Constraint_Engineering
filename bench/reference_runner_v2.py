@@ -384,6 +384,40 @@ def _declare_truncation(text: str, limit: int) -> str:
               f"say so rather than reporting it unverified.]\n")
 
 
+def clear_stale_resolution_stamps(entry: dict) -> list:
+    """Drop stamps that describe an instrument the entry no longer carries.
+
+    A finding can be rescued twice: by the ROUTING ladder and by the
+    POST-CONVERGENCE SWEEP. Both attach a fresh, runner-verified falsifier. The
+    routing site cleared `irreducible_escalation` and `hil_escalated`; it missed
+    `mechanical_fault`, and the SWEEP site cleared none of the three.
+
+    Found by both reviewers independently, 2026-08-31. Fable proved the class is
+    live in the archive: C0015 is CLOSED carrying `hil_escalated=True`, and
+    C0013 is CLOSED carrying `mechanical_fault=True` after routing had already
+    replaced the falsifier those stamps described.
+
+    ADDITIVE, and it does not gate anything. Founder ruling the same day: HIL is
+    "just another (albeit slower) computational node" and must never block
+    convergence. So the repair is to make the stamps TRUE, never to act on them
+    while they are false -- an earlier proposal to block the close on
+    `mechanical_fault` would have blocked a correct close and, since nothing
+    else clears that flag, stranded the finding for ever.
+
+    Returns the names cleared, so the artefact records the retraction.
+    """
+    cleared = []
+    for flag in ("mechanical_fault", "irreducible_escalation", "hil_escalated"):
+        if entry.get(flag):
+            entry[flag] = False
+            cleared.append(flag)
+    if cleared:
+        entry.pop("hil_reason", None)
+        entry.setdefault("stamp_retractions", []).append(
+            {"cleared": cleared, "reason": "replacement falsifier verified"})
+    return cleared
+
+
 def base_model_label(label: str) -> str:
     """Vendor base of a panel label. ``CC2-SIM`` -> ``CC2``.
 
@@ -4761,9 +4795,7 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # Exp 44 post-run fix (2026-07-27): a later-round success must clear
             # the stale irreducible/HIL stamps from an earlier exhausted ladder,
             # so queue counts and reports read truth (the 6-stale-flags episode).
-            e["irreducible_escalation"] = False
-            e["hil_escalated"] = False
-            e.pop("hil_reason", None)
+            clear_stale_resolution_stamps(e)
             # AND THE MECHANICAL-FAULT STAMP, which this clear-list missed
             # (founder ruling 2026-08-31; the routing architecture was already
             # correct and only the flag lied).
@@ -5063,6 +5095,8 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                     e["falsifier_code"] = code
                     e["falsifier_verdict"] = "CONFIRMED"
                     e["verified"] = True
+                    # The sweep is the SECOND rescue site and cleared nothing.
+                    clear_stale_resolution_stamps(e)
                     e["resolved_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
                     registry.resolve(cid, "CONFIRMED", round_idx)
                     stats["cleared"] += 1
