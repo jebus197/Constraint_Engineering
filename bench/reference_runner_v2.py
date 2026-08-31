@@ -4616,6 +4616,35 @@ def _extract_routing_falsifier(text: str) -> str:
     if not cand:
         cand = [b.strip() for b in _re.findall(_LOOSE, text or "", _re.S)
                 if _runnable(b)]
+    if not cand:
+        # THIRD PASS, STRICTLY WIDENING (both reviewers, 2026-08-31). Neither
+        # regex pass survives a falsifier whose body contains a BARE fence line
+        # -- the natural shape for asserting that a fenced block is ABSENT from
+        # a document, and the exact prose case this function's docstring calls
+        # safe. Reproduced: it returned "". The two existing self-fenced
+        # fixtures carry their inner backticks MID-LINE, which is why the shape
+        # was never covered.
+        #
+        # Both passes above choose the closer by PATTERN and only then test
+        # runnability. Here runnability chooses the closer: enumerate every
+        # fence position, try each opener/closer pairing, and keep the pairings
+        # that actually parse and assert. Runs only when both patterns have
+        # already failed, so it can add candidates and never remove one.
+        fences = [m.start() for m in _re.finditer(r"```", text or "")]
+        seen = set()
+        for oi in range(len(fences)):
+            body_start = (text or "").find("\n", fences[oi])
+            if body_start < 0:
+                continue
+            for ci in range(len(fences) - 1, oi, -1):
+                block = (text or "")[body_start + 1:fences[ci]]
+                key = (body_start, fences[ci])
+                if key in seen:
+                    continue
+                seen.add(key)
+                if _runnable(block):
+                    cand.append(block.strip())
+                    break
     return cand[-1] if cand else ""
 
 
@@ -11958,6 +11987,57 @@ def run_experiment(
             # Exp 46 lesson (2026-07-28): the last round checkpoint predates
             # the sweep — persist the post-sweep registry so the saved state
             # matches the report and the per-item audit trail survives exit.
+            # POST-SWEEP RECONCILIATION (both reviewers, 2026-08-31).
+            #
+            # The sweep ATTACHES falsifiers and resolves findings, and it is the
+            # last thing that runs. Two per-round passes therefore never see its
+            # results:
+            #
+            #  * the fix-efficacy probe, which recorded NOT_PROBED_NO_FALSIFIER
+            #    on 15 entries of which 11 CARRY a falsifier in the final
+            #    artefact -- and that set of 11 is IDENTICAL to the set the
+            #    sweep cleared. The records were true when written and false by
+            #    the end;
+            #  * `_settle_confirmed_findings`, which exists to turn
+            #    CONFIRMED+verified into CLOSED and which runs BEFORE the sweep,
+            #    so the sweep manufactures the exact state that pass was written
+            #    to eliminate.
+            #
+            # The cap is lifted for this one pass: with the per-round limit of 5
+            # in force, an epilogue would have probed 5 of the 11 and silently
+            # skipped 6, which is a smaller copy of the defect it repairs.
+            #
+            # Strictly after the verdict, and it moves nothing that the gate
+            # reads: convergence is already decided when this runs.
+            try:
+                _reprobed = 0
+                for _cid, _e in list(registry.entries.items()):
+                    if fix_efficacy_decision(_e, 0, limit=10**6) != "PROBE":
+                        continue
+                    try:
+                        from fix_efficacy import probe as _fe_probe
+                        _rel = repo_relative_target(
+                            _e.get("target_file") or cfg.test_article)
+                        if (REPO_ROOT / _rel).is_file():
+                            _fe = _fe_probe(
+                                {"falsifier_code": _e.get("falsifier_code") or "",
+                                 "proposed_fix": _e.get("proposed_fix") or ""},
+                                _rel, repo_root=REPO_ROOT, timeout=20)
+                            _e["fix_efficacy"] = {"outcome": _fe.outcome,
+                                                  "detail": _fe.detail[:300]}
+                            _e["fix_efficacy_attempted"] = True
+                            _reprobed += 1
+                    except Exception as _fe_exc:            # noqa: BLE001
+                        _log(f"  post-sweep fix-efficacy error {_cid}: "
+                             f"{type(_fe_exc).__name__}")
+                _resettled = _settle_confirmed_findings(registry, round_idx)
+                _log(f"  post-sweep reconciliation: {_reprobed} re-probed, "
+                     f"{_resettled} settled")
+                result["post_sweep_reconciliation"] = {
+                    "reprobed": _reprobed, "settled": _resettled}
+            except Exception as _rc_exc:                    # noqa: BLE001
+                _log(f"  WARNING: post-sweep reconciliation failed ({_rc_exc})")
+
             try:
                 _rs_path = logs_dir / "runner_state.json"
                 _rs = json.loads(_rs_path.read_text(encoding="utf-8")) if _rs_path.exists() else {}
