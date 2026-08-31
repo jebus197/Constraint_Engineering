@@ -844,6 +844,25 @@ def call_claude_cli(
         # the detecting control is the per-round target hash guard in
         # reference_runner_v2.py. Three layers, none of them relied on alone.
         "--allowedTools", "Bash", "Read", "Grep", "Glob", "WebFetch", "WebSearch",  # STEM tools via Bash (SymPy/z3/numpy/scipy); source via Read/Grep/Glob; research via WebFetch/WebSearch. No file modification.
+        # THE PANELLIST IS BRIEFED BY THE DIRECTIVE, NOT BY THE OPERATOR'S OWN
+        # INSTRUCTIONS (founder ruling 2026-08-31).
+        #
+        # This route is how CC2 -- and Fable -- reach a REAL, PAID experiment. A
+        # `claude -p` subagent loads ~/.claude/CLAUDE.md and the project
+        # .claude/CLAUDE.md before it sees anything else, and `--system-prompt`
+        # does NOT displace them: verified by execution on 2026-08-31, a probe
+        # answered YES to seeing the operator's personal working-hours directive
+        # and the project's MC shorthand table even with --system-prompt set.
+        #
+        # Measured on the simulated panel, which uses the same CLI: 66,533 of
+        # 93,442 briefing characters, 71.2% (Wilson [70.9%, 71.5%]), was
+        # inherited config -- 2.5x more than the CDSFL directive. Two panellists
+        # declined to review, citing the operator's personal directive; a third
+        # objected using a naming rule superseded 23 days earlier.
+        #
+        # A paid panellist reading the operator's private instructions is not a
+        # blind reviewer, and it has been true of every paid run to date.
+        "--setting-sources", "",
     ]
     if system_prompt:
         cmd.extend(["--system-prompt", system_prompt])

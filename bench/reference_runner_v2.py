@@ -4764,6 +4764,31 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["irreducible_escalation"] = False
             e["hil_escalated"] = False
             e.pop("hil_reason", None)
+            # AND THE MECHANICAL-FAULT STAMP, which this clear-list missed
+            # (founder ruling 2026-08-31; the routing architecture was already
+            # correct and only the flag lied).
+            #
+            # `NON_DISCRIMINATING` is ALREADY in ROUTABLE_INSTRUMENT_FAULTS, so a
+            # falsifier the control measured as not testing its claim is already
+            # routed to a stronger writer -- which is exactly what the founder
+            # specified: "feed it back to the models via routing, or via the
+            # closing sweep... HIL is just another (albeit slower) computational
+            # node", and HIL must NOT block convergence.
+            #
+            # That worked. On the v3.2 run, C0013 was marked NON_DISCRIMINATING
+            # in round 0, routed to Codex-SIM, and came back with a FRESH
+            # falsifier the runner itself verified CONFIRMED. Its close was
+            # legitimate on the merits. What was wrong is that
+            # `mechanical_fault` still said True, describing a falsifier no
+            # longer attached -- so the artefact reported an instrument fault on
+            # a sound instrument.
+            #
+            # Blocking the close on that stale flag -- the earlier proposal --
+            # would have blocked a CORRECT close, and nothing anywhere clears
+            # the flag, so it would have stranded the finding permanently. The
+            # additive repair is to make the flag true, not to act on it while
+            # it is false.
+            e["mechanical_fault"] = False
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
         else:

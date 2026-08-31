@@ -213,6 +213,10 @@ class MacrophageCell:
             "anomaly_count": summary.anomaly_count,
             "verdict_count": len(verdicts),
             "timestamp": time.time(),
+            # Retained so `_stage_baselines` can compare a stage against its
+            # OWN prior rounds rather than against the round's cross-stage
+            # median, which is a category error on a bimodal population.
+            "timings": dict(timings or {}),
         })
 
         # CRITICAL: advisory-only guarantee
@@ -280,30 +284,75 @@ class MacrophageCell:
                 )
                 summary.observations.append(obs)
 
-        # 3. Timing spikes: is any stage disproportionately slow?
-        if timings and len(timings) >= 2:
-            values = [v for v in timings.values() if v > 0]
-            if values:
-                median_t = sorted(values)[len(values) // 2]
-                for stage, t in timings.items():
-                    if t > median_t * self.TIMING_SPIKE_FACTOR and t > 0.5:
-                        # Shadow-audit repair (2026-07-27): the old `median_t > 0.1`
-                        # guard masked ALL spikes whenever the median stage was fast
-                        # (structurally blind in every Exp 44 round). Gate on the
-                        # spiking stage itself being non-trivial instead.
-                        obs = MacrophageObservation(
-                            observation_id=self._next_id(),
-                            mode=self.mode,
-                            category="timing_spike",
-                            description=(
-                                f"Stage '{stage}' took {t:.2f}s "
-                                f"({t/median_t:.1f}x median {median_t:.2f}s)"
-                            ),
-                            severity=min(1.0, t / (median_t * 10)),
-                            evidence={"stage": stage, "time": t, "median": median_t},
-                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,
-                        )
-                        summary.observations.append(obs)
+        # 3. Timing spikes: is a stage disproportionately slow FOR ITSELF?
+        #
+        # AGAINST ITS OWN HISTORY, not the round's cross-stage median
+        # (2026-08-31). The cross-stage median is a CATEGORY ERROR: stage costs
+        # here are bimodal -- bookkeeping stages take microseconds, model-calling
+        # stages take tens of seconds -- so one median across both compares a
+        # model call against a dictionary update.
+        #
+        # MEASURED, and NOT a simulation artefact: across exp45, 46, 47, 48, 49,
+        # 53 and 55 -- real, paid experiments since 2026-07-27 -- this produced
+        # 92 timing alarms. 92 of 92 had ratios above 1000x (up to 526,986x) and
+        # 92 of 92 carried severity exactly 1.00: ONE distinct value in the whole
+        # dataset, so severity carried no information at all.
+        #
+        # The 2026-07-27 repair removed a `median_t > 0.1` guard that had made
+        # the check structurally BLIND and replaced it with `t > 0.5`, which made
+        # it structurally NOISY. Neither is useful. A stage against its own prior
+        # median is the statistic the question actually asks.
+        #
+        # ADDITIVE, not a removal: the check keeps its factor, its floor, its
+        # severity formula and its output shape. Only the baseline changes, from
+        # a meaningless one to a meaningful one.
+        #
+        # No new storage: `_round_history` already holds a dict per round. A
+        # stage with no history raises no alarm, because an anomaly cannot be
+        # called on a sample of one. The cell is a module-level singleton and
+        # does not survive checkpoint-resume, so history restarts afterwards and
+        # the first post-resume round is silent for that stage.
+        if timings:
+            baselines = self._stage_baselines()
+            for stage, t in timings.items():
+                median_t = baselines.get(stage)
+                if median_t and t > median_t * self.TIMING_SPIKE_FACTOR and t > 0.5:
+                    obs = MacrophageObservation(
+                        observation_id=self._next_id(),
+                        mode=self.mode,
+                        category="timing_spike",
+                        description=(
+                            f"Stage '{stage}' took {t:.2f}s "
+                            f"({t/median_t:.1f}x its own median {median_t:.2f}s)"
+                        ),
+                        severity=min(1.0, t / (median_t * 10)),
+                        evidence={"stage": stage, "time": t, "median": median_t,
+                                  "baseline": "own_prior_rounds"},
+                        is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,
+                    )
+                    summary.observations.append(obs)
+
+    def _stage_baselines(self) -> Dict[str, float]:
+        """Median duration per stage across this cell's PRIOR rounds.
+
+        Empty for a stage seen for the first time, so no alarm is raised on a
+        sample of one. Uses only rounds already recorded, never the current one,
+        so a slow round cannot raise its own baseline and mask itself.
+        """
+        per: Dict[str, List[float]] = {}
+        for rec in self._round_history:
+            for stage, t in (rec.get("timings") or {}).items():
+                try:
+                    v = float(t)
+                except (TypeError, ValueError):
+                    continue
+                if v > 0:
+                    per.setdefault(stage, []).append(v)
+        out: Dict[str, float] = {}
+        for stage, vals in per.items():
+            vals.sort()
+            out[stage] = vals[len(vals) // 2]
+        return out
 
     def _self_check_observe(
         self,

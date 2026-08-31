@@ -156,6 +156,23 @@ def make_shim(model: str = "sonnet", timeout: int = 900):
             r = subprocess.run(
                 ["claude", "-p", full, "--model", model, "--output-format", "text",
                  "--no-session-persistence",
+                 # FOUNDER RULING 2026-08-31: "remove personal directives like
+                 # this and any disability directives from the directive set fed
+                 # to the models... do it."
+                 #
+                 # A `claude -p` subagent loads BOTH ~/.claude/CLAUDE.md and the
+                 # project .claude/CLAUDE.md before it sees the brief. Measured:
+                 # 66,533 of 93,442 briefing characters (71.2%) were inherited
+                 # config, 2.5x more than the CDSFL directive it is meant to
+                 # apply. Two panellists refused to review at all, citing the
+                 # operator's personal working-hours directive; a third objected
+                 # using a naming rule superseded on 2026-08-08.
+                 #
+                 # `--setting-sources ""` suppresses both. Verified by execution:
+                 # the same probe answered YES to both files before and "No. No."
+                 # after. `--bare` also works but forces API-key auth, which
+                 # would break subscription dispatch -- rejected.
+                 "--setting-sources", "",
                  "--allowedTools", "Bash", "Read", "Grep", "Glob"],
                 capture_output=True, text=True, timeout=budget,
                 cwd=str(REPO), stdin=subprocess.DEVNULL,
