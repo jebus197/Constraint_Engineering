@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 31 August 2026 00:42 BST (2026-08-31T00:42:11+01:00)
+Generated: 31 August 2026 19:58 BST (2026-08-31T19:58:29+01:00)
 
 ---
 
@@ -18,16 +18,16 @@ Generated: 31 August 2026 00:42 BST (2026-08-31T00:42:11+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `e766935` Pre-push privacy scan: remove 2 new personal-detail additions
-- **Committed:** 2026-08-31 00:41:26 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
+- **Last commit (the PARENT of the commit containing this file):** `20ce683` Panel fixes, part 4: the four archive guards re-measured, not deleted
+- **Committed:** 2026-08-31 19:52:05 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 7
 - **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**4599 tests collected** at 31 August 2026 00:42 BST, HEAD `e766935` (`python3 -m pytest bench/tests/ --co -q`)
+**4607 tests collected** at 31 August 2026 19:58 BST, HEAD `20ce683` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `e766935 Pre-push privacy scan: remove 2 new personal-detail additions`
-- `11ad4a9 Three more rulings applied: truncation fixed, Gemini tooled and PAID-tested, 133 pairs folded in`
-- `1631202 Backlog TTS pair: two older decisions, currency verified first`
-- `8b73653 Rulings 3, 4 and 5: tools enforced without exception, bar one recorded gap`
-- `5be7584 Founder rulings 1 and 2 applied: option B, and option A`
-- `a6559fe One consolidated decisions document, replacing three`
-- `6f111d6 Actually apply the error-tail fix (the previous commit's edit never ran)`
-- `2a6187d Disarm the sim ask pending a ruling; stop truncating panel errors at the red herring`
-- `75cb00d Report pair, retitled: not a green light yet`
-- `7380736 CC2's third pass said NOT a green light, and it was right on 9 of 10 counts`
+- `20ce683 Panel fixes, part 4: the four archive guards re-measured, not deleted`
+- `e7c4ed7 Panel fixes, part 3: post-sweep reconciliation, and the bare-fence extractor case`
+- `f198d0b Panel fixes, part 2: the second 500-char cut, and a comment that misdescribed its own function`
+- `08ab43c Panel fixes, part 1: one clear-list at both rescue sites; macrophage residuals closed`
+- `25f4f49 Three founder-ruled fixes, each tool-verified; the routing architecture was already right`
+- `77c3d1a Lint: numerals stay numerals (Rule 27)`
+- `a4f710f Panel review: I shipped a RED suite, and my option-A fix removed the A4 fail-safe`
+- `5abe4f8 Overnight run COMPLETE: converged at round 3, zero residue, falsification core live`
+- `d04fada Runway 4B.8: seeded exam pairs are NOT vaulted, and my "already vaulted" was over-broad`
+- `8f04a1a Re-arm the corrected-copy ask; the reversal it endangered is now gated`
