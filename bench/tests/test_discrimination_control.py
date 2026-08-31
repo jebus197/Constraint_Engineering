@@ -42,6 +42,7 @@ distinct outcome.
 from __future__ import annotations
 
 import json
+import re
 import pathlib
 import re
 import sys
@@ -712,6 +713,26 @@ class TestASoundFindingIsCompletelyUnaffected:
         assert "discrimination" not in e
 
 
+def _is_v3_era(run_dir) -> bool:
+    """True for a run produced by runner v3 or later. Version first, name second.
+
+    This guard prices a NO-OP claim about the archive that PREDATES the
+    corrected-copy ask. Once that ask was wired and enabled on 2026-08-30, a
+    v3-era run legitimately carries both control inputs -- that is the feature
+    working, not the wiring reaching backwards into the record.
+    """
+    f = run_dir / "runner_state.json"
+    if f.is_file():
+        try:
+            v = json.loads(f.read_text(encoding="utf-8", errors="replace")).get("runner_version")
+        except Exception:  # noqa: BLE001
+            v = None
+        if isinstance(v, str) and re.match(r"v[3-9]", v):
+            return True
+    m = re.match(r"exp(\d+)", run_dir.name)
+    return bool(m and int(m.group(1)) >= 55)
+
+
 class TestTheArchiveSaysHowAggressiveThisIs:
     """`p-pass`: measure the blast radius against the real archive rather than
     reasoning about it. The question the founder asked is how many archived
@@ -721,6 +742,8 @@ class TestTheArchiveSaysHowAggressiveThisIs:
     def _archived_confirmed():
         rows = []
         for f in sorted((REPO / "bench" / "logs").rglob("runner_state.json")):
+            if _is_v3_era(f.parent):
+                continue      # v3-era: corrected copies are the feature working
             try:
                 data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
             except Exception:  # noqa: BLE001 — a corrupt archive file is not this test

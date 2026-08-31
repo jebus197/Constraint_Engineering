@@ -43,6 +43,7 @@ import ast
 import copy as _copy
 import json
 import re
+import re
 import sys
 from pathlib import Path
 
@@ -273,6 +274,25 @@ class TestWithoutACopyTheRunIsUnchanged:
 # 3. THE ARCHIVE DOES NOT MOVE — measured, not reasoned about
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _is_v3_era(run_dir) -> bool:
+    """True for a run produced by runner v3 or later.
+
+    Version first: a run that stamps `runner_version` is classified by it.
+    Name second: for runs predating that stamp, fall back to exp<N> with N >= 55.
+    """
+    for name in ("runner_state.json",):
+        f = run_dir / name
+        if f.is_file():
+            try:
+                v = json.loads(f.read_text(encoding="utf-8", errors="replace")).get("runner_version")
+            except Exception:  # noqa: BLE001
+                v = None
+            if isinstance(v, str) and re.match(r"v[3-9]", v):
+                return True
+    m = re.match(r"exp(\d+)", run_dir.name)
+    return bool(m and int(m.group(1)) >= 55)
+
+
 class TestTheArchiveIsUntouched:
     """`p-pass`: the claim "no verdict changed anywhere" is only worth what the
     measurement behind it is worth, so it is measured against the real archive."""
@@ -282,6 +302,21 @@ class TestTheArchiveIsUntouched:
         """(path, model_id, response_text) for every archived model reply."""
         out = []
         for f in sorted((REPO / "bench" / "logs").rglob("round_*.json")):
+            # PRE-v3 ARCHIVE ONLY. These guards assert a NO-OP claim -- "no
+            # archived reply carries the label, so no archived finding can
+            # acquire a corrected copy". That claim was always ABOUT THE ARCHIVE
+            # THAT PREDATES THE FEATURE. Once the corrected-copy ask was wired
+            # on 2026-08-30 and enabled, v3-era runs legitimately carry the
+            # label: that is the feature working, not the wiring reaching
+            # backwards into the record.
+            #
+            # Same boundary, and for the same reason, as the one applied to
+            # test_corrected_copy_wiring's sibling guard on 2026-08-30. Version
+            # first, name second: a run that records its own runner_version is
+            # classified by it, because classifying by DIRECTORY NAME misfiled a
+            # v3.1 run whose directory was called sim45_* rather than exp*.
+            if _is_v3_era(f.parent):
+                continue
             try:
                 data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
             except Exception:  # noqa: BLE001 — a corrupt archive file is not this test
@@ -372,6 +407,8 @@ class TestTheArchiveIsUntouched:
         runs = findings = moved = 0
         details = []
         for f in sorted((REPO / "bench" / "logs").rglob("runner_state.json")):
+            if _is_v3_era(f.parent):
+                continue      # v3-era: corrected copies are the feature working
 
             try:
                 data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
@@ -428,6 +465,8 @@ class TestTheArchiveIsUntouched:
     """
         carried = []
         for f in sorted((REPO / "bench" / "logs").rglob("runner_state.json")):
+            if _is_v3_era(f.parent):
+                continue      # v3-era: corrected copies are the feature working
             # Classify by the run's OWN recorded version, not by its directory
             # name. The name rule fails CLOSED on anything not called exp<N>:
             # on 2026-08-30 a v3.1 run in sim45_memory_* was filed as pre-v3
