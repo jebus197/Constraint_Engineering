@@ -132,3 +132,60 @@ class TestTheReportSaysWhereThePanelCouldReach:
             subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
                            cwd=str(REPO), capture_output=True)
             subprocess.run(["rm", "-rf", str(sb)], capture_output=True)
+
+
+class TestExtractionDoesNotTrampleTheArchive:
+    """Two defects found before this ever ran to completion, 2026-09-01."""
+
+    def test_the_source_path_has_no_trailing_slash(self):
+        """`cp -R src/ dest/` copies src's CONTENTS into dest, not src itself.
+
+        The glob `*/` yields trailing slashes, so the first version would have
+        scattered every run's files loose into bench/logs, colliding on every
+        same-named file with the last one winning.
+        """
+        body = LAUNCHER.read_text(encoding="utf-8")
+        assert 'cp -R "${d%/}"' in body, (
+            "the trailing slash must be stripped from the copy source, or the "
+            "extraction scatters directory CONTENTS into bench/logs")
+
+    def test_only_new_directories_are_copied(self):
+        """bench/logs holds TRACKED report files, so a HEAD worktree checks out
+        every archived run -- 148 of them here. Only what the run created is new.
+        """
+        body = LAUNCHER.read_text(encoding="utf-8")
+        assert 'if [ -e "$REPO/bench/logs/$name" ]' in body, (
+            "the launcher must skip run directories that already exist "
+            "canonically; copying the whole checked-out archive back is at best "
+            "pointless and at worst destructive")
+        assert "SKIPPED" in body, "the count of skipped directories must be reported"
+
+    def test_the_extraction_logic_behaves(self, tmp_path):
+        """Run the logic, do not read it."""
+        wt = tmp_path / "wt" / "bench" / "logs"
+        repo = tmp_path / "repo" / "bench" / "logs"
+        (wt / "existing_run").mkdir(parents=True)
+        (wt / "new_run").mkdir(parents=True)
+        (repo / "existing_run").mkdir(parents=True)
+        (wt / "existing_run" / "report.json").write_text("from-worktree")
+        (wt / "new_run" / "report.json").write_text("new")
+        (repo / "existing_run" / "report.json").write_text("canonical")
+        (repo / "existing_run" / "raw.json").write_text("untracked-and-precious")
+
+        script = (
+            'for d in "$WT"/bench/logs/*/; do [ -d "$d" ] || continue; '
+            'name="$(basename "${d%/}")"; '
+            'if [ -e "$REPO/bench/logs/$name" ]; then continue; fi; '
+            'cp -R "${d%/}" "$REPO/bench/logs/"; done'
+        )
+        subprocess.run(["bash", "-c", script], check=True, env={
+            **os.environ, "WT": str(tmp_path / "wt"), "REPO": str(tmp_path / "repo")})
+
+        assert (repo / "new_run" / "report.json").read_text() == "new", (
+            "the new run directory was not copied as a directory")
+        assert (repo / "existing_run" / "report.json").read_text() == "canonical", (
+            "an existing canonical artefact was overwritten from the worktree")
+        assert (repo / "existing_run" / "raw.json").is_file(), (
+            "a gitignored artefact that only exists canonically was lost")
+        loose = [p for p in repo.iterdir() if p.is_file()]
+        assert loose == [], f"files were scattered into bench/logs: {loose}"

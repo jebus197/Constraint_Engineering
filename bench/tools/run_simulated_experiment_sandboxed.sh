@@ -40,14 +40,34 @@ RC=0
 
 # EXTRACT BEFORE TEARDOWN (founder, 2026-08-30: "sandboxes should be deleted
 # after we are done with them and after you have extracted fixes, not before").
+# TWO DEFECTS, both found 2026-09-01 before this ever ran to completion.
+#
+# 1. THE TRAILING SLASH. `for d in .../*/` yields paths ending in "/", and
+#    `cp -R src/ dest/` copies the CONTENTS of src into dest rather than the
+#    directory itself. Measured: report.json landed directly in dest/ instead of
+#    dest/run_a/. Across a whole logs tree that scatters every run's files loose
+#    into bench/logs, colliding on every same-named file, last one winning.
+#
+# 2. THE WHOLE ARCHIVE CAME WITH THE WORKTREE. bench/logs holds TRACKED report
+#    and runner_state files, so a HEAD worktree checks out every archived run --
+#    148 directories here. Copying them all back is at best 148 pointless
+#    overwrites and at worst the scatter above applied to the entire archive.
+#    Only directories the RUN created are new; everything else already exists
+#    canonically and must be left alone.
 COPIED=0
+SKIPPED=0
 if [ -d "$WT/bench/logs" ]; then
   for d in "$WT"/bench/logs/*/; do
     [ -d "$d" ] || continue
-    cp -R "$d" "$REPO/bench/logs/" 2>/dev/null && COPIED=$((COPIED+1))
+    name="$(basename "${d%/}")"
+    if [ -e "$REPO/bench/logs/$name" ]; then
+      SKIPPED=$((SKIPPED+1))
+      continue
+    fi
+    cp -R "${d%/}" "$REPO/bench/logs/" && COPIED=$((COPIED+1))
   done
 fi
-echo "    extracted $COPIED run director(ies) to $REPO/bench/logs/"
+echo "    extracted $COPIED new run director(ies); left $SKIPPED existing one(s) alone"
 
 if [ "$RC" -eq 0 ]; then
   git worktree remove --force "$WT" >/dev/null 2>&1 || true
