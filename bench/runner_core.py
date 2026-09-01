@@ -430,6 +430,12 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
     """
     findings: List[Finding] = []
 
+    # PANEL REPAIR 2026-09-01: keep the pre-strip text. The fence strip below
+    # promotes a heading written INSIDE a ``` fence to a top-level heading, so
+    # arm 4b must be able to tell the two apart.
+    _unfenced_src = re.sub(r'\*{2,}', '',
+                           re.sub(r'```.*?```', '', response, flags=re.S))
+
     # Strip markdown bold markers — CC2 uses **SEVERITY:** format
     response = re.sub(r'\*{2,}', '', response)
 
@@ -961,6 +967,57 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
             verified=verified,
             origin_type="model",
         ))
+
+    # ── 4b. Markdown-header findings (PANEL REVISION) ────────────────
+    # Rewrite `### F001 — title` into the marker form the arms above
+    # already parse, then re-enter the parser. This reuses the PROVEN
+    # extraction (DESCRIPTION/FIND, FLAW_CLASS, ABSTRACTION_INDEX,
+    # PROPOSED_FIX incl. chevrons, TARGET_FILE inference, VERIFIED)
+    # instead of re-implementing a lossy subset of it.
+    if not findings:
+        _MD_HDR = re.compile(
+            r'^[ \t]{0,3}#{1,6}[ \t]*(?:FINDING[ \t]+)?(F\d{2,4})\b'
+            r'[ \t]*[\u2014\u2013:.\-]?[ \t]*(.*)$', re.M)
+        _hits = [h for h in _MD_HDR.finditer(response)
+                 if h.group(0).strip() in _unfenced_src]
+        # Same guard the fallback applies: a round-review/summary that cites
+        # canonical registry ids is not a new finding (exp43 C0040).
+        if re.search(r'^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?Review(?:\s+Summary)?\b',
+                     response.strip()[:80], re.IGNORECASE):
+            _hits = []
+        if _hits:
+            _parts, _prev = [], 0
+            _seen = set()
+            for _i, _m in enumerate(_hits):
+                _fid, _title = _m.group(1), (_m.group(2) or "").strip()
+                _end = _hits[_i + 1].start() if _i + 1 < len(_hits) else len(response)
+                _body = response[_m.end():_end]
+                if re.match(r'\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+C\d{4}',
+                            _title):
+                    continue
+                if _fid in _seen:          # a summary table repeating a heading
+                    continue               # must not mint a second finding
+                _seen.add(_fid)
+                _has_desc = re.search(
+                    r'(?:^|\n)[ \t]*[#*]{0,4}[ \t]*(?:DESCRIPTION|FIND)\b',
+                    _body, re.I)
+                _parts.append(
+                    f"\nFINDING_ID: {_fid}\n"
+                    + ("" if _has_desc else f"DESCRIPTION: {_title}\n")
+                    + _body)
+            if _parts:
+                _synth = "".join(_parts)
+                if "FINDING_ID:" in _synth:
+                    _md = _parse_findings_core(model_id, round_idx, _synth)
+                    # Title carries the claim when the body's own field is thin.
+                    _tmap = {f"{model_id}_{m.group(1)}": (m.group(2) or "").strip()
+                             for m in _hits}
+                    import dataclasses as _dc
+                    for _f in _md:
+                        _t = _tmap.get(_f.finding_id, "")
+                        if _t and len(_f.description) < len(_t):
+                            _f = _dc.replace(_f, description=_bounded_description(_t))
+                        findings.append(_f)
 
     # ── 5. Fallback ──────────────────────────────────────────────────
     # Suppress fallback if the response contains verdict lines (CONFIRM/

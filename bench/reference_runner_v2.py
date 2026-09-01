@@ -2243,6 +2243,26 @@ _VERDICT_RE = re.compile(
     r'^[ \t]*'                                  # line start + indent
     r'(?:>[ \t]*)?'                             # optional blockquote
     r'(?:[-*][ \t]+|\d+[.)][ \t]+)?'            # optional bullet or numbered-list prefix
+    # A VERDICT STATED INSIDE A FIELD, added 2026-09-01. Gemini and others write
+    # the verdict as the DESCRIPTION of a marker-format finding:
+    #     FINDING_ID: F001
+    #     DESCRIPTION: CONFIRM C0125
+    #     FIND: ...
+    # The keyword is then not at line start, so this pattern missed it entirely,
+    # while parse_findings SEPARATELY discards the block because its description
+    # is a verdict (runner_core.py, "P3 fix (Exp 38)"). Both paths dropped the
+    # same content and the model's contribution vanished. Measured across the
+    # archive: 734 verdicts recovered by this one alternative, 10.8% of all
+    # verdicts ever issued (Wilson [10.07%, 11.55%]) -- Gemini 368, Codex 177,
+    # ChatGPT 154, DeepSeek 29, CC2 6. Not one model's habit.
+    # WHITELIST, NOT A CLASS (CC2, panel review 2026-09-01). The permissive
+    # form [A-Z][A-Z_ ]{2,20}: promoted 8 of 12 adversarial constructions --
+    # FORMAT:, EXAMPLE:, TEMPLATE:, OUTPUT:, STATUS:, IF TRUE:, NOT A VERDICT:,
+    # > INSTRUCTION: -- which is precisely what a schema-echoing model emits,
+    # and the directives teach the schema. Only these five labels are observed
+    # across all 734 recovered verdicts: VERDICT 444, FIND 135, DESCRIPTION 134,
+    # FINDING_ID 19, PROPOSED_FIX 2.
+    r'(?:(?:VERDICT|FINDING_ID|DESCRIPTION|FIND|PROPOSED_FIX):[ \t]*)?'
     r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic opener
     r'(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)'
     r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic closer on keyword
@@ -2264,14 +2284,35 @@ _VERDICT_TRAILING_FORMAT = re.compile(r'[\s*_]+$')
 def _parse_verdicts(
     response_text: str, model_id: str, round_idx: int,
 ) -> List[Tuple[str, str, str]]:
-    results: List[Tuple[str, str, str]] = []
+    # ONE REPLY, ONE VERDICT PER (TYPE, TARGET) -- CC2, panel review 2026-09-01.
+    #
+    # THE DEFECT THIS CLOSES IS PRE-EXISTING AND IT DELETES FINDINGS BY VOTE.
+    # `add_verdict` appends unconditionally and `auto_resolve_contested` counts
+    # verdict ROWS, not distinct models: `challenges >= 3 and confirms == 0`
+    # auto-refutes. Reproduced against live code: one model, in one reply,
+    # restating a single CHALLENGE three times produced 3 rows from 1 distinct
+    # model and auto-refuted a severity-0.9 finding. Measured at real HEAD:
+    # three plain repeated lines already do this; the field-label alternative
+    # above widened it from 0 to 3 on labelled repeats.
+    #
+    # In a framework whose founding principle is TOOLS DECIDE, NOT VOTES, a
+    # model that can delete a finding by repeating itself is the defect the
+    # project exists to prevent. Deduping here keeps the longest evidence and
+    # leaves the tally to distinct models, where it belongs.
+    best: dict = {}
+    order: List[Tuple[str, str]] = []
     for m in _VERDICT_RE.finditer(response_text):
         description = (m.group(3) or "").strip()
         # Strip trailing markdown format chars (** / __) when the whole
         # verdict line was bold-wrapped.
         description = _VERDICT_TRAILING_FORMAT.sub("", description).strip()
-        results.append((m.group(1), m.group(2), description))
-    return results
+        key = (m.group(1), m.group(2))
+        if key not in best:
+            best[key] = description
+            order.append(key)
+        elif len(description) > len(best[key]):
+            best[key] = description
+    return [(k[0], k[1], best[k]) for k in order]
 
 
 def _resolve_merge_source(
