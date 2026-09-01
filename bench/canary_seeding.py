@@ -91,6 +91,19 @@ class Canary:
     find: str                 # exact text to replace in the target
     replace: str              # the seeded (defective) text
     summary: str              # ground truth, never shown to a reviewer
+    #: How hard this plant is to find, and why. Optional and defaulted, so every
+    #: existing catalogue still loads.
+    #:
+    #: ADDED 2026-09-01, because difficulty turned out to be load-bearing and
+    #: unrecorded. In the first real use of this module, three of five plants
+    #: contradicted a formula stated verbatim in the adjacent docstring and were
+    #: killed by all six seats; the two that required reasoning about an
+    #: invariant were missed by everybody. Both of those sat in the calibration
+    #: split, which `detection_rate` does not report -- so p_hat returned 1.000
+    #: while 40% of the plants went unfound. Difficulty tracking the scored
+    #: boundary is how a detection measurement flatters itself, and nothing in
+    #: this module could see it happening.
+    difficulty: str = ""
 
     def __post_init__(self) -> None:
         if self.split not in _SPLITS:
@@ -296,6 +309,23 @@ def catches(findings: Sequence[dict], canaries: Sequence[Canary],
                 continue
             if verifier(f, c):
                 out.setdefault(model, []).append(cid)
+    return out
+
+
+def split_difficulty_balance(canaries: Sequence[Canary]) -> dict:
+    """Difficulty profile per split, so a flattering catalogue is visible.
+
+    Returns {split: {difficulty_prefix: count}}. A catalogue whose hard plants
+    all sit in the unscored split will show it here immediately. Empty
+    difficulty strings are reported as "unlabelled" rather than ignored: an
+    unlabelled catalogue cannot demonstrate balance, and silence should not read
+    as compliance.
+    """
+    out: dict[str, dict[str, int]] = {}
+    for c in canaries:
+        tier = (c.difficulty or "unlabelled").split("-")[0]
+        out.setdefault(c.split, {}).setdefault(tier, 0)
+        out[c.split][tier] += 1
     return out
 
 
