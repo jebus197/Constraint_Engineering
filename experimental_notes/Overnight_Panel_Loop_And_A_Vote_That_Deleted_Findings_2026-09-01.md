@@ -67,7 +67,23 @@ The parser repairs moved findings into the registry, which gave the downstream m
 
 A worktree at `/private/tmp/cdsfl_review_89557` (HEAD `657b02c`, 2026-08-30) still held uncommitted work existing nowhere else: a **142-line test absent from main**, plus 43 and 131 lines in two runner files. `/private/tmp` clears on reboot — one restart from lost. Preserved verbatim to `experimental_notes/unextracted_sandbox_2026-08-30/`, **nothing applied**, worktree left in place pending a ruling. Both files changed substantially since, so it needs a read, not a merge.
 
-## 8. The deliverable: the decay curve now exists
+## 8. THE RUN CONVERGED HONESTLY — deliverable met
+
+```
+CONVERGED at round 6: CRITICAL_QUIESCENCE_CONVERGED (two-sided gate):
+gamma_critical=0.541 >= 0.3 (decay curve flattened)
+AND 3 consecutive zero-new-critical rounds (history tail=[0, 0, 0])
+```
+
+**Zero occurrences of "VACUOUS" anywhere in the run.** Both sides of the two-sided gate genuinely satisfied. runner v3.2, 7 rounds, converged at 6, 53 findings, 133.5 minutes, sandbox removed cleanly, 1 new run directory extracted and 148 existing left alone.
+
+| | findings | converged | gate verdict |
+|---|---|---|---|
+| previous rehearsal | 8 | round 3 | **VACUOUS CURVE** |
+| this run | **53** | round 6 | **two sides agree** |
+| real exp45 | 41 | round 3 | — |
+
+## 9. The decay curve now exists
 
 The previous run converged at round 3 on a **VACUOUS CURVE** — zero criticals in every round, `gamma_critical` undefined rather than low, the gate itself warning that "a clean target and a broken severity classifier look alike from here".
 
@@ -87,22 +103,22 @@ Supporting evidence that the pipeline is closing the loop, not merely accumulati
 - unmatched corrected copies **70.4%** [51.5%, 84.1%] → **18.2%** [8.6%, 34.4%], non-overlapping — reduced, **not** eliminated
 - z3 produced one grounded **proof** and one grounded **counterexample**; run 1 produced neither
 
-## 9. A limit on what this rehearsal can prove
+## 10. A limit on what this rehearsal can prove
 
 The simulated panel rates severity **materially lower than the real panel on the same module**. Measured against the real exp45 run, same target:
 
 | | findings | criticals | rate | 95% CI (Wilson) |
 |---|---|---|---|---|
 | real exp45 | 41 | 12 | **29.3%** | [17.6%, 44.5%] |
-| this rehearsal | 35 | 2 | **5.7%** | [1.6%, 18.6%] |
+| this rehearsal (final) | 53 | 2 | **3.8%** | [1.0%, 12.8%] |
 
-A 5.1x difference. Fisher exact p=0.015, chi-square p=0.019, z-test p=0.008 — **all three significant**, though the intervals still marginally overlap.
+A 7.7x difference. Fisher exact **p=0.0008**, z-test **p=0.0006**. With the full sample the intervals **no longer overlap**: [1.0%, 12.8%] against [17.6%, 44.5%]. The rehearsal finds MORE material than the real run (53 vs 41) and rates almost none of it critical.
 
 **This is a fidelity gap, not a runner defect.** The machinery behaves correctly on the input it is given; the stand-in agents produce lower severities than the real panel models. The consequence matters for how this run should be read: **a clean convergence here validates the MACHINERY, and does not predict the critical dynamics of a live run.** Bench Run 2 should not be planned on the rehearsal's critical rate.
 
 The curve is nonetheless **no longer vacuous**: criticals appeared in rounds 0 and 3 (history `[1, 0, 0, 1]`), where the previous run had zero in every round. The round-3 critical resets the zero-new-critical streak, so convergence cannot occur before round 6 — the run is being held open by genuine findings rather than stopping on an empty condition.
 
-## 10. Status
+## 11. Status
 
 Suite **4,680 passed, 0 failed**. Canonical tree clean, archive intact at 52,162 lines. All work committed locally, **nothing pushed**.
 
