@@ -690,3 +690,61 @@ Not deferred by decision; simply never written down. Named here so they are not 
 | FW.3 | **Fingerprinting (MinHash/SimHash/LSH) scoped to the ouroboros literature cell** | Right tool, wrong component. At 27-82 findings a run, exact comparison is milliseconds; LSH earns its place at N in the thousands, which is the literature cell. Proposed twice and killed once by measurement at finding level — the scoping is the correction, not the rejection | NOT BUILT |
 | FW.4 | **The discussion-board layer** | Founder ruling 2026-08-20: a UX build, expensive, unnecessary to prove the theory. Explicitly still WANTED, just not now. Work done in the meantime should aim to make it trivial to add | DEFERRED BY DECISION |
 | FW.5 | **Wire counterfactual repair to the merge site** | The tool exists and costs 0.287 s/pair with no metered charge. It is not connected because `_update_finding_statuses` receives no path to the document under review — but `target_path` IS in scope in the calling function at `:8132`, so this is one argument, not an architecture change. **Until it lands, NO code path writes MERGED at all** | NOT BUILT — highest priority of these |
+
+---
+
+## STAGE 0C — INSTRUMENT COMMISSIONING. **Recorded 2026-09-01 12:15 BST. Zero dispatch except where noted.**
+
+The 31 Aug – 1 Sep simulated-rehearsal arc commissioned the rehearsal harness and, in doing so, found defects in the **shared** runner. Of 12 code fixes in the arc, **8 touch `reference_runner_v2.py` / `runner_core.py`** — the runner real experiments use — and only 2 are simulation-only. The simulation is not a fork: `RUNNER_VERSION = "v3.2"` lives in the one runner file, and the sim launcher imports it. The harness patches one function (the dispatch primitive) and wraps the real runner.
+
+### What was found and closed
+
+| # | Finding | Status |
+|---|---|---|
+| 0C.1 | **A model could delete a finding by repeating itself.** `auto_resolve_contested` counts verdict ROWS, not distinct models; `add_verdict` never deduped. One model, one reply, three CHALLENGE lines auto-refuted a severity-0.9 finding. **Pre-existing at HEAD**, verified from git. | Closed by per-reply dedupe + five-label whitelist. **+651 verdicts recovered, 9.7%** of all verdicts, Wilson [9.00%, 10.42%] |
+| 0C.2 | **The parser dropped panel findings.** Four of six agents' replies parsed to zero. Two faults coincided: no arm accepted a markdown-heading finding, and the fallback was suppressed by two guards that were each correct about their own case. | Closed. Rehearsal round 0: 4 → 17 findings, 2 → 6 of 6 agents |
+| 0C.3 | **The heading pattern also matches a Python comment**, minting spurious severity-0.5 findings from pasted transcripts — **12 across real June 2026 replies** | Closed by a per-heading content test |
+| 0C.4 | **Panel agents write to the canonical repo during runs**, including the experiment's own target. Not simulation-specific: 30 archived runs targeted repo code under the same inheritance | Closed for simulated runs by sandboxing; **OPEN for real runs** — see 0C.9 |
+| 0C.5 | **Simulated replies were counted as real archive.** 9 of 11 simulated run directories carry no `runner_state.json` (81.8%, Wilson [52.3%, 94.9%]), so they were misfiled as pre-v3 real history | Closed at record level via the `-SIM` marker |
+| 0C.6 | **The pre-registered threshold profile (F6) was never built.** `CRITICAL_DEFINITION_PREREG_2026-05-18.md` requires γ at 0.5/0.6/0.7/0.8 and a rubric-disagreement count. **0 of 50 archived real reports carried one** | Built at `48d6254`; **defective, see 0C.10** |
+
+### What is OPEN and needs work
+
+| # | Item | Evidence | Priority |
+|---|---|---|---|
+| **0C.7** | **The verdict tally still counts rows ACROSS rounds.** The adopted dedupe is per-reply. A model challenging the same finding in three consecutive rounds still auto-refutes it. Closing it means changing `auto_resolve_contested` to count distinct models — a convergence-adjacent change | Reproduced against live code | **HIGH** — it is the founding principle |
+| **0C.8** | **Rubric-adherence audit of the boundary.** Never done. Sample ~200 findings in [0.65, 0.75), score against the five consequence clauses **blind to the numeric**, report concordance. The only legitimate way to test 0.7 without moving it | 401 findings (5.84%, Wilson [5.31%, 6.42%]) sit exactly on 0.70; 72.1% [71.0%, 73.1%] are quantised to a 0.05 step, so severity is ordinal | **HIGH** — 1–2 days, no live run |
+| **0C.9** | **Real runs still inherit the repo.** The sandbox closed this for simulated runs only. `bench/tools/repo_integrity_watch.sh` exists as a backstop but is not wired into real runs | `reference_runner_v2.py:9841` sets panel cwd deliberately for exams and not for code runs | **HIGH** |
+| **0C.10** | **The threshold profile as shipped is defective** (panel, 2026-09-01): `gate_would_fire` reimplements a simplified gate that appears nowhere in the runner; it reads the ID-keyed novelty series while exp45 gated on the location-keyed one; `boundary_band_census` counts entries `_NON_NOVEL_TERMINAL_STATUSES` excludes | Verified: at exp45's true horizon (`max_round=3`) it fires at no threshold; my published validation used `max_round=6`, three rounds that never happened | **HIGH** — it is live and wrong |
+| **0C.11** | **Sandbox blinding is defeated by construction.** The worktree carries `bench/logs/**`, so exp45's 12 criticals **with their severities** are readable inside the frozen tree, and agents are armed with `Bash, Read, Grep, Glob`. Every sim-vs-real severity comparison to date was measured through this hole | `git show 043a0a8^:.../exp45_...report.json` → 12 criticals readable; `sim_panel_agents.py:104` | **HIGHEST** — founder ruled: fix by **pathspec staging** |
+| **0C.12** | **Simulated panel severities are permanently demoted.** No sim critical counts, gate verdicts, or go/no-go — ever, not "until calibrated". Even a fully applied +0.156 correction moves the sim cluster 0.46 → 0.62, still under 0.70: **calibration buys deltas, never levels** | Panel-converged, both reviewers | **HIGH** — needs a standing ruling + runner guard |
+| **0C.13** | **Panel independence is unverified.** One reviewer measured the simulated panel's between-model variance as **zero after noise correction** (observed 0.000139 < sampling noise 0.000910) against a real-panel 0.0255 — "five seats, one voice". If true it threatens what a "panel" result means, beyond severity | Unverified by me | **HIGH** |
+| **0C.14** | **The discrimination-control evidence base is overwhelmingly simulated.** 84 of 95 scored records (88.4%, Wilson [80.4%, 93.4%]) come from simulated runs. A reviewer's structured count was starker, and reported 50.2% DISCRIMINATES against a pre-registered ≥95% bar — **I could not verify this: the file cited does not exist, only the script that generates it** | Verified for the 88.4%; the 50.2% is UNVERIFIED | **HIGH** — argues for routing the control through a real run |
+| **0C.15** | **Canary seeding: built, tested, never used.** `bench/canary_seeding.py`, 42 passing tests, built to the founder's 2026-08-27 ruling. Never wired into any run. It is the discriminator for "clean document" vs "dead panel" — the exact ambiguity the vacuous convergence exposed. ~5 canaries make a dead panel unmistakable (P(all missed) < 0.001 at an 80% catch rate) | It carries **no severity field**, so it measures recall, not calibration | **MEDIUM** |
+| **0C.16** | **The panel harness accepts a non-verdict.** A reviewer returned 54 characters ("Suite still running — I'll finalize once it completes") against a median of 7,512. The harness recorded `ok=False` and **kept the result**: its retry fires only on a completely empty response | Fixed in the brief (state single-shot, supply the suite baseline); the harness gap remains | **MEDIUM** |
+| **0C.17** | **Rename the runner.** `reference_runner_v2.py` contains `RUNNER_VERSION = "v3.2"`. The founder tripped on this himself; it will confuse any third party following the record | Founder-ruled 2026-09-01 | **MEDIUM** |
+| **0C.18** | **The exp39-experimental bundle is a single point of failure.** 676 commits; the only copy system-wide is `~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle.enc` (86.8 MB), unversioned, on a Desktop | Verified by system-wide search | **MEDIUM** |
+
+### The calibration design, and why it is a scope question rather than a resource one
+
+The claim that calibration needs ~44 distinct model architectures is **a methodological error, and it was mine** — the power calculation used the finding-level standard deviation (0.218) as the noise term for a model-level effect. The comparison is inherently **paired**: the same defects rated by both panels. Pairing removes "how bad is this defect", which is most of that variance.
+
+Measured on the one paired target available (exp45 vs sim45, per-seat means, statsmodels + scipy):
+
+| paired targets | paired obs | 95% CI on the offset | power |
+|---|---|---|---|
+| 1 (today) | 5 | [0.022, 0.290] | 0.68 |
+| **2** | 10 | [0.079, 0.233] | **0.98** |
+| 3 | 15 | [0.096, 0.216] | 0.999 |
+
+**Two paired targets take the offset from borderline to decisive.** exp50, exp51, exp52 and exp54 remain unrun; running each as a pair (real and simulated on the same target) yields the calibration **as a by-product of the runway**, requiring no additional models and no separate campaign.
+
+Caveat that survives regardless: calibration buys **deltas**, never **levels** (0C.12).
+
+### Additions to FUTURE WORK
+
+| # | Item | Why it is future work |
+|---|---|---|
+| FW.6 | **Harvested historical revisions as a recall target.** One reviewer argues these *dominate* seeded targets: a seeded target measures the intersection of real defect-space with the author's imagination, whereas the 676-commit branch carries defects that actually occurred, with ground truth already attached — archived findings plus their executed falsifiers | The other reviewer favours seeding; unresolved, and the branch must be secured first (0C.18) |
+| FW.7 | **Severity is a vote, not a tool.** A reviewer's observation, and the sharpest of the arc: the convergence gate depends on a model-assigned float in a framework whose founding principle is that votes do not decide. The real/sim gap is a symptom; the model-priced float gating convergence is the condition | Structural. Not actionable without a design decision on what would replace it |
+
