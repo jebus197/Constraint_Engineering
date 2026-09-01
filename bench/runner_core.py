@@ -982,19 +982,6 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                  if h.group(0).strip() in _unfenced_src]
         # Same guard the fallback applies: a round-review/summary that cites
         # canonical registry ids is not a new finding (exp43 C0040).
-        # SUMMARY, NOT REVIEW (Fable, panel round 2, 2026-09-01). "Review" is
-        # how a genuine review OPENS; "Summary" is the only header shape that
-        # needs blocking. Measured over 2,505 replies: the Review-trigger blocks
-        # 4 genuine rehearsal replies (8 confirmed findings across rounds 0-2,
-        # each re-verified against the live module) and blocks ZERO phantoms
-        # anywhere in the archive. It also has two holes this closes -- a bold
-        # "**Review Summary**" head and "# Summary of Round 3" both slip past
-        # the old trigger. The instrument that actually stopped exp43 C0040 is
-        # the C-id prose branch, which is untouched.
-        if re.search(r'^\s*(?:[#*]+\s*)?(?:(?:Round\s+\d+\s+)?Review\s+Summary'
-                     r'|Summary\s+of\s+Round\s+\d+|Round\s+\d+\s+Summary)\b',
-                     response.strip()[:80], re.IGNORECASE):
-            _hits = []
         if _hits:
             _parts, _prev = [], 0
             _seen = set()
@@ -1004,6 +991,27 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                 _body = response[_m.end():_end]
                 if re.match(r'\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+C\d{4}',
                             _title):
+                    continue
+                # PER-HEADING CONTENT TEST (CC2, panel round 2, 2026-09-01).
+                # The reply-level review guard was the wrong instrument at the
+                # wrong granularity: measured over 5,698 archived replies it was
+                # the SOLE suppressor exactly once, and that one case was a
+                # genuine blind first-pass review it deleted. The unit here is a
+                # HEADING, so the question must be asked of a heading.
+                #
+                # It also closes a defect no guard variant touched: `#{1,6}`
+                # matches a PYTHON COMMENT, so a pasted tool transcript
+                # containing `# F001: Check the pruning logic` minted spurious
+                # sev-0.5 findings -- 12 of them across two
+                # falsifier_matrix_2026-06-06 replies, real models, June 2026.
+                # A filed finding always carries a schema field in its body; a
+                # recap line and a code comment carry none.
+                if not re.search(
+                        r'(?:^|\n)[ \t]*[#*]{0,4}[ \t]*'
+                        r'(?:SEVERITY|FLAW_CLASS|ABSTRACTION_INDEX|DESCRIPTION'
+                        r'|FIND|FOLLOW|ANALYSE|ANALYZE|FIX|PROPOSED_FIX'
+                        r'|TARGET_FILE|VERIFIED|FALSIFIER)\b',
+                        _body, re.I):
                     continue
                 if _fid in _seen:          # a summary table repeating a heading
                     continue               # must not mint a second finding
