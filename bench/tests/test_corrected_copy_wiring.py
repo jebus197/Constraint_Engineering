@@ -289,6 +289,19 @@ def _is_v3_era(run_dir) -> bool:
                 v = None
             if isinstance(v, str) and re.match(r"v[3-9]", v):
                 return True
+    # A SIMULATED RUN IS NEVER REAL ARCHIVE, whatever it did or did not write.
+    #
+    # The version-first/name-second rule above was added because a v3.1 run whose
+    # directory was called sim45_* had been misfiled by name. It fixed that
+    # instance and not the class: the name fallback learned `exp<N>` and never
+    # learned `sim*`, so a simulated run that did not get as far as writing
+    # runner_state.json still fell through to "pre-v3 real archive". Measured
+    # 2026-09-01: 9 of 11 simulated run directories carry no runner_state.json
+    # (81.8%, Wilson [52.3%, 94.9%]) -- most of them, because a run killed or
+    # crashed early never writes one. Four of tonight's simulated replies were
+    # being counted against a claim about the REAL archive.
+    if run_dir.name.startswith("sim"):
+        return True
     m = re.match(r"exp(\d+)", run_dir.name)
     return bool(m and int(m.group(1)) >= 55)
 
@@ -324,6 +337,15 @@ class TestTheArchiveIsUntouched:
             resp = data.get("model_responses")
             if isinstance(resp, dict):
                 for model, text in resp.items():
+                    # THE -SIM SUFFIX IS THE PROVENANCE MARKER (founder ruling
+                    # 2026-08-08), so it settles this at the RECORD level rather
+                    # than relying on where the record happens to be filed. A
+                    # reply from CC2-SIM is a rehearsal and cannot bear on a
+                    # claim about what the real archive contains. Belt and
+                    # braces with the directory rule above: a simulated reply
+                    # filed anywhere at all is still excluded.
+                    if isinstance(model, str) and model.strip().endswith("-SIM"):
+                        continue
                     if isinstance(text, str):
                         out.append((f, model, text))
         return out
