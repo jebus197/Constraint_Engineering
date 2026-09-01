@@ -35,5 +35,5 @@ while true; do
     echo "--- restored from HEAD ---" >> "$REC"
     echo "REPO MUTATION DETECTED AND RESTORED — see $REC"
   fi
-  sleep 20
+  sleep 3
 done
