@@ -164,6 +164,7 @@ from experiment_11_orchestrator import (
     ExperimentConfig,
     ModelConfig,
     set_panel_cwd,
+    get_panel_cwd,
 )
 from dynamic_management import (
     DynamicManager,
@@ -10394,6 +10395,24 @@ def run_experiment(
         # version key at all, so its results cannot be attributed to the code
         # that produced them without git archaeology. From v3.1 on, they can.
         "runner_version": RUNNER_VERSION,
+        # WHERE THE PANEL COULD REACH. Recorded 2026-09-01 because it was not,
+        # and the omission made a whole class of question unanswerable from the
+        # archive. The panel is confined for exams and deliberately inherits
+        # this repository for code runs (see set_panel_cwd below), and agents
+        # carry a shell -- so "the panel reviewed X" and "the panel could have
+        # rewritten X" were indistinguishable after the fact. Measured that day:
+        # an agent wrote a fix straight into the reviewed target twice, in two
+        # separate runs, and NO archived report records which mode its run used.
+        # 6 of 83 run directories carry a per-round target hash (7.2%, Wilson
+        # [3.4%, 14.9%]), so the archive cannot settle it either way.
+        "panel_confinement": {
+            "panel_cwd_config": cfg.panel_cwd or None,
+            "panel_cwd_effective": get_panel_cwd(),
+            "run_root": str(REPO_ROOT),
+            # A linked git worktree carries a .git FILE, not a directory. That
+            # is how a run inside a disposable sandbox copy identifies itself.
+            "is_sandbox_worktree": (REPO_ROOT / ".git").is_file(),
+        },
         "topology": cfg.topology,
         "relay_mode": cfg.relay_mode if cfg.topology == "relay" else None,
         "start_time": datetime.now(timezone.utc).isoformat(),
