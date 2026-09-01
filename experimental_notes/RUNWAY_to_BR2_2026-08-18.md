@@ -41,11 +41,11 @@
 > (`scripts/instrument_inventory.py`, `experimental_notes/Instrument_Inventory_2026-08-22.md`,
 > 34 instruments). Spot-checked in code 2026-08-24: ruling 1 is live —
 > a discrimination failure now writes `NON_DISCRIMINATING` / `verified=False` /
-> `escalated=True` and demotes CONFIRMED to UNCONFIRMED at `reference_runner_v2.py:3729`,
+> `escalated=True` and demotes CONFIRMED to UNCONFIRMED at `reference_runner_v3.py:3729`,
 > which is what carries it into `_apply_routing`'s existing `escalated=True, not CONFIRMED`
 > trigger; ruling 6 is marked SHELVED in `docs/ARCHITECTURE.md`,
 > `bench/dynamic_management.py` and the inventory; ruling 7's ledger is wired at
-> `reference_runner_v2.py:9053`.
+> `reference_runner_v3.py:9053`.
 >
 > **Why this marker exists.** The block below was written at 03:47 on 22 August and the
 > rulings arrived that afternoon. This file was edited twice on 24 August (`46024a1`,
@@ -175,7 +175,7 @@ commit that later fixed the defect it accuses.
 The gate measures that a falsifier FIRED, never that it fired BECAUSE of the
 claim. **0 of 2,030 archived entries carry a discrimination record** — the control
 has never run once in the project's life (`discrimination_control_ask = False`,
-`reference_runner_v2.py:593`). Everything else on this page is downstream of the
+`reference_runner_v3.py:593`). Everything else on this page is downstream of the
 answer, because a transition log that records which mechanism decided is worthless
 if the mechanism does not discriminate.
 
@@ -209,7 +209,7 @@ four carry `escalated=True`, so a human saw them; the status is still wrong.
 read-only reviewer overwrote the committed 397-row result with a 12-row one on
 22 August. Disclosed, restored from git. It needs `--dry-run`.
 
-**VERIFIED TONIGHT AND UNCHANGED: no code path in `reference_runner_v2.py`,
+**VERIFIED TONIGHT AND UNCHANGED: no code path in `reference_runner_v3.py`,
 `immune_agents.py` or `bench/dm/` writes MERGED at all.** Any live run started today
 produces zero merges. `target_path` is a local in `run_experiment` (`:8225`-`:8231`)
 and the `_update_finding_statuses` call is at `:9122` in the same function, so
@@ -326,7 +326,7 @@ flags all 85 pairs at 47% precision, which is the base rate.
 ### INCONSISTENCY 1 — the tasks are wired to a runner generation we replaced.
 
 ```
-reference_runner_v2.py   last commit 2026-08-26   references tasks_frontier   0 times
+reference_runner_v3.py   last commit 2026-08-26   references tasks_frontier   0 times
 run_benchmark.py         last commit 2026-04-13   consumes them
 run_phase2.py            last commit 2026-03-19   consumes them
 run_experiment.py        last commit 2026-03-18   consumes them
@@ -349,7 +349,7 @@ run_round_robin.py       last commit 2026-08-15   consumes them
 |---|---|---|---|
 | 4B.1 | **Split `ground_truth_notes` out of all 27** into the outside key store | zero, offline | Do NOW — needs nothing from 4B.2 |
 | 4B.2 | Reconcile the one off-schema task to the 26-task schema | zero | |
-| 4B.3 | Wire `reference_runner_v2` to the frontier schema | zero dispatch | Decide how `verification_method` maps onto the falsifier gate |
+| 4B.3 | Wire `reference_runner_v3` to the frontier schema | zero dispatch | Decide how `verification_method` maps onto the falsifier gate |
 | 4B.4 | **C5 — dry-run all 27 for tool availability, graceful degradation, answer leakage** | zero dispatch | In the 8 April plan, never done |
 | 4B.5 | Live burn-in on **ONE** BR2 task | 1 BR2 task | Validates 4B.3. Does NOT consume internal runway |
 | 4B.6 | **Audit the 27 targets for prose/markdown documents that print fenced code listings** | zero, offline | Founder ruling 2026-08-30. A falsifier about such a document must quote the listing, so its own source carries three backticks. The extractor was repaired that day and now survives 7 reply shapes plus both self-fenced fixtures — but the RE-ASK path uses the same transport, so if any of the 27 is that shape it wants one live check, not just a unit test |
@@ -686,7 +686,7 @@ Not deferred by decision; simply never written down. Named here so they are not 
 | # | Item | Why it is future work | Status |
 |---|---|---|---|
 | FW.1 | **The missing epistemic state** — a finding that was RIGHT about a target that was WRONG. Today a finding is either fixed or refuted; there is no terminal value for "the model's objection held and the claim under review is the error", which in science is the most valuable outcome available | A status value plus a pointer to the overturned claim. Cheap. The founder has ruled the Bugzilla structural fixes back IN scope (2026-08-20), so this is not deferred by choice | NOT BUILT |
-| FW.2 | **Structural keying of claims** — key a finding on the structure of the claim it challenges rather than on its location in the document | Addresses a limitation the code documents at `reference_runner_v2.py:4331`: location-only keying "cannot see a SECOND distinct defect in an already-flagged function". Needs enforced structured output first | NOT BUILT |
+| FW.2 | **Structural keying of claims** — key a finding on the structure of the claim it challenges rather than on its location in the document | Addresses a limitation the code documents at `reference_runner_v3.py:4331`: location-only keying "cannot see a SECOND distinct defect in an already-flagged function". Needs enforced structured output first | NOT BUILT |
 | FW.3 | **Fingerprinting (MinHash/SimHash/LSH) scoped to the ouroboros literature cell** | Right tool, wrong component. At 27-82 findings a run, exact comparison is milliseconds; LSH earns its place at N in the thousands, which is the literature cell. Proposed twice and killed once by measurement at finding level — the scoping is the correction, not the rejection | NOT BUILT |
 | FW.4 | **The discussion-board layer** | Founder ruling 2026-08-20: a UX build, expensive, unnecessary to prove the theory. Explicitly still WANTED, just not now. Work done in the meantime should aim to make it trivial to add | DEFERRED BY DECISION |
 | FW.5 | **Wire counterfactual repair to the merge site** | The tool exists and costs 0.287 s/pair with no metered charge. It is not connected because `_update_finding_statuses` receives no path to the document under review — but `target_path` IS in scope in the calling function at `:8132`, so this is one argument, not an architecture change. **Until it lands, NO code path writes MERGED at all** | NOT BUILT — highest priority of these |
@@ -695,7 +695,7 @@ Not deferred by decision; simply never written down. Named here so they are not 
 
 ## STAGE 0C — INSTRUMENT COMMISSIONING. **Recorded 2026-09-01 12:15 BST. Zero dispatch except where noted.**
 
-The 31 Aug – 1 Sep simulated-rehearsal arc commissioned the rehearsal harness and, in doing so, found defects in the **shared** runner. Of 12 code fixes in the arc, **8 touch `reference_runner_v2.py` / `runner_core.py`** — the runner real experiments use — and only 2 are simulation-only. The simulation is not a fork: `RUNNER_VERSION = "v3.2"` lives in the one runner file, and the sim launcher imports it. The harness patches one function (the dispatch primitive) and wraps the real runner.
+The 31 Aug – 1 Sep simulated-rehearsal arc commissioned the rehearsal harness and, in doing so, found defects in the **shared** runner. Of 12 code fixes in the arc, **8 touch `reference_runner_v3.py` / `runner_core.py`** — the runner real experiments use — and only 2 are simulation-only. The simulation is not a fork: `RUNNER_VERSION = "v3.2"` lives in the one runner file, and the sim launcher imports it. The harness patches one function (the dispatch primitive) and wraps the real runner.
 
 ### What was found and closed
 
@@ -707,23 +707,27 @@ The 31 Aug – 1 Sep simulated-rehearsal arc commissioned the rehearsal harness 
 | 0C.4 | **Panel agents write to the canonical repo during runs**, including the experiment's own target. Not simulation-specific: 30 archived runs targeted repo code under the same inheritance | Closed for simulated runs by sandboxing; **OPEN for real runs** — see 0C.9 |
 | 0C.5 | **Simulated replies were counted as real archive.** 9 of 11 simulated run directories carry no `runner_state.json` (81.8%, Wilson [52.3%, 94.9%]), so they were misfiled as pre-v3 real history | Closed at record level via the `-SIM` marker |
 | 0C.6 | **The pre-registered threshold profile (F6) was never built.** `CRITICAL_DEFINITION_PREREG_2026-05-18.md` requires γ at 0.5/0.6/0.7/0.8 and a rubric-disagreement count. **0 of 50 archived real reports carried one** | Built at `48d6254`; **defective, see 0C.10** |
+| 0C.7 | **The verdict tally counted verdict ROWS across rounds.** One model challenging the same finding in three consecutive rounds refuted it alone — a self-consensus path in a project that does not confirm or delete findings by vote at all | Closed 2026-09-01: counts distinct models. Archive exposure **1 of 66** findings carrying ≥3 CHALLENGE rows was REFUTED/CONTESTED with <3 distinct challengers (1.5%, Wilson [0.3%, 8.1%]). An earlier **22.7% was an over-statement** — it counted by row regardless of eligibility for auto-resolution |
+| 0C.10 | The threshold profile as shipped was defective — `gate_would_fire` reimplemented a gate appearing nowhere in the runner | Closed at `c58b03e`. The reimplementation is gone; the profile now reports `inputs_vary_with_threshold` and `gamma_range_across_thresholds` and asserts nothing about firing |
+| 0C.11 | **Sandbox blinding was defeated by construction** — the worktree carried `bench/logs/**`, so exp45's 12 criticals **with severities** were readable inside the frozen tree | Closed at `c58b03e` by pathspec staging (founder ruling 2026-09-01); `bench/logs/`, `bench/results/` and `experimental_notes/` are excluded from the sparse checkout |
+| 0C.12 | Simulated panel severities are permanently barred from severity, threshold and convergence claims | Closed at `bb8d54b`. Enforced in the report itself via `severity_admissibility` + `severity_demotion_notice`, keyed on the mandatory `-SIM` suffix, failing toward ADMISSIBLE so a bare config cannot silently demote a real run |
+| 0C.16 | **The panel harness accepted a non-verdict** — a reviewer returned 54 characters against a median reply of 7,512 and the harness recorded `ok=False` and kept it | Closed 2026-09-01. **Worse than recorded here:** the retry fired on *neither* an empty reply (`CircuitBreakerTripped` is re-raised immediately) nor a short one (`return text`, untested). Now an `accept=` predicate inside the retry loop; default `None` leaves every existing caller unchanged |
+| 0C.17 | **Runner name and version disagreed** — `reference_runner_v3.py` carrying `RUNNER_VERSION = "v3.2"` | Closed 2026-09-01 at `ce08914`: renamed to `bench/reference_runner_v3.py`, 191 files rewritten. The filename now carries the major version and the constant the minor. `experimental_notes/` deliberately **not** rewritten — those notes describe the file as it was named when written |
 
 ### What is OPEN and needs work
 
 | # | Item | Evidence | Priority |
 |---|---|---|---|
-| **0C.7** | **The verdict tally still counts rows ACROSS rounds.** The adopted dedupe is per-reply. A model challenging the same finding in three consecutive rounds still auto-refutes it. Closing it means changing `auto_resolve_contested` to count distinct models — a convergence-adjacent change | Reproduced against live code | **HIGH** — it is the founding principle |
 | **0C.8** | **Rubric-adherence audit of the boundary.** Never done. Sample ~200 findings in [0.65, 0.75), score against the five consequence clauses **blind to the numeric**, report concordance. The only legitimate way to test 0.7 without moving it | 401 findings (5.84%, Wilson [5.31%, 6.42%]) sit exactly on 0.70; 72.1% [71.0%, 73.1%] are quantised to a 0.05 step, so severity is ordinal | **HIGH** — 1–2 days, no live run |
-| **0C.9** | **Real runs still inherit the repo.** The sandbox closed this for simulated runs only. `bench/tools/repo_integrity_watch.sh` exists as a backstop but is not wired into real runs | `reference_runner_v2.py:9841` sets panel cwd deliberately for exams and not for code runs | **HIGH** |
-| **0C.10** | **The threshold profile as shipped is defective** (panel, 2026-09-01): `gate_would_fire` reimplements a simplified gate that appears nowhere in the runner; it reads the ID-keyed novelty series while exp45 gated on the location-keyed one; `boundary_band_census` counts entries `_NON_NOVEL_TERMINAL_STATUSES` excludes | Verified: at exp45's true horizon (`max_round=3`) it fires at no threshold; my published validation used `max_round=6`, three rounds that never happened | **HIGH** — it is live and wrong |
-| **0C.11** | **Sandbox blinding is defeated by construction.** The worktree carries `bench/logs/**`, so exp45's 12 criticals **with their severities** are readable inside the frozen tree, and agents are armed with `Bash, Read, Grep, Glob`. Every sim-vs-real severity comparison to date was measured through this hole | `git show 043a0a8^:.../exp45_...report.json` → 12 criticals readable; `sim_panel_agents.py:104` | **HIGHEST** — founder ruled: fix by **pathspec staging** |
-| **0C.12** | **Simulated panel severities are permanently demoted.** No sim critical counts, gate verdicts, or go/no-go — ever, not "until calibrated". Even a fully applied +0.156 correction moves the sim cluster 0.46 → 0.62, still under 0.70: **calibration buys deltas, never levels** | Panel-converged, both reviewers | **HIGH** — needs a standing ruling + runner guard |
+| **0C.9** | **Real runs still inherit the repo.** The sandbox closed this for simulated runs only. **Detection half closed 2026-09-01**; the confinement half is a behavioural change to live experiments and is held for panel review | `set_panel_cwd(cfg.panel_cwd or None)` leaves panel cwd unset for code runs, deliberately. The mid-run mutation guard is now exercised (see 0C.20) but remains **detective only** — it cannot prevent the write, and whether to remove model write access is a founder ruling | **HIGH** |
 | **0C.13** | **Panel independence is unverified.** One reviewer measured the simulated panel's between-model variance as **zero after noise correction** (observed 0.000139 < sampling noise 0.000910) against a real-panel 0.0255 — "five seats, one voice". If true it threatens what a "panel" result means, beyond severity | Unverified by me | **HIGH** |
 | **0C.14** | **The discrimination-control evidence base is overwhelmingly simulated.** 84 of 95 scored records (88.4%, Wilson [80.4%, 93.4%]) come from simulated runs. A reviewer's structured count was starker, and reported 50.2% DISCRIMINATES against a pre-registered ≥95% bar — **I could not verify this: the file cited does not exist, only the script that generates it** | Verified for the 88.4%; the 50.2% is UNVERIFIED | **HIGH** — argues for routing the control through a real run |
 | **0C.15** | **Canary seeding: built, tested, never used.** `bench/canary_seeding.py`, 42 passing tests, built to the founder's 2026-08-27 ruling. Never wired into any run. It is the discriminator for "clean document" vs "dead panel" — the exact ambiguity the vacuous convergence exposed. ~5 canaries make a dead panel unmistakable (P(all missed) < 0.001 at an 80% catch rate) | It carries **no severity field**, so it measures recall, not calibration | **MEDIUM** |
-| **0C.16** | **The panel harness accepts a non-verdict.** A reviewer returned 54 characters ("Suite still running — I'll finalize once it completes") against a median of 7,512. The harness recorded `ok=False` and **kept the result**: its retry fires only on a completely empty response | Fixed in the brief (state single-shot, supply the suite baseline); the harness gap remains | **MEDIUM** |
-| **0C.17** | **Rename the runner.** `reference_runner_v2.py` contains `RUNNER_VERSION = "v3.2"`. The founder tripped on this himself; it will confuse any third party following the record | Founder-ruled 2026-09-01 | **MEDIUM** |
 | **0C.18** | **The exp39-experimental bundle is a single point of failure.** 676 commits; the only copy system-wide is `~/Desktop/CDSFL_archive/exp39-experimental-2026-08-17.bundle.enc` (86.8 MB), unversioned, on a Desktop | Verified by system-wide search | **MEDIUM** |
+| **0C.19** | **A document that verifies against its own generator verifies nothing.** `EXPERIMENT_RUN_LEDGER.md` opens "DERIVED. Every figure below is read from the artefacts, never typed", and cited `reference_runner_v3.py:11002` for a comment sitting at **12070** — wrong by 1,068 lines, at HEAD, before any edit this session. Its test compared the ledger against the generator's own hard-coded copy of the same wrong number, so two copies of a typo agreed perfectly | Fixed for this citation: generator and test both derive the line from the runner source, and the generator raises rather than guessing if the anchor comment is rewritten. **The class is open** — no sweep has been done for other assertions that compare a derived document against its generator rather than against the source | **HIGH** — cheap to sweep, and it silently voids a "DERIVED" claim |
+| **0C.20** | **Guards that have never fired.** The mid-run target mutation guard, written in July after a model mutated Exp 47's target and restored it, had never once run: **0 of 83** archived run directories carry the `target_integrity_events` field it writes. Unreachable inline in a 12,000-line function, it accumulated a defect — an unkeyed, never-reset module global made a second experiment in one process report a round-0 mutation with nothing mutated. **Its first firing would have been the false one** | Extracted to `target_hash_event()`, keyed by target path, cleared per run, exercised in both directions. **The class is open**: this is the second latent guard found (the A4 fail-safe reachable by 0 of 43 configs was the first), and no inventory exists of which guards have ever fired | **HIGH** — a guard nobody has seen fire is a hypothesis, not a control |
+| **0C.21** | **New tests can look green without ever running.** Three regression files written this session landed in a root `tests/` directory the suite does not collect. They passed when invoked directly and would have contributed nothing to the suite count | Moved to `bench/tests/` before commit. **The class is open** — nothing checks that every test file in the tree is reachable by the suite's collection roots | **MEDIUM** — one collection-coverage test closes it |
+
 
 ### The calibration design, and why it is a scope question rather than a resource one
 
