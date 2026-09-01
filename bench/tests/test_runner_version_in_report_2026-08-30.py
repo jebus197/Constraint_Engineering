@@ -18,7 +18,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R   # noqa: E402
+import reference_runner_v3 as R   # noqa: E402
 
 
 def test_the_runner_declares_a_version():
@@ -27,7 +27,7 @@ def test_the_runner_declares_a_version():
 
 
 def test_the_version_is_written_into_the_result_dict():
-    src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+    src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
     fn = next(n for n in ast.walk(ast.parse(src))
               if isinstance(n, ast.FunctionDef) and n.name == "run_experiment")
     body = ast.unparse(fn).replace('"', "'")
@@ -36,7 +36,7 @@ def test_the_version_is_written_into_the_result_dict():
 
 
 def test_the_banner_and_the_constant_agree():
-    src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+    src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
     banner = src[:4000]
     assert f"RUNNER VERSION {R.RUNNER_VERSION}" in banner, (
         f"the docstring banner and RUNNER_VERSION={R.RUNNER_VERSION!r} disagree")

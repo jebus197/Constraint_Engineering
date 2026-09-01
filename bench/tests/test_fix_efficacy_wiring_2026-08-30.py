@@ -2,7 +2,7 @@
 
 CC2 measured on the repair-loop panel that `bench/fix_efficacy.py` was built,
 tested, consumed by two scripts and called by NOTHING that runs:
-`grep -c fix_efficacy bench/reference_runner_v2.py` returned 0.
+`grep -c fix_efficacy bench/reference_runner_v3.py` returned 0.
 
 These tests pin the wiring AND the two properties that make it safe to wire.
 """
@@ -16,7 +16,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-SRC = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 
 
 def _fn(name):
@@ -93,5 +93,5 @@ def test_only_the_ineffective_outcome_reaches_a_model():
 
 
 def test_the_cap_exists_and_is_small():
-    import reference_runner_v2 as rr
+    import reference_runner_v3 as rr
     assert 1 <= rr.FIX_EFFICACY_PER_ROUND_LIMIT <= 10

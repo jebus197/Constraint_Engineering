@@ -144,7 +144,7 @@ def main() -> int:
     args = ap.parse_args()
 
     import stem_fixtures as S
-    from bench import reference_runner_v2 as R
+    from bench import reference_runner_v3 as R
     from bench.convergence_location import (
         hierarchical_novelty_series, novelty_rule_divergence)
 
@@ -382,7 +382,7 @@ def main() -> int:
 
     @stage("rho is CONTRIBUTORY, not a veto (founder ruling 2026-08-29)")
     def s_rho():
-        from reference_runner_v2 import _check_gamma_alt_convergence
+        from reference_runner_v3 import _check_gamma_alt_convergence
         kw = dict(cfg=cfg, novel_critical_history=[3, 0, 0, 0, 0, 0, 0],
                   unresolved_critical=0, contested=0)
         with_churn, why = _check_gamma_alt_convergence(6, 0.20, rho_churn=True, **kw)
@@ -417,7 +417,7 @@ def main() -> int:
     @stage("the discrimination overlay leaks no git history")
     def s_overlay():
         import shutil as _sh, subprocess as _sp
-        from reference_runner_v2 import _build_discrimination_overlay
+        from reference_runner_v3 import _build_discrimination_overlay
         ov = _build_discrimination_overlay(REPO, "bench/evidence.py", "# MUTATED\n")
         try:
             if (ov / ".git").exists():
@@ -438,7 +438,7 @@ def main() -> int:
     def s_fe():
         import ast as _ast
         from fix_efficacy import probe as _probe, FIX_CURES, FIX_INEFFECTIVE
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text()
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text()
         tree = _ast.parse(src)
         for g in ("_evaluate_gate_conditions", "_check_gamma_alt_convergence"):
             fn = next(n for n in _ast.walk(tree)
@@ -454,7 +454,7 @@ def main() -> int:
     @stage("EXTEND is READ (founder ruling, 21 Aug — it was read by nothing)")
     def s_extend():
         import ast as _a
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text()
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text()
         kinds = ("CONFIRM", "CHALLENGE", "EXTEND", "MERGE", "REOPEN")
         unread = [k for k in kinds if src.count(f'== "{k}"') == 0]
         if unread:

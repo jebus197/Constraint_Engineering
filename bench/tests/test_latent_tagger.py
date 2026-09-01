@@ -35,7 +35,7 @@ from bench.latent_tagger import (  # noqa: E402
     tag_entry,
     tag_registry,
 )
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     CRITICAL_SEVERITY_THRESHOLD,
     FindingRegistry,
     RunnerConfig,
@@ -320,7 +320,7 @@ class TestInSystem:
     def test_ordering_tagger_runs_before_calibration_in_the_round_loop(self):
         """Order is load-bearing: tags written after the sweep would be read a
         round late. Asserts the real call sites, in the real file."""
-        src = open(os.path.join(_ROOT, "bench", "reference_runner_v2.py"),
+        src = open(os.path.join(_ROOT, "bench", "reference_runner_v3.py"),
                    encoding="utf-8").read()
         tag_at = src.index("from bench.latent_tagger import tag_registry")
         calib_at = src.index("_sev_calib_n = _apply_severity_calibration")

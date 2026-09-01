@@ -158,7 +158,7 @@ def components_claimed_commissioned():
 
 CLAIMS = [
     ("merge arbitration defaults OFF",
-     [("bench/reference_runner_v2.py", r"defaults False and is unset in every")],
+     [("bench/reference_runner_v3.py", r"defaults False and is unset in every")],
      merge_arbitration_default),
     ("no archived report carries a rho series",
      [("scripts/replay_accounting.py", r"count of rho-shaped keys is zero"),

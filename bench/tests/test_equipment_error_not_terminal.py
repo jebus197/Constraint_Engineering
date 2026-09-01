@@ -28,7 +28,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     FindingRegistry, RunnerConfig, apply_falsifier_verdicts, _apply_routing,
 )
 

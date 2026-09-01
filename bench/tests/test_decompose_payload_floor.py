@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     DECOMPOSE_HARD_FLOOR_CHARS,
     should_decompose_v2,
 )

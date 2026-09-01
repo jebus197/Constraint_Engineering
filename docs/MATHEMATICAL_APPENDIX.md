@@ -966,7 +966,7 @@ gate above are recorded here for accuracy:
    a *high* γ (cumulative novelty flattened) means convergence; the live
    `_estimate_gamma` returns γ → 1 when discovery stops, and the operational gate
    passes when γ **≥** threshold (see `GAMMA_BANDS` and `_check_gamma_gate` in
-   `bench/reference_runner_v2.py`). The Exp-36 reconciliation note above is itself
+   `bench/reference_runner_v3.py`). The Exp-36 reconciliation note above is itself
    the proof: a *converging* run with γ = 0.411 (§7.1a calls 0.411 "converging")
    **failed** C₄ because 0.411 > 0.35 — a converging run failing the convergence
    condition. The intended condition is γ ≥ γ_hard.

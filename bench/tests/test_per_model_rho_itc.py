@@ -21,7 +21,7 @@ from typing import Dict, List
 
 import pytest
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     ITC_DEGRADATION,
     RunnerConfig,
     _compute_rho,

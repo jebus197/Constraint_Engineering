@@ -13,7 +13,7 @@ TASKS = [
             "that fails the discrimination control is CONFIRMED (it fired), and the ladder "
             "only fires on `escalated=True AND not CONFIRMED`, so such a falsifier never "
             "reaches it. Founder ruling 2026-08-22: use the mechanism that exists.",
-     "where": "bench/reference_runner_v2.py — `_apply_routing` (~:3279), and the "
+     "where": "bench/reference_runner_v3.py — `_apply_routing` (~:3279), and the "
               "discrimination outcome constants `DISC_FAILED` / `DISC_PASSED` (~:2176).",
      "done": "A finding whose falsifier returned NO_DISCRIMINATION is routed to a "
              "stronger writer by `_apply_routing`, and a test proves it was NOT before."},
@@ -24,7 +24,7 @@ TASKS = [
             "`entry['corrected_copy']` and nothing supplies one. Measured 2026-08-22: 367 "
             "of 437 archived findings carry a machine-applyable SEARCH/REPLACE fix, so the "
             "missing input already exists.",
-     "where": "bench/reference_runner_v2.py — `_apply_discrimination_control` (~:2810), "
+     "where": "bench/reference_runner_v3.py — `_apply_discrimination_control` (~:2810), "
               "`_ingest_corrected_copies`, and the call site (~:9127).",
      "done": "When a finding carries a proposed_fix that applies to the target, "
              "`corrected_copy` is populated from it and the control runs. A test proves "
@@ -37,7 +37,7 @@ TASKS = [
             "TESTED AND STOOD, closing the gap where a clean run of the zero-plant control "
             "produces an ABSENCE indistinguishable from a dispatch failure or a document "
             "nobody read. Founder ruling 2026-08-22: wire it, do not withdraw it.",
-     "where": "bench/evidence.py (the ledger), bench/reference_runner_v2.py (the runner, "
+     "where": "bench/evidence.py (the ledger), bench/reference_runner_v3.py (the runner, "
               "which currently never mentions it).",
      "done": "A REFUTED falsifier writes a ledger row during a run; CONFIRMED, ERROR and "
              "UNTOOLABLE write nothing; an un-fed ledger reports NEVER_INVOKED rather than "
@@ -49,7 +49,7 @@ TASKS = [
             "verified=False. A falsifier that did not run is not evidence in either "
             "direction. Founder ruling: equipment error counts as UNRESOLVED, escalates to "
             "HIL, and is subject to re-routing.",
-     "where": "bench/reference_runner_v2.py — `apply_falsifier_verdicts` (~:2936) and "
+     "where": "bench/reference_runner_v3.py — `apply_falsifier_verdicts` (~:2936) and "
               "`_apply_routing`.",
      "done": "An ERROR or UNTOOLABLE verdict can never leave a finding in CLOSED, "
              "CONFIRMED, REFUTED or MERGED; it lands UNRESOLVED, is escalated, and enters "
@@ -64,7 +64,7 @@ TASKS = [
             "can be accessed and understood trivially by both humans and machines.",
      "where": "experimental_notes/Design_Reviews_Bugzilla_And_Perturbation_2026-08-21.md "
               "carries the agreed status table and which transitions are TOOL-ONLY. "
-              "bench/reference_runner_v2.py holds the statuses.",
+              "bench/reference_runner_v3.py holds the statuses.",
      "done": "CORROBORATED and WITHHELD exist as real statuses with the agreed transition "
              "rules; a catalogue export writes one machine-readable record per finding "
              "carrying status, the evidence that decided it, and the mechanism. A test "

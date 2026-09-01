@@ -125,8 +125,8 @@ def _confine(wt: Path, rel: str) -> Optional[Path]:
     each patch's `rel` from its SEARCH header. Neither was validated, and pathlib
     DISCARDS the left operand when the right one is absolute::
 
-        Path('/tmp/wt_abc') / '/Users/.../reference_runner_v2.py'
-            -> PosixPath('/Users/.../reference_runner_v2.py')
+        Path('/tmp/wt_abc') / '/Users/.../reference_runner_v3.py'
+            -> PosixPath('/Users/.../reference_runner_v3.py')
 
     So a model emitting an absolute path -- by confusion, which is enough -- would have
     had `write_text` overwrite the live runner in the real tree, voiding this module's

@@ -71,7 +71,7 @@
     ]
   },
   "_pre_registration": "Frozen 2026-07-22 before the run. Exp 44 = the post-fix shake-out on bench/evidence.py under the instrument-identical two-sided gate, with exactly five declared deltas (FIX 1, 2, 3 in code; FIX 4 in this config; FIX 5 in the gated directive). PREDICTION: the run converges cleanly within the round budget (sy replay of Exp 43 data says the FIX-1 gate closes at the first 3-zero streak, ~R6-R8 expected here), with zero sub-critical contested blocking, the residual queue explicitly logged, and low/zero residual HIL. FAILURE MODES to report honestly: (a) does not converge -> assume MECHANICAL, diagnose under cy, do NOT demote gamma; (b) converges but the post-run HIL materiality review finds a genuine defect parked in the residual queue that should have gated -> FIX 1's severity boundary or falsifier-verdict test is mis-drawn, revisit before Exp 45; (c) contested still blocks -> FIX 1 mis-implemented or a new contested pathway exists. No tuning after results. z3 invariant carried: FIX 1 can never pass a critical-contested finding.",
-  "_plan_ref": "NEW Exp 44 (roadmap approved by founder 26 July 2026: forensic roadmap, 6-experiment compressed arc). Runner: reference_runner_v2.py with the 2026-07-22 fix tranche. Next: Exp 45 = dm/_memory.py with domain=statistics (declared specialist variable).",
+  "_plan_ref": "NEW Exp 44 (roadmap approved by founder 26 July 2026: forensic roadmap, 6-experiment compressed arc). Runner: reference_runner_v3.py with the 2026-07-22 fix tranche. Next: Exp 45 = dm/_memory.py with domain=statistics (declared specialist variable).",
   "take_up_slack_enabled": true,
   "location_shadow_enabled": true,
   "location_keyed_convergence": true,

@@ -31,7 +31,7 @@ design:
 The module is intentionally standalone (not yet wired into the runner's
 per-round loop) so it can be tested on the existing Exp 40 finding
 corpus before any new dispatch. After the test pass, integration into
-reference_runner_v2 happens in a separate commit.
+reference_runner_v3 happens in a separate commit.
 """
 
 from __future__ import annotations

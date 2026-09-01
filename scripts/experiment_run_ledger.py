@@ -23,7 +23,7 @@ both rather than a renumber that would change nothing:
      exp36 and exp37 STATE_CONVERGED, exp40 twice, exp35 EXTENSION_STALLED,
      and both exp55 runs HALTED_IRREDUCIBLE_QUEUE_ALARM. Post-mortem tooling
      reading only the signal sees a converged run as INCOMPLETE. The runner's
-     own source names this defect at reference_runner_v2.py:11002 and dates a
+     own source names this defect at reference_runner_v3.py:11002 and dates a
      partial fix to 2026-05-18; runs after that date still show it.
 
 This script reads BOTH and reports the disagreement instead of picking one.
@@ -47,6 +47,31 @@ LEDGER = REPO / "experimental_notes" / "EXPERIMENT_RUN_LEDGER.md"
 
 DIR_RE = re.compile(r"^exp(\d+)[_-](.+?)_(\d{8}T\d{6}Z)$")
 ROUND_RE = re.compile(r"^round_(\d+)\.json$")
+
+
+# The anchor text of the comment the ledger cites. Matched against the runner
+# source at generation time rather than typed, because it WAS typed: the ledger
+# claimed line 11002 while the comment sat at 12070, an error of 1,068 lines
+# that survived because the test compared the ledger against this generator's
+# own hard-coded string. Two copies of the same wrong number agree with each
+# other perfectly. Fixed 2026-09-01.
+_GAMMA_ALT_ANCHOR = "gamma-alt gate previously set only the result"
+
+
+def _gamma_alt_comment_line() -> int:
+    """Line number of the cited gamma-alt comment in the runner source.
+
+    Raises rather than guessing: a ledger that silently cites the wrong line is
+    worse than one that fails to build, and this document's own header promises
+    every figure in it is derived.
+    """
+    src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+    for i, line in enumerate(src.splitlines(), start=1):
+        if _GAMMA_ALT_ANCHOR in line:
+            return i
+    raise RuntimeError(
+        f"anchor comment not found in the runner: {_GAMMA_ALT_ANCHOR!r}. "
+        "If the comment was rewritten, update _GAMMA_ALT_ANCHOR to match.")
 
 
 def _rel(p: pathlib.Path) -> str:
@@ -224,7 +249,7 @@ def render(data: dict) -> str:
         reason = r["report_reason"] or f"converged_at={r['report_converged_at']}"
         A(f"| {r['exp']} | {r['pretty']} | {r['signal_status']} (reason empty) | {reason[:80]} |")
     A("")
-    A("The runner's own source names this at `bench/reference_runner_v2.py:11002` and dates a")
+    A(f"The runner's own source names this at `bench/reference_runner_v3.py:{_gamma_alt_comment_line()}` and dates a")
     A("partial fix to 2026-05-18: *\"the hardened / gamma-alt gate previously set only the result")
     A("dict, so post-mortem tooling read every hardened convergence as INCOMPLETE.\"* Runs after")
     A("that date still show it, so the fix did not close the class.")

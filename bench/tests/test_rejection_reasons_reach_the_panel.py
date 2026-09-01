@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     SK_ESCALATE,
     SK_NO_SCORE,
     SK_REJECTED,

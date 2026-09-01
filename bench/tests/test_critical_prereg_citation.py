@@ -25,7 +25,7 @@ PREREG_REL = "bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md"
 PREREG = REPO / PREREG_REL
 QUEUE = REPO / "experimental_notes" / "OUTSTANDING_QUEUE_to_BR2.md"
 RECOVERY = REPO / "resources" / "RECOVERY.md"
-RUNNER = REPO / "bench" / "reference_runner_v2.py"
+RUNNER = REPO / "bench" / "reference_runner_v3.py"
 
 WINDOW = 12  # lines either side of the critical-severity item
 

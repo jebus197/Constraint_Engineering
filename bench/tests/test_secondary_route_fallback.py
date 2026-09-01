@@ -247,17 +247,17 @@ class TestFailureHandlerEmptyNoExclude:
 
 class TestRunnerHILAccumulators:
     def test_secondary_route_usage_accumulator_exists(self):
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         assert hasattr(rr, "_secondary_route_usage")
         assert isinstance(rr._secondary_route_usage, list)
 
     def test_persistent_empty_flags_accumulator_exists(self):
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         assert hasattr(rr, "_persistent_empty_flags")
         assert isinstance(rr._persistent_empty_flags, list)
 
     def test_accumulators_clearable(self):
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         rr._secondary_route_usage.append({"test": "value"})
         rr._persistent_empty_flags.append({"test": "value"})
         rr._secondary_route_usage.clear()
@@ -269,7 +269,7 @@ class TestRunnerHILAccumulators:
         """Source-truth: the result dict assigned at end of
         run_experiment must include both accumulators so post-mortem /
         HIL review can read them."""
-        src = Path(__import__("bench").reference_runner_v2.__file__).read_text()
+        src = Path(__import__("bench").reference_runner_v3.__file__).read_text()
         assert 'result["secondary_route_usage"]' in src, (
             "result must surface _secondary_route_usage for HIL review"
         )

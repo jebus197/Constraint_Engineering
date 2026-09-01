@@ -5,7 +5,7 @@ would widen the error surface; quarantining it does not. Three grounds, each
 measured rather than asserted:
 
   1. It has never run outside its own tests. No runner in the Experiment 40-54
-     arc constructs a ``LoadBalancer``: ``bench/reference_runner_v2.py``
+     arc constructs a ``LoadBalancer``: ``bench/reference_runner_v3.py``
      contains no reference to it, and none of the helpers it imports from
      ``bench/run_exp17_immune.py`` reaches it. Held by
      ``bench/tests/test_load_balancer_shelved.py``.

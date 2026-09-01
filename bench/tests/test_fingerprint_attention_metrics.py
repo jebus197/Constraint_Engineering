@@ -22,7 +22,7 @@ from typing import Any, Dict
 
 import pytest
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     DECOMPOSE_HARD_FLOOR_CHARS,
     _compute_attention_metrics,
     _itc_model_state,

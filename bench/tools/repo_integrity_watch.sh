@@ -2,7 +2,7 @@
 # Watch the canonical repo for mutation BY A PANEL AGENT during a run.
 #
 # 2026-09-01. Panel agents inherit the repo as cwd for code experiments, by
-# design (reference_runner_v2.py:9836 — "unset for code runs, where the panel
+# design (reference_runner_v3.py:9836 — "unset for code runs, where the panel
 # legitimately needs this repo"). Reading it is intended. Nothing stops a write.
 # Measured this night: bench/dm/_memory.py, the experiment's own target, was
 # written at 01:17:34 during a run, and an agent reported having run

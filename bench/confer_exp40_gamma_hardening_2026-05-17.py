@@ -63,7 +63,7 @@ PLANF_PM = (REPO_ROOT / "experimental_notes"
             / "Exp40_Slice_F_Convergence_Result_2026-05-17.md").read_text()
 
 ESTIMATOR_SRC = r'''
-# bench/reference_runner_v2.py — the gamma estimator (verbatim)
+# bench/reference_runner_v3.py — the gamma estimator (verbatim)
 def _estimate_gamma(novelty_counts: List[int], min_rounds: int = 3) -> float:
     n = len(novelty_counts)
     if n < min_rounds:

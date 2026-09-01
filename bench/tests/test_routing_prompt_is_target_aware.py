@@ -39,7 +39,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     TARGET_KIND_PROSE,
     TARGET_KIND_PYTHON,
     _routing_resolve_prompt,
@@ -178,7 +178,7 @@ class TestTheReasonStringSaysOnlyWhatWasObserved:
         # would fire on the explanation rather than on the behaviour. (Written
         # first as a raw substring test, which duly failed on its own comment.)
         import ast
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         tree = ast.parse(src)
         offenders = [
             n.value for n in ast.walk(tree)
@@ -196,7 +196,7 @@ class TestTheTwoPromptsAgree:
     WAS the defect, so it is now pinned: both must branch on target kind."""
 
     def test_both_prompts_branch_on_target_kind(self):
-        from bench.reference_runner_v2 import _sweep_prompt
+        from bench.reference_runner_v3 import _sweep_prompt
         residuals = {"C0031": dict(FINDING, status="CONFIRMED")}
         sweep = _sweep_prompt(residuals, "SW-21-REF-04.md", DOC)
         route = _routing_resolve_prompt(

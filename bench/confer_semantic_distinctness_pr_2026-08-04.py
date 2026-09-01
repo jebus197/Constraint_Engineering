@@ -151,7 +151,7 @@ def main() -> int:
     load_env()
     from bench.experiment_11_orchestrator import load_default_config
     from bench.launcher_core import load_cdsfl_directive
-    from bench.reference_runner_v2 import dispatch_to_model
+    from bench.reference_runner_v3 import dispatch_to_model
 
     cfg = load_default_config()
     directive = load_cdsfl_directive()

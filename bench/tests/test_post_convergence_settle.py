@@ -42,7 +42,7 @@ _root = Path(__file__).resolve().parents[2]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     FindingRegistry, _settle_confirmed_findings,
 )
 
@@ -177,7 +177,7 @@ class TestWiring:
     CALL = '_settled = _settle_confirmed_findings(registry, round_idx)'
 
     def _src(self):
-        return (_root / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+        return (_root / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 
     def test_the_call_site_is_uniquely_identifiable(self):
         """Guards the guard: if this string stops being unique, the two tests

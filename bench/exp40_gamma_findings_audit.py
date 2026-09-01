@@ -29,10 +29,10 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-from bench.reference_runner_v2 import _estimate_gamma  # noqa: E402
+from bench.reference_runner_v3 import _estimate_gamma  # noqa: E402
 
 # Runner's post-reconciliation non-novel terminal set (verbatim from
-# reference_runner_v2.py ~4909) — what is stripped before gamma sees it.
+# reference_runner_v3.py ~4909) — what is stripped before gamma sees it.
 _NON_NOVEL_TERMINAL = {"MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED"}
 CRIT = 0.7  # runner's hardcoded critical-severity convention (NOT a
             # documented schema boundary — see appendix sev thresholds

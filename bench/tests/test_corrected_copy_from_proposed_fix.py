@@ -53,7 +53,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     DISC_ABSENT,
     DISC_FAILED,
     DISC_PASSED,
@@ -70,7 +70,7 @@ from bench.reference_runner_v2 import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parents[2]
-RUNNER_SRC = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+RUNNER_SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 
 TARGET_REL = "pkg/spec.py"
 
@@ -468,9 +468,9 @@ class TestTheArchiveActuallyCarriesThisShape:
         """And the guard that makes the above safe: an anchor is located by exact
         match, so a fix written against a revision that no longer exists derives
         NOTHING rather than something approximate."""
-        target = (REPO / "bench" / "reference_runner_v2.py").read_text(
+        target = (REPO / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8", errors="replace")
-        entry = {"proposed_fix": _fix(path="bench/reference_runner_v2.py")}
+        entry = {"proposed_fix": _fix(path="bench/reference_runner_v3.py")}
         assert not _derive_corrected_copy_from_fix(
-            entry, target, target_rel="bench/reference_runner_v2.py", cid="C9999")
+            entry, target, target_rel="bench/reference_runner_v3.py", cid="C9999")
         assert "corrected_copy" not in entry

@@ -28,7 +28,7 @@ _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _root not in sys.path:
     sys.path.insert(0, _root)
 
-from bench.reference_runner_v2 import _anchor_dir_for  # noqa: E402
+from bench.reference_runner_v3 import _anchor_dir_for  # noqa: E402
 
 
 class TestAnchorDir:
@@ -84,7 +84,7 @@ class TestAnchorDir:
 class TestNoInlinedDuplicates:
     def test_every_call_site_uses_the_helper(self):
         """Four sites had this logic inlined; a fifth was a matter of time."""
-        src = Path(_root, "bench", "reference_runner_v2.py").read_text(encoding="utf-8")
+        src = Path(_root, "bench", "reference_runner_v3.py").read_text(encoding="utf-8")
         assert "anchor_dir = str(Path(source_path).parent)" not in src, (
             "an inlined anchor derivation has reappeared — route it through "
             "_anchor_dir_for so the read-only staging case stays covered")

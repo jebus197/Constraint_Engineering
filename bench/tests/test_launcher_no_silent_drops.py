@@ -18,7 +18,7 @@ if _root not in sys.path:
     sys.path.insert(0, _root)
 
 from bench.launcher_core import build_runner_config_from_dict  # noqa: E402
-from bench.reference_runner_v2 import RunnerConfig  # noqa: E402
+from bench.reference_runner_v3 import RunnerConfig  # noqa: E402
 
 # Every field whose value changes experimental behaviour. A field added to
 # RunnerConfig and omitted here is caught by test_no_unreviewed_fields below.

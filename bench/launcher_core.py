@@ -130,7 +130,7 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     RunnerConfig
         Fully-populated runner config ready to pass to run_experiment.
     """
-    from bench.reference_runner_v2 import RunnerConfig
+    from bench.reference_runner_v3 import RunnerConfig
 
     kwargs: dict[str, Any] = {
         "experiment_name": exp_cfg["experiment_name"],
@@ -280,7 +280,7 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     # sent to models AND the runner pass), because a half-present mechanism
     # measures nothing coherent. off_mode selects the reading: "absent"
     # (default — no text, no pass), "text_only", or "pass_only". See
-    # RunnerConfig in bench/reference_runner_v2.py for the full semantics.
+    # RunnerConfig in bench/reference_runner_v3.py for the full semantics.
     #
     # All four are gated on key presence, so every config in the repository
     # — none of which carries any of them — is byte-identical. The
@@ -343,12 +343,12 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
 def dispatch_experiment(exp_config_obj, cdsfl_text: str, runner_cfg) -> dict:
     """Dispatch run_experiment with the correct three-argument signature.
 
-    Importing run_experiment from reference_runner_v2 is centralised here
+    Importing run_experiment from reference_runner_v3 is centralised here
     so future launchers cannot accidentally call it with the wrong
     arity (launch_exp40.py's original two-argument call was the bug
     fixed at commit 22adc0b).
     """
-    from bench.reference_runner_v2 import run_experiment
+    from bench.reference_runner_v3 import run_experiment
     return run_experiment(exp_config_obj, cdsfl_text, runner_cfg)
 
 

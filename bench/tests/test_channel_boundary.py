@@ -15,7 +15,7 @@ import math
 
 import pytest
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     ChannelViolationError,
     compute_rk,
     compute_rk_with_eta_channel,
@@ -150,7 +150,7 @@ class TestWrapperIdentityModeGridSweep:
     At m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q the wrapper
     reduces mathematically to bare compute_rk(q). This test documents
     the identity-mode invariant the Exp 40 shipping config relies on
-    (reference_runner_v2.py:3510) by sweeping a dense grid and
+    (reference_runner_v3.py:3510) by sweeping a dense grid and
     comparing both forms within 1e-9.
     """
 

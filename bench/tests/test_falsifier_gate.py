@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 
 from bench.falsifier_verify import reverify_falsifier
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     FindingRegistry, RunnerConfig, apply_falsifier_verdicts,
 )
 from bench.dm._types import Finding

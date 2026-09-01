@@ -57,7 +57,7 @@ class MemoryIntegrityError(ValueError):
     looking like a broken falsifier.
 
     Raised rather than absorbed. Both production call sites (the recording and
-    consumption blocks in ``reference_runner_v2``) already wrap this module in
+    consumption blocks in ``reference_runner_v3``) already wrap this module in
     ``try/except`` that writes the failure into the run report AND logs it, so
     refusing leaves a trace on two channels and never kills a run — while
     accepting would leave a memory nobody can audit and no later reader could

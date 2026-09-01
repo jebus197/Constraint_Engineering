@@ -17,7 +17,7 @@ artefacts that decide the question:
 
 WHAT IS REAL AND WHAT IS STUBBED (stated up front so nothing is hidden):
 
-  REAL  the full ``run_experiment`` loop in reference_runner_v2 — round loop,
+  REAL  the full ``run_experiment`` loop in reference_runner_v3 — round loop,
         registry, prompt assembly, ``_run_shadow_cells``, the OuroborosCell
         (live arXiv/OpenAlex/Unpaywall network calls, live PDF download, live
         pypdf parse), the Stage 6 calibrator, ``_evaluate_sk_for_findings``,
@@ -58,7 +58,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from bench import reference_runner_v2 as rr  # noqa: E402
+from bench import reference_runner_v3 as rr  # noqa: E402
 from bench.experiment_11_orchestrator import (  # noqa: E402
     ExperimentConfig,
     ModelConfig,
@@ -382,7 +382,7 @@ def step2_prompt(recorder: PromptRecorder, round_idx: int) -> str:
     print(BAR)
     prompt = recorder.get(round_idx, "Gemini")
     a, b = _locate(prompt)
-    print("Captured inside reference_runner_v2._dispatch_single_model — the "
+    print("Captured inside reference_runner_v3._dispatch_single_model — the "
           "last call before the model API.")
     print(f"Prompt length: {len(prompt):,} chars. "
           f"Brief block at offset {a:,}..{b:,}.\n")
@@ -452,7 +452,7 @@ def step3_c_ext(result: Dict[str, Any], workdir: Path, name: str) -> None:
 
 def _counterfactual(res: Dict[str, Any]) -> None:
     """Same entry, same S_k, c_ext forced to 0 — the pre-31-July path."""
-    from bench.reference_runner_v2 import compute_rk_with_eta_channel
+    from bench.reference_runner_v3 import compute_rk_with_eta_channel
 
     q, R_old, sk = 0.5, 0.5, float(res.get("sk", 0.0))
     c_ext, nu_k = float(res["c_ext"]), float(res["nu_k"])

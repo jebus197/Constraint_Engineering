@@ -52,7 +52,7 @@ _root = Path(__file__).resolve().parents[2]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     RunnerConfig,
     SK_ADMISSIBLE,
     SK_NO_SCORE,
@@ -344,7 +344,7 @@ class TestTheRoundPipelineHandlesNoScore:
     @staticmethod
     def _registry_with_a_prose_fix():
         from bench.dm._types import Finding
-        from bench.reference_runner_v2 import FindingRegistry
+        from bench.reference_runner_v3 import FindingRegistry
 
         reg = FindingRegistry()
         cid = reg.register(
@@ -356,7 +356,7 @@ class TestTheRoundPipelineHandlesNoScore:
         return reg, cid
 
     def _run(self):
-        from bench.reference_runner_v2 import _evaluate_sk_for_findings
+        from bench.reference_runner_v3 import _evaluate_sk_for_findings
         reg, cid = self._registry_with_a_prose_fix()
         stats = _evaluate_sk_for_findings(
             reg, PROSE_TARGET, "SW-21-REF-04.md", baseline={}, round_idx=3)
@@ -394,7 +394,7 @@ class TestSkEnabledIsForcedOffInCode:
         enforced."""
         import inspect
 
-        from bench.reference_runner_v2 import run_experiment
+        from bench.reference_runner_v3 import run_experiment
 
         src = inspect.getsource(run_experiment)
         assert "resolve_target_kind(" in src

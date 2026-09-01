@@ -51,7 +51,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     DISC_ABSENT,
     DISC_PASSED,
     FindingRegistry,
@@ -72,7 +72,7 @@ from bench.reference_runner_v2 import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parents[2]
-RUNNER_SRC = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+RUNNER_SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 
 TARGET_REL = "pkg/spec.py"
 
@@ -390,7 +390,7 @@ class TestTheArchiveIsUntouched:
         of re-executing 500 falsifiers against a tree that has moved on.
         """
         import bench.falsifier_verify as _fv
-        from bench import reference_runner_v2 as _R
+        from bench import reference_runner_v3 as _R
 
         pinned: dict = {}
         monkeypatch.setattr(
@@ -454,7 +454,7 @@ class TestTheArchiveIsUntouched:
                 if isinstance(mr, dict):
                     replies.append({k: v for k, v in mr.items()
                                     if isinstance(v, str)})
-            cfg = RunnerConfig(test_article="bench/reference_runner_v2.py",
+            cfg = RunnerConfig(test_article="bench/reference_runner_v3.py",
                                falsifier_gate_enabled=True)
             before = _replay(entries, replies, False, cfg)
             after = _replay(entries, replies, True, cfg)
@@ -787,7 +787,7 @@ class TestWhatLimitsTheInterceptionAnswer:
         import shutil as _shutil
 
         from bench.falsifier_verify import execute_python
-        from bench.reference_runner_v2 import (
+        from bench.reference_runner_v3 import (
             DISC_TRIPWIRE_BODY, _build_discrimination_overlay,
             _normalise_probe_output, _retarget_falsifier,
         )
@@ -925,7 +925,7 @@ class TestTheMechanismHasAProductionWriter:
         import types
 
         import bench.falsifier_verify as _fv
-        from bench import reference_runner_v2 as _R
+        from bench import reference_runner_v3 as _R
 
         reg = _registry(status="OPEN")
         monkeypatch.setattr(
@@ -951,7 +951,7 @@ class TestTheMechanismHasAProductionWriter:
         import types
 
         import bench.falsifier_verify as _fv
-        from bench import reference_runner_v2 as _R
+        from bench import reference_runner_v3 as _R
 
         reg = _registry(status="UNCONFIRMED", falsifier_code="",
                         escalated=True, falsifier_verdict="UNTOOLABLE")

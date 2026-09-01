@@ -143,7 +143,7 @@ def test_the_probe_leaves_no_overlay_behind(repo, tmp_path, monkeypatch):
     "another process on this Mac made a directory" is a false-positive
     generator, and this project runs panels alongside suites routinely.
 
-    `reference_runner_v2._discrimination_overlay` builds the overlay with
+    `reference_runner_v3._discrimination_overlay` builds the overlay with
     `tempfile.mkdtemp(prefix="cdsfl_disc_")` (line 3094), which honours
     `tempfile.tempdir`. Pointing that at the test's own tmp_path confines the
     measurement to directories THIS call created, which is the property the test

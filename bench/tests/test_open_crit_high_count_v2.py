@@ -1,6 +1,6 @@
 """Tests for ``open_crit_high_count()`` REOPENED-status handling on runner v2.
 
-``bench/reference_runner_v2.py::FindingRegistry.open_crit_high_count`` is the
+``bench/reference_runner_v3.py::FindingRegistry.open_crit_high_count`` is the
 active gate-input for Exp 40–54 (runner v1 is frozen). The v2 and v1 bodies
 were identical at the 22 April 2026 baseline; the risk addressed here is
 silent drift — if a future refactor drops ``REOPENED`` from the v2
@@ -43,10 +43,10 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import FindingRegistry
+from bench.reference_runner_v3 import FindingRegistry
 
 
-_V2_PATH = Path(_project_root) / "bench" / "reference_runner_v2.py"
+_V2_PATH = Path(_project_root) / "bench" / "reference_runner_v3.py"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -224,7 +224,7 @@ def _extract_non_terminal_tuple() -> tuple[str, ...]:
             return tuple(elts)
     raise AssertionError(
         "Could not locate _NON_TERMINAL tuple inside "
-        "open_crit_high_count() in bench/reference_runner_v2.py"
+        "open_crit_high_count() in bench/reference_runner_v3.py"
     )
 
 

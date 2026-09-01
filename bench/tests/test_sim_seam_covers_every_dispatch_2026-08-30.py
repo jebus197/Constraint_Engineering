@@ -3,7 +3,7 @@
 THE DEFECT, MEASURED 2026-08-30
 -------------------------------
 The simulation shim patched ``_dispatch_single_model``. Nine functions in
-``reference_runner_v2`` dispatch to a model, and the other eight went to real,
+``reference_runner_v3`` dispatch to a model, and the other eight went to real,
 unconfigured models for the whole v3.1 run. The most costly was ``resolve_fn``,
 the routing ladder's FALSIFIER WRITER: its call raised, a bare ``except``
 returned "", and the run logged "routing: 0 resolved by strong writer" in every
@@ -28,7 +28,7 @@ WHAT THIS TEST PINS
 import ast, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 
 RUNNER = pathlib.Path(R.__file__)
 #: primitives that actually leave the process to reach a model

@@ -144,7 +144,7 @@ Anchors that remain in force from Rounds 1 and 2:
 
 - bench/exp40_configs/40_gate.json acceptance criterion: "gamma >= 0.30
   OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt
-  implemented in reference_runner_v2._check_gamma_alt_convergence."
+  implemented in reference_runner_v3._check_gamma_alt_convergence."
 
 - Stage 6 orthogonality: R_k = VALIDITY, nu_k = NOVELTY, c_ext = SEARCH
   QUALITY. Three independent reporting dimensions; MUST NEVER be
@@ -218,7 +218,7 @@ co-rule is not in its dispatch.
 A. **Keep §6b as written.** Exp 44 primary trigger, Exp 49 migration.
    If you choose this, name a specific dispatch path in Exp 44 that
    produces multi-specialist co-rule, citing the consolidated plan or
-   `bench/reference_runner_v2.py`. If you cannot, this option is
+   `bench/reference_runner_v3.py`. If you cannot, this option is
    refuted by structural analysis.
 
 B. **Reword §6b to Exp 49 primary, Exp 44 retained as early-observation
@@ -240,7 +240,7 @@ Q2 = r"""
 ## Q2. F3 DEBUG_CHANNEL_CHECK closure-state label
 
 **F3 in context.** F3 is a debug-time assertion at
-`bench/reference_runner_v2.py:3510`, gated by environment variable
+`bench/reference_runner_v3.py:3510`, gated by environment variable
 `DEBUG_CHANNEL_CHECK=1`. When the env var is set, the assertion
 compares the wrapped `compute_rk_with_eta_channel(...)` output against
 an independently computed bare `compute_rk(...)` output to within

@@ -29,7 +29,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R          # noqa: E402
+import reference_runner_v3 as R          # noqa: E402
 from bench.tools import sim_dispatch_shim as S   # noqa: E402
 
 
@@ -94,7 +94,7 @@ class TestTheApiTablesAreEnumeratedNotAssumed:
     }
 
     def test_no_unlisted_api_table_is_reachable_from_the_runner(self):
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text(
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         imported = set(re.findall(
             r"^from\s+(\w+)\s+import\s+\(?([^)\n]*)", src, re.M))

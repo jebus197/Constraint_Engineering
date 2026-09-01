@@ -262,7 +262,7 @@ class LocationNoveltyTracker:
 #   * `location_only_series` here — the RETIRED single-`<generic>`-bucket keying
 #     the six archived runs were scored with. It is what the archive replay must
 #     reproduce, and nothing else.
-#   * `reference_runner_v2._location_keyed_critical_series` — the LIVE rule,
+#   * `reference_runner_v3._location_keyed_critical_series` — the LIVE rule,
 #     which keys each unlocated critical on its own content (an empty signature
 #     falls back to a hash of its own text) and skips terminal non-novel
 #     statuses. THIS is the series that feeds the count side of the two-sided
@@ -545,10 +545,10 @@ def signature_similarity(a: FrozenSet[str], b: FrozenSet[str]) -> float:
 # [CORRECTION 2026-08-17.] An earlier version of this block said "Both are now
 # fixed". That was FALSE for the second one and stayed false for a day: commit
 # 1e5de9a repaired the parser in `runner_core.py` and never touched
-# `reference_runner_v2.py`, so `finding.description[:500]` remained live while
+# `reference_runner_v3.py`, so `finding.description[:500]` remained live while
 # this comment asserted otherwise. Found by an independent sweep of the dedup
 # record, not by re-reading the code. The store cap is now 2000
-# (`reference_runner_v2.py:1059`); the parser fix stands. Recording the error
+# (`reference_runner_v3.py:1059`); the parser fix stands. Recording the error
 # rather than editing it away, because a comment claiming a fix that does not
 # exist is the exact defect class this file documents.
 #
@@ -920,7 +920,7 @@ def identity_decision(description: str, symbols, seen: Sequence[Prior], *,
 
 
 # Post-reconciliation statuses that are NOT genuine novelty. Held as a LOCAL
-# copy of `reference_runner_v2._NON_NOVEL_TERMINAL_STATUSES` because this module
+# copy of `reference_runner_v3._NON_NOVEL_TERMINAL_STATUSES` because this module
 # must stay a LEAF — the runner imports it, so importing the runner back would
 # make the graph circular. A second copy of a constant is a second constant, so
 # `test_the_excluded_status_set_matches_the_runner` fails if they ever drift.
@@ -934,7 +934,7 @@ def _gate_population(entries) -> List[dict]:
     THE DEFECT THIS CLOSES, found 2026-08-12 by adversarial verification and the
     root cause shared by both corrections in the block above: this module scored
     its rule against a different POPULATION from the one the gate counts.
-    `reference_runner_v2._location_keyed_critical_series` skips entries whose
+    `reference_runner_v3._location_keyed_critical_series` skips entries whose
     settled status is terminal-and-not-novel, and entries with no
     `open_since_round` at all. This module counted them, which flags their
     locations — so a REFUTED round-0 finding could flag a location and the
@@ -1062,7 +1062,7 @@ def location_only_series(entries, max_round: int, symbols, *,
 
     IT IS NOT THE LIVE GATING RULE and must never be used alone to argue that
     this module is safe to gate on. The live rule is
-    `reference_runner_v2._location_keyed_critical_series`: it keys each unlocated
+    `reference_runner_v3._location_keyed_critical_series`: it keys each unlocated
     critical on its own content instead of one shared bucket, and skips terminal
     non-novel statuses. Checking the elementwise claim against this function
     alone hid a real undercount of the live series on Exp 44 — see correction (2)

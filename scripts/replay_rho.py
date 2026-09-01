@@ -49,7 +49,7 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from bench.reference_runner_v2 import _compute_rho, RunnerConfig  # noqa: E402
+from bench.reference_runner_v3 import _compute_rho, RunnerConfig  # noqa: E402
 
 RUN_DIR = re.compile(r"^exp(\d+)[_-]")
 

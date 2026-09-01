@@ -33,7 +33,7 @@ _root = Path(__file__).resolve().parents[2]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from bench.reference_runner_v2 import _write_report_json  # noqa: E402
+from bench.reference_runner_v3 import _write_report_json  # noqa: E402
 
 # The exact character that broke the run: high surrogate, no low half following.
 LONE = "\ud835"
@@ -119,7 +119,7 @@ class TestAllThreeReportWritesUseTheGuard:
     """
 
     def test_no_report_write_bypasses_the_guard(self):
-        src = (_root / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+        src = (_root / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
         lines = src.splitlines()
         offenders = []
         for i, line in enumerate(lines):

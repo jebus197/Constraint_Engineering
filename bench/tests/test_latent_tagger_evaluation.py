@@ -84,14 +84,14 @@ from bench.latent_tagger import (  # noqa: E402
     tag_entry,
     tag_registry,
 )
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     FindingRegistry,
     RunnerConfig,
     _apply_severity_calibration,
     _is_demotion_eligible,
 )
 
-# The runner's own call site, bench/reference_runner_v2.py: the tagger is swept
+# The runner's own call site, bench/reference_runner_v3.py: the tagger is swept
 # with these skipped and the calibrator additionally skips REFUTED. Mirrored
 # here so this evaluation measures the population the runner would actually see.
 RUNNER_SKIP_STATUSES = {"MERGED", "CLOSED", "DUPLICATE"}

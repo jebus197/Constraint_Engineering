@@ -137,7 +137,7 @@ that form.
 ### 1. Choose an Experiment
 
 Experiments 42 onward — every result the project currently leads with — run on a
-single shared launcher, `bench/launch_exp42.py`, driving `bench/reference_runner_v2.py`
+single shared launcher, `bench/launch_exp42.py`, driving `bench/reference_runner_v3.py`
 (9,097 lines). **The launcher's name is historical; it is not specific to Experiment
 42.** Each experiment is selected by its committed config file.
 
@@ -309,7 +309,7 @@ gamma_critical=0.336 >= 0.3 … AND 3 consecutive zero-new-critical rounds`, gam
 the input to the two-sided convergence gate. `gamma` (recorded as `gamma_history`) is
 the same statistic over all findings and is telemetry; the runner's own reason string
 labels it that way. Quoting either under a bare label "Gamma" is ambiguous — always
-name the series. The gate is implemented at `bench/reference_runner_v2.py:2833-3035`.
+name the series. The gate is implemented at `bench/reference_runner_v3.py:2833-3035`.
 
 > **[Correction 2026-08-07.]** The snippet in this section previously read
 > `report['gamma']` and `report['completion_signal']['status']` against

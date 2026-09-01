@@ -104,8 +104,8 @@ class TestRunnerIntegration:
         # Direct dict construction check — the runner populates this key
         # unconditionally (may be None if no alternatives).
         import inspect
-        from bench import reference_runner_v2
-        src = inspect.getsource(reference_runner_v2)
+        from bench import reference_runner_v3
+        src = inspect.getsource(reference_runner_v3)
         assert '"cross_model_diversity": cross_model_diversity' in src, (
             "Runner must include cross_model_diversity key in round_data "
             "for the 1E.7 logging acceptance."

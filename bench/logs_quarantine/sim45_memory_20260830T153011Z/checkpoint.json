@@ -312,7 +312,7 @@
         "flaw_class": 6,
         "severity": 0.5,
         "abstraction_index": 0.35,
-        "description": "`load()`, `record_experiment()`, and `save()` are independent public methods with no locking between them. The documented usage pattern (module docstring example, and both call sites in `reference_runner_v2.py:9264-9273` and `:11524-11550`) is load \u2192 mutate \u2192 save against one shared path.",
+        "description": "`load()`, `record_experiment()`, and `save()` are independent public methods with no locking between them. The documented usage pattern (module docstring example, and both call sites in `reference_runner_v3.py:9264-9273` and `:11524-11550`) is load \u2192 mutate \u2192 save against one shared path.",
         "proposed_fix": "<<<< SEARCH bench/dm/_memory.py\nimport hashlib\nimport json\nimport logging\nimport math\n==== REPLACE\nimport fcntl\nimport hashlib\nimport json\nimport logging\nimport math\n>>>>",
         "target_file": "bench/dm/_memory.py",
         "verified": false,
@@ -1565,7 +1565,7 @@
             "flaw_class": 6,
             "severity": 0.5,
             "abstraction_index": 0.35,
-            "description": "`load()`, `record_experiment()`, and `save()` are independent public methods with no locking between them. The documented usage pattern (module docstring example, and both call sites in `reference_runner_v2.py:9264-9273` and `:11524-11550`) is load \u2192 mutate \u2192 save against one shared path.",
+            "description": "`load()`, `record_experiment()`, and `save()` are independent public methods with no locking between them. The documented usage pattern (module docstring example, and both call sites in `reference_runner_v3.py:9264-9273` and `:11524-11550`) is load \u2192 mutate \u2192 save against one shared path.",
             "proposed_fix": "<<<< SEARCH bench/dm/_memory.py\nimport hashlib\nimport json\nimport logging\nimport math\n==== REPLACE\nimport fcntl\nimport hashlib\nimport json\nimport logging\nimport math\n>>>>",
             "target_file": "bench/dm/_memory.py",
             "verified": false,
@@ -1632,8 +1632,8 @@
           {
             "finding_id": "ChatGPT_F002",
             "passed": false,
-            "reason": "Cited file not found: `reference_runner_v2.py",
-            "cited_file": "`reference_runner_v2.py",
+            "reason": "Cited file not found: `reference_runner_v3.py",
+            "cited_file": "`reference_runner_v3.py",
             "cited_line": 9264
           },
           {

@@ -192,7 +192,7 @@ tamper-evident provenance as a core property. Standing rule added to
 
 **STAGE 1'S EXIT TEST PASSES, 8 OF 8, AND THE ARC IS BLOCKED ON A RULING RATHER THAN ON CODE OR FILES.**
 
-**Runway 1.7 is delivered as far as the archive permits.** `python3 scripts/replay_accounting.py --verify` reproduces every archived location-keyed critical series exactly, so the replay is a valid instrument. The delta half was a stub and is now built: **no run changes its convergence round** under the repaired accounting. Not circular — `bench/convergence_location.py` changed after the last archived run (`1e5de9a`, `f53c276`), so exact reproduction is a measurement of behaviour-neutrality. **CORRECTED 2026-08-27 — the "permanently unavailable" claim is REFUTED.** This read: *"One third of 1.7 is permanently unavailable: no archived report carries a rho series in any form."* **Measured across all 31 archived reports: 22 carry per-round `rho` AND `rho_avg` for EVERY round**, exp42 through exp55, complete series. What was absent is only a **top-level `rho_history` array** — 0 of 31 — the convenience hoisting that every gamma series already gets. exp44 recovers as 13 rounds, mean 0.7536, sd 0.2233, Spearman rs=−0.477 (p=0.099, n=13). **The rho third of Runway 1.7 is RETROACTIVELY available on 22 runs.** Founder ruled 2026-08-27 "persist it"; `rho_history` is now written to the report by `reference_runner_v2.py`, so future runs carry it directly.
+**Runway 1.7 is delivered as far as the archive permits.** `python3 scripts/replay_accounting.py --verify` reproduces every archived location-keyed critical series exactly, so the replay is a valid instrument. The delta half was a stub and is now built: **no run changes its convergence round** under the repaired accounting. Not circular — `bench/convergence_location.py` changed after the last archived run (`1e5de9a`, `f53c276`), so exact reproduction is a measurement of behaviour-neutrality. **CORRECTED 2026-08-27 — the "permanently unavailable" claim is REFUTED.** This read: *"One third of 1.7 is permanently unavailable: no archived report carries a rho series in any form."* **Measured across all 31 archived reports: 22 carry per-round `rho` AND `rho_avg` for EVERY round**, exp42 through exp55, complete series. What was absent is only a **top-level `rho_history` array** — 0 of 31 — the convenience hoisting that every gamma series already gets. exp44 recovers as 13 rounds, mean 0.7536, sd 0.2233, Spearman rs=−0.477 (p=0.099, n=13). **The rho third of Runway 1.7 is RETROACTIVELY available on 22 runs.** Founder ruled 2026-08-27 "persist it"; `rho_history` is now written to the report by `reference_runner_v3.py`, so future runs carry it directly.
 
 **THE THREE UNRUN ARTICLES WERE NEVER LOST. The earlier "not on this machine" report is WITHDRAWN.** Recover from `ddd74bde^` as `exp50_physics.md` / `exp51_biology.md` / `exp52_factorial.md`, each matching the target MANIFEST's published SHA-256; five answer keys at `eecdb0f^`. The failure was mine: I searched the *staging* names the configs point at (`PX-12-REF-05.md` and siblings), which were never committed under those names.
 
@@ -278,7 +278,7 @@ only tools settle.*
 
 **EXTEND is the answer to ledger-vs-instrument**, reached independently by both. Parsed,
 offered in the prompt as the explicit alternative to duplicating, used 183–543 times, and
-**read by nothing** (`grep -c '"EXTEND"' reference_runner_v2.py` → 0). Make it carry a
+**read by nothing** (`grep -c '"EXTEND"' reference_runner_v3.py` → 0). Make it carry a
 falsifier; still-fires-after-the-parent-fix means the parent fix is demonstrably
 insufficient and the system names what it misses. Only 11 archived entries can replay it,
 so it needs one live run.
@@ -468,7 +468,7 @@ new costume: every failure renders as a confident success.
 ### [NEEDS A RULING] DESCRIPTIONS ARE TRUNCATED AT SCALE
 
 Of **2187** archived descriptions: **714 exactly 200 chars** (`runner_core.py:814`
-parser fallback `block[:200]`), **661 exactly 500** (`reference_runner_v2.py:1059`),
+parser fallback `block[:200]`), **661 exactly 500** (`reference_runner_v3.py:1059`),
 **1284 end mid-word**. ~63% of the archive. 81 of the 165 similarity criticals (49%).
 
 C0063 ends `"...escape the 0.60 do"` — the anchor was cut off by the cap.
@@ -788,7 +788,7 @@ plus the raw agent output beside it.
 ### What that falsification also established
 
 - **Convergence is NOT endangered** by the tri-state verification repair. A finding
-  settles via the falsifier gate (`reference_runner_v2.py:1908`); close-the-loop
+  settles via the falsifier gate (`reference_runner_v3.py:1908`); close-the-loop
   sits upstream behind `not entry.get("verified")` (`:1779`). In Exp 48/49
   close-the-loop verified **0 of 37 and 0 of 38** — all 64 closures came from the
   gate. Gamma is implicated nowhere; every mechanism found is string handling,
@@ -1055,7 +1055,7 @@ still limits the damage of any query that does slip; the librarian's own quality
 (`reader_backend`) is the separate open question.
 
 **Separate defect found and fixed in passing.** `_check_budget_extension` in
-`reference_runner_v2.py` read a name `cfg` that existed in no enclosing scope,
+`reference_runner_v3.py` read a name `cfg` that existed in no enclosing scope,
 introduced by `1cec60d` on 27 July. It raised `NameError` on every call, and it
 is called whenever a run reaches its last budgeted round without converging. Exp
 44–49 all converged earlier, so it was never seen; it would have killed the first
@@ -1091,7 +1091,7 @@ run that used its whole budget. Fixed by passing `cfg` in.
 - **OPEN FOUNDER DECISION (gates Exp 44), to make after restart:** keep `dm/_memory.py` as the shake-out target (review ≠ use — a review commits to nothing) OR swap to a live target. Standing offer: enumerate which candidate targets are wired-live vs dormant so the choice is on full information.
 - Housekeeping: fixed a stale numbering table in the operational tracker (matrix still showed pre-20-July numbers) — Desktop and repo copies synced.
 - NEXT ON RESTART unchanged: implement FIX 1–5 (FFAFP + convergence regression suite, trace each myself) → build the chosen Exp 44 config → run under cy. Founder directive stands: finish efficiently, take the financial hit.
-  **[DONE — NOT OUTSTANDING. Correction recorded 2026-08-06 00:23 BST.]** This "NEXT" was discharged five days later. FIX 1–5 were coded 2026-07-27 in commit `1cec60d` (`reference_runner_v2.py` + `runner_core.py` + `launcher_core.py`, pinned by `bench/tests/test_exp43_fixes.py`) and shaken out by Exp 44, whose own completion signal records `STATE_CONVERGED at round 12 (3 consecutive passes)` with `contested=0` (`bench/logs/exp44_evidence_locationkey_live_20260727T002705Z/completion_signal.json`). See the 27 July block above.
+  **[DONE — NOT OUTSTANDING. Correction recorded 2026-08-06 00:23 BST.]** This "NEXT" was discharged five days later. FIX 1–5 were coded 2026-07-27 in commit `1cec60d` (`reference_runner_v3.py` + `runner_core.py` + `launcher_core.py`, pinned by `bench/tests/test_exp43_fixes.py`) and shaken out by Exp 44, whose own completion signal records `STATE_CONVERGED at round 12 (3 consecutive passes)` with `contested=0` (`bench/logs/exp44_evidence_locationkey_live_20260727T002705Z/completion_signal.json`). See the 27 July block above.
 
 ---
 
@@ -1130,7 +1130,7 @@ run that used its whole budget. Fixed by passing `cfg` in.
 
 **12 July session (Phase 1 executed overnight + adversarial-pass fixes):** Phase 1 done, committed on `exp39-experimental` (pushed at this sv): A1 pruning `pr` panel 4/5 (cc2 blocked by CLI OAuth; unanimous SOUND-WITH-CAVEATS; §18 = top prune; RECOMMENDATION-only) `ef1fe7b`; A2 ouroboros SHADOW real-work (resolve OA→download→pypdf parse→cheap-reader brief; proven live arXiv 1706.03762 = 24k chars parsed/hashed/briefed; strictly shadow — never reaches a prompt/`c_ext`/γ) `df18201`; A3 rename `take_up_slack`→`routing` (code-only; ALL configs unchanged; back-compat alias in BOTH `launcher_core` AND `RunnerConfig.from_dict`) `349951f`; adversarial-pass fixes `b656549`. **A4 §10 = already INERT** (flag never passed to RunnerConfig; no compelled-conv text in dispatch) ⇒ Exp 43 is now FULLY directive-identical to Exp 42 on both launch paths (supersedes the earlier "run without §10 = deviation" framing). **ADVERSARIAL PASS (14 agents, 5 confirmed/5 refuted)** caught + FIXED a real A3 regression: the routing alias sat only in `launcher_core`, NOT `RunnerConfig.from_dict` → the runner's own `--config` CLI ran routing SILENTLY OFF for Exp 43 (the earlier A3 check tested only the launcher path). Fixed both paths + regression test; 4 LOW shadow-ouroboros findings also fixed (all dead-in-Exp-43). **BLOCKER (founder morning action):** claude CLI (CC2) OAuth session EXPIRED (macOS Keychain; the generic 401 was masked by inherited `ANTHROPIC_BASE_URL`). Fix = force re-login (`claude` → `/login`; verify `claude -p --model opus "PONG"` in a plain terminal). Needed so Exp 43's 5-model panel is byte-identical to Exp 42 (`call_claude_cli` uses `--system-prompt`=full CDSFL directive; subagents can't replace it). Dispatch launches with `env -u ANTHROPIC_BASE_URL` once fresh — no code change. **Full suite 1595 pass / 3 fail:** 2 = CLI-OAuth timeout; 1 = PRE-EXISTING stale `test_both_phase1_paths_use_the_constant` (`decomposed_dispatch.py` refactored off `_PHASE1_MAX_TOKENS` in `fbafff8`; unrelated). Report: `experimental_notes/CDSFL_Overnight_Phase1_2026-07-12.md` (+ `_Plain_English_` + Desktop TTS). **NEXT (Phase 2):** on founder review + CLI re-login, launch Exp 43 `python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"` under cy (ouroboros studies in shadow; NB frozen config has NO `_ouroboros` block ⇒ cell won't run in 43 without a pre-reg amendment).
 
-**8 July session (pre-Exp-43 verification + founder decision-register close):** keys confirmed present + live-valid (the whole "missing keys" saga was a checker parser-bug, retracted; `.env` now `chflags uchg` immutable — unlock with `chflags nouchg .env`). All flagged mechanisms tool-verified GREEN (250 tests): falsifier gate (CONFIRM-only, voting removed), routing (`take_up_slack`, wired `reference_runner_v2.py:5787`), §17/§18, merge-arb, immune. Ouroboros audited = HOLLOW (fetches 500-char abstracts, discards them, wires to nothing, `c_ext` hardcoded 0); assessment + fix proposal in `CDSFL_Ouroboros_and_Self_Improvement_Assessment_2026-07-08.md`. **Founder rulings 8 July:** (a) goal = the CALCULATOR ANALOGY (reliable answers, HIL for genuine residuals only), NOT removing the human; self-improvement = emergent bonus, not core. (b) **RETIRE compelled convergence §10** (a hack; now redundant under the falsifier gate) — run Exp 43 WITHOUT it. (c) rename `take_up_slack`→`routing` now (trivial). (d) run pruning `pr` panel + ouroboros SHADOW-real-work build in parallel, then Exp 43. **AGREED NEXT (Phase 1, fresh session):** A1 pruning panel (hard-constraint-guarded vs the gamma-disaster) + A2 ouroboros shadow-work (cheap reader Haiku/DeepSeek) + A3 rename + A4 retire §10 → then B1 Exp 43 under cy.
+**8 July session (pre-Exp-43 verification + founder decision-register close):** keys confirmed present + live-valid (the whole "missing keys" saga was a checker parser-bug, retracted; `.env` now `chflags uchg` immutable — unlock with `chflags nouchg .env`). All flagged mechanisms tool-verified GREEN (250 tests): falsifier gate (CONFIRM-only, voting removed), routing (`take_up_slack`, wired `reference_runner_v3.py:5787`), §17/§18, merge-arb, immune. Ouroboros audited = HOLLOW (fetches 500-char abstracts, discards them, wires to nothing, `c_ext` hardcoded 0); assessment + fix proposal in `CDSFL_Ouroboros_and_Self_Improvement_Assessment_2026-07-08.md`. **Founder rulings 8 July:** (a) goal = the CALCULATOR ANALOGY (reliable answers, HIL for genuine residuals only), NOT removing the human; self-improvement = emergent bonus, not core. (b) **RETIRE compelled convergence §10** (a hack; now redundant under the falsifier gate) — run Exp 43 WITHOUT it. (c) rename `take_up_slack`→`routing` now (trivial). (d) run pruning `pr` panel + ouroboros SHADOW-real-work build in parallel, then Exp 43. **AGREED NEXT (Phase 1, fresh session):** A1 pruning panel (hard-constraint-guarded vs the gamma-disaster) + A2 ouroboros shadow-work (cheap reader Haiku/DeepSeek) + A3 rename + A4 retire §10 → then B1 Exp 43 under cy.
 
 **Read next:** `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` — the
 comprehensive stand-alone state of the project (+ plain-English companion + TTS on the Desktop),
@@ -1202,7 +1202,7 @@ KEEP dormant (distinct from take_up_slack, wire only for BR2); dm consolidation 
    run BOTH checks:
 
        ls -l /tmp/exp*_launch*.pid
-       ps aux | grep -E "reference_runner_v2|detached_launch|launch_exp" | grep -v grep
+       ps aux | grep -E "reference_runner_v3|detached_launch|launch_exp" | grep -v grep
 
    `detached_launch.sh` writes the pidfile beside the run log as
    `${LOG%.log}.pid`, so its exact name follows the log's — both
@@ -1216,7 +1216,7 @@ KEEP dormant (distinct from take_up_slack, wire only for BR2); dm consolidation 
    live checkpoint corrupts the run.**
    (This item previously read `ps aux | grep run_round_robin`. That matches only
    `bench/run_round_robin.py`, the Bench Run 1 driver; the Exp 40–54 arc has run
-   on `reference_runner_v2.py` via `bench/launch_exp42.py` for months, so the old
+   on `reference_runner_v3.py` via `bench/launch_exp42.py` for months, so the old
    check returned silence during a live arc run.)
 
 > **ITEMS 5–8 BELOW ARE SUPERSEDED HISTORICAL MATERIAL (March 2026,
@@ -1352,7 +1352,7 @@ Branch `exp39-experimental`. HEAD `4b97be0` (15 commits ahead of origin until th
 
 **Two real detector defects found, fixed, 5-model-confer-verified (commit 0901fd5).** (1) `kappa_rate` counted EVERY finding incl. repeats → a quiet, exhausted review read as unfinished and blocked convergence; rewritten to measure NOVEL-discovery decline from the early peak (`bench/dm/_convergence.py`). (2) The serious one — `_finding_similarity` embedding mode floors unrelated findings at cosine≈0.48 while `tau_sim=0.33` sat BELOW that floor → almost everything merged as a duplicate → genuinely-novel criticals hidden from the severity veto → FALSE convergence (a critical could be silently dropped). The correct `tau_sim_embed=0.55` existed in config but was never wired. Fix: `effective_tau_sim(config)` in `bench/dm/_similarity.py`, bound into `_convergence.py` (`_tau_sim()`) and the `_manager.py` rho-detector. Software verifier promoted shadow→live (`"software"` added to `LIVE_SPECIALIST_DOMAINS`, `bench/immune_agents.py`).
 
-**First-principles runner gate (commit 86587f4).** The runner now feeds the GENUINE settled, verifier-filtered novelty series to gamma + the state gate + γ-alt's `novel_critical_history` (recompute via `_settled_novelty_series` before gamma in the round loop, `bench/reference_runner_v2.py`). So "no new discoveries" means "no new GENUINE discoveries that survived reconciliation + the live software verifier". The hardened conjunction gate is OFF (`hardened_gate_enabled: false`). Convergence = gamma≥0.30 OR 3 consecutive zero-novel-critical rounds OR state gate 3 consecutive rounds.
+**First-principles runner gate (commit 86587f4).** The runner now feeds the GENUINE settled, verifier-filtered novelty series to gamma + the state gate + γ-alt's `novel_critical_history` (recompute via `_settled_novelty_series` before gamma in the round loop, `bench/reference_runner_v3.py`). So "no new discoveries" means "no new GENUINE discoveries that survived reconciliation + the live software verifier". The hardened conjunction gate is OFF (`hardened_gate_enabled: false`). Convergence = gamma≥0.30 OR 3 consecutive zero-novel-critical rounds OR state gate 3 consecutive rounds.
 
 **Gamma resolution (commit 4b97be0 — founder's standing ruling honoured).** gamma is a LOAD-BEARING convergence TRIGGER, NOT demoted. `gamma_alt_threshold` corrected 1.1→0.30. The durable distinction: gamma-as-TRIGGER (high gamma → converged) is kept; gamma-as-BLOCKER (low gamma → can't converge) is what made convergence impossible post-Exp-40 and is OFF (telemetry-only for the state gate). A low gamma can no longer make convergence impossible; a high gamma can still fire it.
 
@@ -1458,8 +1458,8 @@ Branch: `exp39-experimental`. HEAD at session start `7cdf846` (post-hiatus, 16-d
 1. **OpenRouter pre-flight verifications.** `/auth/key` returns valid; `/credits` shows $530 total, $176.17 used, ≈$353.83 remaining — comfortable for Round 2 plus the experimental arc through OpenRouter routes. DeepSeek `/v1/models` lists `deepseek-v4-pro` and `deepseek-v4-flash` ONLY (R1-0528/`deepseek-reasoner` no longer listed; upgrade is mandatory). Opus 4.7 confirmed as the Max-subscription-served version (founder confirmation).
 
 2. **All four residuals from the 22 April oversight Q&A closed:**
-   - **(a) Exp 39-0 gate state cross-check.** `bench/logs/exp39_0_gate_20260413T193320Z/completion_signal.json` records `status: INCOMPLETE` (6 rounds, no convergence, final kappa 0.619, 111 findings). Cross-check confirmed Exp 39-0 was a CALIBRATION experiment that surfaced finding F7/F23 — `max_open_crit_high=0` was structurally unreachable. Fix landed: `RunnerConfig.max_open_crit_high` default raised 0 → 5 at `bench/reference_runner_v2.py:259` (mirrored at `reference_runner.py:207`), regression-pinned at `bench/tests/test_runner_status_transitions.py:242`. The original threshold was the SUBJECT of Exp 39-0, not its prerequisite. `~/.claude/projects/.../memory/ce_state.md` updated to reflect this distinction (work-stream COMPLETE; experiment INCOMPLETE in own log).
-   - **(b) Per-finding R_k time-series tracking — assessed.** `grep` on `r_k_history|rk_trajectory|rk_time_series|per_finding_rk` across `bench/reference_runner_v2.py` and `bench/runner_core.py` returned zero matches. Plan and `MATHEMATICAL_APPENDIX.md` carry no time-series-R_k requirement. **Not a blocker for any Exp 40-54 experiment as currently planned.** Forward-going enhancement candidate; no current dependency.
+   - **(a) Exp 39-0 gate state cross-check.** `bench/logs/exp39_0_gate_20260413T193320Z/completion_signal.json` records `status: INCOMPLETE` (6 rounds, no convergence, final kappa 0.619, 111 findings). Cross-check confirmed Exp 39-0 was a CALIBRATION experiment that surfaced finding F7/F23 — `max_open_crit_high=0` was structurally unreachable. Fix landed: `RunnerConfig.max_open_crit_high` default raised 0 → 5 at `bench/reference_runner_v3.py:259` (mirrored at `reference_runner.py:207`), regression-pinned at `bench/tests/test_runner_status_transitions.py:242`. The original threshold was the SUBJECT of Exp 39-0, not its prerequisite. `~/.claude/projects/.../memory/ce_state.md` updated to reflect this distinction (work-stream COMPLETE; experiment INCOMPLETE in own log).
+   - **(b) Per-finding R_k time-series tracking — assessed.** `grep` on `r_k_history|rk_trajectory|rk_time_series|per_finding_rk` across `bench/reference_runner_v3.py` and `bench/runner_core.py` returned zero matches. Plan and `MATHEMATICAL_APPENDIX.md` carry no time-series-R_k requirement. **Not a blocker for any Exp 40-54 experiment as currently planned.** Forward-going enhancement candidate; no current dependency.
    - **(c) Scientific-notation amendment to locked note standard.** `~/.claude/projects/.../memory/cdsfl_note_standard_v1.1.md` created (additive amendment, dated lock 2026-05-10). Adds Rule 11 — 11a scientific-notation format `1×10^N (number-words)` with verified exponent-to-word correspondence; 11b `<digit>E.<digit>` item-reference recognition (prevents 1E.10 → "ten billion" misreading). All ten v1 rules unchanged. MEMORY.md indexed v1.1 as current working version, v1 preserved for archival continuity.
    - **(d) F4 retroactive closure-state labelling sweep.** Component Closure-State Index added to `resources/ONBOARDING.md` as a subsection of the F4 lexicon block. 19 running components tabled with labels (live_operational, shadow_integrated, library_complete), file locations, dates of state confirmation, and flip triggers where applicable. Forward-going additions get a label at write time; in-line narrative below the index may use bare component names without re-stating the label.
 
@@ -1519,9 +1519,9 @@ Branch: `exp39-experimental`. Autonomous shift under the founder's pre-sleep sta
 
 3. **G3 — Stage 6 calibrator test harness at `bench/dm/_shadow_stage6.py`.** No fix needed; 14 April two-dimensional design intact. 18 new tests in `bench/tests/test_shadow_stage6_calibrator.py` (6 classes: public API, triple invariants, SymPy-verified δ = η·c_ext·(1−ν_k) delta identity via `sp.simplify(...) == 0`, SymPy-verified noisy-OR combiner c_ext_raw = 1 − (1−c_s1)(1−c_s2) → 0.65 at (0.5, 0.3), frequency-scaling monotonicity + C_MAX saturation, epistemic tagging, source-truth constants; 0.76 s). Unblocks Exp 50.
 
-4. **G4 — `open_crit_high_count()` REOPENED regression at `bench/reference_runner_v2.py:454`.** No fix needed; existing `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal already handles REOPENED correctly. 11 new tests in `bench/tests/test_open_crit_high_count_v2.py` (behavioural + purity + signature via `typing.get_type_hints` + AST source-truth).
+4. **G4 — `open_crit_high_count()` REOPENED regression at `bench/reference_runner_v3.py:454`.** No fix needed; existing `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal already handles REOPENED correctly. 11 new tests in `bench/tests/test_open_crit_high_count_v2.py` (behavioural + purity + signature via `typing.get_type_hints` + AST source-truth).
 
-5. **G5 — `contested_count()` grace-period regression at `bench/reference_runner_v2.py:464`.** No fix needed; parameter is respected. Three call-sites (1019, 1135, 1214-1215) use default implicitly — not a defect for launch but a latent wiring gap for future sweep experiments. 10 new tests in `bench/tests/test_contested_count_v2.py` (behavioural at boundaries + signature + AST default + call-site purity; 0.82 s). Parallel hardcoded `grace_period = 2` at `reference_runner_v2.py:829` logged for post-launch re-review.
+5. **G5 — `contested_count()` grace-period regression at `bench/reference_runner_v3.py:464`.** No fix needed; parameter is respected. Three call-sites (1019, 1135, 1214-1215) use default implicitly — not a defect for launch but a latent wiring gap for future sweep experiments. 10 new tests in `bench/tests/test_contested_count_v2.py` (behavioural at boundaries + signature + AST default + call-site purity; 0.82 s). Parallel hardcoded `grace_period = 2` at `reference_runner_v3.py:829` logged for post-launch re-review.
 
 6. **G9 — F4 closure-state lexicon applied.** New `## Closure-State Lexicon (F4, locked 21 April 2026)` section added to `resources/ONBOARDING.md` between Standing Rules and Current State, defining `library_complete` / `shadow_integrated` / `live_operational` with examples and promotion-order rule. Stale K/L/M shadow-audit field-list description on ONBOARDING line 51 corrected in situ from the pre-compaction `claim_id, severity` to the real `CellVerdict` fields, with explicit "22 April 2026 correction" note and `shadow_integrated` label. Full retroactive labelling of remaining shadow mentions not attempted — forward-going discipline applies.
 
@@ -1543,9 +1543,9 @@ Branch: `exp39-experimental`. Non-network pytest subset 1121/1121 passing (19m02
 
    a. **F1 — SymPy sandbox allow-list at `bench/immune_agents.py:977`.** Pre-existing bug `global_dict={'__builtins__': {}}` caused every SymPy verdict to silently return UNCERTAIN. Fix expands allow-list (Integer, Float, Rational, Symbol, Add, Mul, Pow, pi, E, oo, sqrt, Eq, Gt, Lt, Ge, Le, log, exp) while keeping `__builtins__` empty so RCE blocklist holds. Four regression tests added under `TestSympyF1SandboxAllowList` in `bench/tests/test_immune_agents.py`; 4/4 pass in 7.70s.
 
-   b. **F2 — 1E.10 wrapper activation in identity mode at `bench/reference_runner_v2.py:3510`.** Swapped bare `compute_rk(R_old, q, sk, nu_b, nu_f)` for `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)`. At identity parameters the wrapper reduces mathematically to bare `compute_rk(q)` — 1620-case pre-verification (2026-04-20 re-audit) within 1e-9, plus 567-case pytest-level grid sweep under `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped `false → true`.
+   b. **F2 — 1E.10 wrapper activation in identity mode at `bench/reference_runner_v3.py:3510`.** Swapped bare `compute_rk(R_old, q, sk, nu_b, nu_f)` for `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)`. At identity parameters the wrapper reduces mathematically to bare `compute_rk(q)` — 1620-case pre-verification (2026-04-20 re-audit) within 1e-9, plus 567-case pytest-level grid sweep under `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped `false → true`.
 
-   c. **F3 — Debug channel assertion at `bench/reference_runner_v2.py:3510`.** Gated by `DEBUG_CHANNEL_CHECK` environment variable; independent `compute_rk` invocation plus assertion that wrapped `R_new` matches bare within 1e-9. Production default: no-op. Purpose: catch future refactors that shift identity-mode parameters.
+   c. **F3 — Debug channel assertion at `bench/reference_runner_v3.py:3510`.** Gated by `DEBUG_CHANNEL_CHECK` environment variable; independent `compute_rk` invocation plus assertion that wrapped `R_new` matches bare within 1e-9. Production default: no-op. Purpose: catch future refactors that shift identity-mode parameters.
 
 2. **K/L/M shadow-audit logging enriched at `bench/immune_agents.py:5400-5428`** — step 1 of the Round 2 RQ4 bounding condition. Shadow log statement for physics (K), chemistry (L), engineering (M) specialists previously recorded only verdict count; now records per-verdict structured detail (`claim_id`, `verdict`, `severity`, `tool_used`, 256-char `evidence` excerpt) serialised to JSON. Measurement of non-distortion against `40_gate.json` pass_condition proceeds across Exp 40–50 rounds before the `LIVE_SPECIALIST_DOMAINS` frozenset flip at `bench/immune_agents.py:334`. Each domain flips independently at its specialist experiment: K at Exp 51, L at Exp 52, M at Exp 53, if non-distortion holds for that domain.
 
@@ -1568,7 +1568,7 @@ Branch: `exp39-experimental`. Non-network pytest subset 1121/1121 passing (19m02
 
 **What this leaves:**
 
-- Working tree modifications for commit: `bench/immune_agents.py` (F1 + K/L/M enrichment), `bench/reference_runner_v2.py` (F2 + F3), `bench/exp40_configs/40_gate.json` (F2 flag flip), `bench/tests/test_channel_boundary.py` (grid sweep), `bench/tests/test_immune_agents.py` (F1 regression class), `bench/confer_exp40to54_plan_review_round2_2026-04-21.py` (new), `bench/logs/confer_exp40to54_plan_review_round2_2026-04-21/*` (new), `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round2_Outcome_2026-04-21.md` (new), `experimental_notes/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.md` (new), `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` (updated), `resources/ONBOARDING.md` + `resources/RECOVERY.md` (updated this save-state), Desktop canonical plan at `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and TTS at `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.txt` (outside repo).
+- Working tree modifications for commit: `bench/immune_agents.py` (F1 + K/L/M enrichment), `bench/reference_runner_v3.py` (F2 + F3), `bench/exp40_configs/40_gate.json` (F2 flag flip), `bench/tests/test_channel_boundary.py` (grid sweep), `bench/tests/test_immune_agents.py` (F1 regression class), `bench/confer_exp40to54_plan_review_round2_2026-04-21.py` (new), `bench/logs/confer_exp40to54_plan_review_round2_2026-04-21/*` (new), `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round2_Outcome_2026-04-21.md` (new), `experimental_notes/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.md` (new), `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` (updated), `resources/ONBOARDING.md` + `resources/RECOVERY.md` (updated this save-state), Desktop canonical plan at `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and TTS at `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.txt` (outside repo).
 - This save-state produces the next commit.
 
 **Open items, not sv-blocking:**
@@ -1682,7 +1682,7 @@ log directories. This is a protocol-level and documentary session.
 
 1. **Exp 40 pre-launch panel re-audit.** Five-model panel (Codex GPT-5.4,
    Gemini 3.1 Pro, ChatGPT GPT-5.4, CC2 Opus 4.6, DeepSeek R1) re-
-   audited against `bench/reference_runner_v2.py` under corrective
+   audited against `bench/reference_runner_v3.py` under corrective
    framing anchored on `bench/experiments/exp40/40_gate.json` pass-
    condition plus Stage 6 orthogonality. A prior round had been
    reverted on founder instruction after a "v1 preservation"
@@ -1724,7 +1724,7 @@ log directories. This is a protocol-level and documentary session.
       delegated to repair it.
    d. `nu_max` binding threshold — 5%, 10%, or 25%?
    e. 1E.10 wrapper runtime assertion at
-      `bench/reference_runner_v2.py:3510` — gated on Exp 54
+      `bench/reference_runner_v3.py:3510` — gated on Exp 54
       `eta_int_modulator` wiring; not required for Exp 40 launch.
    f. Debug q-composition assertion at the same call site.
    g. Closure-state stratification in `resources/ONBOARDING.md`.
@@ -2285,7 +2285,7 @@ from 6 to 2 (1E.3 flip, 1E.10 runtime assertion — both gated).
 
 **Open items before Exp 40 launch:**
 
-1. **Founder decision:** approve promotion of `reference_runner_v2.py`
+1. **Founder decision:** approve promotion of `reference_runner_v3.py`
    over frozen v1. v2 is tested at 1250, docs in place.
 2. **1E.3 live-promotion flip** (optional; K/L/M in shadow is safe
    for Exp 40 since Exp 40's target is `bench/dm/_feedback.py`).
@@ -2316,7 +2316,7 @@ Branch: `exp39-experimental`. 57 new tests, all passing.
 
 **What landed (code + tests):**
 
-- `bench/reference_runner_v2.py` — γ-alt convergence path added, new `_check_gamma_alt_convergence` function; Macrophage defensive fallback synthesising verdict-like objects from `final_verdicts` when `cell_verdicts` is empty; round-context helpers (prior-fix-summary, consolidation preamble, windowed context) wired into dispatch-time prompt prefix; 7 new config fields (γ-alt trio + round-context quad); quality gate now also protects `max_successful_prompt_chars` (not just `prompt_chars_history`); `novel_critical_history` tracked and persisted via checkpoint.
+- `bench/reference_runner_v3.py` — γ-alt convergence path added, new `_check_gamma_alt_convergence` function; Macrophage defensive fallback synthesising verdict-like objects from `final_verdicts` when `cell_verdicts` is empty; round-context helpers (prior-fix-summary, consolidation preamble, windowed context) wired into dispatch-time prompt prefix; 7 new config fields (γ-alt trio + round-context quad); quality gate now also protects `max_successful_prompt_chars` (not just `prompt_chars_history`); `novel_critical_history` tracked and persisted via checkpoint.
 - `bench/runner_core.py` — `parse_findings` adapter converts DeepSeek `### Finding N: Title` markdown headers into synthetic marker lines so the existing marker-format parser recovers them. Defaults: severity 0.7, flaw_class 1. Explicit markers still take precedence.
 - `bench/dm/_round_context.py` NEW — three helpers: `build_prior_fix_summary`, `build_consolidation_preamble`, `build_windowed_context`.
 - `bench/dm/_diversity.py` NEW — cross-model pairwise-Jaccard metric for §18 compliance-theatre detection. Module ready; runner integration pending.
@@ -2396,7 +2396,7 @@ by script.
 
 **What landed (code scaffold, zero behaviour change):**
 
-- `bench/reference_runner_v2.py` — 4,344-line pristine copy of
+- `bench/reference_runner_v3.py` — 4,344-line pristine copy of
   `reference_runner.py`. Ready for in-place fixes. The Exp 39 runner
   `reference_runner.py` is UNTOUCHED per founder directive and stays
   frozen until v2 is tested and explicitly promoted.
@@ -2436,7 +2436,7 @@ tests. Effort reduced vs original plan by ~4 items.
    `reference_runner.py:~3741` moved to v2). Physics/chemistry/
    engineering built functional in shadow, not placeholder; promotion
    gated on empirical data from experiments 41 onwards.
-4. Runner evolves in place. Single `reference_runner_v2.py`. No forks.
+4. Runner evolves in place. Single `reference_runner_v3.py`. No forks.
    `reference_runner.py` frozen until founder decision to supersede.
 5. Ouroboros principle governs: each experiment's runner = previous
    experiment's runner + previous experiment's lessons.

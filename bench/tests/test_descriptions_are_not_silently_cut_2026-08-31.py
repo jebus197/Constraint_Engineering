@@ -77,7 +77,7 @@ class TestACutIsDeclared:
     def test_the_limit_matches_what_registration_keeps(self):
         """Keeping more here than registration stores would just be lost."""
         src = (pathlib.Path(__file__).resolve().parents[1]
-               / "reference_runner_v2.py").read_text(encoding="utf-8")
+               / "reference_runner_v3.py").read_text(encoding="utf-8")
         assert "finding.description[:2000]" in src, (
             "registration's own cap moved; _DESCRIPTION_LIMIT should follow it"
         )

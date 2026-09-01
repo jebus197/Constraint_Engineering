@@ -34,7 +34,7 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     CRITICAL_SEVERITY_THRESHOLD,
     FindingRegistry,
     RunnerConfig,
@@ -372,7 +372,7 @@ class TestVerdictReaderHygiene:
 
 class TestPostConvergenceSweep:
     def _run(self, monkeypatch, reg, response, sweep_rounds=2, reverify="CONFIRMED"):
-        import bench.reference_runner_v2 as rv2
+        import bench.reference_runner_v3 as rv2
         import bench.falsifier_verify as fv
         calls = []
         def fake_dispatch(mc, prompt, system, enable_tools=False):
@@ -388,7 +388,7 @@ class TestPostConvergenceSweep:
         return stats, calls
 
     def test_disabled_is_noop(self, monkeypatch):
-        import bench.reference_runner_v2 as rv2
+        import bench.reference_runner_v3 as rv2
         reg = FindingRegistry()
         _register(reg, "F030", 0.4, "OPEN")
         cfg = RunnerConfig(post_convergence_sweep_rounds=0)

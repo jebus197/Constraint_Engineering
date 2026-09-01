@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from bench.reference_runner_v2 import _VERDICT_RE, _parse_verdicts
+from bench.reference_runner_v3 import _VERDICT_RE, _parse_verdicts
 
 
 def _match(line: str):

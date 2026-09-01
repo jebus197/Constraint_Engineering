@@ -32,7 +32,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     parse_search_replace_blocks,
     apply_fix_blocks,
 )
@@ -44,7 +44,7 @@ CLEANED = OUT_DIR / "_feedback_cleaned.py"
 REPORT_OUT = OUT_DIR / "collation_report.json"
 
 RUNNER_BASENAMES = {
-    "reference_runner_v2.py", "runner_core.py", "immune_agents.py",
+    "reference_runner_v3.py", "runner_core.py", "immune_agents.py",
     "insect_brain.py", "decomposed_dispatch.py", "merge_arbitration.py",
     "evidence.py", "endocrine.py", "experiment_11_orchestrator.py",
     "composer.py", "_sk_format.py",

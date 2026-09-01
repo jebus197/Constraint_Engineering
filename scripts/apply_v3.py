@@ -2,7 +2,7 @@
 """Apply the ten composed patches to the working tree, making v3.
 
 v3 IS A DIRECT DERIVATION OF v2, NOT A REBUILD. Founder instruction, 2026-08-23.
-The file keeps its name: `reference_runner_v2.py` is imported by configs, tests and
+The file keeps its name: `reference_runner_v3.py` is imported by configs, tests and
 launchers, and renaming it would change the blast radius from "ten patches" to
 "every import in the project" for no gain. The VERSION is metadata, and it lands in
 each run's report, which is where a reader actually needs it.
@@ -120,7 +120,7 @@ def main() -> int:
         applied.append(tid)
         print(f"  {tid} applied: {sorted({p[0] for p in patches})}")
 
-    runner = REPO / "bench/reference_runner_v2.py"
+    runner = REPO / "bench/reference_runner_v3.py"
     src = runner.read_text(encoding="utf-8")
     if src.count(MARKER) != 1:
         _restore(touched)
@@ -129,7 +129,7 @@ def main() -> int:
     if "RUNNER VERSION v3" in src:
         print("  version banner already present; not duplicating")
     else:
-        touched.setdefault("bench/reference_runner_v2.py", src)
+        touched.setdefault("bench/reference_runner_v3.py", src)
         runner.write_text(src.replace(MARKER, BANNER, 1), encoding="utf-8")
         print("  version banner written: v3")
 

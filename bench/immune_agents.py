@@ -43,7 +43,7 @@ from bench.live_dispatch_policy import live_dispatch_allowed
 
 try:  # pragma: no cover - the fallback only fires on a bare-path import
     from bench.bugzilla_loop import is_python_target
-except ImportError:  # reference_runner_v2 imports siblings without the package
+except ImportError:  # reference_runner_v3 imports siblings without the package
     from bugzilla_loop import is_python_target  # type: ignore[no-redef]
 
 

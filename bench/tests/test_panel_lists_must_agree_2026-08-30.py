@@ -24,9 +24,9 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R   # noqa: E402
+import reference_runner_v3 as R   # noqa: E402
 
-SRC = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 
 
 def _run_body() -> str:

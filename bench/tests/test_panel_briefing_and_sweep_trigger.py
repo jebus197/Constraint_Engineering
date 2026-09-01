@@ -1,6 +1,6 @@
 """Two things the panel and the ledger were told that were no longer true.
 
-1. THE PANEL BRIEFING (reference_runner_v2.py ~1217)
+1. THE PANEL BRIEFING (reference_runner_v3.py ~1217)
    Every model, every round, was told: a parseable proposed_fix is applied to a
    sandbox copy, ruff + mypy + bandit + the test suite are run, and on a clean
    pass the finding transitions to CLOSED. On a prose target none of that
@@ -10,7 +10,7 @@
    it would reasonably conclude that writing a good fix is the route to closure.
    It is not. On a prose target the route is a runnable falsifier.
 
-2. THE SWEEP TRIGGER (reference_runner_v2.py ~8544)
+2. THE SWEEP TRIGGER (reference_runner_v3.py ~8544)
    The residual-clearing sweep was gated on `converged`, so the cleaner was off
    in exactly the runs whose residual ledger is worst. Exp 53 halted at round 3
    of 16 with 20 of 40 findings escalated, and `post_convergence_sweep_rounds: 2`
@@ -26,14 +26,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     TARGET_KIND_PROSE,
     TARGET_KIND_PYTHON,
     Finding,
     FindingRegistry,
 )
 
-RUNNER = Path(__file__).resolve().parents[1] / "reference_runner_v2.py"
+RUNNER = Path(__file__).resolve().parents[1] / "reference_runner_v3.py"
 
 
 def _registry(kind: str) -> FindingRegistry:

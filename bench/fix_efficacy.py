@@ -98,7 +98,7 @@ def _overlay_verdict(target_rel: str, content: str, falsifier_code: str,
     repo paths `_retarget_falsifier` rewrote, and it is load-bearing: see
     `_is_intercepted`.
     """
-    from reference_runner_v2 import _build_discrimination_overlay, _retarget_falsifier
+    from reference_runner_v3 import _build_discrimination_overlay, _retarget_falsifier
     from falsifier_verify import reverify_falsifier
 
     overlay = _build_discrimination_overlay(repo_root, target_rel, content)
@@ -126,7 +126,7 @@ def probe(finding: dict, target_rel: str, *,
     The order matters: 1 and 2 are the two ways a sound fix could be falsely
     condemned, and both are checked BEFORE any verdict can be produced.
     """
-    from reference_runner_v2 import DISC_TRIPWIRE_BODY, DISC_TRIPWIRE_TOKEN
+    from reference_runner_v3 import DISC_TRIPWIRE_BODY, DISC_TRIPWIRE_TOKEN
     from endocrine import _apply_fix_to_source
 
     root = repo_root or REPO_ROOT

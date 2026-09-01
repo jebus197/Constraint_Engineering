@@ -75,7 +75,7 @@ exfiltration channel that made Exp 48 expensive.
 **A rejection is a THIRD OUTCOME, not a verdict.** :func:`reverify_falsifier`
 returns :data:`INTEGRITY_VIOLATION` — never CONFIRMED, never REFUTED. The
 finding is neither closed nor dropped. At the runner's gate
-(``reference_runner_v2.apply_falsifier_verdicts``) any verdict that is not
+(``reference_runner_v3.apply_falsifier_verdicts``) any verdict that is not
 CONFIRMED, and not a REFUTED sub-critical, falls to the escalation branch, so an
 integrity rejection sets ``escalated`` and goes to a human. Every rejection also
 prints a banner to stderr quoting the matched text, and is appended to

@@ -25,7 +25,7 @@ from types import SimpleNamespace
 import pytest
 
 from bench.launcher_core import build_runner_config_from_dict
-from bench.reference_runner_v2 import RunnerConfig
+from bench.reference_runner_v3 import RunnerConfig
 
 REPO = Path(__file__).resolve().parents[2]
 BASE = {"experiment_name": "t", "models": ["CC2"], "test_article": "x.md"}
@@ -43,7 +43,7 @@ def _discover_aliases() -> set[tuple[str, str]]:
     for new, old in _LAUNCHER_ALIAS.findall(src):
         if new != old:
             found.add((old, new))
-    src2 = (REPO / "bench/reference_runner_v2.py").read_text()
+    src2 = (REPO / "bench/reference_runner_v3.py").read_text()
     for old, new in _FROMDICT_ALIAS.findall(src2):
         if new != old:
             found.add((old, new))

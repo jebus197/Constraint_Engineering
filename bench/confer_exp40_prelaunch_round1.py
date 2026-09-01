@@ -231,7 +231,7 @@ rounds.
 
 3. **1E.10 runtime call-site assertion**: wrapper `compute_rk_with_eta_channel`
    exists and passes tests, but the production call site at
-   `reference_runner_v2.py:3510` still calls the bare `compute_rk`. Reason:
+   `reference_runner_v3.py:3510` still calls the bare `compute_rk`. Reason:
    `m_div` does not currently flow into `compute_rk` — that wiring is
    deferred to Exp 54 (2×2 factorial attribution). Activating the wrapper
    now would produce a dead assertion.
@@ -249,7 +249,7 @@ rounds.
 
 6. **Cross-domain diversity metric + cross-round recidivism**: both are
    populated every round but remain log-only (see
-   `reference_runner_v2.py:4473` code comment). Folding them into scoring
+   `reference_runner_v3.py:4473` code comment). Folding them into scoring
    or admissibility would require Exp 54 attribution + explicit calibration.
 """
 

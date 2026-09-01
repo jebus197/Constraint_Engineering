@@ -12,7 +12,7 @@ preservation" as a standing policy and used it as the decisive argument
 on several questions. The policy was invalid: it conflated
 reference_runner.py (v1, retained on disk as historical reference to the
 first Exp-38 demonstration of the full Stage 6 mathematical model) with
-reference_runner_v2.py (v2, 4922 lines, the actual Exp 40 runner, actively
+reference_runner_v3.py (v2, 4922 lines, the actual Exp 40 runner, actively
 extended through Phase A commit 8b8682d and Phase B commit bdfc93a).
 
 This audit asks four narrow questions under corrected framing. All five
@@ -96,7 +96,7 @@ The correct facts are:
    mathematical model. It is NOT the Exp 40 runner. It has no
    preservation policy attached to it.
 
-2. `bench/reference_runner_v2.py` (v2, 4922 lines) IS the Exp 40 runner.
+2. `bench/reference_runner_v3.py` (v2, 4922 lines) IS the Exp 40 runner.
    It is NOT frozen. It has been actively extended through:
    - Phase A (commit 8b8682d, 14 April): 1D.5, 1D.6, 1E.6, 1E.7, 1E.10
      library-form wrapper (98 tests).
@@ -106,7 +106,7 @@ The correct facts are:
 3. Exp 40's real acceptance criterion per `bench/exp40_configs/40_gate.json`:
    `"pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel
    CRITICAL findings). Gamma-alt implemented in
-   reference_runner_v2._check_gamma_alt_convergence."`
+   reference_runner_v3._check_gamma_alt_convergence."`
    Additional logged signals: all 5 models parseable with R_k, R_k adoption
    ≥ 80% across models, §17 and §18 admissibility rates logged.
 
@@ -210,7 +210,7 @@ Three items were flagged as outstanding before Exp 40 launch:
       on every claim because the subprocess init sets
       `global_dict={'__builtins__': {}}`, which prevents SymPy from
       constructing Integer literals).
-  (b) 1E.10 runtime wrapper activation at `reference_runner_v2.py:3510`
+  (b) 1E.10 runtime wrapper activation at `reference_runner_v3.py:3510`
       (replace bare `compute_rk` with `compute_rk_with_eta_channel`, m_div
       = 1.0 hardcoded until Exp 54's `eta_int_modulator` wiring).
   (c) K/L/M specialist cell live-promotion (extending LIVE_SPECIALIST_DOMAINS

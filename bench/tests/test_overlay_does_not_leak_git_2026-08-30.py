@@ -27,7 +27,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from reference_runner_v2 import _build_discrimination_overlay   # noqa: E402
+from reference_runner_v3 import _build_discrimination_overlay   # noqa: E402
 from bench.canary_seeding import _in_a_git_worktree             # noqa: E402
 
 TARGET = "bench/evidence.py"

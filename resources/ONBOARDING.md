@@ -42,7 +42,7 @@ Seven rules the founder has named load-bearing. They apply across every session,
 Every shadow or promoted component is described by exactly one of four closure-state labels. The lexicon removes ambiguity when new reviewers ask whether a feature is "done" — "done" alone is underspecified; the label names which layer is done.
 
 - **library_complete.** Code exists and is correct on its own terms — it parses, imports, and has pytest coverage for its documented public surface. It is NOT yet hooked into any live pipeline, runner, or dispatch path. Example: a draft specialist tool file that passes its own unit tests but is not wired into `tool_manifest.toml`.
-- **tripwire.** Code is present in the live or dev/CI pipeline and is observation-only by default — off, or on-emit-only — but becomes assertive (halts the run, blocks the gate, or otherwise drives an outcome) when an explicit flag (environment variable, config key, or CLI option) is set. Distinguished from `library_complete` because the code IS hooked into a pipeline path; distinguished from `shadow_integrated` because its activated behaviour can drive run-level outcomes rather than just emit observations. Example: F3 `DEBUG_CHANNEL_CHECK` at `bench/reference_runner_v2.py:3510` — production default is no-op, but when `DEBUG_CHANNEL_CHECK=1` is set the assertion compares the wrapped `compute_rk_with_eta_channel(...)` output against an independently computed bare `compute_rk(...)` output and raises `AssertionError` (halting the run) on mismatch beyond 1e-9. *Added 2026-05-13 per Round 3 4/5 convergence — relieves edge-case pressure on F3-style flag-gated tripwires.*
+- **tripwire.** Code is present in the live or dev/CI pipeline and is observation-only by default — off, or on-emit-only — but becomes assertive (halts the run, blocks the gate, or otherwise drives an outcome) when an explicit flag (environment variable, config key, or CLI option) is set. Distinguished from `library_complete` because the code IS hooked into a pipeline path; distinguished from `shadow_integrated` because its activated behaviour can drive run-level outcomes rather than just emit observations. Example: F3 `DEBUG_CHANNEL_CHECK` at `bench/reference_runner_v3.py:3510` — production default is no-op, but when `DEBUG_CHANNEL_CHECK=1` is set the assertion compares the wrapped `compute_rk_with_eta_channel(...)` output against an independently computed bare `compute_rk(...)` output and raises `AssertionError` (halting the run) on mismatch beyond 1e-9. *Added 2026-05-13 per Round 3 4/5 convergence — relieves edge-case pressure on F3-style flag-gated tripwires.*
 - **shadow_integrated.** Code is hooked into the live pipeline in an observation-only capacity. It runs on every relevant input, emits logs or metrics, and participates in audits, but its outputs do NOT drive verdicts, promotions, or gate decisions. Example: the K/L/M shadow-audit enrichment at `bench/immune_agents.py:5400-5428` (22 April 2026) — it records per-verdict detail for Round 2 RQ4 non-distortion measurement without altering runner behaviour.
 - **live_operational.** Code drives live decisions — its outputs affect verdicts, gates, or downstream state. Reversion requires an explicit policy change, not just a config flip. Example: the §17 feedback directive as of Exp 39; the §18 divergence directive as of Exp 39.
 
@@ -59,14 +59,14 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
 | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
 | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v2.py:3510` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:3510` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
 | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
 | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
 | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
 | B-Cell information-science specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/information_science.toml` | Exp 36 era |
 | Gate C admissibility-parser preflight | `bench/launch_exp40.py:gate_c_preflight()` | 2026-04-22 |
-| `RunnerConfig.max_open_crit_high` (default raised 0 → 5) | `bench/reference_runner_v2.py:259` (mirrored at `reference_runner.py:207`) | 2026-04-13 (Exp 39-0 fix) |
-| ν_k (nu_k) novelty metric, two-dimensional with c_ext | `bench/dm/_shadow_stage6.py` (calibrator) + `bench/reference_runner_v2.py` (consumer) | 2026-04-14 |
+| `RunnerConfig.max_open_crit_high` (default raised 0 → 5) | `bench/reference_runner_v3.py:259` (mirrored at `reference_runner.py:207`) | 2026-04-13 (Exp 39-0 fix) |
+| ν_k (nu_k) novelty metric, two-dimensional with c_ext | `bench/dm/_shadow_stage6.py` (calibrator) + `bench/reference_runner_v3.py` (consumer) | 2026-04-14 |
 | c_ext external coverage metric | `bench/dm/_shadow_stage6.py` noisy-OR combiner | 2026-04-14 |
 | Compelled-convergence star topology dispatch | `bench/cdsfl_registry/composer.py` + per-confer scripts | Round 1 plan review (2026-04-21) |
 
@@ -74,7 +74,7 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 
 | Component | Location | Shadow since | Flip trigger |
 |---|---|---|---|
-| Macrophage cell (patrol/self-check anomaly monitor) | `bench/macrophage_cell.py` (instantiated `bench/reference_runner_v2.py:3438`, observed `:3544`) — **re-tiered + location corrected 2026-06-10**: tool-verified that `immune_agents.py` contains no macrophage code and the cell's output reaches no live decision (advisory-only, `pipeline_modified=False` hard-set; flows only into shadow telemetry + the shadow ouroboros). Previously mis-indexed live_operational at "`immune_agents.py` macrophage section". | Exp 36 era (mis-labelled until 2026-06-10) | Exp 43 (it is the Exp 43 TARGET) + founder decision: minimal-promote (HIL-flag on a high-severity anomaly) or formally retire-as-cosmetic |
+| Macrophage cell (patrol/self-check anomaly monitor) | `bench/macrophage_cell.py` (instantiated `bench/reference_runner_v3.py:3438`, observed `:3544`) — **re-tiered + location corrected 2026-06-10**: tool-verified that `immune_agents.py` contains no macrophage code and the cell's output reaches no live decision (advisory-only, `pipeline_modified=False` hard-set; flows only into shadow telemetry + the shadow ouroboros). Previously mis-indexed live_operational at "`immune_agents.py` macrophage section". | Exp 36 era (mis-labelled until 2026-06-10) | Exp 43 (it is the Exp 43 TARGET) + founder decision: minimal-promote (HIL-flag on a high-severity anomaly) or formally retire-as-cosmetic |
 | K/L/M shadow-audit logging | `bench/immune_agents.py:5400-5428` (fix at lines 5411-5421 on 2026-04-22) | 2026-04-21 (corrected 2026-04-22) | Exp 51 (K), Exp 52 (L), Exp 53 (M); per-domain non-distortion check against `bench/exp40_configs/40_gate.json` `pass_condition` across Exp 40–50 rounds |
 | Stage 6 query-quality calibrator | `bench/dm/_shadow_stage6.py` | 2026-04-14 | Exp 50 (Stage 6 self-referential calibration experiment) |
 | B-Cell physics specialist (K, shadow) | dispatch entry pending in `LIVE_SPECIALIST_DOMAINS`; tools routed per `domains/immune/physics.toml` | Exp 36 tranche | Exp 51 |
@@ -85,7 +85,7 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 
 | Component | Location | Tripwire since | Flag | Assertive behaviour |
 |---|---|---|---|---|
-| F3 `DEBUG_CHANNEL_CHECK` assertion | `bench/reference_runner_v2.py:3510` | 2026-05-13 (relabelled from `library_complete` per Round 3 4/5 convergence) | env var `DEBUG_CHANNEL_CHECK=1` | Compares wrapped `compute_rk_with_eta_channel` output against an independently computed bare `compute_rk` output; raises `AssertionError` (halts the run) on mismatch beyond 1e-9. Production default is no-op. |
+| F3 `DEBUG_CHANNEL_CHECK` assertion | `bench/reference_runner_v3.py:3510` | 2026-05-13 (relabelled from `library_complete` per Round 3 4/5 convergence) | env var `DEBUG_CHANNEL_CHECK=1` | Compares wrapped `compute_rk_with_eta_channel` output against an independently computed bare `compute_rk` output; raises `AssertionError` (halts the run) on mismatch beyond 1e-9. Production default is no-op. |
 
 **library_complete** (code present and tested, not in any live, shadow, or tripwire path):
 
@@ -528,9 +528,9 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 
   **G3 — Stage 6 query-quality calibrator test harness at `bench/dm/_shadow_stage6.py`.** No fix needed; the 14 April two-dimensional design is intact, identities hold, HARD 6 framing preserved. Regression: `bench/tests/test_shadow_stage6_calibrator.py` (18 new tests, 6 classes, SymPy-verified `δ = η · c_ext · (1 − ν_k)` delta identity via `sp.simplify(delta_code − delta_closed) == 0`, noisy-OR combiner `c_ext_raw = 1 − (1 − c_s1)(1 − c_s2)` at 0.65 for (0.5, 0.3), frequency-scaling monotonicity and C_MAX saturation, epistemic-tagging boundaries, 0.76 s). Unblocks Exp 50 self-referential Stage 6 calibration.
 
-  **G4 — `open_crit_high_count()` REOPENED-status regression at `bench/reference_runner_v2.py:454`.** No fix needed; existing `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal already handles REOPENED correctly (v1 and v2 byte-identical at baseline). Regression: `bench/tests/test_open_crit_high_count_v2.py` (11 new tests, 4 classes, behavioural + purity + signature + AST source-truth). Signature pin uses `typing.get_type_hints` to resolve deferred annotations (v2 uses `from __future__ import annotations`).
+  **G4 — `open_crit_high_count()` REOPENED-status regression at `bench/reference_runner_v3.py:454`.** No fix needed; existing `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal already handles REOPENED correctly (v1 and v2 byte-identical at baseline). Regression: `bench/tests/test_open_crit_high_count_v2.py` (11 new tests, 4 classes, behavioural + purity + signature + AST source-truth). Signature pin uses `typing.get_type_hints` to resolve deferred annotations (v2 uses `from __future__ import annotations`).
 
-  **G5 — `contested_count()` grace-period regression at `bench/reference_runner_v2.py:464`.** No fix needed; parameter is respected (function body at lines 481 and 494 both use it). Three call-sites (lines 1019, 1135, 1214-1215) use default implicitly — not a defect for launch, but a latent wiring gap if any future sweep experiment needs non-default values. Regression: `bench/tests/test_contested_count_v2.py` (10 new tests, 4 classes, behavioural at boundaries + signature + AST default + call-site purity, 0.82 s). Adjacent observation logged: parallel hardcoded `grace_period = 2` at `reference_runner_v2.py:829` inside `_update_finding_statuses` will surface when the G-list is re-reviewed post-launch.
+  **G5 — `contested_count()` grace-period regression at `bench/reference_runner_v3.py:464`.** No fix needed; parameter is respected (function body at lines 481 and 494 both use it). Three call-sites (lines 1019, 1135, 1214-1215) use default implicitly — not a defect for launch, but a latent wiring gap if any future sweep experiment needs non-default values. Regression: `bench/tests/test_contested_count_v2.py` (10 new tests, 4 classes, behavioural at boundaries + signature + AST default + call-site purity, 0.82 s). Adjacent observation logged: parallel hardcoded `grace_period = 2` at `reference_runner_v3.py:829` inside `_update_finding_statuses` will surface when the G-list is re-reviewed post-launch.
 
   **G9 — F4 closure-state lexicon applied.** New `## Closure-State Lexicon (F4, locked 21 April 2026)` section added to this file between Standing Rules and Current State, naming `library_complete` / `shadow_integrated` / `live_operational` with one-clause examples each, promotion-order rule (non-skipping), and pointer to shadow-promotion-now non-distortion bounding condition. Most load-bearing stale description corrected in situ on line 51: K/L/M shadow-audit field list rewritten from pre-compaction `claim_id, severity` to real `CellVerdict` fields with explicit "22 April 2026 correction" note and `shadow_integrated` label. Full retroactive labelling of remaining ~40 shadow mentions not attempted (forward-going discipline applies).
 
@@ -549,9 +549,9 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 
   **F1 — SymPy sandbox allow-list.** `bench/immune_agents.py:977`. Pre-existing bug: `global_dict={'__builtins__': {}}` caused every SymPy verdict to return UNCERTAIN. Fix expands allow-list (Integer, Float, Rational, Symbol, Add, Mul, Pow, pi, E, oo, sqrt, Eq, Gt, Lt, Ge, Le, log, exp) while keeping `__builtins__` empty for RCE blocklist preservation. Four regression tests added under `TestSympyF1SandboxAllowList` — 4/4 passed in 7.70s.
 
-  **F2 — 1E.10 wrapper activation (identity mode).** `bench/reference_runner_v2.py:3510` now calls `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)` instead of bare `compute_rk`. At identity parameters the wrapper reduces mathematically to the bare form; verified across 1620 parameter combinations within 1e-9 in the 2026-04-20 re-audit, plus 567 triples via new `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped from `false` to `true`.
+  **F2 — 1E.10 wrapper activation (identity mode).** `bench/reference_runner_v3.py:3510` now calls `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)` instead of bare `compute_rk`. At identity parameters the wrapper reduces mathematically to the bare form; verified across 1620 parameter combinations within 1e-9 in the 2026-04-20 re-audit, plus 567 triples via new `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped from `false` to `true`.
 
-  **F3 — Debug channel assertion.** `bench/reference_runner_v2.py:3510`. Gated by `DEBUG_CHANNEL_CHECK` environment variable. When set, computes the bare `compute_rk` independently and asserts the wrapped result matches within 1e-9. Production default: no-op.
+  **F3 — Debug channel assertion.** `bench/reference_runner_v3.py:3510`. Gated by `DEBUG_CHANNEL_CHECK` environment variable. When set, computes the bare `compute_rk` independently and asserts the wrapped result matches within 1e-9. Production default: no-op.
 
   **K/L/M shadow-audit enrichment.** `bench/immune_agents.py:5400-5428`. Shadow-specialist log statement previously recorded only verdict count; now records per-verdict structured detail (`finding_id`, `verdict`, `confidence`, `tool_used`, 256-char evidence excerpt) serialised to JSON. *22 April 2026 correction:* the pre-compaction draft used `claim_id` and `severity` which are NOT `CellVerdict` dataclass fields and resolved to `None`, halving the Round 2 RQ4 non-distortion signal. The fix at `bench/immune_agents.py:5411-5421` restores binding to the real fields. Regression pinned by `bench/tests/test_shadow_audit_klm.py` (11 tests, AST schema + field binding + behaviour + log format). Closure-state label: **shadow_integrated** (logging landed, live flip pending non-distortion measurement). This is step 1 of the Round 2 RQ4 bounding condition — measurement of non-distortion vs `40_gate.json` pass_condition proceeds across Exp 40–50 rounds before the `LIVE_SPECIALIST_DOMAINS` frozenset flip at `bench/immune_agents.py:334`. Each domain flips independently at its specialist experiment (K at Exp 51, L at Exp 52, M at Exp 53) if non-distortion holds.
 
@@ -652,7 +652,7 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
   - `experimental_notes/Exp40_Runner_Audit_2026-04-17.md` — shadow-log
     audit (12 files from Exp 39-0) + item-by-item verification of Part 1
     against current code
-  - `bench/reference_runner_v2.py` — pristine 4,344-line copy of
+  - `bench/reference_runner_v3.py` — pristine 4,344-line copy of
     `reference_runner.py`, ready for in-place fixes
 
   **Significant finding during audit:** the plan's P0 backlog is
@@ -673,7 +673,7 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
     promoted shadow → live for Exp 40; physics/chemistry/engineering
     built functional in shadow, promotion gated on empirical data from
     Exp 41 onwards
-  - Runner evolves in place (single `reference_runner_v2.py`, no forks);
+  - Runner evolves in place (single `reference_runner_v3.py`, no forks);
     `reference_runner.py` stays frozen until v2 is tested and explicitly
     promoted by founder decision
   - No preferred scientific outcome: Popperian interpretive analysis
@@ -1159,7 +1159,7 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
   `bench/dm/_convergence.py`, `bench/dm/_divergence.py`, `bench/evidence.py`,
   `bench/dm/_memory.py`, `bench/dm/_shadow_stage6.py`, `bench/immune_agents.py`
   macrophage subsection, `bench/cdsfl_registry/composer.py`, and
-  `bench/reference_runner_v2.py` as Exp 54 meta-test candidate).
+  `bench/reference_runner_v3.py` as Exp 54 meta-test candidate).
 
   **Strand 1 — Consolidated plan for Experiments 40 through 54.** Produced
   `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` folding
@@ -1233,7 +1233,7 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 
   **Strand 1 — Exp 40 pre-launch panel audit.** Five-model panel (Codex GPT-5.4,
   Gemini 3.1 Pro, ChatGPT GPT-5.4, CC2 Opus 4.6, DeepSeek R1) re-audited against
-  `bench/reference_runner_v2.py` under corrective framing anchored on
+  `bench/reference_runner_v3.py` under corrective framing anchored on
   `bench/exp40_configs/40_gate.json` pass-condition plus Stage 6 orthogonality.
   An earlier audit round was reverted on founder instruction after a "v1
   preservation" misframing inflated blast radius. Artefacts:
@@ -2537,7 +2537,7 @@ Constraint_Engineering/
     EXTENDED_RATIONALE.md     -- General-audience companion
     MATHEMATICAL_APPENDIX.md  -- Mathematical extensions
   bench/
-    reference_runner_v2.py    -- ACTIVE runner, Exp 40-54 (9,097 lines)
+    reference_runner_v3.py    -- ACTIVE runner, Exp 40-54 (9,097 lines)
     reference_runner.py       -- FROZEN v1 baseline, Exp 38/39 (4,344 lines)
     launch_exp42.py           -- shared launcher for the whole Exp 40-54 arc
                                  (name is historical, not Exp-42-specific)
@@ -2684,7 +2684,7 @@ state, then quality control.
 1. Run `python3 scripts/cdsfl_recover.py`. It measures state live rather than
    restating it, and prints, in order: a FIRST READ block naming the canonical
    tracker and the live work queue; a RUNNING NOW block that scans every process
-   against `/reference_runner_v2|detached_launch|launch_exp/` plus `/tmp` pidfiles,
+   against `/reference_runner_v3|detached_launch|launch_exp/` plus `/tmp` pidfiles,
    and distinguishes "nothing is running" from "the check failed"; and the true git
    state. Read its FIRST READ block before anything else in this document.
 2. Read `experimental_notes/CDSFL_Agent_Operational_Plan.md` — the canonical
@@ -2699,7 +2699,7 @@ state, then quality control.
 If you want the running-experiment check by hand rather than through the script:
 
 ```bash
-ps aux | grep -E "reference_runner_v2|detached_launch|launch_exp" | grep -v grep
+ps aux | grep -E "reference_runner_v3|detached_launch|launch_exp" | grep -v grep
 ls -l /tmp/exp*_launch*.pid 2>/dev/null
 ```
 
@@ -2710,7 +2710,7 @@ failed one — which is exactly why the script is preferred: it says which.
 `ps aux | grep run_round_robin` and `tail -30 bench/logs/$(ls -t bench/logs/ | head -1)`.
 Neither could do what it claimed. The first matches only `bench/run_round_robin.py`,
 the Bench Run 1 driver; the Experiment 40–54 arc has run on
-`bench/reference_runner_v2.py` via `bench/launch_exp42.py` for months, launched
+`bench/reference_runner_v3.py` via `bench/launch_exp42.py` for months, launched
 detached through `bench/detached_launch.sh`, so the old check returned silence during
 a live arc run and read as an authoritative "nothing is running". The correct
 predicate is the one given above, and `scripts/cdsfl_recover.py` runs both halves of
@@ -2744,7 +2744,7 @@ python3 bench/launch_exp42.py \
 
 `bench/launch_exp42.py` is the shared launcher for the whole Experiment 40–54 arc;
 the name is historical and is not specific to Experiment 42. It drives
-`bench/reference_runner_v2.py`. Target for this run: `bench/dm/_shadow_stage6.py`.
+`bench/reference_runner_v3.py`. Target for this run: `bench/dm/_shadow_stage6.py`.
 Caps: 16 rounds, 21,600 s. `.env` is read by the launcher itself
 (`bench/launcher_core.py:53`), so no `source` step is needed.
 

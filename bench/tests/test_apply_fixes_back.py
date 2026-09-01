@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 
 
 class _Cfg:

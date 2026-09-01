@@ -101,7 +101,7 @@ _SYSTEM_TEMPLATE = (
 # reintroduced here on 2026-08-22: DeepSeek has no tool loop on its API route, read
 # "USE YOUR TOOLS", and hallucinated a <tool_calls> block instead of answering.
 _TOOLS_YES = (
-    "USE YOUR TOOLS, AND USE grep FIRST. bench/reference_runner_v2.py is 10,510 lines "
+    "USE YOUR TOOLS, AND USE grep FIRST. bench/reference_runner_v3.py is 10,510 lines "
     "and 527,304 characters; read_file returns at most 24,000 characters, so paging it "
     "whole would exhaust your budget before you reach the code. grep for the symbol "
     "named in the task, then read_file the surrounding 200 lines -- read_file returns "
@@ -150,7 +150,7 @@ def dispatch(tag: str, model_id: str, route: str, prompt: str, timeout: int = 18
              parent: str = "HEAD") -> str:
     if route == "claude_cli":
         # SANDBOXED. The Claude CLI route grants Bash, and BASH IS A SUPERSET OF
-        # WRITE. On 2026-08-22 a model working T01 edited bench/reference_runner_v2.py
+        # WRITE. On 2026-08-22 a model working T01 edited bench/reference_runner_v3.py
         # in the live tree instead of returning a patch, and a blanket `git add -A`
         # committed 157 lines of unreviewed, ungated code under a commit message that
         # did not mention it. The 2026-07-29 ruling "remove Write/Edit from panel

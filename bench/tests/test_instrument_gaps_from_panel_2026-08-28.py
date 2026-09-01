@@ -19,7 +19,7 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
-from bench.reference_runner_v2 import check_sk_threshold   # noqa: E402
+from bench.reference_runner_v3 import check_sk_threshold   # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -60,7 +60,7 @@ def test_challenge_votes_are_read_from_the_verdict_list():
     contested count would under-report, and gate condition (c) would open early
     on evidence that was never actually uncontested.
     """
-    src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+    src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
     fn = next(n for n in ast.walk(ast.parse(src))
               if isinstance(n, ast.FunctionDef) and n.name == "_update_finding_statuses")
 
@@ -110,7 +110,7 @@ def test_no_skip_guard_calls_the_code_it_guards():
     # Names DEFINED in the runner, not merely imported into it. `dir(rr)` also
     # returns re-exports such as `Path`, which made legitimate file-presence
     # guards look like calls into project logic.
-    runner = ast.parse((REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8"))
+    runner = ast.parse((REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8"))
     owned = {n.name for n in runner.body
              if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
     offenders = []

@@ -23,7 +23,7 @@ of every gate, so no gate arrangement can route around it — and the γ-alt
 checker no longer refuses convergence on this condition, because a silent veto
 is the behaviour that got it turned off.
 """
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 from bench.dm._types import Finding
 
 

@@ -1660,7 +1660,7 @@ Covering the experiments numbered thirty to forty-nine, each with its own entry 
 **Two gamma series, and only one of them is the gate.** This project has twice confused these two numbers, so every figure below is labelled with the series it came from:
 
 - **γ_all** — the last value of `gamma_history`. Computed over **all** findings regardless of severity. It is telemetry. It is **not** the convergence gate's input, and several convergence-reason strings in these reports say so explicitly ("reported only", "telemetry").
-- **γ_crit** — the last value of `gamma_critical_history`. Computed over **critical** findings only, critical meaning severity ≥ 0.70 (`CRITICAL_SEVERITY_THRESHOLD` in `bench/reference_runner_v2.py`). This is the series the two-sided convergence gate reads.
+- **γ_crit** — the last value of `gamma_critical_history`. Computed over **critical** findings only, critical meaning severity ≥ 0.70 (`CRITICAL_SEVERITY_THRESHOLD` in `bench/reference_runner_v3.py`). This is the series the two-sided convergence gate reads.
 
 `gamma_critical_history` **does not exist in any report before Experiment 42.** Where it is absent, the entry below says `ABSENT` and quotes no substitute. Substituting γ_all for γ_crit is precisely the error this labelling exists to prevent: in Experiment 45 the two differ by an order of magnitude and sit on opposite sides of the gate threshold.
 

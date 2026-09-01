@@ -3,7 +3,7 @@
 WHY THIS EXISTS
 ---------------
 Founder ruling 2026-08-08 mandates the ``-SIM`` suffix on every simulated panel
-member. Two places in ``reference_runner_v2`` compared ``mc.label`` to the exact
+member. Two places in ``reference_runner_v3`` compared ``mc.label`` to the exact
 string ``"CC2"``, so honouring the naming rule would have DISABLED them:
 
   * ``_verify_batch_with_cc2`` returns ``{"skipped": True, "reason": "CC2 config
@@ -19,7 +19,7 @@ config.
 """
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 
 
 class TestBaseLabel:

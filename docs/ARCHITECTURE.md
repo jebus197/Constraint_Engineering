@@ -14,11 +14,11 @@ Two orthogonal Popperian arms sit at the centre of the design. The **severe-test
 
 ## Components
 
-### Runner (`bench/reference_runner_v2.py`, launched by `bench/launch_exp42.py`)
+### Runner (`bench/reference_runner_v3.py`, launched by `bench/launch_exp42.py`)
 
 The runner orchestrates a multi-round analysis session: it composes prompts, dispatches them to models, parses responses, feeds findings through the immune pipeline, updates the registry, evaluates convergence, and manages checkpoints. Common infrastructure lives in `runner_core.py` and `experiment_11_orchestrator.py`.
 
-`reference_runner_v2.py` (9,097 lines) has been the active runner for the Experiment 40–54 arc since 17 April 2026 and has driven every result from Experiment 40 onward. `reference_runner.py` (4,344 lines) is the frozen Experiment 38/39 baseline and is retained unchanged as a reference. Runs are launched through `bench/launch_exp42.py --config <config>` — a shared launcher for the whole arc whose name is historical, not Experiment-42-specific — which resolves the config, loads `.env`, and dispatches through `bench/launcher_core.py`. `bench/detached_launch.sh` wraps that in `nohup … & disown` for runs that must survive the terminal.
+`reference_runner_v3.py` (9,097 lines) has been the active runner for the Experiment 40–54 arc since 17 April 2026 and has driven every result from Experiment 40 onward. `reference_runner.py` (4,344 lines) is the frozen Experiment 38/39 baseline and is retained unchanged as a reference. Runs are launched through `bench/launch_exp42.py --config <config>` — a shared launcher for the whole arc whose name is historical, not Experiment-42-specific — which resolves the config, loads `.env`, and dispatches through `bench/launcher_core.py`. `bench/detached_launch.sh` wraps that in `nohup … & disown` for runs that must survive the terminal.
 
 Experiments 29–37 have their own standalone `bench/run_exp*.py` scripts. Those are the pre-April-2026 harnesses, retained as records; they hand-parse `sys.argv`, silently ignore unrecognised flags, and dispatch live on launch.
 
@@ -121,11 +121,11 @@ Two independent mechanisms run every round:
 
 **Stall detector**: Secondary signal. Checks static open / contested counts plus γ threshold. Two tiers: advisory (γ ≥ 0.30, log only) and terminate (γ ≥ 0.45, fires STALL_CONVERGED).
 
-**Two-sided critical-quiescence gate (the current terminal condition).** Since the Experiment 40 arc, the runner also evaluates a conjunctive gate over CRITICAL findings only. It fires when BOTH sides of the same diminishing-returns measure agree: `gamma_critical >= gamma_alt_threshold` (default 0.30 — the decay curve has flattened) AND a run of `gamma_alt_consecutive_zero_crit` consecutive rounds (default 3) in which no new genuine CRITICAL finding appeared, with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Both conditions are required; either alone is insufficient. Implemented at `bench/reference_runner_v2.py:2833-3035`. The exact pass condition for any run is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
+**Two-sided critical-quiescence gate (the current terminal condition).** Since the Experiment 40 arc, the runner also evaluates a conjunctive gate over CRITICAL findings only. It fires when BOTH sides of the same diminishing-returns measure agree: `gamma_critical >= gamma_alt_threshold` (default 0.30 — the decay curve has flattened) AND a run of `gamma_alt_consecutive_zero_crit` consecutive rounds (default 3) in which no new genuine CRITICAL finding appeared, with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Both conditions are required; either alone is insufficient. Implemented at `bench/reference_runner_v3.py:2833-3035`. The exact pass condition for any run is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
 
 One narrowing applies: where the cumulative critical count over the whole run is zero, the critical decay curve does not exist and `gamma_critical` returns 0.0 — numerically identical to the worst case, a constant arrival rate. That case converges on the count side alone, guarded by a requirement that the panel produced findings of *some* severity, and it is logged distinctly as `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate, VACUOUS CURVE)`. This narrows the estimator's domain; it does not weaken the gate.
 
-Termination states emitted by `reference_runner_v2.py`, verified 2026-08-07:
+Termination states emitted by `reference_runner_v3.py`, verified 2026-08-07:
 
 | State | When |
 |---|---|
@@ -299,7 +299,7 @@ A shelved component is quarantined, not deleted: it still imports, its tests sti
 
 Multi-objective constrained task allocation (Area 2 of dynamic management, reached through `DynamicManager.get_allocation` in `bench/dm/_manager.py`). Shelved on 2026-08-22 on three measured grounds:
 
-1. **It has never run outside its own tests.** `bench/reference_runner_v2.py`, the runner for the Experiment 40-54 arc, contains no reference to `LoadBalancer`, `Allocation` or `get_allocation`, and none of the helpers it imports from `bench/run_exp17_immune.py` reaches them. The 16 tests in `bench/tests/test_dynamic_management.py` are the only place it has executed.
+1. **It has never run outside its own tests.** `bench/reference_runner_v3.py`, the runner for the Experiment 40-54 arc, contains no reference to `LoadBalancer`, `Allocation` or `get_allocation`, and none of the helpers it imports from `bench/run_exp17_immune.py` reaches them. The 16 tests in `bench/tests/test_dynamic_management.py` are the only place it has executed.
 2. **It reports an impossible allocation as a success.** When no model can hold a task, the greedy solver force-assigns it past the F1 token limit and `solve()` still returns a normal `Allocation`; the violation surfaces only as a warning string.
 3. **Its self-description was false for four and a half months.** From 2 April 2026 the caller docstring claimed allocation used live capability fingerprints. The module reads no fingerprint at all — allocation depends only on token limits, costs, latency, role admissibility and current loads. Corrected 2026-08-22.
 

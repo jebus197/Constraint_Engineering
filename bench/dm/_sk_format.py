@@ -51,10 +51,10 @@ def check_sk_format_admissible(proposed_fix: str) -> Tuple[bool, str]:
     if not has_closer:
         return False, "missing '>>>>' closer at end of REPLACE"
 
-    # Late import to avoid reference_runner_v2 importing us at module load
+    # Late import to avoid reference_runner_v3 importing us at module load
     # creating a circular path.
     try:
-        from bench.reference_runner_v2 import parse_search_replace_blocks
+        from bench.reference_runner_v3 import parse_search_replace_blocks
     except ImportError:
         return True, ""  # structural markers present is sufficient for now
 

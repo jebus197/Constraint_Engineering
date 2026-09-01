@@ -199,7 +199,7 @@ def main() -> int:
               f"{'YES' if hasv else 'no '}   {n:>5}")
     print("      * it cannot speak to entries with NO tool verdict; those are M3's residual.")
     print("      * status-vs-verdict is not causation. What makes it more than correlation")
-    print("        is the ORDER IN THE CODE: reference_runner_v2 calls")
+    print("        is the ORDER IN THE CODE: reference_runner_v3 calls")
     print("        _update_finding_statuses (votes) and THEN apply_falsifier_verdicts,")
     print("        whose docstring reads 'Called AFTER _update_finding_statuses so the")
     print("        falsifier verdict wins'. The vote writes first and is overridden.\n")

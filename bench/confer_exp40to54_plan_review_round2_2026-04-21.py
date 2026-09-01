@@ -23,7 +23,7 @@ Framing anchors:
     - 15-experiment arc: 14 component studies (Exp 40-53) + 1 integration
       (Exp 54). Exp 54 is NEVER "the next experiment after Exp 40".
     - Reference runner v1 = bench/reference_runner.py (frozen Exp 38/39
-      historical baseline). Reference runner v2 = bench/reference_runner_v2.py
+      historical baseline). Reference runner v2 = bench/reference_runner_v3.py
       (4922 lines, active for Exp 40-54). Name v2 explicitly.
     - Cell types (DENDRITIC, CYTOTOXIC_T, B_CELL, NK_CELL, HELPER_T,
       REGULATORY_T) are dispatch units; tools (~20 entries in
@@ -120,7 +120,7 @@ Standing anchors (all apply unchanged from Round 1):
 1. `bench/exp40_configs/40_gate.json` acceptance criterion for Exp 40:
    `"pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0
    novel CRITICAL findings). Gamma-alt implemented in
-   reference_runner_v2._check_gamma_alt_convergence."`
+   reference_runner_v3._check_gamma_alt_convergence."`
 
 2. Stage 6 orthogonality (canonical). R_k measures VALIDITY, nu_k
    measures NOVELTY, c_ext measures SEARCH QUALITY. The three are
@@ -130,7 +130,7 @@ Standing anchors (all apply unchanged from Round 1):
 3. The "v1 preservation" framing (refuted 2026-04-20) is forbidden.
    `bench/reference_runner.py` is v1, frozen on disk ONLY as a
    historical baseline for the Exp 38/39 Stage 6 demonstration.
-   `bench/reference_runner_v2.py` is v2, 4922 lines, actively extended,
+   `bench/reference_runner_v3.py` is v2, 4922 lines, actively extended,
    and IS the Exp 40 runner through to Exp 54. Any argument that
    depends on v2 "preserving v1 behaviour" is invalid.
 
@@ -228,7 +228,7 @@ Per-RQ position summaries:
 ### RQ1 — Unaddressed fix against 40_gate.json
 - Gemini: NO — F1-F4 sufficient
 - Codex: YES — add live-path preflight for section-17 admissibility parser on bench/dm/_feedback.py
-- CC2: NO — F1-F4 sufficient (argued from codebase grounding: admissibility/divergence signal generation independent of F2 wrapper wiring; gamma-alt convergence path via reference_runner_v2._check_gamma_alt_convergence at line 1064 reads thresholds already present in 40_gate.json)
+- CC2: NO — F1-F4 sufficient (argued from codebase grounding: admissibility/divergence signal generation independent of F2 wrapper wiring; gamma-alt convergence path via reference_runner_v3._check_gamma_alt_convergence at line 1064 reads thresholds already present in 40_gate.json)
 - ChatGPT: NO — F1-F4 sufficient
 - DeepSeek: YES — add section-17 [VERIFY:current] flag handling and section-18 cosmetic-rewrite suppression
 Split: 3 NO / 2 YES.
@@ -507,7 +507,7 @@ one of five panel models in a compelled-convergence review. The hub
 models — you give YOUR position only.
 
 Your Round 1 positions were:
-- RQ1: NO — F1-F4 sufficient (argued from codebase grounding: admissibility/divergence signal generation independent of F2 wrapper wiring; gamma-alt convergence path via reference_runner_v2._check_gamma_alt_convergence at line 1064 reads thresholds already present in 40_gate.json)
+- RQ1: NO — F1-F4 sufficient (argued from codebase grounding: admissibility/divergence signal generation independent of F2 wrapper wiring; gamma-alt convergence path via reference_runner_v3._check_gamma_alt_convergence at line 1064 reads thresholds already present in 40_gate.json)
 - RQ2: NO — math-stats overlap is subcase of routing imbalance, caught at Exp 44 / Exp 49 integration
 - RQ3: YES conditional on Gate C Cell A integrity check — two-way ANOVA on round-level metrics
 - RQ4: CONDITIONALLY SAFE — F2 1e-9 regression gate plus Exp 49 cross-domain recalibration checkpoint

@@ -150,7 +150,7 @@ class TestRunnerWiring:
     must be gone (collision-safe fix landed)."""
 
     def test_runner_clears_accumulator_reference(self):
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         src = __import__("pathlib").Path(rr.__file__).read_text()
         assert "_feedback_mod._finding_id_collisions.clear()" in src, (
             "runner must clear the collision accumulator at "

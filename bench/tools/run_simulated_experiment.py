@@ -32,7 +32,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R                       # noqa: E402
+import reference_runner_v3 as R                       # noqa: E402
 from bench.tools import sim_dispatch_shim as SHIM     # noqa: E402
 
 #: Named with the mandatory ``-SIM`` suffix AT SOURCE (founder ruling
@@ -108,7 +108,7 @@ def main() -> int:
     # in module-level code guarded by `if not _shadow_log.handlers`, so setting
     # it after the first import of that module is a silent no-op -- the run would
     # look isolated and would not be. Measured 2026-08-31: importing
-    # reference_runner_v2 and sim_dispatch_shim leaves immune_agents unloaded, so
+    # reference_runner_v3 and sim_dispatch_shim leaves immune_agents unloaded, so
     # here is early enough. That is a fact about today's import graph, not a
     # guarantee, and one lazy import promoted to module level would break it
     # without a symptom. So import it HERE, while the variable is set, and read
@@ -274,7 +274,7 @@ def main() -> int:
     t0 = time.monotonic()
     try:
         # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).
-        # `system_prompt_path` is read ZERO times in reference_runner_v2 and
+        # `system_prompt_path` is read ZERO times in reference_runner_v3 and
         # runner_core -- the panel's directive arrives only via the composer, or
         # via THIS argument when the composer fails. Passing "" meant the loud
         # composer fallback handed a panellist NOTHING: Fable-SIM has no

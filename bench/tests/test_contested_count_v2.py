@@ -1,6 +1,6 @@
 """Tests for ``contested_count()`` grace_period parameter on runner v2.
 
-``bench/reference_runner_v2.py::FindingRegistry.contested_count`` is the
+``bench/reference_runner_v3.py::FindingRegistry.contested_count`` is the
 gate-input that decides whether a round's divergence-directive branch
 fires, and its ``grace_period`` parameter controls how long an
 UNCONFIRMED finding is still counted as contested (to avoid flicker when
@@ -24,7 +24,7 @@ These tests pin three things:
   future change moves it, call-sites that rely on the implicit default
   start producing different counts silently — this pin flags the move.
 * **Call-site purity.** For each call-site of ``contested_count`` in
-  ``reference_runner_v2.py``, AST-level source inspection confirms no
+  ``reference_runner_v3.py``, AST-level source inspection confirms no
   literal is passed as ``grace_period`` — every call uses the default.
   If a future caller starts passing an explicit literal, this pin
   surfaces it so the reviewer can decide whether that was intentional
@@ -51,10 +51,10 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import FindingRegistry
+from bench.reference_runner_v3 import FindingRegistry
 
 
-_V2_PATH = Path(_project_root) / "bench" / "reference_runner_v2.py"
+_V2_PATH = Path(_project_root) / "bench" / "reference_runner_v3.py"
 _EXPECTED_DEFAULT_GRACE = 2
 
 

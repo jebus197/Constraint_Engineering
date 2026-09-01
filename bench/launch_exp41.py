@@ -99,7 +99,7 @@ def main() -> int:
             print(f"    {k}: {v}")
         print(f"  Test cmd: {exp_cfg.get('test_cmd', '(unset)')}")
         print()
-        print("  Runner: bench/reference_runner_v2.py")
+        print("  Runner: bench/reference_runner_v3.py")
         print("  Launcher infra: bench/launcher_core.py")
         print("=" * 60)
         return 0

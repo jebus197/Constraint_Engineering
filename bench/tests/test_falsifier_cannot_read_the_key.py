@@ -360,13 +360,13 @@ def test_a_rejection_is_announced_and_recorded():
 def test_the_runner_gate_escalates_an_unrecognised_verdict():
     """The third outcome only works if the runner's gate fails closed on it.
 
-    reference_runner_v2.apply_falsifier_verdicts confirms on `== "CONFIRMED"`
+    reference_runner_v3.apply_falsifier_verdicts confirms on `== "CONFIRMED"`
     and drops on `== "REFUTED"` for sub-criticals; everything else falls to the
     escalation branch. Asserted structurally here because falsifier_verify.py
     cannot enforce what its caller does with the string it returns — and if that
     ever becomes an inequality test, an integrity fault could close a finding.
     """
-    runner = (REPO_ROOT / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+    runner = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
     gate = runner[runner.index("def apply_falsifier_verdicts"):]
     gate = gate[:gate.index("\ndef ", 10)]
 

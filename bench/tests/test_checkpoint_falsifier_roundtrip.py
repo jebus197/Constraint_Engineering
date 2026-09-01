@@ -11,14 +11,14 @@ falsifier and nothing else, so a resume that dropped falsifiers would leave
 criticals permanently unresolvable. Resume is routine (33 run artefacts; Exp 47 was
 resumed from round 5 twice), so that would have been severe.
 
-It was refuted by measurement. reference_runner_v2 keeps a SECOND checkpoint,
+It was refuted by measurement. reference_runner_v3 keeps a SECOND checkpoint,
 runner_state.json, which persists the registry including falsifier source and
 verdict and restores it on resume. Exp 47's post-resume registry still holds 58
 falsifiers with 55 CONFIRMED. No run's convergence was affected.
 
 What remains, and why this is still worth pinning: runner_state.json is a single
 point of failure for the one artefact the discipline depends on, and the loader at
-reference_runner_v2.py:8178 already handles finding it corrupted. When that happens
+reference_runner_v3.py:8178 already handles finding it corrupted. When that happens
 the falsifiers should survive in the other checkpoint instead of being gone. Replay
 and analysis tooling reading checkpoint.json also sees them now.
 

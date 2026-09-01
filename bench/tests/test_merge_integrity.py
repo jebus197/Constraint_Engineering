@@ -36,7 +36,7 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
-from bench.reference_runner_v2 import FindingRegistry, _resolve_merge_source  # noqa: E402
+from bench.reference_runner_v3 import FindingRegistry, _resolve_merge_source  # noqa: E402
 from bench.runner_core import parse_findings  # noqa: E402
 
 

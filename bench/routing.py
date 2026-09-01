@@ -91,7 +91,7 @@ def rank_falsifier_writers(
     # Run 2 will run -- so ladder ORDER was unrehearsed by every simulation.
     #
     # Normalised locally rather than importing `base_model_label`, which lives
-    # in reference_runner_v2 and would make this module import its own caller.
+    # in reference_runner_v3 and would make this module import its own caller.
     def _base(m: str) -> str:
         m = str(m or "")
         return m[:-4] if m.endswith("-SIM") else m

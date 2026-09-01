@@ -101,7 +101,7 @@ def test_location_keyed_series_makes_real_gate_converge():
     ID-proxy series, on the real Exp 42 registry. The ID-proxy series NEVER converges
     (the bug); the location-keyed series converges at round 6. This is what
     `location_keyed_convergence=True` wires into the runner."""
-    import bench.reference_runner_v2 as rr
+    import bench.reference_runner_v3 as rr
     from collections import Counter
     j = json.load(open(RUN))
     entries = j["registry"]["entries"]

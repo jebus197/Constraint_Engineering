@@ -99,6 +99,6 @@ class TestAConfirmRateIsNotACompetenceMeasure:
 
     def test_nothing_imports_either_script_into_the_runner(self):
         """RECORD ONLY. If this fails, one of them has become load-bearing."""
-        runner = (REPO / "bench/reference_runner_v2.py").read_text()
+        runner = (REPO / "bench/reference_runner_v3.py").read_text()
         for name in ("harness_defect_rate", "competence_provenance"):
             assert name not in runner, f"{name} is record-only and must not drive the runner"

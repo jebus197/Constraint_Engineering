@@ -440,7 +440,7 @@ def test_the_weak_evidence_band_is_inclusive_at_the_threshold():
     critical, and the band where 2 of 3 clean exits were measured false — would
     silently lose its WEAK EVIDENCE alarm.
     """
-    from bench.reference_runner_v2 import CRITICAL_SEVERITY_THRESHOLD
+    from bench.reference_runner_v3 import CRITICAL_SEVERITY_THRESHOLD
 
     led = _ledger()
     on_line = _record(led, finding_id="C0001", severity=CRITICAL_SEVERITY_THRESHOLD)
@@ -456,7 +456,7 @@ def test_the_weak_evidence_band_is_inclusive_at_the_threshold():
 def test_critical_threshold_matches_the_runner():
     """evidence.py stays a leaf module, so the threshold is duplicated rather
     than imported. This pins the duplicate against drift."""
-    from bench.reference_runner_v2 import CRITICAL_SEVERITY_THRESHOLD
+    from bench.reference_runner_v3 import CRITICAL_SEVERITY_THRESHOLD
 
     assert LEDGER_CRITICAL_SEVERITY == CRITICAL_SEVERITY_THRESHOLD
 
@@ -469,7 +469,7 @@ def test_the_convergence_gate_does_not_reference_the_ledger():
     Scoped to the gate function itself, so wiring `record()` elsewhere in the
     runner (the intended integration) does not falsely trip this test.
     """
-    from bench.reference_runner_v2 import _check_gamma_alt_convergence
+    from bench.reference_runner_v3 import _check_gamma_alt_convergence
 
     src = inspect.getsource(_check_gamma_alt_convergence)
     for token in ("SurvivedFalsificationLedger", "survived_falsification",
@@ -483,7 +483,7 @@ def test_the_convergence_gate_does_not_reference_the_ledger():
 def test_report_section_exposes_nothing_the_gate_consumes():
     """No key here collides with a gate input, so a future wiring cannot feed
     the gate from this section by accident."""
-    from bench.reference_runner_v2 import _check_gamma_alt_convergence
+    from bench.reference_runner_v3 import _check_gamma_alt_convergence
 
     gate_inputs = set(
         inspect.signature(_check_gamma_alt_convergence).parameters

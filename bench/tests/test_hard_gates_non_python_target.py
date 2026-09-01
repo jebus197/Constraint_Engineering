@@ -41,7 +41,7 @@ _root = Path(__file__).resolve().parents[2]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     _gateable_source, _run_hard_gate_ast, _run_hard_gate_compile,
 )
 

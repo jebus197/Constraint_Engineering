@@ -27,7 +27,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     TARGET_KIND_PROSE,
     TARGET_KIND_PYTHON,
     LaunchRefused,
@@ -105,7 +105,7 @@ class TestACodeRunIsUnaffected:
         # not spread beyond the case that justifies it.
         r = preflight_target_machinery(
             Cfg(routing_enabled=False, falsifier_gate_enabled=False),
-            str(Path(__file__).resolve().parents[1] / "reference_runner_v2.py"),
+            str(Path(__file__).resolve().parents[1] / "reference_runner_v3.py"),
             TARGET_KIND_PYTHON)
         assert r == []
 
@@ -115,13 +115,13 @@ class TestACodeRunIsUnaffected:
 
 class TestTheRefusalIsWiredAndFatal:
     def test_it_raises_rather_than_warns(self):
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         assert "raise LaunchRefused(" in src, (
             "a warning is a thing a tired person scrolls past at 2am; the "
             "point of A9 is that the run does not start")
 
     def test_it_runs_before_any_dispatch(self):
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         i_check = src.index("_refusals = preflight_target_machinery(")
         i_kind = src.index("target_kind, target_kind_reason = resolve_target_kind(")
         assert i_kind < i_check, "the check needs the resolved kind"
@@ -130,7 +130,7 @@ class TestTheRefusalIsWiredAndFatal:
         assert i_check < i_loop, "refuse before the first round, not during it"
 
     def test_every_refusal_is_logged_not_just_raised(self):
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         assert 'LAUNCH REFUSED: {_r}' in src
 
     def test_the_exception_names_the_target_and_the_kind(self):

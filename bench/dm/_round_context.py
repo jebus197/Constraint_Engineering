@@ -1,4 +1,4 @@
-"""Round-context helpers for reference_runner_v2.
+"""Round-context helpers for reference_runner_v3.
 
 Implements three Exp 40 plan items from Part 1D (lessons-forward):
 

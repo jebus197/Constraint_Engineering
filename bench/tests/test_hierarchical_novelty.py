@@ -50,7 +50,7 @@ from bench.convergence_location import (  # noqa: E402
     signature_similarity,
     stem_signature,
 )
-from bench.reference_runner_v2 import RunnerConfig  # noqa: E402
+from bench.reference_runner_v3 import RunnerConfig  # noqa: E402
 
 
 def _symbols():
@@ -168,14 +168,14 @@ class TestItIsShadowUntilPromoted:
         assert not on, f"promoted without evidence from a live run: {on}"
 
     def test_the_runner_records_it_in_shadow(self):
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         assert 'result["hierarchical_crit_series"]' in src
         assert 'result["hierarchical_crit_series_is_gating"]' in src, (
             "a series recorded without saying whether it gated is how "
             "location_crit_shadow_history came to be actively misleading")
 
     def test_shadow_failure_cannot_kill_a_run(self):
-        src = (Path(__file__).resolve().parents[1] / "reference_runner_v2.py").read_text()
+        src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
         i = src.index('result["hierarchical_crit_series"]')
         window = src[max(0, i - 900):i + 900]
         assert "except Exception" in window and "hierarchical_crit_series_error" in window

@@ -1,5 +1,5 @@
 {
-  "_comment": "Exp 40: infrastructure gate under reference_runner_v2. Target is the \u00a717 feedback channel module (bench/dm/_feedback.py, ~22K). This is the first decomposed target element from the 14-sub-experiment series. Exp 40 maps to Exp 39-0 (infrastructure gate) but with (a) right-sized test article, (b) \u00a717 + \u00a718 directives live, (c) \u03b3-alt convergence path wired, (d) specialist cells for math/stats/bio/info-sci live-promoted, (e) Macrophage verdict-wiring fallback, (f) DeepSeek '### Finding N:' header adapter, (g) fingerprint update quality-gated.",
+  "_comment": "Exp 40: infrastructure gate under reference_runner_v3. Target is the \u00a717 feedback channel module (bench/dm/_feedback.py, ~22K). This is the first decomposed target element from the 14-sub-experiment series. Exp 40 maps to Exp 39-0 (infrastructure gate) but with (a) right-sized test article, (b) \u00a717 + \u00a718 directives live, (c) \u03b3-alt convergence path wired, (d) specialist cells for math/stats/bio/info-sci live-promoted, (e) Macrophage verdict-wiring fallback, (f) DeepSeek '### Finding N:' header adapter, (g) fingerprint update quality-gated.",
   "test_article": "bench/dm/_feedback.py",
   "context_files": [
     "bench/dm/_types.py"
@@ -47,7 +47,7 @@
   },
   "_convergence_criteria": {
     "description": "Gate passes if: (a) all 5 models produce parseable output with R_k, (b) \u03b3-alt path triggers at \u03b3 \u2265 0.30 OR 3 rounds zero novel CRITICAL, (c) R_k adoption \u2265 80% across models, (d) \u00a717 and \u00a718 admissibility rates logged. Wall-clock cap is a safety net, not the expected termination path.",
-    "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt implemented in reference_runner_v2._check_gamma_alt_convergence.",
+    "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt implemented in reference_runner_v3._check_gamma_alt_convergence.",
     "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds."
   },
   "_directives_live": {
@@ -59,7 +59,7 @@
       "near_copy_0.98"
     ],
     "eta_int_modulator_wired_into_compute_rk": true,
-    "_note": "F2 (2026-04-21): eta_int_modulator wiring pulled forward from Exp 54 to Exp 40 under shadow-promotion-now policy. Wrapper runs in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q) at bench/reference_runner_v2.py:3510; mathematically equivalent to the prior bare compute_rk(q) path but exercises the wrapper's channel validation. 1620-case identity verified in re-audit 2026-04-20."
+    "_note": "F2 (2026-04-21): eta_int_modulator wiring pulled forward from Exp 54 to Exp 40 under shadow-promotion-now policy. Wrapper runs in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q) at bench/reference_runner_v3.py:3510; mathematically equivalent to the prior bare compute_rk(q) path but exercises the wrapper's channel validation. 1620-case identity verified in re-audit 2026-04-20."
   },
   "_specialist_cells": {
     "live": [

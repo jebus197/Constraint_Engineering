@@ -46,7 +46,7 @@ SHELVED_DATE = "2026-08-22"
 
 LB_SOURCE = REPO_ROOT / "bench" / "dm" / "_load_balancer.py"
 MANAGER = REPO_ROOT / "bench" / "dm" / "_manager.py"
-RUNNER = REPO_ROOT / "bench" / "reference_runner_v2.py"
+RUNNER = REPO_ROOT / "bench" / "reference_runner_v3.py"
 EXP17 = REPO_ROOT / "bench" / "run_exp17_immune.py"
 
 # Documents that describe the component to a reader, and the token each must
@@ -176,7 +176,7 @@ def test_the_false_self_description_is_withdrawn():
 def test_the_runner_does_not_call_the_load_balancer():
     hits = _referenced_names(ast.parse(RUNNER.read_text(encoding="utf-8")))
     assert not hits, (
-        f"bench/reference_runner_v2.py references shelved symbols {sorted(hits)}; "
+        f"bench/reference_runner_v3.py references shelved symbols {sorted(hits)}; "
         f"a shelved component with a live caller is not shelved"
     )
 

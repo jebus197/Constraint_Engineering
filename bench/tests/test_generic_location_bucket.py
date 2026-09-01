@@ -1,7 +1,7 @@
 """The shared `<generic>` bucket in the location-keyed novelty series.
 
 THE DEFECT (found 2026-08-04 in panel review, verified live 2026-08-08, fixed
-the same day). `_location_keyed_critical_series` in bench/reference_runner_v2.py
+the same day). `_location_keyed_critical_series` in bench/reference_runner_v3.py
 keyed every critical from which no code location could be parsed to ONE shared
 constant:
 
@@ -46,7 +46,7 @@ import os
 
 import pytest
 
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 from bench.convergence_location import finding_locations
 
 CRIT = rr.CRITICAL_SEVERITY_THRESHOLD  # 0.7
@@ -545,7 +545,7 @@ def test_a_failed_gate_computation_does_not_announce_itself_as_shadow():
 
     src = inspect.getsource(rr.run_experiment) if hasattr(rr, "run_experiment") else None
     if src is None:                                   # pragma: no cover
-        path = os.path.join(os.path.dirname(rr.__file__), "reference_runner_v2.py")
+        path = os.path.join(os.path.dirname(rr.__file__), "reference_runner_v3.py")
         with open(path, "r", encoding="utf-8") as fh:
             src = fh.read()
     tree = ast.parse(textwrap.dedent(src))

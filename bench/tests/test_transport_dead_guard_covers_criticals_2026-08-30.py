@@ -24,7 +24,7 @@ only through a severity test.
 """
 import ast, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 
 SRC = pathlib.Path(R.__file__).read_text(encoding="utf-8")
 TREE = ast.parse(SRC)

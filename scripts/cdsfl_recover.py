@@ -398,7 +398,7 @@ def gamma_lines(exp: dict[str, Any]) -> list[str]:
         "     all-findings one. It converges only when BOTH hold: gamma_critical >=",
         "     gamma_alt_threshold (default 0.30) AND K consecutive zero-new-critical",
         "     rounds (default 3). Gamma is an ACTIVE convergence condition — see",
-        "     _check_gamma_alt_convergence in bench/reference_runner_v2.py.",
+        "     _check_gamma_alt_convergence in bench/reference_runner_v3.py.",
         "     It is not the only way a run can close: STATE_CONVERGED and",
         "     critical-quiescence are separate rules, and across all completed runs",
         "     they closed more of them than the gamma-alt gate did (measured",
@@ -487,7 +487,7 @@ def target_lines(exp: dict[str, Any], root: Path) -> list[str]:
 # in the documented recovery path checked for one, so a recovering agent could
 # not answer "is an experiment running" from any step — and could launch a
 # duplicate against a live checkpoint.
-RUNNER_PATTERN = re.compile(r"reference_runner_v2|detached_launch|launch_exp")
+RUNNER_PATTERN = re.compile(r"reference_runner_v3|detached_launch|launch_exp")
 PIDFILE_GLOBS = ("exp*.pid", "exp*_launch_*.pid")
 
 

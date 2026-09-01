@@ -5,7 +5,7 @@ First of the 14-experiment coverage sweep (Exp 40 through Exp 53) derived
 from the Exp 39 sub-experiments. Target: bench/dm/_feedback.py (§17 module).
 
 This entry script loads bench/exp40_configs/40_gate.json, constructs a
-RunnerConfig from it, and dispatches reference_runner_v2.run_experiment.
+RunnerConfig from it, and dispatches reference_runner_v3.run_experiment.
 It does NOT touch bench/reference_runner.py; the Exp 39 runner is frozen.
 
 Usage:
@@ -185,7 +185,7 @@ def gate_c_preflight() -> tuple[bool, list[str]]:
 
 def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
     """Map JSON keys to RunnerConfig fields."""
-    from bench.reference_runner_v2 import RunnerConfig  # noqa: E402
+    from bench.reference_runner_v3 import RunnerConfig  # noqa: E402
 
     # Only the fields we know RunnerConfig supports; extras preserved in
     # exp_cfg for runner-side use (e.g., _macrophage, _directives_live).
@@ -323,7 +323,7 @@ def main() -> int:
         print(f"    - live: {sc.get('live', [])}")
         print(f"    - functional_shadow: {sc.get('functional_shadow', [])}")
         print("")
-        print("  Runner: bench/reference_runner_v2.py (Exp 39 runner frozen)")
+        print("  Runner: bench/reference_runner_v3.py (Exp 39 runner frozen)")
         print("=" * 60)
         return 0
 
@@ -345,10 +345,10 @@ def main() -> int:
         print(f"Gate C preflight: PASS (5 canonical cases, "
               f"{len(_GATE_C_EXPECTED_GATES)} gates verified)")
 
-        # Model-connectivity preflight lives inside reference_runner_v2.
+        # Model-connectivity preflight lives inside reference_runner_v3.
         try:
-            from bench.reference_runner_v2 import run_preflight  # noqa: F401
-            from bench.reference_runner_v2 import (
+            from bench.reference_runner_v3 import run_preflight  # noqa: F401
+            from bench.reference_runner_v3 import (
                 ExperimentConfig,  # noqa: F401
             )
         except ImportError as e:
@@ -380,7 +380,7 @@ def main() -> int:
               "Launch proceeding without live-path parser verification.")
 
     try:
-        from bench.reference_runner_v2 import run_experiment  # noqa: E402
+        from bench.reference_runner_v3 import run_experiment  # noqa: E402
         from bench.experiment_11_orchestrator import load_default_config  # noqa: E402
     except ImportError as e:
         print(f"ERROR: could not import runner v2 or orchestrator: {e}")
@@ -409,7 +409,7 @@ def main() -> int:
 
     # Authoritative convergence signal is the runner's top-level
     # result["converged_at"] / result["convergence_reason"] (set by the
-    # state / hardened / gamma-alt gate at reference_runner_v2.py
+    # state / hardened / gamma-alt gate at reference_runner_v3.py
     # ~5602/5609). The per-round dicts do NOT carry a `converged` flag
     # (always None), so the old any(r.get("converged")...) check
     # misreported every hardened convergence as "ended without

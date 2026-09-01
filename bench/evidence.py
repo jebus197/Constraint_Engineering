@@ -791,7 +791,7 @@ DISCRIMINATION_LIMITATION = (
     "are a starting point for review, not a substitute for it."
 )
 
-# Kept in step with reference_runner_v2.CRITICAL_SEVERITY_THRESHOLD. Duplicated
+# Kept in step with reference_runner_v3.CRITICAL_SEVERITY_THRESHOLD. Duplicated
 # rather than imported so this module stays a leaf (it imports only
 # verification_chain); the duplication is pinned against drift by
 # test_verified_true_ledger.py::test_critical_threshold_matches_the_runner.

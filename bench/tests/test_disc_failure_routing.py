@@ -31,10 +31,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-import bench.reference_runner_v2 as rr  # noqa: E402
+import bench.reference_runner_v3 as rr  # noqa: E402
 import bench.routing as routing_mod  # noqa: E402
 from bench.dm._types import Finding  # noqa: E402
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     FindingRegistry,
     RunnerConfig,
     _apply_routing,

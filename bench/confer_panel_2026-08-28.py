@@ -29,7 +29,8 @@ if _env.is_file():
         _k, _, _v = _l.partition("=")
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
-from experiment_11_orchestrator import call_claude_cli, set_panel_cwd, set_tool_log_sink  # noqa: E402
+from experiment_11_orchestrator import (  # noqa: E402
+    call_claude_cli, set_panel_cwd, set_tool_log_sink, verdict_is_substantive)
 
 if len(sys.argv) < 2:
     print("usage: confer_panel_2026-08-28.py <log-dir-name> [--dry-run]", file=sys.stderr)
@@ -169,8 +170,12 @@ def run(tag, model_id):
         set_panel_cwd(str(wt))
         # Evidence that the reviewer actually RAN things, not just wrote.
         set_tool_log_sink(str(LOGS / f"{tag}.tools.json"))
-        txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400, max_retries=2) or ""
-        ok = bool(txt.strip()) and "<invoke" not in txt and len(txt) > 800
+        # accept= makes the substance test a RETRY condition, not a label
+        # applied after the fact (runway 0C.16, fixed 2026-09-01).
+        txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400,
+                              max_retries=2,
+                              accept=verdict_is_substantive) or ""
+        ok = verdict_is_substantive(txt) is None
         rec = {"reviewer": tag, "ok": ok, "chars": len(txt),
                "elapsed_s": round(time.time() - t0, 1), "response": txt,
                "tree_carried": carried}
@@ -190,7 +195,7 @@ def run(tag, model_id):
         #
         # He is right and the cost was real. On the 2026-08-30 repair-loop panel,
         # fable wrote three changes to canary_seeding.py plus 7 tests, and cc2
-        # wrote four edits to reference_runner_v2.py plus 8 tests and two further
+        # wrote four edits to reference_runner_v3.py plus 8 tests and two further
         # fixes. Every line was deleted here before anyone read it, and the
         # reviews had to be re-implemented from their prose descriptions.
         #

@@ -7,7 +7,7 @@ any dispatch.
 """
 from __future__ import annotations
 
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 from bench.dm._types import Finding
 
 
@@ -90,7 +90,7 @@ def test_dedup_short_circuits_before_dispatch(monkeypatch):
     # It was not dormant, contrary to commit 3c96d29. The configs do not set
     # `routing_enabled`; they set the legacy alias `take_up_slack_enabled: true`,
     # which BOTH loaders map (launcher_core.py:216-217,
-    # reference_runner_v2.py:822-823). It is live in all 13 forward configs, and
+    # reference_runner_v3.py:822-823). It is live in all 13 forward configs, and
     # `resolved_by_routing` appears 82 times across exp44-49. Found by a CC2
     # review, 2026-08-21; the same alias trap had already been written down on
     # 2026-08-12 with the note "record the alias so the next audit does not repeat

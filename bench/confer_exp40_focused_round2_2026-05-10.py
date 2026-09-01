@@ -126,7 +126,7 @@ Anchors that remain in force from Round 1:
 
 - bench/exp40_configs/40_gate.json acceptance criterion: "gamma >= 0.30
   OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt
-  implemented in reference_runner_v2._check_gamma_alt_convergence."
+  implemented in reference_runner_v3._check_gamma_alt_convergence."
 
 - Stage 6 orthogonality (canonical model). R_k = VALIDITY,
   nu_k = NOVELTY, c_ext = SEARCH QUALITY. The three are independent
@@ -212,7 +212,7 @@ The four residuals as closed:
     experiment that surfaced finding F7/F23 — the
     max_open_crit_high=0 threshold was structurally unreachable. Fix
     landed: default raised 0 → 5 at
-    bench/reference_runner_v2.py:259 (mirrored at
+    bench/reference_runner_v3.py:259 (mirrored at
     reference_runner.py:207), regression-pinned at
     bench/tests/test_runner_status_transitions.py:242. The original
     threshold was the SUBJECT of Exp 39-0, not its prerequisite.

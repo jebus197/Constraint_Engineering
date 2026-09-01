@@ -28,7 +28,7 @@ import pathlib
 
 import pytest
 
-from bench import reference_runner_v2 as rr
+from bench import reference_runner_v3 as rr
 
 REL = "bench/cdsfl_registry/targets/control_two_distinct_defects.md"
 

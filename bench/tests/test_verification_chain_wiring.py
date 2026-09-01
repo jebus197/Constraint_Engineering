@@ -19,7 +19,7 @@ if _root not in sys.path:
 
 from bench.verification_chain import VerificationChain  # noqa: E402
 
-_RUNNER = Path(_root) / "bench" / "reference_runner_v2.py"
+_RUNNER = Path(_root) / "bench" / "reference_runner_v3.py"
 
 
 class TestRunnerWiring:

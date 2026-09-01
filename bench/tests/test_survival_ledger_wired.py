@@ -25,7 +25,7 @@ import pytest
 
 from bench.evidence import SurvivedFalsificationLedger
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     CRITICAL_SEVERITY_THRESHOLD,
     FindingRegistry,
     RunnerConfig,

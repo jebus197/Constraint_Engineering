@@ -444,7 +444,7 @@ def tier3_ablation(lab) -> dict:
 # Round-number caps applied to finding descriptions before they ever reach this
 # rule. 200 is `runner_core._parse_findings`' fallback when the DESCRIPTION/FIND
 # field does not match and it keeps `block[:200]`; 500 is the registry write in
-# `reference_runner_v2`. Both cut mid-word.
+# `reference_runner_v3`. Both cut mid-word.
 DESCRIPTION_CAPS = {200, 300, 500, 1200}
 
 

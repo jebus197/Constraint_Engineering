@@ -1,7 +1,7 @@
 """Latent-tagger — the missing upstream producer for severity calibration.
 
 Severity calibration (``_apply_severity_calibration`` in
-``bench/reference_runner_v2.py``, commit 050f17c, 2026-06-10) demotes a finding
+``bench/reference_runner_v3.py``, commit 050f17c, 2026-06-10) demotes a finding
 iff it is (1) critical, (2) falsifier-CONFIRMED real, (3) explicitly flagged
 ``latent``, and (4) not in a never-demote category. Condition (3) has never had
 a producer, so the mechanism has been inert since it was written. This module is
@@ -69,7 +69,7 @@ __all__ = [
 ]
 
 # ── Category classification ────────────────────────────────────────────────
-# Mirrors _SEVERITY_CALIB_NEVER_DEMOTE_CATEGORIES in reference_runner_v2. A
+# Mirrors _SEVERITY_CALIB_NEVER_DEMOTE_CATEGORIES in reference_runner_v3. A
 # category assigned here that lands in that set makes the finding permanently
 # undemotable, so this classifier is deliberately LIBERAL: it is a safety
 # interlock, and a false "this is a safety finding" costs nothing but a

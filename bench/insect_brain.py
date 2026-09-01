@@ -1023,7 +1023,7 @@ class InsectBrain:
                     #
                     # SCOPE, stated precisely because the first reading of this was
                     # wrong. It is NOT true that resumed runs lost their falsifiers.
-                    # reference_runner_v2 keeps its own checkpoint, runner_state.json,
+                    # reference_runner_v3 keeps its own checkpoint, runner_state.json,
                     # which persists the registry INCLUDING falsifier source and
                     # verdict, and restores it on resume. Exp 47 was resumed from
                     # round 5 and its post-resume registry still holds 58 falsifiers
@@ -1032,7 +1032,7 @@ class InsectBrain:
                     #
                     # It is still worth closing. runner_state.json is currently a
                     # single point of failure for the one artefact CONFIRM-only
-                    # depends on, and the loader at reference_runner_v2.py:8178
+                    # depends on, and the loader at reference_runner_v3.py:8178
                     # already contemplates finding it corrupted. When that happens
                     # the falsifiers should be recoverable from the other checkpoint
                     # rather than gone. Anything reading findings from checkpoint.json

@@ -36,13 +36,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     CRITICAL_SEVERITY_THRESHOLD,
     _record_computed_evidence,
     _rejection_lines,
 )
 
-RUNNER = Path(__file__).resolve().parents[1] / "reference_runner_v2.py"
+RUNNER = Path(__file__).resolve().parents[1] / "reference_runner_v3.py"
 
 
 class TestTheAnswerIsKeptRatherThanDiscarded:

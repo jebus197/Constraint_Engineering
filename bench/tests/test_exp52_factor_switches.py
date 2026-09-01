@@ -44,7 +44,7 @@ from bench.dm._directive_sections import (  # noqa: E402
     DirectiveSectionError,
     omit_directive_sections,
 )
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     DIRECTIVE_FACTOR_FIELDS,
     RunnerConfig,
     _apply_directive_omission,
@@ -418,7 +418,7 @@ class TestDivergencePassIsPrevented:
 
     def test_runner_source_no_longer_hardcodes_enabled_true(self):
         """Structural guard: the hard-coded construction was the blocker."""
-        src = (REPO_ROOT / "bench" / "reference_runner_v2.py").read_text(
+        src = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         assert "_DivergenceConfig(enabled=True)" not in src
         assert "_DivergenceConfig(enabled=divergence_pass_enabled)" in src
@@ -430,7 +430,7 @@ class TestDivergencePassIsPrevented:
         omission assignment comes before every downstream use of the variable
         inside _dispatch_single_model."""
         import ast
-        src = (REPO_ROOT / "bench" / "reference_runner_v2.py").read_text(
+        src = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         tree = ast.parse(src)
         fn = next(n for n in ast.walk(tree)
@@ -468,7 +468,7 @@ class TestDivergencePassIsPrevented:
         )
 
     def test_feedback_pass_gate_reads_the_factor_state(self):
-        src = (REPO_ROOT / "bench" / "reference_runner_v2.py").read_text(
+        src = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         assert 'feedback_enabled = _directive_factor_state(cfg, "feedback")[1]' in src
         assert ('divergence_pass_enabled = _directive_factor_state('
@@ -506,7 +506,7 @@ class TestArmDirectiveOmission:
         """The fail-fast that exists so a null result cannot masquerade as a
         measurement: if the omission removes nothing, refuse to run."""
         monkeypatch.setattr(
-            "bench.reference_runner_v2._apply_directive_omission",
+            "bench.reference_runner_v3._apply_directive_omission",
             lambda text: text)
         cfg = RunnerConfig(test_article="x.py",
                            divergence_channel_enabled=False)

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 
 
 class _MC:

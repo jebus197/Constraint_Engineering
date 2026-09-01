@@ -12,7 +12,7 @@
 # Permissions on a file cannot protect it when the directory is writable.
 #
 # WHY RUNNING FROM INSIDE THE COPY IS THE WHOLE FIX. Both harnesses derive their
-# root from __file__ (reference_runner_v2.py:154, run_simulated_experiment.py:30)
+# root from __file__ (reference_runner_v3.py:154, run_simulated_experiment.py:30)
 # and repo_relative_target normalises every target against that root. Launching
 # the runner from inside the worktree therefore redirects the target, the panel's
 # inherited working directory and every derived path in one move, with no new

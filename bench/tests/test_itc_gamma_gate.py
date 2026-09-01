@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import pytest
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     ITC_DEGRADATION,
     _itc_adapt,
     _itc_consecutive_failures,

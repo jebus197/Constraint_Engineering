@@ -47,7 +47,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R   # noqa: E402
+import reference_runner_v3 as R   # noqa: E402
 
 #: Vendor label -> simulated stand-in. Order fixed so a run is reproducible.
 #: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
@@ -192,7 +192,7 @@ def make_shim(model: str = "sonnet", timeout: int = 900):
             # (runner_core.py:1271 TimeoutError, :1277 RuntimeError, :1284
             # re-raised payload). `_dispatch_single_model` catches that and
             # converts it to the `__DISPATCH_FAILED__` sentinel ITSELF
-            # (reference_runner_v2.py:6947) -- so the sentinel belongs to the
+            # (reference_runner_v3.py:6947) -- so the sentinel belongs to the
             # findings path alone.
             #
             # Returning the sentinel instead of raising made every OTHER path

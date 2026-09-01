@@ -36,7 +36,7 @@ import sys
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 import runner_core as RC
 import experiment_11_orchestrator as ORCH
 

@@ -16,7 +16,7 @@ the live runner actually takes, end to end:
                         |  break tool use in production. If it fails, this test
                         |  reports it LOUDLY.
   extraction        -> runner_core.parse_findings (-> Finding.falsifier_code)
-  verdict           -> reference_runner_v2.apply_falsifier_verdicts over a real
+  verdict           -> reference_runner_v3.apply_falsifier_verdicts over a real
                         FindingRegistry with RunnerConfig(falsifier_gate_enabled=
                         True). The runner re-runs the falsifier; the verdict is
                         CONFIRMED / REFUTED / HIL — a TOOL decision, NOT a vote.
@@ -63,7 +63,7 @@ from experiment_11_orchestrator import (  # noqa: E402
     dispatch,
 )
 from runner_core import dispatch_to_model, parse_findings  # noqa: E402
-from reference_runner_v2 import (  # noqa: E402
+from reference_runner_v3 import (  # noqa: E402
     FindingRegistry,
     RunnerConfig,
     apply_falsifier_verdicts,

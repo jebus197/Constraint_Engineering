@@ -11,7 +11,7 @@ A second cap, `finding.description[:500]` in `FindingRegistry.register`, clipped
 a further 29%.
 
 Both reach live machinery — the location-keyed convergence count reads the
-registry description (`reference_runner_v2.py:4288`), as does the CC2
+registry description (`reference_runner_v3.py:4288`), as does the CC2
 verification prompt (`:6271`). So the archived registries under-describe what the
 models actually said, and any measurement derived from them inherits that.
 

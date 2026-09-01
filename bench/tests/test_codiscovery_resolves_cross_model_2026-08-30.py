@@ -25,7 +25,7 @@ never opened.
 """
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 
 
 def _finding(model_id, finding_id, desc="off-by-one in _prune"):
@@ -91,7 +91,7 @@ class TestItDoesNotOverReach:
 class TestTheCallSiteUsesIt:
     def test_production_call_site_falls_back_to_the_model_agnostic_lookup(self):
         src = (pathlib.Path(__file__).resolve().parents[1]
-               / "reference_runner_v2.py").read_text(encoding="utf-8")
+               / "reference_runner_v3.py").read_text(encoding="utf-8")
         i = src.index("registry.record_codiscovery(")
         window = src[max(0, i - 800):i]
         assert "lookup_alias_any(" in window, (

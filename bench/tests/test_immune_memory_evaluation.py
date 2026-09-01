@@ -45,7 +45,7 @@ WHY EACH ASSERTION IS HERE, NOT JUST WHAT IT CHECKS
    as a match.
 
 A FINDING THIS SUITE DOES NOT ASSERT ON, because the fix belongs to whoever
-holds ``reference_runner_v2.py``: ``_rejection_lines`` tests each entry of
+holds ``reference_runner_v3.py``: ``_rejection_lines`` tests each entry of
 ``gate_details`` for ``is False``/``== 0``, but those entries are ``str`` (110
 archived cases) or ``dict`` (9) — never a bare falsy scalar. The "name the
 failed gate" branch is therefore dead, and all 119 archived rejections produce
@@ -85,7 +85,7 @@ from bench.dm._memory import (  # noqa: E402
     ImmuneMemory,
     MemoryIntegrityError,
 )
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     RK0_PI_BASE,
     check_sk_threshold,
 )
@@ -124,7 +124,7 @@ def _report_for(run_prefix: str) -> dict:
 
 
 def _flaw_counts_from(report: dict) -> dict:
-    """Reproduce the runner's own tallying block (reference_runner_v2 ~9478)."""
+    """Reproduce the runner's own tallying block (reference_runner_v3 ~9478)."""
     counts: dict = {}
     for entry in report["registry"]["entries"].values():
         cell = counts.setdefault(int(entry.get("flaw_class") or 0), [0, 0])
@@ -731,7 +731,7 @@ class TestAdvisoryOnlyUnderAttack:
         finding's status from anything the memory produced. Checked
         structurally — `ImmuneMemory` is imported at exactly the two runner
         sites (record, consume) and neither assigns to `["status"]`."""
-        runner = os.path.join(_project_root, "bench", "reference_runner_v2.py")
+        runner = os.path.join(_project_root, "bench", "reference_runner_v3.py")
         with open(runner, encoding="utf-8") as fh:
             tree = ast.parse(fh.read())
 
@@ -779,7 +779,7 @@ class TestAdvisoryOnlyUnderAttack:
         # And the outcome is not inert: a REJECTED tristate is rendered into
         # the panel's next prompt by `_rejection_lines`, so the memory reaches
         # the finding stream indirectly, via what the panel is told.
-        from bench.reference_runner_v2 import _rejection_lines, SK_REJECTED
+        from bench.reference_runner_v3 import _rejection_lines, SK_REJECTED
         lines = _rejection_lines({"sk_result": {"tristate": SK_REJECTED,
                                                 "gate_details": {}}})
         assert lines and "REJECTED" in lines[0], lines

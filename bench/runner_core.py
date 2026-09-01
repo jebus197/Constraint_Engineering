@@ -789,7 +789,7 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
         # header for it, so the stored "description" is `FINDING_ID: F006\nSEVERITY:
         # 0.80\nFIND: <first ~130 chars>`. Every downstream consumer then reads
         # metadata as though it were the claim, including the location-keyed
-        # convergence count (reference_runner_v2.py:4288) and the CC2 verification
+        # convergence count (reference_runner_v3.py:4288) and the CC2 verification
         # prompt (:6271).
         #
         # THREE INDEPENDENT CAUSES, each fixed by one clause below.
@@ -1288,7 +1288,7 @@ def _normalise_field_labels(response: str) -> str:
 
 
 #: Registration caps a description at 2,000 characters
-#: (reference_runner_v2.py:1572), so keeping more here would be lost anyway.
+#: (reference_runner_v3.py:1572), so keeping more here would be lost anyway.
 _DESCRIPTION_LIMIT = 2000
 
 

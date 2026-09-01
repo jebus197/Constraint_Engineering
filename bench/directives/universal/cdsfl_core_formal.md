@@ -503,7 +503,7 @@ it was meant to catch. So, concretely:
 - **Before the first dispatch**, an exam run verifies via `bench/vault_keys.sh
   status` that no plaintext scoring key exists on disk and **refuses to start**
   otherwise — including when the vault script itself is missing, which fails loud
-  rather than open (`bench/reference_runner_v2.py`, "NO PLAINTEXT SCORING KEY MAY
+  rather than open (`bench/reference_runner_v3.py`, "NO PLAINTEXT SCORING KEY MAY
   EXIST WHILE AN EXAM RUNS"). This control binds where the others cannot: falsifier
   re-verification and the `execute_python` tool run model-authored code with the
   operator's own credentials, outside panel confinement. Against a falsifier that

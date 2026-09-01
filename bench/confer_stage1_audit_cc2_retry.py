@@ -4,7 +4,7 @@
 WHY THIS EXISTS. cc2 timed out three times at exactly 300.0s. Root cause is not
 the model: call_claude_cli defaults to timeout=300, and this panel's SYSTEM prompt
 explicitly instructs the only tool-capable panellist to read the repository and
-verify rather than accept. reference_runner_v2.py is ~9,900 lines. The instruction
+verify rather than accept. reference_runner_v3.py is ~9,900 lines. The instruction
 and the default were in direct conflict.
 
 Precedent for the fix is in the same module: experiment_11_orchestrator.py:134

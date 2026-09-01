@@ -52,7 +52,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     DISC_ABSENT,
     DISC_BASELINE,
     DISC_COPY_UNCHANGED,
@@ -565,7 +565,7 @@ class TestTheGateAppliesTheControl:
             self, mini_repo, monkeypatch):
         """The house failure mode, applied to the control itself. It must not be
         able to take a round down, and it must not be able to go quiet."""
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         monkeypatch.setattr(rr, "run_discrimination_control",
                             lambda *a, **k: (_ for _ in ()).throw(
                                 RuntimeError("apparatus exploded")))
@@ -624,7 +624,7 @@ class TestTheGateAppliesTheControl:
         three rounds in the runner's own order and asserts the finding is still
         open to a human at the end.
         """
-        from bench.reference_runner_v2 import _update_finding_statuses
+        from bench.reference_runner_v3 import _update_finding_statuses
         entry = {"severity": 0.85, "falsifier_code": NON_DISCRIMINATING_FALSIFIER,
                  "corrected_copy": CORRECTED, "description": "d"}
         reg = _registry_with("C0001", entry)
@@ -642,7 +642,7 @@ class TestTheGateAppliesTheControl:
     def test_a_sound_finding_still_reaches_closed_across_the_same_rounds(
             self, mini_repo):
         """The control must cost a sound finding nothing — including its close."""
-        from bench.reference_runner_v2 import _update_finding_statuses
+        from bench.reference_runner_v3 import _update_finding_statuses
         entry = {"severity": 0.85, "falsifier_code": SOUND_FALSIFIER,
                  "corrected_copy": CORRECTED, "description": "d"}
         reg = _registry_with("C0001", entry)
@@ -826,7 +826,7 @@ class TestThePanelIsToldWhatHappened:
 
 class TestTheCorrectedCopyIsAskedForNeverSynthesised:
     def test_the_reasoning_stays_attached_to_the_code(self):
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
         i = src.index("DISCRIMINATION CONTROL — the false-CONFIRMED detector")
         block = src[i:i + 4000]
         assert "NEVER" in block and "synthesised" in block, (

@@ -61,7 +61,7 @@ EXP = {
     "number": 49,
     "status": "STATE_CONVERGED",
     "topology": "full-mesh",
-    "target": "bench/reference_runner_v2.py",
+    "target": "bench/reference_runner_v3.py",
     "total_rounds": 7,
     "total_findings": 61,
     "gamma": 0.5123,

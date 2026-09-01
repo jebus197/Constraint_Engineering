@@ -42,7 +42,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from bench import launcher_core  # noqa: E402
-from bench import reference_runner_v2 as rr  # noqa: E402
+from bench import reference_runner_v3 as rr  # noqa: E402
 from bench.ouroboros_cell import (  # noqa: E402
     _BRIEF_BEGIN,
     _BRIEF_END,

@@ -94,7 +94,7 @@ A prior pre-launch audit on 2026-04-20 converged under a wrong framing.
 That framing treated reference_runner.py (v1) as if it carried a
 "preservation" policy. It does not. v1 is retained on disk ONLY as a
 HISTORICAL REFERENCE to the first Exp-38 demonstration of the full
-Stage 6 mathematical model. reference_runner_v2.py (v2, 4922 lines) IS
+Stage 6 mathematical model. reference_runner_v3.py (v2, 4922 lines) IS
 the Exp 40 runner and has been actively extended through Phase A
 (commit 8b8682d) and Phase B (commit bdfc93a).
 
@@ -103,7 +103,7 @@ The panel is to reason ONLY from two anchors:
 1. `bench/exp40_configs/40_gate.json` acceptance criterion for Exp 40:
    `"pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0
    novel CRITICAL findings). Gamma-alt implemented in
-   reference_runner_v2._check_gamma_alt_convergence."`
+   reference_runner_v3._check_gamma_alt_convergence."`
 
 2. Stage 6 orthogonality (canonical Stage 6 mathematical model).
    R_k measures VALIDITY, nu_k measures NOVELTY, c_ext measures
@@ -171,7 +171,7 @@ plan review, not a plan expansion.
 ### RQ1. Unaddressed fix against 40_gate.json
 
 The four fold-in-now items (F1 SymPy sandbox restoration; F2 wrapper
-activation at reference_runner_v2.py:3510; F3 debug assertion on q at
+activation at reference_runner_v3.py:3510; F3 debug assertion on q at
 call site; F4 closure state stratification) are scheduled before Exp 40
 launches.
 

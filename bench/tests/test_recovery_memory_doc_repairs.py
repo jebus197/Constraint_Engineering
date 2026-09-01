@@ -110,7 +110,7 @@ class TestMinimumRecoveryRunningExperimentCheck:
 
     def test_no_recovery_command_greps_for_run_round_robin(self):
         """`grep run_round_robin` matches only bench/run_round_robin.py, the
-        Bench Run 1 driver. Every Exp 40-54 runner is reference_runner_v2 via
+        Bench Run 1 driver. Every Exp 40-54 runner is reference_runner_v3 via
         bench/launch_exp42.py, so the old check reported silence during a live
         run — and silence reads as "nothing is running".
 
@@ -130,7 +130,7 @@ class TestMinimumRecoveryRunningExperimentCheck:
     def test_both_current_checks_are_present(self):
         body = self._min_recovery()
         assert "/tmp/exp*_launch*.pid" in body
-        assert "reference_runner_v2|detached_launch|launch_exp" in body
+        assert "reference_runner_v3|detached_launch|launch_exp" in body
 
     def test_the_pid_glob_matches_both_observed_pidfile_shapes(self):
         """detached_launch.sh writes `${LOG%.log}.pid`, so the pidfile name

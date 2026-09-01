@@ -27,7 +27,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-SRC = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
 TREE = ast.parse(SRC)
 
 

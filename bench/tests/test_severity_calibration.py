@@ -32,7 +32,7 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from bench.dm._types import Finding
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     CRITICAL_SEVERITY_THRESHOLD,
     FindingRegistry,
     RunnerConfig,

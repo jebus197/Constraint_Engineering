@@ -1,4 +1,4 @@
-"""Tests for the critical-quiescence convergence path in reference_runner_v2.
+"""Tests for the critical-quiescence convergence path in reference_runner_v3.
 
 Originally the γ-alternative path (Item 1A.3, Exp 40). The convergence gate is
 now a TWO-SIDED GATE (founder ruling 2026-06-10): convergence requires BOTH
@@ -25,7 +25,7 @@ Earliest round gated by ``cfg.gamma_alt_earliest_round``.
 
 from __future__ import annotations
 
-from bench.reference_runner_v2 import (
+from bench.reference_runner_v3 import (
     RunnerConfig,
     _check_gamma_alt_convergence,
 )

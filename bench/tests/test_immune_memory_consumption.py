@@ -33,7 +33,7 @@ if _project_root not in sys.path:
 
 from bench.dm._memory import ImmuneMemory  # noqa: E402
 from bench.dm._types import Finding  # noqa: E402
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     CRITICAL_SEVERITY_THRESHOLD,
     RK0_PI_BASE,
     FindingRegistry,
@@ -349,7 +349,7 @@ class TestNonDistortionOnCompletedRuns:
         and ``sk_stats`` is read only to place it in the round report."""
         import ast
 
-        src_path = os.path.join(_project_root, "bench", "reference_runner_v2.py")
+        src_path = os.path.join(_project_root, "bench", "reference_runner_v3.py")
         with open(src_path) as fh:
             src = fh.read()
         tree = ast.parse(src)
@@ -480,7 +480,7 @@ class TestAdvisoryOnly:
         vs 5000 rejected). The falsifier demonstrates it anyway. The finding
         must still be CONFIRMED."""
         import bench.falsifier_verify as fv
-        import bench.reference_runner_v2 as rv2
+        import bench.reference_runner_v3 as rv2
         monkeypatch.setattr(fv, "reverify_falsifier",
                             lambda code, repo_root=None: "CONFIRMED")
         monkeypatch.setattr(rv2, "reverify_falsifier",
@@ -511,7 +511,7 @@ class TestAdvisoryOnly:
         """The mirror case. Memory says this class is always real; the
         falsifier refutes a NON-critical. The refutation must stand."""
         import bench.falsifier_verify as fv
-        import bench.reference_runner_v2 as rv2
+        import bench.reference_runner_v3 as rv2
         monkeypatch.setattr(fv, "reverify_falsifier",
                             lambda code, repo_root=None: "REFUTED")
         monkeypatch.setattr(rv2, "reverify_falsifier",
@@ -566,14 +566,14 @@ class TestConfigPlumbing:
         assert rc.immune_memory_rho == 0.2
 
     def test_builder_returns_nothing_when_the_flag_is_off(self):
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         prior, receipt = _build_rk0_prior(
             RunnerConfig(immune_memory_consume_rk0=False))
         assert prior is None and receipt == {}
 
     def test_builder_returns_a_working_prior_when_enabled(self):
         """The runner's own seam, on the real recorded memory file."""
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         mem = _memory_from_real_state()
         classes = sorted(mem._records)
         prior, receipt = _build_rk0_prior(RunnerConfig(
@@ -588,7 +588,7 @@ class TestConfigPlumbing:
 
     def test_builder_degrades_to_none_on_a_missing_memory_file(self):
         """A broken prior must never take a run down with it."""
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         prior, receipt = _build_rk0_prior(RunnerConfig(
             immune_memory_consume_rk0=True,
             immune_memory_path="bench/state/definitely_not_here.json"))
@@ -603,7 +603,7 @@ class TestConfigPlumbing:
         ``run_experiment`` dispatches panel models, which costs money."""
         import ast
 
-        src_path = os.path.join(_project_root, "bench", "reference_runner_v2.py")
+        src_path = os.path.join(_project_root, "bench", "reference_runner_v3.py")
         tree = ast.parse(open(src_path).read())
         run_fn = next(n for n in ast.walk(tree)
                       if isinstance(n, ast.FunctionDef) and n.name == "run_experiment")
@@ -694,7 +694,7 @@ class TestRecordingAndConsumptionAreSeparateSwitches:
         class is named after.
         """
         from bench.launcher_core import build_runner_config_from_dict
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         if "models" not in cfg or "experiment_name" not in cfg:
             return False
         try:
@@ -706,7 +706,7 @@ class TestRecordingAndConsumptionAreSeparateSwitches:
 
     def test_recording_alone_does_not_consume(self):
         """The exact defect: enabled=True must not seed R_k(0) by itself."""
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         prior, receipt = _build_rk0_prior(RunnerConfig(
             immune_memory_enabled=True,
             immune_memory_path="bench/state/immune_memory.json"))
@@ -716,7 +716,7 @@ class TestRecordingAndConsumptionAreSeparateSwitches:
 
     def test_consumption_does_not_require_recording(self):
         """The switches are independent in both directions, not merely ordered."""
-        from bench.reference_runner_v2 import _build_rk0_prior
+        from bench.reference_runner_v3 import _build_rk0_prior
         prior, _ = _build_rk0_prior(RunnerConfig(
             immune_memory_enabled=False, immune_memory_consume_rk0=True,
             immune_memory_path="bench/state/immune_memory.json"))

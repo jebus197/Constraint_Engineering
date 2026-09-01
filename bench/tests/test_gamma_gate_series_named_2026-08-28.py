@@ -33,7 +33,7 @@ import re
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-RUNNER = REPO / "bench" / "reference_runner_v2.py"
+RUNNER = REPO / "bench" / "reference_runner_v3.py"
 
 
 class TestTheReportNamesItsOwnAuthority:

@@ -116,7 +116,7 @@ class TestLedgerIsActuallyWiredIntoTheRunner:
     def test_the_gate_accepts_a_ledger_argument(self):
         """Pins the T03 wiring of 2026-08-22. If someone removes the parameter, the
         component silently returns to being shelved."""
-        import bench.reference_runner_v2 as rr
+        import bench.reference_runner_v3 as rr
         sig = inspect.signature(rr.apply_falsifier_verdicts)
         assert "ledger" in sig.parameters, (
             "apply_falsifier_verdicts no longer takes a ledger — I33 is shelved again"
@@ -124,7 +124,7 @@ class TestLedgerIsActuallyWiredIntoTheRunner:
 
     def test_the_runner_constructs_and_attaches_one(self):
         import pathlib
-        src = pathlib.Path(__file__).resolve().parents[1] / "reference_runner_v2.py"
+        src = pathlib.Path(__file__).resolve().parents[1] / "reference_runner_v3.py"
         text = src.read_text(encoding="utf-8", errors="replace")
         assert "attach_survival_ledger" in text, "no attach point in the runner"
         assert "ledger=survival_ledger" in text, (

@@ -5,7 +5,7 @@ agreed a status table (Q1, :59-69) in which CONFIRMED, REFUTED, CLOSED and
 MERGED are TOOL-ONLY, and in which CORROBORATED and WITHHELD are the states a
 model attestation is actually allowed to produce. Measured on 2026-08-22: the
 blocking BEHAVIOUR had landed at five sites, but `WITHHELD` had 0 references in
-`reference_runner_v2.py` and `CORROBORATED` had 1 — in a comment. The
+`reference_runner_v3.py` and `CORROBORATED` had 1 — in a comment. The
 model-quorum site wrote CONFIRMED from a COUNT OF OPINIONS into the same field
 the falsifier gate writes after executing code, and nothing in the entry
 recorded which of the two had happened.
@@ -23,8 +23,8 @@ import json
 import pytest
 
 from bench.dm._types import Finding
-from bench import reference_runner_v2 as rr
-from bench.reference_runner_v2 import FindingRegistry, _update_finding_statuses
+from bench import reference_runner_v3 as rr
+from bench.reference_runner_v3 import FindingRegistry, _update_finding_statuses
 
 # Reached through the module rather than by `from ... import` so that the
 # absence of the vocabulary shows up as a FAILING ASSERTION in each test rather
@@ -42,7 +42,7 @@ ALL_STATUSES = [
 def _vocab():
     v = getattr(rr, "FINDING_STATUS_" + "VOCABULARY", None)
     assert v is not None, (
-        "reference_runner_v2 registers no status vocabulary; CORROBORATED and "
+        "reference_runner_v3 registers no status vocabulary; CORROBORATED and "
         "WITHHELD were agreed on 2026-08-21 and must be real statuses")
     return v
 

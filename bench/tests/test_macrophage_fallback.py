@@ -124,7 +124,7 @@ class TestDiagnosticLogPath:
     """When both cell_verdicts and final_verdicts are empty, the diagnostic
     log should fire with both-path status.  This asserts the log-line format
     rather than emission (log is side-effect). The fallback implementation
-    lives in reference_runner_v2._run_shadow_cells."""
+    lives in reference_runner_v3._run_shadow_cells."""
 
     def test_both_paths_empty_reports_both(self):
         """An ImmuneResponse-like object with empty verdicts both ways."""

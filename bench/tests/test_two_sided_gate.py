@@ -2,7 +2,7 @@
 sides of the same diminishing-returns coin: gamma_critical >= gamma_alt_threshold (the
 decay curve has flattened) AND K consecutive zero-new-critical rounds (the strict
 'insurance' endpoint). gamma is an ACTIVE convergence condition, NOT 'reported only'."""
-import bench.reference_runner_v2 as rr
+import bench.reference_runner_v3 as rr
 
 
 def test_both_sides_required():

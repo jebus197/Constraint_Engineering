@@ -12,13 +12,13 @@ report DOES name the cause:
     exp55  HALTED_IRREDUCIBLE_QUEUE_ALARM
     exp55  HALTED_IRREDUCIBLE_QUEUE_ALARM
 
-MECHANISM. reference_runner_v2 writes the cause to its result dict, then copies
+MECHANISM. reference_runner_v3 writes the cause to its result dict, then copies
 it to brain.state.convergence_reason ONLY inside `if converged:`. signal_complete
 reads that field. So every non-convergence stop reached the report and never
 reached the signal, and any tool reading the signal alone saw a run that halted
 on a named alarm as a run that simply stopped.
 
-The runner's own source names a related defect at reference_runner_v2.py:11002
+The runner's own source names a related defect at reference_runner_v3.py:11002
 and dates a partial fix to 2026-05-18 -- "post-mortem tooling read every
 hardened convergence as INCOMPLETE". Runs from July and August still showed it,
 so that fix corrected the instance and not the class.
@@ -141,7 +141,7 @@ class TestTheRunnerActuallySetsIt:
         defect returns silently, which is how it survived the 2026-05-18 fix."""
         import pathlib
         src = (pathlib.Path(__file__).resolve().parents[1]
-               / "reference_runner_v2.py").read_text(encoding="utf-8")
+               / "reference_runner_v3.py").read_text(encoding="utf-8")
         assert src.count("brain.state.stop_reason =") >= 2, (
             "fewer than two stop_reason assignments in the runner; one of the two "
             "stop paths no longer records its cause"

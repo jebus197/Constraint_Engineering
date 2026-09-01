@@ -78,7 +78,7 @@ if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
 from bench.falsifier_verify import reverify_falsifier  # noqa: E402
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     _extract_routing_falsifier, _sweep_prompt,
 )
 

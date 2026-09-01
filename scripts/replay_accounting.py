@@ -56,7 +56,7 @@ RUNS = {
 
 
 def estimate_gamma(counts, min_rounds: int = 3) -> float:
-    """Duane slope, transcribed from reference_runner_v2._estimate_gamma.
+    """Duane slope, transcribed from reference_runner_v3._estimate_gamma.
 
     Deliberately a copy rather than an import: the runner's version is embedded in
     a module that pulls the whole dispatch stack, and a replay must not be able to
@@ -183,7 +183,7 @@ def deltas() -> int:
         new_series = CL.location_only_series(ents, len(arch) - 1, symbols_for(tgt, ents))
         # ★ THE COMPARATOR IS NOT `gamma_critical_history`, AND THIS IS NOT A DETAIL.
         # That archived series is the Duane slope of the SETTLED novelty series, which
-        # the gate reads directly (reference_runner_v2.py:4385-4387). The series this
+        # the gate reads directly (reference_runner_v3.py:4385-4387). The series this
         # replay repairs is the LOCATION-KEYED critical series. Fitting a slope to one
         # and comparing it against a slope fitted to the other compares two different
         # quantities and manufactures a delta out of nothing. That precise error was

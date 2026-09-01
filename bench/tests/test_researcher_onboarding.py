@@ -297,7 +297,7 @@ def test_running_experiment_check_names_the_active_runner():
 
     This is the defect that survived a repair scoped to one file: the check
     matched `run_round_robin`, the Bench Run 1 driver, while the arc had been
-    running `reference_runner_v2.py` for months. Silence from that grep during
+    running `reference_runner_v3.py` for months. Silence from that grep during
     a live run reads as 'nothing is running'.
     """
     runner = active_runner_module()

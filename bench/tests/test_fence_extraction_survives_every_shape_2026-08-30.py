@@ -33,7 +33,7 @@ import sys
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-import reference_runner_v2 as R
+import reference_runner_v3 as R
 
 BODY = "import x\nassert False, 'FALSIFIED'"
 

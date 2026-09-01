@@ -67,7 +67,7 @@ def load_env() -> None:
 def build_registry(max_findings: int):
     """A registry holding the CONFIRMED set (needed for the ladder's dedup pass)
     plus the top-N escalated findings by severity."""
-    from bench.reference_runner_v2 import FindingRegistry
+    from bench.reference_runner_v3 import FindingRegistry
 
     raw = json.loads(ARCHIVE.read_text())
     entries = raw.get("registry", {}).get("entries", {}) or raw.get("entries", {})
@@ -104,7 +104,7 @@ def main() -> int:
     args = ap.parse_args()
 
     load_env()
-    from bench import reference_runner_v2 as R
+    from bench import reference_runner_v3 as R
     from bench import launcher_core
 
     exp_cfg = json.loads(CONFIG.read_text())

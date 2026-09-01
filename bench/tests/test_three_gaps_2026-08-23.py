@@ -19,7 +19,7 @@ import tempfile
 import pytest
 
 from bench.cost_ledger import CostLedger, UNMETERED_ROUTES
-from bench.reference_runner_v2 import FindingRegistry
+from bench.reference_runner_v3 import FindingRegistry
 
 
 # ── GAP 1 ────────────────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ class TestProseAnchorFallback:
     CORRECTED = "Claim CT-01. The rate satisfies the criterion, because f_s > 2 * f_max."
 
     def test_a_bare_quote_of_a_marked_up_passage_now_derives(self):
-        from bench.reference_runner_v2 import _splice_corrected_copy
+        from bench.reference_runner_v3 import _splice_corrected_copy
         bare = ("Claim CT-01. The rate satisfies the criterion, because "
                 "f_s = 400 Hz exceeds f_max = 180 Hz.")
         copy, reason = _splice_corrected_copy(self.TARGET, bare, self.CORRECTED,
@@ -180,7 +180,7 @@ class TestProseAnchorFallback:
         assert "NORMALISED" in reason
 
     def test_an_exact_quote_still_takes_the_exact_path(self):
-        from bench.reference_runner_v2 import _splice_corrected_copy
+        from bench.reference_runner_v3 import _splice_corrected_copy
         exact = ("**Claim CT-01.** The rate satisfies the criterion, because\n"
                  "`f_s = 400 Hz` exceeds `f_max = 180 Hz`.")
         copy, reason = _splice_corrected_copy(self.TARGET, exact, self.CORRECTED,
@@ -189,7 +189,7 @@ class TestProseAnchorFallback:
             "an exact match must win outright; normalised is the FALLBACK")
 
     def test_an_ambiguous_normalised_match_is_REFUSED_not_guessed(self):
-        from bench.reference_runner_v2 import _splice_corrected_copy
+        from bench.reference_runner_v3 import _splice_corrected_copy
         # BOTH paragraphs carry the markdown, so the EXACT count is 0 and the
         # normalised count is 2. A first version of this test used one marked-up
         # and one bare paragraph, which is exact-count 1 -- the exact path
@@ -205,7 +205,7 @@ class TestProseAnchorFallback:
         """On .py, exact is both correct and achievable. Loosening it would let a
         patch land somewhere it was never meant to, which is far worse than a
         decline."""
-        from bench.reference_runner_v2 import _splice_corrected_copy
+        from bench.reference_runner_v3 import _splice_corrected_copy
         code = "def compute(x):\n    # a comment here\n    return x * 2\n"
         loose = "def compute(x):\n        # a comment here\n        return x * 2"
         copy, reason = _splice_corrected_copy(code, loose, "def compute(x):\n    return x * 3",
@@ -226,7 +226,7 @@ def test_the_co_discovery_wiring_is_where_the_registry_actually_is():
     """
     import re
     src = (pathlib.Path(__file__).resolve().parents[1]
-           / "reference_runner_v2.py").read_text(encoding="utf-8")
+           / "reference_runner_v3.py").read_text(encoding="utf-8")
     assert 'kwargs.get("registry")' not in src, (
         "the wiring reads a kwargs that does not exist in its enclosing function")
     i = src.index("record_codiscovery(\n")
@@ -244,7 +244,7 @@ def test_a_co_discovery_failure_is_logged_LOUDLY_not_swallowed():
     A recording failure must not kill a run and must not disappear either.
     """
     src = (pathlib.Path(__file__).resolve().parents[1]
-           / "reference_runner_v2.py").read_text(encoding="utf-8")
+           / "reference_runner_v3.py").read_text(encoding="utf-8")
     i = src.index("[co-discovery] recording failed")
     assert "_log(" in src[i - 200:i], "the failure path does not log"
 
@@ -267,7 +267,7 @@ class TestRelativePathFalsifiersReachTheOverlay:
     def test_with_cwd_at_the_overlay_it_reads_the_REPLACED_target(self):
         import shutil
         from bench.falsifier_verify import execute_python
-        from bench.reference_runner_v2 import (REPO_ROOT,
+        from bench.reference_runner_v3 import (REPO_ROOT,
                                                _build_discrimination_overlay)
         tgt = "bench/cdsfl_registry/targets/control_two_distinct_defects.md"
         root = _build_discrimination_overlay(REPO_ROOT, tgt, "# REPLACED\n")
@@ -287,7 +287,7 @@ class TestRelativePathFalsifiersReachTheOverlay:
 
     def test_the_control_passes_cwd_at_every_execution_site(self):
         src = (pathlib.Path(__file__).resolve().parents[1]
-               / "reference_runner_v2.py").read_text(encoding="utf-8")
+               / "reference_runner_v3.py").read_text(encoding="utf-8")
         # Scoped to run_discrimination_control, NOT the whole file: `cwd=str(` also
         # appears at two unrelated pre-existing sandbox call sites, and a file-wide
         # count would silently pass on the wrong five. Measured, not guessed -- a

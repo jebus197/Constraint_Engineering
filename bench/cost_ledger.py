@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS. `bench/FINANCIAL_LEDGER.md` has sat in the repository since March
 and NEITHER RUNNER WRITES TO IT. Measured 2026-08-23: zero references to it in
-`reference_runner_v2.py` or in the build-experiment harness. So this project has no
+`reference_runner_v3.py` or in the build-experiment harness. So this project has no
 record of what any experiment cost, and the founder is spending borrowed money.
 
 The one figure that did exist was an estimate, and it was wrong by 18x -- the build

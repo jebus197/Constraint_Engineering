@@ -49,7 +49,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "bench"))
 
-from bench.reference_runner_v2 import parse_search_replace_blocks  # noqa: E402
+from bench.reference_runner_v3 import parse_search_replace_blocks  # noqa: E402
 
 
 TARGET = REPO_ROOT / "bench" / "dm" / "_feedback.py"

@@ -620,6 +620,33 @@ _ASK_CORRECTED_COPY: Dict[str, Any] = {"on": False}
 # That changes the DIRECTIVE TEXT of control arms mid-arc, which is an
 # experimental-validity problem, not a cosmetic one. Splitting them restores the
 # control while leaving tools unconditionally on, exactly as ruled.
+# Per-round target hashes for the mid-run mutation guard, keyed by target
+# path and cleared at the start of every run. See the guard near the
+# immune pipeline for why both properties are load-bearing.
+_TARGET_HASH_PREV: dict[str, str] = {}
+
+
+def target_hash_event(target_path) -> tuple[str, str | None]:
+    """Hash `target_path` and return (hash, previous_hash_if_changed).
+
+    The second element is None when the target is unchanged or unseen, and the
+    prior hash when it changed since the last round -- i.e. exactly when the
+    caller should raise a mid-run mutation warning.
+
+    Extracted to module level 2026-09-01. The check itself dates from July and
+    had never run: 0 of 83 archived run directories carry `target_integrity_events`.
+    It sat inline inside the round loop of a 12,000-line function, which is
+    precisely why nothing could exercise it, and why a cross-run false-alarm
+    defect survived in it undetected.
+    """
+    import hashlib
+
+    digest = hashlib.sha256(Path(target_path).read_bytes()).hexdigest()
+    key = str(target_path)
+    previous = _TARGET_HASH_PREV.get(key)
+    _TARGET_HASH_PREV[key] = digest
+    return digest, (previous if previous and previous != digest else None)
+
 _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
 
 
@@ -2206,12 +2233,34 @@ class FindingRegistry:
                 v for v in entry.get("verdicts", [])
                 if v.get("round", 0) >= current_round - 2
             ]
-            challenges = sum(1 for v in recent_verdicts if v.get("verdict") == "CHALLENGE")
-            confirms = sum(1 for v in recent_verdicts if v.get("verdict") == "CONFIRM")
+            # DISTINCT MODELS, NOT ROWS (0C.7, closed 2026-09-01).
+            #
+            # This counted verdict ROWS. `add_verdict` appends unconditionally,
+            # so one model restating a single CHALLENGE three times reached the
+            # threshold on its own and DELETED a severity-0.9 finding.
+            # Reproduced against live code and confirmed pre-existing at real
+            # HEAD: three plain repeated lines already did it.
+            #
+            # In a framework whose founding principle is TOOLS DECIDE, NOT
+            # VOTES, a model that can delete a finding by repeating itself is
+            # the defect the project exists to prevent. A per-reply dedupe was
+            # added at the parser on 2026-09-01, but it is per REPLY: the same
+            # model challenging across three ROUNDS still cleared the bar. The
+            # count itself was the defect, so the count is what changes.
+            #
+            # Surveyed first: the four other tallies over `verdicts` gate on
+            # EXISTENCE (`if not challenges`) or on round staleness, so a
+            # repeated verdict cannot move them. This was the only site where a
+            # COUNT met a THRESHOLD.
+            challenges = len({v.get("model") for v in recent_verdicts
+                              if v.get("verdict") == "CHALLENGE"})
+            confirms = len({v.get("model") for v in recent_verdicts
+                            if v.get("verdict") == "CONFIRM"})
             if challenges >= 3 and confirms == 0:
                 # F6 fix: use resolve() instead of direct mutation.
                 self.resolve(fid, "REFUTED", current_round)
-                _log(f"  Auto-refuted {fid}: {challenges} challenges, 0 defences in last 3 rounds")
+                _log(f"  Auto-refuted {fid}: {challenges} DISTINCT models challenged, "
+                     f"0 defences in last 3 rounds")
 
     def to_dict(self) -> dict:
         return {
@@ -5128,7 +5177,7 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
     # this and converts every CONFIRMED+verified finding with no unresolved
     # challenge to CLOSED — those are settled, not residual, and asking the panel
     # to re-falsify them would just burn dispatch. What survives here is the
-    # CONTESTED-to-CONFIRMED case (reference_runner_v2.py ~1655), which reaches
+    # CONTESTED-to-CONFIRMED case (reference_runner_v3.py ~1655), which reaches
     # CONFIRMED without `verified` and therefore never settles on its own.
     _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
     stats = {"cleared": 0, "withdrawn": 0, "rounds": 0, "remaining": 0}
@@ -10086,6 +10135,11 @@ def run_experiment(
     # silently reinstate the exposure that let a model read the key in Exp 48.
     set_panel_cwd(cfg.panel_cwd or None)
 
+    # Per-run reset for the target integrity guard (runway 0C.9). It is keyed by
+    # target path, but a legitimate edit BETWEEN two runs on the same target
+    # would otherwise surface as a round-0 mutation in the second run.
+    _TARGET_HASH_PREV.clear()
+
     # NO PLAINTEXT SCORING KEY MAY EXIST WHILE AN EXAM RUNS.
     #
     # This is the control that actually binds, and it has to live HERE. Panel
@@ -11180,18 +11234,22 @@ def run_experiment(
         # cannot prevent the write and deliberately does not halt the run —
         # whether to remove model write access is a founder ruling.
         try:
-            import hashlib as _hl
             _tgt_p = Path(REPO_ROOT) / cfg.test_article
-            _tgt_h = _hl.sha256(_tgt_p.read_bytes()).hexdigest()
-            _prev_h = locals().get("_target_hash_prev") or globals().get("_TARGET_HASH_PREV")
-            if _prev_h and _prev_h != _tgt_h:
+            # KEYED BY TARGET AND RESET PER RUN. A bare module global compared
+            # run 2's first round against run 1's last hash, so two experiments
+            # sharing one process raised a round-0 "CHANGED mid-run" event with
+            # nothing mutated. Reproduced 2026-09-01; never observed in the
+            # archive only because no archived report carries the field at all
+            # (0 of 83 run directories) -- the guard has never once fired, so
+            # its first firing would have been the false one.
+            _tgt_h, _prev_h = target_hash_event(_tgt_p)
+            if _prev_h:
                 _log(f"  *** TARGET INTEGRITY WARNING: {cfg.test_article} CHANGED "
                      f"mid-run (round {round_idx}): {_prev_h[:12]} -> {_tgt_h[:12]}. "
                      f"Findings/falsifiers from this round may reference a different "
                      f"module than earlier rounds. Review before trusting results. ***")
                 result.setdefault("target_integrity_events", []).append(
                     {"round": round_idx, "from": _prev_h, "to": _tgt_h})
-            globals()["_TARGET_HASH_PREV"] = _tgt_h
             result.setdefault("target_hashes", {})[str(round_idx)] = _tgt_h
         except Exception as _ti_exc:  # noqa: BLE001 — guard must never break a run
             _log(f"  WARNING: target integrity check failed ({_ti_exc})")
@@ -12433,7 +12491,7 @@ def run_experiment(
             return obj
 
         _chain = VerificationChain()
-        _who = cfg.experiment_name or "reference_runner_v2"
+        _who = cfg.experiment_name or "reference_runner_v3"
 
         for _rd in result.get("rounds", []):
             _chain.append_record(

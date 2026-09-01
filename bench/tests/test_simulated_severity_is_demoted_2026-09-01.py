@@ -26,7 +26,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-import reference_runner_v2 as R  # noqa: E402
+import reference_runner_v3 as R  # noqa: E402
 
 
 def _cfg(*labels):
@@ -89,7 +89,7 @@ class TestTheNoticeSaysWhatMayBeClaimed:
 class TestTheGuardIsWiredIntoTheReport:
 
     def test_the_runner_stamps_it(self):
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
         assert 'result["severity_admissibility"]' in src, (
             "the demotion must reach the REPORT; a ruling nobody can read from "
             "the artefact is a ruling that will be forgotten")
@@ -97,7 +97,7 @@ class TestTheGuardIsWiredIntoTheReport:
     def test_it_does_not_alter_the_gate(self):
         """The demotion is a statement about admissibility, not a behaviour
         change. A simulated run still converges on its own evidence."""
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text(encoding="utf-8")
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
         gate = src[src.index("def _check_gamma_alt_convergence"):][:6000] \
             if "def _check_gamma_alt_convergence" in src else ""
         assert "run_is_simulated" not in gate, (

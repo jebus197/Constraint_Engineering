@@ -3,7 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-`_location_keyed_critical_series` (reference_runner_v2.py) counts a critical as
+`_location_keyed_critical_series` (reference_runner_v3.py) counts a critical as
 novel iff it names at least one code location not previously flagged. A second,
 genuinely distinct defect in an already-flagged function therefore contributes
 ZERO — not a duplicate, not a downgrade, zero. The function's own docstring says

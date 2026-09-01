@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -768,6 +768,30 @@ def call_openrouter(
     )
 
 
+def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
+    """Return None if `text` reads as a real verdict, else why it does not.
+
+    The three rejection modes are the ones actually observed in the archive:
+    an empty reply, a reply that is only a tool-call block (the model started
+    working and never wrote a conclusion), and a holding note far below the
+    length any real review reaches. `min_chars` defaults to 800 against a
+    measured median panel reply of 7,512 characters, so it rejects notes
+    without threatening a terse but genuine verdict.
+
+    This is deliberately a free function rather than a method: several confer
+    harnesses each grew their own copy of the same three-clause test, applied
+    AFTER dispatch where it could only annotate, never retry.
+    """
+    stripped = (text or "").strip()
+    if not stripped:
+        return "empty"
+    if "<invoke" in stripped:
+        return "tool-call block rather than a verdict"
+    if len(stripped) < min_chars:
+        return f"{len(stripped)} chars, below the {min_chars}-char floor"
+    return None
+
+
 def call_claude_cli(
     model_id: str,
     system_prompt: str | None,
@@ -776,6 +800,7 @@ def call_claude_cli(
     timeout: int = 300,
     max_retries: int = 3,
     backoff_base: float = 1.0,
+    accept: "Callable[[str], str | None] | None" = None,
 ) -> str:
     """Call Claude via claude CLI (Max subscription — no API credits needed).
 
@@ -789,6 +814,18 @@ def call_claude_cli(
     model can run Python (via Bash) and import the real target during analysis.
     No gated parameter is needed here — unlike the OpenAI-compatible routes
     (call_openrouter, call_deepseek) which take an optional ``tools`` argument.
+
+    ``accept`` is an optional substance test, added 2026-09-01 (runway 0C.16).
+    It receives the reply and returns None to accept it, or a short reason
+    string to reject it; a rejected reply is retried like any other transport
+    failure. Without it a reply is accepted on the sole condition that it is
+    non-empty, which is how a 54-character holding note ("Suite still running
+    -- I'll finalize once it completes") was recorded as a panel verdict on
+    2026-08-31 against a median reply of 7,512 characters. The caller marked it
+    ``ok=False`` and kept it anyway, because the only substance test in the
+    system ran AFTER the call had already returned.
+
+    Default None leaves behaviour identical for every existing caller.
     """
     cli = CLAUDE_CLI
     if not cli:
@@ -842,7 +879,7 @@ def call_claude_cli(
         # redirection, and Bash is required for the falsifier tool loop. The
         # enforcing control is the read-only staged target (stage_targets.sh);
         # the detecting control is the per-round target hash guard in
-        # reference_runner_v2.py. Three layers, none of them relied on alone.
+        # reference_runner_v3.py. Three layers, none of them relied on alone.
         "--allowedTools", "Bash", "Read", "Grep", "Glob", "WebFetch", "WebSearch",  # STEM tools via Bash (SymPy/z3/numpy/scipy); source via Read/Grep/Glob; research via WebFetch/WebSearch. No file modification.
         # THE PANELLIST IS BRIEFED BY THE DIRECTIVE, NOT BY THE OPERATOR'S OWN
         # INSTRUCTIONS (founder ruling 2026-08-31).
@@ -918,6 +955,15 @@ def call_claude_cli(
                     "empty_response", model_id, "dispatch",
                     f"Empty stdout after {elapsed:.1f}s",
                 )
+            if accept is not None:
+                reason = accept(text)
+                if reason:
+                    last_error = RuntimeError(f"unacceptable reply: {reason}")
+                    _log(f"  [claude-cli:{model_id}] attempt {attempt} "
+                         f"REJECTED ({len(text)} chars): {reason}")
+                    if attempt < max_retries and backoff_base > 0:
+                        time.sleep(backoff_base * (2 ** (attempt - 1)))
+                    continue
             return text
         except subprocess.TimeoutExpired:
             elapsed = time.monotonic() - t0

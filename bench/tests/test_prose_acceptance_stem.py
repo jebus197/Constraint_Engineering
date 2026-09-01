@@ -17,7 +17,7 @@ chosen to exercise it. This file checks the same machinery against documents
 written by a different pass, before the assertions existed, and drives them
 through the paths a real run uses: ``compute_sk`` via
 ``_evaluate_sk_for_findings``, closure via ``bugzilla_loop.attempt_close`` (which
-``reference_runner_v2`` calls at the CONFIRMED -> CLOSED transition), the
+``reference_runner_v3`` calls at the CONFIRMED -> CLOSED transition), the
 falsifier via ``falsifier_verify.reverify_falsifier``, and the sweep prompt via
 ``_sweep_prompt``.
 
@@ -94,7 +94,7 @@ from bench.bugzilla_loop import (  # noqa: E402
 )
 from bench.dm._types import Finding  # noqa: E402
 from bench.falsifier_verify import reverify_falsifier  # noqa: E402
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     SK_ADMISSIBLE,
     SK_NO_SCORE,
     TARGET_KIND_PROSE,
@@ -131,7 +131,7 @@ CONTROL_MIN_FENCES = 4
 def _fix_text(fixture: Fixture, patches, path) -> str:
     """Render fixture patches as the SEARCH/REPLACE text a model would emit.
 
-    The delimiters are the ones both consumers accept: ``reference_runner_v2``
+    The delimiters are the ones both consumers accept: ``reference_runner_v3``
     's line-oriented parser and ``bugzilla_loop``'s regex.
     """
     return "\n".join(
@@ -274,7 +274,7 @@ class TestHarmfulFixIsNeverAdmittedAndNeverCloses:
     recur.
 
     CLOSURE DOES NOT HOLD as of 2026-08-01. ``bugzilla_loop.attempt_close`` —
-    which ``reference_runner_v2`` calls at the CONFIRMED -> CLOSED transition —
+    which ``reference_runner_v3`` calls at the CONFIRMED -> CLOSED transition —
     verifies a non-Python target by ``ast.parse``-ing its fenced listings. Every
     harmful fix in this set is syntactically valid Python, so the listings parse,
     the outcome is PASS, and the finding closes. See the two tests at the end of

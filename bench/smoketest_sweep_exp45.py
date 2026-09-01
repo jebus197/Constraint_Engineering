@@ -18,7 +18,7 @@ from bench import launcher_core  # noqa: E402
 
 launcher_core.load_env_file()
 
-from bench.reference_runner_v2 import (  # noqa: E402
+from bench.reference_runner_v3 import (  # noqa: E402
     FindingRegistry, RunnerConfig, _post_convergence_sweep,
 )
 

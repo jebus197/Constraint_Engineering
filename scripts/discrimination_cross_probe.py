@@ -48,7 +48,7 @@ import time
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-import bench.reference_runner_v2 as RR                      # noqa: E402
+import bench.reference_runner_v3 as RR                      # noqa: E402
 from bench.falsifier_verify import reverify_falsifier       # noqa: E402
 
 RECORD = REPO / "experimental_notes/data/discrimination_control_archive.json"

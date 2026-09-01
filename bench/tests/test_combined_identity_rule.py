@@ -644,7 +644,7 @@ def test_combined_never_undercounts_the_live_gating_series(run):
     `location_only_series` is the retired single-`<generic>`-bucket keying the
     six archived runs were scored with. The series that feeds the count side of
     the two-sided gate today is
-    `reference_runner_v2._location_keyed_critical_series`, which keys each
+    `reference_runner_v3._location_keyed_critical_series`, which keys each
     unlocated critical on its own content and skips terminal non-novel statuses.
     They are different rules, and a safety claim verified against the retired one
     says nothing about the gate.
@@ -658,7 +658,7 @@ def test_combined_never_undercounts_the_live_gating_series(run):
     The runner's own function is driven here rather than re-implemented, so this
     test tracks the live rule if it changes instead of quietly testing a copy.
     """
-    from bench.reference_runner_v2 import _location_keyed_critical_series
+    from bench.reference_runner_v3 import _location_keyed_critical_series
 
     class _Reg:
         def __init__(self, entries):
@@ -679,7 +679,7 @@ def test_the_excluded_status_set_matches_the_runner():
     constant is a second constant, so drift between them is a defect and this is
     where it goes red."""
     from bench.convergence_location import _NON_NOVEL_TERMINAL_STATUSES as MINE
-    from bench.reference_runner_v2 import _NON_NOVEL_TERMINAL_STATUSES as THEIRS
+    from bench.reference_runner_v3 import _NON_NOVEL_TERMINAL_STATUSES as THEIRS
     assert set(MINE) == set(THEIRS), (
         f"the identity rule is scoring a different population from the gate: "
         f"mine {sorted(MINE)} vs the runner's {sorted(THEIRS)}")
@@ -718,7 +718,7 @@ def test_a_finding_the_gate_never_sees_cannot_merge_one_it_does(name, rows):
     Each case is deliberately built so the second finding is the real one and the
     first is invisible to the gate.
     """
-    from bench.reference_runner_v2 import _location_keyed_critical_series
+    from bench.reference_runner_v3 import _location_keyed_critical_series
 
     class _Reg:
         def __init__(self, entries):
@@ -841,7 +841,7 @@ def test_the_divergence_report_never_shows_the_forbidden_direction():
 class TestNothingGatesOnThis:
 
     def test_hierarchical_gating_still_defaults_off(self):
-        from bench.reference_runner_v2 import RunnerConfig
+        from bench.reference_runner_v3 import RunnerConfig
         assert RunnerConfig().hierarchical_novelty_convergence is False
 
     def test_no_shipped_config_enables_novelty_gating(self):
@@ -865,7 +865,7 @@ class TestNothingGatesOnThis:
         """
         import inspect
 
-        from bench.reference_runner_v2 import _estimate_gamma, _settled_novelty_series
+        from bench.reference_runner_v3 import _estimate_gamma, _settled_novelty_series
         for fn in (_settled_novelty_series, _estimate_gamma):
             src = inspect.getsource(fn)
             for banned in ("finding_locations", "stem_signature", "identity_decision",

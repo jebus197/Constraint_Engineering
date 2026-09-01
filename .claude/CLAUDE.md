@@ -344,7 +344,7 @@ diminishing-returns coin to agree, neither alone:
    flattened; AND
 2. K consecutive zero-new-critical rounds (default 3) — the strict, threshold-free "insurance"
    endpoint of that same curve.
-Implemented in `_check_gamma_alt_convergence` (`reference_runner_v2.py`); tests in
+Implemented in `_check_gamma_alt_convergence` (`reference_runner_v3.py`); tests in
 `bench/tests/test_two_sided_gate.py`. On the 9 June live Exp 42 run BOTH held first at round 6
 (gamma_critical 0.607 >= 0.30, count [0,0,0]) — confirming the two naturally agree.
 

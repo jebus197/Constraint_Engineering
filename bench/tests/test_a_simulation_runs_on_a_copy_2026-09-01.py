@@ -7,7 +7,7 @@ repo itself."
 What prompted it: panel agents wrote fixes straight into bench/dm/_memory.py --
 the experiment's own target -- during two separate runs. Panel agents inherit
 this repository as their working directory for code experiments by design
-(reference_runner_v2.py:9841, "unset for code runs, where the panel legitimately
+(reference_runner_v3.py:9841, "unset for code runs, where the panel legitimately
 needs this repo") and they carry a shell. Reading is intended; nothing stopped a
 write.
 
@@ -103,7 +103,7 @@ class TestAWorktreeIsGenuinelyIsolated:
         out = subprocess.run(
             [sys.executable, "-c",
              "import sys; sys.path.insert(0,'bench');"
-             "import reference_runner_v2 as R; print(R.REPO_ROOT)"],
+             "import reference_runner_v3 as R; print(R.REPO_ROOT)"],
             cwd=str(worktree), capture_output=True, text=True)
         assert out.returncode == 0, out.stderr[-400:]
         root = Path(out.stdout.strip()).resolve()
@@ -116,7 +116,7 @@ class TestAWorktreeIsGenuinelyIsolated:
 class TestTheReportSaysWhereThePanelCouldReach:
 
     def test_the_provenance_block_is_in_the_report(self):
-        src = (REPO / "bench" / "reference_runner_v2.py").read_text(
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         for key in ("panel_confinement", "panel_cwd_config",
                     "panel_cwd_effective", "is_sandbox_worktree", "run_root"):

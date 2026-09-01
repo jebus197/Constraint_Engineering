@@ -5,12 +5,12 @@ WHAT THIS TESTS, AND WHY IT IS THE COMPLEMENT OF THE DISCRIMINATION CONTROL
 --------------------------------------------------------------------------
 The discrimination control asks: repair the claim, does the falsifier go QUIET?
 It has never run, because it needs a corrected copy from the panel and nothing
-supplies one (`reference_runner_v2.py:593` is a dead flag).
+supplies one (`reference_runner_v3.py:593` is a dead flag).
 
 This asks the opposite and needs no panel input at all: change something
 SEMANTICALLY IRRELEVANT, does the falsifier STAY PUT? A sound falsifier must.
 One that flips is responding to the file changing rather than to the claim - the
-access-versus-dependence hole (`reference_runner_v2.py:2972`) promoted one level,
+access-versus-dependence hole (`reference_runner_v3.py:2972`) promoted one level,
 and the failure mode a CC2 review named on 2026-08-22: "change-response without
 claim-dependence".
 
@@ -52,7 +52,7 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from bench.falsifier_verify import reverify_falsifier  # noqa: E402
-from bench.reference_runner_v2 import _build_discrimination_overlay  # noqa: E402
+from bench.reference_runner_v3 import _build_discrimination_overlay  # noqa: E402
 
 MARKER = "\n# null-perturbation control: semantically inert line, appended by the control\n"
 

@@ -145,8 +145,15 @@ class TestAgainstTheRealArtefacts:
     def test_the_ledger_names_the_disagreement_count(self):
         text = LEDGER.read_text(encoding="utf-8")
         assert "Hole 2" in text and "EMPTY reason" in text
-        assert "reference_runner_v2.py:11002" in text, (
-            "the ledger no longer cites where the runner's own source names this defect"
+        # DERIVED, not typed. The previous form asserted a literal line
+        # number that was wrong by 1,068 lines and agreed with the generator's
+        # identical typo, so the pair verified each other and never the source
+        # (2026-09-01).
+        sys.path.insert(0, str(REPO / "scripts"))
+        from experiment_run_ledger import _gamma_alt_comment_line
+        assert f"reference_runner_v3.py:{_gamma_alt_comment_line()}" in text, (
+            "the ledger no longer cites where the runner's own source names "
+            "this defect"
         )
 
 

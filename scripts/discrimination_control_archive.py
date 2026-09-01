@@ -47,7 +47,7 @@ probe (is it deterministic), and the runner's own baseline check. Any of them
 failing yields an INDETERMINATE_* outcome and NO verdict.
 
 NOTHING IS WRITTEN TO THE REAL TREE. Every execution happens inside a throwaway
-symlink overlay built by `reference_runner_v2._build_discrimination_overlay`.
+symlink overlay built by `reference_runner_v3._build_discrimination_overlay`.
 The one earlier tool that adjudicated by repair wrote to the target file and
 restored it in a `finally`; this does not, deliberately.
 
@@ -73,7 +73,7 @@ import time
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-import bench.reference_runner_v2 as RR                       # noqa: E402
+import bench.reference_runner_v3 as RR                       # noqa: E402
 from bench.falsifier_verify import reverify_falsifier        # noqa: E402
 
 RUNS = {

@@ -74,7 +74,7 @@ class TestAnUnmeasuredBaselineIsNotAGreenBaseline:
         """The refusal must come BEFORE any worktree is made, on the baseline alone."""
         monkeypatch.setattr(BA, "suite_baseline", lambda *a, **k: None)
         response = (
-            "<<<< SEARCH bench/reference_runner_v2.py\n"
+            "<<<< SEARCH bench/reference_runner_v3.py\n"
             "old text\n"
             "==== REPLACE\n"
             "new text\n"
@@ -92,7 +92,7 @@ class TestAnUnmeasuredBaselineIsNotAGreenBaseline:
 
 class TestModelSuppliedPathsCannotEscapeTheWorktree:
     @pytest.mark.parametrize("bad", [
-        "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py",
+        "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py",
         "/etc/hosts",
         "../../../etc/hosts",
         "bench/../../escape.py",

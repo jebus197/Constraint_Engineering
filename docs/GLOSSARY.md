@@ -42,7 +42,7 @@ Popper's degree of corroboration. Measures how well evidence E supports hypothes
 Four-label vocabulary describing a code component's maturity within the runtime pipeline. Locked 21 April 2026 (three labels); extended 13 May 2026 (added `tripwire`). Full definitions in `resources/ONBOARDING.md` under "Closure-State Lexicon". Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional and applies specifically to flag-gated runtime guards.
 
 - **`library_complete`** — code present and tested, not hooked into any live or shadow pipeline path.
-- **`tripwire`** — code hooked into the pipeline, observation-only by default (off, or on-emit-only), but becomes assertive (halts the run, blocks the gate, drives an outcome) when an explicit flag is set. Example: `DEBUG_CHANNEL_CHECK` assertion at `bench/reference_runner_v2.py:3510`.
+- **`tripwire`** — code hooked into the pipeline, observation-only by default (off, or on-emit-only), but becomes assertive (halts the run, blocks the gate, drives an outcome) when an explicit flag is set. Example: `DEBUG_CHANNEL_CHECK` assertion at `bench/reference_runner_v3.py:3510`.
 - **`shadow_integrated`** — code hooked into the live pipeline in observation-only capacity. Runs on every relevant input, emits logs and metrics, but does not drive verdicts, promotions, or gate decisions. Example: K/L/M shadow-audit logging.
 - **`live_operational`** — code drives live decisions; outputs affect verdicts, gates, or downstream state. Reversion requires explicit policy change. Examples: §17 feedback directive, §18 divergence directive.
 
@@ -230,7 +230,7 @@ Immune pipeline cell type. Stage 6 reconciliation. Final gate that ensures consi
 
 ### Runner
 
-The Python program that orchestrates a multi-model analysis session. Since Experiment 40 there is one active runner, `bench/reference_runner_v2.py`, driven by the shared launcher `bench/launch_exp42.py` and selected per experiment by a committed config under `bench/expNN_configs/`; the launcher's name is historical, not Experiment-42-specific. `bench/reference_runner.py` is the frozen Experiment 38/39 baseline. Experiments 29–37 each have their own standalone script (e.g. `run_exp36_evidence.py`), retained as records. All share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
+The Python program that orchestrates a multi-model analysis session. Since Experiment 40 there is one active runner, `bench/reference_runner_v3.py`, driven by the shared launcher `bench/launch_exp42.py` and selected per experiment by a committed config under `bench/expNN_configs/`; the launcher's name is historical, not Experiment-42-specific. `bench/reference_runner.py` is the frozen Experiment 38/39 baseline. Experiments 29–37 each have their own standalone script (e.g. `run_exp36_evidence.py`), retained as records. All share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
 
 ### S_k Tristate, and NO_SCORE
 
@@ -293,7 +293,7 @@ The architecture amplifies existing competence but cannot create competence from
 
 ### Two-sided gate (critical quiescence)
 
-The runner's terminal convergence condition since the Experiment 40 arc. It fires only when both sides of the same diminishing-returns measure agree: `gamma_critical` at or above threshold (default 0.30) **AND** a run of consecutive rounds (default 3) producing no new genuine CRITICAL finding — with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Either side alone is insufficient. Reported in a run's `convergence_reason` as `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate)`. Implemented at `bench/reference_runner_v2.py:2833-3035`; the pass condition for any given config is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
+The runner's terminal convergence condition since the Experiment 40 arc. It fires only when both sides of the same diminishing-returns measure agree: `gamma_critical` at or above threshold (default 0.30) **AND** a run of consecutive rounds (default 3) producing no new genuine CRITICAL finding — with no unverified critical pending, nothing contested, no churn, and the irreducible queue within bound. Either side alone is insufficient. Reported in a run's `convergence_reason` as `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate)`. Implemented at `bench/reference_runner_v3.py:2833-3035`; the pass condition for any given config is printed by `python3 bench/launch_exp42.py --config <config> --dry-run`.
 
 Where the cumulative critical count over the whole run is zero, the decay curve does not exist and `gamma_critical` returns 0.0 — indistinguishable, numerically, from the worst case. That run converges on the count side alone, guarded by a requirement that the panel produced findings of some severity, and is labelled `(two-sided gate, VACUOUS CURVE)` so a reader can judge it.
 
