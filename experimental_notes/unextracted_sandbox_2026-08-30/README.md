@@ -70,3 +70,49 @@ the model is told in those words that its fix does not cure its own falsifier.
 
 **Still open, unchanged:** whether the 43 lines in `falsifier_verify.py` and the
 131 lines in the runner should be adopted, superseded, or discarded.
+
+---
+
+## The open question is now answered: both halves are SUPERSEDED
+
+Assessed 2026-09-01 by reading the diff against current code rather than by
+attempting to apply it. The diff is **100 insertions / 4 deletions** in the
+runner and **43 insertions** in `falsifier_verify.py` — the README's earlier
+"131 lines" was the raw line count, not the diff.
+
+**The runner half — superseded by the implementation that was adopted.** The
+uncommitted work is the reviewer's own draft of the fix-efficacy wiring: module
+aliases `FE_FIX_INEFFECTIVE` / `FE_FEEDBACK_LINE`, a
+`FIX_EFFICACY_PER_ROUND_LIMIT` of 5, and the probe called inline from the status
+pass. What is in `reference_runner_v3.py` today is the same feature refactored:
+`fix_efficacy_decision()` plus a lazy `from fix_efficacy import probe` at the
+call site, with the same per-round limit.
+
+The evidence is the reviewer's own tests. All eight of its commissioning tests
+now run in the suite as
+`bench/tests/test_repair_loop_wiring_2026-08-30.py` and pass against the adopted
+code — including the two that matter most here, that an ineffective fix reaches
+the model and that the probe is contributory and cannot gate anything. A draft
+whose author's own tests pass against the replacement is superseded, not lost.
+
+The single exception is the one assertion that named the aliases rather than the
+behaviour. It was restated on integration; the aliases themselves are the only
+thing in these 100 lines that does not exist in the tree, and nothing depends on
+them.
+
+**The `falsifier_verify.py` half — superseded by the founder's own ruling.** The
+43 lines add `_main_work_tree()`, which resolves `--git-common-dir` so a run
+inside a linked worktree stops raising `INTEGRITY_VIOLATION` against the
+canonical tree. That is a real problem, and it was solved differently: the
+founder ruled for Option B on 2026-08-30, where the panel's cwd stays the
+disposable worktree and `CDSFL_CANONICAL_REPO` names the canonical one. That
+ruling is live — `bench/falsifier_verify.py` reads the variable at
+`_allow_roots`, and `bench/confer_panel_2026-08-28.py` sets it before dispatch.
+
+Adopting `_main_work_tree()` now would give the same widening a second,
+independent route, which is the opposite of what a confinement control wants.
+
+**Recommendation: discard, and prune the worktree.** Neither half carries
+anything the tree lacks. The worktree at `/private/tmp/cdsfl_review_89557` has
+not been pruned here, because deleting it is the founder's call and it is the
+only copy.
