@@ -1,0 +1,225 @@
+diff --git a/bench/falsifier_verify.py b/bench/falsifier_verify.py
+index 1d4cef3..6109a39 100644
+--- a/bench/falsifier_verify.py
++++ b/bench/falsifier_verify.py
+@@ -358,6 +358,36 @@ def _protected_values() -> list[str]:
+     return out
+ 
+ 
++_MAIN_WORK_TREE_CACHE: list = []
++
++
++def _main_work_tree() -> str:
++    """The canonical work tree of the repository this file lives in.
++
++    Returns `REPO_ROOT` itself when this is not a worktree, or when git cannot
++    answer -- the failure direction is "no extra root", which is the status quo
++    and never a widening. Cached: `_allow_roots` is called per falsifier and a
++    subprocess per call would be paid hundreds of times a run.
++    """
++    if _MAIN_WORK_TREE_CACHE:
++        return _MAIN_WORK_TREE_CACHE[0]
++    root = os.path.normpath(str(REPO_ROOT))
++    try:
++        import subprocess as _sp
++        common = _sp.run(["git", "rev-parse", "--git-common-dir"],
++                         capture_output=True, text=True, timeout=10,
++                         cwd=str(REPO_ROOT)).stdout.strip()
++        if common:
++            cand = os.path.dirname(os.path.abspath(
++                os.path.join(str(REPO_ROOT), common)))
++            if os.path.isdir(cand):
++                root = os.path.normpath(cand)
++    except Exception:                                    # noqa: BLE001
++        pass
++    _MAIN_WORK_TREE_CACHE.append(root)
++    return root
++
++
+ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str] = ()) -> list[str]:
+     """Directories a falsifier may legitimately name by absolute path.
+ 
+@@ -377,6 +407,19 @@ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str]
+     roots = [os.path.normpath(repo_root or str(REPO_ROOT)),
+              os.path.normpath(str(REPO_ROOT)),
+              STAGED_TARGET_ROOT]
++    # ...AND THE MAIN WORK TREE, when this copy of the harness is running from a
++    # git worktree. `REPO_ROOT` is `parents[1]` of THIS FILE, so in a worktree it
++    # names the worktree and the CANONICAL tree drops out of the allowlist. Panels
++    # are dispatched into throwaway worktrees, and archived falsifiers name the
++    # canonical tree by absolute path, so those falsifiers are rejected as
++    # INTEGRITY_VIOLATION -- a verdict that routes the finding to a human and
++    # never to CONFIRMED. MEASURED 2026-08-30 from a worktree, over the 560
++    # archived falsifier sources in `test_the_guard_rejects_nothing_else_in_the
++    # _whole_tracked_archive`: 17 rejected against the 2 that are real. 15 honest
++    # falsifiers blocked, which is precisely what that test's docstring says must
++    # never happen. The reasoning is the same as the line above it: the repository
++    # holds no key material, so allowing it costs nothing.
++    roots.append(_main_work_tree())
+     for mod_name in ("bench.experiment_11_orchestrator", "experiment_11_orchestrator"):
+         mod = sys.modules.get(mod_name)
+         panel = getattr(mod, "_PANEL_CWD", None) if mod is not None else None
+diff --git a/bench/reference_runner_v2.py b/bench/reference_runner_v2.py
+index 4052eab..22e6c85 100644
+--- a/bench/reference_runner_v2.py
++++ b/bench/reference_runner_v2.py
+@@ -259,7 +259,17 @@ MODEL_ROSTER = {
+ # Findings not attempted this round remain CONFIRMED and become
+ # candidates next round (entry["bugzilla_attempted"] flag prevents
+ # re-attempting the same finding repeatedly).
++from fix_efficacy import (           # noqa: E402
++    FIX_INEFFECTIVE as FE_FIX_INEFFECTIVE,
++    FEEDBACK_LINE as FE_FEEDBACK_LINE,
++)
++
+ BUGZILLA_PER_ROUND_LIMIT = 5
++#: Fix-efficacy probes attempted per round. Measured 2026-08-30 over 313
++#: archived findings: 0.255 s per probe wall-clock, so 5 costs ~1.3 s a round.
++#: The cap exists for the same reason the Bugzilla one does -- a bounded,
++#: predictable per-round cost -- not because the probe is expensive.
++FIX_EFFICACY_PER_ROUND_LIMIT = 5
+ 
+ # Operational directive — R_k(i) self-assessment equation and working protocol.
+ # Appended AFTER composer phenotype transforms to bypass char caps. Models MUST
+@@ -2348,6 +2358,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
+     # caller-side state.
+     _bugzilla_attempts_this_call = 0
+ 
++    _fix_efficacy_attempts_this_call = 0
+     # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
+     # Derived fresh each call — not sticky. Requires review activity.
+     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
+@@ -2628,6 +2639,63 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
+                         f"{type(_bz_exc).__name__}: {str(_bz_exc)[:160]}"
+                     )
+ 
++        # ── FIX-EFFICACY PROBE (wiring added 2026-08-30) ────────────────────
++        # The Bugzilla block above asks "did this fix break anything". It never
++        # asks "does this fix cure the defect THIS finding's own falsifier
++        # demonstrates". That is the FIX_INEFFECTIVE condition, and measured
++        # across 313 archived findings on 2026-08-30 it holds for 125 of the 243
++        # that yield a verdict -- 51.4%.
++        #
++        # `bench/fix_efficacy.probe` has existed since commit 775518d, with 14
++        # passing tests and two consuming scripts, and was never called from the
++        # runner. This is the wiring, and only the wiring.
++        #
++        # CONTRIBUTORY, NEVER A VETO. It writes no status, sets no flag any gate
++        # reads, and cannot un-confirm, close, merge or block. It records a
++        # reading on the entry; `_rejection_lines` turns the one actionable
++        # outcome into a corrective line for the model that offered the fix.
++        # This follows the founder ruling of 2026-08-29 that made rho
++        # contributory (commit aff3ab7) -- an instrument that measures the
++        # exhaustion of a search must not be able to refuse the convergence it
++        # is measuring.
++        #
++        # The four INDETERMINATE outcomes are recorded and NOT shown to the
++        # model. They are statements about the apparatus, not about the fix, and
++        # telling a model "the instrument could not look" invites it to rewrite
++        # a sound fix. Only the two real verdicts reach the panel.
++        if (
++            entry.get("proposed_fix", "").strip()
++            and (entry.get("falsifier_code") or "").strip()
++            and not entry.get("fix_efficacy_attempted")
++            and _fix_efficacy_attempts_this_call < FIX_EFFICACY_PER_ROUND_LIMIT
++        ):
++            _fix_efficacy_attempts_this_call += 1
++            entry["fix_efficacy_attempted"] = True
++            try:
++                _fe_target = (entry.get("target_file")
++                              or (cfg.test_article if cfg else None))
++                if _fe_target:
++                    from fix_efficacy import probe as _fe_probe
++                    _fe = _fe_probe(
++                        {"falsifier_code": entry.get("falsifier_code") or "",
++                         "proposed_fix": entry.get("proposed_fix") or ""},
++                        str(_fe_target),
++                        repo_root=Path(REPO_ROOT),
++                    )
++                    entry["fix_efficacy"] = {"outcome": _fe.outcome,
++                                             "detail": _fe.detail[:300],
++                                             "round": round_idx}
++                    _log(f"  FIX-EFFICACY {canonical_id}: {_fe.outcome}")
++            except Exception as _fe_exc:              # noqa: BLE001
++                # Loud, never silent, and never a verdict. A probe that could not
++                # run says nothing about the fix.
++                entry["fix_efficacy"] = {
++                    "outcome": "INDETERMINATE_PROBE_ERROR",
++                    "detail": f"{type(_fe_exc).__name__}: {str(_fe_exc)[:200]}",
++                    "round": round_idx}
++                _log(f"  FIX-EFFICACY probe error for {canonical_id}: "
++                     f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
++
+         if (entry["status"] in ("CONFIRMED", "CORROBORATED")
+                 and entry.get("verified")):
+             # CLOSED stays TOOL-ONLY and remains honestly so: `verified` is
+@@ -2783,18 +2851,38 @@ def _disc_sha(text: str) -> str:
+     return _hashlib.sha256((text or "").encode("utf-8", "replace")).hexdigest()[:16]
+ 
+ 
+-def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str) -> None:
++#: Never mirrored into an overlay ROOT. `.git` is the answer key for any overlay
++#: whose leaf differs from the tracked file: with it symlinked in,
++#: `git -C <overlay> show HEAD:<target>` hands back the pristine text and
++#: `git -C <overlay> diff` hands back the mutation set at precision 1.000 -- the
++#: exact leak `canary_seeding.seed` refuses a tracked target to prevent, arriving
++#: through a mechanism that guard cannot see. Measured 2026-08-30: `git log` and
++#: `git diff` both ran successfully through a live overlay and returned real
++#: repository history. It also made every overlay look like a git work tree to
++#: `canary_seeding._in_a_git_worktree`, so `seed()` refused the one location where
++#: in-flight seeding is legitimate.
++_OVERLAY_NEVER_MIRROR = frozenset({".git"})
++
++
++def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str,
++                                  *, is_root: bool = False) -> None:
+     """Mirror one directory as symlinks, omitting `skip`.
+ 
+     Symlinks, not copies: the repo is large and the control runs per finding.
+     The links are absolute, so they resolve identically from the sandbox's
+     throwaway cwd. `shutil.rmtree` does not follow symlinks when deleting, so
+     tearing an overlay down cannot reach the real tree.
++
++    At the overlay ROOT, `_OVERLAY_NEVER_MIRROR` is omitted as well -- see that
++    constant. Root only, because that is the only level at which git resolves a
++    repository; a project file named `.git` deeper in the tree is not one.
+     """
+     over_dir.mkdir(parents=True, exist_ok=True)
+     for child in real_dir.iterdir():
+         if child.name == skip:
+             continue
++        if is_root and child.name in _OVERLAY_NEVER_MIRROR:
++            continue
+         link = over_dir / child.name
+         if link.exists() or link.is_symlink():  # pragma: no cover — defensive
+             continue
+@@ -2822,11 +2910,12 @@ def _build_discrimination_overlay(repo_root: Path, target_rel: str,
+         raise FileNotFoundError(f"discrimination control: target not found: {real_target}")
+     root = Path(tempfile.mkdtemp(prefix="cdsfl_disc_"))
+     real_dir, over_dir = repo_root, root
+-    for comp in parts[:-1]:
+-        _discrimination_mirror_except(real_dir, over_dir, comp)
++    for _i, comp in enumerate(parts[:-1]):
++        _discrimination_mirror_except(real_dir, over_dir, comp, is_root=(_i == 0))
+         real_dir = real_dir / comp
+         over_dir = over_dir / comp
+-    _discrimination_mirror_except(real_dir, over_dir, parts[-1])
++    _discrimination_mirror_except(real_dir, over_dir, parts[-1],
++                                  is_root=(len(parts) == 1))
+     leaf = over_dir / parts[-1]
+     leaf.write_text(content, encoding="utf-8")
+     if leaf.is_symlink() or leaf.read_text(encoding="utf-8") != content:  # pragma: no cover
+@@ -8860,6 +8949,13 @@ def _rejection_lines(entry: dict) -> list:
+             "FIX NOT SCORED: fix-admission is undefined on this target, so a "
+             "fix cannot close this finding. Attach a runnable falsifier "
+             "instead — that is what settles it here.")
++    # The fix-efficacy reading. Only the one actionable outcome renders: the
++    # model can act on "your fix does not cure your own test", and cannot act on
++    # "the instrument could not look", which would only invite it to rewrite a
++    # fix nothing found fault with.
++    _fe = entry.get("fix_efficacy") or {}
++    if _fe.get("outcome") == FE_FIX_INEFFECTIVE:
++        out.append(FE_FEEDBACK_LINE)
+     v = entry.get("falsifier_verdict")
+     if v == "ERROR":
+         out.append(
