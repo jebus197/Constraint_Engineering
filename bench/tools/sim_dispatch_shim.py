@@ -220,15 +220,83 @@ def make_shim(model: str = "sonnet", timeout: int = 900):
     return _dispatch
 
 
+def make_multiturn_shim(dispatch):
+    """Stand in for ``_multiturn_fallback``, the SECOND dispatch primitive.
+
+    THE SEAM WAS TWO PRIMITIVES, NOT ONE (2026-09-01). Patching
+    ``dispatch_to_model`` covers every path that funnels through it -- but
+    ``_multiturn_fallback`` does not. It calls ``decomposed_dispatch``, a
+    separate function with its own API table listing google, openrouter,
+    deepseek and codex_exec. A simulated ModelConfig carries ``api="sim"``, so
+    the moment the runner fell back to the multi-turn path every agent died on
+    ``ValueError: Unknown API: sim``. Measured on the first launch of the final
+    exp45 run: 5 of 6 agents failed in Round 0, before a single finding.
+
+    This is the same shape as the 2026-08-30 defect where the shim patched one
+    of nine dispatch sites. The lesson taken then was "patch the primitive";
+    the lesson that survives now is "count the primitives".
+
+    The real function delivers the target in chunks across several turns and
+    then asks for a synthesis. The stand-in agent has the whole target in one
+    context, so the chunking has nothing to model: the same content and the
+    same final instruction go over in one turn. Returns ``(text, elapsed)``,
+    the real function's contract.
+    """
+    def _mt(mc, prompt, cdsfl_text, full_code, round_idx, pattern_text,
+            logs_dir, enable_tools: bool = True):
+        composed = f"{full_code}\n\n{pattern_text}\n\n{prompt}"
+        return dispatch(mc, composed, cdsfl_text, enable_tools=enable_tools)
+    return _mt
+
+
+def make_decomposed_shim(dispatch):
+    """Backstop for ``decomposed_dispatch`` itself.
+
+    ``make_multiturn_shim`` covers the runner's own fallback, which is the path
+    that failed. This covers any OTHER caller reaching the decomposed primitive
+    during a simulated run, so a third route cannot rediscover the same crash.
+    It cannot recover the agent's label -- every simulated ModelConfig carries
+    ``model_id="sim"`` -- so telemetry lands under the api name. That is why the
+    multi-turn patch above exists as well rather than relying on this alone.
+    """
+    class _Stand:
+        label = "sim"
+
+    def _dd(api, model_id, system_prompt, chunks, final_instruction,
+            max_tokens: int = 32768, timeout: int = 600,
+            cdsfl_directives=None, enable_tools: bool = False,
+            extra_body=None):
+        from decomposed_dispatch import DecomposedResult
+        body = "\n\n".join(getattr(c, "content", str(c)) for c in chunks)
+        text, elapsed = dispatch(
+            _Stand(), f"{body}\n\n{final_instruction}",
+            cdsfl_directives or system_prompt or "", enable_tools=enable_tools)
+        return DecomposedResult(
+            text=text, model_id=model_id or "sim", api=api,
+            chunks_delivered=len(chunks), total_chars_delivered=len(body),
+            elapsed_s=elapsed)
+    return _dd
+
+
 def install(model: str = "sonnet", timeout: int = 900):
-    """Patch the PRIMITIVE seam. Returns the original so a caller can restore."""
-    original = R.dispatch_to_model
-    R.dispatch_to_model = make_shim(model, timeout)
-    return original
+    """Patch BOTH dispatch primitives. Returns the originals for restore()."""
+    dispatch = make_shim(model, timeout)
+    originals = (R.dispatch_to_model, R._multiturn_fallback,
+                 R.decomposed_dispatch)
+    R.dispatch_to_model = dispatch
+    R._multiturn_fallback = make_multiturn_shim(dispatch)
+    R.decomposed_dispatch = make_decomposed_shim(dispatch)
+    return originals
 
 
-def restore(original) -> None:
-    R.dispatch_to_model = original
+def restore(originals) -> None:
+    # Tuple since 2026-09-01. A bare callable is still accepted so an older
+    # caller restores the primary seam rather than raising here.
+    if not isinstance(originals, tuple):
+        R.dispatch_to_model = originals
+        return
+    (R.dispatch_to_model, R._multiturn_fallback,
+     R.decomposed_dispatch) = originals
 
 
 def calls() -> list:
