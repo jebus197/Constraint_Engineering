@@ -67,7 +67,22 @@ The parser repairs moved findings into the registry, which gave the downstream m
 
 A worktree at `/private/tmp/cdsfl_review_89557` (HEAD `657b02c`, 2026-08-30) still held uncommitted work existing nowhere else: a **142-line test absent from main**, plus 43 and 131 lines in two runner files. `/private/tmp` clears on reboot — one restart from lost. Preserved verbatim to `experimental_notes/unextracted_sandbox_2026-08-30/`, **nothing applied**, worktree left in place pending a ruling. Both files changed substantially since, so it needs a read, not a merge.
 
-## 8. Status
+## 8. A limit on what this rehearsal can prove
+
+The simulated panel rates severity **materially lower than the real panel on the same module**. Measured against the real exp45 run, same target:
+
+| | findings | criticals | rate | 95% CI (Wilson) |
+|---|---|---|---|---|
+| real exp45 | 41 | 12 | **29.3%** | [17.6%, 44.5%] |
+| this rehearsal | 35 | 2 | **5.7%** | [1.6%, 18.6%] |
+
+A 5.1x difference. Fisher exact p=0.015, chi-square p=0.019, z-test p=0.008 — **all three significant**, though the intervals still marginally overlap.
+
+**This is a fidelity gap, not a runner defect.** The machinery behaves correctly on the input it is given; the stand-in agents produce lower severities than the real panel models. The consequence matters for how this run should be read: **a clean convergence here validates the MACHINERY, and does not predict the critical dynamics of a live run.** Bench Run 2 should not be planned on the rehearsal's critical rate.
+
+The curve is nonetheless **no longer vacuous**: criticals appeared in rounds 0 and 3 (history `[1, 0, 0, 1]`), where the previous run had zero in every round. The round-3 critical resets the zero-new-critical streak, so convergence cannot occur before round 6 — the run is being held open by genuine findings rather than stopping on an empty condition.
+
+## 9. Status
 
 Suite **4,680 passed, 0 failed**. Canonical tree clean, archive intact at 52,162 lines. All work committed locally, **nothing pushed**.
 
