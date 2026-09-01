@@ -2262,15 +2262,21 @@ class FindingRegistry:
             return ""
         exact = self.model_identity.get(key)
         if exact:
-            return exact
+            # NORMALISE THE VALUE TOO, not just the key. fable, panel review
+            # 2026-09-01: the lookup lowercased the label but returned the
+            # identity string verbatim, so two configs writing "OpenRouter" and
+            # "openrouter" for the same route would resolve one seat to two
+            # identities -- over-separating, which is the direction that makes
+            # auto-refutation EASIER and deletes findings.
+            return exact.strip().lower()
         # Case-insensitive second pass. Seat labels are hand-written in configs
         # and read back out of archived JSON, and a MISSED alias resolves two
         # seats of one model to two models -- it over-counts dissent, which is
         # the direction that deletes findings. Built per call rather than cached
         # because the map is set once per run and read a handful of times.
-        lowered = {str(k).strip().lower(): v
+        lowered = {str(k).strip().lower(): str(v).strip().lower()
                    for k, v in self.model_identity.items()}
-        return lowered.get(key.lower(), key)
+        return lowered.get(key.lower(), key.lower())
 
     def distinct_models(self, verdicts) -> int:
         """How many DIFFERENT MODELS are represented, not how many rows or seats."""
@@ -11207,7 +11213,74 @@ def run_experiment(
                     if not ok:
                         sk_reformat_requests_for_next_round.append((cid, reason))
             else:
-                registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
+                # A REUSED FINDING ID IS NOT AUTOMATICALLY THE SAME DEFECT.
+                #
+                # THE DELETION PATH THIS CLOSES, found by fable in panel review
+                # 2026-09-01. `lookup_alias` keys on (model_id, finding_id)
+                # alone. A model that re-uses its OWN local id for a DIFFERENT
+                # defect had the second one converted into a CONFIRM vote on the
+                # first, and its description, falsifier and proposed fix were
+                # discarded without ever entering the registry. On the canary
+                # rehearsal that is how the one parsed `compute_source_hash`
+                # catch was lost: a correct detection had a live path to
+                # oblivion regardless of whether the reviewer saw the plant.
+                #
+                # This is the same class as "a model could delete a finding by
+                # repeating itself", arriving through the absorb door rather
+                # than the verdict door.
+                #
+                # The content test uses THIS PROJECT'S OWN instrument at its own
+                # calibrated threshold -- Jaccard over STEM signatures, measured
+                # on archive ground truth at median 0.542 for pairs the system
+                # merged against 0.000 for independently-confirmed distinct
+                # pairs (p = 1.9e-25). Below that threshold the two texts are
+                # about different things, so the finding is REGISTERED rather
+                # than absorbed.
+                #
+                # Fails toward the OLD behaviour: any error in the comparison
+                # leaves the finding absorbed exactly as before, so a defect in
+                # this guard cannot invent findings.
+                _absorb = True
+                _sim = 1.0
+                try:
+                    # Imported here, as at the other call site: these live in
+                    # bench.convergence_location, not at this module's top level.
+                    # Without the import this whole block raises NameError, is
+                    # swallowed by the fail-safe below, and the guard silently
+                    # never fires -- which is how a control gets written and
+                    # never runs.
+                    from bench.convergence_location import (
+                        signature_similarity, stem_signature)
+                    _new_sig = stem_signature(getattr(f, "description", "") or "")
+                    _old_sig = stem_signature(
+                        (registry.entries.get(existing) or {}).get("description") or "")
+                    if _new_sig and _old_sig:
+                        _sim = signature_similarity(_new_sig, _old_sig)
+                        if _sim < _UNLOCATED_MERGE_THRESHOLD:
+                            _absorb = False
+                except Exception as _sim_exc:            # noqa: BLE001
+                    _log(f"  WARNING: absorb content check failed for "
+                         f"{f.model_id}:{f.finding_id} ({_sim_exc}); absorbing "
+                         f"as before")
+                if _absorb:
+                    registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
+                else:
+                    _log(f"  ID REUSE, DIFFERENT DEFECT: {f.model_id}:"
+                         f"{f.finding_id} is not {existing} (signature overlap "
+                         f"{_sim:.3f} < {_UNLOCATED_MERGE_THRESHOLD}); "
+                         f"registering it rather than folding it in")
+                    cid = registry.register(f, f.model_id)
+                    novel_this_round += 1
+                    per_model_novel_this_round[f.model_id] = (
+                        per_model_novel_this_round.get(f.model_id, 0) + 1
+                    )
+                    if getattr(f, "severity", 0.0) >= 0.7:
+                        novel_critical_this_round += 1
+                    result.setdefault("id_reuse_registered", []).append(
+                        {"round": round_idx, "model": f.model_id,
+                         "local_id": f.finding_id, "absorbed_into_would_be":
+                         existing, "new_canonical": cid,
+                         "signature_overlap": round(_sim, 4)})
 
         novelty_counts.append(novel_this_round)
         novel_critical_history.append(novel_critical_this_round)  # Exp 40 1A.3

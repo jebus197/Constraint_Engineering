@@ -131,7 +131,12 @@ class TestSeatsAreNotModels:
     def test_an_unknown_seat_resolves_to_itself(self):
         registry = R.FindingRegistry()
         registry.model_identity = self.LIVE_SEATS
-        assert registry.resolve_model("Fable") == "Fable"
+        # Values are case-normalised (fable, 2026-09-01), so an unknown seat
+        # resolves to its own normalised label -- distinct from every known
+        # identity, which is the property that matters.
+        assert registry.resolve_model("Fable") == "fable"
+        assert registry.resolve_model("Fable") not in {
+            registry.resolve_model(s) for s in self.LIVE_SEATS}
         assert registry.resolve_model("Codex") == "openai/gpt-5.5"
         assert registry.resolve_model("codex") == "openai/gpt-5.5"
         assert registry.resolve_model(None) == ""
@@ -199,6 +204,28 @@ class TestIdentityIsRouteAwareNotJustWeights:
             "restoring the codex_exec/openrouter contrast must restore two "
             "distinct voices; keying identity on model_id alone would collapse "
             "them and quietly make refutation easier")
+
+    def test_identity_values_are_case_normalised_not_just_keys(self):
+        """Two configs spelling one route differently are still one route.
+
+        fable, panel review 2026-09-01: `resolve_model` lowercased the seat
+        LABEL but returned the identity string verbatim, so `OpenRouter` in one
+        config and `openrouter` in another resolved a single route to two
+        identities. That over-separates, and over-separation is the direction
+        that makes auto-refutation EASIER -- it manufactures the third distinct
+        challenger the tally needs to delete a finding.
+        """
+        registry = R.FindingRegistry()
+        registry.model_identity = {"Codex": "OpenAI/GPT-5.5@OpenRouter",
+                                   "ChatGPT": "openai/gpt-5.5@openrouter"}
+        assert registry.resolve_model("Codex") == registry.resolve_model("ChatGPT")
+        assert registry.distinct_models(
+            [{"model": "Codex"}, {"model": "ChatGPT"}]) == 1
+
+    def test_an_unknown_seat_is_normalised_too(self):
+        registry = R.FindingRegistry()
+        registry.model_identity = {"CC2": "anthropic/opus@claude_cli"}
+        assert registry.resolve_model("Fable") == registry.resolve_model("FABLE")
 
     def test_the_runner_builds_the_key_from_both_fields(self):
         src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")

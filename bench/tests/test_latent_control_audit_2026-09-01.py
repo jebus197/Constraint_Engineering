@@ -182,6 +182,44 @@ class TestAgeControl:
                 f"{sorted(quarantined)}. If this is empty the age control is "
                 f"not being applied at all.")
 
+    def test_the_comparison_at_the_boundary_is_strict(self):
+        """A key committed EXACTLY at the baseline is not newer than it.
+
+        CC2, panel review 2026-09-01: the pinned baseline sits hours from the
+        keys' commit times and the negative control sits 74 years away, so
+        nothing constrained behaviour AT the boundary -- `>`, `>=` and
+        `> newest + 1` were all indistinguishable to this suite. That is the
+        same class of untested boundary that produced the 0.70 problem.
+
+        Pinning `registry`'s own commit epoch as the baseline makes the
+        comparison decidable: strict `>` leaves it unquarantined, `>=` would
+        quarantine it.
+        """
+        out = subprocess.run(
+            [sys.executable, str(SCRIPT), "--json", "--as-of",
+             str(REGISTRY_KEY_FIRST_COMMIT)],
+            cwd=str(REPO), capture_output=True, text=True, timeout=280)
+        assert out.returncode == 0, out.stderr[-800:]
+        rows = {r["key"]: r for r in json.loads(out.stdout)["rows"]}
+        row = rows["registry"]
+        assert row["first_committed"] == REGISTRY_KEY_FIRST_COMMIT
+        assert row["verdict"] != "TOO_NEW", (
+            "a key committed exactly AT the baseline was quarantined, so the "
+            "comparison is >= rather than >. Equal is not newer.")
+
+    def test_one_second_past_the_boundary_does_quarantine(self):
+        """The other side of the same boundary, so `>` is pinned from both ends."""
+        out = subprocess.run(
+            [sys.executable, str(SCRIPT), "--json", "--as-of",
+             str(REGISTRY_KEY_FIRST_COMMIT - 1)],
+            cwd=str(REPO), capture_output=True, text=True, timeout=280)
+        assert out.returncode == 0, out.stderr[-800:]
+        rows = {r["key"]: r for r in json.loads(out.stdout)["rows"]}
+        assert rows["registry"]["verdict"] == "TOO_NEW", (
+            "one second before the key's commit it is genuinely newer than the "
+            "archive and must be quarantined; it was not, so the comparison is "
+            "slack at the boundary")
+
     def test_an_old_baseline_quarantines_nothing(self):
         """The other direction: with a baseline far in the future, nothing is new."""
         out = subprocess.run(
