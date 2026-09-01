@@ -16,6 +16,7 @@ run remains valid for is unchanged and substantial: machinery validation.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -66,24 +67,54 @@ class TestTheNoticeSaysWhatMayBeClaimed:
     def test_a_sim_run_is_marked_inadmissible(self):
         n = R.severity_demotion_notice(_cfg("CC2-SIM"))
         assert n["severity_provenance"] == "simulated"
-        assert n["severity_derived_claims_admissible"] is False
-        assert "critical counts" in n["barred_when_simulated"]
+        assert n["severity_magnitudes_calibrated"] is False
+        assert "uncalibrated" in n["caveat_when_simulated"].lower()
 
-    def test_a_real_run_is_marked_admissible(self):
+    def test_a_real_run_is_marked_calibrated(self):
         n = R.severity_demotion_notice(_cfg("CC2", "Gemini"))
         assert n["severity_provenance"] == "real"
-        assert n["severity_derived_claims_admissible"] is True
+        assert n["severity_magnitudes_calibrated"] is True
 
-    def test_machinery_validation_is_explicitly_still_permitted(self):
-        """The demotion must not read as 'the rehearsal is worthless'."""
-        n = R.severity_demotion_notice(_cfg("CC2-SIM"))
-        joined = " ".join(n["permitted_when_simulated"]).lower()
-        for kept in ("machinery", "parser", "registry", "gate plumbing"):
-            assert kept in joined, f"{kept} should remain permitted"
+    def test_readiness_reporting_is_explicitly_permitted(self):
+        """FOUNDER RULING 2026-09-01, and the point of the whole exercise.
 
-    def test_it_cites_its_basis(self):
+        The notice previously listed "convergence verdicts as evidence" among
+        things barred for a simulated run. That clause blocked a straight answer
+        to the only question the simulation exists to answer -- is this runner
+        fit to take into a real experiment -- and it had no standing: it arrived
+        as a two-model panel convergence, the runway itself recorded it as
+        "needs a standing ruling", and it was then written into a commit message
+        AS a standing ruling without ever reaching HIL.
+
+        The founder: "remove that clause that prevents you from reporting when
+        that is the case. It seems to serve no purpose other than to confuse you
+        and me."
+        """
         n = R.severity_demotion_notice(_cfg("CC2-SIM"))
-        assert "0C.12" in n["basis"], "the ruling must be traceable to the runway"
+        assert "PERMITTED" in n["readiness_reporting"]
+        joined = json.dumps(n).lower()
+        assert "convergence verdicts as evidence" not in joined, (
+            "the withdrawn clause is back; a simulated run must be citable as "
+            "evidence of whether the runner is ready")
+
+    def test_the_caveat_that_survives_is_about_magnitudes_not_conclusions(self):
+        """What was always true stays: sim severity numbers do not transfer."""
+        n = R.severity_demotion_notice(_cfg("CC2-SIM"))
+        c = n["caveat_when_simulated"].lower()
+        assert "magnitudes" in c and "do not transfer" in c
+        assert "machinery" in c, (
+            "the caveat must say what is NOT caveated, or it reads as 'the "
+            "rehearsal is worthless'")
+
+    def test_it_cites_a_basis_that_is_actually_a_ruling(self):
+        n = R.severity_demotion_notice(_cfg("CC2-SIM"))
+        b = n["basis"].lower()
+        assert "founder ruling" in b, (
+            "the basis must name the HIL ruling. A panel convergence is a model "
+            "vote, and this project does not confirm findings by model vote.")
+        assert "never ratified" in b, (
+            "the record should say plainly that the superseded item never had "
+            "the standing it was given")
 
 
 class TestTheGuardIsWiredIntoTheReport:

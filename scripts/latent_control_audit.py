@@ -144,10 +144,23 @@ def _archive() -> tuple[list, int]:
     return reports, newest
 
 
-def audit(quiet: bool = False) -> dict:
+def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
+    """Audit the runner's report keys against the archive.
+
+    `newest_override` pins the age baseline instead of taking it from the newest
+    archived report's mtime. It exists so the age control can be COMMISSIONED:
+    with the live archive, whether anything is TOO_NEW depends on when the last
+    run happened, so a test written against live state passes whether the
+    control works or not. Measured 2026-09-01: disabling the rule outright
+    (`too_new = False`) left all nine tests of this script green, because the
+    canary run had just moved the baseline past every new key. A guard that
+    cannot be made to fire on demand is not a guard.
+    """
     src = RUNNER.read_text(encoding="utf-8")
     writes = _report_key_writes(src)
     reports, newest = _archive()
+    if newest_override is not None:
+        newest = int(newest_override)
 
     counts = {k: sum(1 for r in reports if k in r) for k in writes}
     # A gated key's siblings are the unconditional keys written nearby -- within
@@ -200,14 +213,19 @@ def audit(quiet: bool = False) -> dict:
         print("  Only AMBIGUOUS is actionable. Give the guard an unconditional")
         print("  'I ran' counter beside its alarm and it becomes decidable.")
     return {"reports": len(reports), "rows": rows,
+            "baseline_mtime": newest,
             "aliases_applied": CONFIG_ALIASES}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument("--as-of", type=int, default=None, metavar="EPOCH",
+                    help="pin the age baseline to this unix time instead of the "
+                         "newest archived report (used to commission the age "
+                         "control, and to re-read the archive as it stood)")
     a = ap.parse_args()
-    out = audit(quiet=a.json)
+    out = audit(quiet=a.json, newest_override=a.as_of)
     if a.json:
         print(json.dumps(out, indent=2))
     return 0

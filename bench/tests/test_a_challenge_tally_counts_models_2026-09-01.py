@@ -137,6 +137,67 @@ class TestSeatsAreNotModels:
         assert registry.resolve_model(None) == ""
 
 
+class TestIdentityIsRouteAwareNotJustWeights:
+    """Two seats on one model but different routes are two voices, not one.
+
+    The Codex and ChatGPT seats were once genuinely differentiated, and not by
+    weights. Codex ran through `codex exec`, which carries OpenAI's own hidden
+    agent prompt; ChatGPT ran bare through OpenRouter with CDSFL as the system
+    message. Same GPT weights, two instruction conditions -- a designed contrast
+    recorded in bench/EXECUTION_PLAN_EXPERIMENT_11.md under "Diversity Axes".
+
+    It lapsed on 2026-04-02 in commit 556e0af, when the Codex seat moved to
+    OpenRouter for reliability reasons, and the difference went silently.
+    Measured either side of that date: pre-lapse the seats' finding counts
+    differ (78 paired rounds, sign test p = 0.00515); post-lapse they do not
+    (205 paired rounds, p = 0.378).
+
+    So collapsing on model_id alone is right for today and wrong the moment the
+    contrast is restored. Identity is keyed on (model_id, api).
+    """
+
+    TODAY = {"Codex": "openai/gpt-5.5@openrouter",
+             "ChatGPT": "openai/gpt-5.5@openrouter",
+             "CC2": "anthropic/claude-opus@claude_cli"}
+    HISTORICAL = {"Codex": "gpt-5.4@codex_exec",
+                  "ChatGPT": "openai/gpt-5.4@openrouter",
+                  "CC2": "anthropic/claude-opus@claude_cli"}
+
+    def _status(self, identity, verdicts):
+        registry = R.FindingRegistry()
+        finding = R.Finding(
+            finding_id="M_F001", model_id="M", round_idx=0, flaw_class=1,
+            severity=0.9, abstraction_index=0.5,
+            description="a finding challenged across seats and routes",
+            verified=False, origin_type="model")
+        registry.register(finding, "M")
+        cid = next(iter(registry.entries))
+        registry.entries[cid]["status"] = "CONTESTED"
+        registry.model_identity = identity
+        for model, rnd in verdicts:
+            registry.add_verdict(cid, model, "CHALLENGE", rnd, evidence="e")
+        registry.auto_resolve_contested(2)
+        return registry.entries[cid].get("status")
+
+    THREE = [("Codex", 1), ("ChatGPT", 1), ("CC2", 1)]
+
+    def test_todays_config_collapses_the_two_seats(self):
+        """Same model, same route: two seats, one voice. Must not refute."""
+        assert self._status(self.TODAY, self.THREE) == "CONTESTED"
+
+    def test_the_historical_route_contrast_does_not_collapse(self):
+        """Same weights, DIFFERENT routes: two instruction conditions, two voices."""
+        assert self._status(self.HISTORICAL, self.THREE) == "REFUTED", (
+            "restoring the codex_exec/openrouter contrast must restore two "
+            "distinct voices; keying identity on model_id alone would collapse "
+            "them and quietly make refutation easier")
+
+    def test_the_runner_builds_the_key_from_both_fields(self):
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        assert "f\"{mc.model_id}@{getattr(mc, 'api', '') or '?'}\"" in src, (
+            "the identity map no longer includes the api/route in its key")
+
+
 class TestTheTallyReadsTheModelField:
     def test_verdicts_without_a_model_field_do_not_stack(self):
         """A missing model is one bucket (None), not N anonymous dissenters.

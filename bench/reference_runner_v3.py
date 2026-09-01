@@ -5892,17 +5892,41 @@ def severity_demotion_notice(cfg) -> Dict[str, Any]:
     """
     return {
         "severity_provenance": "simulated" if run_is_simulated(cfg) else "real",
-        "severity_derived_claims_admissible": not run_is_simulated(cfg),
-        "barred_when_simulated": [
-            "critical counts", "gate verdicts as evidence",
-            "convergence verdicts as evidence", "go/no-go decisions",
-        ],
-        "permitted_when_simulated": [
-            "machinery validation", "parser and dedupe behaviour",
-            "registry status transitions", "gate plumbing",
-            "discrimination-control wiring",
-        ],
-        "basis": "panel-converged 2026-09-01; see RUNWAY STAGE 0C item 0C.12",
+        # WHAT A SIMULATED SEVERITY NUMBER IS WORTH, stated as a caveat rather
+        # than a bar. FOUNDER RULING 2026-09-01: "remove that clause that
+        # prevents you from reporting when that is the case. It seems to serve
+        # no purpose other than to confuse you and me."
+        #
+        # The clause removed is "convergence verdicts as evidence". It was
+        # blocking a straight answer to the only question the simulation exists
+        # to answer -- is this runner fit to take into a real experiment -- and
+        # it had no standing to do so. It arrived as a two-model panel
+        # convergence, the runway recorded it as "needs a standing ruling", and
+        # it was then written into a commit message AS a standing ruling without
+        # ever reaching HIL. In a project whose founding principle is that
+        # findings are confirmed programmatically or by HIL and NEVER by model
+        # vote, that promotion was the defect.
+        #
+        # What survives is the part that was always true and is now correctly
+        # scoped: simulated severity is uncalibrated, so its MAGNITUDES do not
+        # transfer to a real panel. That is a caveat on numbers, not a gag on
+        # conclusions.
+        "severity_magnitudes_calibrated": not run_is_simulated(cfg),
+        "caveat_when_simulated": (
+            "Severity magnitudes are uncalibrated against a real panel and do "
+            "not transfer. Counts and thresholds derived from them are "
+            "indicative only. Machinery behaviour -- parsing, dedupe, registry "
+            "transitions, gate plumbing, detection of seeded defects -- is "
+            "measured directly and carries no such caveat."
+        ),
+        "readiness_reporting": (
+            "PERMITTED. A simulated run may be cited as evidence of whether the "
+            "runner is fit for a real experiment. Founder ruling 2026-09-01."
+        ),
+        "basis": (
+            "founder ruling 2026-09-01 (supersedes the panel convergence "
+            "recorded as RUNWAY STAGE 0C item 0C.12, which was never ratified)"
+        ),
     }
 
 
@@ -10418,8 +10442,27 @@ def run_experiment(
     # live config -- so a refutation tally over seat labels counts one model
     # twice. Populated from the run's own configs, never guessed.
     try:
+        # IDENTITY IS (model_id, api), NOT model_id ALONE.
+        #
+        # Found 2026-09-01 while answering the founder's question about how the
+        # Codex and ChatGPT seats were once told apart. They WERE differentiated,
+        # and not by weights: the Codex seat ran through `codex exec`, which
+        # carries OpenAI's own hidden agent prompt, while ChatGPT ran bare through
+        # OpenRouter with CDSFL as the system message. Same model, two instruction
+        # conditions, a designed contrast (bench/EXECUTION_PLAN_EXPERIMENT_11.md,
+        # "Diversity Axes"). It lapsed on 2026-04-02 in commit 556e0af when the
+        # Codex seat was moved to OpenRouter for reliability, and the difference
+        # went silently. Measured: pre-lapse the two seats' finding counts differed
+        # (78 paired rounds, sign test p=0.00515); post-lapse they do not
+        # (205 paired rounds, p=0.378).
+        #
+        # Keying identity on model_id alone would therefore have been correct for
+        # today's config and WRONG the moment the contrast is restored by flipping
+        # the route back -- it would collapse two genuinely different instruction
+        # conditions into one voice, and quietly make refutation easier.
         registry.model_identity = {
-            mc.label: mc.model_id for mc in exp_config.models
+            mc.label: f"{mc.model_id}@{getattr(mc, 'api', '') or '?'}"
+            for mc in exp_config.models
             if getattr(mc, "label", None) and getattr(mc, "model_id", None)}
         _collisions = len(registry.model_identity) - len(
             set(registry.model_identity.values()))

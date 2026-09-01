@@ -16,7 +16,29 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
+#: Newest archived report mtime at 2026-09-01 07:19:13, immediately before
+#: the canary run landed and moved the baseline ten hours forward.
+PRE_CANARY_BASELINE = 1788247153
 SCRIPT = REPO / "scripts" / "latent_control_audit.py"
+
+
+def _newest_archive_mtime() -> int:
+    """Newest mtime among archived run reports -- the audit's own age baseline.
+
+    Mirrors scripts/latent_control_audit.py:_archive(). Kept here rather than
+    imported because the test must be able to detect the audit drifting away
+    from the rule it claims to apply.
+    """
+    newest = 0
+    for fp in (REPO / "bench" / "logs").glob("**/*.json"):
+        try:
+            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
+        except Exception:                                     # noqa: BLE001
+            continue
+        if isinstance(d, dict) and ("registry" in d or "converged_at" in d
+                                    or "runner_version" in d):
+            newest = max(newest, int(fp.stat().st_mtime))
+    return newest
 
 
 @pytest.fixture(scope="module")
@@ -60,18 +82,67 @@ class TestAgeControl:
     disbelieved the first time anyone runs it.
     """
 
-    def test_keys_committed_after_the_newest_run_are_quarantined(self, result):
-        fresh = [r["key"] for r in result["rows"] if r["verdict"] == "TOO_NEW"]
-        assert fresh, (
-            "nothing is TOO_NEW. Either age control is broken or no key has "
-            "been added since the newest archived run -- check before assuming "
-            "the second.")
+    def test_the_quarantine_rule_holds_for_every_row(self, result):
+        """TOO_NEW iff the key post-dates the newest archived run. Always true.
 
-    def test_no_recently_added_key_is_called_unreachable(self, result):
-        for r in result["rows"]:
-            if r["verdict"] in ("UNREACHABLE", "AMBIGUOUS"):
-                assert r["verdict"] != "TOO_NEW"
+        REWRITTEN 2026-09-01, having gone red the same day it was written. The
+        original asserted that SOMETHING is currently TOO_NEW, which is a
+        transient, not an invariant: it held only while the newest archived run
+        pre-dated that day's three new keys. The canary run then landed in
+        bench/logs, moved the baseline forward by roughly ten hours, and the
+        quarantine set correctly emptied -- so a test meant to prove the age
+        control works failed *because the age control worked*.
 
+        The invariant is the rule itself, and it is checkable in any archive
+        state including an empty one.
+        """
+        newest = _newest_archive_mtime()
+        for row in result["rows"]:
+            first = row.get("first_committed")
+            expected_too_new = bool(first and newest and first > newest)
+            assert (row["verdict"] == "TOO_NEW") == expected_too_new, (
+                f"{row['key']}: verdict {row['verdict']} but first_committed="
+                f"{first} against newest archive mtime {newest}. The quarantine "
+                f"rule and the reported verdict disagree.")
+
+    def test_the_control_can_be_made_to_fire_on_demand(self):
+        """COMMISSIONING. Pin the baseline and require quarantine to happen.
+
+        The previous two versions of this test both passed while the age control
+        was disabled outright. The first asserted a transient; the second
+        asserted an invariant that holds vacuously whenever nothing is new. A
+        mutation test on 2026-09-01 (`too_new = False`) left all nine green.
+
+        This drives the control instead of observing it: pinned to the archive as
+        it stood at 07:19:13 on 2026-09-01, the three keys committed later that
+        day MUST be quarantined. That is a statement about a fixed past, so it
+        cannot go quiet, and it fails the moment the rule stops being applied.
+        """
+        out = subprocess.run(
+            [sys.executable, str(SCRIPT), "--json", "--as-of", str(PRE_CANARY_BASELINE)],
+            cwd=str(REPO), capture_output=True, text=True, timeout=280)
+        assert out.returncode == 0, out.stderr[-800:]
+        d = json.loads(out.stdout)
+        assert d["baseline_mtime"] == PRE_CANARY_BASELINE
+        quarantined = {r["key"] for r in d["rows"] if r["verdict"] == "TOO_NEW"}
+        for key in ("gamma_threshold_profile", "severity_admissibility",
+                    "critical_boundary_census"):
+            assert key in quarantined, (
+                f"{key} was committed after {PRE_CANARY_BASELINE} and must be "
+                f"quarantined at that baseline. Quarantined set: "
+                f"{sorted(quarantined)}. If this is empty the age control is "
+                f"not being applied at all.")
+
+    def test_an_old_baseline_quarantines_nothing(self):
+        """The other direction: with a baseline far in the future, nothing is new."""
+        out = subprocess.run(
+            [sys.executable, str(SCRIPT), "--json", "--as-of", "4102444800"],  # 2100
+            cwd=str(REPO), capture_output=True, text=True, timeout=280)
+        assert out.returncode == 0, out.stderr[-800:]
+        d = json.loads(out.stdout)
+        assert not [r for r in d["rows"] if r["verdict"] == "TOO_NEW"], (
+            "keys are quarantined against a year-2100 baseline, so the "
+            "comparison is not the one the rule claims")
 
 class TestItOverReportsRatherThanUnderReports:
     def test_the_alias_map_is_carried_in_the_output(self, result):
