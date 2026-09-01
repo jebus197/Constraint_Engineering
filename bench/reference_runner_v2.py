@@ -5746,6 +5746,66 @@ PREREG_GAMMA_PROFILE_THRESHOLDS = (0.5, 0.6, 0.7, 0.8)
 #: (Mann-Whitney p=0.0006, Welch p=0.0012).
 PREREG_BOUNDARY_BAND = 0.10
 
+
+def run_is_simulated(cfg) -> bool:
+    """True when this run's panel is the simulated stand-in panel.
+
+    Detected by the MANDATORY `-SIM` suffix (founder ruling 2026-08-08), which
+    is the same provenance marker the archive guards use. A run is simulated iff
+    any seat carries it; there is no mixed panel.
+    """
+    labels = []
+    for m in (getattr(cfg, "models", None) or []):
+        labels.append(m if isinstance(m, str) else getattr(m, "label", ""))
+    return any(str(x).strip().endswith("-SIM") for x in labels)
+
+
+def severity_demotion_notice(cfg) -> Dict[str, Any]:
+    """Why a simulated run's severity-derived numbers must not be read as results.
+
+    STANDING RULING, panel-converged 2026-09-01 and founder-adopted. A simulated
+    panel is PERMANENTLY barred from severity-, threshold- and
+    convergence-dependent claims. Not "until calibrated" -- permanently, for
+    three measured reasons:
+
+      1. The offset is real but modest and the boundary sits on a spike. 401 of
+         6,865 archived findings (5.84%, Wilson [5.31%, 6.42%]) sit EXACTLY on
+         0.70 and 72.1% [71.0%, 73.1%] are quantised to a 0.05 step, so severity
+         is ordinal. A ~0.12 mean shift converts MECHANICALLY into a ~7.8x
+         critical-count ratio. That is how a modest calibration gap was
+         misdiagnosed as a fidelity crisis on 2026-09-01.
+      2. Calibration buys DELTAS, never LEVELS. Even applying the measured
+         +0.156 correction moves the simulated cluster from 0.46 to 0.62 --
+         still under 0.70. Corrected counts would still be wrong counts.
+      3. The correction's own uncertainty straddles the boundary: per-seat
+         offsets ranged 0.029 to 0.265 on the one paired target available.
+
+    What a simulated run IS valid for is unchanged and substantial: machinery
+    validation -- parser, dedupe, registry transitions, merge guards, gate
+    plumbing, discrimination-control wiring. Anything where severity is an input
+    under our control rather than an output being measured.
+
+    Emitted into the report so a downstream reader cannot mistake a simulated
+    critical count for a result. It does NOT alter the gate: the run still
+    converges on its own evidence, and the record simply says what that evidence
+    may be used for.
+    """
+    return {
+        "severity_provenance": "simulated" if run_is_simulated(cfg) else "real",
+        "severity_derived_claims_admissible": not run_is_simulated(cfg),
+        "barred_when_simulated": [
+            "critical counts", "gate verdicts as evidence",
+            "convergence verdicts as evidence", "go/no-go decisions",
+        ],
+        "permitted_when_simulated": [
+            "machinery validation", "parser and dedupe behaviour",
+            "registry status transitions", "gate plumbing",
+            "discrimination-control wiring",
+        ],
+        "basis": "panel-converged 2026-09-01; see RUNWAY STAGE 0C item 0C.12",
+    }
+
+
 # ── Severity calibration (over-production bounding, 2026-06-10, gated default-off) ──
 # Markers a finding must carry to be ELIGIBLE for demotion, and markers that make it
 # INELIGIBLE no matter what. Read off the registry dict, so no Finding-dataclass change.
@@ -12129,6 +12189,17 @@ def run_experiment(
             registry, round_idx, cfg.min_rounds_for_gamma)
     except Exception as _exc:  # noqa: BLE001
         result["gamma_threshold_profile"] = {"error": f"{type(_exc).__name__}: {_exc}"}
+    # THE DEMOTION, stamped into every report (0C.12). A simulated run's
+    # severity-derived numbers are not results, and the report says so in the
+    # report rather than in a note someone has to remember.
+    try:
+        result["severity_admissibility"] = severity_demotion_notice(cfg)
+        if run_is_simulated(cfg):
+            _log("  severity provenance: SIMULATED — critical counts and gate "
+                 "verdicts from this run are NOT admissible as evidence "
+                 "(standing ruling, RUNWAY 0C.12)")
+    except Exception as _exc:  # noqa: BLE001
+        result["severity_admissibility"] = {"error": f"{type(_exc).__name__}: {_exc}"}
     try:
         result["critical_boundary_census"] = boundary_band_census(registry)
     except Exception as _exc:  # noqa: BLE001
