@@ -69,12 +69,34 @@ mkdir -p "$WT/bench/logs"
 
 # REFUSE TO RUN IF THE BLINDING DID NOT TAKE. A sandbox that silently keeps the
 # answers is worse than no sandbox, because the resulting numbers look clean.
-LEAKED=$(find "$WT/bench/logs" "$WT/experimental_notes" -type f 2>/dev/null | wc -l | tr -d ' ')
+# COUNTED PER DIRECTORY, AND ONLY OVER DIRECTORIES THAT EXIST.
+#
+# THE DEFECT THIS REPLACES KILLED EVERY RUN, SILENTLY, AND HAD DONE SINCE THE
+# GUARD WAS WRITTEN. The old form was a single `find` over both paths. The sparse
+# checkout has just EXCLUDED experimental_notes, so that path does not exist, so
+# `find` exits non-zero; `set -o pipefail` propagates it and `set -e` kills the
+# script -- after the "sandbox" line and before the "blinded" line, with the
+# find's own stderr sent to /dev/null. Two launches on 2026-09-01 produced a
+# one-line log and no process, and looked like the harness killing a background
+# job. Reproduced directly: exit 1, echo never reached.
+#
+# So the control that makes this sandbox trustworthy had never once let a run
+# start. That is the third latent control found this day, and the only one whose
+# failure mode was to abort the thing it was guarding.
+#
+# bench/results is now counted too. The sparse checkout excludes it and the old
+# check never looked at it, so a leak there would have passed unnoticed.
+LEAKED=0
+for _p in "$WT/bench/logs" "$WT/bench/results" "$WT/experimental_notes"; do
+  [ -d "$_p" ] || continue
+  _n=$(find "$_p" -type f 2>/dev/null | wc -l | tr -d ' ')
+  LEAKED=$((LEAKED + _n))
+done
 if [ "$LEAKED" != "0" ]; then
   echo "FATAL: blinding failed -- $LEAKED answer-surface file(s) present in the sandbox" >&2
   git worktree remove --force "$WT" >/dev/null 2>&1; exit 1
 fi
-echo "    blinded: 0 archived reports, 0 notes reachable by the panel"
+echo "    blinded: 0 files across bench/logs, bench/results and experimental_notes"
 
 RC=0
 ( cd "$WT" && python3 bench/tools/run_simulated_experiment.py "$@" ) || RC=$?
