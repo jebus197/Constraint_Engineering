@@ -137,6 +137,48 @@ fi
 echo "    blinded: 0 files across bench/logs, bench/results and experimental_notes"
 echo "    severed: no .git, no reachable history"
 
+# CANARY SEEDING (optional, off unless CDSFL_CANARY_CATALOGUE names a catalogue).
+#
+# WHY IT MATTERS HERE. The 2026-09-01 run converged as CRITICAL_QUIESCENCE with a
+# VACUOUS CURVE -- zero critical findings across the whole run. That is
+# convergence by absence, and on its own it CANNOT distinguish "the target is
+# genuinely clean" from "the panel is dead". Seeded defects with known ground
+# truth are the discriminator: if the panel finds them, the silence on everything
+# else is informative; if it misses them, the silence means nothing.
+#
+# Seeding happens AFTER the history is severed, and that ordering is load-bearing:
+# canary_seeding.seed() refuses a target inside a git work tree, because git diff
+# returns the planted set at precision 1.000 with no key required.
+#
+# The manifest is answer-key material and is written OUTSIDE the sandbox and
+# outside the repository. It never enters the tree the panel can read.
+if [ -n "${CDSFL_CANARY_CATALOGUE:-}" ]; then
+  CANARY_OUT="$(python3 - "$RUN" "$CDSFL_CANARY_CATALOGUE" <<'SEEDPY'
+import json, pathlib, sys
+run, catalogue = pathlib.Path(sys.argv[1]), sys.argv[2]
+sys.path.insert(0, str(run / "bench"))
+from canary_seeding import load_catalogue, seed
+
+canaries = load_catalogue(catalogue)
+target = run / "bench" / "dm" / "_memory.py"
+clean = target.read_text(encoding="utf-8")
+seeded, manifest = seed(clean, canaries, target_path=target)
+missing = [c.id for c in canaries if c.replace not in seeded]
+if missing:
+    raise SystemExit(f"FATAL: canaries did not seed: {missing}")
+import ast
+ast.parse(seeded)                     # a syntax error would be reviewed instead
+target.write_text(seeded, encoding="utf-8")
+key = pathlib.Path.home() / "CDSFL_keys" / f"manifest_{run.parent.name}.json"
+key.parent.mkdir(parents=True, exist_ok=True)
+key.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+print(f"{len(canaries)}|{key}")
+SEEDPY
+)" || { echo "FATAL: canary seeding failed" >&2; exit 1; }
+  echo "    seeded:  ${CANARY_OUT%%|*} canaries into bench/dm/_memory.py"
+  echo "    key:     ${CANARY_OUT##*|}  (outside the repo, never in the sandbox)"
+fi
+
 RC=0
 ( cd "$RUN" && python3 bench/tools/run_simulated_experiment.py "$@" ) || RC=$?
 
