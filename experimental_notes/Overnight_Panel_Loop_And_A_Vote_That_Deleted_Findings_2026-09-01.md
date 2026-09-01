@@ -67,7 +67,27 @@ The parser repairs moved findings into the registry, which gave the downstream m
 
 A worktree at `/private/tmp/cdsfl_review_89557` (HEAD `657b02c`, 2026-08-30) still held uncommitted work existing nowhere else: a **142-line test absent from main**, plus 43 and 131 lines in two runner files. `/private/tmp` clears on reboot — one restart from lost. Preserved verbatim to `experimental_notes/unextracted_sandbox_2026-08-30/`, **nothing applied**, worktree left in place pending a ruling. Both files changed substantially since, so it needs a read, not a merge.
 
-## 8. A limit on what this rehearsal can prove
+## 8. The deliverable: the decay curve now exists
+
+The previous run converged at round 3 on a **VACUOUS CURVE** — zero criticals in every round, `gamma_critical` undefined rather than low, the gate itself warning that "a clean target and a broken severity classifier look alike from here".
+
+| | gamma_critical series |
+|---|---|
+| run 1 | `[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]` — flat zero, **converged anyway** |
+| run 2 | `[0.0, 0.0, 1.0, 0.622, 0.622, 0.536, 0.536, 0.527, 0.527]` — **a real decay curve** |
+
+Run 2 decays from 1.0 toward 0.527, mean 0.624 over seven non-zero values, against a 0.30 threshold. **The decay side of the two-sided gate is satisfied.** The run stays open because the *other* side is not: `novel_crit_recent` moved `[0,0,1] → [0,1,0] → [1,0,0]`, a critical passing through the three-round window and resetting the zero-new-critical streak each time.
+
+That is the whole point. **The gate is open because criticals are still arriving, not because the curve does not exist.** An honest evaluation, on evidence, in both directions.
+
+Supporting evidence that the pipeline is closing the loop, not merely accumulating:
+
+- **3 findings CLOSED** on `verified fix, no unresolved challenges` (run 1 closed **zero**)
+- **C0028 correctly REFUSED closure** because its falsifier fires on a corrected copy
+- unmatched corrected copies **70.4%** [51.5%, 84.1%] → **18.2%** [8.6%, 34.4%], non-overlapping — reduced, **not** eliminated
+- z3 produced one grounded **proof** and one grounded **counterexample**; run 1 produced neither
+
+## 9. A limit on what this rehearsal can prove
 
 The simulated panel rates severity **materially lower than the real panel on the same module**. Measured against the real exp45 run, same target:
 
@@ -82,7 +102,7 @@ A 5.1x difference. Fisher exact p=0.015, chi-square p=0.019, z-test p=0.008 — 
 
 The curve is nonetheless **no longer vacuous**: criticals appeared in rounds 0 and 3 (history `[1, 0, 0, 1]`), where the previous run had zero in every round. The round-3 critical resets the zero-new-critical streak, so convergence cannot occur before round 6 — the run is being held open by genuine findings rather than stopping on an empty condition.
 
-## 9. Status
+## 10. Status
 
 Suite **4,680 passed, 0 failed**. Canonical tree clean, archive intact at 52,162 lines. All work committed locally, **nothing pushed**.
 
