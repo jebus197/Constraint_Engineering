@@ -200,3 +200,42 @@ class TestBoldTitlesAreEntriesToo:
         assert not audit.over_long, (
             f"{len(audit.over_long)} entries exceed the 150-character rule: "
             + ", ".join(t for _n, t in audit.over_long[:5]))
+
+
+class TestTheOneLineRuleRefuses:
+    """Founder ruling 2026-09-01: terseness is a requirement, not a preference.
+
+    The 150-character rule was reported and never enforced, and the report was
+    blind to bold-titled entries, so it had no force: 40 of 132 entries were
+    over it, the worst at 686 characters, 5,801 characters of excess.
+    """
+
+    def _idx(self, tmp_path, body):
+        (tmp_path / "a.md").write_text("body\n")
+        (tmp_path / "MEMORY.md").write_text(body, encoding="utf-8")
+        return sv._check_memory_index_size(sv._audit_memory_index(tmp_path))
+
+    def test_an_over_long_entry_refuses_the_save(self, tmp_path):
+        check = self._idx(tmp_path, "- [T](a.md) — " + "x" * 200 + "\n")
+        assert check.passed is False
+        assert check.name == "memory-index-entries-are-one-line"
+
+    def test_a_bold_over_long_entry_also_refuses(self, tmp_path):
+        """The shape the audit could not see until today."""
+        check = self._idx(tmp_path, "- **[T](a.md)** — " + "x" * 200 + "\n")
+        assert check.passed is False, "a bold-titled over-long entry passed"
+
+    def test_a_compliant_index_passes(self, tmp_path):
+        assert self._idx(tmp_path, "- [T](a.md) — hook\n").passed is True
+
+    def test_the_refusal_names_the_worst_offender(self, tmp_path):
+        check = self._idx(tmp_path, "- [Distinctive](a.md) — " + "x" * 200 + "\n")
+        assert "Distinctive" in check.observed, (
+            "the refusal must say WHICH entry, or it is unactionable")
+
+    def test_the_live_index_passes_the_rule(self):
+        audit = sv._audit_memory_index(sv._MEMORY_DIR)
+        if audit.error:
+            pytest.skip(audit.error)
+        check = sv._check_memory_index_size(audit)
+        assert check.passed is True, f"{check.name}: {check.observed}"

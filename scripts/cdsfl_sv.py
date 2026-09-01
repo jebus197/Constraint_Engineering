@@ -1713,6 +1713,28 @@ def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
             observed=f"the index could not be measured — {audit.error}",
             look_at=str(audit.path),
         )
+    # THE ONE-LINE RULE NOW REFUSES, 2026-09-01 (founder ruling: make it a
+    # programmatic habit, not a preference). It was reported and not enforced,
+    # and the report was blind to bold-titled entries, so the rule had no force
+    # at all: 40 of 132 entries were over it, the worst at 686 characters, and
+    # the excess was 5,801 characters -- a quarter of the whole index. Refusing
+    # here is what makes terseness structural rather than dependent on the
+    # founder having the energy to insist on it.
+    if audit.over_long:
+        worst = audit.over_long[0]
+        return _Check(
+            name="memory-index-entries-are-one-line", passed=False,
+            why=("an index entry is a POINTER, not the memory. Detail belongs "
+                 "in the file it points at, where it costs nothing. Every "
+                 "character spent elaborating in the index is charged against "
+                 "the loader budget and buys nothing a reader could not get by "
+                 "opening the file."),
+            expected=f"every entry within {_MEMORY_ENTRY_ONE_LINE_CHARS} characters",
+            observed=(f"{len(audit.over_long)} entr"
+                      f"{'y is' if len(audit.over_long) == 1 else 'ies are'} over: "
+                      f"longest {worst[0]} chars — {worst[1][:60]}"),
+            look_at=str(audit.path),
+        )
     line_threshold = int(_MEMORY_INDEX_LIMIT_LINES * _MEMORY_INDEX_REFUSE_FRACTION)
     if audit.lines >= line_threshold:
         return _Check(
