@@ -91,11 +91,17 @@ misleading.**
 
 | era | runs | entries | with falsifier code | terminal | backed by a tool verdict |
 |---|---|---|---|---|---|
-| exp42 onward, from 2026-06 | 11 | 566 | 465 (82.2%) | 532 | **454 (85.3%)** |
+| exp42 onward, from 2026-06 | 13 | 586 | 477 (81.4%) | 536 | **458 (85.4%)** |
 | exp34–41, to 2026-05 | 16 | 1464 | 0 (0.0%) | 910 | **0 (0.0%)** |
 
 Modern era by status: CLOSED **419/430 = 97.4%**; REFUTED 14/18 = 77.8%;
-CONFIRMED 19/71 = 26.8%; MERGED 2/13 = 15.4%.
+CONFIRMED 23/75 = 30.7%; MERGED 2/13 = 15.4%.
+
+Refreshed from `scripts/track_record_audit.py` on 2026-09-01. The table had read
+11 runs / 566 entries / 465 since 22 August while the script named in this
+document's own reproduce line reported 13 / 586 / 477 — two further runs had
+landed and nothing compared the document to the script. A parametrised test now
+does: `bench/tests/test_derived_docs_match_their_generators_2026-09-01.py`.
 
 ## M4 — why the legacy era is empty
 

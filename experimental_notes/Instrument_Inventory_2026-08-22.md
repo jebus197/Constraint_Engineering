@@ -21,8 +21,7 @@ The heuristic scored **I14, the falsifier gate**, as commissioned. It is not:
 suite and nothing calls it.
 
 Direct measurements therefore override the heuristic, and the script reports its
-own error rate against them: **5 rows measured, 3 disagreements, 2 in the confident
-direction.** The remaining "yes" rows are **unverified, not reassurance**. Founder
+own error rate against them: **9 rows measured, 3 disagreements (I08, I14, I26).** Refreshed from the generator 2026-09-01: the figure read 5 rows for ten days while four further rows were measured, three of them re-measured to COMMISSIONED on 2026-08-30. The remaining "yes" rows are **unverified, not reassurance**. Founder
 ruling 2026-08-22: the panel confirms or refutes each row with tools.
 
 | id | instrument | emits | live flag | tests naming it | commissioning candidate | panel |
@@ -62,6 +61,8 @@ ruling 2026-08-22: the panel confirms or refutes each row with tools.
 | I33 | Survived-falsification ledger | positive record | (NOT WIRED) | 1 | **NO** | |
 | I34 | Null-perturbation control | verdict | (offline script) | 0 | YES — MEASURED: MEASURED 2026-08-21: 397 findings, 360 fired, 0 moved on either an irrelevant comment or an unaccused function rename. | |
 
-**27 of 34 instruments have a commissioning candidate. 7 do not.**
+**30 of 34 instruments have a commissioning candidate. 4 do not.**
+
+Refreshed from `scripts/instrument_inventory.py` on 2026-09-01. The document had read 27 and 7 since 22 August while the generator it names in its own reproduce line reported 30 and 4 — a header promising reproducibility, with no test that ran the script and compared. That test now exists: `bench/tests/test_derived_docs_match_their_generators_2026-09-01.py`.
 
 Written under CDSFL note standard v1.4.
