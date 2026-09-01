@@ -5716,6 +5716,36 @@ def _check_gamma_alt_convergence(
 # hardened gate uses this named constant.
 CRITICAL_SEVERITY_THRESHOLD = 0.7
 
+# THE PRE-REGISTERED THRESHOLD PROFILE (F6), built 2026-09-01.
+#
+# CRITICAL_DEFINITION_PREREG_2026-05-18.md, "Numeric encoding" clause, verbatim:
+# "gamma is additionally reported at 0.5 / 0.6 / 0.7 / 0.8 so a reviewer sees the
+# full threshold profile, not a single chosen point", and per run "the count of
+# findings where rubric and numeric disagreed, and the verdict's sensitivity to
+# that disagreement". Measured 2026-09-01: NEITHER existed -- not in the code,
+# and not in any of 50 archived real reports. The frozen definition existed; the
+# machinery that makes it auditable did not.
+#
+# WHY IT MATTERS, over 6,865 real archived findings: there is NO natural break at
+# 0.70. scipy KDE minima fall at 0.12 / 0.37 / 0.62; a numpy histogram puts
+# valleys at 0.67 and 0.71, either side of it. 401 findings (5.8%) sit EXACTLY on
+# 0.70 because models quantise to round numbers, so the boundary runs through a
+# spike -- the most sensitive place it could sit. Moving it to 0.72 would
+# reclassify 456 findings, 6.6% of the archive.
+#
+# THE THRESHOLD IS NOT MOVED AND MUST NOT BE. The pre-registration names moving
+# it after seeing results as "the single largest cooking vector", and the
+# founder's ruling stands: keep 0.7, make the pre-registration visible. This is
+# purely additive -- it changes no verdict, it lets a reviewer see whether a
+# verdict depended on the chosen point.
+PREREG_GAMMA_PROFILE_THRESHOLDS = (0.5, 0.6, 0.7, 0.8)
+
+#: Half-width of the band in which a finding's CLASS could flip on a rating
+#: difference smaller than the shift measured between the real panel and the
+#: simulated stand-ins on the SAME defect: 0.132 severity points
+#: (Mann-Whitney p=0.0006, Welch p=0.0012).
+PREREG_BOUNDARY_BAND = 0.10
+
 # ── Severity calibration (over-production bounding, 2026-06-10, gated default-off) ──
 # Markers a finding must carry to be ELIGIBLE for demotion, and markers that make it
 # INELIGIBLE no matter what. Read off the registry dict, so no Finding-dataclass change.
@@ -5830,7 +5860,7 @@ _NON_NOVEL_TERMINAL_STATUSES = {
 
 
 def _settled_novelty_series(
-    registry, max_round: int,
+    registry, max_round: int, severity_threshold: float = None,
 ) -> Tuple[List[int], List[int]]:
     """Production-faithful per-round novelty from the SETTLED registry.
 
@@ -5841,6 +5871,11 @@ def _settled_novelty_series(
     fix: the gate reads the settled registry, not the live-at-round
     accumulator that produced the 0.305-vs-0.231 flip.
     """
+    # Defaults to the pre-registered proxy, so every existing caller is
+    # byte-identical. The parameter exists only so gamma_threshold_profile
+    # can re-read the SAME settled registry at 0.5 / 0.6 / 0.7 / 0.8.
+    _thr = (CRITICAL_SEVERITY_THRESHOLD if severity_threshold is None
+            else float(severity_threshold))
     entries = registry.entries if hasattr(registry, "entries") else {}
     vals = (list(entries.values())
             if isinstance(entries, dict) else list(entries))
@@ -5853,7 +5888,7 @@ def _settled_novelty_series(
         if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
             continue
         all_s[r] += 1
-        if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+        if (e.get("severity") or 0.0) >= _thr:
             crit_s[r] += 1
     return all_s, crit_s
 
@@ -5881,6 +5916,90 @@ _UNLOCATED_MERGE_THRESHOLD = 0.20
 # Prefix for the fallback identity of a critical naming no code location.
 # NOT a single shared bucket — see _unlocated_novelty_key.
 _UNLOCATED_KEY_PREFIX = "<unlocated:"
+
+
+def gamma_threshold_profile(registry, max_round: int,
+                            min_rounds: int = 3) -> Dict[str, Any]:
+    """gamma at each pre-registered threshold, plus verdict sensitivity.
+
+    Mandated by CRITICAL_DEFINITION_PREREG_2026-05-18.md and never built until
+    2026-09-01. DIAGNOSTIC ONLY: it changes no verdict. The live gate keeps using
+    CRITICAL_SEVERITY_THRESHOLD. Its purpose is to show whether a verdict
+    depended on the chosen point, which one number cannot show.
+    """
+    out: Dict[str, Any] = {"thresholds": {}, "verdict_is_threshold_sensitive": None}
+    fired = []
+    for thr in PREREG_GAMMA_PROFILE_THRESHOLDS:
+        try:
+            _all, _crit = _settled_novelty_series(registry, max_round,
+                                                  severity_threshold=thr)
+            g = float(_estimate_gamma(_crit, min_rounds))
+        except Exception as exc:  # noqa: BLE001 — a diagnostic must not fell a run
+            out["thresholds"][f"{thr:.1f}"] = {"error": f"{type(exc).__name__}: {exc}"}
+            continue
+        decay_ok = g >= 0.30
+        tail = _crit[-3:] if len(_crit) >= 3 else list(_crit)
+        quiet = bool(tail) and all(c == 0 for c in tail)
+        fired.append(bool(decay_ok and quiet))
+        out["thresholds"][f"{thr:.1f}"] = {
+            "gamma_critical": round(g, 4),
+            "critical_novelty_series": list(_crit),
+            "criticals_total": int(sum(_crit)),
+            "decay_side_met": bool(decay_ok),
+            "zero_novel_critical_tail": list(tail),
+            "quiescence_side_met": bool(quiet),
+            "gate_would_fire": bool(decay_ok and quiet),
+        }
+    if fired:
+        out["verdict_is_threshold_sensitive"] = bool(len(set(fired)) > 1)
+    out["live_threshold"] = CRITICAL_SEVERITY_THRESHOLD
+    out["prereg"] = "bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md"
+    return out
+
+
+def boundary_band_census(registry, band: float = None) -> Dict[str, Any]:
+    """Findings whose CRITICAL class could flip on a small rating difference.
+
+    HONEST LIMIT, STATED IN THE OUTPUT. The pre-registered rubric is
+    CONSEQUENCE-based -- wrong result, hard-constraint violation,
+    verification-integrity corruption, silent evidence loss, unreproducibility.
+    A machine cannot adjudicate those; the pre-registration says the
+    adjudication is logged with its rationale against the five clauses, which
+    means a model or the human in the loop must do it. What IS computable is the
+    POPULATION such an adjudication would have to cover. This is a proxy and is
+    labelled as one in its own output.
+    """
+    b = PREREG_BOUNDARY_BAND if band is None else float(band)
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    vals = list(entries.values()) if isinstance(entries, dict) else list(entries)
+    lo, hi = CRITICAL_SEVERITY_THRESHOLD - b, CRITICAL_SEVERITY_THRESHOLD + b
+    inband, on_thr, above, below = [], 0, 0, 0
+    for e in vals:
+        if not isinstance(e, dict):
+            continue
+        sev = float(e.get("severity") or 0.0)
+        above, below = (above + 1, below) if sev >= CRITICAL_SEVERITY_THRESHOLD else (above, below + 1)
+        if abs(sev - CRITICAL_SEVERITY_THRESHOLD) < 1e-9:
+            on_thr += 1
+        if lo <= sev <= hi:
+            inband.append({
+                "id": e.get("canonical_id") or e.get("finding_id"),
+                "severity": round(sev, 3),
+                "class": "critical" if sev >= CRITICAL_SEVERITY_THRESHOLD else "non-critical",
+            })
+    return {
+        "band": [round(lo, 3), round(hi, 3)],
+        "band_half_width": b,
+        "findings_in_band": len(inband),
+        "findings_exactly_on_threshold": on_thr,
+        "critical_total": above,
+        "non_critical_total": below,
+        "entries": inband[:50],
+        "IS_A_PROXY": ("The population a rubric adjudication must cover. NOT a "
+                       "rubric verdict: the five-clause consequence rubric cannot "
+                       "be evaluated mechanically and must be adjudicated by a "
+                       "model or the human in the loop, per the pre-registration."),
+    }
 
 
 def _unlocated_novelty_key(description: str, buckets: List[Tuple[str, Any]]) -> str:
@@ -11975,6 +12094,20 @@ def run_experiment(
     result["gamma_critical_history"] = [
         round(g, 4) for g in gamma_critical_history
     ]
+
+    # THE PRE-REGISTERED THRESHOLD PROFILE AND BOUNDARY CENSUS (F6), 2026-09-01.
+    # Both DIAGNOSTIC: neither touches the gate, and the live verdict is still
+    # computed at CRITICAL_SEVERITY_THRESHOLD. Wrapped because a diagnostic must
+    # never take a run down.
+    try:
+        result["gamma_threshold_profile"] = gamma_threshold_profile(
+            registry, round_idx, cfg.min_rounds_for_gamma)
+    except Exception as _exc:  # noqa: BLE001
+        result["gamma_threshold_profile"] = {"error": f"{type(_exc).__name__}: {_exc}"}
+    try:
+        result["critical_boundary_census"] = boundary_band_census(registry)
+    except Exception as _exc:  # noqa: BLE001
+        result["critical_boundary_census"] = {"error": f"{type(_exc).__name__}: {_exc}"}
     # The location-keyed critical series. Emitted under BOTH names: the honest
     # one, and the legacy `..._shadow_...` key that every completed report and
     # every existing reader uses. The legacy name is actively misleading — it
