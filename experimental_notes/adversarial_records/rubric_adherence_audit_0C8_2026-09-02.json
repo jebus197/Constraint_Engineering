@@ -1,0 +1,3643 @@
+{
+ "method": "blind scoring against the 2026-05-18 five-clause pre-registration; severity withheld and redacted from 80 of 286 texts; shuffle seed 20260902",
+ "first_pass": [
+  {
+   "item": 0,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text describes the `if refutations or final_v == \"REJECTED\"` condition and then breaks off mid-word at \"This part is corr[ect]\", so the setup is present but the actual defect claim never appears."
+  },
+  {
+   "item": 1,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "It states that on the real ingestion path `EvidenceStore` \"cannot index, query, or t[rack]\" \u2014 a producer/consumer contract mismatch that leaves the evidence store unable to perform its intended function, so queries against logged evidence return wrong (empty) answers."
+  },
+  {
+   "item": 2,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "It shows `_compute_shadow_e_values` looking up a finding-ID key in the tool-name-keyed `_cumulative_tool_fpr` (citing the module's own 2026-07-27 comment as proof of the key space), so `tracker` is always `None` and the e-value computation is permanently dead \u2014 the evidence/severity measurement it exists to produce is never made."
+  },
+  {
+   "item": 3,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is an adjudication asserting the absence of a defect \u2014 \"_parse_verdicts does not discard target/source distinction for MERGE operations; it isolates them effectively\" \u2014 so upholding it leaves correctness, hard-constraint conclusions and the accounting exactly as they are."
+  },
+  {
+   "item": 4,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text cuts off at \"classified as HARD or SOFT using `\" \u2014 it names the function, the line and the flaw class but never states what is wrong with the classification, and the rubric cannot be applied to a defect that is not described."
+  },
+  {
+   "item": 5,
+   "verdict": "NON_CRITICAL",
+   "reason": "It is a code-grounded refutation \u2014 \"FIND as stated is not justified from the code\", because `verify_inclusion_proof()` is pure with respect to chain state and reads neither `self._records` nor `self._epochs` \u2014 so sustaining it changes nothing in the artefact or the accounting."
+  },
+  {
+   "item": 6,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "It states that per-model budgets are collapsed to `max(...)`, \"which understates pressure for smaller-budget models\", so `compute_pacing_signals()` returns a numerically wrong pressure value and \"downstream pacing decisions can be silently wrong in multi-model runs\" \u2014 multi-model being the normal case."
+  },
+  {
+   "item": 7,
+   "verdict": "NON_CRITICAL",
+   "reason": "Unvalidated `domain`/`variant` strings reaching `DIRECTIVES_DIR / domain` is input hardening against a caller that is the experiment's own trusted config, and the text names no path by which normal operation yields a wrong directive, a wrong result, or lost evidence."
+  },
+  {
+   "item": 8,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The surviving parenthetical states the consequence outright \u2014 \"silently wrong results; a valid contrast statement is ignored, the alternative becomes inadmissible, and the model suffers an unwarranted penalty\" \u2014 a valid submission silently misjudged as inadmissible."
+  },
+  {
+   "item": 9,
+   "verdict": "NON_CRITICAL",
+   "reason": "The stated effect is that keyword matching \"inflates the `type_safety` count in `HealthScan` and misleads the insect brain's health trends\" \u2014 a mislabelled lint-diagnostic tally, which is the prereg's \"diagnostic only\" case and touches no result, hard-constraint conclusion or convergence accounting."
+  },
+  {
+   "item": 10,
+   "verdict": "NON_CRITICAL",
+   "reason": "`trace_finding()` \"sorts only by `timestamp_utc`, so equal timestamps lose the append order\" \u2014 an ordering wobble confined to exact-tie events in an audit view, with no stated decision, verdict or count that depends on the tie order."
+  },
+  {
+   "item": 11,
+   "verdict": "NON_CRITICAL",
+   "reason": "Only `fid_a` receives the near-duplicate record, so the loss is \"asymmetric information loss\" in the corrective-feedback channel \u2014 the duplicate pair itself was detected and both findings remain in the registry, leaving the reconciliation and novelty accounting unchanged."
+  },
+  {
+   "item": 12,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`_EvidenceIndex.__init__` uses truthiness (`if rec.experiment:`, `if rec.model:`) so that records with default `\"\"` values are, in the finding's own word, \"silently omitted from `by_experiment` and `by_model`\" \u2014 evidence that is present in the chain but unreachable through the index any audit or count runs over."
+  },
+  {
+   "item": 13,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Misclassifying negated verbosity directives causes \"conflict resolution to keep contradictory instructions\", so the composer emits a self-contradictory directive stack \u2014 a logically incorrect output of the exact function whose purpose is to eliminate such contradictions, and that stack is the experiment's input."
+  },
+  {
+   "item": 14,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`compose()` assigns to `situation.text` on a caller-supplied mutable dataclass while its docstring claims \"Pure: no side effects, no state mutation\"; a reused packet therefore receives the phenotype transform twice, silently producing a different composed prompt depending on call order."
+  },
+  {
+   "item": 15,
+   "verdict": "NON_CRITICAL",
+   "reason": "`priority_score()` returning \"a lower priority score than intended\" for a refutation-free REJECTED verdict re-ranks an item within the feedback list; the verdict itself is still recorded and no measurement or conclusion moves."
+  },
+  {
+   "item": 16,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text breaks off at \"it checks `registr[y]`\" \u2014 the one-directional coverage gap is named but neither the missing direction's object nor any consequence is stated, so there is nothing concrete to test against the five clauses."
+  },
+  {
+   "item": 17,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`model_origin` is taken from `finding.model_id` rather than the R_k validation's `model_id`, so \"if model A's R_k for model B's finding is flagged WARN, the feedback routes to model B instead of model A\" \u2014 an actively wrong attribution delivered to the wrong model, not merely a missing notification."
+  },
+  {
+   "item": 18,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The dedup guard in `_evaluate_gate_conditions` \"prevents the stability window check from ever accumulating enough history when `open_ch` is stable and non-zero\" \u2014 it suppresses precisely the consecutive-identical signal the gate measures, so the convergence determination itself is corrupted."
+  },
+  {
+   "item": 19,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The finding's arithmetic is correct \u2014 SymPy and math.hypot both give RSS = 0.5266% against the document's arithmetic sum of 0.85% \u2014 so absent an explicit worst-case declaration the artefact reports a combined standard uncertainty that is mathematically wrong by 60%."
+  },
+  {
+   "item": 20,
+   "verdict": "NON_CRITICAL",
+   "reason": "It upholds the existing behaviour \u2014 \"evaluating the challenge as unresolved is logically correct\" for a same-round concurrent challenge and confirm \u2014 so its resolution leaves the artefact and the reconciliation accounting untouched."
+  },
+  {
+   "item": 21,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding is still recorded as REJECTED in `final_verdicts`; what is missing is that \"the model receives no corrective feedback\", a completeness gap in the improvement loop that changes no registry contents, no verdict and no convergence count."
+  },
+  {
+   "item": 22,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops mid-condition at 'If metadata contains `\"round\":`' \u2014 the `meta.get(\"round\", -1)` mechanism is quoted but the failing case and its effect are both cut away."
+  },
+  {
+   "item": 23,
+   "verdict": "NON_CRITICAL",
+   "reason": "Eagerly converting \"every raw chain record into an `EvidenceRecord` before the calle[r]\" is an eager-versus-lazy construction cost; the records and their contents are identical either way, so correctness and the evidence accounting are unchanged."
+  },
+  {
+   "item": 24,
+   "verdict": "NON_CRITICAL",
+   "reason": "As stated, an aggregate-voted REJECTED finding with no cell-level REJECTED verdict means \"no `FindingFeedback` record is created\" \u2014 the rejection is still logged in `final_verdicts`, so only the corrective message to the model is lost."
+  },
+  {
+   "item": 25,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`_CONTRAST_RE` \"truncates multi-line contrast statements at the first newline, causing false rejections\" \u2014 valid submitted content is silently judged invalid, which is a wrong output of the admissibility check itself."
+  },
+  {
+   "item": 26,
+   "verdict": "NON_CRITICAL",
+   "reason": "`ThreadPoolExecutor(max_workers=len(eligible))` with `len(eligible)==0` raises immediately because \"Python requires `max_workers >= 1`\" \u2014 a loud fail-fast on a config that selected no participants, producing no result to be wrong and no evidence to lose."
+  },
+  {
+   "item": 27,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The sentence breaks at \"drops items from `top_items` and r[...]\" \u2014 dropping items is what a truncation path is for, and the clause that would name the actual defect is missing."
+  },
+  {
+   "item": 28,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`escalate_stale_contested` \"changes status to `UNCONFIRMED`, which is a regular registry status\" instead of removing the finding from automated resolution as the A3 fix intends, so contested findings needing human adjudication are reclassified back into the automated pool and the contested/critical counts the gate reads are wrong."
+  },
+  {
+   "item": 29,
+   "verdict": "NON_CRITICAL",
+   "reason": "A REJECTED finding with no cell verdicts \"is silently omitted\" from feedback record construction only; the verdict remains in `final_verdicts`, so nothing is lost from the registry or the accounting."
+  },
+  {
+   "item": 30,
+   "verdict": "NON_CRITICAL",
+   "reason": "It restates the section-3 asymmetry \u2014 \"only notifies `fid[_a]`\" \u2014 as the same root cause as C0232; the duplicate pair is detected and both findings are retained, so only the second author's notification is missing."
+  },
+  {
+   "item": 31,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text confirms the proof \"includes these keys\" and then cuts at \"which includes the `\\\"merkle_[root]\\\"`\" \u2014 whether the embedded root overrides the supplied `bundle.merkle_root` and thereby makes verification circular is exactly the part that is missing."
+  },
+  {
+   "item": 32,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The document permits straight external-standard back-calculation against a non-zero intercept of \"about 2 per cent\" of the level-1 response; SymPy gives the resulting relative bias as +8% at 20% of level-1, +18% at 10% and +38% at 5%, so the \"residual bias at the bottom\" is a systematically wrong quantitation, not a bounded convenience."
+  },
+  {
+   "item": 33,
+   "verdict": "NON_CRITICAL",
+   "reason": "It self-identifies as \"not a new discovery\" and merges into C0016, reporting the same one-sided `fid_a` near-duplicate notification \u2014 a feedback-completeness refinement that leaves both findings and their verdicts intact."
+  },
+  {
+   "item": 34,
+   "verdict": "NON_CRITICAL",
+   "reason": "The claim is conditional hardening \u2014 `results_count` is numeric-assumed \"even though the type is declared as `Dict[str, Any]`\" and strings \"can arrive\" across JSON/subprocess boundaries \u2014 with no producer identified that actually emits a string, and the most likely outcome if one did is a loud TypeError."
+  },
+  {
+   "item": 35,
+   "verdict": "NON_CRITICAL",
+   "reason": "Storing `round_idx` \"directly from metadata without type coercion\" is the same declared-versus-actual type hardening: the finding names no producer that supplies a non-integer round and no observed misattribution, only the absent coercion."
+  },
+  {
+   "item": 36,
+   "verdict": "NON_CRITICAL",
+   "reason": "It is a pure refutation \u2014 \"I challenge that stated mechanism\" \u2014 of C0031's claimed route to a negative kappa_set, and upholding it establishes that no defect exists, leaving the artefact, the hard-constraint conclusions and the convergence accounting exactly as they are."
+  },
+  {
+   "item": 37,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"allows near-verbatim rephrasing through ... missing the near_copy rejection\" means a repetition is admitted as a genuine alternative, which changes the novelty accounting itself, not just the artefact."
+  },
+  {
+   "item": 38,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"uses cumulative_context_chars (total across all models) but compares it directly to context_budget (per-model)\" is a denominator mismatch that makes context_fraction numerically wrong by roughly the model count, so the function's intended output is incorrect."
+  },
+  {
+   "item": 39,
+   "verdict": "NON_CRITICAL",
+   "reason": "The only named consequence is that an over-long contrast statement \"passes the character-length gate, effectively circumventing the rendering-boundary cap\" \u2014 a resource/length bound, leaving correctness, hard-constraint conclusions and the verification accounting unchanged."
+  },
+  {
+   "item": 40,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"Fallback density calibration always returns ~0.057 regardless of input length, producing a bogus constant\" is a calibration output that is numerically wrong for every input."
+  },
+  {
+   "item": 41,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"the R_k discrepancy is silently attributed to model B via finding.model_id\" because ownership is never verified \u2014 a misattribution inside the reconciliation/self-assessment accounting, not in the artefact under study."
+  },
+  {
+   "item": 42,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `tmpdir` NameError fires only on a path where `_create_sandbox` has already failed, so it replaces one loud exception with another and masks a diagnostic; no output value, hard-constraint conclusion or accounting figure changes."
+  },
+  {
+   "item": 43,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops at \"the `while` loop that trims `top_items` to fit `max_chars\" without stating what the loop does wrong or with what effect, so no clause can be tested."
+  },
+  {
+   "item": 44,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"C0019 and C0041 should merge into closed C0017 because they describe the same near-duplicate\" case \u2014 left unmerged, two duplicates are counted as separate live findings, which changes the class/novel counts the convergence verdict is computed from."
+  },
+  {
+   "item": 45,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"_VERDICT_RE accepts REOPEN, and _parse_verdicts() returns only (verb, target_canonical_id, evidence)\" while REOPEN and MERGE need a distinct source finding, so reopen/merge transitions in the settled registry cannot be represented correctly."
+  },
+  {
+   "item": 46,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"Reformatting C0187 to fix the missing '====' separator in the SEARCH/REPLACE block\" is a presentation repair of a patch block; nothing in the artefact's correctness or the verification accounting changes."
+  },
+  {
+   "item": 47,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"build_feedback_records() only iterates cell_verdicts.items()\" means verdicts held anywhere else never enter the feedback/reconciliation pass at all, so the reconciliation accounting is assembled from an incomplete verdict set."
+  },
+  {
+   "item": 48,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"two methods disagree on the dict key space\" producing \"silently empty results\" means the computation returns an empty answer where a populated one is due, and does so without any error surfacing."
+  },
+  {
+   "item": 49,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Using \"the normal distribution (z=1.96)\" for n=8 with unknown variance instead of \"t=2.365 for df=7\" yields a demonstrably wrong confidence interval (285.6\u2013293.2 rather than 284.8\u2013294.0 MPa)."
+  },
+  {
+   "item": 50,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"verify_bundle() bypasses the chain_hash mismatch check if either the record or the proof is missing the chain_hash key\" \u2014 the integrity check reports success without having verified anything, corrupting the verification itself."
+  },
+  {
+   "item": 51,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"Character-limit enforcement can be circumvented via the contrast statement\" names only a bypass of a length cap; no output becomes wrong and no accounting figure moves."
+  },
+  {
+   "item": 52,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"fid_b receives no feedback about the duplication\" leaves the duplicate_pairs data and the dedup accounting intact and affects only which side of a pair is annotated in the feedback text."
+  },
+  {
+   "item": 53,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"the denominator counts each prior equivalence class once via aggregated_severity, but the numerator suppression can count multiple members from the same prior equivalence class\" is an asymmetry inside kappa_set() itself, so the convergence measurement is wrong."
+  },
+  {
+   "item": 54,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"It returns the cached result from verifier A without ever checking verifier B's signatures\" because the cache tracks only that some verifier ran \u2014 a signature check silently skipped inside the verification machinery."
+  },
+  {
+   "item": 55,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `median_t > 0.1` comparison is deterministic for any given input and the claimed harm is confined to values within floating-point noise of the threshold, so a heuristic spike gate's knife-edge is a refinement, not a wrong result."
+  },
+  {
+   "item": 56,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text ends at \"accepts unbounded numeric attributes fro\" without naming the consequence, and whether a shadow calibrator's assessment reaches any live severity or novelty accounting is exactly the unstated fact the verdict turns on."
+  },
+  {
+   "item": 57,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`_ALT_HEADER_RE` \"requires the header line to *terminate* immediately after the keyword\", so any alternative whose header carries trailing text fails to parse and its content is dropped without notice."
+  },
+  {
+   "item": 58,
+   "verdict": "UNJUDGEABLE",
+   "reason": "Only the first premise survives \u2014 \"_extract_finding_ids recursively searches dict keys and values\" \u2014 with no claim, defect or consequence stated."
+  },
+  {
+   "item": 59,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The guard \"aborts entire computation based solely on current round's raw count\", so `_compute_rho` reports (0.0, 0.0, False) \u2014 no churn \u2014 for histories that did have poor efficiency, corrupting a convergence-family measurement."
+  },
+  {
+   "item": 60,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text cuts off inside the evidence line (\"if rec.payload and isinstance(rec\") and never says what happens to non-dict payloads or what the event classification feeds, so no clause can be tested."
+  },
+  {
+   "item": 61,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"_split_packet_directives fragments monolithic prose presets, causing silent loss of protocol content\" means the composed directive packet \u2014 the artefact the composer exists to produce \u2014 is incomplete and nothing signals it."
+  },
+  {
+   "item": 62,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "It confirms \"a valid concern about the C0206 fix interaction with the UUID collision problem\", and colliding finding identities corrupt the registry's finding accounting on which the convergence verdict is computed."
+  },
+  {
+   "item": 63,
+   "verdict": "NON_CRITICAL",
+   "reason": "The challenge concludes the bound \"bounds exactly 3 rounds, perfectly mirroring the functional docstring and execution logging\" \u2014 it establishes there is no defect, so nothing in the artefact or the accounting changes."
+  },
+  {
+   "item": 64,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"raises KeyError when the raw record dict is missing the 'chain_hash' key\" is a loud, immediate failure on malformed input; no value is silently wrong and no accounting figure is altered."
+  },
+  {
+   "item": 65,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"Finding IDs are only extracted from the payload, completely ignoring the metadata field\" means every finding referenced only in metadata is invisible to the extractor and drops out of the record without trace."
+  },
+  {
+   "item": 66,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "Five admissibility failures score 4.0 against a refuted finding's 3.0, so \"a refuted finding can be pushed out of the top-\" K \u2014 a falsification signal suppressed from the feedback the next round is built on."
+  },
+  {
+   "item": 67,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"engine.validate() ... performs no check that each parameter in a TOML file is defined at a layer permitted by its min_layer\", so the validator returns a passing verdict for configurations the schema forbids and mis-scoped policy parameters take effect silently."
+  },
+  {
+   "item": 68,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"the implementation never reads immune_result.rejected_findings\" means an entire documented category of findings \u2014 those the immune layer threw out \u2014 never reaches the feedback record, so the rejection is silent."
+  },
+  {
+   "item": 69,
+   "verdict": "NON_CRITICAL",
+   "reason": "It refutes rather than reports: the UNCONFIRMED status \"is not proven wrong from the code shown\" and is \"consistent with A3 escalation\", so resolving it confirms current behaviour and changes nothing."
+  },
+  {
+   "item": 70,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"If immune_result.final_verdicts has a REJECTED finding not in cell_verdicts, it is missed\" \u2014 a rejected finding disappears from the feedback pass entirely, with nothing to mark its absence."
+  },
+  {
+   "item": 71,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"_compute_fix_verdict logic allows a fix that introduces new issues in one tool to be masked by reductions in\" another, so a regressing fix is scored as an improvement and the verdict the function exists to produce is wrong."
+  },
+  {
+   "item": 72,
+   "verdict": "NON_CRITICAL",
+   "reason": "An empty `eligible` list makes `ThreadPoolExecutor(max_workers=0)` raise `ValueError` immediately at dispatch on a degenerate config \u2014 a loud, reproducible abort that produces no incorrect output and corrupts no convergence or severity accounting."
+  },
+  {
+   "item": 73,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops mid-sentence at \"the while-loop that trims items to fit `max_chars_per_model` uses the c\" \u2014 the actual defect and its consequence (over-trimming versus under-trimming) are absent, and the two fall on opposite sides of the rubric."
+  },
+  {
+   "item": 74,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_compute_rho` returning `(0.0, 0.0, False)` whenever `raw_counts[-1] == 0` discards the rolling-window rho \"relevant for convergence detection\", so the defect changes the measured value of a convergence metric, not just the artefact."
+  },
+  {
+   "item": 75,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_classify_event` in `bench/evidence.py` identifying verdict commands by `json.dumps` plus substring `in` matching will classify events by incidental text (the trace begins \"A finding ID like \\\"C0001\\\"\"), so verdict events in the evidence record are misclassified and the verdict accounting itself is wrong."
+  },
+  {
+   "item": 76,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_FINDING_ID_RE = re.compile(r\"\\b[A-Za-z]\\d{3,5}\\b\")` matches any letter followed by three to five digits, so ordinary prose tokens are extracted as finding IDs and the finding registry's identity and cross-linking \u2014 the substrate of the convergence count \u2014 is corrupted."
+  },
+  {
+   "item": 77,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"`_rebuild_section` silently drops the mandatory \u00a717 instructions when the prompt is truncated\" means the composer emits a prompt that breaches its own mandatory specification with no record, so its output is incorrect for its intended function."
+  },
+  {
+   "item": 78,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`verify_bundle()` skipping the record-versus-proof `chain_hash` binding \"when the proof lacks a `chain_hash` field\" means a bundle can pass verification without the binding ever being checked \u2014 a defect in the verification apparatus itself."
+  },
+  {
+   "item": 79,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Because `_directive_topic_and_stance()` \"returns only one `(topic, stance)` pair\", `resolve_layer_conflicts()` reports no conflict where a real one exists, so the resolver's output is logically wrong and the composed prompt carries an unresolved contradiction."
+  },
+  {
+   "item": 80,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A missing ADMISSIBILITY block scoring \"all 5 gates as failed\" at 4.0 outranks a refuted finding at 3.0, inverting the docstring's `REJECTED > FFAFP-FAIL > DUPLICATE` invariant \u2014 the severity and priority accounting itself produces the wrong ordering."
+  },
+  {
+   "item": 81,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_WORD_RE` requiring a leading letter makes `score_isomorphism()` blind to \"timeout 5 ms and retry limit 3\" versus \"timeout 9 ms and retry limit 0\", so materially divergent alternatives score as isomorphic and the novelty and divergence accounting is wrong."
+  },
+  {
+   "item": 82,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding's own scope statement \u2014 \"not operation-blocking; module is shadow/observation-only\" \u2014 puts the silently empty results outside the live path, so correctness, the hard-constraint conclusions and the verification accounting are unchanged."
+  },
+  {
+   "item": 83,
+   "verdict": "NON_CRITICAL",
+   "reason": "As stated the defect is redundant work \u2014 \"every finding with a proposed fix is evaluated twice\" by `EndocrineLayer.run()` and immune Stage 4 \u2014 with no asserted divergence between the two verdicts or double-counting in the record, so it is cost, not correctness."
+  },
+  {
+   "item": 84,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding refutes C0042, concluding the `clusters.setdefault(root, []).append(i)` code \"is syntactically valid Python and operationally valid for grouping union-find roots\", so no artefact correctness or hard-constraint conclusion changes on resolution."
+  },
+  {
+   "item": 85,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Neither `validate()` nor `validate_all_policies()` enforces the declared `min_layer`, so \"a domain-layer TOML file could define `model.timeout = 5` and it would be silently accepted\" \u2014 the validator returns valid for a configuration that breaches an explicit schema constraint."
+  },
+  {
+   "item": 86,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`parse_alternative_block()` terminating a body \"only at the next alternative header or EOF\" lets `FALSIFICATION:` and `CORROBORATION:` text bleed into the alternative, so the divergence module scores novelty over contaminated text."
+  },
+  {
+   "item": 87,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`compose()` assigning `situation.text = _apply_phenotype_transform(...)` on a mutable dataclass the \"caller retains a reference to\" means a reused packet is transformed repeatedly, making composed prompts order-dependent and wrong on the second and later calls."
+  },
+  {
+   "item": 88,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut at \"includes `FINDING_ID` and `FINDING` as alternations, but the alternation order\" \u2014 for prefix-overlapping alternatives the terminator's start position may be identical, so without the stated effect the defect could be either nil or lossy."
+  },
+  {
+   "item": 89,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A `section_terminator` without the `re.IGNORECASE` that `marker_match` carries cannot close a section whose header the marker regex accepted case-insensitively, so section boundaries are asymmetric and parsed findings merge or absorb following content, changing the finding counts."
+  },
+  {
+   "item": 90,
+   "verdict": "NON_CRITICAL",
+   "reason": "`_render_single_record()` raising on `len(evidence)` when `evidence` is `None` is a loud failure in a rendering path; nothing in the text shows the exception is swallowed or that any record is silently dropped or miscounted."
+  },
+  {
+   "item": 91,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`_load_domain_directive(\"product-engineering\", variant=\"automotive\")` builds `product-engineering_automotive.txt` while the real file is `product_automotive.txt`, so a valid directive is \"silently\" absent and the composed prompt is not the configuration the run believes it applied."
+  },
+  {
+   "item": 92,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`build_feedback_records()` omitting \"pipeline-level rejected findings\" means adjudicated REJECTED verdicts never reach the feedback record, so rejections are silently absent from the round's accounting and recur in later rounds."
+  },
+  {
+   "item": 93,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Because the verbosity branch returns before the examples branch, a realistic directive (\"Use concise format. Do [not include examples]\") yields only `(\"verbosity\", \"low\")`, so `resolve_layer_conflicts()` reports no conflict on a topic where one exists."
+  },
+  {
+   "item": 94,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut at \"correctly uses `model_id` from `rk_validation.items()` to fil\" \u2014 it states what the C0206 fix gets right and stops before the alleged defect, leaving nothing to test against the clauses."
+  },
+  {
+   "item": 95,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`if record_hash and proof_hash and record_hash != proof_hash:` skips the mismatch check whenever either hash is empty, \"allowing forged records to pass verification\" \u2014 the verification integrity is defeated by an absent field."
+  },
+  {
+   "item": 96,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The same confirmed defect as C0204/C0219/C0224 \u2014 `build_feedback_records()` \"only iterates `cell_verdicts`\" \u2014 drops verdicts held in `final_verdicts` from the feedback accounting."
+  },
+  {
+   "item": 97,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`EvidenceStore.verify_bundle()` accepting \"any `bundle.merkle_root` value\" without checking it against the store's own root means a bundle carrying a fabricated root verifies, which is a defect in the verification mechanism itself."
+  },
+  {
+   "item": 98,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `TypeError` in `compute_pacing_signals()` is contingent on a hypothetical caller passing `None` or a string against a declared `context_budget: int`, and no such caller is shown; the failure would be a loud abort, not a corrupted measurement."
+  },
+  {
+   "item": 99,
+   "verdict": "NON_CRITICAL",
+   "reason": "An unused `import numpy as np` in `bench/dm/_convergence.py`, confirmed dead by AST scan, is a dependency-hygiene refinement that leaves the module's computations and the convergence accounting identical."
+  },
+  {
+   "item": 100,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`parse_admissibility_block()` treating \"prose mentions of `ADMISSIBILITY` as the start of an admissibility block\" causes gates to be read off arbitrary text, so findings are admitted or failed on a fabricated parse \u2014 the admissibility adjudication itself is corrupted."
+  },
+  {
+   "item": 101,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A finding held in `immune_result.final_verdicts` as `\"REJECTED\"` with no `cell_verdicts` entry produces no `FindingFeedback` record at all, so the rejection is silently absent from the feedback accounting and \"the model never learns its finding was rejected\"."
+  },
+  {
+   "item": 102,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`cumulative_context_chars += len(text)` accumulates response sizes while the value is consumed as prompt or context load by `endo.run(... context_budget=...)`, so the pacing signal is derived from the wrong quantity and both the logged metric and the decision it drives are wrong."
+  },
+  {
+   "item": 103,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The blanket `if len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS: return` returns before timing-spike analysis \"even though timing analysis depends on `timings`, not on verdict count\", so the observer silently skips checks whose own preconditions are met."
+  },
+  {
+   "item": 104,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text gives only the location and the trigger \u2014 \"When `build_feedback_sections` exceeds `max_chars_per_mo`\" \u2014 and stops before saying what is dropped; trimming low-priority items is by design while dropping mandatory content is not."
+  },
+  {
+   "item": 105,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text ends at \"`_semantically_duplicate` uses a containment check: if the Jaccard is \u22650.95 with respect to\", leaving unstated whether the objection is a containment asymmetry that merges distinct findings or a threshold-tuning preference."
+  },
+  {
+   "item": 106,
+   "verdict": "NON_CRITICAL",
+   "reason": "`record[\"chain_hash\"]` raising `KeyError` is a loud failure and the one-sentence text shows no writer that actually emits a record without the key, so nothing here demonstrates silent loss or an unverifiable accepted result."
+  },
+  {
+   "item": 107,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Same defect as C0191/C0197: \"A finding present in `final_verdicts` as `\\\"REJECTED\\\"` but not in `cell_verdicts` is omitted\", so an adjudicated rejection is silently missing from the feedback accounting."
+  },
+  {
+   "item": 108,
+   "verdict": "NON_CRITICAL",
+   "reason": "The truthiness guard excludes only records whose index key is an empty string \u2014 a degenerate value nothing can meaningfully be queried by \u2014 and the records themselves are dropped from the index, not the store, so no convergence, severity or novelty count changes."
+  },
+  {
+   "item": 109,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "An explicitly requested `domain_variant` whose file does not exist is \"silently ignored\", so `_load_domain_directive()` returns a directive stack that does not match the request and the dispatch runs under a condition it was not asked to run."
+  },
+  {
+   "item": 110,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_render_single_record()` renders \"untrusted finding/tool text directly into future model prompts without quoting or esca[ping]\", so registry-shaped text inside a finding body can steer the next round's verdicts, which is the material the convergence measurement is computed from."
+  },
+  {
+   "item": 111,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "Burst-mode HIL exits skip the `brain._save_checkpoint()` the monolithic gate performs, and \"the same round has already run immune pip[eline]\", so verdicts computed in that round are silently absent from the persisted state at the pause boundary."
+  },
+  {
+   "item": 112,
+   "verdict": "NON_CRITICAL",
+   "reason": "`diff_policies` produces an accurate diff for the `domain_a, domain_b, model_a, model_b` arguments it accepts; the absence of `task_id_a`/`task_id_b` is a missing capability in a reviewer-facing diagnostic, and policy resolution itself is unchanged."
+  },
+  {
+   "item": 113,
+   "verdict": "NON_CRITICAL",
+   "reason": "`trace_finding` returns the same event set and only the docstring's \"ordered by timestamp\" claim overstates `for i in sorted(indices)`, with the divergence conditional on timestamps that \"could be out-of-order if records are appended re[trospectively]\" \u2014 offered as hypothetical, not observed."
+  },
+  {
+   "item": 114,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`_semantically_duplicate` \"deletes opposites\" because `_STOPWORDS` strips \"without\", so a finding and its negation collapse into one and a substantively distinct finding is silently removed."
+  },
+  {
+   "item": 115,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`prior_findings` \"becomes a multiset\" because cumulative equivalence classes contribute multiple copies of identical findings, so `_suppression_weight` and `ConvergenceDetector.kappa_set()` \u2014 the convergence metric itself \u2014 are computed on inflated counts."
+  },
+  {
+   "item": 116,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "Replacing \"must not\" with \"do not\" turns a prohibition into a factual statement while the function's stated invariant is \"HARD constraints are preserved exactly. Only presentation is modified\", so an explicit HARD constraint is weakened in the directive actually dispatched."
+  },
+  {
+   "item": 117,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`_classify_event()` returns `\"submitted\"` as the default for ALL matching `model_chat_log` records, so every event that is not a submission is emitted with a wrong type by the function whose only job is to type them."
+  },
+  {
+   "item": 118,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Raw `bool()`/`int()`/`float()` coercion of unvalidated payload values produces \"silently wrong divergence enforcement\" \u2014 a quoted `\"false\"` coerces to True \u2014 so the enforcement state diverges from the logged configuration with no error raised."
+  },
+  {
+   "item": 119,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "A null block with a valid header but no body sets `has_null = False`, so `eta_int_modulator` applies the \"ignored directive entirely\" penalty \"instead of the correct 0.85 penalty\", a numerically wrong modulator value on a compliant record."
+  },
+  {
+   "item": 120,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Clustering on `similarity_fn(...) >= tau_sim` alone, with flaw_class worth \"at most +0.06\", contradicts the documented relation \"equivalent if they share flaw_class and have sim >= tau_sim\" and merges different flaw classes into one class, changing the equivalence-class counts convergence and novelty are measured from."
+  },
+  {
+   "item": 121,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The permissive `(alt(?:ernative)?|conjecture)` header regex matches lines inside an existing alternative's body, \"splitting a legitimate alternative into multiple parsed records\" and so returning an inflated, incorrect alternative count."
+  },
+  {
+   "item": 122,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `section_terminator` list still contains markers that will occur, so the block does terminate; the finding claims only that it \"might stop at\" a later marker and establishes no changed admissibility outcome."
+  },
+  {
+   "item": 123,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text ends mid-sentence at \"The function guards against `immune_result i`\", giving a location but no stated defect or consequence to assess against any clause."
+  },
+  {
+   "item": 124,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`parse_admissibility_block()` \"selects the first syntactic ADMISSIBILITY marker in the whole finding_text\", so a finding's admissibility can be taken from a quoted or neighbouring marker and the finding admitted or rejected on a verdict that is not its own."
+  },
+  {
+   "item": 125,
+   "verdict": "NON_CRITICAL",
+   "reason": "The record is still emitted and \"the `action` property correctly identifies this state as requiring a RECALCULATE action\"; only the priority ordering weight is 0.0, which affects presentation rank and no verdict, count or accounting figure."
+  },
+  {
+   "item": 126,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Ignoring the `model_id` key of `rk_validation` applies an R_k discrepancy \"to whichever model's finding matches the `fid`\", attributing a measured discrepancy to a model that did not produce it whenever more than one model touched that id."
+  },
+  {
+   "item": 127,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding states outright that \"the shadowing is cosmetic (no function parameter named `model_id` exists)\" and that the rename to `rk_model_id` \"improves clarity\" \u2014 a naming change by its own account."
+  },
+  {
+   "item": 128,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_tokenise` dropping single-character tokens is \"inflating isomorphism scores for texts differing only in one-letter identifiers\", so distinct findings score as duplicates and the dedup and novelty counts the gate reads are wrong."
+  },
+  {
+   "item": 129,
+   "verdict": "NON_CRITICAL",
+   "reason": "As stated this is an annotation that disagrees with the implementation (`-> Tuple[bool, str]`); no caller misbehaviour or wrong verification outcome is asserted, and correcting the annotation leaves runtime output unchanged."
+  },
+  {
+   "item": 130,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`eta_int_modulator()` \"ignores `DivergenceConfig.mode=\"advisory\"`\", so it applies a scoring penalty in a mode configured to advise only, returning a wrong modulator value deterministically whenever that mode is set."
+  },
+  {
+   "item": 131,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text says only that the function \"returns `1.0` immediately when `record.compliant` is true\" and is cut off before stating why that early return is wrong or what modulation it bypasses."
+  },
+  {
+   "item": 132,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "The terminator lacks the `re.IGNORECASE` the locator has, so a title-case `Novelty:` header makes the admissibility \"block variable consume all subsequent tex[t]\", swallowing later sections and findings under the format drift the parser is designed to accept."
+  },
+  {
+   "item": 133,
+   "verdict": "NON_CRITICAL",
+   "reason": "A non-numeric `confidence` makes `sum(severities) / len(severities)` raise, which \"can crash the advisory monitor\" \u2014 a loud failure in an advisory path, not a wrong output, a changed count, or a suppressed finding."
+  },
+  {
+   "item": 134,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Caching `_verified=False` with `_verified_with_verifier=True` makes a later call return the cached `False`, \"falsely implying structural corruption\" from the very instrument that certifies the evidence record's integrity."
+  },
+  {
+   "item": 135,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`compose()` mutates the caller's packet in place despite documenting \"Pure: no side effects, no state mutation\", so across a multi-model confer \"each subsequent call receives already-transformed text\" and the composed prompt depends on dispatch order."
+  },
+  {
+   "item": 136,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_count_tool_issues` catching all exceptions and returning 0 turns a tool that could not run into \"pre-fix and post-fix counts of 0, net change 0, and a verdict of NEUTRAL or SAFE\", so a fix is accepted as safe on a measurement that never happened."
+  },
+  {
+   "item": 137,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "REOPEN is accepted by `_VERDICT_RE` but the `(verb, canonical_id, evidence)` shape has no resolver equivalent to `_resolve_merge_source()`, so reopen instructions are not honoured and the zero-new-critical count the convergence gate reads is wrong."
+  },
+  {
+   "item": 138,
+   "verdict": "NON_CRITICAL",
+   "reason": "The defect is confined to a reviewer-facing diff that prints `\"<absent>\"` where the schema default is the effective value; the policy layers are still merged and applied as before, leaving verdicts and the convergence accounting unchanged."
+  },
+  {
+   "item": 139,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`_compute_cid()` includes \"only packet layer, packet name, text length, and model\", so different directive contents of equal length share a composition id and the logged identity cannot establish which directive text actually produced a result."
+  },
+  {
+   "item": 140,
+   "verdict": "NON_CRITICAL",
+   "reason": "The three advertised mechanisms \u2014 sensitivity dial, circuit breaker, semantic clustering \u2014 are absent, but the gap is between docstring and code with ergonomic consequences (\"prevents HIL overload\"); implementing them or correcting the docstring changes no output, verdict or accounting figure."
+  },
+  {
+   "item": 141,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "A finding present in `final_verdicts` as rejected but absent from `cell_verdicts` \"is never surfaced as feedback\", so a rejection is silently dropped from the loop that would let it be contested or recalculated."
+  },
+  {
+   "item": 142,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is a schema-conformance reply carrying an \"identity replacement\" after establishing that the original claim of a lexical bug `clusters.s` \"is incorrect as the artifact contains valid Python\", so nothing about the artefact's correctness changes."
+  },
+  {
+   "item": 143,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A zero-based `round_idx` compared against a one-based `cfg.rho_earliest_round` \"delays rho-churn detection by one round, causing late termination\", shifting the round at which the run's own convergence criterion fires."
+  },
+  {
+   "item": 144,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`__post_init__` \"unconditionally overwrites `rho_earliest_round` with `earliest_stop_round`, discarding any user-supplied value\", so the round at which the rho convergence parameter takes effect differs silently from the configured run, changing the schedule under which convergence is measured."
+  },
+  {
+   "item": 145,
+   "verdict": "NON_CRITICAL",
+   "reason": "The text asserts the code is correct (\"Target/source distinctions are robustly preserved\") and identifies no defect, so its resolution changes nothing."
+  },
+  {
+   "item": 146,
+   "verdict": "NON_CRITICAL",
+   "reason": "The demonstrated substance is a comment/log-versus-code window mismatch (\"docstring/comment says 'last 3 rounds'\" against `current_round - 2`) plus a hedged tuning worry (\"achievable but tight\"); no incorrect auto-resolution outcome is established."
+  },
+  {
+   "item": 147,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The plateau predicate `all(n <= 1 for n in recent)` counts a round with one novel finding as a plateau, a defect in the novelty accounting itself, and the FOLLOW line traces it to premature convergence."
+  },
+  {
+   "item": 148,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`verify()` caches the first unverified result, so \"a later call with a verifier returns the cached unsigned result instead of re-running signature verification\" \u2014 the chain reports verified when signatures were never checked."
+  },
+  {
+   "item": 149,
+   "verdict": "NON_CRITICAL",
+   "reason": "A base score of 0.0 for a REJECTED-without-refutations finding is a weighting inconsistency in the feedback prioritisation heuristic; the record is still produced and no verdict, count, or finding is shown to be lost."
+  },
+  {
+   "item": 150,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`from_chain_file()` infers `experiment` from the path (\"p.parent.name or p.stem\") while records are indexed under a recorded experiment value, so a result's evidence cannot be reliably retrieved by experiment from the logged chain."
+  },
+  {
+   "item": 151,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The text (truncated) names the defect \u2014 `build_feedback_records()` ignores the `model_id` key \u2014 which makes feedback records not attributable to the model that produced them, an incorrect output of the function's intended purpose."
+  },
+  {
+   "item": 152,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The gate regex both misses bolded gate names and matches status substrings (\"`PASSIVE` matches `PASS`\"), so admissibility gate statuses are recorded wrongly and the verification record no longer reflects what the model reported."
+  },
+  {
+   "item": 153,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Missing `\\b` boundaries mean \"`G-completeness: PASSED`\" is reported as a passed gate, so an inadmissible submission is recorded as having cleared its admissibility gate."
+  },
+  {
+   "item": 154,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Single-linkage clustering \"only tests `similarity >= tau_sim`\" without requiring a shared `flaw_class`, so distinct findings merge into one class that \"inherits an arbitrary `flaw_class`\", changing both the distinct-finding count and its classification."
+  },
+  {
+   "item": 155,
+   "verdict": "NON_CRITICAL",
+   "reason": "A crash in `_render_single_record()` on non-string refutation evidence is a robustness gap in a rendering path that would fail loudly; no wrong result, lost finding, or corrupted accounting is shown."
+  },
+  {
+   "item": 156,
+   "verdict": "NON_CRITICAL",
+   "reason": "Missing runtime validation of `mode`; the trigger requires a caller to violate the declared `MacrophageMode` type, and the text names no such call site and no resulting wrong outcome before it breaks off."
+  },
+  {
+   "item": 157,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The immune pipeline passes a hardcoded relative `bench/tests/` path while the sandbox tmpdir is `cwd`, so `evaluate_fix` cannot run the tests its verdict is supposed to rest on and returns an evaluation not grounded in any test execution."
+  },
+  {
+   "item": 158,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Iterating only `cell_verdicts` means \"pipeline-level rejected findings\" that appear in `final_verdicts` with no cell key \"can [be omitted] entirely\", making the function's output systematically incomplete."
+  },
+  {
+   "item": 159,
+   "verdict": "NON_CRITICAL",
+   "reason": "`for r in range(round_idx + 1)` is only wrong \"if rounds are not contiguous or start at non-zero\", and the text establishes no run in which that indexing actually occurs."
+  },
+  {
+   "item": 160,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Strategy 3 assigns the joined `new_block` back \"as a single-element list to the slice\", so applying a fix collapses multiple source lines and corrupts the patched source structure."
+  },
+  {
+   "item": 161,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Under the documented unordered-pair contract cited in the premises, \"any finding that appears only as `fid_b` receives no corrective feedback\", so the function omits records it is specified to produce."
+  },
+  {
+   "item": 162,
+   "verdict": "NON_CRITICAL",
+   "reason": "The confirmed substance is that \"the user-facing log says `in last 3 rounds`\" while the filter is `>= current_round - 2` and the method \"has no docstring\" \u2014 a logging and documentation accuracy issue, with the finding's own evidence being that the two are \"easy to m[isread]\"."
+  },
+  {
+   "item": 163,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Ignoring the `model_id` key applies rk_validation discrepancies \"to findings regardless of which model produced them\", so feedback is attributed to models that did not produce the discrepancy."
+  },
+  {
+   "item": 164,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Only `fid_a` is looked up in `finding_by_id` and given a record while the docstring uses \"symmetric language\", so one member of each near-duplicate pair is never notified and the output is incomplete."
+  },
+  {
+   "item": 165,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`hash(key) % 8 + 1` is randomised per process by PYTHONHASHSEED, so \"the same unknown flaw class string maps to different integers across experiment runs\" and a logged run does not re-classify identically on replay."
+  },
+  {
+   "item": 166,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The loop over `for fid_a, fid_b, sim in duplicate_pairs` \"processes only the first element of each duplicate pair\", leaving the second member of every pair without a feedback record \u2014 the same omission defect, stated tersely."
+  },
+  {
+   "item": 167,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `isinstance(rec.payload, dict)` guard skips non-dict payloads in an event classifier; the text breaks off at \"If a `model_chat_log\" without naming a consequence, and no finding, verdict, or count is shown to change."
+  },
+  {
+   "item": 168,
+   "verdict": "NON_CRITICAL",
+   "reason": "A `None`-valued `final_verdicts` is a hypothesis the text does not show to occur, and the stated failure is a loud `AttributeError` rather than a wrong result or a silent loss."
+  },
+  {
+   "item": 169,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The FIND stops mid-clause at \"relies on `_directive_topic_and_stance`, which\", so neither the defect nor any consequence is stated."
+  },
+  {
+   "item": 170,
+   "verdict": "NON_CRITICAL",
+   "reason": "Lexicographic ordering of ISO-8601 UTC timestamps is chronologically correct for uniform formats, the text establishes no mixed-format case before it truncates, and trace ordering is a diagnostic view rather than the accounting."
+  },
+  {
+   "item": 171,
+   "verdict": "NON_CRITICAL",
+   "reason": "`validate_alternative()` performs the contract it implements \u2014 presence plus `min_contrast_chars` \u2014 and requiring a \"dimension-specific difference\" is a strengthening of a free-text heuristic, with no admitted-filler instance or changed count demonstrated."
+  },
+  {
+   "item": 172,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The \"excessively broad\" `\\b[A-Za-z]\\d{3,5}\\b` captures generic tokens as finding IDs, so verdicts and cross-references can be bound to IDs that correspond to no finding, corrupting the registry's finding/verdict accounting."
+  },
+  {
+   "item": 173,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Confirms that `build_feedback_records()` \"ignores the `model_id` key of `rk_validation`\", so validation discrepancies are written into feedback records for models that did not produce them."
+  },
+  {
+   "item": 174,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`_compute_cid()` hashes only `f\"{p.layer}:{p.name}:{len(p.text)}\"` plus the model, so two different directive compositions of equal length share an identity and the logged CID does not pin the inputs a run used."
+  },
+  {
+   "item": 175,
+   "verdict": "NON_CRITICAL",
+   "reason": "The routine enforces presence and `null_justification_min_chars` as written; distinguishing \"generic filler\" from a real justification is a semantic judgement the check never claimed to make, and no admitted case or changed conclusion is shown."
+  },
+  {
+   "item": 176,
+   "verdict": "NON_CRITICAL",
+   "reason": "The demonstrated collision (\"`file1=b\\\"ab\\\", file2=b\\\"c\\\"`\") requires contrived redistribution of bytes across file boundaries; the text shows no realistic source state in which the memory key actually collides or a wrong result follows."
+  },
+  {
+   "item": 177,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "`ParameterDef.min_layer` \"is loaded from schema ... but never validated against actual layer definitions\", so an explicit constraint of the directive taxonomy can be breached by defining a parameter in a layer the schema forbids."
+  },
+  {
+   "item": 178,
+   "verdict": "NON_CRITICAL",
+   "reason": "Provenance is overwritten even when a layer \"re-states the identical value\", so only the attribution label is (in the finding's own word) \"misleading\"; the effective parameter values, and therefore the conclusions and reproducibility, are unchanged."
+  },
+  {
+   "item": 179,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_verification_step` \"resolves finding statuses, but never calls `registry.add_verdict`\", so the verification round's verdicts never enter the registry the convergence accounting is computed from."
+  },
+  {
+   "item": 180,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The duplicate relation is symmetric but the loop \"creates/updates a feedback record only for fid_a\", so the function's intended output \u2014 a feedback record per finding \u2014 is logically incomplete for every fid_b, and the model that raised fid_b is never told it duplicated an existing finding."
+  },
+  {
+   "item": 181,
+   "verdict": "NON_CRITICAL",
+   "reason": "An AI-proposed Python fix containing a literal null byte is not a plausible input, and the stated consequence is a loud unhandled ValueError that \"crashes the experiment\" rather than a wrong result, a corrupted measurement or silently lost evidence."
+  },
+  {
+   "item": 182,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`_DIM_LINE_RE.match(body)` anchors at position zero, so valid alternative blocks whose dimension line is not first are wrongly rejected \u2014 an explicit \"false-negative rejection of valid alternative blocks\", i.e. incorrect output of the parser's intended function."
+  },
+  {
+   "item": 183,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Same defect as stated in its own words \u2014 the near-duplicate loop \"processes only the first element of each duplicate pair (fid_a)\" \u2014 leaving the second member of every pair without the record the function exists to produce."
+  },
+  {
+   "item": 184,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The marker regex accepts `(?:#{1,6}\\s*)?ADMISSIBILITY` but the terminator regex \"lacks the same optional `#{1,6}` prefix\", so on Markdown-formatted replies \u2014 the common case \u2014 the ADMISSIBILITY section never terminates at the next header and the block is parsed wrongly."
+  },
+  {
+   "item": 185,
+   "verdict": "NON_CRITICAL",
+   "reason": "A \"single, hardcoded 30% reduction\" before falling through to Pass 2 is a tuning choice in a budget-fitting heuristic; the text asserts no incorrect output, no lost finding and no change to the convergence or severity accounting."
+  },
+  {
+   "item": 186,
+   "verdict": "NON_CRITICAL",
+   "reason": "The exclusion only occurs \"if a negative round index is registered via `add_round_findings(-1, findings)`\", a caller-supplied value the round loop never produces, so this is input-validation hardening rather than a live corruption of cumulative convergence counts."
+  },
+  {
+   "item": 187,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "The confirmed defect is that `build_feedback_records()` \"can omit a final pipeline `REJECTED` finding\", i.e. a finding disappears from the feedback record entirely \u2014 suppression of a finding from the record, not a presentational issue."
+  },
+  {
+   "item": 188,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "It asserts the contested claim \"fundamentally contradicts the explicit A3 system design driving the HIL audit grace interval\", so acting on that claim would breach an explicit design constraint and change escalation behaviour."
+  },
+  {
+   "item": 189,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`constraint_count` is \"fixed from the TOML policy and is not reduced\" while pruning shrinks `remaining_tokens`, so the density objective the pruning loop is steering on cannot be satisfied by pruning \u2014 a logically broken control computation, not a tuning preference."
+  },
+  {
+   "item": 190,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "It records that \"escalating directly to UNCONFIRMED alongside hil_escalated=True is the intended architectural design\", so the contested claim is a false positive whose acceptance would have changed designed escalation behaviour and left a spurious critical entry in the register."
+  },
+  {
+   "item": 191,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`compose()` mutates the caller's packet in place despite a docstring claiming purity, so \"the second call receives already-transformed text, which is transformed again\" \u2014 every model after the first is dispatched a doubly-degraded prompt."
+  },
+  {
+   "item": 192,
+   "verdict": "NON_CRITICAL",
+   "reason": "`sorted(values)[len(values)//2]` is exact for the odd-sized panel the finder concedes is \"usually fine\", and for even sets the deviation is bounded by the gap between the two central values and affects only \"threshold-based pacing signals\", not the convergence, severity or novelty accounting."
+  },
+  {
+   "item": 193,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "Adding argon at constant volume and temperature leaves the partial pressures of N\u2082, H\u2082 and NH\u2083 unchanged so Q is unchanged \u2014 the artefact's claimed equilibrium shift and \"argon bleed as a fine trim on converter yield\" breaches a physical law."
+  },
+  {
+   "item": 194,
+   "verdict": "NON_CRITICAL",
+   "reason": "As stated the defect is a signature-shape inconsistency \u2014 `export_bundle()` \"drops the `artifact_type` parameter from its method signature\" relative to a sibling \u2014 with nothing in the text indicating the exported evidence content, its classification, or its reproducibility changes."
+  },
+  {
+   "item": 195,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "A literal substitution of `\"must not\"` \u2192 `\"do not\"` inside `simplify_language` rewrites the modal that carries prohibition force in composed constraint text, so a HARD prohibition reaches the model weakened or grammatically broken."
+  },
+  {
+   "item": 196,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`__post_init__` \"unconditionally overwrites `rho_earliest_round` with `earliest_stop_round`, discarding any user-provided value\" and does so silently, so a run's rho stop criterion is evaluated from a different round than the configured experimental design specifies."
+  },
+  {
+   "item": 197,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_weighted_novel_severity()` multiplies \"the largest suppression weight (from one member) by the largest severity (possibly from a different member)\", inflating the weighted novel severity that the convergence gate is computed on."
+  },
+  {
+   "item": 198,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The entire FIND is cut off at \"`benc`\"; all that survives is the model's own flaw-class and abstraction-index annotation, so there is no mechanism, location or evidence to judge independently of that self-label."
+  },
+  {
+   "item": 199,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`verify_bundle()` \"does not validate that each record's payload_hash matches the actual payload\", so a bundle with an altered payload and recomputed hashes verifies clean \u2014 the logged evidence a hostile reviewer would reproduce from is not provably the evidence produced."
+  },
+  {
+   "item": 200,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_CONTRAST_RE` \"requires one of a narrow set of lead phrases followed *immediately* by\" punctuation, so contrast statements phrased any other way are missed and inter-model divergence is under-counted in the reconciliation accounting."
+  },
+  {
+   "item": 201,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`sigma[_\\s]*measured` with `\\s` matching newlines under an unanchored `re.search` matches \"sigma\" and \"measured\" on separate lines \u2014 I reproduced the cross-line match \u2014 so the \u03c3_measured gate can record a PASS/FAIL the block never asserted."
+  },
+  {
+   "item": 202,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Recomputing the document's own formula gives \u03c0\u00b2\u00b7210e9\u00b75.60e-6/4.50\u00b2 = 573.17 kN against the stated 587 kN, a 2.4% error in a reported Euler buckling load \u2014 a numerically wrong result in the artefact."
+  },
+  {
+   "item": 203,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut at \"ignores the `model_id` key w\", and ignoring an outer dict key is compatible with both a benign reading (the record already carries the correct attribution) and a harmful one, with nothing visible to settle which."
+  },
+  {
+   "item": 204,
+   "verdict": "CRITICAL",
+   "clause": 5,
+   "reason": "`(abs(hash(key)) % 8) + 1` is salted per process unless PYTHONHASHSEED is fixed (it is unset here), so the same unknown flaw-class text maps to a different class on every run and a logged classification cannot be reproduced."
+  },
+  {
+   "item": 205,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Without intermediate `__init__.py` the sandbox makes pyright and mypy emit \"spurious 'module not found' errors for every `from bench.xxx import`\", so the static-analysis output that fix verification is judged on is systematically false \u2014 real errors masked by noise."
+  },
+  {
+   "item": 206,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "Escalated findings are resolved to status UNCONFIRMED with the escalation held only in an auxiliary flag, so \"status-driven readers can miss that these are escalated HIL items\" \u2014 a misclassification that silently removes contested findings from view."
+  },
+  {
+   "item": 207,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`DirectivePacket` is a mutable dataclass and `compose()` writes back to it, so \"dispatching the same task to 5 models\" gives each successive model text already transformed by the previous one \u2014 the panel is not answering the same prompt."
+  },
+  {
+   "item": 208,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`v[\"round\"] >= latest_confirm_round` keeps same-round challenges unresolved, so `contested_count()` reports an inflated contested total \u2014 an off-by-one directly in the reconciliation accounting."
+  },
+  {
+   "item": 209,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding states outright that \"the current `schema.toml` does not have such a structure\" and objects only that \"the code is not defensive against future evolution\", so nothing in the artefact's present output changes."
+  },
+  {
+   "item": 210,
+   "verdict": "NON_CRITICAL",
+   "reason": "The failure needs a stored file containing an explicit `\"decay_rate\": null` and then fails loudly with `TypeError` in `math.exp(-self.decay_rate)`; it is input-validation hardening with no wrong result, silent loss, or accounting change."
+  },
+  {
+   "item": 211,
+   "verdict": "NON_CRITICAL",
+   "reason": "`from_chain_record` raising `KeyError` on a record missing required keys is a loud failure on already-invalid input; replacing it with a clean validation error changes error handling, not correctness, evidence content or reproducibility."
+  },
+  {
+   "item": 212,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Quoted `.env` values are a normal convention, and the stated result is \"silent authentication failures in every API dispatch\" \u2014 the panel's replies never arrive while the run proceeds, so whatever convergence is then measured was measured on absent evidence."
+  },
+  {
+   "item": 213,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "When `final_verdicts` holds `fid: \"REJECTED\"` with no `cell_verdicts` entry, \"the finding is silently dropped from feedback\" \u2014 suppression of a finding from the record with no loud signal."
+  },
+  {
+   "item": 214,
+   "verdict": "NON_CRITICAL",
+   "reason": "It lists what `add_round_findings()` will accept \u2014 negative indices, NaN or infinite durations and deltas \u2014 but shows no path by which the runner supplies such values, so it is input-validation completeness rather than a demonstrated corruption of the convergence figures."
+  },
+  {
+   "item": 215,
+   "verdict": "NON_CRITICAL",
+   "reason": "The code already \"uses that finding's `model_id` as `model_origin`\", which is the correct attribution; the objection is the absence of a cross-check against the outer key for a cross-model entry the finder only hypothesises (\"If `rk_validation` contains...\")."
+  },
+  {
+   "item": 216,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"CUSUM missing dead-band (k=0) ... causes false positive drift alerts under stationary noise\" is a wrong output of the detector's intended function \u2014 a reflected random walk with no negative drift crosses any threshold with probability 1, which I reproduced at a 200/200 false-alarm rate over stationary noise."
+  },
+  {
+   "item": 217,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The function \"removes text while keeping the same constraint_count, so it can worsen the measured constraint density it is trying to reduce\" \u2014 density = C/(chars//4) rises monotonically as text is pruned (0.007 -> 0.028 in a check), so the routine produces the logical inverse of its intended result."
+  },
+  {
+   "item": 218,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"a high-severity finding inside a partially novel class may be hidden from the veto check ... allows a dangerous new finding to escape without blocking convergence\" is a defect in the novelty accounting that changes the zero-novel-critical side of the convergence measurement."
+  },
+  {
+   "item": 219,
+   "verdict": "NON_CRITICAL",
+   "reason": "priority_score \"does not account for final_verdict == REJECTED when self.refutations is empty\" affects the ranking of feedback records only; the finding, its verdict and the convergence accounting are unchanged (the consequence sentence is truncated mid-word, but the defect as stated is ordering)."
+  },
+  {
+   "item": 220,
+   "verdict": "NON_CRITICAL",
+   "reason": "The text itself makes the harm conditional \u2014 \"if model_id were referenced after the loop\" \u2014 so the reported shadowing of the loop variable is a naming/hygiene concern with no demonstrated incorrect behaviour."
+  },
+  {
+   "item": 221,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "open_crit_high_count excluding REOPENED while build_summary includes it means \"a reopened [REDACTED] finding would not be counted toward the 'Open CRIT/HIGH' gate, potentially allowing premature convergence\" \u2014 a direct corruption of the convergence measurement."
+  },
+  {
+   "item": 222,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "detect_finding_id_collisions \"can turn an observation-only collision detector into a blocking failure and can overcount\" \u2014 the finding-ID collision instrument is part of the reconciliation accounting, so both the spurious block and the overcount misreport run integrity."
+  },
+  {
+   "item": 223,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"It only appends to the history list if the value changes ... causing len(open_ch_history) < cfg.open_ch_stability_window to perpetually fail\" means a genuinely stable state can never satisfy the gate's stability window, changing when convergence is measured as reached."
+  },
+  {
+   "item": 224,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The entire text is one structural observation \u2014 \"rec is appended to both the local collisions list ... and the global _finding_id_collisions accumulator\" \u2014 with no asserted failure mode, so there is nothing to test against the five clauses."
+  },
+  {
+   "item": 225,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"the near-duplicate section only creates feedback for fid_a\" is an omission in corrective feedback to one of two duplicate owners; the findings remain in the registry and the dedup, novelty and convergence accounting are untouched."
+  },
+  {
+   "item": 226,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"REJECTED findings are not reliably surfaced as corrective feedback\" concerns what the models are told, not what is recorded \u2014 the final REJECTED verdict still stands in the pipeline output, so no finding is lost and no hard-constraint conclusion moves."
+  },
+  {
+   "item": 227,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The artefact concludes the pump set \"tolerates two simultaneous unit failures without loss of duty\" from its own premise that a single unit delivers \"55 per cent of duty\" \u2014 an invalid derivation, and a 2-out-of-3 arrangement tolerates one failure, not two."
+  },
+  {
+   "item": 228,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"single-linkage clustering only tests similarity >= tau_sim; it does not require flaw_class to match\" merges findings of different flaw classes into one equivalence class, which is the reconciliation input to novelty and convergence counting."
+  },
+  {
+   "item": 229,
+   "verdict": "NON_CRITICAL",
+   "reason": "The listed failures \u2014 \"data.get raises AttributeError\", \"float() or math operations fail\", \".items() raises AttributeError\" \u2014 are loud crashes on malformed JSON input; the well-formed path's correctness and the verification accounting are unchanged."
+  },
+  {
+   "item": 230,
+   "verdict": "NON_CRITICAL",
+   "reason": "The bundle's data is still logged and parseable as JSON; only the reciprocal constructor is absent, so \"EvidenceBundle(json.load(f))\" failing on the injected bundle_version key is an API-completeness gap, not an accepted result that cannot be reproduced."
+  },
+  {
+   "item": 231,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops at \"C0232 correctly identifies that build_feedback_records() section 3 processes duplicate_pairs\" \u2014 the defect claim and its consequence are cut off, so the clause test cannot be applied without guessing which section-3 defect is meant."
+  },
+  {
+   "item": 232,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"The condition if current_round - oldest > 1 ... only counts a finding as contested if the oldest unresolved challenge is more than 1 round old\" undercounts live contested findings, and contested_count is a gate input, so the convergence measurement changes if it is fixed."
+  },
+  {
+   "item": 233,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding refutes its own harm \u2014 \"verify_inclusion_proof ... doesn't actually need chain state ... so this works on ANY EvidenceStore instance\" \u2014 leaving only a docstring/API-design complaint that changes no result and no accounting."
+  },
+  {
+   "item": 234,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "evaluate_fix \"can never apply ordinary unified diff / patch-style fixes even though the module's main integration point ... feeds model-proposed textual fixes\", so the dominant class of proposed fixes is systematically evaluated as unusable \u2014 a wrong output of the fix-evaluation function at its own interface."
+  },
+  {
+   "item": 235,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"ignores the model_id key of rk_validation, applying R_k discrepancies to findings regardless of whether the model_id matches the finding's model_origin\" attributes one model's R_k discrepancy to another's finding \u2014 an incorrect, not merely incomplete, output."
+  },
+  {
+   "item": 236,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "\"the engine never checks schema_hard_bools - registry_hard_bools\", so a parameter promoted to HARD in schema.toml passes validation unenforced \u2014 an explicit HARD constraint can exist without the validator ever binding it."
+  },
+  {
+   "item": 237,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "compose() \"mutates the caller's situation packet in-place\" despite claiming purity, so \"the second model receives text already transformed by the first model's phenotype\" \u2014 every dispatch after the first composes the wrong prompt, and the result depends on dispatch order."
+  },
+  {
+   "item": 238,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "_compute_shadow_e_values \"treats immune_response.cell_verdicts as if its outer keys are tool/cell names\" when the same module's _track_tool_fpr documents them as finding-ID keyed, so the e-values are computed over the wrong key structure and are numerically wrong."
+  },
+  {
+   "item": 239,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"crashes on missing chain_hash key due to direct key access\" is a loud KeyError on a malformed record; nothing is silently accepted and no accounting is altered on the well-formed path."
+  },
+  {
+   "item": 240,
+   "verdict": "NON_CRITICAL",
+   "reason": "The defect direction is over-reporting only \u2014 an explicit value equal to the default \"triggering a diff entry\" against a policy that inherits it \u2014 so the diff is noisy but never hides a real difference, leaving the audit trail intact."
+  },
+  {
+   "item": 241,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"no feedback record is created. The model never learns its finding was rejected\" is an omission in the corrective-feedback loop; the pipeline-level REJECTED verdict is still recorded, so no finding is lost and the convergence accounting is unchanged."
+  },
+  {
+   "item": 242,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"missing source_hash in the JSON file combined with a caller-supplied expected_hash does not invalidate memory, allowing stale data\" is an integrity guard failing open \u2014 stale immune memory silently feeds the priors the severity and novelty accounting rests on."
+  },
+  {
+   "item": 243,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Same defect as item 235 stated against C0201 \u2014 \"applying R_k discrepancies to whichever model's finding matches fid\" misattributes one model's validation discrepancy to another model's finding."
+  },
+  {
+   "item": 244,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"If two different models both lack the model_id attribute, the default '?' makes them indistinguishable \u2014 the set colla[pses]\", so cross_model = len(model_ids) > 1 mislabels a genuine cross-model finding-ID collision as intra-model in the collision accounting."
+  },
+  {
+   "item": 245,
+   "verdict": "NON_CRITICAL",
+   "reason": "This challenge concludes the code is correct \u2014 \"_check_gamma_gate() does not have inverted pass/fail semantics ... That is the natural interpretation of threshold gating\" \u2014 so resolving it requires no change to the artefact or to the gate's measurement."
+  },
+  {
+   "item": 246,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"The later Ouroboros-specific check is therefore unreachable\" whenever the aggregate counters are absent or zero, so an entire class of gate-integrity findings is silently never generated by the monitoring cell."
+  },
+  {
+   "item": 247,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"the stated reason, 'f_s exceeds f_max', is not the Nyquist criterion\" \u2014 I confirmed the counterexample: at f_s = 300 Hz, f_max = 180 Hz the stated test passes while Nyquist fails (300 < 360), so the artefact's derivation is invalid even though its answer is accidentally right."
+  },
+  {
+   "item": 248,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"the buffer therefore resolves features separated by 1 Hz\" is false \u2014 bin spacing is exactly 400/256 = 1.5625 Hz, and a 256-sample rectangular window at 400 Hz merges two tones 1 Hz apart into a single peak in a direct FFT check."
+  },
+  {
+   "item": 249,
+   "verdict": "NON_CRITICAL",
+   "reason": "The finding concedes the behaviour it reports \u2014 \"This is safe (returns [])\" \u2014 leaving only a defensive-programming preference about distinguishing round-0 semantics from an invalid negative index."
+  },
+  {
+   "item": 250,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text ends inside its first premise, \"EvidenceStore.verify() caches results based on whether a v\", so whether the cache is wrongly reused (verification-integrity) or merely redundant cannot be determined from what is present."
+  },
+  {
+   "item": 251,
+   "verdict": "UNJUDGEABLE",
+   "reason": "Every concern the text raises it then withdraws \u2014 \"The sort itself is safe\", \"This is correct\" \u2014 and it is cut off at \"But the _rebuild_section function accepts an\", exactly where the actual defect would have been stated."
+  },
+  {
+   "item": 252,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The declared severity labels are applied inconsistently across tools so that \"ruff uses 'warning' for everything\" while a bandit HIGH becomes \"error\", making `counts_by_severity` a logically incorrect aggregate and causing the insect brain's error-count health gate to fire on the wrong input."
+  },
+  {
+   "item": 253,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is a challenge that refutes an alleged division-by-zero by quoting both guards and explicitly declines to assert a defect (\"may have policy issues around zero-raw rounds, but it does not divide by zero\"), so resolving it leaves the artefact, the hard-constraint conclusions and the accounting unchanged."
+  },
+  {
+   "item": 254,
+   "verdict": "NON_CRITICAL",
+   "reason": "The load-bearing claim that an unhandled `ValueError` from `os.path.commonpath` \"will crash `evaluate_fix`\" is retracted by the author within the same text (\"Actually, the exception is caught in the outer try-except\"), leaving only a caught error path on platform edge cases the finding itself names as Windows-drive or mixed absolute/relative paths."
+  },
+  {
+   "item": 255,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`record_experiment` \"performs no deduplication\" so a replayed `exp_id` \"doubles (or multiplies) the evidence contributed by that experiment\", yielding by the finding's own words \"a silently incorrect memory and therefore a silently incorrect blended prior downstream\"."
+  },
+  {
+   "item": 256,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The quoted mismatch between line 242 `_NON_TERMINAL = (\"OPEN\", \"CONTESTED\")` and line 275 `full_detail_statuses = (\"OPEN\", \"CONTESTED\", \"REOPENED\")` means `open_crit_high_count` under-counts REOPENED critical findings, and that count is the open-critical input to the convergence gate."
+  },
+  {
+   "item": 257,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut off at \"`constraints.sympy_auto_verify` (\" before naming the second parameter or stating what the \"semantic contradiction\" causes, so there is no way to tell whether it is a logical contradiction in the core constraints or a documentation inconsistency."
+  },
+  {
+   "item": 258,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The finding carries its own tool receipt showing `len(t) >= 2` collapses \"x y z\" and \"a b c\" to empty token sets scoring 1.0 where \"lexical Jaccard should be `0.0`\", i.e. a demonstrated mathematically wrong divergence value for wholly distinct inputs."
+  },
+  {
+   "item": 259,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Because `_novel_classes()` \"marks an entire round-r class as non-novel if ANY member matches a prior finding\", a genuinely novel high-severity finding is recorded as non-novel and \"will never trigger the severity veto\" \u2014 a corruption of the novelty accounting that also disables the safety mechanism built on it."
+  },
+  {
+   "item": 260,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is a challenge arguing the observed `UNCONFIRMED` + `hil_escalated = True` combination \"is the precise intentional design for A3 escalation\", so accepting it changes no code, no hard-constraint conclusion and no accounting."
+  },
+  {
+   "item": 261,
+   "verdict": "NON_CRITICAL",
+   "reason": "The mismatch between `priority_score()` (which adds 3.0 only `if self.refutations`) and `action` (which returns RECALCULATE on \"refutations or final_verdict == 'REJECTED'\") affects only the ordering weight of feedback records; the severity, verdict and registry values themselves are unaltered and no truncation of the list is claimed."
+  },
+  {
+   "item": 262,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The sentence stops at \"returns `1.0` immediately for any `record.compliant`, before checki[ng]\", so the bypassed condition, the direction of the resulting eta_int error and any consequence are all absent from the text."
+  },
+  {
+   "item": 263,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Judging only on the substantive consequence clause \u2014 \"silently wrong result: a fully-compliant alternative is penalised on \u03b7_int\" \u2014 the finding asserts an incorrect computed value for a model quantity, which is a wrong output in the parser's intended function."
+  },
+  {
+   "item": 264,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`_assess_finding()` reads `getattr(finding, \"novelty\", 0.9)` and `getattr(finding, \"detection_confidence\", 0.5)` from an untyped `finding: Any` \"without validating or clamping them to the probability-like `[0, 1]` range\", and since `C_MAX` caps only `c_freq`, an out-of-range model-supplied number propagates into `eta_stage6` as an invalid probability."
+  },
+  {
+   "item": 265,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text breaks at \"across all supplied prior alternatives withou[t]\", so neither the missing restriction nor whether the gate then wrongly admits or wrongly rejects an alternative can be determined."
+  },
+  {
+   "item": 266,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Setting aside the unused-variable observation the author himself calls \"not a bug per se\", the surviving claim is that sparse non-zero `novelty_counts` leave \"very few points and produce unstable gamma estimates\" \u2014 a defect in the measurement of convergence itself, which the two-sided gate reads at a 0.30 cutoff."
+  },
+  {
+   "item": 267,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "When `rec.payload` is a string rather than a dict, `_classify_event` \"returns `\"submitted\"` without detecting the verdict\", so \"confirmations, challenges, extensions, and merges\" are misrecorded in the provenance traces that constitute the reconciliation and audit record."
+  },
+  {
+   "item": 268,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Ignoring the `model_id` key of `rk_validation` applies each R_k discrepancy \"to whichever model's finding currently occupies `finding_by_id[fid]`\", producing a feedback record attributed to the wrong model \u2014 a wrong output in the function's intended purpose."
+  },
+  {
+   "item": 269,
+   "verdict": "NON_CRITICAL",
+   "reason": "The confirmed mechanism \u2014 \"`build_feedback_records()` section 1 iterates only `cell_verdicts.it[ems()]`\" \u2014 omits records from the feedback packet sent to models, but the verdicts themselves remain in the registry, so correctness, hard-constraint conclusions and the convergence accounting are unchanged."
+  },
+  {
+   "item": 270,
+   "verdict": "NON_CRITICAL",
+   "reason": "The author's own stated consequence of the missing default-type check is that a malformed schema \"will be accepted and cause runtime errors when the def[ault is used]\" \u2014 a loud failure on a trusted, version-controlled in-repo file, with no malformed schema shown to exist."
+  },
+  {
+   "item": 271,
+   "verdict": "NON_CRITICAL",
+   "reason": "The described defect is that `_describe_event()` \"calls `_classify_event()` internally on line 478, duplicating the classification\", which is redundant work over the same input and therefore output-preserving; no divergence between the two call sites is claimed."
+  },
+  {
+   "item": 272,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Verified with scipy: the artefact's 285.6\u2013293.2 MPa is exactly the z=1.96 interval (285.583\u2013293.217) while the correct t interval with 7 degrees of freedom is 284.795\u2013294.005 MPa, matching the finding's t_0.975,7 = 2.365 and margin 4.605 \u2014 a wrong statistical result in the report's intended function."
+  },
+  {
+   "item": 273,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The surviving claim after the author's own concession is that when `raw_counts[-1] == 0` the function early-returns `(0.0, 0.0, False)` and \"the rolling average skips this by early-returning before computing it\", so the reported rolling rho is not the metric's true value \u2014 a change to the measurement of convergence, even though it errs conservatively."
+  },
+  {
+   "item": 274,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_compute_equivalence_classes` clustering \"based solely on text similarity, ignoring `flaw_class`\" over-merges findings of different flaw classes into one class, and those classes are what the novelty and deduplication accounting is computed over."
+  },
+  {
+   "item": 275,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Without `\\b` anchors the gate regex matches `PASS` inside \"encompass\" and `FAIL` inside \"failure\", so `parse_admissibility_block` emits a gate status contradicting the declared one \u2014 a logically incorrect parse of an admissibility verdict."
+  },
+  {
+   "item": 276,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "Because `re.search()` \"stops at the first match for each gate\", a block containing both `S_min: PASS` and a later `S_min: FAIL` silently discards the FAIL and records a PASS, suppressing the evidence that would change the admissibility (hard-constraint) conclusion."
+  },
+  {
+   "item": 277,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "Verified with pint: 450 kN / 3.60 MPa = 0.125 m\u00b2 (125000 mm\u00b2), not dimensionless, so the artefact's \"bearing factor of safety = 125 ... reported without units\" breaches dimensional homogeneity and the quoted ratio is not a factor of safety at all."
+  },
+  {
+   "item": 278,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is a challenge defending running pyright and mypy together as intended PoC observability \u2014 \"`HealthScan.counts_by_tool/tools_available` are designed to surface per-tool signals, not deduplicated issue sets\" \u2014 so accepting it changes no output and no conclusion."
+  },
+  {
+   "item": 279,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`verify_bundle()` \"never checks that the two lists have equal length\" and \"Python zip truncates to the shorter list\", so a bundle carrying extra unproven records \"can be reported valid\" \u2014 the evidence-integrity check that underwrites the audit trail is defeated."
+  },
+  {
+   "item": 280,
+   "verdict": "NON_CRITICAL",
+   "reason": "`DefectCategory.OFF_BY_ONE` and `RACE_CONDITION` being declared and documented but never emitted is dead enum membership plus a docstring overclaim; the categories actually produced (\"TYPE_SAFETY or NULL_DEREF\", \"DEAD_CODE/STYLE/SECURITY\") and their counts are unchanged by fixing it."
+  },
+  {
+   "item": 281,
+   "verdict": "NON_CRITICAL",
+   "reason": "The author concedes the point directly \u2014 \"provenance is still correct because model is last\" \u2014 leaving only internal-state inconsistency that \"would fail if another layer were added\", a latent maintainability concern with no present wrong output."
+  },
+  {
+   "item": 282,
+   "verdict": "NON_CRITICAL",
+   "reason": "A REJECTED finding present in `immune_result.final_verdicts` but absent from `cell_verdicts` is \"silently omitted from feedback\" only; the rejection itself remains in the verdict record, so no hard-constraint conclusion and no convergence accounting changes."
+  },
+  {
+   "item": 283,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Verified with pathlib: for both \"chain.json\" and \"./chain.json\", `p.parent.name` is `''` and `'' != '.'` is True, so `from_chain_file` publishes `experiment=\"\"` through `summary()` and `export_bundle()` instead of the stem \u2014 a wrong identity on the exported evidence bundle."
+  },
+  {
+   "item": 284,
+   "verdict": "NON_CRITICAL",
+   "reason": "The claim is hedged throughout (\"may be reached in the first round\", \"may be too sensitive\") and its premise is weak, since a 0.8 fraction of the context budget already scales with the budget by construction; this is threshold tuning, not a wrong output."
+  },
+  {
+   "item": 285,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Verified with RDKit: paracetamol (CC(=O)Nc1ccc(O)cc1) returns zero matches for `[CX3](=O)[OX2H1]` against one match for the acetic-acid control, so the artefact's claim of \"exactly one match\" for a carboxylic acid is a wrong chemistry result."
+  }
+ ],
+ "second_pass": [
+  {
+   "item": 0,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut off exactly at the defect claim \u2014 the visible portion only establishes that \"the condition `if refutations or final_v == \\\"REJECTED\\\"` still fires. This part is corr[ect]\", so no failure mode is actually stated."
+  },
+  {
+   "item": 1,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "It asserts a definite capability failure of the artefact's core function \u2014 \"On the real ingestion path, EvidenceStore cannot index, query, or t[race]\" \u2014 which is a wrong (non-functional) output on the live path, not a refinement."
+  },
+  {
+   "item": 2,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A key-space mismatch (cell_verdicts keyed by finding ID vs _cumulative_tool_fpr keyed by tool name) makes `tracker` \"always None \u2192 continue\", so the shadow e-value/false-positive-rate computation silently never runs \u2014 a defect in the severity accounting machinery itself."
+  },
+  {
+   "item": 3,
+   "verdict": "NON_CRITICAL",
+   "reason": "This is a rebuttal asserting the code is already correct (\"_parse_verdicts does not discard target/source distinction... it isolates them effectively\"), so there is nothing whose resolution would change correctness or the accounting."
+  },
+  {
+   "item": 4,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops mid-sentence at \"classified as HARD or SOFT using `\" \u2014 it names a location and a subject but never states what is wrong or in which direction the misclassification runs."
+  },
+  {
+   "item": 5,
+   "verdict": "NON_CRITICAL",
+   "reason": "It is a challenge concluding the alleged defect does not exist \u2014 \"verify_inclusion_proof() is pure with respect to chain state... bundle verification does not require access to the original chain contents\" \u2014 so no fix is implied and nothing changes."
+  },
+  {
+   "item": 6,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The function \"collapses them to max(...), which understates pressure for smaller-budget models\", so `compute_pacing_signals()` returns a numerically wrong signal and \"downstream pacing decisions can be silently wrong in multi-model runs\"."
+  },
+  {
+   "item": 7,
+   "verdict": "NON_CRITICAL",
+   "reason": "Unvalidated `domain`/`variant` in a filesystem path is a hardening concern on operator-supplied config input; nothing in the text shows a wrong composed output, corrupted accounting, or a breached safety/legal absolute."
+  },
+  {
+   "item": 8,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The stated consequence is \"silently wrong results; a valid contrast statement is ignored, the alternative becomes inadmissible, and the model suffers an unwarranted penalty\" \u2014 valid input incorrectly rejected is an incorrect output of the intended function."
+  },
+  {
+   "item": 9,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Keyword matching \"incorrectly labels other error types (e.g. reportMissingImports...) as type safety\", which \"inflates the type_safety count in HealthScan\" \u2014 a demonstrably wrong categorisation and a wrong reported count."
+  },
+  {
+   "item": 10,
+   "verdict": "NON_CRITICAL",
+   "reason": "Ordering among records with identical `timestamp_utc` is a presentation/tie-break refinement \u2014 any order of simultaneous events is chronologically admissible and no severity, novelty or convergence value changes."
+  },
+  {
+   "item": 11,
+   "verdict": "NON_CRITICAL",
+   "reason": "Only `fid_a` receiving the duplicate notice is asymmetric feedback routing, not lost data: the pair (\"F-alpha\", \"F-beta\", 0.92) is still recorded and one side is told to \"differentiate or withdraw\", leaving the dedup/novelty accounting unchanged."
+  },
+  {
+   "item": 12,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Truthiness guards mean \"records with default \\\"\\\" values are silently omitted from by_experiment and by_model\", so index queries return incomplete result sets \u2014 a wrong output of the evidence index, and silent at that."
+  },
+  {
+   "item": 13,
+   "verdict": "CRITICAL",
+   "clause": 2,
+   "reason": "Misclassifying negated verbosity directives causes \"conflict resolution to keep contradictory instructions\", i.e. the composed constraint set retains a logical contradiction in its directives rather than resolving it."
+  },
+  {
+   "item": 14,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "`compose()` assigns to `situation.text` on a mutable caller-owned dataclass while documenting \"Pure: no side effects, no state mutation\"; a reused packet is transformed repeatedly, so the composed text becomes call-order dependent and wrong."
+  },
+  {
+   "item": 15,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"a lower priority score than intended\" changes only the ranking of items within a feedback list; the finding, its verdict and the convergence accounting are all unaffected."
+  },
+  {
+   "item": 16,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"validate() performs schema coverage checks in one direction only\" means a genuinely mismatched registry can be reported as valid \u2014 the validator's own output is wrong for reachable inputs."
+  },
+  {
+   "item": 17,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"If model A's R_k for model B's finding is flagged WARN, the feedback routes to model B instead of model A\" \u2014 the emitted record carries affirmatively wrong attribution, sending a false divergence signal to a model that did not diverge."
+  },
+  {
+   "item": 18,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The dedup guard \"suppresses exactly the signal the stability check needs: consecutive identical values across rounds\", so the convergence gate's stability window can never accumulate \u2014 a defect in the convergence measurement itself."
+  },
+  {
+   "item": 19,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Confirmed by computation: arithmetic addition of 0.42/0.28/0.15 gives 0.85% but the root-sum-square of independent components is 0.5266%, so the reported combined uncertainty is mathematically wrong."
+  },
+  {
+   "item": 20,
+   "verdict": "NON_CRITICAL",
+   "reason": "The challenge concludes existing behaviour is right \u2014 \"evaluating the challenge as unresolved is logically correct\" \u2014 so there is no defect whose resolution would change any output or conclusion."
+  },
+  {
+   "item": 21,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "A whole reachable class \u2014 \"rejected by aggregate vote without any individual cell issuing REJECTED\" \u2014 \"is never processed\", so the function emits no record at all where its contract requires one."
+  },
+  {
+   "item": 22,
+   "verdict": "NON_CRITICAL",
+   "reason": "Absent type coercion on `meta.get(\"round\", -1)` is defensive hardening; the metadata is written by the same codebase and the text shows no producer that actually emits a non-integer round."
+  },
+  {
+   "item": 23,
+   "verdict": "NON_CRITICAL",
+   "reason": "Eager rather than lazy conversion of chain records in `EvidenceStore.__init__()` is a construction-cost/design characteristic; the records produced are the same, so correctness and the accounting are unchanged."
+  },
+  {
+   "item": 24,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"all cells returned UNCERTAIN but the aggregation logic voted REJECTED\" yields \"no FindingFeedback record\", so a rejected finding falls out of the feedback output entirely \u2014 an incorrect (empty) result for a reachable input class."
+  },
+  {
+   "item": 25,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"truncates multi-line contrast statements at the first newline, causing false rejections\" \u2014 valid input is rejected, which is an incorrect output of the matcher's intended function."
+  },
+  {
+   "item": 26,
+   "verdict": "NON_CRITICAL",
+   "reason": "An unguarded `max_workers=len(eligible)` fails loudly on a degenerate config with zero participants (\"models\": []); the failure is noisy rather than silent and no result, measurement or evidence is corrupted."
+  },
+  {
+   "item": 27,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text breaks at \"drops items from top_items and r\" \u2014 truncation to a budget is expected behaviour, and without the rest of the claim there is no way to tell whether the objection is unbounded looping, mis-accounting, or silent loss."
+  },
+  {
+   "item": 28,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The method \"changes status to UNCONFIRMED, which is a regular registry status\" instead of moving contested findings out of automated resolution, so the HIL escalation path is unreachable and the reconciliation accounting keeps auto-resolving items it must hand off."
+  },
+  {
+   "item": 29,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"a REJECTED finding that had no cell verdicts... is silently omitted\" \u2014 the function produces no output for an entire reachable class of findings it is defined to cover, and does so without signal."
+  },
+  {
+   "item": 30,
+   "verdict": "NON_CRITICAL",
+   "reason": "Same duplicate-notification asymmetry as C0232 (\"section 3... only notifies fid[_a]\"); one side is still notified and the pair remains recorded, so no measurement, verdict or retained finding changes."
+  },
+  {
+   "item": 31,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`verify_bundle` passes a proof dict that itself \"includes the \\\"merkle_[root]\\\"\" alongside a separately supplied `bundle.merkle_root`, so the inclusion-proof check can be self-referential \u2014 a defect in the evidence-verification path rather than in the artefact under review."
+  },
+  {
+   "item": 32,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The method \"permits straight single-point external-standard back-calculation despite a non-zero calibration intercept and an explicitly admitted low-end bias\", so reported concentrations carry an uncorrected systematic error largest at the bottom of the range."
+  },
+  {
+   "item": 33,
+   "verdict": "NON_CRITICAL",
+   "reason": "Self-declared as \"not a new discovery. It confirms and merges into C0016\", and the underlying issue \u2014 duplicate feedback attached only to `fid_a` \u2014 is feedback routing, leaving the recorded duplicate pair and its accounting intact."
+  },
+  {
+   "item": 34,
+   "verdict": "NON_CRITICAL",
+   "reason": "The complaint is that `results_count` is used \"without coercion or validation\" against a hypothetical (\"can arrive as strings\") \u2014 no producer emitting a string is shown, and a string would raise loudly rather than silently corrupt the calibration."
+  },
+  {
+   "item": 35,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"stores round_idx directly from metadata without type coercion\" is the same defensive-typing gap as item 22, with no demonstrated path by which a non-integer round actually reaches the record."
+  },
+  {
+   "item": 36,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The disputed matter is whether `kappa_set()` can return a negative value, i.e. whether the convergence metric can leave its valid range, which is a defect in the measurement of convergence itself."
+  },
+  {
+   "item": 37,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`validate_alternative_with_ground_truth` letting \"near-verbatim rephrasing through when ground-truth indicates 'repetition', missing the near_copy rejection\" admits repetitions as genuine alternatives, corrupting the novelty accounting."
+  },
+  {
+   "item": 38,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Dividing a cross-model total (`cumulative_context_chars`) by a per-model `context_budget` \"without scaling by number of models\" is a unit mismatch that makes `compute_pacing_signals` emit a mathematically incorrect fraction and \"false `context_growth` signals\"."
+  },
+  {
+   "item": 39,
+   "verdict": "NON_CRITICAL",
+   "reason": "An oversized contrast statement slipping past `max_chars_per_alternative` circumvents a rendering-boundary cap, but the artefact's correctness, the hard-constraint conclusions and the verification accounting are all unchanged by the bypass."
+  },
+  {
+   "item": 40,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"Fallback density calibration always returns ~0.057 regardless of input length, producing a bogus constant\" is by definition a mathematically incorrect output of the calibration function."
+  },
+  {
+   "item": 41,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Iterating `rk_validation` without using `model_id` to verify ownership means \"the R_k discrepancy is silently attributed to model B via `finding.model_id`\", misattributing a self-assessment measurement to the wrong model."
+  },
+  {
+   "item": 42,
+   "verdict": "NON_CRITICAL",
+   "reason": "The `tmpdir`-before-assignment `NameError` fires only on the error path when `_create_sandbox` itself fails, and it surfaces loudly rather than producing a wrong result, lost finding, or altered accounting."
+  },
+  {
+   "item": 43,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops at \"the `while` loop that trims `top_items` to fit `max_chars\" without stating what the loop does wrong, so the consequence class (over-trim, under-trim, non-termination) cannot be determined."
+  },
+  {
+   "item": 44,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"C0019 and C0041 should merge into closed C0017 because they describe the same near-duplicate\" issue \u2014 leaving duplicates unmerged counts one defect as several distinct findings, which is a defect in the reconciliation and novelty accounting."
+  },
+  {
+   "item": 45,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_parse_verdicts()` returning only \"(verb, target_canonical_id, evidence)\" cannot carry a MERGE source distinct from the target or REOPEN's new evidence, so those reconciliation verdicts are parsed into an insufficient shape and mis-applied to the registry."
+  },
+  {
+   "item": 46,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"Reformatting C0187 to fix the missing '====' separator\" is a presentation/format repair to a patch block, leaving correctness, hard-constraint conclusions and accounting untouched."
+  },
+  {
+   "item": 47,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`build_feedback_records()` iterating only `cell_verdicts.items()` means a REJECTED verdict held elsewhere is never surfaced, suppressing an immune rejection of a finding."
+  },
+  {
+   "item": 48,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"Two methods disagree on the dict key space\" producing \"silently empty results\" means the computation returns an empty answer where a populated one is correct, with no error raised."
+  },
+  {
+   "item": 49,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Using z=1.96 for n=8 with unknown variance is a statistical error \u2014 t(0.975, df=7)=2.3646 reproduces the finding's wider 284.8\u2013294.0 MPa interval exactly \u2014 so the published confidence interval is numerically wrong."
+  },
+  {
+   "item": 50,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"`EvidenceStore.verify_bundle()` bypasses the `chain_hash` mismatch check if either the record or the proof is missing the `chain_hash` key\" lets an unverified bundle pass as verified, corrupting the evidence-integrity check itself."
+  },
+  {
+   "item": 51,
+   "verdict": "NON_CRITICAL",
+   "reason": "Same defect as item 39 \u2014 \"`validate_alternative` checks only the stripped body, not the full block length\" \u2014 a length-cap bypass that leaves correctness and the verification accounting unchanged."
+  },
+  {
+   "item": 52,
+   "verdict": "NON_CRITICAL",
+   "reason": "Only `fid_a` being annotated means `fid_b`'s owner is not told about the duplication, but both findings and the duplicate-pair detection itself survive intact, so no measurement or conclusion changes."
+  },
+  {
+   "item": 53,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The numerator counting \"multiple members from the same prior equivalence class through TopK similarity\" while \"the denominator counts each prior equivalence class once via aggregated_severity\" is a basis mismatch inside `kappa_set()`, the convergence measurement."
+  },
+  {
+   "item": 54,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A boolean `_verified_with_verifier` that tracks whether any verifier ran means `verify(verifier=B)` \"returns the cached result from verifier A without ever checking verifier B's signatures\", reporting verification that never happened."
+  },
+  {
+   "item": 55,
+   "verdict": "NON_CRITICAL",
+   "reason": "The claim is unfounded: the double nearest 0.1 is 5.55e-18 above exact 0.1, so `median_t > 0.1` is deterministic and a median equal to 0.1 compares False every time \u2014 the only real effect is a ~1e-17 shift in a heuristic timing gate."
+  },
+  {
+   "item": 56,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text cuts off at \"accepts unbounded numeric attributes fro\" without saying where the values come from or what they skew downstream, and whether a shadow calibrator's output touches live accounting is not stated."
+  },
+  {
+   "item": 57,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "`_ALT_HEADER_RE` requiring \"the header line to *terminate* immediately after the keyword\" means any alternative whose header carries trailing text is never recognised, so the divergence block is silently dropped from the record."
+  },
+  {
+   "item": 58,
+   "verdict": "UNJUDGEABLE",
+   "reason": "Only premises are present (\"`_extract_finding_ids` recursively searches dict keys and values\") with no stated defect or consequence, so there is nothing to score against the five clauses."
+  },
+  {
+   "item": 59,
+   "verdict": "NON_CRITICAL",
+   "reason": "The early return yields `(0.0, 0.0, False)` \u2014 an explicitly flagged-invalid rho \u2014 and rho is a diagnostic efficiency/churn signal, not part of the convergence, reconciliation, severity or novelty accounting the gate is computed on."
+  },
+  {
+   "item": 60,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops at \"only inspects `rec.payload` when it is a `dict`\" without stating what a misclassified event costs or what `_classify_event()`'s output feeds, so the consequence cannot be placed."
+  },
+  {
+   "item": 61,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"`_split_packet_directives` fragments monolithic prose presets, causing silent loss of protocol content\" means `resolve_layer_conflicts` emits a merged policy missing directives it was given \u2014 an incorrect output of its intended function."
+  },
+  {
+   "item": 62,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "It confirms \"a valid concern about the C0206 fix interaction with the UUID collision problem\", and colliding finding IDs conflate or overwrite distinct findings in the registry; the specific mechanism is truncated but the collision class is named."
+  },
+  {
+   "item": 63,
+   "verdict": "NON_CRITICAL",
+   "reason": "The challenge establishes the code is already right \u2014 r-2 through r inclusive is exactly 3 rounds, \"perfectly mirroring the functional docstring\" \u2014 so resolving it changes no code, no conclusion and no accounting."
+  },
+  {
+   "item": 64,
+   "verdict": "NON_CRITICAL",
+   "reason": "\"`EvidenceRecord.from_chain_record` raises KeyError when the raw record dict is missing the 'chain_hash' key\" is a loud failure on a malformed record, not a silent wrong result or a bypassed check (contrast item 50, which does bypass)."
+  },
+  {
+   "item": 65,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"Finding IDs are only extracted from the payload, completely ignoring the metadata field\" means any finding referenced only in metadata is never linked to its evidence record, silently dropping that association."
+  },
+  {
+   "item": 66,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "Five admissibility failures score 0.8\u00d75 = 4.0 against a specialist-tool refutation's 3.0 (arithmetic confirmed), so \"a refuted finding can be pushed out of the top-\"K and the refutation is suppressed from the feedback."
+  },
+  {
+   "item": 67,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"`engine.validate()` (lines 258-306) performs no check that each parameter in a TOML file is defined at a layer permitted by its `min_layer`\", so the validator returns a pass for a configuration the schema forbids."
+  },
+  {
+   "item": 68,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "The implementation \"never reads `immune_result.rejected_findings`\" while iterating only `final_verdicts` and `cell_verdicts`, so an entire channel of immune rejections is dropped rather than recorded."
+  },
+  {
+   "item": 69,
+   "verdict": "NON_CRITICAL",
+   "reason": "The challenge argues the UNCONFIRMED status is \"not proven wrong from the code shown\" and is internally consistent with `build_summary()` and `contested_count()`, so resolving it leaves the status machine and its accounting exactly as they are."
+  },
+  {
+   "item": 70,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "\"If `immune_result.final_verdicts` has a REJECTED finding not in `cell_verdicts`, it is missed\" \u2014 an immune rejection of a finding is suppressed from the record built for that round."
+  },
+  {
+   "item": 71,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "`_compute_fix_verdict` letting \"a fix that introduces new issues in one tool to be masked by reductions in t[he other]\" returns a passing verdict for a regressive fix, corrupting the fix-acceptance accounting."
+  },
+  {
+   "item": 72,
+   "verdict": "NON_CRITICAL",
+   "reason": "A ValueError from ThreadPoolExecutor(max_workers=0) on an empty eligible list is a loud, deterministic abort, not a wrong output, corrupted measurement or silent loss, so no clause is engaged."
+  },
+  {
+   "item": 73,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text is cut at \"uses the c\" before stating what the max_chars_per_model trimming loop does wrong, so the consequence class cannot be determined."
+  },
+  {
+   "item": 74,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"if not raw_counts or raw_counts[-1] == 0: return 0.0, 0.0, False\" discards the rolling-window rho average that convergence detection reads, so the measurement of convergence itself changes."
+  },
+  {
+   "item": 75,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "Identifying verdict commands by substring match over json.dumps of the payload lets incidental text such as a finding ID be classified as a verdict, corrupting the evidence store's verdict accounting."
+  },
+  {
+   "item": 76,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "A finding-ID regex matching any single letter followed by 3-5 digits extracts phantom identifiers, and finding accounting is keyed on those identifiers."
+  },
+  {
+   "item": 77,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "\"silently drops the mandatory \u00a717 instructions when the prompt is truncated\" means models are prompted under a protocol different from the one the builder is specified to emit."
+  },
+  {
+   "item": 78,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "When the proof carries no chain_hash field the record/proof hash comparison is skipped, so verify_bundle can return valid for a record whose chain hash was never checked."
+  },
+  {
+   "item": 79,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "_directive_topic_and_stance() returns only one (topic, stance) pair, so a block naming two conflict topics has one silently ignored and resolve_layer_conflicts reports resolution it did not perform."
+  },
+  {
+   "item": 80,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The stated arithmetic (5 failed gates x 0.8 = 4.0 against refutation +3.0, with a missing ADMISSIBILITY block failing all 5) shows priority_score inverting the documented REJECTED > FFAFP-FAIL ordering."
+  },
+  {
+   "item": 81,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "_WORD_RE requires a leading letter, so \"timeout 5 ms / retry 3\" and \"timeout 9 ms / retry 0\" tokenise identically and genuinely divergent alternatives are scored as isomorphic in the divergence accounting."
+  },
+  {
+   "item": 82,
+   "verdict": "NON_CRITICAL",
+   "reason": "The text itself states the module is \"shadow/observation-only\" and the fault \"not operation-blocking\", so the empty results leave the live artefact's correctness and the verification accounting unchanged."
+  },
+  {
+   "item": 83,
+   "verdict": "NON_CRITICAL",
+   "reason": "The visible claim establishes only that evaluate_fixes runs twice over overlapping finding sets \u2014 redundant computation, with no divergent verdict or double-counted record asserted."
+  },
+  {
+   "item": 84,
+   "verdict": "NON_CRITICAL",
+   "reason": "The item refutes C0042, concluding the setdefault/union-find grouping is \"syntactically valid Python and operationally valid\", so resolving it changes nothing in the artefact."
+  },
+  {
+   "item": 85,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Neither validate() nor validate_all_policies() checks min_layer, so a domain-layer file setting model.timeout is \"silently accepted\" and the validator's accept/reject output is wrong against an explicit schema constraint."
+  },
+  {
+   "item": 86,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "An alternative body terminates only at the next alternative header or EOF, so following FALSIFICATION/CORROBORATION sections are swallowed into the alternative and lost to the parser."
+  },
+  {
+   "item": 87,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "compose() assigns _apply_phenotype_transform back into the caller's mutable DirectivePacket, so reuse re-applies the transform and the composed prompt becomes order-dependent."
+  },
+  {
+   "item": 88,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The text stops at \"the alternation order\", and as described both FINDING and FINDING_ID are terminators that would fire at the same offset, so no determinable effect can be read from what is visible."
+  },
+  {
+   "item": 89,
+   "verdict": "CRITICAL",
+   "clause": 4,
+   "reason": "marker_match using IGNORECASE while section_terminator does not means a header is recognised as a section start but not as the prior section's end, merging or dropping the findings that follow."
+  },
+  {
+   "item": 90,
+   "verdict": "NON_CRITICAL",
+   "reason": "len(evidence) on None in _render_single_record is a loud, deterministic TypeError rather than a wrong result, corrupted measurement or silent loss."
+  },
+  {
+   "item": 91,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Building the path as \"{domain}_{variant}.txt\" for directory product-engineering silently loads no directive, so the composed prompt omits its domain constraints with no signal that anything is missing."
+  },
+  {
+   "item": 92,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "build_feedback_records() \"can omit pipeline-level rejected findings\", so the verdict feedback set the function exists to produce is incomplete."
+  },
+  {
+   "item": 93,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "The verbosity branch returns before \"example\"/rationale/table are tested, so a directive carrying both stances has one silently discarded and the conflict goes undetected."
+  },
+  {
+   "item": 94,
+   "verdict": "UNJUDGEABLE",
+   "reason": "The visible text says only that the C0206 fix \"correctly uses model_id from rk_validation.items()\"; the asserted defect lies beyond the cut."
+  },
+  {
+   "item": 95,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "\"if record_hash and proof_hash and record_hash != proof_hash\" requires both to be truthy, so an empty chain_hash on either side bypasses the mismatch check and forged records pass verification."
+  },
+  {
+   "item": 96,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "build_feedback_records() \"only iterates cell_verdicts\", so verdicts recorded elsewhere yield no feedback record and the function's output verdict set is incomplete."
+  },
+  {
+   "item": 97,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "verify_bundle() \"accepts any bundle.merkle_root value without checking\" it, so a bundle can carry a root never derived from the store and still verify."
+  },
+  {
+   "item": 98,
+   "verdict": "NON_CRITICAL",
+   "reason": "A TypeError from a non-int context_budget in compute_pacing_signals() is a loud, deterministic abort between rounds, not a wrong output or corrupted accounting."
+  },
+  {
+   "item": 99,
+   "verdict": "NON_CRITICAL",
+   "reason": "An unused \"import numpy as np\" confirmed dead by AST scan is dependency weight only; removing it leaves correctness, hard-constraint conclusions and verification accounting untouched."
+  },
+  {
+   "item": 100,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "parse_admissibility_block() \"still treats prose mentions of ADMISSIBILITY as the start of an admissibility block\", so gates are parsed from the wrong text and finding admissibility is misdetermined."
+  },
+  {
+   "item": 101,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "A finding_id REJECTED in final_verdicts with no cell_verdicts entry produces \"no FindingFeedback record\", so the feedback output omits a whole class of verdicts it exists to report."
+  },
+  {
+   "item": 102,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "cumulative_context_chars sums len(text) over responses while being consumed as prompt/context load, so the pacing metric computes and reports a different quantity from the one named."
+  },
+  {
+   "item": 103,
+   "verdict": "NON_CRITICAL",
+   "reason": "The check skipped by the MIN_FINDINGS_FOR_ANALYSIS guard is timing-spike analysis in the macrophage's observation path \u2014 a health diagnostic that leaves artefact correctness and convergence accounting unchanged."
+  },
+  {
+   "item": 104,
+   "verdict": "UNJUDGEABLE",
+   "reason": "Cut immediately after naming _rebuild_section and the max_chars_per_model trigger, with no statement of what is dropped; by-design trimming of feedback items and loss of mandatory content fall in different classes."
+  },
+  {
+   "item": 105,
+   "verdict": "CRITICAL",
+   "clause": 3,
+   "reason": "The defect sits in _semantically_duplicate's decision rule itself, so a misfire either collapses distinct findings or splits duplicates, changing the distinct-finding count the novelty accounting rests on."
+  },
+  {
+   "item": 106,
+   "verdict": "NON_CRITICAL",
+   "reason": "A KeyError from record[\"chain_hash\"] on a record missing the field is a loud, deterministic failure rather than a wrong result or a silent loss."
+  },
+  {
+   "item": 107,
+   "verdict": "CRITICAL",
+   "clause": 1,
+   "reason": "Beneath the reformatting note the substantive claim is the same omission: a finding REJECTED in final_verdicts but absent from cell_verdicts produces no feedback record, leaving the output incomplete."
+  }
+ ],
+ "shared_slices": [
+  0,
+  1,
+  2
+ ],
+ "ground_truth": {
+  "0": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0296"
+  ],
+  "1": [
+   0.7,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0047"
+  ],
+  "2": [
+   0.74,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0026"
+  ],
+  "3": [
+   0.71,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0104"
+  ],
+  "4": [
+   0.7,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0046"
+  ],
+  "5": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0033"
+  ],
+  "6": [
+   0.74,
+   "exp33_endocrine_20260405T110345Z",
+   "C0007"
+  ],
+  "7": [
+   0.72,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0043"
+  ],
+  "8": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0058"
+  ],
+  "9": [
+   0.7,
+   "exp33_endocrine_20260405T110345Z",
+   "C0019"
+  ],
+  "10": [
+   0.73,
+   "exp37_evidence_20260409T050932Z",
+   "C0087"
+  ],
+  "11": [
+   0.65,
+   "exp40_slice_records_20260518T160503Z",
+   "C0041"
+  ],
+  "12": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0205"
+  ],
+  "13": [
+   0.72,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0060"
+  ],
+  "14": [
+   0.66,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0013"
+  ],
+  "15": [
+   0.65,
+   "exp40_slice_records_20260518T160503Z",
+   "C0050"
+  ],
+  "16": [
+   0.72,
+   "exp35_pe_20260406T152126Z",
+   "C0057"
+  ],
+  "17": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0244"
+  ],
+  "18": [
+   0.65,
+   "exp39_0_gate_20260413T054642Z",
+   "C0023"
+  ],
+  "19": [
+   0.74,
+   "exp48_chemistry_exam_live_20260729T044134Z",
+   "C0015"
+  ],
+  "20": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0106"
+  ],
+  "21": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0191"
+  ],
+  "22": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0103"
+  ],
+  "23": [
+   0.74,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0013"
+  ],
+  "24": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0204"
+  ],
+  "25": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0061"
+  ],
+  "26": [
+   0.72,
+   "exp39_0_gate_20260413T054642Z",
+   "C0007"
+  ],
+  "27": [
+   0.7,
+   "exp40_slice_records_20260518T160503Z",
+   "C0038"
+  ],
+  "28": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0022"
+  ],
+  "29": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0187"
+  ],
+  "30": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0257"
+  ],
+  "31": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0081"
+  ],
+  "32": [
+   0.72,
+   "exp48_chemistry_exam_live_20260729T044134Z",
+   "C0036"
+  ],
+  "33": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0027"
+  ],
+  "34": [
+   0.72,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0015"
+  ],
+  "35": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0060"
+  ],
+  "36": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0047"
+  ],
+  "37": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0064"
+  ],
+  "38": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0081"
+  ],
+  "39": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0043"
+  ],
+  "40": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0034"
+  ],
+  "41": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0206"
+  ],
+  "42": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0043"
+  ],
+  "43": [
+   0.68,
+   "exp40_gate_20260514T020550Z",
+   "C0034"
+  ],
+  "44": [
+   0.65,
+   "exp40_slice_records_20260518T160503Z",
+   "C0054"
+  ],
+  "45": [
+   0.74,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0033"
+  ],
+  "46": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0197"
+  ],
+  "47": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0221"
+  ],
+  "48": [
+   0.72,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0023"
+  ],
+  "49": [
+   0.7,
+   "exp49_engineering_exam_live_20260729T062320Z",
+   "C0008"
+  ],
+  "50": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0063"
+  ],
+  "51": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0027"
+  ],
+  "52": [
+   0.7,
+   "exp40_slice_records_20260518T160503Z",
+   "C0012"
+  ],
+  "53": [
+   0.7,
+   "exp41c_first_principles_20260522T194836Z",
+   "C0011"
+  ],
+  "54": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0201"
+  ],
+  "55": [
+   0.7,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0007"
+  ],
+  "56": [
+   0.66,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0009"
+  ],
+  "57": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0010"
+  ],
+  "58": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0045"
+  ],
+  "59": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0167"
+  ],
+  "60": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0018"
+  ],
+  "61": [
+   0.7,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0053"
+  ],
+  "62": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0277"
+  ],
+  "63": [
+   0.66,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0107"
+  ],
+  "64": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0066"
+  ],
+  "65": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0171"
+  ],
+  "66": [
+   0.7,
+   "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+   "C0014"
+  ],
+  "67": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0026"
+  ],
+  "68": [
+   0.72,
+   "exp40_slice_records_20260518T160503Z",
+   "C0028"
+  ],
+  "69": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0064"
+  ],
+  "70": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0237"
+  ],
+  "71": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0014"
+  ],
+  "72": [
+   0.72,
+   "exp39_0_gate_20260413T054642Z",
+   "C0016"
+  ],
+  "73": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0150"
+  ],
+  "74": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0084"
+  ],
+  "75": [
+   0.7,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0004"
+  ],
+  "76": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0014"
+  ],
+  "77": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0174"
+  ],
+  "78": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0215"
+  ],
+  "79": [
+   0.68,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0044"
+  ],
+  "80": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0001"
+  ],
+  "81": [
+   0.66,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0062"
+  ],
+  "82": [
+   0.7,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0002"
+  ],
+  "83": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0067"
+  ],
+  "84": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0045"
+  ],
+  "85": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0018"
+  ],
+  "86": [
+   0.74,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0004"
+  ],
+  "87": [
+   0.74,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0003"
+  ],
+  "88": [
+   0.68,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0032"
+  ],
+  "89": [
+   0.72,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0031"
+  ],
+  "90": [
+   0.7,
+   "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+   "C0024"
+  ],
+  "91": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0049"
+  ],
+  "92": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0284"
+  ],
+  "93": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0057"
+  ],
+  "94": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0275"
+  ],
+  "95": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0068"
+  ],
+  "96": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0234"
+  ],
+  "97": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0050"
+  ],
+  "98": [
+   0.66,
+   "exp33_endocrine_20260405T110345Z",
+   "C0017"
+  ],
+  "99": [
+   0.68,
+   "exp41_convergence_20260522T021030Z",
+   "C0038"
+  ],
+  "100": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0265"
+  ],
+  "101": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0230"
+  ],
+  "102": [
+   0.67,
+   "exp39_0_gate_20260413T054642Z",
+   "C0008"
+  ],
+  "103": [
+   0.66,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0012"
+  ],
+  "104": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0164"
+  ],
+  "105": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0037"
+  ],
+  "106": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0070"
+  ],
+  "107": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0209"
+  ],
+  "108": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0197"
+  ],
+  "109": [
+   0.72,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0045"
+  ],
+  "110": [
+   0.72,
+   "exp40_slice_records_20260518T160503Z",
+   "C0024"
+  ],
+  "111": [
+   0.68,
+   "exp39_0_gate_20260413T054642Z",
+   "C0017"
+  ],
+  "112": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0015"
+  ],
+  "113": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0024"
+  ],
+  "114": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0045"
+  ],
+  "115": [
+   0.7,
+   "exp41c_first_principles_20260522T194836Z",
+   "C0007"
+  ],
+  "116": [
+   0.65,
+   "exp42_composer_20260606T202037Z",
+   "C0021"
+  ],
+  "117": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0077"
+  ],
+  "118": [
+   0.74,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0022"
+  ],
+  "119": [
+   0.65,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0049"
+  ],
+  "120": [
+   0.65,
+   "exp41_convergence_20260522T021030Z",
+   "C0020"
+  ],
+  "121": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0042"
+  ],
+  "122": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0025"
+  ],
+  "123": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0144"
+  ],
+  "124": [
+   0.66,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0020"
+  ],
+  "125": [
+   0.68,
+   "exp40_slice_records_20260518T160503Z",
+   "C0016"
+  ],
+  "126": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0201"
+  ],
+  "127": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0294"
+  ],
+  "128": [
+   0.65,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0066"
+  ],
+  "129": [
+   0.68,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0023"
+  ],
+  "130": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0005"
+  ],
+  "131": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0040"
+  ],
+  "132": [
+   0.65,
+   "exp40_slice_admissibility_hardened_20260518T190104Z",
+   "C0021"
+  ],
+  "133": [
+   0.72,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0025"
+  ],
+  "134": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0218"
+  ],
+  "135": [
+   0.7,
+   "exp42_composer_confirm_20260606T184941Z",
+   "C0002"
+  ],
+  "136": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0061"
+  ],
+  "137": [
+   0.71,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0003"
+  ],
+  "138": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0061"
+  ],
+  "139": [
+   0.74,
+   "exp42_composer_20260606T202037Z",
+   "C0005"
+  ],
+  "140": [
+   0.65,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0005"
+  ],
+  "141": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0178"
+  ],
+  "142": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0049"
+  ],
+  "143": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0133"
+  ],
+  "144": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0150"
+  ],
+  "145": [
+   0.74,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0103"
+  ],
+  "146": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0013"
+  ],
+  "147": [
+   0.65,
+   "exp34_endocrine_20260405T225218Z",
+   "C0019"
+  ],
+  "148": [
+   0.74,
+   "exp36_evidence_20260407T004931Z",
+   "C0008"
+  ],
+  "149": [
+   0.68,
+   "exp40_slice_records_20260518T160503Z",
+   "C0021"
+  ],
+  "150": [
+   0.69,
+   "exp37_evidence_20260409T050932Z",
+   "C0028"
+  ],
+  "151": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0235"
+  ],
+  "152": [
+   0.65,
+   "exp40_slice_admissibility_hardened_20260518T190104Z",
+   "C0036"
+  ],
+  "153": [
+   0.65,
+   "exp40_slice_admissibility_hardened_20260518T190104Z",
+   "C0030"
+  ],
+  "154": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0019"
+  ],
+  "155": [
+   0.7,
+   "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+   "C0016"
+  ],
+  "156": [
+   0.68,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0019"
+  ],
+  "157": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0021"
+  ],
+  "158": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0171"
+  ],
+  "159": [
+   0.72,
+   "exp41_convergence_20260522T021030Z",
+   "C0061"
+  ],
+  "160": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0052"
+  ],
+  "161": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0017"
+  ],
+  "162": [
+   0.66,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0036"
+  ],
+  "163": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0239"
+  ],
+  "164": [
+   0.7,
+   "exp40_slice_records_20260518T160503Z",
+   "C0017"
+  ],
+  "165": [
+   0.7,
+   "exp39_0_gate_20260413T193320Z",
+   "C0005"
+  ],
+  "166": [
+   0.7,
+   "exp40_slice_records_20260518T160503Z",
+   "C0019"
+  ],
+  "167": [
+   0.72,
+   "exp37_evidence_20260409T050932Z",
+   "C0102"
+  ],
+  "168": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0175"
+  ],
+  "169": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0054"
+  ],
+  "170": [
+   0.65,
+   "exp37_evidence_20260409T050932Z",
+   "C0193"
+  ],
+  "171": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0045"
+  ],
+  "172": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0033"
+  ],
+  "173": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0271"
+  ],
+  "174": [
+   0.72,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0014"
+  ],
+  "175": [
+   0.74,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0002"
+  ],
+  "176": [
+   0.72,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0007"
+  ],
+  "177": [
+   0.65,
+   "exp35_pe_20260406T152126Z",
+   "C0062"
+  ],
+  "178": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0012"
+  ],
+  "179": [
+   0.7,
+   "exp39_0_gate_20260413T054642Z",
+   "C0004"
+  ],
+  "180": [
+   0.65,
+   "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+   "C0007"
+  ],
+  "181": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0059"
+  ],
+  "182": [
+   0.7,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0046"
+  ],
+  "183": [
+   0.65,
+   "exp40_slice_records_20260518T135539Z.OUTAGE_TERMINATED_R5",
+   "C0010"
+  ],
+  "184": [
+   0.72,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0012"
+  ],
+  "185": [
+   0.7,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0041"
+  ],
+  "186": [
+   0.72,
+   "exp41_convergence_20260522T021030Z",
+   "C0037"
+  ],
+  "187": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0270"
+  ],
+  "188": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0114"
+  ],
+  "189": [
+   0.65,
+   "exp42_composer_confirm_20260606T184941Z",
+   "C0018"
+  ],
+  "190": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0108"
+  ],
+  "191": [
+   0.7,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0009"
+  ],
+  "192": [
+   0.71,
+   "exp33_endocrine_20260405T110345Z",
+   "C0008"
+  ],
+  "193": [
+   0.7,
+   "exp48_chemistry_exam_live_20260729T044134Z",
+   "C0022"
+  ],
+  "194": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0185"
+  ],
+  "195": [
+   0.68,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0061"
+  ],
+  "196": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0166"
+  ],
+  "197": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0029"
+  ],
+  "198": [
+   0.72,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0022"
+  ],
+  "199": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0204"
+  ],
+  "200": [
+   0.68,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0011"
+  ],
+  "201": [
+   0.65,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0036"
+  ],
+  "202": [
+   0.7,
+   "exp49_engineering_exam_live_20260729T062320Z",
+   "C0011"
+  ],
+  "203": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0256"
+  ],
+  "204": [
+   0.71,
+   "exp39_0_gate_20260413T193320Z",
+   "C0002"
+  ],
+  "205": [
+   0.65,
+   "exp34_endocrine_20260405T225218Z",
+   "C0065"
+  ],
+  "206": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0062"
+  ],
+  "207": [
+   0.7,
+   "exp42_composer_20260606T202037Z",
+   "C0002"
+  ],
+  "208": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0027"
+  ],
+  "209": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0040"
+  ],
+  "210": [
+   0.65,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0027"
+  ],
+  "211": [
+   0.7,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0059"
+  ],
+  "212": [
+   0.65,
+   "exp39_0_gate_20260413T193320Z",
+   "C0006"
+  ],
+  "213": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0219"
+  ],
+  "214": [
+   0.72,
+   "exp41c_first_principles_20260522T194836Z",
+   "C0017"
+  ],
+  "215": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0220"
+  ],
+  "216": [
+   0.65,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0032"
+  ],
+  "217": [
+   0.68,
+   "exp42_composer_takeupslack_20260607T154745Z",
+   "C0004"
+  ],
+  "218": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0063"
+  ],
+  "219": [
+   0.65,
+   "exp40_slice_records_20260518T160503Z",
+   "C0011"
+  ],
+  "220": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0293"
+  ],
+  "221": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0132"
+  ],
+  "222": [
+   0.72,
+   "exp40_slice_collision_20260518T130744Z",
+   "C0002"
+  ],
+  "223": [
+   0.7,
+   "exp39_0_gate_20260413T054642Z",
+   "C0003"
+  ],
+  "224": [
+   0.7,
+   "exp40_slice_collision_20260518T130744Z",
+   "C0006"
+  ],
+  "225": [
+   0.65,
+   "exp40_slice_records_20260518T160503Z",
+   "C0042"
+  ],
+  "226": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0002"
+  ],
+  "227": [
+   0.7,
+   "exp49_engineering_exam_live_20260729T062320Z",
+   "C0021"
+  ],
+  "228": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0023"
+  ],
+  "229": [
+   0.65,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0029"
+  ],
+  "230": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0126"
+  ],
+  "231": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0255"
+  ],
+  "232": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0019"
+  ],
+  "233": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0016"
+  ],
+  "234": [
+   0.74,
+   "exp34_endocrine_20260405T225218Z",
+   "C0072"
+  ],
+  "235": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0225"
+  ],
+  "236": [
+   0.65,
+   "exp35_pe_20260406T152126Z",
+   "C0056"
+  ],
+  "237": [
+   0.7,
+   "exp42_composer_locationkey_live_20260609T183659Z",
+   "C0002"
+  ],
+  "238": [
+   0.72,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0006"
+  ],
+  "239": [
+   0.65,
+   "exp44_evidence_locationkey_live_20260727T002705Z",
+   "C0067"
+  ],
+  "240": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0024"
+  ],
+  "241": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0242"
+  ],
+  "242": [
+   0.7,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0004"
+  ],
+  "243": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0211"
+  ],
+  "244": [
+   0.65,
+   "exp40_slice_collision_20260518T130744Z",
+   "C0012"
+  ],
+  "245": [
+   0.72,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0035"
+  ],
+  "246": [
+   0.66,
+   "exp43_macrophage_locationkey_live_20260719T014326Z",
+   "C0011"
+  ],
+  "247": [
+   0.72,
+   "exp55_v3_control_20260823T144624Z",
+   "C0005"
+  ],
+  "248": [
+   0.7,
+   "exp55_v3_control_20260823T153955Z",
+   "C0008"
+  ],
+  "249": [
+   0.65,
+   "exp41_convergence_20260522T021030Z",
+   "C0043"
+  ],
+  "250": [
+   0.7,
+   "exp37_evidence_20260409T050932Z",
+   "C0178"
+  ],
+  "251": [
+   0.65,
+   "exp40_gate_20260514T020550Z",
+   "C0049"
+  ],
+  "252": [
+   0.7,
+   "exp33_endocrine_20260405T110345Z",
+   "C0030"
+  ],
+  "253": [
+   0.72,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0034"
+  ],
+  "254": [
+   0.7,
+   "exp34_endocrine_20260405T225218Z",
+   "C0036"
+  ],
+  "255": [
+   0.7,
+   "exp45_memory_statistics_live_20260727T225640Z",
+   "C0014"
+  ],
+  "256": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0151"
+  ],
+  "257": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0064"
+  ],
+  "258": [
+   0.65,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0067"
+  ],
+  "259": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0044"
+  ],
+  "260": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0105"
+  ],
+  "261": [
+   0.68,
+   "exp40_slice_records_20260518T160503Z",
+   "C0006"
+  ],
+  "262": [
+   0.66,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0018"
+  ],
+  "263": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0034"
+  ],
+  "264": [
+   0.66,
+   "exp46_stage6_locationkey_live_20260728T103151Z",
+   "C0008"
+  ],
+  "265": [
+   0.72,
+   "exp47_divergence_locationkey_live_20260728T230026Z",
+   "C0012"
+  ],
+  "266": [
+   0.7,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0006"
+  ],
+  "267": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0196"
+  ],
+  "268": [
+   0.7,
+   "exp40_gate_20260514T020550Z",
+   "C0185"
+  ],
+  "269": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0254"
+  ],
+  "270": [
+   0.7,
+   "exp35_pe_20260406T152126Z",
+   "C0046"
+  ],
+  "271": [
+   0.72,
+   "exp37_evidence_20260409T050932Z",
+   "C0061"
+  ],
+  "272": [
+   0.66,
+   "exp49_engineering_exam_live_20260729T062320Z",
+   "C0017"
+  ],
+  "273": [
+   0.65,
+   "exp38_ouroboros_20260411T041938Z",
+   "C0010"
+  ],
+  "274": [
+   0.7,
+   "exp41_convergence_20260522T021030Z",
+   "C0041"
+  ],
+  "275": [
+   0.65,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0019"
+  ],
+  "276": [
+   0.68,
+   "exp40_slice_admissibility_20260516T223952Z",
+   "C0027"
+  ],
+  "277": [
+   0.65,
+   "exp49_engineering_exam_live_20260729T062320Z",
+   "C0022"
+  ],
+  "278": [
+   0.69,
+   "exp34_endocrine_20260405T225218Z",
+   "C0073"
+  ],
+  "279": [
+   0.71,
+   "exp36_evidence_20260407T004931Z",
+   "C0009"
+  ],
+  "280": [
+   0.72,
+   "exp33_endocrine_20260405T110345Z",
+   "C0003"
+  ],
+  "281": [
+   0.65,
+   "exp35_pe_20260406T152126Z",
+   "C0076"
+  ],
+  "282": [
+   0.72,
+   "exp40_gate_20260514T020550Z",
+   "C0224"
+  ],
+  "283": [
+   0.7,
+   "exp36_evidence_20260407T004931Z",
+   "C0020"
+  ],
+  "284": [
+   0.7,
+   "exp33_endocrine_20260405T110345Z",
+   "C0022"
+  ],
+  "285": [
+   0.7,
+   "exp48_chemistry_exam_live_20260729T044134Z",
+   "C0003"
+  ]
+ }
+}
