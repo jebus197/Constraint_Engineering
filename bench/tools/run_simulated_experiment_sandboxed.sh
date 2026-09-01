@@ -96,10 +96,49 @@ if [ "$LEAKED" != "0" ]; then
   echo "FATAL: blinding failed -- $LEAKED answer-surface file(s) present in the sandbox" >&2
   git worktree remove --force "$WT" >/dev/null 2>&1; exit 1
 fi
+# SEVER THE HISTORY, NOT JUST THE WORKING TREE.
+#
+# THE BLINDING WAS DEFEATED A SECOND TIME, BY A DIFFERENT ROUTE, and the first
+# repair hid it. Sparse checkout removes the answer files from the WORKING TREE.
+# It does not touch history, and a linked worktree's .git file points straight at
+# the main repository's object store. Measured 2026-09-01 from inside a sandbox
+# that had just printed "blinded: 0 files":
+#
+#     git -C "$WT" show HEAD:bench/logs/exp45_..._report.json
+#       -> 39 entries, 39 severities, 12 critical (>=0.7)
+#       -> exact values 0.82, 0.80, 0.80, 0.80, 0.80, 0.78, 0.78, 0.78
+#
+# The panel agents carry Bash. exp45 is the reference outcome this simulation is
+# compared against, so its answer key was one `git show` away in every run to
+# date, including the run that converged at round 4 that day. The file-counting
+# guard could never see this: it counts files in a tree the files were deliberately
+# removed from.
+#
+# The run therefore happens in a PLAIN COPY with no git linkage at all. That also
+# unblocks canary seeding later: canary_seeding.seed() refuses a target inside a
+# git work tree, for exactly this reason -- `git diff` returns the planted set at
+# precision 1.000, no key required.
+RUN="$SANDBOX/run"
+mkdir -p "$RUN"
+tar -C "$WT" --exclude=.git -cf - . | tar -C "$RUN" -xf -
+rm -f "$RUN/.git"
+git worktree remove --force "$WT" >/dev/null 2>&1 || true
+
+# REFUSE TO RUN IF HISTORY IS STILL REACHABLE. A guard that only counts files
+# already passed this sandbox once while the whole archive was readable.
+if [ -e "$RUN/.git" ]; then
+  echo "FATAL: the run directory still carries git linkage" >&2; exit 1
+fi
+if git -C "$RUN" rev-parse --git-dir >/dev/null 2>&1; then
+  echo "FATAL: git history is still reachable from the run directory -- the" >&2
+  echo "       archive can be read with 'git show' regardless of the checkout" >&2
+  exit 1
+fi
 echo "    blinded: 0 files across bench/logs, bench/results and experimental_notes"
+echo "    severed: no .git, no reachable history"
 
 RC=0
-( cd "$WT" && python3 bench/tools/run_simulated_experiment.py "$@" ) || RC=$?
+( cd "$RUN" && python3 bench/tools/run_simulated_experiment.py "$@" ) || RC=$?
 
 # EXTRACT BEFORE TEARDOWN (founder, 2026-08-30: "sandboxes should be deleted
 # after we are done with them and after you have extracted fixes, not before").
@@ -119,8 +158,8 @@ RC=0
 #    canonically and must be left alone.
 COPIED=0
 SKIPPED=0
-if [ -d "$WT/bench/logs" ]; then
-  for d in "$WT"/bench/logs/*/; do
+if [ -d "$RUN/bench/logs" ]; then
+  for d in "$RUN"/bench/logs/*/; do
     [ -d "$d" ] || continue
     name="$(basename "${d%/}")"
     if [ -e "$REPO/bench/logs/$name" ]; then
