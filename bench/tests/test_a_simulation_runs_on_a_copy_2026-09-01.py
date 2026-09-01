@@ -41,8 +41,12 @@ class TestTheLauncherExists:
 
     def test_it_runs_the_experiment_from_inside_the_worktree(self):
         body = LAUNCHER.read_text(encoding="utf-8")
-        assert "git worktree add --detach" in body
-        assert 'cd "$WT"' in body, (
+        # Flags between `add` and `--detach` are allowed: since 2026-09-01 the
+        # launcher passes --no-checkout so sparse-checkout can blind the sandbox
+        # before any file lands. What must hold is that a DETACHED worktree is
+        # created, not the exact flag order.
+        assert "git worktree add" in body and "--detach" in body
+        assert ('cd "$WT"' in body or 'git -C "$WT"' in body), (
             "the launcher must cd INTO the sandbox. Both harnesses derive their "
             "root from __file__, so running from anywhere else leaves the "
             "target, the panel cwd and every derived path pointing at the live "
@@ -50,8 +54,12 @@ class TestTheLauncherExists:
 
     def test_it_extracts_artefacts_before_teardown(self):
         body = LAUNCHER.read_text(encoding="utf-8")
+        # The LAST worktree-remove is the teardown. Since 2026-09-01 there is an
+        # EARLIER one on the blinding-refusal path, which aborts before any run
+        # happens and so has nothing to extract. Indexing the first occurrence
+        # compared the copy against the wrong statement.
         copy_at = body.index("cp -R")
-        remove_at = body.index("worktree remove")
+        remove_at = body.rindex("worktree remove")
         assert copy_at < remove_at, (
             "artefacts must be copied out BEFORE the sandbox is removed "
             "(founder, 2026-08-30: delete sandboxes after extracting, not "
@@ -189,3 +197,31 @@ class TestExtractionDoesNotTrampleTheArchive:
             "a gitignored artefact that only exists canonically was lost")
         loose = [p for p in repo.iterdir() if p.is_file()]
         assert loose == [], f"files were scattered into bench/logs: {loose}"
+
+
+class TestTheSandboxIsBlinded:
+    """The answers must not be in the reviewers' working directory.
+
+    Measured 2026-09-01 before this was closed: a plain worktree exposed 149 run
+    directories, 54 report JSONs, 325 experimental_notes files and 29,899
+    severity values -- including exp45's 12 criticals WITH their severities --
+    to agents armed with Bash, Read, Grep and Glob. Every sim-versus-real
+    severity comparison made before the fix was measured through that hole.
+    """
+
+    def test_the_launcher_excludes_the_answer_surfaces(self):
+        body = LAUNCHER.read_text(encoding="utf-8")
+        assert "sparse-checkout" in body, "the sandbox is no longer blinded"
+        for path in ("/bench/logs/", "/bench/results/", "/experimental_notes/"):
+            assert f"!{path}" in body, f"{path} is no longer excluded"
+
+    def test_it_refuses_to_run_if_the_blinding_failed(self):
+        body = LAUNCHER.read_text(encoding="utf-8")
+        assert "blinding failed" in body, (
+            "a sandbox that silently keeps the answers is worse than no sandbox, "
+            "because the numbers it produces look clean")
+
+    def test_it_recreates_the_logs_directory_the_runner_writes_to(self):
+        body = LAUNCHER.read_text(encoding="utf-8")
+        assert 'mkdir -p "$WT/bench/logs"' in body, (
+            "the exclusion removes bench/logs, which the runner writes into")

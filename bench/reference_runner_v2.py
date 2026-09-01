@@ -5927,7 +5927,7 @@ def gamma_threshold_profile(registry, max_round: int,
     CRITICAL_SEVERITY_THRESHOLD. Its purpose is to show whether a verdict
     depended on the chosen point, which one number cannot show.
     """
-    out: Dict[str, Any] = {"thresholds": {}, "verdict_is_threshold_sensitive": None}
+    out: Dict[str, Any] = {"thresholds": {}, "inputs_vary_with_threshold": None}
     fired = []
     for thr in PREREG_GAMMA_PROFILE_THRESHOLDS:
         try:
@@ -5937,21 +5937,39 @@ def gamma_threshold_profile(registry, max_round: int,
         except Exception as exc:  # noqa: BLE001 — a diagnostic must not fell a run
             out["thresholds"][f"{thr:.1f}"] = {"error": f"{type(exc).__name__}: {exc}"}
             continue
-        decay_ok = g >= 0.30
+        # `gate_would_fire` WAS REPORTED HERE AND HAS BEEN REMOVED (CC2, panel
+        # review 2026-09-01). It reimplemented convergence as
+        # `g >= 0.30 and last-three-are-zero` -- a gate that appears NOWHERE in
+        # this runner. The live gate additionally reads cfg.gamma_alt_threshold,
+        # cfg.gamma_alt_consecutive_zero_crit, unresolved_critical, contested,
+        # the irreducible queue, a vacuous-curve branch, a sparsity fallback and
+        # a leave-one-out sustain check. Executed counterexamples: a vacuous
+        # critical curve where this said False and the live gate said True; a
+        # clean tail with contested=2 where this fired at all four thresholds
+        # and the live gate refused.
+        #
+        # A reviewer reads "would the gate have fired at 0.6?" as an answer
+        # about THIS runner. It was an answer about a simplified gate that does
+        # not exist, which is worse than reporting nothing. The ingredients are
+        # reported instead; the verdict belongs to the gate that owns it.
         tail = _crit[-3:] if len(_crit) >= 3 else list(_crit)
         quiet = bool(tail) and all(c == 0 for c in tail)
-        fired.append(bool(decay_ok and quiet))
+        fired.append((round(g, 4), quiet))
         out["thresholds"][f"{thr:.1f}"] = {
             "gamma_critical": round(g, 4),
             "critical_novelty_series": list(_crit),
             "criticals_total": int(sum(_crit)),
-            "decay_side_met": bool(decay_ok),
             "zero_novel_critical_tail": list(tail),
-            "quiescence_side_met": bool(quiet),
-            "gate_would_fire": bool(decay_ok and quiet),
+            "tail_is_quiescent": bool(quiet),
         }
+    # Sensitivity is now stated over the INGREDIENTS, not over a fabricated
+    # verdict: does the picture the gate reads change with the threshold? That
+    # is answerable here. Whether the GATE's answer would change is not, and is
+    # no longer claimed.
     if fired:
-        out["verdict_is_threshold_sensitive"] = bool(len(set(fired)) > 1)
+        out["inputs_vary_with_threshold"] = bool(len(set(fired)) > 1)
+        out["gamma_range_across_thresholds"] = [
+            min(g for g, _ in fired), max(g for g, _ in fired)]
     out["live_threshold"] = CRITICAL_SEVERITY_THRESHOLD
     out["prereg"] = "bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md"
     return out
@@ -5976,6 +5994,13 @@ def boundary_band_census(registry, band: float = None) -> Dict[str, Any]:
     inband, on_thr, above, below = [], 0, 0, 0
     for e in vals:
         if not isinstance(e, dict):
+            continue
+        # SAME EXCLUSION THE SERIES APPLIES (CC2, panel review 2026-09-01).
+        # _settled_novelty_series drops _NON_NOVEL_TERMINAL_STATUSES; this did
+        # not. Constructed case: four severity-0.9 entries, one each REFUTED /
+        # MERGED / UNCONFIRMED / OPEN -- the census reported critical_total 4
+        # where the gate and the profile both saw 1.
+        if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
             continue
         sev = float(e.get("severity") or 0.0)
         above, below = (above + 1, below) if sev >= CRITICAL_SEVERITY_THRESHOLD else (above, below + 1)
