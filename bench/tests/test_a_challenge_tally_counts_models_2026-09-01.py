@@ -146,11 +146,19 @@ class TestIdentityIsRouteAwareNotJustWeights:
     message. Same GPT weights, two instruction conditions -- a designed contrast
     recorded in bench/EXECUTION_PLAN_EXPERIMENT_11.md under "Diversity Axes".
 
-    It lapsed on 2026-04-02 in commit 556e0af, when the Codex seat moved to
-    OpenRouter for reliability reasons, and the difference went silently.
-    Measured either side of that date: pre-lapse the seats' finding counts
-    differ (78 paired rounds, sign test p = 0.00515); post-lapse they do not
-    (205 paired rounds, p = 0.378).
+    It lapsed on 2026-04-02, recorded in commit 556e0af when the Codex seat
+    moved to OpenRouter for reliability reasons, and the difference went
+    silently. (One reviewer showed the route actually changed slightly BEFORE
+    that commit -- Codex latencies drop from ~500s to ~40s earlier the same day
+    -- so the commit records the lapse rather than being it.)
+
+    SIX STATISTICS PREVIOUSLY QUOTED HERE ARE WITHDRAWN. They claimed a
+    pre-lapse sign test at p = 0.00515 and a post-lapse null at p = 0.378.
+    Neither panel reviewer could reproduce them from this repository, no script
+    computing them exists in it, and the analysis was wrong in kind:
+    rounds within a run are not independent trials, and with the run as the unit
+    the pre-lapse difference does not survive. The "205 post-lapse rounds" set
+    was the entire archive, pre-lapse runs included.
 
     So collapsing on model_id alone is right for today and wrong the moment the
     contrast is restored. Identity is keyed on (model_id, api).

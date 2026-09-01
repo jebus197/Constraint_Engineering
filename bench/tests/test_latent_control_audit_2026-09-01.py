@@ -19,6 +19,16 @@ REPO = Path(__file__).resolve().parents[2]
 #: Newest archived report mtime at 2026-09-01 07:19:13, immediately before
 #: the canary run landed and moved the baseline ten hours forward.
 PRE_CANARY_BASELINE = 1788247153
+#: First commit epoch for a long-lived report key, established from git
+#: INDEPENDENTLY of the audit. Pinning it closes the hole fable found in panel
+#: review: `test_the_quarantine_rule_holds_for_every_row` recomputes the
+#: expected verdict from `first_committed` taken out of the tool's OWN output,
+#: so it is self-consistent by construction and cannot detect a corrupted
+#: provenance function. Mutating `min(stamps)` to `max(stamps)` in
+#: `_key_first_committed` survived the whole suite while flipping 3 of 50
+#: verdicts -- including `target_hashes`, the witness key from the original
+#: refutation, quarantined by a corrupted date with nothing going red.
+REGISTRY_KEY_FIRST_COMMIT = 1776397305
 SCRIPT = REPO / "scripts" / "latent_control_audit.py"
 
 
@@ -31,8 +41,22 @@ def _newest_archive_mtime() -> int:
     """
     newest = 0
     for fp in (REPO / "bench" / "logs").glob("**/*.json"):
+        # Mirror the audit's simulated-run exclusion. Re-implemented rather than
+        # imported: the test must be able to catch the audit drifting away from
+        # the rule it claims to apply. Before 2026-09-01 the audit's own filter
+        # was a dead conditional and excluded nothing, so this baseline and the
+        # audit's disagreed and the rule test went red for the wrong reason.
+        name = fp.parent.name.lower()
+        if name.startswith("sim") or "_sim" in name or "simulated" in name:
+            continue
         try:
-            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
+            raw = fp.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if "-SIM" in raw[:4000]:
+            continue
+        try:
+            d = json.loads(raw)
         except Exception:                                     # noqa: BLE001
             continue
         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
@@ -104,6 +128,31 @@ class TestAgeControl:
                 f"{row['key']}: verdict {row['verdict']} but first_committed="
                 f"{first} against newest archive mtime {newest}. The quarantine "
                 f"rule and the reported verdict disagree.")
+
+    def test_the_dating_function_is_checked_against_git_not_itself(self):
+        """The provenance input must be pinned independently, or it self-certifies.
+
+        Found by fable, 2026-09-01: mutating `min(stamps)` to `max(stamps)` in
+        `_key_first_committed` left all eight tests green while flipping three
+        verdicts, because every other test reads `first_committed` out of the
+        audit's own output and re-applies the comparison to it. Commissioning
+        the comparison is not commissioning its input.
+
+        `registry` is a long-lived key whose first and last commits are years
+        apart, so min and max are far apart and the mutation cannot hide.
+        """
+        out = subprocess.run(
+            [sys.executable, str(SCRIPT), "--json", "--as-of", str(PRE_CANARY_BASELINE)],
+            cwd=str(REPO), capture_output=True, text=True, timeout=280)
+        assert out.returncode == 0, out.stderr[-800:]
+        rows = {r["key"]: r for r in json.loads(out.stdout)["rows"]}
+        row = rows.get("registry")
+        assert row is not None, "the runner no longer writes a `registry` key"
+        assert row["first_committed"] == REGISTRY_KEY_FIRST_COMMIT, (
+            f"`registry` is dated {row['first_committed']}, not "
+            f"{REGISTRY_KEY_FIRST_COMMIT} as git reports. The dating function "
+            f"is returning the wrong end of the commit range -- every age "
+            f"verdict in this tool is computed from it.")
 
     def test_the_control_can_be_made_to_fire_on_demand(self):
         """COMMISSIONING. Pin the baseline and require quarantine to happen.

@@ -127,12 +127,43 @@ def _key_first_committed(key: str) -> int | None:
         return None
 
 
+def _is_simulated_report(fp: pathlib.Path) -> bool:
+    """True when this artefact came from a simulated run.
+
+    Keyed on the mandatory `-SIM` provenance marker (founder ruling 2026-08-08)
+    and on the run-directory naming, so a real run cannot be excluded by
+    accident. Checked against the directory name AND the report body, because a
+    directory can be renamed while the labels inside it cannot.
+    """
+    name = fp.parent.name.lower()
+    if name.startswith("sim") or "_sim" in name or "simulated" in name:
+        return True
+    try:
+        head = fp.read_text(encoding="utf-8", errors="ignore")[:4000]
+    except OSError:
+        return False
+    return "-SIM" in head
+
+
 def _archive() -> tuple[list, int]:
     """(report dicts, newest run mtime). Reports only -- not every json."""
     reports, newest = [], 0
     for fp in LOGS.glob("**/*.json"):
-        if "sim" in fp.parts[-2].lower() if len(fp.parts) > 1 else False:
-            pass
+        # EXCLUDE SIMULATED RUNS FROM THE WITNESS SET.
+        #
+        # THE LINE THIS REPLACES WAS A DEAD CONDITIONAL -- `if <cond>: pass` --
+        # so it excluded nothing and simulated reports counted as archive. Found
+        # by fable in panel review, 2026-09-01, and the consequence was
+        # circular: the three keys this tool reported as SEEN were seen ONLY
+        # because the canary rehearsal's own report sits in bench/logs, and it
+        # sits there twice via a duplicated run directory. A tool built to find
+        # "controls nobody has seen fire" was accepting the runner's own
+        # rehearsal, double-counted, as the evidence that they had fired.
+        #
+        # A simulated run is a rehearsal of the machinery, not a sighting in the
+        # field. It cannot witness that a control fires in real use.
+        if _is_simulated_report(fp):
+            continue
         try:
             d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
         except Exception:                                 # noqa: BLE001

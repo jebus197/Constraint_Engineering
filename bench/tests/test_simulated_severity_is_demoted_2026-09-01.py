@@ -11,8 +11,18 @@ independently and for the same measured reasons:
   * Calibration buys DELTAS, never LEVELS: applying the measured +0.156
     correction moves the simulated cluster 0.46 -> 0.62, still under 0.70.
 
-The demotion is therefore PERMANENT, not "until calibrated". What a simulated
-run remains valid for is unchanged and substantial: machinery validation.
+Those three measurements stand. The BAR built on them does not.
+
+WITHDRAWN 2026-09-01 on founder ruling: "remove that clause that prevents you
+from reporting when that is the case. It seems to serve no purpose other than to
+confuse you and me." The rule had been promoted from a two-model panel
+convergence to a "STANDING RULING" in forty minutes with no HIL step, in a
+project whose founding principle is that findings are never confirmed by model
+vote.
+
+What survives is a caveat on MAGNITUDES -- simulated severity does not transfer
+to a real panel -- not a bar on conclusions. Readiness reporting from a
+simulated run is explicitly permitted, and machinery validation always was.
 """
 from __future__ import annotations
 
@@ -115,6 +125,64 @@ class TestTheNoticeSaysWhatMayBeClaimed:
         assert "never ratified" in b, (
             "the record should say plainly that the superseded item never had "
             "the standing it was given")
+
+
+class TestTheWithdrawalReachedTheSIBLINGS:
+    """A payload cleaned while its siblings still assert the old rule.
+
+    Found by BOTH panel reviewers, 2026-09-01, independently. The withdrawal
+    edited the dict that `severity_demotion_notice` returns, and the guard test
+    asserted against that dict -- while three sibling channels went on asserting
+    the withdrawn bar: the function's own docstring ("PERMANENTLY barred", and a
+    false "founder-adopted"), a runtime `_log` line emitted on every simulated
+    run ("NOT admissible as evidence (standing ruling, RUNWAY 0C.12)"), and this
+    module's docstring.
+
+    CC2 named the shape exactly: it is the same failure as the `target_hashes`
+    sibling it caught the previous round -- the checked artefact was cleaned and
+    the unchecked sibling was not. The console barred what the report permitted,
+    and the suite stayed green throughout.
+    """
+
+    RUNNER = REPO / "bench" / "reference_runner_v3.py"
+    #: Phrases that assert the withdrawn bar. Allowed ONLY where the text is
+    #: quoting its own history and disowning it in the same breath.
+    WITHDRAWN = ("PERMANENTLY barred", "NOT admissible as evidence",
+                 "demotion is therefore PERMANENT")
+
+    def test_the_runner_no_longer_asserts_the_bar_anywhere(self):
+        src = self.RUNNER.read_text(encoding="utf-8")
+        for phrase in self.WITHDRAWN:
+            assert phrase not in src, (
+                f"{phrase!r} is back in the runner. The bar was withdrawn on a "
+                f"founder ruling; a payload that permits while a sibling "
+                f"channel forbids is the defect this test exists for.")
+
+    def test_no_runtime_log_line_cites_it_as_a_standing_ruling(self):
+        src = self.RUNNER.read_text(encoding="utf-8")
+        for i, line in enumerate(src.splitlines(), start=1):
+            if "_log(" in line or line.strip().startswith('"'):
+                low = line.lower()
+                if "standing ruling" in low and "0c.12" in low:
+                    raise AssertionError(
+                        f"{self.RUNNER.name}:{i} logs 0C.12 as a standing "
+                        f"ruling at runtime. It never was one.")
+
+    def test_this_module_does_not_reassert_it_either(self):
+        me = Path(__file__).read_text(encoding="utf-8")
+        head = me[:me.index("class ")]
+        assert "demotion is therefore PERMANENT" not in head
+
+    def test_the_false_provenance_is_named_rather_than_repeated(self):
+        """"founder-adopted" may appear only as a quotation being disowned."""
+        src = self.RUNNER.read_text(encoding="utf-8")
+        for i, line in enumerate(src.splitlines(), start=1):
+            if "founder-adopted" in line:
+                window = "\n".join(src.splitlines()[max(0, i-3):i+3])
+                assert "It was neither" in window or "Nothing in the record" in window, (
+                    f"{self.RUNNER.name}:{i} repeats the 'founder-adopted' "
+                    f"claim without disowning it. Nothing in the record "
+                    f"supports it.")
 
 
 class TestTheGuardIsWiredIntoTheReport:

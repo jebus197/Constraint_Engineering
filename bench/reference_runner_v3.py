@@ -5863,10 +5863,24 @@ def run_is_simulated(cfg) -> bool:
 def severity_demotion_notice(cfg) -> Dict[str, Any]:
     """Why a simulated run's severity-derived numbers must not be read as results.
 
-    STANDING RULING, panel-converged 2026-09-01 and founder-adopted. A simulated
-    panel is PERMANENTLY barred from severity-, threshold- and
-    convergence-dependent claims. Not "until calibrated" -- permanently, for
-    three measured reasons:
+    WITHDRAWN AS A STANDING RULING, 2026-09-01, and the withdrawal is the point.
+
+    This docstring used to open "STANDING RULING, panel-converged 2026-09-01 and
+    founder-adopted". It was neither. It arrived as a two-model panel
+    convergence; the runway recorded it as "needs a standing ruling"; forty
+    minutes later a commit restated it as a standing ruling, and this docstring
+    added "and founder-adopted" on top. Nothing in the record supports that
+    label. Both panel reviewers found the same chain independently, and one
+    noted that the runway's own wording -- asking for a ruling -- is an
+    admission it did not have one.
+
+    FOUNDER RULING 2026-09-01: "remove that clause that prevents you from
+    reporting when that is the case. It seems to serve no purpose other than to
+    confuse you and me." Readiness reporting from a simulated run is PERMITTED.
+
+    What survives is a measurement caveat, not a bar: simulated severity
+    MAGNITUDES are uncalibrated and do not transfer to a real panel. The three
+    measurements that motivated the original are unaffected and still stand:
 
       1. The offset is real but modest and the boundary sits on a spike. 401 of
          6,865 archived findings (5.84%, Wilson [5.31%, 6.42%]) sit EXACTLY on
@@ -10452,9 +10466,30 @@ def run_experiment(
         # conditions, a designed contrast (bench/EXECUTION_PLAN_EXPERIMENT_11.md,
         # "Diversity Axes"). It lapsed on 2026-04-02 in commit 556e0af when the
         # Codex seat was moved to OpenRouter for reliability, and the difference
-        # went silently. Measured: pre-lapse the two seats' finding counts differed
-        # (78 paired rounds, sign test p=0.00515); post-lapse they do not
-        # (205 paired rounds, p=0.378).
+
+        # STATISTICS WITHDRAWN 2026-09-01. This comment previously cited
+        # "pre-lapse 78 paired rounds, sign test p=0.00515; post-lapse 205
+        # paired rounds, p=0.378". BOTH panel reviewers independently failed to
+        # reproduce those six numbers from this repository, and no script or
+        # note computing them exists anywhere in it -- they appear only as prose.
+        # Worse, the analysis was wrong in kind: rounds within a run share
+        # target, prompt lineage and accumulated findings, so they are not
+        # independent trials. Taking the run as the unit, the pre-lapse
+        # difference does not survive (run-level sign test p = 0.6875, Wilcoxon
+        # p = 0.156). And "205 post-lapse rounds" is the entire archive
+        # including pre-lapse runs -- the whole dataset mislabelled.
+        #
+        # There is also a confound that makes the contrast unattributable even
+        # if the arithmetic had held: pre-lapse the Codex seat was dispatched
+        # DECOMPOSED (chunked target) far more often than ChatGPT, so the route
+        # change altered dispatch mechanics and output length, not only the
+        # instruction condition.
+        #
+        # WHAT REMAINS, and it is enough: the mechanism is documented
+        # (EXECUTION_PLAN_EXPERIMENT_11.md, "Diversity Axes"), the route change
+        # is in the diff of 556e0af, and today the two seats are byte-identical
+        # apart from the label. The design conclusion rests on the mechanism and
+        # needs no p-value.
         #
         # Keying identity on model_id alone would therefore have been correct for
         # today's config and WRONG the moment the contrast is restored by flipping
@@ -12365,9 +12400,11 @@ def run_experiment(
     try:
         result["severity_admissibility"] = severity_demotion_notice(cfg)
         if run_is_simulated(cfg):
-            _log("  severity provenance: SIMULATED — critical counts and gate "
-                 "verdicts from this run are NOT admissible as evidence "
-                 "(standing ruling, RUNWAY 0C.12)")
+            _log("  severity provenance: SIMULATED — severity MAGNITUDES are "
+                 "uncalibrated against a real panel and do not transfer; counts "
+                 "and thresholds derived from them are indicative. Machinery "
+                 "behaviour and readiness reporting carry no such caveat "
+                 "(founder ruling 2026-09-01)")
     except Exception as _exc:  # noqa: BLE001
         result["severity_admissibility"] = {"error": f"{type(_exc).__name__}: {_exc}"}
     try:
