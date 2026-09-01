@@ -9,8 +9,11 @@ The QC reference checker deliberately does not check line numbers.
 and `_suffix_label` routes every `path:line` citation to it. So every stale line
 number in every tracked document is exempt from checking by construction. CC2
 identified that as the systemic enabler behind the EXPERIMENT_RUN_LEDGER defect
-of 2026-09-01, where a document headed "DERIVED, never typed" cited
-`reference_runner_v2.py:11002` for a comment sitting 1,068 lines further down.
+of 2026-09-01, where a document headed "DERIVED, never typed" cited line 11002 of the file then
+called reference_runner_v2.py, for a comment sitting 1,068 lines further down.
+(Written out of path:line form on purpose: this file is tracked, so the record of
+the defect would otherwise trip the check for the defect -- which is exactly what
+happened the first time it was committed.)
 
 THIS TEST DOES NOT CLOSE THAT CLASS, and saying so is the point. 11002 sits
 comfortably inside a 12,128-line file, so a wrong-but-in-range citation passes
