@@ -982,7 +982,17 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                  if h.group(0).strip() in _unfenced_src]
         # Same guard the fallback applies: a round-review/summary that cites
         # canonical registry ids is not a new finding (exp43 C0040).
-        if re.search(r'^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?Review(?:\s+Summary)?\b',
+        # SUMMARY, NOT REVIEW (Fable, panel round 2, 2026-09-01). "Review" is
+        # how a genuine review OPENS; "Summary" is the only header shape that
+        # needs blocking. Measured over 2,505 replies: the Review-trigger blocks
+        # 4 genuine rehearsal replies (8 confirmed findings across rounds 0-2,
+        # each re-verified against the live module) and blocks ZERO phantoms
+        # anywhere in the archive. It also has two holes this closes -- a bold
+        # "**Review Summary**" head and "# Summary of Round 3" both slip past
+        # the old trigger. The instrument that actually stopped exp43 C0040 is
+        # the C-id prose branch, which is untouched.
+        if re.search(r'^\s*(?:[#*]+\s*)?(?:(?:Round\s+\d+\s+)?Review\s+Summary'
+                     r'|Summary\s+of\s+Round\s+\d+|Round\s+\d+\s+Summary)\b',
                      response.strip()[:80], re.IGNORECASE):
             _hits = []
         if _hits:
@@ -1048,7 +1058,13 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
         if not _l.lstrip().startswith(('#', '//')))
     _is_registry_prose = bool(
         re.search(r'\bC\d{4}\b', _prose_only)
-        or re.search(r'^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?Review(?:\s+Summary)?\b',
+        # Same Summary-anchored trigger as arm 4b (Fable, round 2). Measured:
+        # fixing this branch's `**` blind spot alone changed NOTHING across
+        # 2,505 replies, and deleting the branch entirely changed exactly one
+        # reply -- it was suppressing debris created by the other guard's own
+        # mistake. The C-id prose branch below is what fired on exp43 C0040.
+        or re.search(r'^\s*(?:[#*]+\s*)?(?:(?:Round\s+\d+\s+)?Review\s+Summary'
+                     r'|Summary\s+of\s+Round\s+\d+|Round\s+\d+\s+Summary)\b',
                      response.strip()[:80], re.IGNORECASE)
     )
     if (not findings and not _has_verdicts and not _is_registry_prose
