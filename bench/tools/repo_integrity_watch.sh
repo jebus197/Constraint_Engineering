@@ -26,7 +26,13 @@ if [ -n "$DIRTY_AT_START" ]; then
   exit 2
 fi
 while true; do
-  DIRTY=$(git status --porcelain -- . ':(exclude)bench/logs' | head -40)
+  # TRACKED modifications only. An untracked file cannot be restored by
+  # `git checkout --`, so an earlier version re-reported the same untracked
+  # path every 3 seconds forever -- 5 identical entries in 15 seconds, on a
+  # file the operator had just written. A guard that cannot fix what it
+  # reports must not keep reporting it.
+  DIRTY=$(git status --porcelain -- . ':(exclude)bench/logs' \
+          | grep -E '^[ MARCD]M|^M' | head -40)
   if [ -n "$DIRTY" ]; then
     echo "=== $(date -Iseconds) REPO MUTATED DURING RUN ===" >> "$REC"
     echo "$DIRTY" >> "$REC"
