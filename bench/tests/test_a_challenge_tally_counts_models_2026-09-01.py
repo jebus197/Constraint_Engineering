@@ -83,6 +83,60 @@ class TestThreeGenuineDissentersStillRefute:
         ) == "REFUTED"
 
 
+class TestSeatsAreNotModels:
+    """Two seats can run one model. Counting seats over-counts dissent.
+
+    Found by CC2 in panel review on 2026-09-01, against the distinct-model fix
+    made the same day. In the live config `Codex` and `ChatGPT` both declare
+    `model_id="openai/gpt-5.5"`. Measured over the archive: of 103 findings
+    challenged by three or more distinct seat LABELS, 21 had fewer than three
+    distinct underlying models -- 20.4%, Wilson [13.7%, 29.2%].
+    """
+
+    def _with_identity(self, identity, verdicts):
+        registry = R.FindingRegistry()
+        finding = R.Finding(
+            finding_id="M_F001", model_id="M", round_idx=0, flaw_class=1,
+            severity=0.9, abstraction_index=0.5,
+            description="a finding challenged by seats, not models",
+            verified=False, origin_type="model")
+        registry.register(finding, "M")
+        cid = next(iter(registry.entries))
+        registry.entries[cid]["status"] = "CONTESTED"
+        registry.model_identity = identity
+        for model, round_idx in verdicts:
+            registry.add_verdict(cid, model, "CHALLENGE", round_idx, evidence="e")
+        registry.auto_resolve_contested(2)
+        return registry.entries[cid].get("status")
+
+    LIVE_SEATS = {"Codex": "openai/gpt-5.5", "ChatGPT": "openai/gpt-5.5",
+                  "CC2": "anthropic/claude-opus", "Gemini": "google/gemini"}
+
+    def test_two_seats_on_one_model_are_one_dissenter(self):
+        assert self._with_identity(
+            self.LIVE_SEATS,
+            [("Codex", 1), ("ChatGPT", 1), ("CC2", 1)]) == "CONTESTED", (
+            "Codex and ChatGPT run the same model; that is two voices, not three")
+
+    def test_three_genuinely_distinct_models_still_refute(self):
+        assert self._with_identity(
+            self.LIVE_SEATS,
+            [("Codex", 1), ("CC2", 1), ("Gemini", 1)]) == "REFUTED"
+
+    def test_an_empty_identity_map_falls_back_to_seat_labels(self):
+        """Unknown identity must not invent distinctness, nor lose the old path."""
+        assert self._with_identity(
+            {}, [("Codex", 1), ("ChatGPT", 1), ("CC2", 1)]) == "REFUTED"
+
+    def test_an_unknown_seat_resolves_to_itself(self):
+        registry = R.FindingRegistry()
+        registry.model_identity = self.LIVE_SEATS
+        assert registry.resolve_model("Fable") == "Fable"
+        assert registry.resolve_model("Codex") == "openai/gpt-5.5"
+        assert registry.resolve_model("codex") == "openai/gpt-5.5"
+        assert registry.resolve_model(None) == ""
+
+
 class TestTheTallyReadsTheModelField:
     def test_verdicts_without_a_model_field_do_not_stack(self):
         """A missing model is one bucket (None), not N anonymous dissenters.

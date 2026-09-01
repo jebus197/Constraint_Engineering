@@ -17,10 +17,10 @@ Each item is independently addressable. A compliant implementation ticks items i
 
 ## Standing constraints (apply to every experiment)
 
-- **S1.** The Experiment 39 runner at `bench/reference_runner.py` must NOT be overwritten. The new runner is constructed as `bench/reference_runner_v2.py`, with `bench/launch_exp40.py` as its entry point. Promotion to `reference_runner.py` is a subsequent founder decision after Exp 40 has run and been studied.
+- **S1.** The Experiment 39 runner at `bench/reference_runner.py` must NOT be overwritten. The new runner is constructed as `bench/reference_runner_v3.py`, with `bench/launch_exp40.py` as its entry point. Promotion to `reference_runner.py` is a subsequent founder decision after Exp 40 has run and been studied.
 - **S2.** The Ouroboros principle governs. Each experiment's runner is the previous experiment's runner plus its own post-experiment lessons. The runner evolves in-place; it does not fork.
 - **S3.** CDSFL directives are live. §17 feedback channel and §18 round-two divergence directive are default-on in every experiment. `eta_int_modulator` remains library-exposed but NOT wired into `compute_rk` for Experiment 40 — this is the design-deferred state, preserved for baseline measurement.
-- **S4.** Specialist cells for mathematics, statistics, biology, and information science are promoted from shadow to live before Experiment 40 runs. The single-line flip at `reference_runner.py:~3741` moves from shadow to live in `reference_runner_v2.py`.
+- **S4.** Specialist cells for mathematics, statistics, biology, and information science are promoted from shadow to live before Experiment 40 runs. The single-line flip at `reference_runner.py:~3741` moves from shadow to live in `reference_runner_v3.py`.
 - **S5.** Shadow cells for physics, chemistry, and engineering are built functional in shadow mode, not placeholder. Promotion to live is gated on empirical data from experiments 41 through 53.
 - **S6.** The 2×2 factorial for §17/§18 attribution is deferred to Experiment 54 (integration). Cells A (reuse Exp 36–38 baseline), B (§17 on, §18 off), C (§17 off, §18 on), D (both on) run in Exp 54 on a chosen integration target. Coverage sweep runs 40–53 as single-cell D.
 - **S7.** No preferred scientific outcome. Each experiment is run to produce empirical data. Interpretation follows the data; claims are not pre-declared.
@@ -28,7 +28,7 @@ Each item is independently addressable. A compliant implementation ticks items i
 
 ---
 
-## Part 1 — Runner fixes (to fold into `reference_runner_v2.py` before Exp 40)
+## Part 1 — Runner fixes (to fold into `reference_runner_v3.py` before Exp 40)
 
 ### 1A. Priority-zero bugs from 39-0 post-mortem
 
@@ -38,7 +38,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 - **Source:** TTS §Layer 1 bug 1; `Exp39_0_Gate_PostMortem_2026-04-14.md` P0 #1
 - **Symptom:** 0% S_k ADMISSIBLE rate across all six rounds of 39-0
 - **Root cause:** prompt advertises format A (`====` separator, `>>>> REPLACE` closer); parser at `reference_runner.py:2094` in `parse_search_replace_blocks()` reconstructs format B; evaluator checks format C
-- **Fix site:** `parse_search_replace_blocks()` in `reference_runner_v2.py` around line 2094; align parser, prompt, and evaluator on a single canonical format
+- **Fix site:** `parse_search_replace_blocks()` in `reference_runner_v3.py` around line 2094; align parser, prompt, and evaluator on a single canonical format
 - **Acceptance:** smoke test produces S_k ADMISSIBLE > 0 on a hand-crafted finding-with-fix input. Unit test covers A/B/C format variants and confirms parser returns the canonical form
 - **Status:** TODO
 
@@ -101,7 +101,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 
 #### Item 1D.1 — Prior fix summary context
 - **Source:** TTS §Layer 2 item 6; confound analysis §2 lesson 6
-- **Implementation:** port `_build_prior_fix_summary()` from Exp 37 (`run_exp37_evidence.py`) into `reference_runner_v2.py` as a first-class method; call on each round K, inject into round K+1 prompt as a context block
+- **Implementation:** port `_build_prior_fix_summary()` from Exp 37 (`run_exp37_evidence.py`) into `reference_runner_v3.py` as a first-class method; call on each round K, inject into round K+1 prompt as a context block
 - **Acceptance:** unit test confirms that on a synthetic round-1 with three applied fixes, round-2's prompt contains a "prior fixes this experiment:" block naming the three fix IDs
 - **Status:** TODO
 
@@ -140,7 +140,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 #### Item 1E.1 — Feedback channel directive live in the runner
 - **Source:** TTS §Layer 3 item 1
 - **State:** live-default since 15 April; 39 tests pass; never exercised in a running experiment
-- **Implementation:** confirm `reference_runner_v2.py` wires `build_feedback_records()` output into round K+1 dispatch as a prompt-prefix section
+- **Implementation:** confirm `reference_runner_v3.py` wires `build_feedback_records()` output into round K+1 dispatch as a prompt-prefix section
 - **Acceptance:** on a two-round synthetic run, round-2 dispatch contains the feedback section derived from round-1 findings
 - **Status:** VERIFY (already wired in reference_runner.py; confirm carries over to v2)
 
@@ -154,7 +154,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 #### Item 1E.3 — B-Cell specialist dispatch live-promotion
 - **Source:** TTS §Layer 3 item 5; standing constraint S4
 - **State:** 14 active verifiers via TOML manifest; shadow mode at `reference_runner.py:~3741`
-- **Implementation:** flip specialist dispatch from shadow to live for mathematics, statistics, biology, information science in `reference_runner_v2.py`. Keep physics, chemistry, engineering in shadow (per S5)
+- **Implementation:** flip specialist dispatch from shadow to live for mathematics, statistics, biology, information science in `reference_runner_v3.py`. Keep physics, chemistry, engineering in shadow (per S5)
 - **Acceptance:** on synthetic math-domain claim, B-Cell specialist SymPy verifier produces a verdict that enters the immune pipeline; on synthetic physics claim, the specialist remains shadow-mode (logs verdict but does not affect pipeline)
 - **Status:** TODO
 
@@ -194,7 +194,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 #### Item 1E.9 — Recidivism detection (cross-round)
 - **Source:** TTS §Residual debt; Divergence_Round2_Implementation_2026-04-16.md
 - **State:** §18 currently checks isomorphism within a single round only
-- **Implementation:** carry divergence records forward from round K to round K+1 in `reference_runner_v2.py`; `check_sibling_admissibility()` extended to check against prior-round alternatives, not only current-round siblings
+- **Implementation:** carry divergence records forward from round K to round K+1 in `reference_runner_v3.py`; `check_sibling_admissibility()` extended to check against prior-round alternatives, not only current-round siblings
 - **Acceptance:** on a synthetic two-round run where round-2 resubmits a round-1 alternative unchanged, the round-2 finding is flagged as recidivism and incurs the 0.60 severe tier
 - **Status:** TODO
 
@@ -222,7 +222,7 @@ Three items. All blockers for any fix-verification or convergence claim.
 
 ## Part 2 — Shadow-log audit (FFAFP on Exp 39 shadow outputs)
 
-Apply FFAFP (Find, Follow, Analyse, Fix, P-pass) to each Exp 39 shadow log. If the cell generated meaningful data, fold the behaviour into `reference_runner_v2.py`. If it didn't, find root cause, fix, test.
+Apply FFAFP (Find, Follow, Analyse, Fix, P-pass) to each Exp 39 shadow log. If the cell generated meaningful data, fold the behaviour into `reference_runner_v3.py`. If it didn't, find root cause, fix, test.
 
 ### Item 2.1 — Ouroboros shadow audit
 - **Logs:** `bench/logs/exp39_0_gate_20260413T193320Z/ouroboros_shadow_r00.json` through `r05.json`
@@ -292,13 +292,13 @@ Each of the 14 sub-experiments maps to one experiment (40 through 53) and target
 
 ### Exp 40 build and run
 
-#### Item 4.0.1 — Build `reference_runner_v2.py`
-- **Implementation:** copy `reference_runner.py` to `reference_runner_v2.py`; fold in all of Part 1 (items 1A, 1B, 1C, 1D, 1E); do NOT modify `reference_runner.py`
+#### Item 4.0.1 — Build `reference_runner_v3.py`
+- **Implementation:** copy `reference_runner.py` to `reference_runner_v3.py`; fold in all of Part 1 (items 1A, 1B, 1C, 1D, 1E); do NOT modify `reference_runner.py`
 - **Acceptance:** `python3 -m pytest bench/tests/ -v` reports the prior green count plus new tests passing; `ruff check` and `mypy` clean on the new file
 - **Status:** TODO
 
 #### Item 4.0.2 — Build `bench/launch_exp40.py`
-- **Implementation:** entry script that loads `bench/exp40_configs/40_gate.json`, wires `reference_runner_v2.py`, dispatches the five-model panel
+- **Implementation:** entry script that loads `bench/exp40_configs/40_gate.json`, wires `reference_runner_v3.py`, dispatches the five-model panel
 - **Acceptance:** `--dry-run` produces a valid execution plan; `--preflight` confirms connectivity to all five models
 - **Status:** TODO
 
@@ -317,7 +317,7 @@ Each of the 14 sub-experiments maps to one experiment (40 through 53) and target
 
 Each experiment follows the same shape:
 
-1. Fold lessons from prior experiment into the runner (the runner evolves; `reference_runner_v2.py` is updated in place; do NOT fork into `_v3.py` etc.)
+1. Fold lessons from prior experiment into the runner (the runner evolves; `reference_runner_v3.py` is updated in place; do NOT fork into `_v3.py` etc.)
 2. Build `bench/launch_exp{N}.py` with the target from the Part 3 mapping
 3. Run
 4. Post-mortem in `experimental_notes/Exp{N}_PostMortem_{DATE}.md`
@@ -330,12 +330,12 @@ Each experiment follows the same shape:
 ### Exp 54 — integration run
 
 #### Item 4.54.1 — Build integration runner
-- **Implementation:** the same `reference_runner_v2.py` after Exp 53's lessons; 2×2 factorial configured (cells A reused from Exp 36–38 archives, B = §17 on §18 off, C = §17 off §18 on, D = both on)
+- **Implementation:** the same `reference_runner_v3.py` after Exp 53's lessons; 2×2 factorial configured (cells A reused from Exp 36–38 archives, B = §17 on §18 off, C = §17 off §18 on, D = both on)
 - **Acceptance:** 2×2 factorial config lints clean; `eta_int_modulator` is now wired into `compute_rk` for cells C and D (the deferred wiring lands here, after the 40–53 sweep has produced empirical tier-calibration data)
 - **Status:** PENDING
 
 #### Item 4.54.2 — Integration target selection
-- **Implementation:** chosen based on 40–53 outcomes; likely a module that integrates cross-cell behaviour cleanly (candidate: `bench/reference_runner_v2.py` itself, testing the runner against itself as a meta-test)
+- **Implementation:** chosen based on 40–53 outcomes; likely a module that integrates cross-cell behaviour cleanly (candidate: `bench/reference_runner_v3.py` itself, testing the runner against itself as a meta-test)
 - **Status:** PENDING
 
 #### Item 4.54.3 — Run Exp 54
@@ -360,7 +360,7 @@ Before launching Exp N+1, the following must be true.
 - All new bugs from Exp N are classified into the plan's Part 1 (1A/1B/1C) and either fixed or explicitly deferred with reason
 
 ### Gate B — lessons folded
-- Every P0 and P1 bug from Exp N is folded into `reference_runner_v2.py` before Exp N+1 launches
+- Every P0 and P1 bug from Exp N is folded into `reference_runner_v3.py` before Exp N+1 launches
 - P2 bugs may be deferred one experiment if they do not affect the next experiment's target domain
 - Schema wiring items (1E) have no outstanding TODOs that block Exp N+1's target
 
@@ -394,7 +394,7 @@ The plan is committed at every gate checkpoint, alongside the runner state. The 
 | Artefact | Path |
 |---|---|
 | Experiment 39 runner (frozen, do not modify) | `bench/reference_runner.py` |
-| Experiment 40+ runner (evolves in place) | `bench/reference_runner_v2.py` |
+| Experiment 40+ runner (evolves in place) | `bench/reference_runner_v3.py` |
 | Experiment 40 launcher | `bench/launch_exp40.py` |
 | Experiment N launcher (N ≥ 40) | `bench/launch_exp{N}.py` |
 | Experiment N config | `bench/exp{N}_configs/*.json` |

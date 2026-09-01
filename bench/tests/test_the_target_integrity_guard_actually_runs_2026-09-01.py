@@ -5,14 +5,25 @@ changes, because panel models are dispatched with Write and Edit in their
 allowed tools and one mutated Exp 47's target mid-run on 2026-07-29, restored
 it, and left no trace in git or the round files.
 
-It has never fired. Zero of 83 archived run directories carry the
-`target_integrity_events` field the guard writes. It sat inline in the round
-loop of a 12,000-line function where nothing could reach it, and in that state
-it accumulated a defect: the previous hash was a bare module global with no
-per-run reset and no key, so a second experiment in the same process compared
-its first round against the first experiment's last hash and reported a round-0
-mutation with nothing mutated. The guard's first firing would have been a false
-alarm -- in a project that has already absorbed 92 of those from the macrophage.
+It has never reported a violation. It has, however, RUN: 9 archived run
+directories carry `target_hashes`, covering 38 hashed rounds. The guard has
+executed 38 times and been correctly silent every time.
+
+That distinction was got wrong on the first pass of this file and corrected by
+CC2 in panel review the same day. The original claim was "it has never fired",
+resting on 0 of 83 run directories carrying `target_integrity_events`. That is
+the violation-gated key, written inside `if _prev_h:`. The unconditional sibling
+`target_hashes` is written one line below it, in code that had already been read.
+A guard's silence is not evidence of its absence when it writes a reachability
+witness beside its alarm.
+
+What the guard did accumulate, unreachable inline in the round loop of a
+12,000-line function, is a defect: the previous hash was a bare module global
+with no per-run reset and no key, so a second experiment in the same process
+compared its first round against the first experiment's last hash and reported a
+round-0 mutation with nothing mutated. Since the guard demonstrably executes,
+that false alarm was reachable too -- in a project that has already absorbed 92
+of them from the macrophage.
 
 Extracted to `target_hash_event` on 2026-09-01 (runway 0C.9) so it can be run.
 """
@@ -86,6 +97,46 @@ class TestItDoesNotFalselyAccuse:
         R._TARGET_HASH_PREV.clear()                    # runner does this per run
         target.write_text("# edited between runs, by a human\n")
         assert R.target_hash_event(target)[1] is None
+
+
+class TestTheGuardLeavesAReachabilityWitness:
+    """The distinction that this file got wrong once already.
+
+    A violation-gated record cannot answer "did this run?". The unconditional
+    sibling can, and the archive proves it does: 9 run directories, 38 rounds.
+    """
+
+    def test_the_round_loop_writes_the_hash_unconditionally(self):
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        i = src.index('result.setdefault("target_hashes", {})')
+        j = src.rindex("if _prev_h:", 0, i)
+        k = src.index("\n", j)
+        block = src[k:i]
+        # the unconditional write must sit OUTSIDE the violation branch: at the
+        # same indentation as the `if`, not nested within it.
+        line = src[src.rindex("\n", 0, i) + 1:i]
+        guard_indent = len(src[src.rindex("\n", 0, j) + 1:j])
+        assert len(line) - len(line.lstrip()) == guard_indent, (
+            "target_hashes is written inside the violation branch. It is the "
+            "only evidence that this guard ran at all; gating it makes a silent "
+            "guard indistinguishable from a dead one.")
+
+    def test_the_archive_carries_the_witness(self):
+        """Not a mock: the real artefacts, which is how the error was caught."""
+        import glob
+        import json
+        dirs, rounds = set(), 0
+        for fp in glob.glob(str(REPO / "bench/logs/**/*.json"), recursive=True):
+            try:
+                d = json.load(open(fp))
+            except Exception:
+                continue
+            if isinstance(d, dict) and "target_hashes" in d:
+                dirs.add(str(Path(fp).parent))
+                rounds += len(d["target_hashes"] or {})
+        assert dirs, (
+            "no archived run carries target_hashes. Either the guard stopped "
+            "running or the witness stopped being written -- both are defects.")
 
 
 class TestTheRunnerStillWiresItIn:

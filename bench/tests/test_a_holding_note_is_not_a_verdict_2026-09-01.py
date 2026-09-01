@@ -53,6 +53,41 @@ class TestThePredicate:
         assert verdict_is_substantive("x" * 799) is not None
 
 
+class TestAShortConclusionIsStillAConclusion:
+    """CC2, panel review 2026-09-01: gate on structure, not length alone.
+
+    A pure length floor rejects a reviewer who genuinely has nothing to add,
+    and then spends further dispatches re-asking a question already answered.
+
+    CC2's concrete example, `[NO_NOVEL_FINDINGS]`, is NOT a token in this
+    codebase -- a search of bench/ finds no such literal, so that exact reply
+    could never have been rejected, because it is never sent. The class it
+    points at is real, and the shape is pinned here so that introducing such a
+    token later does not require rediscovering this.
+    """
+
+    def test_a_bracketed_protocol_token_is_accepted(self):
+        assert verdict_is_substantive("[NO_NOVEL_FINDINGS]") is None
+        assert verdict_is_substantive("[CONVERGED]") is None
+
+    def test_a_terse_but_explicit_verdict_is_accepted(self):
+        assert verdict_is_substantive(
+            "VERDICT: all four fixes confirmed. Nothing further to add.") is None
+        assert verdict_is_substantive(
+            "NO FINDINGS. I ran the suite and reproduced each claim.") is None
+
+    def test_the_holding_note_is_still_rejected(self):
+        """The whole point: short-and-conclusive passes, short-and-pending does not."""
+        reason = verdict_is_substantive(THE_HOLDING_NOTE)
+        assert reason is not None and "no verdict marker" in reason
+
+    def test_a_short_reply_that_merely_mentions_work_in_progress_is_rejected(self):
+        for note in ("Still checking, back shortly.",
+                     "Running the tests now; will report after.",
+                     "Give me a moment to finish reading the diff."):
+            assert verdict_is_substantive(note) is not None, note
+
+
 class _FakeCompleted:
     def __init__(self, stdout):
         self.stdout, self.stderr, self.returncode = stdout, "", 0

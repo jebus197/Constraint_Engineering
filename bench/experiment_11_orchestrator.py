@@ -768,6 +768,16 @@ def call_openrouter(
     )
 
 
+# A short reply is a conclusion, not a holding note, if it says so explicitly.
+# The labels are the ones the runner's verdict parser whitelists, plus the shape
+# of a bracketed protocol token.
+_CONCLUSIVE_SHORT_RE = _re.compile(
+    r"(?:^|\n)\s*(?:\[[A-Z_]{3,}\]"
+    r"|\**(?:VERDICT|FINDING_ID|DESCRIPTION|FIND|PROPOSED_FIX|CONFIRM"
+    r"|CHALLENGE|REFUTED|NO\s+FINDINGS)\**\s*[:\]]?)",
+    _re.IGNORECASE)
+
+
 def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
     """Return None if `text` reads as a real verdict, else why it does not.
 
@@ -787,9 +797,24 @@ def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
         return "empty"
     if "<invoke" in stripped:
         return "tool-call block rather than a verdict"
-    if len(stripped) < min_chars:
-        return f"{len(stripped)} chars, below the {min_chars}-char floor"
-    return None
+    if len(stripped) >= min_chars:
+        return None
+    # SHORT, BUT IS IT A CONCLUSION OR A HOLDING NOTE?
+    #
+    # CC2, panel review 2026-09-01: "gate on structure, not length" -- a floor
+    # alone rejects a reviewer who genuinely has nothing to add, and then spends
+    # further dispatches re-asking a question already answered.
+    #
+    # Its concrete example, `[NO_NOVEL_FINDINGS]`, is NOT a token in this
+    # codebase; a search of bench/ finds no such literal, so that specific reply
+    # could not have been rejected because it is never sent. The class is real
+    # regardless, so a short reply is accepted when it carries an explicit
+    # verdict marker -- the same labels the runner's own verdict parser accepts
+    # -- or is a single bracketed all-caps token, which is the shape a protocol
+    # terminal reply takes if one is ever introduced.
+    if _CONCLUSIVE_SHORT_RE.search(stripped):
+        return None
+    return f"{len(stripped)} chars with no verdict marker (holding note?)"
 
 
 def call_claude_cli(

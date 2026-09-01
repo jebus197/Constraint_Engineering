@@ -633,11 +633,22 @@ def target_hash_event(target_path) -> tuple[str, str | None]:
     prior hash when it changed since the last round -- i.e. exactly when the
     caller should raise a mid-run mutation warning.
 
-    Extracted to module level 2026-09-01. The check itself dates from July and
-    had never run: 0 of 83 archived run directories carry `target_integrity_events`.
-    It sat inline inside the round loop of a 12,000-line function, which is
-    precisely why nothing could exercise it, and why a cross-run false-alarm
-    defect survived in it undetected.
+    Extracted to module level 2026-09-01. It sat inline inside the round loop of
+    a 12,000-line function, which is why nothing could exercise it, and why a
+    cross-run false-alarm defect survived in it undetected.
+
+    CORRECTED the same day, by CC2 in panel review. This docstring said the check
+    "had never run", on the evidence that 0 of 83 archived run directories carry
+    `target_integrity_events`. That was the wrong key. The violation record is
+    written inside `if _prev_h:`; the UNCONDITIONAL sibling `target_hashes` is
+    written one line below it, in code already read. Measured: **9 run directories
+    carry `target_hashes`, covering 38 hashed rounds.** The guard has run 38 times
+    and been correctly silent every time. "Never reported a violation" is not
+    "never ran", and the difference is a reachability witness sitting in the same
+    try block.
+
+    The cross-run false alarm was therefore reachable too, which makes the fix
+    more load-bearing rather than less.
     """
     import hashlib
 
@@ -1590,6 +1601,21 @@ class FindingRegistry:
         # Defaults to Python so an un-updated caller gets the historical prompt
         # rather than a wrong one. Read only by build_summary.
         self.target_kind: str = TARGET_KIND_PYTHON
+        # SEAT LABEL -> UNDERLYING MODEL ID. Set once per run by the runner.
+        #
+        # Seats are not models. In the live config `Codex` and `ChatGPT` are two
+        # seats declaring the SAME `model_id="openai/gpt-5.5"`, so a tally of
+        # distinct seat labels counts one model twice. Measured across the
+        # archive: of 103 findings challenged by three or more distinct LABELS,
+        # 21 had fewer than three distinct underlying models -- 20.4%, Wilson
+        # [13.7%, 29.2%]. Found by CC2 in panel review, 2026-09-01, against the
+        # distinct-model fix made the same day.
+        #
+        # Empty means "unknown", and an unknown label resolves to itself. That
+        # keeps archived data and every existing caller behaving exactly as
+        # before; it cannot collapse aliases it was never told about, and it
+        # never invents distinctness that is not there.
+        self.model_identity: Dict[str, str] = {}
 
     def record_codiscovery(self, canonical_id: str, model_id: str,
                            finding_id: str, similarity: float = 0.0) -> bool:
@@ -2225,6 +2251,31 @@ class FindingRegistry:
                          f"since R{oldest} -> UNCONFIRMED + HIL flag")
         return escalated_ids
 
+    def resolve_model(self, label) -> str:
+        """Seat label -> underlying model id, or the label itself if unknown.
+
+        Case- and whitespace-insensitive on the label, because seat labels are
+        written by hand in configs and read back out of archived JSON.
+        """
+        key = str(label or "").strip()
+        if not key:
+            return ""
+        exact = self.model_identity.get(key)
+        if exact:
+            return exact
+        # Case-insensitive second pass. Seat labels are hand-written in configs
+        # and read back out of archived JSON, and a MISSED alias resolves two
+        # seats of one model to two models -- it over-counts dissent, which is
+        # the direction that deletes findings. Built per call rather than cached
+        # because the map is set once per run and read a handful of times.
+        lowered = {str(k).strip().lower(): v
+                   for k, v in self.model_identity.items()}
+        return lowered.get(key.lower(), key)
+
+    def distinct_models(self, verdicts) -> int:
+        """How many DIFFERENT MODELS are represented, not how many rows or seats."""
+        return len({self.resolve_model(v.get("model")) for v in verdicts})
+
     def auto_resolve_contested(self, current_round: int):
         for fid, entry in self.entries.items():
             if entry.get("status") != "CONTESTED":
@@ -2252,10 +2303,10 @@ class FindingRegistry:
             # EXISTENCE (`if not challenges`) or on round staleness, so a
             # repeated verdict cannot move them. This was the only site where a
             # COUNT met a THRESHOLD.
-            challenges = len({v.get("model") for v in recent_verdicts
-                              if v.get("verdict") == "CHALLENGE"})
-            confirms = len({v.get("model") for v in recent_verdicts
-                            if v.get("verdict") == "CONFIRM"})
+            challenges = self.distinct_models(
+                [v for v in recent_verdicts if v.get("verdict") == "CHALLENGE"])
+            confirms = self.distinct_models(
+                [v for v in recent_verdicts if v.get("verdict") == "CONFIRM"])
             if challenges >= 3 and confirms == 0:
                 # F6 fix: use resolve() instead of direct mutation.
                 self.resolve(fid, "REFUTED", current_round)
@@ -10362,6 +10413,23 @@ def run_experiment(
     # The registry renders the panel's state-machine briefing every round;
     # what it says about how a finding settles depends on the target.
     registry.target_kind = target_kind
+    # SEATS ARE NOT MODELS (CC2, panel review 2026-09-01). Two seats can declare
+    # the same model_id -- `Codex` and `ChatGPT` both run openai/gpt-5.5 in the
+    # live config -- so a refutation tally over seat labels counts one model
+    # twice. Populated from the run's own configs, never guessed.
+    try:
+        registry.model_identity = {
+            mc.label: mc.model_id for mc in exp_config.models
+            if getattr(mc, "label", None) and getattr(mc, "model_id", None)}
+        _collisions = len(registry.model_identity) - len(
+            set(registry.model_identity.values()))
+        if _collisions:
+            _log(f"  Seat identity: {len(registry.model_identity)} seats, "
+                 f"{len(set(registry.model_identity.values()))} distinct models "
+                 f"({_collisions} seat(s) share a model with another seat)")
+    except Exception as _mi_exc:  # noqa: BLE001 — identity is an improvement, not a gate
+        _log(f"  WARNING: seat identity map unavailable ({_mi_exc}); the "
+             f"refutation tally will count SEATS, which over-counts dissent")
 
     # Fingerprints
     observed_fingerprints = _load_fingerprints()
@@ -11238,10 +11306,11 @@ def run_experiment(
             # KEYED BY TARGET AND RESET PER RUN. A bare module global compared
             # run 2's first round against run 1's last hash, so two experiments
             # sharing one process raised a round-0 "CHANGED mid-run" event with
-            # nothing mutated. Reproduced 2026-09-01; never observed in the
-            # archive only because no archived report carries the field at all
-            # (0 of 83 run directories) -- the guard has never once fired, so
-            # its first firing would have been the false one.
+            # nothing mutated. Reproduced 2026-09-01. Not observed in the archive
+            # because no archived run pair happens to share a process, NOT
+            # because the guard is dead: 9 run directories carry `target_hashes`
+            # across 38 hashed rounds, so this code has executed 38 times and
+            # been correctly silent each time.
             _tgt_h, _prev_h = target_hash_event(_tgt_p)
             if _prev_h:
                 _log(f"  *** TARGET INTEGRITY WARNING: {cfg.test_article} CHANGED "
