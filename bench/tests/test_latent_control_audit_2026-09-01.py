@@ -231,6 +231,70 @@ class TestAgeControl:
             "keys are quarantined against a year-2100 baseline, so the "
             "comparison is not the one the rule claims")
 
+class TestTheProvenanceRuleIsCheckedAgainstRealFiles:
+    """Assert admission and exclusion on files on disk, not a copy of the rule.
+
+    The previous test for this re-implemented the predicate VERBATIM, so it
+    could detect drift from the rule but never that the rule was wrong. CC2,
+    panel review 2026-09-02: "No test asserts a known-real file is admitted or a
+    known-sim file excluded." It passed over both of its counterexamples.
+
+    The rule it was guarding read the first 4,000 characters and excluded
+    anything containing "-SIM". Measured: 9 real panel transcripts on disk were
+    excluded purely for DISCUSSING simulation, one hitting the marker 76
+    characters from the window boundary -- while the runner's own authoritative
+    provenance keys sat at character 494,477 and 503,114, far outside the window
+    the audit looked in.
+    """
+
+    def _classify(self, path: Path):
+        import json as _json
+        sys.path.insert(0, str(REPO / "scripts"))
+        import latent_control_audit as A
+        doc = _json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+        return A._is_simulated(doc, path)
+
+    def test_a_real_run_report_is_admitted(self):
+        """The evidence base must not shrink because a reviewer said "-SIM"."""
+        reals = [p for p in (REPO / "bench" / "logs").glob("exp*/**/*report*.json")]
+        assert reals, "no real experiment reports found to test against"
+        wrongly = [p for p in reals if self._classify(p)]
+        assert not wrongly, (
+            "real run reports classified as simulated:\n  "
+            + "\n  ".join(str(p.relative_to(REPO)) for p in wrongly[:6]))
+
+    def test_a_simulated_run_report_is_excluded(self):
+        sims = [p for p in (REPO / "bench" / "logs").glob("sim*/**/*report*.json")]
+        assert sims, "no simulated reports found to test against"
+        missed = [p for p in sims if not self._classify(p)]
+        assert not missed, (
+            "simulated reports admitted as evidence:\n  "
+            + "\n  ".join(str(p.relative_to(REPO)) for p in missed[:6]))
+
+    def test_prose_mentioning_the_marker_does_not_exclude_a_real_run(self):
+        """The exact false positive: a real report quoting "-SIM" in a finding."""
+        import json as _json
+        sys.path.insert(0, str(REPO / "scripts"))
+        import latent_control_audit as A
+        doc = {"converged_at": 3, "runner_version": "v3.2",
+               "registry": {"entries": {"C0001": {
+                   "description": "routing.py mislabels CC2-SIM seats"}}}}
+        fake = REPO / "bench" / "logs" / "exp99_pretend" / "r.json"
+        assert not A._is_simulated(doc, fake), (
+            "a real report was excluded for quoting the -SIM marker in a "
+            "finding; that is how a run reviewing routing.py excludes itself")
+
+    def test_the_authoritative_key_is_what_decides(self):
+        import json as _json
+        sys.path.insert(0, str(REPO / "scripts"))
+        import latent_control_audit as A
+        fake = REPO / "bench" / "logs" / "exp99_pretend" / "r.json"
+        doc = {"severity_admissibility": {"severity_provenance": "simulated"}}
+        assert A._is_simulated(doc, fake), (
+            "the runner writes severity_provenance and the audit must read it "
+            "rather than reimplementing a weaker string test")
+
+
 class TestItOverReportsRatherThanUnderReports:
     def test_the_output_does_not_claim_work_it_never_did(self, result):
         """It used to announce `aliases_applied` while applying nothing.

@@ -88,7 +88,7 @@ disagree and a tool reading only the signal draws the wrong conclusion:
 | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
 | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
 
-The runner's own source names this at `bench/reference_runner_v3.py:12348` and dates a
+The runner's own source names this at `bench/reference_runner_v3.py:12428` and dates a
 partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
 dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
 that date still show it, so the fix did not close the class.

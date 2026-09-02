@@ -140,22 +140,41 @@ def _key_first_committed(key: str) -> int | None:
         return None
 
 
-def _is_simulated_report(fp: pathlib.Path) -> bool:
-    """True when this artefact came from a simulated run.
+def _is_simulated(doc: dict, fp: pathlib.Path) -> bool:
+    """True when this PARSED report came from a simulated run.
 
-    Keyed on the mandatory `-SIM` provenance marker (founder ruling 2026-08-08)
-    and on the run-directory naming, so a real run cannot be excluded by
-    accident. Checked against the directory name AND the report body, because a
-    directory can be renamed while the labels inside it cannot.
+    PARSE FIRST, CLASSIFY SECOND. The previous version read the first 4,000
+    characters as a string and excluded anything containing "-SIM". CC2, panel
+    review 2026-09-02, measured what that actually did: **9 real panel
+    transcripts on disk are excluded purely for discussing simulation**, one of
+    them hitting the marker 76 characters from the window boundary. In every
+    real report the first model-authored description begins between character
+    209 and 1,656, so thousands of characters of arbitrary model prose sit
+    inside that window -- and a real run reviewing `routing.py` or this runner,
+    both of which contain the literal `-SIM`, would quote it in round 0 and
+    exclude itself from its own evidence base.
+
+    Meanwhile the runner already writes three authoritative provenance signals,
+    and the heuristic read none of them: in a real simulated report
+    `severity_provenance` sits at character 494,477 and `_simulated` at 503,114,
+    both far outside the window the audit chose to look in. It reimplemented a
+    weaker string test instead of reading the key.
+
+    Directory naming is kept as a second signal, because a directory can be
+    renamed while the labels inside it cannot -- but it is now checked against
+    the parsed document, not a text window.
     """
-    name = fp.parent.name.lower()
-    if name.startswith("sim") or "_sim" in name or "simulated" in name:
+    sa = doc.get("severity_admissibility")
+    if isinstance(sa, dict) and sa.get("severity_provenance") == "simulated":
         return True
-    try:
-        head = fp.read_text(encoding="utf-8", errors="ignore")[:4000]
-    except OSError:
-        return False
-    return "-SIM" in head
+    if doc.get("_simulated"):
+        return True
+    models = doc.get("models") or doc.get("model_labels") or []
+    if isinstance(models, (list, tuple)) and any(
+            isinstance(m, str) and m.upper().endswith("-SIM") for m in models):
+        return True
+    name = fp.parent.name.lower()
+    return name.startswith("sim") or "_sim" in name or "simulated" in name
 
 
 def _archive() -> tuple[list, int]:
@@ -175,11 +194,13 @@ def _archive() -> tuple[list, int]:
         #
         # A simulated run is a rehearsal of the machinery, not a sighting in the
         # field. It cannot witness that a control fires in real use.
-        if _is_simulated_report(fp):
-            continue
         try:
             d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
         except Exception:                                 # noqa: BLE001
+            continue
+        if not isinstance(d, dict):
+            continue
+        if _is_simulated(d, fp):
             continue
         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
                                     or "runner_version" in d):
