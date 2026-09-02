@@ -204,8 +204,42 @@ def run(tag, model_id):
         # both reviewers used it. The diff is the most valuable thing a review
         # produces and it was the one thing being discarded.
         try:
+            # INTENT-TO-ADD FIRST, so new files become REAL diff hunks.
+            #
+            # THE DEFECT THIS CLOSES, measured 2026-09-02. New files were
+            # appended after the diff under `=== NEW FILE:` headers. The content
+            # was preserved -- deliberately, and the comment below explains why
+            # it is loud -- but the artefact is named `.patch`, and `git apply`
+            # returns **exit 0** on it while silently ignoring every one of those
+            # blocks. CC2 hit this applying a review: 8 files, 757 lines, absent
+            # from the resulting tree with no error. In that tree both
+            # `record_dispatch` call sites sit inside `except Exception: pass`,
+            # so the founder's DEFAULT-ON metering ruling becomes a permanent
+            # silent no-op -- defeated by a file extension.
+            #
+            # Across every review artefact on record: 8 of 18 unique patches
+            # carry content `git apply` ignores (44.4%, Wilson [24.6%, 66.3%]),
+            # totalling 9,914 lines, and `--check` returns 0 on all of them.
+            #
+            # `git add -N` stages intent-to-add, so `git diff HEAD` emits proper
+            # `new file mode` hunks. Nothing is committed and the sandbox is
+            # discarded regardless. The `=== NEW FILE` fallback is kept below for
+            # anything add -N cannot cover (over the size cap, unreadable), so
+            # the loud-not-silent property survives.
+            untracked = subprocess.run(["git", "ls-files", "--others",
+                                        "--exclude-standard"], cwd=str(wt),
+                                       capture_output=True, text=True, timeout=60)
+            _to_add = [r for r in (untracked.stdout or "").split()
+                       if (pathlib.Path(wt) / r).is_file()
+                       and (pathlib.Path(wt) / r).stat().st_size < 400_000]
+            if _to_add:
+                subprocess.run(["git", "add", "-N", "--", *_to_add], cwd=str(wt),
+                               capture_output=True, text=True, timeout=120)
             diff = subprocess.run(["git", "diff", "HEAD"], cwd=str(wt),
-                                  capture_output=True, text=True, timeout=60)
+                                  capture_output=True, text=True, timeout=120)
+            # Re-list: anything add -N covered is no longer "other", so the
+            # fallback below now only fires for what genuinely could not be
+            # turned into a hunk.
             untracked = subprocess.run(["git", "ls-files", "--others",
                                         "--exclude-standard"], cwd=str(wt),
                                        capture_output=True, text=True, timeout=60)

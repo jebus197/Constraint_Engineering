@@ -181,7 +181,21 @@ def load_vendor_tokens() -> Set[str]:
 
 # A name marker: 'simulated'/'simulation' anywhere, or a bare 'sim' path segment.
 # Deliberately does NOT match 'similarity' or 'simple'.
-_NAME_MARK = re.compile(r"(?i)simulat|(?:^|[_\-./])sim(?=[_\-./]|$)")
+#: A SIM token in a path. `sim` must be bounded -- but a DIGIT is a boundary too,
+#: which it was not until 2026-09-02.
+#:
+#: THE GAP, MEASURED. This project names its simulated runs `sim45_...`, and the
+#: old form required `sim` to be followed by one of `_-./` or end-of-string. So
+#: **0 of 20 simulated run directories on disk matched the name rule**
+#: (Wilson [0.0%, 16.1%]) and selection rested ENTIRELY on the content rule. A
+#: simulated artefact carrying no content marker -- an empty file, a plain-text
+#: log, a `.txt` -- would not have been selected at all, in a guard the founder
+#: ruled on 2026-08-08.
+#:
+#: Widening to allow a following digit matches 233 further paths across the
+#: 15,453 examined, and **all 233 are genuinely simulated run paths: zero false
+#: positives**, Wilson [0.0%, 1.6%].
+_NAME_MARK = re.compile(r"(?i)simulat|(?:^|[_\-./])sim(?=[_\-./0-9]|$)")
 
 # Cheap byte pre-filter: a superset of _CONTENT_MARK, so the archive is read once
 # at ~2.3 s rather than decoded in full at ~13 s.
@@ -239,6 +253,31 @@ def _strip_quoted_prose(data: bytes) -> bytes:
     SIM token in a path or an identity key all still select.
     """
     text = data.decode("utf-8", errors="replace")
+
+    # DIFF BODIES ARE REVIEWER-AUTHORED TEXT TOO, 2026-09-02.
+    #
+    # The same false positive recurred one artefact type later. A REAL panel
+    # review's `cc2.patch` was selected as a simulated artefact because the code
+    # the reviewer wrote mentions the convention -- `m.endswith("-SIM")`,
+    # `label.upper().endswith("-SIM")`, and a test fixture `label="Gemini-SIM"`.
+    # Four occurrences, every one of them code ABOUT the SIM rule, and the guard
+    # then flagged the FILENAME `cc2.patch` as a bare vendor name.
+    #
+    # A patch is not JSON, so the quotation-key blanking below could not fire on
+    # it. This file's own principle applies unchanged: a SIM token in free prose
+    # is not a self-declaration, and code a reviewer wrote is free prose for this
+    # purpose. Diff CONTENT lines are blanked; the diff HEADER lines are not, so
+    # a patch that genuinely creates `sim45_foo/report.json` still selects on its
+    # path.
+    if text.lstrip().startswith("diff --git") or "\ndiff --git " in text:
+        out = []
+        for line in text.split("\n"):
+            if line[:1] in ("+", "-", " ") and not line.startswith(("+++", "---")):
+                out.append(re.sub(r"-SIM", " " * 4, line))
+            else:
+                out.append(line)
+        text = "\n".join(out)
+
     for key in _QUOTATION_KEYS:
         # Blank the VALUE of a quotation-bearing JSON key, leaving structure.
         text = re.sub(
