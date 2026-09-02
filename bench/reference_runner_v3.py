@@ -5287,13 +5287,18 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
         stats["rounds"] += 1
         _log(f"  sweep round {_sweep_i + 1}/{n_rounds}: "
              f"{len(residuals)} residual(s) -> panel")
-        prompt = _sweep_prompt(residuals, cfg.test_article, target_src)
         for mc in exp_config.models:
             live = {cid: e for cid, e in residuals.items()
                     if registry.entries[cid]["status"] not in _TERMINAL
                     and cid not in _handled}
             if not live:
                 break
+            # BUILT PER MODEL, FROM `live`. It was built ONCE before this loop,
+            # so `live` was computed and then thrown away: every model was handed
+            # the full residual list including everything earlier models had
+            # already cleared, which is what invited the re-clears above. A model
+            # shown work that is already done will do it again.
+            prompt = _sweep_prompt(live, cfg.test_article, target_src)
             try:
                 resp, _ = dispatch_to_model(mc, prompt, _SWEEP_SYSTEM,
                                             enable_tools=True)
@@ -5322,7 +5327,21 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                     resp or "", _re.S):
                 cid, code = m.group(1), m.group(2).strip()
                 e = registry.entries.get(cid)
-                if e is None or e["status"] in _TERMINAL or not code:
+                # `cid in _handled` IS LOAD-BEARING and was missing.
+                #
+                # At this scope _TERMINAL is {MERGED, CLOSED, REFUTED,
+                # DUPLICATE} -- CONFIRMED is NOT in it. So once a model cleared
+                # a finding to CONFIRMED, every later model's reply matched it
+                # again, passed this guard, RE-RAN the falsifier (paid model
+                # code, executed twice), incremented `cleared` a second time and
+                # OVERWROTE `resolved_by_sweep` with the later model's name.
+                #
+                # Measured by fable in panel review 2026-09-02: `cleared: 27` on
+                # a 16-entry registry, and "all 27 by DeepSeek-SIM" unreliable --
+                # CC2-SIM was dispatched first and may have cleared up to 11 with
+                # the credit taken. Unrecoverable afterwards, because sweep
+                # replies are persisted nowhere.
+                if e is None or e["status"] in _TERMINAL or cid in _handled or not code:
                     continue
                 verdict = reverify_falsifier(code, repo_root=repo_root)
                 if verdict == "CONFIRMED":
