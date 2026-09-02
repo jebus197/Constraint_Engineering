@@ -66,6 +66,62 @@ class TestTheDecisionRuleSeparatesDefects:
             f"threshold rests on reports 0.542 against 0.000")
 
 
+class TestTheRealPopulationNotTheEasyCase:
+    """The signature test alone deletes 40% of real same-function pairs.
+
+    REFUTED BY THE PANEL, 2026-09-02, on real data. Of 711 archived pairs that
+    name the SAME function and carry DIFFERENT falsifier code -- different
+    defects by this project's own tools-decide criterion -- 282 score at or
+    above the 0.20 threshold: 39.7%, Wilson [36.1%, 43.3%]. Under a reused id
+    every one of those would have been absorbed and deleted.
+
+    The cause: a STEM signature is built from LOCATION tokens, identifiers and
+    line numbers, median 4 of them. Two findings about one function collide by
+    construction. The 0.20 threshold was calibrated for merging UNLOCATED
+    findings -- the opposite population.
+
+    My original test used a cross-file pair sharing zero tokens. I checked the
+    easy case and shipped it as though it were the whole set.
+    """
+
+    SAME_FN_DIFFERENT_DEFECT = (
+        "`record_experiment` (`bench/dm/_memory.py:232`) inverts the duplicate "
+        "guard so a repeated `exp_id` is accepted by default",
+        "`record_experiment` (`bench/dm/_memory.py:232`) does not strip "
+        "`exp_id`, so whitespace variants bypass the membership test")
+
+    def test_the_signature_test_alone_would_absorb_them(self):
+        """Pin the weakness, so the falsifier rule cannot be quietly removed."""
+        a, b = self.SAME_FN_DIFFERENT_DEFECT
+        sim = _overlap(a, b)
+        assert sim >= THRESHOLD, (
+            f"overlap {sim:.3f}: this pair no longer demonstrates the "
+            f"collision, so pick another same-function pair")
+
+    def test_a_different_falsifier_decides_it_regardless(self):
+        """The primary rule: different falsifier, different defect. Exact."""
+        src = RUNNER.read_text(encoding="utf-8")
+        i = src.index("PRIMARY TEST: A DIFFERENT FALSIFIER IS A DIFFERENT DEFECT")
+        block = src[i:i + 2200]
+        assert "_new_fals and _old_fals and _new_fals != _old_fals" in block, (
+            "the falsifier comparison is gone; the signature test alone deletes "
+            "40% of real same-function pairs")
+        assert "_absorb = False" in block
+
+    def test_the_signature_test_survives_as_a_fallback(self):
+        """One side may carry no falsifier yet; that case still needs a test."""
+        src = RUNNER.read_text(encoding="utf-8")
+        i = src.index("PRIMARY TEST: A DIFFERENT FALSIFIER IS A DIFFERENT DEFECT")
+        block = src[i:i + 2600]
+        assert "SECONDARY" in block and "signature_similarity(" in block
+
+    def test_the_report_says_which_rule_decided(self):
+        src = RUNNER.read_text(encoding="utf-8")
+        assert '"decided_by"' in src, (
+            "without it, nobody can tell afterwards whether a separation was "
+            "made on falsifiers or on a threshold known to be weak here")
+
+
 class TestTheRunnerActuallyPerformsTheCheck:
     """A guard that exists but is never reached is the defect it replaced."""
 

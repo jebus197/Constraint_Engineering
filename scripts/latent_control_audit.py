@@ -57,11 +57,24 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 RUNNER = REPO / "bench" / "reference_runner_v3.py"
 LOGS = REPO / "bench" / "logs"
 
-# Legacy key -> current key. A config setting the legacy name enables the
-# current control, so the current name must not be reported as never-enabled.
-CONFIG_ALIASES = {
-    "take_up_slack_enabled": "routing_enabled",
-}
+# ALIAS RESOLUTION DOES NOT APPLY TO THIS TOOL, and saying so is the fix.
+#
+# CC2's original design note named alias resolution as mandatory: `routing_enabled`
+# looks dead and is enabled in 21 configs under the legacy key
+# `take_up_slack_enabled`. That is true, and it is about CONFIG FLAGS.
+#
+# This tool audits REPORT KEYS -- the strings the runner writes into a run
+# report -- which are a different object with no legacy aliases. I imported the
+# constraint into the wrong tool, then shipped a `CONFIG_ALIASES` map that was
+# read by nothing and an output field, `aliases_applied`, that announced it had
+# been applied. fable, panel review 2026-09-02: the map "is never applied -- the
+# docstring's alias resolution design constraint is echoed into output and
+# enforced by nothing."
+#
+# A field asserting work that never happened is worse than dead code, and my own
+# test asserted the ECHO rather than the behaviour, which is how it survived.
+# The map and the claim are removed. The real constraint stands for whoever
+# builds the config-flag audit, and it is recorded on the runway at 0C.25.
 
 
 def _report_key_writes(source: str) -> dict:
@@ -245,7 +258,9 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         print("  'I ran' counter beside its alarm and it becomes decidable.")
     return {"reports": len(reports), "rows": rows,
             "baseline_mtime": newest,
-            "aliases_applied": CONFIG_ALIASES}
+            "audited_object": "report keys written by the runner "
+                              "(NOT config flags -- those have legacy "
+                              "aliases and need their own audit)"}
 
 
 def main() -> int:

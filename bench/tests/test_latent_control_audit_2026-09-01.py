@@ -232,10 +232,24 @@ class TestAgeControl:
             "comparison is not the one the rule claims")
 
 class TestItOverReportsRatherThanUnderReports:
-    def test_the_alias_map_is_carried_in_the_output(self, result):
-        """A control enabled under a legacy key must not read as never-enabled."""
-        assert result["aliases_applied"].get("take_up_slack_enabled") == \
-            "routing_enabled"
+    def test_the_output_does_not_claim_work_it_never_did(self, result):
+        """It used to announce `aliases_applied` while applying nothing.
+
+        fable, 2026-09-02: the map "is never applied -- the docstring's alias
+        resolution design constraint is echoed into output and enforced by
+        nothing." And the test that guarded it asserted the ECHO rather than the
+        behaviour, which is exactly how it survived a review.
+
+        Alias resolution is a real constraint for a CONFIG-FLAG audit. This tool
+        audits REPORT KEYS, which have no legacy aliases, so the honest fix was
+        to drop the claim rather than fake the work.
+        """
+        assert "aliases_applied" not in result, (
+            "the output again claims aliases were applied; either apply them or "
+            "do not say so")
+        assert "report keys" in result.get("audited_object", ""), (
+            "the output must name what it actually audits, so nobody imports a "
+            "config-flag constraint into it again")
 
     def test_the_archive_was_actually_read(self, result):
         assert result["reports"] > 50, (

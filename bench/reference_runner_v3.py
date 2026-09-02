@@ -5844,7 +5844,21 @@ CRITICAL_SEVERITY_THRESHOLD = 0.7
 # founder's ruling stands: keep 0.7, make the pre-registration visible. This is
 # purely additive -- it changes no verdict, it lets a reviewer see whether a
 # verdict depended on the chosen point.
-PREREG_GAMMA_PROFILE_THRESHOLDS = (0.5, 0.6, 0.7, 0.8)
+PREREG_GAMMA_PROFILE_THRESHOLDS = (0.5, 0.6, 0.65, 0.7, 0.75, 0.8)
+#: 0.65 and 0.75 are the edges of the boundary band, added 2026-09-02 after the
+#: rubric-adherence audit the pre-registration demanded in May was finally run.
+#: In that band the numeric proxy and the five-clause rubric agree on only
+#: 141 of 259 judgeable findings (54.4%, Wilson [48.4%, 60.4%]) -- and that is
+#: NOT reader noise: two independent blind readers agreed with each other on
+#: 86 of 93 (92.5%, Cohen's kappa 0.837 [0.721, 0.953]) while each agreed with
+#: the number about 55% of the time.
+#:
+#: Reporting gamma at the band EDGES makes the pre-registration's second, unbuilt
+#: requirement readable directly: "the verdict's sensitivity to that
+#: disagreement". If gamma_critical is identical at 0.65 and 0.75, then nothing
+#: in the disputed band could have moved the verdict and the run is robust to the
+#: whole 46% disagreement. If it differs, the verdict rests on findings whose
+#: classification two careful readers would contest.
 
 #: Half-width of the band in which a finding's CLASS could flip on a rating
 #: difference smaller than the shift measured between the real panel and the
@@ -6176,6 +6190,41 @@ def gamma_threshold_profile(registry, max_round: int,
             min(g for g, _ in fired), max(g for g, _ in fired)]
     out["live_threshold"] = CRITICAL_SEVERITY_THRESHOLD
     out["prereg"] = "bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md"
+    # THE PRE-REGISTRATION'S SECOND, UNBUILT REQUIREMENT, made readable.
+    #
+    # It says the post-mortem must report, per run, "the count of findings where
+    # rubric and numeric disagreed, and the verdict's sensitivity to that
+    # disagreement". Measured 2026-09-02: 0 of 27 archived reports carry any
+    # rubric field and the runner contained no such code, so neither half had
+    # ever been built.
+    #
+    # The first half needs a per-finding rubric classifier and is not wired here.
+    # The second half is computable now: if gamma is identical at both edges of
+    # the disputed band, then nothing inside that band could have moved the
+    # verdict, and the run is robust to the whole disagreement.
+    try:
+        _lo = (out.get("thresholds", {}).get("0.65") or {}).get("gamma_critical")
+        _hi = (out.get("thresholds", {}).get("0.75") or {}).get("gamma_critical")
+        out["boundary_band_sensitivity"] = {
+            "band": [0.65, 0.75],
+            "gamma_at_lower_edge": _lo,
+            "gamma_at_upper_edge": _hi,
+            "verdict_robust_to_band": (
+                _lo is not None and _hi is not None and _lo == _hi),
+            "basis": (
+                "Rubric-adherence audit 2026-09-02 (runway 0C.8): across 286 "
+                "archived findings in this band the numeric proxy and the "
+                "five-clause rubric agree on 141 of 259 judgeable cases "
+                "(54.4%, Wilson [48.4%, 60.4%]). That is not reader noise -- "
+                "two independent blind readers agreed with each other on 86 of "
+                "93 (92.5%, Cohen's kappa 0.837 [0.721, 0.953]) while each "
+                "agreed with the number about 55% of the time. A verdict that "
+                "changes across this band therefore rests on findings whose "
+                "classification two careful readers would contest."),
+        }
+    except Exception as _bs_exc:  # noqa: BLE001 — a diagnostic must not fell a run
+        out["boundary_band_sensitivity"] = {
+            "error": f"{type(_bs_exc).__name__}: {_bs_exc}"}
     return out
 
 
@@ -11251,13 +11300,40 @@ def run_experiment(
                     # never runs.
                     from bench.convergence_location import (
                         signature_similarity, stem_signature)
-                    _new_sig = stem_signature(getattr(f, "description", "") or "")
-                    _old_sig = stem_signature(
-                        (registry.entries.get(existing) or {}).get("description") or "")
-                    if _new_sig and _old_sig:
-                        _sim = signature_similarity(_new_sig, _old_sig)
-                        if _sim < _UNLOCATED_MERGE_THRESHOLD:
-                            _absorb = False
+                    _prev = registry.entries.get(existing) or {}
+                    # PRIMARY TEST: A DIFFERENT FALSIFIER IS A DIFFERENT DEFECT.
+                    #
+                    # This is the project's own founding criterion -- tools
+                    # decide, not votes -- and it is exact where the signature
+                    # test is not. fable, panel review 2026-09-02, refuted the
+                    # signature-only version of this guard on real data: of 711
+                    # archived pairs that name the SAME function and carry
+                    # DIFFERENT falsifier code (so they are different defects by
+                    # this project's own criterion), 282 score at or above the
+                    # 0.20 threshold -- 39.7%, Wilson [36.1%, 43.3%]. They would
+                    # have been absorbed and deleted.
+                    #
+                    # The cause is that a STEM signature is made of LOCATION
+                    # tokens -- identifiers and line numbers, median 4 of them --
+                    # so two findings about one function collide by construction.
+                    # The 0.20 threshold was calibrated for merging UNLOCATED
+                    # findings, which is the opposite population. My own test
+                    # missed it by using a cross-file pair sharing zero tokens:
+                    # I checked the easy case and shipped it as the whole set.
+                    _new_fals = (getattr(f, "falsifier_code", "") or "").strip()
+                    _old_fals = (_prev.get("falsifier_code") or "").strip()
+                    if _new_fals and _old_fals and _new_fals != _old_fals:
+                        _absorb = False
+                        _sim = -1.0                      # decided on falsifiers
+                    else:
+                        # SECONDARY: signatures, for the case where one side
+                        # carries no falsifier yet. Still fails toward absorbing.
+                        _new_sig = stem_signature(getattr(f, "description", "") or "")
+                        _old_sig = stem_signature(_prev.get("description") or "")
+                        if _new_sig and _old_sig:
+                            _sim = signature_similarity(_new_sig, _old_sig)
+                            if _sim < _UNLOCATED_MERGE_THRESHOLD:
+                                _absorb = False
                 except Exception as _sim_exc:            # noqa: BLE001
                     _log(f"  WARNING: absorb content check failed for "
                          f"{f.model_id}:{f.finding_id} ({_sim_exc}); absorbing "
@@ -11265,9 +11341,11 @@ def run_experiment(
                 if _absorb:
                     registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
                 else:
+                    _why = ("different falsifier code" if _sim < 0 else
+                            f"signature overlap {_sim:.3f} < "
+                            f"{_UNLOCATED_MERGE_THRESHOLD}")
                     _log(f"  ID REUSE, DIFFERENT DEFECT: {f.model_id}:"
-                         f"{f.finding_id} is not {existing} (signature overlap "
-                         f"{_sim:.3f} < {_UNLOCATED_MERGE_THRESHOLD}); "
+                         f"{f.finding_id} is not {existing} ({_why}); "
                          f"registering it rather than folding it in")
                     cid = registry.register(f, f.model_id)
                     novel_this_round += 1
@@ -11280,7 +11358,9 @@ def run_experiment(
                         {"round": round_idx, "model": f.model_id,
                          "local_id": f.finding_id, "absorbed_into_would_be":
                          existing, "new_canonical": cid,
-                         "signature_overlap": round(_sim, 4)})
+                         "signature_overlap": round(_sim, 4),
+                         "decided_by": ("falsifier" if _sim < 0
+                                        else "signature")})
 
         novelty_counts.append(novel_this_round)
         novel_critical_history.append(novel_critical_this_round)  # Exp 40 1A.3
