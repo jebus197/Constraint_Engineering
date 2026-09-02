@@ -33,7 +33,7 @@ For months the project has asked at what point it stops paying to put the same q
 
 Every method in that family needs 2 numbers: how many findings were seen by exactly one reviewer, and how many by exactly two. The overlap between reviewers is what tells you how much you have not found.
 
-The harness records the first number and destroys the second. Of 2,050 real archived findings, 2,048 are recorded as found by exactly one model and only 2 by more than one. When 2 models find the same defect, the system creates 2 separate unlinked records.
+The harness records the first number and destroys the second. Of 2,050 real archived findings, 2,048 are recorded as found by exactly one model and only 2 by more than one. When 2 models find the same defect, the finding register creates 2 separate unlinked records.
 
 Feeding those figures to the standard estimators gives an estimated completeness of about a quarter of one percent, and 2 estimators from the same family disagree by a factor of 152. That is not a hard estimation problem. It is a signal that the data is outside the range where those methods work. The ecology literature has a name for this exact pathology, which is failing to recognise an individual you have already seen.
 
@@ -55,7 +55,7 @@ This matters because your distinction, between one model used directly and one m
 
 You asked directly whether I am unreasonably error prone. The honest answer is yes, in one specific repeating way.
 
-Of 54 commits in the period, 13 corrected a previous claim of mine. That is 24.1 percent, interval 14.6 to 36.9. The review panel caught 9 of those 13. The recurring shape is that I verify the easy case and ship it as though it were the whole set. I did that with the duplicate detector, with a timing test, with the simulation filter, and with a coverage calculation, all in one night.
+Of 54 commits in the period, 13 corrected a previous claim of mine. That is 24.1 percent, interval 14.6 to 36.9. The review panel caught 9 of those 13. The recurring shape is that I verify the easy case and ship it as though it were the whole set. I did that with the duplicate detector, with a timing test, with the simulation filter, and and with a calculation of how much of the defect space the panel had covered, all in one night.
 
 Two things qualify that. The reviewers err too, and one of them refuted the other outright today. And the record overstates my error rate, because until this afternoon I had only ever asked the panel to find faults. Across 7 briefs, permission to call something sound appeared twice, against 25 instructions to find what was wrong. Across 14 replies there were 176 pieces of evidence attached to problems and zero attached to any proposed cure.
 
@@ -70,7 +70,7 @@ There are 5. Each one says what it is, why it matters, and what I recommend.
 
 ### DECISION 1. THE RECORDING CHANGE. This is the one that unlocks everything else.
 
-What it is. Today, when a finding is recorded, the system notes which single model raised it. The proposal is to record instead the full list of occasions that raised it, where an occasion means a particular model, using a particular prompt style, with a particular random seed, in a particular round.
+What it is. Today, when a finding is recorded, the finding register notes which single model raised it. The proposal is to record instead the full list of occasions that raised it, where an occasion means a particular model, using a particular prompt style, with a particular random seed, in a particular round.
 
 Why it matters. That list is the overlap statistic. Without it, none of the established methods for estimating what you have not yet found can run at all. With it, they all become available immediately, including a stopping rule that means the same thing whether a researcher has one model or a hundred.
 
@@ -82,11 +82,11 @@ My recommendation. Do it. It is recording, not research, and the cost is negligi
 
 ## Decision 2. How To Check The Matcher, And Whether It Smuggles Voting Back In.
 
-What it is. Before any of the above means anything, we need to know how good the system is at recognising that 2 findings describe the same defect. A first version exists and scores about 86 percent precision. But it scores pairs of findings directly, while the output it produces groups them, and 29.8 percent of the pairs in those groups were never actually scored. They are present only because the grouping chains through other pairs. So roughly a third of the output has unmeasured accuracy.
+What it is. Before any of the above means anything, we need to know how good the duplicate matcher is at recognising that 2 findings describe the same defect. A first version exists and scores about 86 percent precision. But it scores pairs of findings directly, while the output it produces groups them, and 29.8 percent of the pairs in those groups were never actually scored. They are present only because the grouping chains through other pairs. So roughly a third of the output has unmeasured accuracy.
 
 The choice. One reviewer proposed a way of labelling that is consistent with this project's founding principle: take 2 candidate findings, run each one's test against the other's defect, and if both fire they are the same defect, decided by execution rather than by opinion. Cost is 2 sandbox runs per pair and no model calls at all. The alternative, which is what the current 86 percent rests on, uses similarity scoring, which is closer to a vote.
 
-My recommendation. Adopt the execution based labelling. It is the only option here that does not quietly reintroduce agreement as a truth criterion, which is the thing this whole project exists to avoid. Also seed defects deliberately, because a planted defect has a known identity and therefore gives free ground truth with no extra dispatches.
+My recommendation. Adopt the execution based labelling. It is the only option here that does not quietly reintroduce agreement as a truth criterion, which is what this whole project exists to avoid. Also seed defects deliberately, because a planted defect has a known identity and therefore gives free ground truth with no extra dispatches.
 
 ## Decision 3. The Experiment You Proposed.
 
@@ -119,4 +119,4 @@ In order. First, the recording change, because everything else waits on it. Seco
 
 Only after those does it make sense to build anything that decides how to divide work across whatever resources a researcher has, because until then such a thing would be optimising against a number that does not yet exist.
 
-One thing I will not do without you. The convergence gate is the mechanism that decides when a run has finished. Any change to it, even a change that only observes and does not act, goes to you and to the panel first.
+One thing I will not do without you. The convergence gate decides when a run has finished. Any change to it, even a change that only observes and does not act, goes to you and to the panel first.
