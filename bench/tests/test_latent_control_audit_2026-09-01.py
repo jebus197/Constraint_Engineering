@@ -295,6 +295,60 @@ class TestTheProvenanceRuleIsCheckedAgainstRealFiles:
             "rather than reimplementing a weaker string test")
 
 
+class TestTheClassificationRuleItselfIsPinned:
+    """The verdict the tool calls "actionable" was entirely unpinned.
+
+    CC2, panel review 2026-09-02: mutating `elif w["gated"]:` to
+    `elif not w["gated"]:` flips 16 of 51 verdicts -- every AMBIGUOUS and every
+    UNREACHABLE -- and the whole suite stayed green. Every existing test
+    exercised the AGE control or the witness rule; nothing asserted that a gated
+    key without a witness is AMBIGUOUS rather than UNREACHABLE, which is the one
+    distinction the tool exists to draw.
+
+    The rule, from the module docstring:
+      unconditional write, 0 occurrences        -> UNREACHABLE
+      gated write, unconditional sibling seen    -> SILENT_BUT_RAN
+      gated write, no sibling, 0 occurrences     -> AMBIGUOUS  (the actionable one)
+
+    These pin one representative of each class against the live tree, so
+    inverting the gatedness test cannot pass.
+    """
+
+    def test_an_unconditional_unseen_key_is_unreachable(self, result):
+        rows = {r["key"]: r for r in result["rows"]}
+        row = rows.get("stalled")
+        assert row is not None, "`stalled` is no longer written by the runner"
+        assert row["verdict"] == "UNREACHABLE", (
+            f"`stalled` is written unconditionally and appears in no report, so "
+            f"it is unreachable as configured; got {row['verdict']}")
+        assert row["gated"] is False
+
+    def test_a_gated_key_with_a_witness_is_silent_not_dead(self, result):
+        rows = {r["key"]: r for r in result["rows"]}
+        row = rows["target_integrity_events"]
+        assert row["verdict"] == "SILENT_BUT_RAN"
+        assert row["gated"] is True and row["sibling"], (
+            "the witness is what separates a silent guard from a dead one")
+
+    def test_a_gated_key_without_a_witness_is_ambiguous(self, result):
+        """The only actionable verdict, and the one the mutation erased."""
+        rows = {r["key"]: r for r in result["rows"]}
+        row = rows.get("burst_phases")
+        assert row is not None, "`burst_phases` is no longer written"
+        assert row["verdict"] == "AMBIGUOUS", (
+            f"a gated key with no unconditional sibling and no sightings is "
+            f"genuinely ambiguous -- it is the only class needing work; got "
+            f"{row['verdict']}")
+        assert row["gated"] is True and not row["sibling"]
+
+    def test_the_three_classes_are_all_populated(self, result):
+        """If any class empties, one of the pins above is silently vacuous."""
+        from collections import Counter
+        c = Counter(r["verdict"] for r in result["rows"])
+        for verdict in ("UNREACHABLE", "SILENT_BUT_RAN", "AMBIGUOUS", "SEEN"):
+            assert c[verdict] > 0, f"no key classified {verdict}"
+
+
 class TestItOverReportsRatherThanUnderReports:
     def test_the_output_does_not_claim_work_it_never_did(self, result):
         """It used to announce `aliases_applied` while applying nothing.
