@@ -12699,14 +12699,27 @@ def run_experiment(
     # and like the sweep it is strictly after the verdict, so it cannot touch
     # convergence. Must precede the sweep, so the sweep sees only findings that
     # are genuinely unresolved.
-    if converged:
-        try:
-            _settled = _settle_confirmed_findings(registry, round_idx)
-            if _settled:
-                result["post_convergence_settled"] = _settled
-                result["registry"] = registry.to_dict()  # refresh after the edit
-        except Exception as _st_exc:  # noqa: BLE001 — never lose a run to tidying
-            _log(f"  WARNING: post-convergence settle failed ({_st_exc})")
+    #
+    # UNGATED 2026-09-02. The line below read `if converged:` -- the code
+    # contradicting its own comment, one line apart, since the sweep was widened
+    # to run on halts on 2026-08-01 while this was not.
+    #
+    # The cost was measured by fable in panel review: on a HALTED run the settle
+    # never ran, so findings the routing ladder had already CONFIRMED and
+    # verified were handed to the sweep as "residuals" and re-offered to the
+    # panel. On the run that raised the irreducible-queue alarm that was 7 of
+    # them, and it is a large part of why the sweep reported clearing 27 items
+    # from a 16-entry registry.
+    #
+    # Ungating is safe by the comment's own reasoning: no dispatch, no config,
+    # strictly after the verdict. It makes the sweep do LESS, not more.
+    try:
+        _settled = _settle_confirmed_findings(registry, round_idx)
+        if _settled:
+            result["post_convergence_settled"] = _settled
+            result["registry"] = registry.to_dict()  # refresh after the edit
+    except Exception as _st_exc:  # noqa: BLE001 — never lose a run to tidying
+        _log(f"  WARNING: post-convergence settle failed ({_st_exc})")
 
     # RESIDUAL-CLEARING SWEEP (2026-07-28 as post-convergence; widened 2026-08-01).
     # The verdict is already recorded above; the sweep can only clean the residual

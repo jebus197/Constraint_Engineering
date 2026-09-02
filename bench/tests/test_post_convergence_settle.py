@@ -184,35 +184,59 @@ class TestWiring:
         below silently start inspecting the wrong place again."""
         assert self._src().count(self.CALL) == 1
 
-    def test_the_call_is_reachable_and_guarded_only_by_convergence(self):
+    def test_the_call_is_reachable_and_guarded_by_nothing_at_all(self):
         """Source order alone does not prove the pass RUNS.
 
         Disabling the call outright (`if False:`) left every other test in this
         file green, because they check that the call exists and where it sits,
-        not that it executes. Asserted on the AST: the call's enclosing `if`
-        must test exactly `converged` — which pins reachability and the absence
-        of any extra gate in one condition. Proving it by running
-        `run_experiment` would mean a live panel dispatch, which costs money.
+        not that it executes.
+
+        REWRITTEN 2026-09-02. This used to assert the enclosing `if` tested
+        exactly `converged`, and so it PINNED a defect: the settle's own comment
+        says it "runs unconditionally", and the code gated it one line later.
+        When the sweep was widened to run on halts on 2026-08-01 the settle was
+        not, so on every halted run the findings the routing ladder had already
+        CONFIRMED and verified were handed to the sweep as "residuals" and
+        re-offered to the panel -- 7 of them on the run that raised the
+        irreducible-queue alarm, and a large part of why the sweep reported
+        clearing 27 items from a 16-entry registry. Found by fable in panel
+        review.
+
+        The contract is now the one the comment always described: no gate. It
+        costs no dispatch, needs no config, and runs strictly after the verdict,
+        so it cannot touch convergence -- it only ever makes the sweep do less.
         """
         import ast
-        tree = ast.parse(self._src())
+        src = self._src()
+        tree = ast.parse(src)
         fn = next(n for n in ast.walk(tree)
                   if isinstance(n, ast.FunctionDef) and n.name == "run_experiment")
+        # The PRIMARY settle: the one before the sweep. A second, deliberate
+        # re-settle runs INSIDE the sweep block after it clears residuals, and
+        # that one is correctly gated on the sweep's own config -- an earlier
+        # version of this test flagged it and had to be narrowed.
+        sweep_line = src[:src.index(
+            'result["post_convergence_sweep"] = _post_convergence_sweep')
+        ].count("\n") + 1
         for node in ast.walk(fn):
             if not isinstance(node, ast.If):
                 continue
             calls = [c for c in ast.walk(node) if isinstance(c, ast.Call)
                      and isinstance(c.func, ast.Name)
-                     and c.func.id == "_settle_confirmed_findings"]
-            if not calls:
-                continue
-            assert isinstance(node.test, ast.Name) and node.test.id == "converged", (
-                f"the settle pass is guarded by "
-                f"`{ast.unparse(node.test)}` — it must be `converged` alone, so it "
-                f"cannot be disabled or gated on a config the way the sweep is")
-            return
-        pytest.fail("no `if` in run_experiment contains the settle call — the "
-                    "pass is unreachable or was removed")
+                     and c.func.id == "_settle_confirmed_findings"
+                     and c.lineno < sweep_line]
+            if calls:
+                pytest.fail(
+                    f"the pre-sweep settle is inside "
+                    f"`if {ast.unparse(node.test)}:` — it must be "
+                    f"unconditional. A gate here means a halted run hands "
+                    f"already-confirmed findings to the sweep as residuals.")
+        # Reachable, and in a `try` rather than an `if`.
+        src = self._src()
+        i = src.index(self.CALL)
+        window = src[max(0, i - 400):i]
+        assert "try:" in window, (
+            "the settle call is no longer wrapped; tidying must never lose a run")
 
     def test_the_runner_settles_before_it_sweeps(self):
         """Order is load-bearing: settling first means the sweep is handed only
