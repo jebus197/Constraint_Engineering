@@ -139,9 +139,25 @@ class TestTheHarnessesUseIt:
         "bench/confer_convergence_panel_2026-08-23.py",
     ])
     def test_the_panel_harness_passes_accept(self, script):
+        """The predicate must be in the retry loop -- and must count WORK.
+
+        WIDENED 2026-09-02. This asserted `accept=verdict_is_substantive`
+        literally, which pinned the narrower contract that destroyed a review.
+        On the scale review fable wrote 77,219 bytes across 12 files and closed
+        with a 126-character note; the bare predicate rejected the note, retried,
+        and recorded the dispatch as ok=False with zero characters.
+
+        The harness now passes `accept_reply_or_work(wt)`, which accepts a short
+        reply when substantive work sits beside it in the sandbox. Empty is
+        still empty. See test_work_counts_as_substance_2026-09-02.py.
+        """
         src = (REPO / script).read_text(encoding="utf-8")
-        assert "accept=verdict_is_substantive" in src, (
-            f"{script} dispatches without a substance test in the retry loop")
+        assert "accept=accept_reply_or_work(wt)" in src, (
+            f"{script} dispatches without a work-aware substance test in the "
+            f"retry loop")
+        assert "accept=verdict_is_substantive)" not in src, (
+            f"{script} has reverted to judging the reply alone, which discards "
+            f"a reviewer that wrote its work down and summarised briefly")
         assert 'bool(txt.strip()) and "<invoke" not in txt' not in src, (
             f"{script} still carries its own post-hoc copy of the test")
 

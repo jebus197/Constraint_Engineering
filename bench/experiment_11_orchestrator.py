@@ -778,6 +778,62 @@ _CONCLUSIVE_SHORT_RE = _re.compile(
     _re.IGNORECASE)
 
 
+def accept_reply_or_work(worktree_path, min_chars: int = 800,
+                         min_work_bytes: int = 2000):
+    """Acceptance predicate that also counts WORK, not only words.
+
+    Returns a callable suitable for `call_claude_cli(accept=...)`.
+
+    THE DEFECT THIS CLOSES, measured 2026-09-02. `verdict_is_substantive` judges
+    the REPLY in isolation. A dispatch produces an artefact SET -- a reply, a
+    diff in the sandbox, a tool log -- and a short reply is only a holding note
+    if nothing else was produced.
+
+    On the 2026-09-02 scale review, fable wrote **77,219 bytes across 12 files**,
+    including edits to decomposed_dispatch.py, routing.py, runner_core.py and the
+    runner itself, then closed with a 126-character note. The predicate rejected
+    the note, retried, and recorded the whole dispatch as ok=False, chars=0. The
+    patch survived only because extraction runs in a `finally`.
+
+    Across 25 archived dispatches, 2 are recorded as failed while carrying a
+    substantive patch -- 8.0%, Wilson [2.2%, 25.0%], 78,926 bytes in total. One
+    predates the retry gate, so the gate did not create the fault; it made it
+    expensive, because a rejected reply is retried and then hard-fails.
+
+    That is also the wrong incentive. A reviewer running out of budget SHOULD
+    write its work down and point at it. Punishing exactly that behaviour is how
+    an overloaded reviewer's output gets destroyed instead of salvaged.
+    """
+    import subprocess as _sp
+
+    def _work_bytes() -> int:
+        if not worktree_path:
+            return 0
+        try:
+            out = _sp.run(["git", "diff", "HEAD"], cwd=str(worktree_path),
+                          capture_output=True, text=True, timeout=120)
+            n = len(out.stdout or "")
+            unt = _sp.run(["git", "ls-files", "--others", "--exclude-standard"],
+                          cwd=str(worktree_path), capture_output=True,
+                          text=True, timeout=120)
+            return n + sum(len(x) for x in (unt.stdout or "").splitlines())
+        except Exception:                                  # noqa: BLE001
+            return 0
+
+    def _accept(text: str):
+        reason = verdict_is_substantive(text, min_chars=min_chars)
+        if reason is None:
+            return None
+        if reason == "empty":
+            return reason        # nothing said AND nothing to point at is empty
+        produced = _work_bytes()
+        if produced >= min_work_bytes:
+            return None          # short reply, but real work exists beside it
+        return f"{reason}; and only {produced} bytes of work in the sandbox"
+
+    return _accept
+
+
 def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
     """Return None if `text` reads as a real verdict, else why it does not.
 

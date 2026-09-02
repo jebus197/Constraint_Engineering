@@ -30,7 +30,8 @@ if _env.is_file():
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
 from experiment_11_orchestrator import (  # noqa: E402
-    call_claude_cli, set_panel_cwd, set_tool_log_sink, verdict_is_substantive)
+    accept_reply_or_work, call_claude_cli, set_panel_cwd, set_tool_log_sink,
+    verdict_is_substantive)
 
 if len(sys.argv) < 2:
     print("usage: confer_panel_2026-08-28.py <log-dir-name> [--dry-run]", file=sys.stderr)
@@ -174,8 +175,8 @@ def run(tag, model_id):
         # applied after the fact (runway 0C.16, fixed 2026-09-01).
         txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400,
                               max_retries=2,
-                              accept=verdict_is_substantive) or ""
-        ok = verdict_is_substantive(txt) is None
+                              accept=accept_reply_or_work(wt)) or ""
+        ok = accept_reply_or_work(wt)(txt) is None
         rec = {"reviewer": tag, "ok": ok, "chars": len(txt),
                "elapsed_s": round(time.time() - t0, 1), "response": txt,
                "tree_carried": carried}

@@ -21,7 +21,8 @@ if _env.is_file():
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
 from experiment_11_orchestrator import (  # noqa: E402
-    call_claude_cli, set_panel_cwd, verdict_is_substantive)
+    accept_reply_or_work, call_claude_cli, set_panel_cwd,
+    verdict_is_substantive)
 
 LOGS = REPO / "bench/logs/convergence_panel_2026-08-23"
 PROMPT = (LOGS / "BRIEF.md").read_text(encoding="utf-8")
@@ -56,8 +57,8 @@ def run(tag, model_id):
         # accept= makes the substance test a RETRY condition (runway 0C.16).
         txt = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=2400,
                               max_retries=2,
-                              accept=verdict_is_substantive) or ""
-        ok = verdict_is_substantive(txt) is None
+                              accept=accept_reply_or_work(wt)) or ""
+        ok = accept_reply_or_work(wt)(txt) is None
         rec = {"reviewer": tag, "ok": ok, "chars": len(txt),
                "elapsed_s": round(time.time() - t0, 1), "response": txt}
         if not ok:
