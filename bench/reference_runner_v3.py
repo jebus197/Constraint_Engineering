@@ -4961,6 +4961,34 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             finding, models, confirmed, resolve_fn, reverify_falsifier,
             _routing_similarity,
         )
+        # RECORD WHAT THE LADDER ACTUALLY DID. Detective only; no behaviour here.
+        #
+        # THE GAP THIS CLOSES, found by fable in panel review 2026-09-02. The
+        # irreducible-queue alarm attaches `routing_history` per item, and that
+        # key was WRITTEN NOWHERE IN THE CODEBASE -- empty in every archived
+        # alarm across three runs. So the one question a human opening the
+        # bundle needs answered, "why exactly did these rungs fail on this
+        # finding", could not be answered from the artefact at all. Fable tried
+        # and could not, and labelled it unchecked.
+        #
+        # In a project whose founding principle is that TOOLS DECIDE, the tool
+        # verdicts were the one thing not kept.
+        try:
+            e.setdefault("routing_history", []).append({
+                "round": round_idx,
+                "verdict": result.verdict,
+                "resolved": bool(result.resolved),
+                "model_used": result.model_used,
+                "rungs_tried": getattr(result, "rungs_tried", None),
+                "rungs_available": len(models),
+                "duplicate_of": result.duplicate_of,
+                # The falsifier the last rung actually ran. Truncated because a
+                # bundle a human has to read is worth more than a complete one
+                # nobody opens; the full body lands on the entry when resolved.
+                "last_falsifier_code": (result.falsifier_code or "")[:600],
+            })
+        except Exception as _rh_exc:  # noqa: BLE001 — telemetry must not fell a run
+            _log(f"  WARNING: routing_history not recorded for {cid} ({_rh_exc})")
         if e.pop("_error_route_pending", None):
             if len(_routing_attempts) > _n0:
                 e["error_routed"] = True
@@ -5573,6 +5601,33 @@ def build_irreducible_queue_alarm(
     sk_states = sorted({(x["sk_tristate"] or "(none)") for x in evidence})
     no_falsifier = sum(1 for x in evidence if not x["falsifier_present"])
 
+    # HOW MANY DISTINCT DEFECTS, NOT HOW MANY ITEMS.
+    #
+    # Fable, panel review 2026-09-02: on the run that raised this alarm the
+    # 16-finding registry contained about FOUR distinct defects. The falsifier
+    # bodies fell into three byte-identical groups of five, plus one singleton --
+    # six seats reporting the same plants with nothing upstream merging them.
+    # Every "irreducible" critical in the queue was a duplicate of a defect the
+    # ladder had confirmed the same round.
+    #
+    # A human opening a bundle headed "3 criticals locked as irreducible" reads
+    # three crises. The honest heading is "3 items, 2 defects", and the alarm
+    # should say which. Grouping on the falsifier body is the project's own
+    # criterion: an identical falsifier is, by construction, the same defect.
+    # Grouped from the REGISTRY, not from the evidence dict: the bundle carries
+    # `falsifier_present` (a boolean) and never the body. Keying on the dict
+    # silently gave every item its own group and reported 3 defects for 3
+    # identical falsifiers -- caught by a behavioural test, which a source-level
+    # assertion would have passed.
+    _by_falsifier: Dict[str, List[str]] = {}
+    for x in evidence:
+        _cid = x.get("canonical_id") or x.get("id") or "?"
+        _body = ((registry.entries.get(_cid) or {}).get("falsifier_code") or "").strip()
+        _key = _body if _body else f"__no_falsifier__{_cid}"
+        _by_falsifier.setdefault(_key, []).append(_cid)
+    _groups = [sorted(v) for v in _by_falsifier.values()]
+    _dupes = [g for g in _groups if len(g) > 1]
+
     notify = (
         f"IRREDUCIBLE-QUEUE ALARM at round {round_idx}: {count} criticals are "
         f"locked as irreducible, over the bound of {bound}.\n"
@@ -5599,6 +5654,17 @@ def build_irreducible_queue_alarm(
         "bound": bound,
         "sk_states_in_queue": sk_states,
         "items_without_falsifier": no_falsifier,
+        "distinct_defects": len(_groups),
+        "duplicate_groups": _dupes,
+        "duplicate_note": (
+            f"{count} item(s) in this queue represent {len(_groups)} distinct "
+            f"defect(s), grouped by identical falsifier body."
+            + (f" {len(_dupes)} group(s) contain more than one item, so the "
+               f"queue is smaller than it looks and the upstream fault is "
+               f"cross-model duplicate handling, not irreducibility."
+               if _dupes else
+               " No two items share a falsifier, so these are genuinely "
+               "distinct and the queue size is real.")),
         "notify": notify,
         "evidence": evidence,
     }
