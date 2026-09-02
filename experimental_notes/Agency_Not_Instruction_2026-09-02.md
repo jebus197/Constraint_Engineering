@@ -119,3 +119,34 @@ to the remedy rather than only to the fault. The brief was rewritten to permit a
 verdict of sound, to require a measurement that each proposed fix works, and to
 carry the project's specification so that a recommendation could be justified
 against its aims. That change appears to be what produced the difference.
+
+## Postscript: the fixes, and two more found by making them
+
+The patch-format fault is closed. Staging intent-to-add before diffing makes new
+files into proper diff hunks, so a reviewer-created file now survives the apply
+step where it previously vanished without a word. The loud fallback survives for
+anything that cannot be turned into a hunk.
+
+Making that fix surfaced two more, both in the provenance guard that enforces
+the mandatory simulated-member suffix.
+
+The first is the same false positive one artefact type later. The guard selected
+a real panel review's patch as a simulated artefact, because the code the
+reviewer had written mentions the convention, and then flagged the reviewer's own
+filename as a bare vendor name. The guard already carried a repair for exactly
+this class, written after a real tool log was flagged for grepping a simulated
+label, but that repair blanks quoted values in structured records and a patch is
+not a structured record, so it could not fire. The file's own principle now
+extends to diff bodies: a token on a content line is prose, not a
+self-declaration. Header lines are untouched, so a patch that genuinely creates a
+simulated artefact still selects on its path.
+
+The second was found by trying to break the first, and it is older and larger.
+The guard's name rule required the token to be followed by punctuation or the end
+of the string. This project names its simulated runs with a token followed
+immediately by a digit. So none of the 20 simulated run directories on disk were
+matched by the name rule, and selection rested entirely on the content rule -- a
+simulated artefact carrying no content marker would not have been selected at
+all, in a guard that exists because a simulated result must never be mistakable
+for a real one. Widening the rule to accept a following digit matches 233 further
+paths across the 15,453 examined, and every one of them is genuinely simulated.
