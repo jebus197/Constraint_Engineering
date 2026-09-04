@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 August 2026 19:58 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 5 September 2026 00:11 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -145,6 +145,30 @@ honest answer was: never. A result attributed to a model that never produced it 
 downstream indistinguishable from a fabricated one, in a project that documents
 tamper-evident provenance as a core property. Standing rule added to
 `.claude/CLAUDE.md` and to memory.
+
+---
+
+## SESSION STATE — 2026-09-05 00:10 BST (READ THIS FIRST)
+
+**HEAD 59af19b, main, clean tree, 76 commits AHEAD OF origin/main and UNPUSHED. Suite 4876 passed, 0 failed, 0 errors under --netguard-strict.**
+
+**THE HEADLINE: THE S_k ADMISSIBILITY GATE HAS NEVER REJECTED ANYTHING.** Two independent routes agree. A threshold rejection is the only path that writes `passes_threshold`, because an error-path rejection arrives at the branch already carrying SK_REJECTED and never reaches the check. That field reads false 0 times and true 3816 times across archived run reports. The log line only the threshold branch emits appears 0 times against 400 error-path lines. Fire rate 0 of 3816, Wilson 95% CI [0.0000, 0.0010].
+
+**Cause.** `check_sk_threshold` computes S* from nu_eff(s_k) <= nu* with nu* evaluated at sigma = 1, while the appendix's nu* is sigma-dependent and sigma IS s_k. At the only reachable operating point (nu_b 0.05, nu_f 0.20, q 0.5, R 0.5 — all literal defaults, because `model_params` has no writer anywhere) S* is the exact rational -1/19, clamps to 0, and admits everything. Verified by SymPy, mpmath at 50 dp, a local Wolfram kernel in exact rationals, and by solving R_k(s_k) = R_old directly. True break-even 0.504931170970423.
+
+**cc2 established that repair is INERT: minimum archived S_k is 0.74, so the corrected threshold rejects 0 of 3601.** The replay-invalidation concern is retired. cc2 further showed the hard-gate conjunction A rejects 9.7% while S* rejects 0.0% of what A passes, so **A is the real Valley-of-Bad-Fixes gate**. The repair-versus-remove choice was then shown NOT to be binary: the two actions touch disjoint artefacts (a formula, a call site, an appendix claim), so composition has residual 0 against 1 for either alone. THE COMPOSED ACTION IS NOT YET APPLIED and needs a founder ruling.
+
+**TWO PANEL ROUNDS, AND THE PANEL REFUTED THE AUTHOR TWICE ON ITS OWN CHANGES.**
+* `boundary_band_sensitivity` shipped as an UNCONDITIONAL CONSTANT, vacuous in 41 of 41 archived reports: `gamma_threshold_profile` keyed thresholds with a 1-decimal format, collapsing 0.65 onto 0.7 and 0.75 onto 0.8, so the consumer's literal lookups never resolved. Its guard file made 0 calls to the function and asserted on source strings. Fixed with `repr(float(thr))` after cc2 refuted `:g` (which maps 1.0 to "1" and collides at 6 significant figures).
+* The occasions overlap record carried a REFUSED merge: the carry ran above the tool-only enforcement, so `adjudicator="model"` left the duplicate WITHHELD while the target still gained an occasion naming a merge that never happened. A model's unverified assertion was writing the record that feeds coverage estimation. Moved below both guards. Dedup re-keyed from (model, round, alias) to `canonical_id` after cc2 showed the old key undercounted.
+
+**STANDING RULES ADDED 2026-09-04** (both CLAUDE.md files): `no-word-numbers`, `measured-rate-travels-with-its-script`, `execute-do-not-grep`.
+
+**COMPACTION IS NOW ANNOUNCED.** `~/.claude/hooks/compaction_watch.py`, wired in settings.json. The founder drives this session remotely and the remote interface gives no indication of compaction. Measured: this session's transcript carries 6 compactions and the founder knew of almost none. Detection is structural (`isCompactSummary`), costs 0.055 s against a 41 MB transcript.
+
+**OUTSTANDING, FOUNDER-APPROVED, NOT STARTED:** D6 write-access disclosure measurement; D8 execution-based matcher; D9 single-model-versus-agents experiment; D10 mechanically generated seeded catalogue; D11 seat contrast restore; D12 commissioning severity_calibration and stall_gamma_termination; D13 rubric adjudication (panel measured ~82% of the disputed band already tool-settled, genuine human queue 4 of 33). Also: 32 appendix claims of SymPy or Wolfram verification with at most 1 test importing sympy at all.
+
+**OPERATIONAL CONSTRAINT DISCOVERED 2026-09-05.** This Mac Mini has 8.0 GB RAM and was measured at 8022 MB of 9216 MB swap in use. Full suite runs and panel dispatches are heavy for it; a remote session on a thrashing machine is fragile.
 
 ---
 

@@ -10,6 +10,26 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
+**★ RESUME POINTER (2026-09-05 00:11 BST). SUPERSEDES EVERY POINTER BELOW. THE VALLEY GATE HAS NEVER FIRED.**
+
+**HEAD 59af19b, main, clean, 76 AHEAD OF origin/main AND UNPUSHED. Suite 4876 passed, 0 failed, 0 errors (--netguard-strict).**
+
+**★★★ THE S_k ADMISSIBILITY GATE HAS NEVER REJECTED ANYTHING — 0 of 3816, Wilson [0.0000, 0.0010].** Two independent routes: `passes_threshold` reads false 0 times against true 3816; the log line only the threshold branch emits appears 0 times against 400 error-path lines. Cause: S* is nu_eff(s_k) <= nu* with nu* taken at sigma=1 while sigma IS s_k. At the only reachable operating point S* = -1/19 exactly, clamps to 0, admits everything. True break-even 0.504931170970423 (SymPy, mpmath 50 dp, local Wolfram exact, and a direct solve).
+
+**REPAIR IS INERT AND THE CHOICE IS NOT BINARY.** Minimum archived S_k is 0.74, so the corrected threshold rejects 0 of 3601 — the replay-invalidation objection is retired. cc2: A rejects 9.7% while S* rejects 0.0% of what A passes, so **A is the real Valley gate**. Repair, remove and appendix-correction touch DISJOINT artefacts; composition has residual 0 against 1 for either alone. **NOT APPLIED — needs a founder ruling.**
+
+**★★ THE PANEL REFUTED CC1 TWICE ON ITS OWN CHANGES, AND WAS RIGHT BOTH TIMES.** `boundary_band_sensitivity` was an unconditional constant, vacuous in 41 of 41 archived reports, because its guard made 0 calls and asserted on source text. And the occasions overlap record carried a REFUSED merge — the carry ran above the tool-only enforcement, so a model's unverified assertion wrote the record feeding coverage estimation. Both fixed, both P-passed, 5 new tests pin the cases CC1's own P-pass missed.
+
+**★ THREE STANDING RULES ADDED 2026-09-04, in BOTH CLAUDE.md files:** `no-word-numbers`, `measured-rate-travels-with-its-script`, `execute-do-not-grep`.
+
+**★ COMPACTION IS NOW ANNOUNCED** (`~/.claude/hooks/compaction_watch.py`). 6 compactions in this session's transcript; the founder knew of almost none, and the remote interface shows nothing. Structural detection, 0.055 s against 41 MB.
+
+**OUTSTANDING, APPROVED, NOT STARTED:** D6 disclosure measurement; D8 execution-based matcher; D9 single-model-versus-agents; D10 mechanical seeded catalogue; D11 seat contrast; D12 commission severity_calibration + stall_gamma_termination; D13 rubric (panel: ~82% of the disputed band already tool-settled, human queue 4 of 33). Plus 32 appendix claims of SymPy/Wolfram verification against at most 1 test importing sympy.
+
+**OPERATIONAL:** this Mini has 8.0 GB RAM, measured at 8022 MB of 9216 MB swap in use. Full suites and panel dispatches are heavy for it.
+
+---
+
 **★ RESUME POINTER (2026-08-28 03:23 BST). FOUR RULINGS ANSWERED; THE HIL PILE WAS NEVER A HIL PILE.**
 
 **★★★ RULING A — ZERO of the 133 similarity pairs are HIL-irreducible.** They were adjudicated by `scripts/adjudicate_by_repair.py` (counterfactual repair) **on 2026-08-18**; `RECOVERY.md:374` said "PENDING FOUNDER RULING" for ten days after. **Tool evidence for 85 of 133.** The 48 undecided, reclassified by cause: **17 NO_APPLICABLE_FIX** (data gap), **16 the finding's own fix fails to cure its own falsifier** (information about the FIX), **11 equipment**, **4 genuine asymmetries** — and an asymmetry is a finding about **subsumption**, not a deadlock. CC1 read the stale line, never opened the data, and recommended routing all 133 to the founder — **the problem-generator failure**. Remaining: supply 17 fixes, repair 11 equipment cases, record 4 containments. **None is adjudication.**

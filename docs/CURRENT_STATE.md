@@ -1,33 +1,26 @@
 # CDSFL Current State
 
-Generated: 31 August 2026 19:58 BST (2026-08-31T19:58:29+01:00)
+Generated: 5 September 2026 00:11 BST (2026-09-05T00:11:25+01:00)
 
 ---
 
 ## Git
 
-> **SNAPSHOT TAKEN IMMEDIATELY BEFORE THE sv COMMIT — NOT CURRENT TRUTH.**
-> This file is generated first and committed second, so it cannot describe
-> the commit that carries it. Read the block below as follows:
-> **"Last commit" is the PARENT** of the commit containing this file, and
-> **the uncommitted list is the working tree at snapshot time — it is NOT
-> that commit's file list.** The two differ in both directions: sv rewrites
-> docs/CURRENT_STATE.md, resources/ONBOARDING.md and resources/RECOVERY.md
-> *after* this snapshot, and it stages only whitelisted paths. For the
-> commit this file actually lives in and its real contents, run
-> `git log -1 --stat -- docs/CURRENT_STATE.md`.
-
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `20ce683` Panel fixes, part 4: the four archive guards re-measured, not deleted
-- **Committed:** 2026-08-31 19:52:05 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 7
-- **Working tree at snapshot time:** clean
+- **Last commit:** `59af19b` Announce compaction, because the remote interface does not
+- **Committed:** 2026-09-04 23:02:27 +0100
+- **Remote:** ahead of origin/main by 76
+- **Working tree:** DIRTY — uncommitted changes present
+
+Uncommitted files:
+- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**4607 tests collected** at 31 August 2026 19:58 BST, HEAD `20ce683` (`python3 -m pytest bench/tests/ --co -q`)
+**4876 tests collected** at 5 September 2026 00:11 BST, HEAD `59af19b` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +50,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `20ce683 Panel fixes, part 4: the four archive guards re-measured, not deleted`
-- `e7c4ed7 Panel fixes, part 3: post-sweep reconciliation, and the bare-fence extractor case`
-- `f198d0b Panel fixes, part 2: the second 500-char cut, and a comment that misdescribed its own function`
-- `08ab43c Panel fixes, part 1: one clear-list at both rescue sites; macrophage residuals closed`
-- `25f4f49 Three founder-ruled fixes, each tool-verified; the routing architecture was already right`
-- `77c3d1a Lint: numerals stay numerals (Rule 27)`
-- `a4f710f Panel review: I shipped a RED suite, and my option-A fix removed the A4 fail-safe`
-- `5abe4f8 Overnight run COMPLETE: converged at round 3, zero residue, falsification core live`
-- `d04fada Runway 4B.8: seeded exam pairs are NOT vaulted, and my "already vaulted" was over-broad`
-- `8f04a1a Re-arm the corrected-copy ask; the reversal it endangered is now gated`
+- `59af19b Announce compaction, because the remote interface does not`
+- `fe02c87 Panel verification FULL RECORD, 2026-09-04, unfiltered`
+- `1928de4 The panel refuted two things in my own change, and both refutations were right`
+- `5a0f20c Fix the 4 errors I reported and did not fix, and convert a grep test to an executing one`
+- `353151e Morning report, 2026-09-04: the gate that never fired, and the constant that looked like a measurement`
+- `bc30e02 Two founder rulings of 2026-09-04, written where they will be read`
+- `33ef614 The Valley gate has never fired, and the overlap record now exists`
+- `8bc32a9 Session notes: the reduction work, the panel records, and the restore`
+- `8d0a7ee The band-sensitivity diagnostic was a constant, and its test grepped the source`
+- `643276b Consolidated report: name the subjects the lint flagged, in both copies`
