@@ -6238,7 +6238,7 @@ def gamma_threshold_profile(registry, max_round: int,
                                                   severity_threshold=thr)
             g = float(_estimate_gamma(_crit, min_rounds))
         except Exception as exc:  # noqa: BLE001 — a diagnostic must not fell a run
-            out["thresholds"][f"{thr:.1f}"] = {"error": f"{type(exc).__name__}: {exc}"}
+            out["thresholds"][f"{thr:g}"] = {"error": f"{type(exc).__name__}: {exc}"}
             continue
         # `gate_would_fire` WAS REPORTED HERE AND HAS BEEN REMOVED (CC2, panel
         # review 2026-09-01). It reimplemented convergence as
@@ -6258,7 +6258,7 @@ def gamma_threshold_profile(registry, max_round: int,
         tail = _crit[-3:] if len(_crit) >= 3 else list(_crit)
         quiet = bool(tail) and all(c == 0 for c in tail)
         fired.append((round(g, 4), quiet))
-        out["thresholds"][f"{thr:.1f}"] = {
+        out["thresholds"][f"{thr:g}"] = {
             "gamma_critical": round(g, 4),
             "critical_novelty_series": list(_crit),
             "criticals_total": int(sum(_crit)),
