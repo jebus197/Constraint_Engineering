@@ -280,7 +280,26 @@ def main() -> int:
     if not LEDGER.is_file():
         print(f"  ledger missing: {_rel(LEDGER)}")
         return 1
-    if LEDGER.read_text(encoding="utf-8") == fresh:
+    # NORMALISE THE ONE LINE DERIVED FROM UNTRACKED STATE (2026-09-04).
+    #
+    # The aborted-invocations paragraph counts run directories that are EMPTY.
+    # Git cannot track an empty directory, so they do not survive a clone or a
+    # linked worktree: this machine reports 12, a fresh checkout reports 0, and
+    # the byte comparison called that DRIFT. Found independently by cc2 and
+    # fable on 2026-09-04, both running the suite from sandboxed copies, and
+    # both correctly diagnosing it as an environment assumption rather than a
+    # defect.
+    #
+    # This check exists to catch a HAND EDIT of a generated file, or a genuine
+    # change in the artefacts. A count of directories that cannot be committed
+    # is neither, so it is normalised out of both sides rather than compared.
+    # The paragraph is still WRITTEN, because on the machine that holds those
+    # directories it is true and useful; it is only excluded from the equality
+    # test.
+    def _portable(s: str) -> str:
+        return re.sub(r"\*\*\d+ aborted invocations\*\*[^\n]*\n?", "", s)
+
+    if _portable(LEDGER.read_text(encoding="utf-8")) == _portable(fresh):
         print(f"  ledger matches the artefacts ({len(data['runs'])} run directories)")
         return 0
     print(f"  LEDGER DRIFT: {_rel(LEDGER)} no longer matches bench/logs/.")

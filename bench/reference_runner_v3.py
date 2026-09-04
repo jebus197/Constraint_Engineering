@@ -1688,6 +1688,7 @@ class FindingRegistry:
                 "model": model_id,
                 "round": getattr(finding, "round_idx", 0),
                 "alias": finding.finding_id,
+                "from_canonical": canonical_id,
                 "via": "register",
             }],
             "source_aliases": [finding.finding_id],
@@ -1783,27 +1784,6 @@ class FindingRegistry:
 
         entry = self.entries[canonical_id]
         previous = entry.get("status")
-
-        # CARRY THE OCCASIONS ACROSS A MERGE (founder ruling 2026-09-04).
-        # This is the line that makes co-discovery visible. A merge is the
-        # runner saying "these two reports are one defect"; without this, the
-        # duplicate's occasion dies with it and the target still looks like a
-        # single-model finding. Deduplicated on (model, round, alias) so a
-        # re-merge cannot inflate the count, which is the ghost-individual
-        # pathology from mark-recapture: failing to re-recognise an individual
-        # inflates the singleton class and biases the estimator upward.
-        if merged_into and merged_into in self.entries:
-            _tgt = self.entries[merged_into]
-            _have = {(o.get("model"), o.get("round"), o.get("alias"))
-                     for o in _tgt.get("occasions", [])}
-            for _occ in entry.get("occasions", []):
-                _key = (_occ.get("model"), _occ.get("round"), _occ.get("alias"))
-                if _key not in _have:
-                    _have.add(_key)
-                    _tgt.setdefault("occasions", []).append(
-                        dict(_occ, via="merge", merged_from=canonical_id,
-                             merged_round=round_idx))
-
         # ── TOOL-ONLY ENFORCEMENT (2026-08-22) ───────────────────────────────
         # `resolve` is the ONLY status write in the runner, so the vocabulary
         # can be enforced here and nowhere else. A caller that has EXECUTED
@@ -1872,6 +1852,42 @@ class FindingRegistry:
             status, merged_into, adjudicator = "UNCONFIRMED", None, "runner"
             if status == previous:
                 return
+
+        # CARRY THE OCCASIONS ACROSS A MERGE — PLACED HERE DELIBERATELY.
+        #
+        # REFUTED BY cc2, panel review 2026-09-04, and the refutation was right.
+        # This block first sat ABOVE the tool-only enforcement, so a merge that
+        # the runner REFUSED still wrote the overlap record: resolving with
+        # adjudicator="model" left the duplicate WITHHELD with merged_into None,
+        # and the target nonetheless gained an occasion tagged via="merge",
+        # naming a merged_from that was never merged. A model's unverified
+        # assertion was writing the very record that feeds coverage estimation.
+        # That is votes deciding where tools must, introduced by the change that
+        # was supposed to make co-discovery measurable.
+        #
+        # It now runs AFTER both the tool-only substitution and the
+        # equipment-failure guard, each of which sets `merged_into = None` when
+        # it fires. Keying on the post-substitution value means a refused merge
+        # carries nothing, by construction rather than by a separate check.
+        #
+        # DEDUP ON canonical_id, NOT (model, round, alias). Also cc2, executed:
+        # one model reusing a finding_id within a round for two genuinely
+        # distinct defects produced 2 occasions for 3 canonicals. The registry
+        # mints separate canonicals for those, so an alias-based key is STRICTER
+        # than the registry's own identity notion. canonical_id is unique by
+        # construction. The old key's error direction was undercount, which
+        # biases coverage down; the refused-merge bug biased it up. They do not
+        # cancel and both are fixed here.
+        if merged_into and merged_into in self.entries:
+            _tgt = self.entries[merged_into]
+            _have = {o.get("from_canonical") for o in _tgt.get("occasions", [])}
+            for _occ in entry.get("occasions", []):
+                _src = _occ.get("from_canonical", canonical_id)
+                if _src not in _have:
+                    _have.add(_src)
+                    _tgt.setdefault("occasions", []).append(
+                        dict(_occ, via="merge", from_canonical=_src,
+                             merged_from=canonical_id, merged_round=round_idx))
 
         entry["status"] = status
         entry["last_status_change_round"] = round_idx
@@ -6282,7 +6298,7 @@ def gamma_threshold_profile(registry, max_round: int,
                                                   severity_threshold=thr)
             g = float(_estimate_gamma(_crit, min_rounds))
         except Exception as exc:  # noqa: BLE001 — a diagnostic must not fell a run
-            out["thresholds"][f"{thr:g}"] = {"error": f"{type(exc).__name__}: {exc}"}
+            out["thresholds"][repr(float(thr))] = {"error": f"{type(exc).__name__}: {exc}"}
             continue
         # `gate_would_fire` WAS REPORTED HERE AND HAS BEEN REMOVED (CC2, panel
         # review 2026-09-01). It reimplemented convergence as
@@ -6302,7 +6318,7 @@ def gamma_threshold_profile(registry, max_round: int,
         tail = _crit[-3:] if len(_crit) >= 3 else list(_crit)
         quiet = bool(tail) and all(c == 0 for c in tail)
         fired.append((round(g, 4), quiet))
-        out["thresholds"][f"{thr:g}"] = {
+        out["thresholds"][repr(float(thr))] = {
             "gamma_critical": round(g, 4),
             "critical_novelty_series": list(_crit),
             "criticals_total": int(sum(_crit)),
@@ -11672,6 +11688,14 @@ def run_experiment(
             # across 38 hashed rounds, so this code has executed 38 times and
             # been correctly silent each time.
             _tgt_h, _prev_h = target_hash_event(_tgt_p)
+            # DECLARE THE LIST THE MOMENT THE CHECK RUNS (2026-09-04).
+            # This was created only by `setdefault(...).append(...)` inside the
+            # mutation branch, so a run in which the target was never touched
+            # emitted no key at all. A reader of the report then cannot tell
+            # "checked every round, correctly silent" from "never executed"
+            # without knowing to cross-reference `target_hashes`. A detective
+            # control that cannot state it ran is not yet a control.
+            result.setdefault("target_integrity_events", [])
             if _prev_h:
                 _log(f"  *** TARGET INTEGRITY WARNING: {cfg.test_article} CHANGED "
                      f"mid-run (round {round_idx}): {_prev_h[:12]} -> {_tgt_h[:12]}. "
@@ -12759,8 +12783,13 @@ def run_experiment(
     # strictly after the verdict. It makes the sweep do LESS, not more.
     try:
         _settled = _settle_confirmed_findings(registry, round_idx)
+        # EMITTED EVEN WHEN EMPTY (2026-09-04). Same reason as the integrity
+        # list above: `if _settled:` meant a settle that correctly moved nothing
+        # left no trace, so the audit could not distinguish it from a settle
+        # that never ran. The registry refresh stays inside the branch -- there
+        # is nothing to refresh when nothing moved.
+        result["post_convergence_settled"] = _settled or []
         if _settled:
-            result["post_convergence_settled"] = _settled
             result["registry"] = registry.to_dict()  # refresh after the edit
     except Exception as _st_exc:  # noqa: BLE001 — never lose a run to tidying
         _log(f"  WARNING: post-convergence settle failed ({_st_exc})")

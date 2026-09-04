@@ -126,3 +126,84 @@ class TestTheRefusedMergesRecordNothing:
         cid = reg.register(_finding(), "CC2")
         reg.resolve(cid, "MERGED", round_idx=1, merged_into="C9999")
         assert len(reg.entries[cid]["occasions"]) == 1
+
+class TestARefusedMergeWritesNothing:
+    """cc2, panel review 2026-09-04. THE GAP MY OWN P-PASS MISSED.
+
+    The class below this one covered self-merge and phantom-target. Both return
+    early, ABOVE the carry. The refusal that matters happens BELOW it: `MERGED`
+    is in TOOL_ONLY_STATUSES, so a caller passing adjudicator="model" has the
+    merge REFUSED -- the duplicate ends WITHHELD with merged_into None. The carry
+    nonetheless ran, and the target permanently gained an occasion tagged
+    via="merge", naming a merged_from that was never merged.
+
+    A model's unverified assertion was writing the record that feeds coverage
+    estimation. That is votes deciding where tools must, in the field added to
+    make co-discovery measurable. Executed, not argued: cc2 reproduced it, and
+    so did I before fixing it.
+    """
+
+    def _refused(self):
+        reg = FindingRegistry()
+        keep = reg.register(_finding(finding_id="a1"), "CC2")
+        dupe = reg.register(_finding(finding_id="b1", round_idx=1), "Fable")
+        reg.resolve(dupe, "MERGED", round_idx=1, merged_into=keep,
+                    adjudicator="model")
+        return reg, keep, dupe
+
+    def test_the_merge_really_was_refused(self):
+        reg, _, dupe = self._refused()
+        assert reg.entries[dupe]["status"] == "WITHHELD"
+        assert reg.entries[dupe].get("merged_into") is None
+
+    def test_the_target_gains_nothing_from_a_refused_merge(self):
+        reg, keep, _ = self._refused()
+        occ = reg.entries[keep]["occasions"]
+        assert len(occ) == 1, (
+            "a merge the runner REFUSED must not write the overlap record; "
+            f"a model's assertion would be deciding, not a tool. Got {occ}")
+        assert all(o["via"] == "register" for o in occ)
+
+    def test_a_TOOL_merge_is_still_carried(self):
+        """The guard must not have been bought by disabling the feature."""
+        reg = FindingRegistry()
+        keep = reg.register(_finding(finding_id="a1"), "CC2")
+        dupe = reg.register(_finding(finding_id="b1", round_idx=1), "Fable")
+        reg.resolve(dupe, "MERGED", round_idx=1, merged_into=keep)  # tool
+        assert len(reg.entries[keep]["occasions"]) == 2
+        assert {o["model"] for o in reg.entries[keep]["occasions"]} == {"CC2", "Fable"}
+
+
+class TestTheDedupKeyIsCanonicalIdNotAlias:
+    """cc2, same review. The old key was stricter than the registry's own.
+
+    `(model, round, alias)` collides when one model reuses a finding_id within a
+    round for two genuinely distinct defects. The registry mints SEPARATE
+    canonicals for those, so the old key contradicted the registry's identity
+    notion and undercounted -- biasing coverage DOWN, while the refused-merge
+    bug biased it UP. They do not cancel.
+    """
+
+    def test_two_distinct_defects_sharing_an_alias_both_count(self):
+        reg = FindingRegistry()
+        keep = reg.register(_finding(finding_id="a1"), "CC2")
+        d1 = reg.register(_finding(finding_id="dup", round_idx=1,
+                                   description="null deref in parser"), "Fable")
+        d2 = reg.register(_finding(finding_id="dup", round_idx=1,
+                                   description="race in scheduler"), "Fable")
+        reg.resolve(d1, "MERGED", round_idx=1, merged_into=keep)
+        reg.resolve(d2, "MERGED", round_idx=1, merged_into=keep)
+        occ = reg.entries[keep]["occasions"]
+        assert len(occ) == 3, (
+            "3 distinct canonicals were merged; an alias-keyed dedup returns 2 "
+            f"and undercounts the recapture. Got {len(occ)}: {occ}")
+        assert len({o["from_canonical"] for o in occ}) == 3
+
+    def test_re_merging_the_same_canonical_still_adds_nothing(self):
+        reg = FindingRegistry()
+        keep = reg.register(_finding(finding_id="a1"), "CC2")
+        dupe = reg.register(_finding(finding_id="b1", round_idx=1), "Fable")
+        reg.resolve(dupe, "MERGED", round_idx=1, merged_into=keep)
+        first = len(reg.entries[keep]["occasions"])
+        reg.resolve(dupe, "MERGED", round_idx=2, merged_into=keep)
+        assert len(reg.entries[keep]["occasions"]) == first

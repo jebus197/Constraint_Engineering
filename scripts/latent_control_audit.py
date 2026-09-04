@@ -238,7 +238,26 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         first = _key_first_committed(key)
         too_new = bool(first and newest and first > newest)
         sibling = None
-        if w["gated"] and seen == 0:
+        # THE SIBLING CHECK APPLIES TO UNCONDITIONAL WRITES TOO (2026-09-04).
+        #
+        # It was gated on `w["gated"]`, so a write that is UNCONDITIONAL and
+        # unseen fell straight through to UNREACHABLE even when a witnessed
+        # sibling proved the surrounding code ran. That misfires on exactly the
+        # repair this script recommends: its own header says to give a guard an
+        # unconditional "I ran" counter, and doing so for
+        # `target_integrity_events` flipped it from SILENT_BUT_RAN to
+        # UNREACHABLE -- the tool reporting a regression for taking its own
+        # advice.
+        #
+        # The age control cannot catch this, and that is worth stating plainly:
+        # `_key_first_committed` dates the KEY NAME via `git log -S`, so a key
+        # that has existed for months but became unconditional today reads as
+        # old. Dating the gating rather than the name would need a structural
+        # diff over history. Widening the sibling rule is the smaller and more
+        # direct repair, and it is sound on the same logic the gated case uses:
+        # a witnessed sibling within 40 lines proves the code ran, and that
+        # proof does not depend on whether THIS write is gated.
+        if seen == 0:
             for other in unconditional:
                 if any(abs(a - b) <= 40
                        for a in w["lines"] for b in writes[other]["lines"]):

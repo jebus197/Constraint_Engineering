@@ -324,11 +324,43 @@ class TestTheClassificationRuleItselfIsPinned:
         assert row["gated"] is False
 
     def test_a_gated_key_with_a_witness_is_silent_not_dead(self, result):
+        """REPRESENTATIVE CHANGED 2026-09-04, and the reason matters.
+
+        This used `target_integrity_events`, which was gated at the time. It was
+        then made UNCONDITIONAL -- the repair this very script recommends in its
+        own header -- so it is no longer a representative of the gated class. The
+        RULE is unchanged; only the example moved. `hil_status` is gated, unseen,
+        and witnessed by `registry`.
+        """
         rows = {r["key"]: r for r in result["rows"]}
-        row = rows["target_integrity_events"]
+        row = rows["hil_status"]
         assert row["verdict"] == "SILENT_BUT_RAN"
         assert row["gated"] is True and row["sibling"], (
             "the witness is what separates a silent guard from a dead one")
+
+    def test_an_unconditional_key_with_a_witness_is_also_silent_not_dead(self, result):
+        """The rule widened on 2026-09-04, and this pins the widening.
+
+        The sibling check ran only for gated writes, so an UNCONDITIONAL write
+        that was unseen fell through to UNREACHABLE even when a witnessed
+        sibling proved the surrounding code had run. That misfired on the
+        script's own recommended repair: giving `target_integrity_events` an
+        unconditional declaration flipped it from SILENT_BUT_RAN to UNREACHABLE,
+        so the tool reported a regression for taking its own advice.
+
+        The age control cannot cover this case. `_key_first_committed` dates the
+        KEY NAME with `git log -S`, so a key that has existed for months but
+        became unconditional today still reads as old and never reaches TOO_NEW.
+        """
+        rows = {r["key"]: r for r in result["rows"]}
+        row = rows["target_integrity_events"]
+        assert row["gated"] is False, (
+            "this key is the unconditional representative; if it is gated again "
+            "the test above is the one that applies")
+        assert row["sibling"], "target_hashes is written beside it, unconditionally"
+        assert row["verdict"] == "SILENT_BUT_RAN", (
+            f"a witnessed sibling proves the code ran, and that proof does not "
+            f"depend on whether THIS write is gated; got {row['verdict']}")
 
     def test_a_gated_key_without_a_witness_is_ambiguous(self, result):
         """The only actionable verdict, and the one the mutation erased."""

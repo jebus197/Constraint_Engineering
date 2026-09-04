@@ -123,8 +123,22 @@ class TestTheReportSaysWhereThePanelCouldReach:
             assert f'"{key}"' in src, f"the report no longer records {key}"
 
     def test_the_sandbox_flag_distinguishes_the_two_cases(self):
-        """A linked worktree carries a .git FILE; a clone carries a directory."""
-        assert (REPO / ".git").is_dir(), "the canonical repo should hold a .git dir"
+        """A linked worktree carries a .git FILE; a clone carries a directory.
+
+        THE PRECONDITION IS NOT THE POINT (2026-09-04). This asserted that the
+        canonical repo holds a .git DIRECTORY. That is machine state, not
+        behaviour, and it is false in the environment this very test file exists
+        to reason about: run inside a linked worktree -- which is exactly how
+        panel reviewers receive the repository -- `REPO/.git` is a 92-byte file
+        and the test failed for reasons unrelated to anything under review.
+        Found independently by cc2 and fable, 2026-09-04, both from sandboxed
+        copies.
+
+        The discriminating assertion is the one below, on the worktree this test
+        creates. The precondition is now recorded rather than asserted, so the
+        test measures the distinction it is named for on any checkout.
+        """
+        _canonical_is_worktree = (REPO / ".git").is_file()
         sb = Path(tempfile.mkdtemp(prefix="cdsfl_flag"))
         wt = sb / "repo"
         rc = subprocess.run(["git", "worktree", "add", "--detach", str(wt), "HEAD"],
