@@ -142,9 +142,45 @@ class TestThereIsNoLongerAnException:
 
 class TestSimulatedAgentsGetTools:
     def test_the_shim_grants_a_shell(self):
-        src = (pathlib.Path(__file__).resolve().parents[1]
-               / "tools" / "sim_dispatch_shim.py").read_text(encoding="utf-8")
-        assert "--allowedTools" in src and "Bash" in src, (
+        """EXECUTED, not grepped (2026-09-04).
+
+        This asserted that the shim's SOURCE contains "--allowedTools" and
+        "Bash". That proves the file mentions the flag, not that the flag
+        reaches the process. The same pattern let `boundary_band_sensitivity`
+        ship as an unconditional constant: its guard read source text and made
+        no calls, while the producer and consumer disagreed about a key and
+        each described itself correctly.
+
+        Now the shim is CALLED with `subprocess.run` intercepted, and the
+        assertion is made against the argv the shim actually built.
+        """
+        import subprocess as _sp
+        import types
+
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "tools"))
+        import sim_dispatch_shim as SHIM
+
+        captured = {}
+
+        def _fake_run(argv, **kw):
+            captured["argv"] = list(argv)
+            return types.SimpleNamespace(stdout="ok", stderr="", returncode=0)
+
+        real = SHIM.subprocess.run
+        SHIM.subprocess.run = _fake_run
+        try:
+            dispatch = SHIM.make_shim()
+            mc = types.SimpleNamespace(label="SIM-A")
+            dispatch(mc, "prompt", "cdsfl", 0, True)
+        finally:
+            SHIM.subprocess.run = real
+
+        argv = captured.get("argv")
+        assert argv is not None, "the shim never invoked a subprocess at all"
+        assert "--allowedTools" in argv, (
+            f"the shim built a command without --allowedTools: {argv}")
+        i = argv.index("--allowedTools")
+        granted = argv[i + 1:]
+        assert "Bash" in granted, (
             "simulated panellists must be able to RUN a falsifier, not only "
-            "describe one"
-        )
+            f"describe one; tools granted were {granted}")

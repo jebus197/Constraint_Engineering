@@ -127,6 +127,19 @@ class TestTheWindowIsShutByDefault:
             assert not G._free_allowed(h)
 
 
+# THE OUTBOUND ATTEMPT IS THE THING UNDER TEST (2026-09-04).
+#
+# These four tests exist to prove the money guard DENIES a call. Proving that
+# requires making the call, so under --netguard-strict each one errored at
+# teardown: "this test attempted 1 outbound call(s)". The suite therefore
+# carried four permanent errors that had nothing to do with any change being
+# reviewed, and RECOVERY.md names precisely this hazard -- "a reviewer who has
+# learned to discount failures is a reviewer who will discount a real one."
+#
+# `@pytest.mark.allow_outbound` is the guard's own purpose-built exemption. It
+# does NOT permit the call: the call is still denied, which is what each test
+# asserts. It waives only the automatic teardown failure. This is the remedy
+# RECOVERY.md specifies verbatim for a deliberate attempt.
 class TestEnforcementNotJustPolicy:
     """CC2's methodological finding, third-pass review 2026-08-30.
 
@@ -137,6 +150,7 @@ class TestEnforcementNotJustPolicy:
     checks a predicate is not evidence for its own title.
     """
 
+    @pytest.mark.allow_outbound
     def test_curl_to_a_paid_host_is_DENIED_by_the_popen_guard(self):
         G.set_free_window(True)
         try:
@@ -146,6 +160,7 @@ class TestEnforcementNotJustPolicy:
         finally:
             G.set_free_window(False)
 
+    @pytest.mark.allow_outbound
     def test_curl_to_a_FREE_host_is_also_denied_inside_the_window(self):
         """The allow-list is one binary. Free hosts are reached in-process."""
         G.set_free_window(True)
@@ -155,6 +170,7 @@ class TestEnforcementNotJustPolicy:
         finally:
             G.set_free_window(False)
 
+    @pytest.mark.allow_outbound
     def test_a_raw_ip_socket_connect_is_DENIED_by_the_connect_guard(self):
         """The second breach, at the enforcement layer rather than the predicate."""
         G.set_free_window(True)
@@ -167,6 +183,7 @@ class TestEnforcementNotJustPolicy:
         finally:
             G.set_free_window(False)
 
+    @pytest.mark.allow_outbound
     def test_a_named_paid_host_is_DENIED_by_the_resolver_guard(self):
         G.set_free_window(True)
         try:
