@@ -1666,6 +1666,30 @@ class FindingRegistry:
         self.entries[canonical_id] = {
             "canonical_id": canonical_id,
             "source_model": model_id,
+            # THE OVERLAP RECORD (founder ruling 2026-09-04, decision 7 of the
+            # 2026-09-03 sheet). `source_model` names ONE model: whoever filed
+            # first. Measured 2026-09-02 (0C.49): 2 of 2,050 archived findings
+            # are recorded as raised by more than one model, because when two
+            # models find one defect the runner mints two unlinked canonicals
+            # and the second is merged away. The overlap signal is destroyed at
+            # exactly the point it is created, so a saturation curve built from
+            # source_model is linear BY CONSTRUCTION -- CC1 built one, got 0.201
+            # per seat, and withdrew it as an artefact of the schema.
+            #
+            # ADDITIVE ON PURPOSE. `source_model` has 12 live consumers in this
+            # file and none of them changes. This list is written beside it and
+            # read by nothing yet, which is what makes it a recording change
+            # rather than a behavioural one: it cannot move a verdict.
+            #
+            # Cost, measured across all 29 archived runs: median 832 bytes and
+            # 0.017 s per run, worst case 4,357 bytes and 0.267 s, against runs
+            # averaging 69.6 minutes.
+            "occasions": [{
+                "model": model_id,
+                "round": getattr(finding, "round_idx", 0),
+                "alias": finding.finding_id,
+                "via": "register",
+            }],
             "source_aliases": [finding.finding_id],
             "severity": finding.severity,
             # RAISED 500 -> 2000 on 2026-08-17. The 500 had been in place since
@@ -1759,6 +1783,26 @@ class FindingRegistry:
 
         entry = self.entries[canonical_id]
         previous = entry.get("status")
+
+        # CARRY THE OCCASIONS ACROSS A MERGE (founder ruling 2026-09-04).
+        # This is the line that makes co-discovery visible. A merge is the
+        # runner saying "these two reports are one defect"; without this, the
+        # duplicate's occasion dies with it and the target still looks like a
+        # single-model finding. Deduplicated on (model, round, alias) so a
+        # re-merge cannot inflate the count, which is the ghost-individual
+        # pathology from mark-recapture: failing to re-recognise an individual
+        # inflates the singleton class and biases the estimator upward.
+        if merged_into and merged_into in self.entries:
+            _tgt = self.entries[merged_into]
+            _have = {(o.get("model"), o.get("round"), o.get("alias"))
+                     for o in _tgt.get("occasions", [])}
+            for _occ in entry.get("occasions", []):
+                _key = (_occ.get("model"), _occ.get("round"), _occ.get("alias"))
+                if _key not in _have:
+                    _have.add(_key)
+                    _tgt.setdefault("occasions", []).append(
+                        dict(_occ, via="merge", merged_from=canonical_id,
+                             merged_round=round_idx))
 
         # ── TOOL-ONLY ENFORCEMENT (2026-08-22) ───────────────────────────────
         # `resolve` is the ONLY status write in the runner, so the vocabulary
