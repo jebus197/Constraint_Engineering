@@ -40,8 +40,45 @@ def _zero(expr):
     return sp.simplify(sp.together(expr)) == 0
 
 
-def _nonzero(expr):
-    return sp.simplify(sp.together(expr)) != 0
+def _witness_closed(expr):
+    """An off-condition residual that is already fully substituted.
+
+    The call sites pin the off-condition point inside the expression itself, so
+    there are no free symbols left that matter: nsimplify gives an exact value.
+    Where free symbols DO remain, they are positive reals and the expression is a
+    product or sum in them, so a non-zero exact coefficient is a witness.
+    """
+    val = sp.together(expr)
+    free = val.free_symbols
+    if free:
+        point = {s: sp.Rational(1, 3 + i) for i, s in enumerate(sorted(free, key=str))}
+        val = val.subs(point)
+    return sp.nsimplify(sp.simplify(val)) != 0
+
+
+def _witness(expr, point):
+    """Discrimination by an EXACT RATIONAL WITNESS, not by failure to simplify.
+
+    REFUTED BY fable, panel review 2026-09-05, and the refutation is deep.
+    The previous helper was `simplify(expr) != 0`, which means "simplify did not
+    reduce this to 0" and NOT "this is provably non-zero". Under Richardson's
+    theorem, equality involving exp, log and trigonometric functions is
+    undecidable in general, so a genuinely ZERO residual can survive simplify and
+    be certified as discrimination -- a wrong-model check that passes while
+    proving nothing. Executed: simplify DOES return 0 for exp(log(x)) - x and for
+    cos(x)**2 + sin(x)**2 - 1, so the hazard is not hypothetical, it is only that
+    those particular cases happen to be easy.
+
+    That is the Q4 rule of this very panel applied to the test suite's own
+    epistemics: an UNDISCHARGED result was being used to CONFIRM.
+
+    A discrimination claim is an EXISTS-claim -- "there is a point where S and F
+    differ" -- so ONE exact rational witness discharges it completely. Rationals,
+    not floats: a float comparison reintroduces the tolerance question this whole
+    module exists to remove.
+    """
+    val = sp.nsimplify(sp.together(expr).subs(point))
+    return val != 0
 
 
 class TestSection1_1_TheUnifiedEquation:
@@ -75,7 +112,7 @@ class TestSection1_1_TheUnifiedEquation:
                            (lambda R, k: sp.sin(R) + k ** 7, "sin(R)+q^7"),
                            (lambda R, k: R * (1 - k), "R*(1-q), plausible but wrong")):
             R = bad(bad(pi, q1), q2)
-            assert _nonzero(R - batch), f"a wrong update passed: {label}"
+            assert _witness_closed(R - batch), f"a wrong update passed: {label}"
 
     def test_the_closed_form_at_a_symmetric_prior(self):
         """L107: K=1, d_i=1, all p_ik=p, pi=1/2 -> R_n = (1-p)^n / (1+(1-p)^n).
@@ -90,7 +127,7 @@ class TestSection1_1_TheUnifiedEquation:
         m = (1 - p) ** n
         posterior = (pi * m) / ((1 - pi) + pi * m)
         assert _zero(posterior.subs(pi, sp.Rational(1, 2)) - m / (1 + m))
-        assert _nonzero(posterior.subs(pi, sp.Rational(1, 4)) - m / (1 + m))
+        assert _witness_closed(posterior.subs(pi, sp.Rational(1, 4)) - m / (1 + m))
 
     def test_perfect_detection_drives_residual_risk_to_zero(self):
         """L77: m_k -> 0 implies R_n -> 0 regardless of the prior."""
@@ -98,6 +135,14 @@ class TestSection1_1_TheUnifiedEquation:
         R = (pi * m) / ((1 - pi) + pi * m)
         assert sp.limit(R, m, 0) == 0
         assert sp.limit(R, m, 1) == pi            # L78: total miss leaves the prior
+        # DISCRIMINATION, added after fable identified this test as lacking it
+        # (panel review 2026-09-05). Both limits above are true of the appendix's
+        # posterior; neither would fail for a WRONG posterior that happens to
+        # share its endpoints. The interior value is what separates them.
+        wrong = pi * m                             # same endpoints, wrong interior
+        assert sp.limit(wrong, m, 0) == 0 and sp.limit(wrong, m, 1) == pi
+        assert _witness_closed(R.subs({pi: sp.Rational(1, 2), m: sp.Rational(1, 2)})
+                               - wrong.subs({pi: sp.Rational(1, 2), m: sp.Rational(1, 2)}))
 
 
 class TestSection0_1_TheIsingBranch:
@@ -106,11 +151,11 @@ class TestSection0_1_TheIsingBranch:
         """L36: psi_ij = 0 -> exponent 1, Z = 1, independent product."""
         q1, q2, psi = sp.symbols('q_1 q_2 psi', positive=True)
         assert _zero((q1 * q2 * sp.exp(psi)).subs(psi, 0) - q1 * q2)
-        assert _nonzero((q1 * q2 * sp.exp(psi)).subs(psi, 2) - q1 * q2)
+        assert _witness_closed((q1 * q2 * sp.exp(psi)).subs(psi, 2) - q1 * q2)
         Z = sum((q1 ** a * (1 - q1) ** (1 - a)) * (q2 ** b * (1 - q2) ** (1 - b))
                 * sp.exp(psi * a * b) for a in (0, 1) for b in (0, 1))
         assert _zero(Z.subs(psi, 0) - 1)
-        assert _nonzero(Z.subs(psi, 2) - 1)
+        assert _witness_closed(Z.subs(psi, 2) - 1)
 
 
 class TestSection1_6_Stage6ReducesToStage5:
@@ -122,18 +167,23 @@ class TestSection1_6_Stage6ReducesToStage5:
     def test_fully_novel_carries_no_penalty(self):
         eta, ei, ce, nk = self._eta()
         assert _zero(eta.subs(nk, 1) - ei)
-        assert _nonzero(eta.subs({nk: sp.Rational(1, 2), ce: sp.Rational(1, 2)}) - ei)
+        assert _witness_closed(eta.subs({nk: sp.Rational(1, 2), ce: sp.Rational(1, 2)}) - ei)
 
     def test_no_search_degrades_to_stage_5(self):
         eta, ei, ce, nk = self._eta()
         assert _zero(eta.subs(ce, 0) - ei)
-        assert _nonzero(eta.subs({ce: sp.Rational(1, 2), nk: sp.Rational(1, 2)}) - ei)
+        assert _witness_closed(eta.subs({ce: sp.Rational(1, 2), nk: sp.Rational(1, 2)}) - ei)
 
     def test_the_stated_partial_derivatives(self):
         """L290/L291, found by cc2 as untested and cheap."""
         eta, ei, ce, nk = self._eta()
         assert _zero(sp.diff(eta, nk) - ce * ei)
         assert _zero(sp.diff(eta, ce) - ei * (nk - 1))
+        # DISCRIMINATION, added after fable identified this test as lacking it.
+        # A wrong eta with the same value at one point would still fail these,
+        # so the check is on the DERIVATIVE of a wrong model.
+        wrong = ei * (1 - ce * (1 - nk) ** 2)      # differs only in the exponent
+        assert _witness_closed(sp.diff(wrong, nk) - ce * ei)
 
 
 class TestTheDetectionExtensions:
@@ -141,12 +191,12 @@ class TestTheDetectionExtensions:
     def test_delivery_feasibility_at_one(self):
         f, d, p = sp.symbols('f_del d p', positive=True)
         assert _zero((f * d * p).subs(f, 1) - d * p)
-        assert _nonzero((f * d * p).subs(f, sp.Rational(1, 2)) - d * p)
+        assert _witness_closed((f * d * p).subs(f, sp.Rational(1, 2)) - d * p)
 
     def test_delivery_and_format_both_at_one(self):
         f, ph, d, p = sp.symbols('f_del phi d p', positive=True)
         assert _zero((f * ph * d * p).subs({f: 1, ph: 1}) - d * p)
-        assert _nonzero((f * ph * d * p).subs({f: 1, ph: sp.Rational(1, 2)}) - d * p)
+        assert _witness_closed((f * ph * d * p).subs({f: 1, ph: sp.Rational(1, 2)}) - d * p)
 
     def test_class_specific_diversity_collapses_ACROSS_CLASSES(self):
         """L420 — CORRECTED. cc2 refuted the first version, which collapsed the
@@ -164,17 +214,17 @@ class TestTheDetectionExtensions:
         collapse = {d11: di, d12: di, d21: di, d22: di}
         assert _zero(general.subs(collapse) - structured)
         partial = {d11: di, d12: di, d21: di, d22: di / 2}   # one class differs
-        assert _nonzero(general.subs(partial) - structured)
+        assert _witness_closed(general.subs(partial) - structured)
 
     def test_zero_deferral(self):
         tau, Fd, Ff = sp.symbols('tau F_d F_f', positive=True)
         assert _zero((sp.exp(-tau) * (Fd / Ff)).subs(tau, 0) - Fd / Ff)
-        assert _nonzero((sp.exp(-tau) * (Fd / Ff)).subs(tau, 1) - Fd / Ff)
+        assert _witness_closed((sp.exp(-tau) * (Fd / Ff)).subs(tau, 1) - Fd / Ff)
 
     def test_neutral_decomposition(self):
         e, d, p = sp.symbols('eta_dec d p', positive=True)
         assert _zero((e * d * p).subs(e, 1) - d * p)
-        assert _nonzero((e * d * p).subs(e, sp.Rational(1, 2)) - d * p)
+        assert _witness_closed((e * d * p).subs(e, sp.Rational(1, 2)) - d * p)
 
 
 class TestSeverityAndScope:
@@ -189,18 +239,18 @@ class TestSeverityAndScope:
         L_n = s1 * R1 + s2 * R2
         R_n = w1 * R1 + w2 * R2
         assert _zero(L_n.subs({s1: w1, s2: w2}) - R_n)
-        assert _nonzero(L_n.subs({s1: w1, s2: 2 * w2}) - R_n)
+        assert _witness_closed(L_n.subs({s1: w1, s2: 2 * w2}) - R_n)
 
     def test_no_domain_variables(self):
         E, M, al, lam, V = sp.symbols('E M alpha lam V_s', positive=True)
         base = E * (al + (1 - al) * M)
         assert _zero((base * (1 + lam * V)).subs(V, 0) - base)
-        assert _nonzero((base * (1 + lam * V)).subs(V, 1) - base)
+        assert _witness_closed((base * (1 + lam * V)).subs(V, 1) - base)
 
     def test_no_follow_step_reduces_FFF_to_standard_confer(self):
         sig, D = sp.symbols('sigma D_found', positive=True)
         assert _zero((D * (1 + sig)).subs(sig, 0) - D)
-        assert _nonzero((D * (1 + sig)).subs(sig, 1) - D)
+        assert _witness_closed((D * (1 + sig)).subs(sig, 1) - D)
 
 
 class TestSection7_1_TheDuaneRelationship:
@@ -215,7 +265,7 @@ class TestSection7_1_TheDuaneRelationship:
         at_half = sp.simplify(lam.subs(beta, sp.Rational(1, 2)))
         sigma = 1 / (2 * sp.sqrt(eta))
         assert _zero(at_half - sigma / sp.sqrt(t))
-        assert _nonzero(sp.simplify(lam.subs(beta, sp.Rational(3, 4))) - sigma / sp.sqrt(t))
+        assert _witness_closed(sp.simplify(lam.subs(beta, sp.Rational(3, 4))) - sigma / sp.sqrt(t))
 
 
 class TestSection7_2_TheAbstractionIndex:
@@ -226,7 +276,7 @@ class TestSection7_2_TheAbstractionIndex:
         H = c * 1 * sp.log(sp.E + We / (Wc + 1)) * (
             1 + g1 * sp.log(1 + Ncm) + g2 * sp.log(1 + Dref))
         assert _zero(H.subs({We: 0, Ncm: 0, Dref: 0}) - c)
-        assert _nonzero(H.subs({We: 0, Ncm: 1, Dref: 0}) - c)
+        assert _witness_closed(H.subs({We: 0, Ncm: 1, Dref: 0}) - c)
 
     def test_the_density_term_is_one_ONLY_at_zero_evidence(self):
         """SOLVED rather than spot-checked. The first version sampled
@@ -280,6 +330,43 @@ class TestSection0_1_TheBoundednessConstraintIsMisjustified:
                        for a in (0, 1) for b in (0, 1)]
             assert all(w >= 0 for w in weights), f"a weight went negative at psi={psi}"
 
+
+    def test_what_the_constraint_WOULD_bound_if_it_were_needed(self):
+        """A FIX, not merely a refutation. The founder's standing position is that
+        a review returning only problems is of limited value.
+
+        If the model were UNNORMALISED -- no partition function, so P(x) had to be
+        at most 1 directly -- a bound WOULD be needed. It is not the stated one.
+        The all-ones state carries the full coupling and has unnormalised weight
+        prod(q_i) * exp(sum psi), so the requirement is
+        sum(psi) <= -sum(log(q_i)). The appendix writes -sum(log(1 - q_i)).
+
+        The argument is wrong, and the error is not cosmetic. At q = 0.9 with 2
+        passes the stated bound is 4.6052 and admits an unnormalised all-ones
+        weight of 81; the correct bound is 0.2107 and admits exactly 1. Worse, the
+        all-zeros state carries exp(0) = 1, so no coupling can affect it -- a
+        bound expressed in terms of (1 - q_i) constrains the single state the
+        coupling does not touch.
+
+        PROPOSED RESOLUTION, for the founder: with Z present the constraint is
+        unnecessary in either form and the justification should be struck. If it
+        is retained for numerical conditioning -- a real concern, since exp
+        overflows -- it should say so and cite the overflow threshold, not
+        non-negativity.
+        """
+        q1, q2, psi = sp.symbols('q_1 q_2 psi', positive=True)
+        # the requirement that the all-ones UNNORMALISED weight not exceed 1
+        derived = sp.solve(sp.Eq(q1 * q2 * sp.exp(psi), 1), psi)[0]
+        assert _zero(sp.expand_log(derived, force=True)
+                     - (-sp.log(q1) - sp.log(q2)))
+        # and the appendix's form is a DIFFERENT quantity
+        stated = -sp.log(1 - q1) - sp.log(1 - q2)
+        assert _witness_closed(sp.expand_log(derived, force=True) - stated)
+        # numerically, the stated bound admits a weight far above 1
+        at_stated = (q1 * q2 * sp.exp(stated)).subs({q1: sp.Rational(9, 10),
+                                                     q2: sp.Rational(9, 10)})
+        assert float(at_stated) > 1
+
     def test_the_reason_is_exp_being_strictly_positive(self):
         """The one-line argument, stated symbolically so it cannot be mislaid."""
         x = sp.Symbol('x', real=True)
@@ -299,13 +386,13 @@ class TestTheReductionsTheRegexCouldNotSee:
         """L516: d_config = 1 for all pairs -> d_ik = d_weight."""
         dw, dc = sp.symbols('d_weight d_config', positive=True)
         assert _zero((dw * dc).subs(dc, 1) - dw)
-        assert _nonzero((dw * dc).subs(dc, sp.Rational(1, 2)) - dw)
+        assert _witness_closed((dw * dc).subs(dc, sp.Rational(1, 2)) - dw)
 
     def test_no_re_injection_gives_the_standard_duane_model(self):
         """L838: nu = 0 -> lambda_ext = lambda."""
         lam, nu, delta = sp.symbols('lambda nu Delta', positive=True)
         assert _zero((lam + nu * delta).subs(nu, 0) - lam)
-        assert _nonzero((lam + nu * delta).subs(nu, sp.Rational(1, 2)) - lam)
+        assert _witness_closed((lam + nu * delta).subs(nu, sp.Rational(1, 2)) - lam)
 
     def test_no_restart_reduces_the_full_model_to_the_extended_one(self):
         """L856, both clauses: I = 0 -> lambda_full = lambda_ext; and with
@@ -315,7 +402,7 @@ class TestTheReductionsTheRegexCouldNotSee:
         ext = lam + nu * delta
         full = ext + mu * I * D
         assert _zero(full.subs(I, 0) - ext)
-        assert _nonzero(full.subs(I, 1) - ext)
+        assert _witness_closed(full.subs(I, 1) - ext)
         assert _zero(full.subs({I: 0, nu: 0}) - lam)
 
     def test_the_duane_intensity_decreases_for_beta_below_one(self):
@@ -341,18 +428,18 @@ class TestTheGnReductionTable:
         """n_H = 0 makes C_H an empty product, so C_H = 1 - 1 = 0."""
         G, w, CM, CH, rho = self._G()
         assert _zero(G.subs(CH, 0) - w * CM)
-        assert _nonzero(G.subs(CH, sp.Rational(1, 2)) - w * CM)
+        assert _witness_closed(G.subs(CH, sp.Rational(1, 2)) - w * CM)
 
     def test_full_priming_reduces_G_n_to_F_n(self):
         """rho_MH = 1: the human's contribution is fully absorbed."""
         G, w, CM, CH, rho = self._G()
         assert _zero(G.subs(rho, 1) - w * CM)
-        assert _nonzero(G.subs(rho, sp.Rational(1, 2)) - w * CM)
+        assert _witness_closed(G.subs(rho, sp.Rational(1, 2)) - w * CM)
 
     def test_full_independence_gives_the_multiplicative_combination(self):
         G, w, CM, CH, rho = self._G()
         assert _zero(G.subs(rho, 0) - w * (1 - (1 - CM) * (1 - CH)))
-        assert _nonzero(G.subs(rho, sp.Rational(1, 2))
+        assert _witness_closed(G.subs(rho, sp.Rational(1, 2))
                         - w * (1 - (1 - CM) * (1 - CH)))
 
     def test_no_methodology_reduces_human_detection_to_the_expertise_floor(self):
@@ -360,7 +447,7 @@ class TestTheGnReductionTable:
         E, M, al = sp.symbols('E M alpha', positive=True)
         f = E * (al + (1 - al) * M)
         assert _zero(f.subs(M, 0) - al * E)
-        assert _nonzero(f.subs(M, sp.Rational(1, 2)) - al * E)
+        assert _witness_closed(f.subs(M, sp.Rational(1, 2)) - al * E)
 
     def test_the_C_of_n_ROW_IS_DEFECTIVE_AS_STATED(self):
         """cc2's finding, reproduced: the row "K=1, d=1, uniform p -> C(n)"
@@ -372,7 +459,14 @@ class TestTheGnReductionTable:
         with it. Amending the appendix is a founder decision.
         """
         G, w, CM, CH, rho = self._G()
-        # with a human stream present, G_n keeps a C_H-dependent term
-        assert _nonzero(G.subs({rho: 0, CH: sp.Rational(1, 2)}) - w * CM)
-        # the row holds only once the human stream is removed
-        assert _zero(G.subs({rho: 0, CH: 0}) - w * CM)
+        # with a human stream present AND no priming, G_n keeps a C_H term
+        assert _witness_closed(G.subs({rho: 0, CH: sp.Rational(1, 2)}) - w * CM)
+        # CORRECTED 2026-09-05 after cgpt and fable BOTH refuted the first fix
+        # independently: n_H = 0 is SUFFICIENT but NOT NECESSARY. Full priming
+        # removes the human contribution just as completely, because the term is
+        # C_H * (1 - rho_MH) and rho_MH = 1 annihilates it whatever C_H is.
+        # The row's missing condition is therefore a DISJUNCTION.
+        assert _zero(G.subs({rho: 0, CH: 0}) - w * CM)                  # n_H = 0
+        assert _zero(G.subs({rho: 1, CH: sp.Rational(1, 2)}) - w * CM)  # rho_MH = 1
+        # and it holds for ANY C_H once fully primed, which is the point
+        assert _zero(G.subs({rho: 1}) - w * CM)
