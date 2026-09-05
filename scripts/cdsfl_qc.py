@@ -276,8 +276,24 @@ def check_test_consistency(root: Path) -> list[dict]:
 
     # Phrasings actually used: "2099 passed", "2102 collected", and the older
     # "N tests pass" / "N tests collected".
-    doc_passed = _unique_ints(r"(\d+)\s+(?:tests?\s+)?pass(?:ed)?\b", current_section)
-    doc_collected = _unique_ints(r"(\d+)\s+(?:tests?\s+)?collected\b", current_section)
+    # A COUNT FOR ONE FILE IS NOT A SUITE COUNT (2026-09-05).
+    #
+    # This scanned the whole current section and compared every "N passed"
+    # against the SUITE total. The 2026-08-28 narrative records that blinding
+    # test_immune_memory_consumption.py took that FILE "from 45 passed to 33
+    # passed, 12 SKIPPED" -- a per-file count, in prose describing a finding.
+    # Both were reported STALE against the suite's 4876, which is a category
+    # error: the document is not claiming the suite passed 45.
+    #
+    # The discriminator is that a suite count never names a single test file.
+    # Lines mentioning a .py file are therefore excluded from the count scan
+    # and only from it; everything else about the section is unchanged. A
+    # genuine stale suite figure, which carries no filename, is still caught --
+    # asserted by the P-pass recorded in the commit that made this change.
+    _count_lines = "\n".join(
+        l for l in lines[:RECOVERY_CURRENT_SECTION_LINES] if ".py" not in l)
+    doc_passed = _unique_ints(r"(\d+)\s+(?:tests?\s+)?pass(?:ed)?\b", _count_lines)
+    doc_collected = _unique_ints(r"(\d+)\s+(?:tests?\s+)?collected\b", _count_lines)
 
     # A DELIBERATE ABSENCE IS NOT A BLIND CHECK (2026-08-12).
     #
