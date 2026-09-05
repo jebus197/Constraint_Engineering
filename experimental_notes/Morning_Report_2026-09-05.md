@@ -253,3 +253,60 @@ Every one was caught by **running** something, not by reading.
 `main` is **84 commits** ahead of `origin/main`, unpushed.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+---
+
+# Part 3 — the builds returned, and none is clean
+
+**Appended 2026-09-05 07:05 BST.** The 4 parallel builds finished; each was then checked by a separate adversarial reviewer instructed to find what is wrong. **Not 1 of 4 came back clean.**
+
+## D8 — the flakiness is gone, and Part 2's entry needs correcting
+
+Part 2 recorded D8 as held back at 2 of 5 runs failing. The builder found and fixed the cause. Re-measured post-fix: **0 failures in 16 runs** (10 idle + 6 under deliberate load), Wilson [0.0%, 19.4%], Clopper-Pearson [0.0%, 20.6%].
+
+**Caveat that cannot be removed:** the failing version was untracked and has been overwritten, so it cannot be re-run. The improvement is *consistent with* the fix but not separable from the fact that the failures were measured while 2 workflows loaded the machine.
+
+**Headline reproduced independently** (`python3 -m bench.execution_based_matcher --compare exp44`):
+
+| Metric | Value |
+|---|---|
+| pairs / execution-decided | 15 / 12 |
+| disagreements with text matcher | 7 of 12 (58.3%, Wilson [32.0%, 80.7%]) |
+| text merges what execution separates | **7 of 7** |
+| text separates what execution merges | **0** |
+| sign test on the direction | p = **0.0156** (scipy + hand-computed, identical) |
+| agreement with the *independent* stored repair adjudicator | **12 of 15 = 80%**, Wilson [54.8%, 93.0%] |
+| all 3 referee disagreements | rows whose stored detail carries an **ERROR leg** |
+
+Survey across 4 archived code-target runs: 4,511 pairs, 643 text-duplicate, **rate 0.14254**.
+
+### A repo-safety defect that is NOT D8's fault
+
+D8's docstring claims *"the repository is never written to."* **False, and reproduced here independently before reporting.**
+
+`_build_discrimination_overlay` builds a symlink tree — every file except the target is a symlink to the real file — and `profile()` hashes **only the target**. A falsifier writing to any sibling writes through the link into the real working tree, undetected. Demonstrated in a throwaway repo: sibling overwritten with `CLOBBERED BY FALSIFIER`, real file changed, **guard did not fire**.
+
+**The builder is the runner's** (`reference_runner_v3.py:3442`), already used by the discrimination control at `:4187` and `:4228`. So this is a **pre-existing hole D8 inherits and would amplify** — 81 executions versus 1 at the gate. Both default-off. Project memory already records *panel agents edit the repo mid-run, caught twice*; this is the same shape one level down.
+
+**Second defect:** the `except` path in `_run` (`:340`) has zero coverage. Replacing `HARNESS_ERROR:{type}` with `"REFUTED"` leaves **20/20 green** and converts an equipment failure into a false `SAME` — verbatim the failure the module's own comment names.
+
+## Line 13, "Can you fix?" — the answer is **no**
+
+Verbatim from the builder: *"THE PREMISE IS FALSE AND THE HONEST ANSWER IS 'NO, NOT AS STATED'. FFAFP cannot be enforced mechanically, and I should not have said it could."*
+
+Find and Follow happen in reasoning; a hook sees the tool-call record and nothing else. It cannot tell a real test from a tautological one — **all 3 of this project's constant-42 tautology tests would satisfy such a detector.**
+
+Built instead: a **one-sided trace detector**, `~/.claude/hooks/ffafp_audit.py`, named `ffafp_audit` not `ffafp_enforce`. Absence of a trace is evidence (a turn that edited Python and ran no test, assert or STEM tool did not P-pass); presence proves nothing. Docstring lists 5 false-negative and 4 false-positive modes.
+
+**Reviewer verdict: PARTIALLY REFUTED.** 40 mutations, 33 killed, **7 survived**. 3 of 4 headline discrimination claims hold only for the P-pass limb; 1 of 3 verdict codes can be deleted with the suite green. **Not wired** — `settings.json` stanza described, not applied.
+
+## D9/D11 and D10
+
+- **D9/D11 — PARTIALLY VERIFIED.** One claimed discrimination **refuted by execution**; 6 defects confirmed. Useful correction: seat contrast was removed in `556e0af` on 2026-04-02 and **not cleanly** — a residual contrast survives. Design problem flagged: **seat count is confounded with vendor diversity**, and 3 arms cannot separate them; a 4th arm is needed.
+- **D10 — VERIFIED**, but the claimed discrimination figure is overstated and 9 of 10 unkillable guards were undisclosed.
+
+## A mistake made and corrected during this work
+
+Testing D8 under deliberate load, 4 CPU-spinner processes were started and **not successfully stopped** — `jobs -p` does not capture them in a non-interactive shell. They ran **7 minutes at ~85% each** before being noticed and killed (PIDs 25633-25636). Same class the founder had to clean up manually once before. It also slowed the concurrent full-suite run.
+
+Written under CDSFL note standard v1.7 (26 August 2026).

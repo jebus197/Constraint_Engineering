@@ -713,3 +713,76 @@ class TestSingleSeatQuorumDegenerates:
             "Arm A is exposed to a confirmation quorum that degenerates at "
             "panel size 1 and its config does not say so")
         assert "CORROBORATED" in arm["_single_seat_quorum_hazard"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. The launch preflight would let all 3 arms start.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestLaunchPreflight:
+    """`preflight_target_machinery` is the A9 refusal gate. A configuration it
+    refuses is discovered after the launcher is invoked, which on a paid arm is
+    the expensive place to find out. Driven here with the target kind the
+    harness itself resolves, not with one chosen by the caller."""
+
+    @pytest.mark.parametrize("name", ARM_FILES)
+    def test_no_arm_is_refused_by_the_machinery_preflight(self, name):
+        from bench.reference_runner_v3 import preflight_target_machinery
+        cfg_dict = _load(name)
+        target = str(REPO / cfg_dict["test_article"])
+        kind, _ = resolve_target_kind(
+            target, None, cfg_dict.get("target_kind") or None)
+        rc = build_runner_config_from_dict(copy.deepcopy(cfg_dict), _ARGS)
+        assert preflight_target_machinery(rc, target, kind) == []
+
+    def test_the_preflight_would_refuse_a_routing_off_prose_run(self):
+        """Discrimination, and it names why the arms are exempt. The absorber
+        refusal is gated on a PROSE target; these arms review a Python module,
+        where the falsifier gate reaches its target by import. A guard that
+        cannot refuse anything is not a guard."""
+        from bench.reference_runner_v3 import (
+            TARGET_KIND_PROSE, preflight_target_machinery)
+        rc = build_runner_config_from_dict(
+            copy.deepcopy(_load("d9_multi_model_panel.json")), _ARGS)
+        refusals = preflight_target_machinery(
+            rc, str(REPO / "bench/cdsfl_registry/targets/"
+                    "control_two_distinct_defects.md"), TARGET_KIND_PROSE)
+        assert any("routing_enabled is false" in r for r in refusals), refusals
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. The premise of the whole design: the diversity claim has never had a
+#     control, because no configuration has ever declared a panel subset.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_no_earlier_configuration_declares_a_panel_subset():
+    """MEASURED across every shipped configuration outside Exp 56: all 42
+    declare the same 5 seats, so `cfg.models` and `exp_config.models` have
+    always agreed and no run in the archive is a single-model or 2-seat
+    comparison. That is why D9's question has never been answered, and it is
+    also why the 3 full-roster reads in section 4 above were latent.
+
+    If this goes red because another experiment now declares a subset, that is
+    information rather than breakage: update the count in
+    D9_D11_Experiment_Design_2026-09-05.md and check whether that experiment is
+    exposed to the same leaks.
+    """
+    sizes = {}
+    for path in sorted(REPO.glob("bench/exp*_configs/*.json")):
+        if path.parent.name == "exp56_configs":
+            continue
+        try:
+            models = json.loads(path.read_text(encoding="utf-8")).get("models")
+        except (OSError, ValueError):
+            continue
+        if isinstance(models, list):
+            sizes.setdefault(len(models), []).append(path.name)
+    assert sizes, "no earlier configurations found; the scan is measuring nothing"
+    subsets = {n: f for n, f in sizes.items() if n < 5}
+    assert not subsets, (
+        f"a configuration outside Exp 56 now declares fewer than 5 seats: "
+        f"{subsets}. Counts by panel size: "
+        f"{ {n: len(f) for n, f in sizes.items()} }")
+    assert list(sizes) == [5], (
+        f"panel sizes found outside Exp 56: "
+        f"{ {n: len(f) for n, f in sizes.items()} }")
