@@ -158,3 +158,98 @@ All 4 responding seats agree process machinery is needed, and 2 proposed **compo
 - `main` is **81 commits** ahead of `origin/main`; tonight's work is uncommitted.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+---
+
+# Part 2 — the agreed task list, worked
+
+**Appended 2026-09-05 05:57 BST.** Part 1 covered the panel rerun. This covers the 01:25 ruling list, which was the larger job and was not started when Part 1 was written.
+
+**A correction first.** Asked whether the panel was the only job, the honest answer was no — only the panel had been done. Worse, the RTF containing the list was *skimmed*: grepped for verdict keywords, then read as one `sed` slice. That missed 3 annotations, one of them a direct instruction (`line 13`, "Can you fix?"), on the very document whose closing line warns against skimming. What follows comes from reading all 64 lines.
+
+## Item 8 — the 2 appendix defects — **APPLIED**
+
+Ruling: *"If you have [asked the models], then simply do the fix."* 4 seats had reviewed across 2 rounds. Every finding re-verified locally with 2 or 3 tools before touching `docs/MATHEMATICAL_APPENDIX.md`.
+
+| Defect | Correction | Verified by |
+|---|---|---|
+| L38 justification (non-negativity) | Struck — `exp(x) > 0` always; `Z` already bounds `P(x)` | SymPy, mpmath, Wolfram |
+| **My own** replacement bound | Refuted — all-ones is insufficient for n ≥ 3 | 3 tools, all return **19** exactly |
+| Complement error character | **NEW** — crosses over at exactly `q = 1/2`; above ½ it *under*-constrains | SymPy `solve`, Wolfram `Solve` |
+| G_n reduction row | States exact residual `w·C_H·(1−ρ)·(1−C_M)` | SymPy + Wolfram `Reduce` (supplied `w=0`) |
+| L688–695 illustration | Spliced + row-shifted; C_H 0.698 → 0.921095; 0.851→**0.825**, 0.748→**0.689** | `scripts/verify_appendix_numerical_illustration.py`, 6/6 rows |
+
+Counterexample detail: n=3, q=1/20, entire all-ones budget `3·log20 = 8.9872` on ψ₁₂ satisfies that bound *with equality* while state {1,2} carries unnormalised weight `(1−q)/q = 19`.
+
+Tests **31 → 35**: the refuted bound test replaced by 4 discriminating ones.
+
+## Item 6 — D12 commissioning — **DONE, premise false**
+
+"Reachable by no configuration" ceased to be true on 2026-07-29 / 07-31. Executing probe through `build_runner_config_from_dict`: **71 of 72** fields arrive intact (the exception, `resume`, is read from `args` by design). What was missing was end-to-end evidence — now `bench/tests/test_d12_commissioning_end_to_end_2026-09-05.py`, **20 tests**, each comparing ON against OFF.
+
+Still enabled in **0** shipped configs, deliberately: switching either on changes convergence conditions.
+
+## Item 2 — the discharge rule — **STATED**
+
+`experimental_notes/The_Discharge_Rule_And_Its_Alternative_2026-09-05.md`. Both options written in adoptable form, with a worked example on 2 adjacent appendix lines.
+
+## Item 1 — the fix-acceptance gate — **WITHDRAWN, premise refuted**
+
+1. "0 of 3816" had **no committed script** — 1 day after the ruling requiring one. Third repeat. `scripts/measure_sk_threshold_gate_fire_rate.py` reproduces it: **0 of 3816**, Wilson [0.0000, 0.0010], cross-checked vs statsmodels. The "400 error-path lines" is **376**.
+2. That script's first version counted the bare phrase `"(Valley of Bad Fixes)"` → 11 hits, **all** models discussing the concept in transcripts. Phrase-mentions as events, same class as the 1,577-mention miscount. Both patterns now anchored on the emitted line format.
+3. **The shipped S\* formula is correct.** Re-derived from the runner's own `nu_eff`: SymPy gives `derived − shipped = 0`; z3 returns `unsat` searching for any point where the gate condition differs from `nu_eff ≤ nu*`.
+4. **The real defect is the σ conflation** — ν\* is evaluated at σ=1 while σ *is* s_k. Correcting flips **3.215%** of decisions over 400,000 points with s_k ≥ 0.74, Wilson [3.161%, 3.270%], **every flip PASS → REJECT**. So "provably inert" is false.
+5. `s_star` reads **0.0 in 3816 of 3816**. At shipped defaults it clamps to 0 for `qR ≥ 0.24` and to 1 for `qR ≤ 0.05` — the gate discriminates only inside `qR ∈ (0.05, 0.24)`.
+
+**Applied** (additive, unambiguous): `reference_runner_v3.py` now records `gate_inputs` — `nu_b`, `nu_f`, `q`, `R_old`, `s_floor`, `effective_threshold`. Not 1 of 3816 records carried them, which is why the first explanation *inferred* `nu_f = 0` and was wrong.
+
+**Composed action stays unapplied** — the attached condition was model review, and the panel record has 0 mentions of it.
+
+## Item 7 — D13 rubric — **BOTH QUESTIONS ANSWERED**
+
+`scripts/reproduce_rubric_human_queue_partition.py` reproduces the panel exactly: 286 items, 27 UNJUDGEABLE, 259 judgeable, 141 agree = **54.44%** Wilson [48.4%, 60.4%], 33 falsifier-era disagreements, **A=27 (81.8%) B=2 (6.1%) C=0 D=4 (12.1%)**, 87.9% decided programmatically.
+
+**Q1, who adjudicates? Nobody.** A 4-way schema lookup, not a judgement. Only class D reaches a person, as a *decision* (commission a falsifier?), never a severity judgement.
+
+**Q2, are the 4 irreducible? No — and worse.** Hypothesis that they were already tool-settled (status is tool-only; `CONFIRMED` ≡ "a falsifier fired") was **refuted twice**: the enforcement making tool-only statuses unfakeable landed **2026-08-23** (`b312b84`) and all 4 runs predate it; and **0 of 4 carry any `falsifier_code`**. Their status came from model verdicts — CC2 CONFIRM, DeepSeek CONFIRM, Codex/ChatGPT CONFIRM. **Confirmation by model vote, which the project forbids.**
+
+**Wider:** **118 of 864** archived findings with a tool-only status have no falsifier code — **13.66%**, Wilson [11.53%, 16.11%] (CONFIRMED 65, CLOSED 28, REFUTED 13, MERGED 12; MERGED legitimately needs none → ~106 concerning). All pre-2026-08-23.
+
+## Items 4, 5 and line 13
+
+- **D9 + D11** — 3 configs in `bench/exp56_configs/` + design note, **69 tests** driving each through the launcher path. **Not launched** (paid dispatches).
+- **D10** — `bench/seeded_defect_catalogue.py` built, under verification.
+- **Line 13, "Can you fix?"** — `~/.claude/hooks/ffafp_audit.py`, **33 tests**. Reports missing FFAFP traces; does not block, because a heuristic block gets disabled and a false block is worse than a missed reminder. `settings.json` **not** edited — stanza reported.
+
+## Held back
+
+**D8 execution-based matcher** — builds, 20 tests, but **flaky: 2 of 5 consecutive runs fail**, Wilson [11.8%, 76.9%] on n=5. A flaky test reads as green, so it is not recorded as done.
+
+## What was got wrong — 7 refuted claims
+
+| Claim | Reality |
+|---|---|
+| "Repair is provably inert" | Flips 3.215% of decisions, all PASS→REJECT |
+| "400 error-path lines" | 376 |
+| "Route 2 shows 0 occurrences" | First script showed 11 — all phrase-mentions |
+| CI "[9.7%, 70.0%]" | Wilson, unlabelled; Clopper-Pearson is [4.3%, 77.7%] |
+| "3 orders past the bound" | Parameter-dependent; 3.81 at the values used |
+| "ν_f = 0" | Inferred, not measured — wrong |
+| "The 4 were tool-settled" | Refuted; confirmed by model vote |
+
+Every one was caught by **running** something, not by reading.
+
+## Outstanding decisions
+
+1. Discharge rule, or its alternative.
+2. Correct the gate's σ conflation, now that inertness is disproved.
+3. Commission 4 falsifiers → human queue to 0.
+4. What to do about the 118 archived findings with unbacked tool-only status.
+5. Launch the D9/D11 comparison (paid).
+6. Enable either D12 setting in a real config (changes experimental conditions).
+7. Wire the FFAFP audit hook into `settings.json`.
+8. The reach normalisation `ν_eff = ν/|D|` — the only item that changes the mathematics.
+
+`main` is **84 commits** ahead of `origin/main`, unpushed.
+
+Written under CDSFL note standard v1.7 (26 August 2026).
