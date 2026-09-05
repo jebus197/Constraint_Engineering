@@ -310,3 +310,58 @@ Built instead: a **one-sided trace detector**, `~/.claude/hooks/ffafp_audit.py`,
 Testing D8 under deliberate load, 4 CPU-spinner processes were started and **not successfully stopped** — `jobs -p` does not capture them in a non-interactive shell. They ran **7 minutes at ~85% each** before being noticed and killed (PIDs 25633-25636). Same class the founder had to clean up manually once before. It also slowed the concurrent full-suite run.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+---
+
+# Part 4 — the full suite, and 3 guards that were wrong
+
+**Appended 2026-09-05 07:16 BST.** Suite run twice, before and after the fixes below.
+
+**First run: `8 failed, 5144 passed`.** Every failure traced to work added tonight, so each was diagnosed rather than patched to green. **3 of the 4 guards were measuring the wrong thing.**
+
+| Guard | Verdict | Why |
+|---|---|---|
+| `test_operational_scripts` exit-code check | **FALSE POSITIVE**, 2nd of its class | substring-matched 2 literal spellings |
+| `test_launch_preflight_refuses` | **FALSE POSITIVE** — acting on it would void Exp 56 | hardcoded `TARGET_KIND_PROSE` |
+| `claims_audit.merge_arbitration_default` | **WRONG SENSITIVITY** | 1 never-run config flips a claim about runs |
+| `EXPERIMENT_RUN_LEDGER.md` | **NOT A DEFECT** | derived; regenerated |
+
+## 1. Exit-code check — the same false positive, one spelling later
+
+Matched exactly `sys.exit(main())` / `raise SystemExit(main())`. Its own comment records fixing this on **2026-08-16 by adding the second spelling** — the same instrument with a longer list.
+
+**Measured by execution**, 4 probe scripts, shell exit codes read:
+
+| Entrypoint | Exit | Verdict |
+|---|---|---|
+| `main(sys.argv)` (bare) | 0 | correctly a violation |
+| `raise SystemExit(main())` | 3 | accepted |
+| `raise SystemExit(main(sys.argv))` | 3 | **flagged, and it propagates** |
+| `sys.exit(main(sys.argv[1:]))` | 3 | **flagged, and it propagates** |
+
+Replaced with an `ast`-based check asking the structural question — is the `main()` call inside `sys.exit(...)` or `SystemExit(...)`? — which is spelling- and argument-independent. A new test pins the argument-passing forms and still rejects a bare call. A third spelling would have repeated the mistake a third time.
+
+## 2. Preflight — acting on it would have voided the experiment
+
+It passed `TARGET_KIND_PROSE` for every config. The absorber refusal is **gated on prose**, so the 3 Exp 56 arms (target: `bench/cdsfl_registry/engine.py`) were flagged for a refusal unreachable at launch.
+
+The obvious repair — enable `routing_enabled` — **would have silently destroyed the comparison.** Routing is off in all 3 arms deliberately: with 1 seat in Arm A the ladder is built from the orchestrator's full 5-seat roster and pulls in exactly the 4 vendors that arm exists to do without (design note line 74; `rank_falsifier_writers(['CC2'], exclude=['CC2'])` returns 0 rungs, the full roster returns 4). Fixed by calling `resolve_target_kind` per config.
+
+## 3. Merge arbitration — wrong sensitivity
+
+Returned False only while **no** config disabled it (`on and not off`), so one never-executed config flips a claim about what **runs** used. The Exp 56 arms disable it deliberately to stop the arbitration context arming with the full roster inside the single-model arm; the explicit `false` is kept, not omitted, so the run cannot depend on a dataclass default. Now weighs `on > off`.
+
+## 4. Ledger — regenerated
+
+Derived from `bench/logs`; adding configs moved it. Regenerated → matches, **56 run directories**. Gap-set expectation `{50,51,52}` → `{50,51,52,56}`, since a planned experiment with configs and no runs is precisely "configured but never ran". Its real subject — exp54 has *neither*, and a config-only scan misses it — is untouched.
+
+## Result
+
+**`5153 passed, 0 failed`** under `--netguard-strict`; 45 outbound attempts across 19 tests, all denied. Arithmetic consistent: 5144 + 8 = 5152, +1 new guard test = 5153.
+
+## Two more of my own mistakes
+
+- **`git add -A` swept an agent's script into a commit unreviewed.** Reviewed after the fact and kept: `scripts/verify_rtf_annotation_attribution.py` answers the founder's 2026-09-04 question about whether a missing `#` jumbled annotation authorship — and answers it *without using `#`*, partitioning the RTF by Word `insrsid` revision ids. Measured: **72 founder-typed blocks, 0 unmarked, 0 `#` in CC1 text.**
+- **Its interface was broken**: usage advertised `--falsify` while argv was hand-parsed, so `--help` showed nothing argparse-shaped and `--falsfy` was silently dropped rather than refused — the falsification pass would quietly not run while output still looked clean. Now argparse, `nargs="*"` so an unknown flag is reported before a missing filename.
+
+Written under CDSFL note standard v1.7 (26 August 2026).
