@@ -1,9 +1,33 @@
 # Recovery Protocol
 
-Last updated: 5 September 2026 00:11 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 5 September 2026 12:13 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
+
+### 2026-09-05 overnight — the panel was never tool-enabled, and 3 of 4 red guards were wrong
+
+**SESSION STATE.** HEAD `b6a2032`, main, **89 ahead of origin/main**. Suite **5153 passed, 0 failed** under `--netguard-strict` (45 outbound attempts across 19 tests, all denied).
+
+**THE PANEL WAS NOT TOOL-ENABLED.** 16 of its 17 tool calls returned `ModuleNotFoundError` and each model read the error AS A TOOL RESULT and reasoned on. Cause was 2 things: `openrouter_tools` reaches the verifiers as `bench.immune_agents`, which needs REPO_ROOT on `sys.path` while a script run puts `bench/` there; **and** `bench/` has no `__init__.py`, so an empty stray tree `bench/bench/results/phase2` made `bench` resolve SUCCESSFULLY to the wrong directory — which is why the error named the submodule, never the package. Fixed, strays removed, re-dispatch: **49 tool calls, 0 errors**. Guarded by `test_tool_dispatch_survives_script_path_2026-09-05.py`, which subprocesses a real script from inside `bench/` (10 pass; 6 fail on revert).
+
+**FIXING IT EXPOSED A SECOND DEFECT IT WAS MASKING.** With tools working, cx went 10 → 31 calls, blew `MAX_TOOL_ITERATIONS`, and `call_openrouter_with_tools` returned `final_text=""` — a full paid seat produced nothing. The cap must stop the tools, not discard the answer: 1 tool-free harvest round-trip on exhaustion, instructed to mark unfinished checks UNVERIFIED. Tested with a mock, because the re-dispatch did NOT reproduce the cap hit and a branch reached by luck is untested.
+
+**APPENDIX CORRECTIONS APPLIED** (founder ruling: "if you have [asked the models], then simply do the fix"). L38 justification struck; **my own proposed replacement was also wrong** — the all-ones bound is insufficient for n ≥ 3 (n=3, q=0.05, whole budget on ψ₁₂ satisfies it exactly while state {1,2} carries weight **19**; SymPy, mpmath and Wolfram agree exactly), correct form is per-subset. NEW, from no seat: the complement error **crosses over at exactly q = 1/2** and above that it UNDER-constrains. G_n row now states the exact residual `w·C_H·(1−ρ)·(1−C_M)`, zero iff `C_H=0 ∨ C_M=1 ∨ ρ=1 ∨ w=0` (Wolfram supplied `w=0`). The L688–695 illustration was spliced and row-shifted: C_H is 0.921095 not 0.698, and 0.851/0.748 → **0.825/0.689**. Tests 31 → 35.
+
+**ITEM 1 WITHDRAWN — "repair is provably inert" is REFUTED.** Correcting the σ conflation (ν\* is evaluated at σ=1 while σ IS s_k) flips **3.215%** of decisions over 400,000 points with s_k ≥ 0.74, Wilson [3.161%, 3.270%], **every flip PASS → REJECT**. The shipped S\* formula itself is CORRECT (SymPy exact 0; z3 unsat). `s_star` reads 0.0 in **3816 of 3816**. Gate now records its own inputs — not 1 archived record carried `nu_b`, `nu_f` or `q`.
+
+**D13 ANSWERED.** Nobody adjudicates: it is a 4-way schema lookup. The 4 escalations are NOT irreducible — **0 of 4 carry falsifier code; their CONFIRMED came from model votes**, which the project forbids. Wider: **118 of 864** tool-only-status findings have no falsifier code (13.66%, Wilson [11.53%, 16.11%]); the sharp figure is **CONFIRMED at 65 of 116 = 56.0%** [47.0%, 64.7%] — CLOSED is 4.0% and dominates the denominator.
+
+**A REPO-SAFETY HOLE IN THE RUNNER, NOT IN THE NEW CODE.** `_build_discrimination_overlay` (`reference_runner_v3.py:3442`) symlinks every non-target file and `profile()` hashes only the target, so a falsifier writing to a SIBLING lands in the real working tree undetected. Reproduced in a throwaway repo. Used by the discrimination control at `:4187` and `:4228`. Both default-off.
+
+**3 OF THE 4 GUARDS THAT WENT RED WERE WRONG.** The exit-code check substring-matched 2 spellings (its own comment records fixing this on 2026-08-16 *by adding the second spelling*) — now AST-based. The preflight hardcoded `TARGET_KIND_PROSE`, and **acting on it would have voided Exp 56**, whose 3 arms disable routing deliberately. `claims_audit` let 1 never-run config flip a claim about runs. Only the ledger was genuinely stale, and it is derived — regenerated.
+
+**MECHANICAL FFAFP ENFORCEMENT: THE ANSWER IS NO.** It cannot be done and should not have been claimed. A hook sees the tool-call record and nothing else; all 3 of this project's constant-42 tautology tests would satisfy such a detector. What exists is a one-sided trace detector, `ffafp_audit` not `ffafp_enforce`. **Not wired** — stanza described only.
+
+**A 488-AGENT RUNAWAY, STOPPED BY THE FOUNDER, AND THE STOP WAS RIGHT.** A reconstruction workflow ran 4h45m and spawned 488 agents against a design of 30–50, because its dedup key collapsed only 12.6%. Nothing was lost: all 482 results survive in the journal and `scripts/salvage_task_reconstruction.py` recovers them offline. **55 founder-ruled-or-approved items are NOT done**, and the repo contradicts the note's own claim in **220 of 473** cases (46.5%, [42.1%, 51.0%]). The completeness critic never ran, so "what did the READ phase miss?" is STILL OPEN.
+
+**OPEN FOR FOUNDER RULING:** the discharge rule vs its alternative; correcting the gate's σ conflation; commissioning 4 falsifiers to take the human queue to 0; what to do about the ~106 archived findings with unbacked tool-only status; launching D9/D11 (paid); enabling either D12 setting; wiring the FFAFP audit hook; and `ν_eff = ν/|D|`, the only item that changes the mathematics.
 
 ### 2026-08-28 overnight — three panels, and the instrument inventory does not survive contact
 
