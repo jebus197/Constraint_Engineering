@@ -75,6 +75,19 @@ CHECKS = [
      "attempts decided by a harness defect",
      r"(\d+) of (\d+) attempts were decided by a defect",
      r"\*\*(\d+) of (\d+) attempts were decided by one of these defects"),
+
+    # FIRST ENTRY OUTSIDE experimental_notes/, 2026-09-05. The coverage test
+    # below built its `covered` set as "experimental_notes/" + filename, so a
+    # derived document anywhere else could never be marked as covered and would
+    # sit in the stray list forever. The artefact discharging anti-cooking
+    # condition (b) lives beside the pre-registration it answers, in
+    # bench/exp40_baseline/, which is the right home for it. So the path now
+    # travels IN the tuple instead of being assumed.
+    ("bench/exp40_baseline/THRESHOLD_REACHABILITY_2026-09-05.md",
+     "scripts/recalibrate_gamma_threshold_reachability.py",
+     "live reachability of the frozen threshold",
+     r"LIVE: (\d+) of (\d+) runs reached",
+     r"\| \*\*LIVE runs\*\* \| \*\*(\d+) of (\d+)\*\* \|"),
 ]
 
 
@@ -84,7 +97,11 @@ CHECKS = [
 def test_the_document_agrees_with_the_script_it_names(doc, script, label,
                                                       gen_pat, doc_pat):
     generated = _one(gen_pat, _run(script), f"{label} from {script}")
-    documented = _one(doc_pat, (NOTES / doc).read_text(encoding="utf-8"),
+    # `doc` may be a bare filename (historically, relative to experimental_notes)
+    # or a repo-relative path. Both resolve here so a derived document is not
+    # forced to live in one directory to be checkable.
+    _doc_path = (REPO / doc) if "/" in doc else (NOTES / doc)
+    documented = _one(doc_pat, _doc_path.read_text(encoding="utf-8"),
                       f"{label} from {doc}")
     assert generated == documented, (
         f"{doc} is stale on {label}.\n"
@@ -127,7 +144,8 @@ class TestEveryReproducibleDocIsChecked:
         return found
 
     def test_no_derived_document_goes_unchecked(self):
-        covered = {f"experimental_notes/{c[0]}" for c in CHECKS}
+        covered = {c[0] if "/" in c[0] else f"experimental_notes/{c[0]}"
+                   for c in CHECKS}
         stray = {d: s for d, s in self._docs_promising_reproduction().items()
                  if d not in covered and d not in self.CHECKED_ELSEWHERE}
         assert not stray, (
