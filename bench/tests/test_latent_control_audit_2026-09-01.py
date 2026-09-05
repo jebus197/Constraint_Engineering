@@ -314,14 +314,49 @@ class TestTheClassificationRuleItselfIsPinned:
     inverting the gatedness test cannot pass.
     """
 
-    def test_an_unconditional_unseen_key_is_unreachable(self, result):
+    def test_a_key_written_only_NESTED_is_still_counted_as_seen(self, result):
+        """THE DISCRIMINATING TEST FOR THE 2026-09-05 FIX, and it was missing.
+
+        The audit counted a key as seen with `k in report` -- TOP LEVEL ONLY. The
+        runner writes whole instrument blocks nested inside the per-round record;
+        `"stall_detector": stall_result` at reference_runner_v3.py:12413 is one.
+        Every key inside such a block therefore counted as never seen, and
+        `stalled` was reported UNREACHABLE -- the tool's most alarming verdict --
+        for a control present, nested, in 37 of 60 archived reports.
+
+        WHY THIS TEST EXISTS SEPARATELY. The fix was made and the 2 tests that
+        pinned the FALSE verdict were updated to stop pinning it. Reverting the
+        fix then left all 20 tests GREEN: nothing pinned the CORRECT behaviour.
+        Removing a test that pinned a wrong answer is only half the repair; the
+        other half is a test that fails when the wrong answer comes back.
+
+        `stalled` is the right probe precisely because it appears ONLY nested.
+        """
         rows = {r["key"]: r for r in result["rows"]}
         row = rows.get("stalled")
         assert row is not None, "`stalled` is no longer written by the runner"
-        assert row["verdict"] == "UNREACHABLE", (
-            f"`stalled` is written unconditionally and appears in no report, so "
-            f"it is unreachable as configured; got {row['verdict']}")
-        assert row["gated"] is False
+        assert row["seen_in_reports"] > 0, (
+            "`stalled` is present nested in archived reports but counted as "
+            "unseen -- the key scan has reverted to top-level-only, and every "
+            "nested instrument is invisible to this audit again"
+        )
+        assert row["verdict"] != "UNREACHABLE", (
+            f"a control that demonstrably ran is classified UNREACHABLE; "
+            f"got {row['verdict']}"
+        )
+
+    def test_the_unreachable_rule_is_stated_and_reachable_in_principle(self, result):
+        """The UNREACHABLE class may legitimately be EMPTY.
+
+        It means every unconditional key the runner writes has been seen in a
+        real report, which is the state the tool exists to bring about. What must
+        not drift is the RULE, so this asserts the rule is still implemented:
+        every row carries the fields the rule is computed from.
+        """
+        for row in result["rows"]:
+            assert "gated" in row and "seen_in_reports" in row and "verdict" in row
+            if row["verdict"] == "UNREACHABLE":
+                assert row["gated"] is False and row["seen_in_reports"] == 0
 
     def test_a_gated_key_with_a_witness_is_silent_not_dead(self, result):
         """REPRESENTATIVE CHANGED 2026-09-04, and the reason matters.
@@ -373,12 +408,25 @@ class TestTheClassificationRuleItselfIsPinned:
             f"{row['verdict']}")
         assert row["gated"] is True and not row["sibling"]
 
-    def test_the_three_classes_are_all_populated(self, result):
-        """If any class empties, one of the pins above is silently vacuous."""
+    def test_the_classes_that_must_be_populated_are(self, result):
+        """UNREACHABLE DROPPED OFF THIS LIST ON 2026-09-05, deliberately.
+
+        The original required all 4 classes to be non-empty, on the reasoning
+        that an empty class means a pin above is vacuous. That reasoning holds
+        for the 3 below and NOT for UNREACHABLE, because UNREACHABLE is the class
+        the tool exists to EMPTY: it means an unconditional control has never
+        been seen in a real report. Requiring it to stay populated made the test
+        punish its own repair -- fixing the top-level-only key scan emptied the
+        class, and this assertion then failed on the improvement.
+
+        The 3 below are different: they describe states that will always exist in
+        a live archive, so an empty one really does mean a broken classifier.
+        """
         from collections import Counter
         c = Counter(r["verdict"] for r in result["rows"])
-        for verdict in ("UNREACHABLE", "SILENT_BUT_RAN", "AMBIGUOUS", "SEEN"):
+        for verdict in ("SILENT_BUT_RAN", "AMBIGUOUS", "SEEN"):
             assert c[verdict] > 0, f"no key classified {verdict}"
+        assert c["UNREACHABLE"] >= 0  # may legitimately be 0; see docstring
 
 
 class TestItOverReportsRatherThanUnderReports:

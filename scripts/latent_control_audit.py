@@ -40,6 +40,22 @@ all. They are false positives in the AMBIGUOUS bucket, not missed controls: the
 tool over-reports and does not under-report, which is the safe direction for a
 detector whose whole purpose is finding things nobody looked at.
 
+  RESOLVED 2026-09-05, AND THE LIMITATION ABOVE WAS INCOMPLETE IN A WAY THAT
+  MATTERED. It named `reason`, `tier` and `terminate` and asked the reader to
+  tolerate them. It did NOT name `stalled`, which is written to the same local --
+  so that one reached the reader as a hard UNREACHABLE, this tool's most alarming
+  verdict, for a control present in 37 of 60 archived reports. The cause was not
+  the extractor at all: the SEEN test was `k in report`, top level only, while
+  the runner nests whole instrument blocks inside the per-round record
+  (`"stall_detector": stall_result`, reference_runner_v3.py:12413). The test now
+  searches at any depth. Measured effect: AMBIGUOUS 5 -> 2, UNREACHABLE 1 -> 0,
+  SEEN 32 -> 36. The 4 that moved are exactly the 4 written to that local.
+
+  Tolerating a known false-positive class is what this project did twice with the
+  exit-code checker in test_operational_scripts, repairing it both times by
+  extending a list of spellings; the third repair asked the structural question
+  instead. Same choice made here.
+
 Offline, stdlib only, no network, no model calls. `--help` costs nothing.
 """
 from __future__ import annotations
@@ -227,7 +243,37 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
     if newest_override is not None:
         newest = int(newest_override)
 
-    counts = {k: sum(1 for r in reports if k in r) for k in writes}
+    # SEARCH AT ANY DEPTH, NOT ONLY THE TOP LEVEL.
+    #
+    # This read `k in r`, which sees only top-level report keys. The runner
+    # writes whole instrument blocks NESTED inside the per-round record --
+    # `"stall_detector": stall_result` at reference_runner_v3.py:12413 is one --
+    # so every key inside them counted as never seen.
+    #
+    # MEASURED 2026-09-05: `stalled`, `tier`, `terminate` and `reason` are
+    # present, nested, in 37 of 60 archived reports, carrying real values
+    # ("reason": "round 0 < 15"). Top-level scanning reported `stalled` as
+    # UNREACHABLE -- the most alarming verdict this tool has -- for a control
+    # that demonstrably ran.
+    #
+    # The module docstring's KNOWN LIMITATION named `reason`, `tier` and
+    # `terminate` as accepted false positives and asked the reader to tolerate
+    # them. It did NOT name `stalled`, which is written to the same local, so
+    # that one reached the reader as a hard UNREACHABLE. Tolerating a
+    # false-positive class is how the exit-code checker in
+    # test_operational_scripts was "fixed" twice by extending a list of
+    # spellings; the third repair was to ask the structural question instead.
+    # Same choice here: search the structure rather than curate exemptions.
+    def _present(key, obj):
+        if isinstance(obj, dict):
+            if key in obj:
+                return True
+            return any(_present(key, v) for v in obj.values())
+        if isinstance(obj, list):
+            return any(_present(key, v) for v in obj)
+        return False
+
+    counts = {k: sum(1 for r in reports if _present(k, r)) for k in writes}
     # A gated key's siblings are the unconditional keys written nearby -- within
     # 40 lines, which covers a guard's own try block without spanning functions.
     unconditional = {k for k, w in writes.items() if not w["gated"]}
