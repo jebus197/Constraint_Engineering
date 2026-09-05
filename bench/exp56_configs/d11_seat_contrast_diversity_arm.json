@@ -1,0 +1,140 @@
+{
+  "_comment": "EXP 56 ARM C -- THE SEAT CONTRAST, RESTORED AS THE DIVERSITY ARM (D11). Two seats that share weights, route and system prompt and differ only in composed phenotype. Its job is to split what Arm B confounds: whether the benefit of a panel comes from DIFFERENT VENDORS or merely from MORE SEATS UNDER DIFFERENT OPERATING CONDITIONS. History and current state are in the `_seat_contrast` block below. Every key except `models` and `experiment_name` is byte-identical to the other two arms; that identity is asserted by bench/tests/test_d9_d11_configs_valid_2026-09-05.py rather than maintained by hand.",
+  "test_article": "bench/cdsfl_registry/engine.py",
+  "context_files": [],
+  "target_kind": "python_module",
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 8,
+  "extension_cap": 8,
+  "wall_clock_cap_s": 21600,
+  "earliest_stop_round": 3,
+  "models": [
+    "Codex",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp56_d11_seat_contrast",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 20,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "_stall_gamma_note": "Stall-path gamma thresholds sit above the gamma ceiling (1.0) so the stall detector can never fire via gamma; convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/53/55.",
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": false,
+  "_merge_arbitration_note": "OFF IN ALL THREE ARMS, AND THIS IS A DECLARED DELTA FROM EVERY CONFIG exp40-exp55, WHICH ALL SET IT TRUE. Two reasons, and the second is the binding one. (1) The merge path is dead code: when arbitration votes MERGE the runner records merge_blocked_reason, logs MERGE WITHHELD and returns KEEP_DISTINCT, closed deliberately by the no-voting ruling of 2026-08-19. So arbitration buys nothing and costs dispatches. (2) THE CONTEXT IT ARMS READS THE WRONG PANEL LIST. In run_experiment, `_merge_arb_ctx` is populated with `\"panel\": list(exp_config.models)` -- the orchestrator's full 5 ModelConfigs -- never intersected with cfg.models. Every experiment to date declared all 5, so the two lists agreed and the bug was latent. Arm A declares 1 seat, so an armed arbitration would dispatch the other 4 vendors INSIDE the single-model arm and silently convert it into a panel. Off in all three arms holds it constant and closes the leak.",
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "_apply_fixes_back_note": "Frozen target. The three arms must review the same bytes; a target that repairs itself between arms would make the later arm an easier exam. Target integrity is additionally hashed per round by the runner.",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": false,
+  "test_cmd": "",
+  "_sk_note": "S_k off in all three arms. The admissibility gate has never rejected anything -- 0 of 3816, Wilson [0.0000, 0.0010] -- and the repair-or-remove ruling is still outstanding. Running a mechanism whose behaviour is under adjudication inside a comparison experiment adds a variable without adding information.",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "falsifier_gate_enabled": true,
+  "_falsifier_gate_note": "ON IN ALL THREE ARMS AND IT IS THE PRIMARY METRIC'S SOURCE. The gate re-runs each critical's falsifier itself and that verdict, never the model's prose, decides CONFIRMED. It also hands execute_python to the OpenRouter and DeepSeek routes during review. Turning it off would leave the arms with no answer-key-free truth criterion, which is the whole reason this design needs no seeded catalogue.",
+  "max_contested_rounds": 3,
+  "routing_enabled": false,
+  "_routing_note": "OFF IN ALL THREE ARMS. `_apply_routing` builds its ladder as `models = [mc.label for mc in exp_config.models]` and hands that to `route()` as available_models -- the orchestrator's full 5 seats, never intersected with cfg.models. The ladder then EXCLUDES the finding's own source model, so in Arm A (1 declared seat) the ladder would be exactly the 4 vendors the arm exists to do without. Demonstrated by execution in the test file: `rank_falsifier_writers(['CC2'], exclude=['CC2'])` returns 0 rungs while `rank_falsifier_writers(<all 5>, exclude=['CC2'])` returns 4. Held OFF and constant so no arm has an absorber the others lack. CONSEQUENCE, PRE-REGISTERED: with no absorber between the falsifier gate and the HIL queue, escalations accumulate; a halt on HALTED_IRREDUCIBLE_QUEUE_ALARM is a reportable outcome of this design, not a mechanical fault to be tuned away.",
+  "post_convergence_sweep_rounds": 0,
+  "_sweep_note": "OFF IN ALL THREE ARMS, same defect class as the two notes above: `_post_convergence_sweep` iterates `for mc in exp_config.models` with no cfg.models filter, so a sweep in Arm A would dispatch all 5 seats after the verdict. Demonstrated by execution in the test file with a stubbed dispatcher.",
+  "immune_memory_enabled": false,
+  "_immune_memory_note": "OFF IN ALL THREE ARMS. Immune memory persists findings ACROSS runs. With it on, whichever arm runs second inherits the first arm's findings and the comparison measures run order instead of panel composition. This is the one cross-arm contamination path the design can close outright, and it is closed.",
+  "location_shadow_enabled": true,
+  "location_keyed_convergence": true,
+  "_locationkey_note": "Location keys are AST-symbol based and the target is a Python module, so the symbols exist. The location-keyed critical series is also what makes the primary metric a count of DISTINCT defects rather than of restatements.",
+  "panel_cwd": "",
+  "_panel_cwd_note": "UNSET, matching the runner's own documented convention: staged confinement is for exam runs, and a code run legitimately needs this repository so a falsifier can reach its target. Falsifiers are unaffected either way -- they execute in a throwaway temp cwd with the repo on PYTHONPATH. The cost of leaving it unset is recorded honestly in the design note as confound 6: the arm configs and the design note sit where a shell-bearing seat can read them.",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_ouroboros": {
+    "api_access": [],
+    "max_papers_per_round": 0,
+    "_note": "External literature retrieval OFF. A live retrieval would add an uncontrolled and arm-varying input to a comparison whose value rests on every input except panel composition being identical."
+  },
+  "_specialist_cells": {
+    "live": [
+      "software",
+      "mathematics",
+      "statistics",
+      "information_science",
+      "engineering"
+    ]
+  },
+  "_arm": {
+    "id": "C",
+    "label": "seat_contrast_diversity_arm",
+    "item": "D11",
+    "role": "diversity_arm",
+    "seats_declared": 2,
+    "paid_seats": 2,
+    "free_seats": 0,
+    "_paid_seats_note": "Both seats bill through OpenRouter against openai/gpt-5.5.",
+    "launch_blocked": true,
+    "_launch_blocked_note": "TRUE because the strong form of the contrast is not present at HEAD: the Codex seat's `api` is `openrouter`, not `codex_exec`. The flag must be flipped to false in the SAME change that restores the route, and bench/tests/test_d9_d11_configs_valid_2026-09-05.py asserts `launch_blocked == (not precondition_met)` by measuring the live ModelConfigs, so the two cannot drift apart. Arm C may be run in its WEAK form with the flag left true only on an explicit founder ruling, recorded in the note."
+  },
+  "_seat_contrast": {
+    "designed_as": "Diversity Axis 2 of the original panel design, bench/EXECUTION_PLAN_EXPERIMENT_11.md: \"Configuration: Codex (factory + CDSFL) vs ChatGPT (bare + CDSFL). Same weights, different operating conditions.\" The Codex seat ran through `codex exec`, carrying OpenAI's own hidden agent prompt, with CDSFL delivered as elevated directives in the prompt body; the ChatGPT seat ran bare through OpenRouter with CDSFL as the system message.",
+    "lapsed_when": "2026-04-02, commit 556e0af, \"sv: Run 7b complete -- 197 findings, file split, context budget, Layer 3\". The diff changes the Codex ModelConfig from api=\"codex_exec\" to api=\"openrouter\". Its own changelog line reads \"Codex routed through OpenRouter (was codex_exec CLI)\".",
+    "lapsed_why": "Reliability, and the reason is recorded in the surviving comment at the call site: it eliminated a 45-to-80-minute-per-round decomposed fallback and a brittle CLI auth dependency. The seat contrast was collateral, not the objective, and nothing in the commit records that it was lost.",
+    "statistics_withdrawn": "A 2026-09-01 comment in reference_runner_v3.py once cited pre-lapse and post-lapse sign tests over 78 and 205 paired rounds. All six numbers were WITHDRAWN the same day: neither panel reviewer could reproduce them, no script computing them exists, rounds within a run are not independent trials, and the \"205 post-lapse\" figure was the entire archive including pre-lapse runs. Do not resurrect them. The design conclusion rests on the mechanism, which is documented, and needs no p-value.",
+    "state_at_head_measured": "Measured by executing load_experiment_config() on 2026-09-05, reproduced by the test file. The two ModelConfigs are identical in 11 of 12 dataclass fields; only `label` differs. model_id, api, role, system_prompt_path, max_tokens, timeout, max_retries, backoff_base, extra_body, secondary_api and secondary_model_id all match. CONTEXT BUDGET IS ALSO IDENTICAL at 60000 characters for both seats, which CORRECTS the standing note in project_model_panel_config.md recording \"context budgets (60K vs 80K)\" as surviving differentiation. What DOES still differ: the composed directive phenotype, 6035 characters for Codex against 7406 for ChatGPT, and the initial capability fingerprints and MODEL_SPECS priors in runner_core.py.",
+    "measured_at_head": {
+      "_note": "MACHINE-READABLE MIRROR of the prose above, so the prose cannot go stale in silence. bench/tests/test_d9_d11_configs_valid_2026-09-05.py re-measures each entry against the live orchestrator and composer and fails on disagreement.",
+      "seat_a": "Codex",
+      "seat_b": "ChatGPT",
+      "context_char_budget_equal": true,
+      "composed_phenotype_differs": true
+    },
+    "required_seat_state": [
+      {
+        "seat": "Codex",
+        "field": "api",
+        "must_equal": "codex_exec",
+        "why": "the designed contrast is OpenAI's own agent prompt, which only `codex exec` carries"
+      },
+      {
+        "seat": "ChatGPT",
+        "field": "api",
+        "must_equal": "openrouter",
+        "why": "the other half of the designed contrast is the bare route with CDSFL as the system message"
+      },
+      {
+        "seat": "Codex",
+        "field": "model_id",
+        "must_equal": "openai/gpt-5.5",
+        "why": "same weights on both seats is what makes this a CONDITION contrast rather than a vendor contrast"
+      }
+    ],
+    "weak_form_vs_strong_form": "WEAK FORM, runnable today: two seats differing only in composed phenotype, a 1371-character directive delta, plus different capability priors. That is a real but small contrast and it is NOT the designed one. STRONG FORM, and what D11 asks for: the Codex seat restored to api=\"codex_exec\" so it carries OpenAI's own agent prompt and its own native tool loop, against ChatGPT bare on OpenRouter. Only the strong form tests operating-condition diversity as designed.",
+    "restore_requires": "A change to bench/experiment_11_orchestrator.py, which this design does not own and has not made. The exact change is in the design note under SHARED-MODULE CHANGES.",
+    "known_cost_of_restoring": "The reason for the 2026-04-02 change has not gone away. `codex exec` has no --system-prompt flag, so CDSFL is delivered in the prompt body, and the route previously drove a 45-to-80-minute decomposed fallback. Restoring it restores that risk. The wall_clock_cap_s of 21600 gives room for it; a seat that stalls must be reported as a stall, not silently dropped.",
+    "confound_that_survives_restoration": "Pre-lapse the Codex seat was dispatched DECOMPOSED -- chunked target -- far more often than ChatGPT, so the historical route change altered dispatch mechanics and output length as well as the instruction condition. A restored arm inherits the same entanglement: `codex exec` differs from bare OpenRouter in agent prompt AND in tool loop AND in output-length behaviour, and this design cannot separate them."
+  },
+  "_convergence_criteria": {
+    "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled, verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested, where un-demonstrated sub-criticals are a logged NON-GATING residual queue per FIX 1; AND (5) not churning; AND (6) irreducible queue within bound.",
+    "pass_condition": "gamma_critical >= 0.30 AND 3 consecutive zero-NEW-genuine-critical rounds AND no unverified critical pending AND not contested (FIX-1 semantics) AND not churning AND irreducible queue within bound.",
+    "fail_condition": "Any seat fails to produce parseable output in 2+ consecutive rounds; OR non-convergence, which is assumed MECHANICAL and diagnosed under cy -- do not demote gamma; OR HALTED_IRREDUCIBLE_QUEUE_ALARM, which in this design is a reportable outcome of running without a routing absorber."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": false,
+    "_section_10_note": "Section 10 was established INERT on 2026-07-12 (A4): the flag never reaches RunnerConfig and no compelled-convergence text reaches dispatch. Recorded false for documentation accuracy.",
+    "_section_18_asymmetry": "Section 18 asks a seat to diverge from the other seats. With 1 declared seat there are no other seats, so the directive text is present and vacuous. Held ON in all three arms rather than off, because the mechanism under test IS having other seats: a multi-seat mechanism that degenerates gracefully in Arm A is part of the treatment, while one that silently re-dispatches the other vendors -- routing, sweep, merge arbitration -- is a leak and is switched off. That is the rule this config applies, and it is stated so the choice can be attacked."
+  },
+  "_pre_registration": "FROZEN 2026-09-05 BEFORE ANY DISPATCH. Exp 56 answers D9: does a panel of DIFFERENT models beat one model running with tools and agents? THE ARMS: A = 1 seat (CC2) with native shell tools; B = 5 seats, 4 vendors; C = 2 seats sharing weights, route and system prompt, differing only in composed phenotype (D11, the seat-contrast diversity arm). PRIMARY METRIC, answer-key-free: the count of DISTINCT criticals, keyed by code location, whose falsifier the runner independently re-ran and returned CONFIRMED. CORROBORATED is attestation rather than demonstration and is reported SEPARATELY, never added to the primary -- this matters most in Arm A, where the external panel size is 0 and the confirmation quorum `min(2, external_panel_size)` degenerates to 0. SECONDARY: rounds to terminal verdict, gamma_critical at verdict, HIL escalations, irreducible queue size, wall clock, paid dispatch count. WHAT REFUTES THE DIVERSITY CLAIM: B confirms no more distinct located defects than A, AND B's confirmed location set is a subset of A's -- the subset condition is the decisive one, because a higher count alone is not separable from run-to-run noise at n=1. A weaker economic refutation: B's confirmed defects per paid dispatch do not exceed A's, where A's paid dispatch count is 0. WHAT ARM C DECIDES: if C resembles B, the benefit tracks seat count and operating-condition variety rather than vendor diversity; if C resembles A, it tracks vendors. FAILURE MODES TO REPORT RATHER THAN TUNE: a halt on HALTED_IRREDUCIBLE_QUEUE_ALARM in any arm; a seat producing no parseable output; a non-convergence, which is assumed MECHANICAL and does NOT demote gamma. NO TUNING AFTER RESULTS. The one fallback permitted is declared here in advance and applies to ALL THREE ARMS IDENTICALLY OR NOT AT ALL: if every arm halts on the irreducible-queue alarm before earliest_stop_round, all three may be re-run once with max_irreducible_queue raised to 8, and both attempts reported.",
+  "_plan_ref": "Founder verdict 2026-09-05, items D9 and D11: \"Do it. Do both.\" Design note: experimental_notes/D9_D11_Experiment_Design_2026-09-05.md. Validation: bench/tests/test_d9_d11_configs_valid_2026-09-05.py.",
+  "_launch": "bash bench/detached_launch.sh bench/exp56_configs/d11_seat_contrast_diversity_arm.json bench/logs/exp56_d11_seat_contrast.log"
+}
