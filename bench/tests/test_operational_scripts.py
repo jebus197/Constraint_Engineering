@@ -1494,20 +1494,92 @@ class TestExitCodesReachTheShell:
     # a violation where none exists trains its readers to override it, and an
     # override habit is how a real violation gets waved through later. That is the
     # same failure this file exists to catch, one level up.
+    # Kept only for the guard test below, which asserts the CHECK still rejects a
+    # bare call. The check itself no longer matches on these strings -- see below.
     _PROPAGATING_ENTRYPOINTS = ("sys.exit(main())", "raise SystemExit(main())")
+
+    # SECOND FALSE POSITIVE OF THE SAME CLASS, 2026-09-05. The comment above
+    # records fixing a bare substring match on ONE spelling by adding a SECOND
+    # spelling. That is the same instrument with a longer list, and it failed
+    # again the moment a script passed an argument:
+    #
+    #     raise SystemExit(main(sys.argv))        flagged, and it propagates
+    #     sys.exit(main(sys.argv[1:]))            flagged, and it propagates
+    #
+    # MEASURED by execution 2026-09-05, 4 probe scripts run and their shell exit
+    # codes read: bare `main(sys.argv)` exits 0; `raise SystemExit(main())`,
+    # `raise SystemExit(main(sys.argv))` and `sys.exit(main(sys.argv[1:]))` all
+    # exit 3. So argument-passing forms propagate exactly as the no-argument ones
+    # do, and the check was reporting a violation where none existed -- against
+    # 2 scripts written the same night.
+    #
+    # The comment above already says why that matters: an instrument that cries
+    # wolf trains its readers to override it, and the override habit is how a
+    # real violation gets waved through later. Adding a third spelling would
+    # repeat the mistake a third time, so the check now parses instead of
+    # matching text. It asks the structural question -- is the call to main()
+    # inside sys.exit(...) or SystemExit(...)? -- which is spelling-independent
+    # and argument-independent.
+    @staticmethod
+    def _propagates(src: str) -> bool:
+        """True if a call to main() is wrapped in sys.exit(...) or SystemExit(...)."""
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return False
+
+        def _is_main_call(node) -> bool:
+            return (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "main")
+
+        for node in ast.walk(tree):
+            # sys.exit(main(...)) / exit(main(...))
+            if isinstance(node, ast.Call):
+                fn = node.func
+                name = (fn.attr if isinstance(fn, ast.Attribute)
+                        else fn.id if isinstance(fn, ast.Name) else None)
+                if name in ("exit", "SystemExit"):
+                    if any(_is_main_call(a) for a in node.args):
+                        return True
+            # raise SystemExit(main(...))
+            if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call):
+                fn = node.exc.func
+                name = (fn.id if isinstance(fn, ast.Name)
+                        else fn.attr if isinstance(fn, ast.Attribute) else None)
+                if name == "SystemExit" and any(_is_main_call(a) for a in node.exc.args):
+                    return True
+        return False
 
     def test_every_script_that_computes_a_code_propagates_it(self):
         violations: list[str] = []
         for path, src in _sources().items():
             if not _main_can_return_a_code(src):
                 continue
-            if not any(form in src for form in self._PROPAGATING_ENTRYPOINTS):
+            if not self._propagates(src):
                 violations.append(
                     f"{path.relative_to(REPO_ROOT)}: main() returns a status "
                     f"that the entrypoint discards — a bare main() call makes "
                     f"every failure exit 0"
                 )
         assert violations == [], "\n".join(violations)
+
+    def test_the_check_accepts_argument_passing_forms(self):
+        """The 2026-09-05 false positive, pinned so a re-tightening reintroduces
+        a red test rather than a silent wrong answer.
+
+        Each string below was EXECUTED as a real script that day and its shell
+        exit code read: the first 3 return 3, the last returns 0.
+        """
+        propagating = [
+            "import sys\ndef main(argv):\n    return 3\nraise SystemExit(main(sys.argv))\n",
+            "import sys\ndef main(argv):\n    return 3\nsys.exit(main(sys.argv[1:]))\n",
+            "def main():\n    return 3\nraise SystemExit(main())\n",
+        ]
+        for src in propagating:
+            assert self._propagates(src), f"argument-passing form rejected:\n{src}"
+        bare = "import sys\ndef main(argv):\n    return 3\nmain(sys.argv)\n"
+        assert not self._propagates(bare), "a BARE main() call was accepted"
 
     def test_the_check_accepts_both_propagating_idioms_and_rejects_a_bare_call(self):
         """Guards the fix above. Without this, someone re-tightening the check to

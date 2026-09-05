@@ -67,7 +67,7 @@ Experiments with a run directory: **[29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
 
 Numbers inside that span with **no run directory at all**: **[50, 51, 52, 54]** (4 of 27).
 
-Of those, **[50, 51, 52]** have a config and were never launched, and **[54]** has no config either — planned in prose only.
+Of those, **[50, 51, 52, 56]** have a config and were never launched, and **[54]** has no config either — planned in prose only.
 
 A reader counting the span `exp29`–`exp55` infers 27 experiments. **23 numbers produced a directory** and **22 produced a report**. The gap is not a numbering error; it is 4 numbers that were planned and never executed.
 
@@ -88,7 +88,7 @@ disagree and a tool reading only the signal draws the wrong conclusion:
 | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
 | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
 
-The runner's own source names this at `bench/reference_runner_v3.py:12581` and dates a
+The runner's own source names this at `bench/reference_runner_v3.py:12610` and dates a
 partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
 dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
 that date still show it, so the fix did not close the class.

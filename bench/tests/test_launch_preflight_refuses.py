@@ -32,6 +32,7 @@ from bench.reference_runner_v3 import (  # noqa: E402
     TARGET_KIND_PYTHON,
     LaunchRefused,
     preflight_target_machinery,
+    resolve_target_kind,
 )
 
 
@@ -155,7 +156,24 @@ class TestTheLiveConfigsWouldPass:
                 falsifier_gate_enabled=bool(d.get("falsifier_gate_enabled", False)),
             )
             target = d.get("test_article") or d.get("target") or ""
-            r = preflight_target_machinery(cfg, target, TARGET_KIND_PROSE)
+            # RESOLVE THE KIND; DO NOT ASSUME IT. Until 2026-09-05 this line
+            # passed TARGET_KIND_PROSE for every configuration it found. The A9
+            # absorber refusal is GATED ON PROSE, so a config with a .py target
+            # and routing_enabled off was reported as failing a refusal it could
+            # never actually receive at launch.
+            #
+            # That is not a harmless over-strictness. It fired against the 3
+            # Exp 56 arms, whose design switches routing OFF DELIBERATELY: with
+            # a single seat in Arm A the routing ladder is built from the
+            # orchestrator's full 5-seat roster and would pull in exactly the 4
+            # vendors that arm exists to do without. Acting on this test's
+            # refusal by enabling routing would have silently destroyed the
+            # experiment it was meant to protect.
+            #
+            # Executing the real gate with the resolved kind returns 0 refusals
+            # for all 3 arms.
+            kind, _reason = resolve_target_kind(target)
+            r = preflight_target_machinery(cfg, target, kind)
             machinery = [x for x in r if "does not exist" not in x
                          and "not readable" not in x and "empty" not in x]
             if machinery:

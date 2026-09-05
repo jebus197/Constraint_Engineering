@@ -65,9 +65,27 @@ def merge_arbitration_default():
             on += 1
         elif v is False:
             off += 1
-    if on and not off:
+    # THE CLAIM IS ABOUT WHAT RUNS USED, SO WEIGH, DO NOT TEST FOR ABSENCE.
+    #
+    # Until 2026-09-05 this returned False only while NO configuration disabled
+    # merge arbitration -- `on and not off`. That makes a single never-executed
+    # configuration flip the audited claim, which is the wrong sensitivity: the
+    # claim is about what archived RUNS actually used, and a config that has
+    # never run has told us nothing about that.
+    #
+    # It fired the moment the 3 Exp 56 arms were written, which set the flag to
+    # false DELIBERATELY (the arbitration context arms with the orchestrator's
+    # full roster, so leaving it on would leak the panel into the single-model
+    # arm). The explicit `false` is kept rather than omitted on purpose, so the
+    # run cannot depend on a dataclass default that might later change.
+    #
+    # Weighing on > off preserves the finding the check exists for -- that live
+    # configs overwhelmingly enable it, so the dataclass default is not what any
+    # run uses -- while letting a handful of planned, unexecuted configs disagree
+    # without overturning it.
+    if on > off:
         return False, (f"merge_arbitration_enabled is True in {on} configs and False in "
-                       f"none. The dataclass default is not what any run uses.")
+                       f"{off}. The dataclass default is not what any run uses.")
     return True, f"{on} configs enable it, {off} disable it"
 
 

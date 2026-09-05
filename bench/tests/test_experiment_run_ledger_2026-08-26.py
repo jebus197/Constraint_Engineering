@@ -134,7 +134,13 @@ class TestAgainstTheRealArtefacts:
         d = json.loads(_run("--json").stdout)
         assert 54 in d["gap_numbers"], "exp54 is absent from the gap set"
         assert 54 in d["gap_no_config"]
-        assert set(d["configured_never_ran"]) == {50, 51, 52}
+        # 56 joined the set on 2026-09-05 when the Exp 56 arms were written:
+        # 3 configurations, no runs yet, which is exactly what "configured but
+        # never ran" means. A planned experiment legitimately lands here, so the
+        # assertion names the set rather than freezing a moment. What this test
+        # is actually for is the line above it -- exp54 has NEITHER a config nor
+        # a run and a config-only scan misses it -- and that part is unchanged.
+        assert set(d["configured_never_ran"]) == {50, 51, 52, 56}
 
     def test_exp53_ran_and_is_not_dropped(self):
         """Standing directive: exp53 is the zero-plant control and MUST NOT be

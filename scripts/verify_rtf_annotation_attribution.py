@@ -41,6 +41,7 @@ Usage:
 
 Exit status 0 if every founder block carries its '#', 1 otherwise.
 """
+import argparse
 import collections
 import os
 import re
@@ -162,12 +163,44 @@ def partition(raw, grouped=False):
     return blocks, base_text, founder_text, base
 
 
+def _build_parser():
+    """A real parser, because the usage text is a promise about the interface.
+
+    Until 2026-09-05 this script hand-parsed argv with `'--falsify' in argv` and
+    a startswith('--') filter, while its docstring advertised --falsify. That is
+    the launcher-config-drop shape one level up: the documentation and the code
+    are 2 forms that can disagree, and nothing compared them. Concretely it meant
+    `--help` printed nothing argparse-shaped, and any mistyped flag -- `--falsfy`
+    -- was silently dropped from the path list and ignored rather than refused,
+    so the falsification pass would quietly not run and the output would look
+    like a clean verification.
+    """
+    ap = argparse.ArgumentParser(
+        prog="verify_rtf_annotation_attribution.py",
+        description="Verify that no founder annotation in an annotated RTF was "
+                    "mis-attributed to CC1.",
+    )
+    # nargs="*" not "+", deliberately. With "+" argparse reports the MISSING
+    # POSITIONAL before it reports an unrecognised flag, so `--falsfy` (a typo)
+    # produced "the following arguments are required" and the real complaint --
+    # that the flag is not a flag -- was never shown. The wrong diagnosis sends
+    # the reader to add a filename rather than to fix the typo. Emptiness is
+    # handled below, where it can say something useful.
+    ap.add_argument("paths", nargs="*", metavar="file.rtf",
+                    help="annotated RTF file(s) to check")
+    ap.add_argument("--falsify", action="store_true",
+                    help="also run the F1/F2/F3 falsification pass described in "
+                         "the module docstring")
+    return ap
+
+
 def main(argv):
-    falsify = '--falsify' in argv
-    paths = [a for a in argv if not a.startswith('--')]
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    falsify = args.falsify
+    paths = args.paths
     if not paths:
-        print(__doc__)
-        return 2
+        parser.error("at least one RTF file is required")
 
     rows, bad = [], 0
     for path in sorted(paths):
