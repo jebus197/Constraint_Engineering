@@ -33,9 +33,17 @@ Where:
 - ψ_ij ∈ ℝ: pairwise correlation coupling between passes i and j
 - Z: partition function summing over all 2^n states, strictly guaranteeing P(x) ∈ [0, 1]
 
-**Reduction property:** When ψ_ij = 0 for all pairs, the exponent equals 1, Z = 1, and the Ising model reduces exactly to the independent product ∏q_i (Branch 1). The independent model is a special case of the correlated model.
+**Reduction property:** When ψ_ij = 0 for all pairs, the exponent equals 0 so the exponential factor equals 1, Z = 1, and the Ising model reduces exactly to the independent product ∏q_i (Branch 1). The independent model is a special case of the correlated model. (SymPy and Wolfram, 2026-09-05: exponent 0, factor 1, Z = 1.)
 
-**Boundedness constraint:** The coupling constants must satisfy Σψ_ij ≤ −Σlog(1 − q_i) to ensure all state probabilities remain non-negative. (Verified by SymPy, March 2026.)
+**Boundedness: the March 2026 constraint was wrong and is withdrawn.** This block previously read "the coupling constants must satisfy Σψ_ij ≤ −Σlog(1 − q_i) to ensure all state probabilities remain non-negative", attributed to SymPy verification in March 2026. **That justification is false, and no bound is needed for the stated purpose.** Every state weight is a product of non-negative Bernoulli factors multiplied by exp(·), and exp is strictly positive for every real argument, so no coupling value can drive a weight negative. P(x) ∈ [0,1] is already guaranteed by Z, exactly as the Z bullet 2 lines above states. Verified 2026-09-05 by SymPy, mpmath and Wolfram, and independently reproduced by 3 panel reviewers; non-negativity holds at ψ = 0, at the old bound, and at ψ = 1000 alike.
+
+**If an unnormalised bound is ever wanted, it is not one inequality but 2ⁿ.** Should a variant of this model be used *without* Z — so that each unnormalised weight must satisfy w(x) ≤ 1 directly — the necessary and sufficient condition is per-subset:
+
+> **∀S ⊆ [n]:  Σ_{i<j ∈ S} ψ_ij  ≤  −Σ_{i∈S} log(q_i)  −  Σ_{i∉S} log(1 − q_i)**
+
+The all-ones state gives only the single inequality Σψ_ij ≤ −Σlog(q_i), and **that is not sufficient for n ≥ 3**: at n = 3, q = 0.05, placing the entire all-ones budget −Σlog(q_i) = 3·log 20 = 8.9872 on the single pair ψ₁₂ satisfies it *exactly* while state {1,2} carries unnormalised weight (1−q)/q = **19**. Verified 2026-09-05 by SymPy (exact rational), mpmath and Wolfram, all returning 19 exactly.
+
+**The original error was a complement error, and it is not uniformly conservative.** Writing (1 − q_i) where q_i belongs crosses over at exactly q = 1/2 (SymPy `solve` and Wolfram `Solve` agree). Below 1/2 the old bound over-constrains; **above 1/2 it under-constrains**, admitting couplings it was meant to exclude. It is also not a numerical-overflow guard: the float64 threshold is log(MaxMachineNumber) = 709.783, against an old bound of 0.1539 at q = 0.05, n = 3.
 
 **Selection criterion:** Use Branch 1 when models are architecturally distinct and prompts are independent. Use Branch 2 when models share training lineage, are given each other's outputs (confer rounds), or systematic correlation is suspected. The structured F_n model in §2 functions as a computationally tractable approximation of this exact physical model.
 
@@ -677,11 +685,17 @@ The base function f_k(E, M) captures two empirical observations: expertise is ne
 | n_H = 0 | F_n | No human passes — machine-only structured model |
 | ρ_MH = 0 | 1 − (1−C_M)(1−C_H) | Full independence — multiplicative gain |
 | ρ_MH = 1 | F_n | Fully primed — human adds nothing |
-| K=1, d=1, uniform p | C(n) | Simple corroboration model |
+| K=1, d=1, uniform p, **and the human residual below is zero** | C(n) | Simple corroboration model |
 | M = 0 | p_H = α·E | Expertise floor — reduced detection |
 | All V_s = 0 | p_H = f(E,M) | Base case — no domain modifiers |
 
-Every simpler model in the white paper and this appendix is a special case of G_n.
+**The human residual, added 2026-09-05.** The corroboration row above previously read "K=1, d=1, uniform p → C(n)" with no further condition, which is false whenever a human stream is present. The exact residual is
+
+> **G_n − w·C_M  =  w · C_H · (1 − ρ_MH) · (1 − C_M)**
+
+so the reduction holds **iff C_H = 0 ∨ ρ_MH = 1 ∨ C_M = 1 ∨ w = 0**. An earlier statement of this defect gave "n_H = 0" as the *necessary* condition; that is wrong. n_H = 0 is one *sufficient* route (via C_H = 0) and never necessary — full priming, saturated machine coverage, or zero class weight each suffice on their own. Stating the residual is preferred to enumerating conditions, because the residual is exact and the enumeration was twice found incomplete. Derived and confirmed 2026-09-05 by SymPy and by Wolfram `Reduce`, which supplied the w = 0 branch the enumeration had missed.
+
+Every simpler **detection-coverage** model in the white paper and this appendix is a special case of G_n. The scope word is deliberate: G_n does not subsume the Bayesian residual-risk model R_n or the Duane intensity model, which are different objects over different formalisms, and the unqualified claim was flagged as over-broad on 2026-09-05.
 
 ### Numerical Illustration
 
@@ -690,11 +704,13 @@ Representative parameters: 3 machine passes (p_M = 0.3, d_M = 0.7), 2 human pass
 | Scenario | Detection |
 |---|---|
 | Machine only (C_M) | 0.507 |
-| Human only (C_H) | 0.698 |
+| Human only (C_H) | 0.921 |
 | Combined, ρ = 0 (fully independent) | 0.961 |
-| Combined, ρ = 0.3 (mild priming) | 0.851 |
-| Combined, ρ = 0.6 (significant priming) | 0.748 |
+| Combined, ρ = 0.3 (mild priming) | 0.825 |
+| Combined, ρ = 0.6 (significant priming) | 0.689 |
 | Combined, ρ = 1.0 (fully correlated) | 0.507 |
+
+**Corrected 2026-09-05; the previous table was spliced from 2 inconsistent computations.** It printed C_H = 0.698 where the formulas above give 0.921095, and its combined rows were then shifted by one position: the value printed against ρ = 0.3 (0.851) is G_n at ρ = 0 computed with C_H = 0.698, and the value printed against ρ = 0.6 (0.748) is G_n at ρ = 0.3 with the same wrong C_H — while the ρ = 0 row (0.961) was computed with the correct 0.921095. The ρ = 0 and ρ = 1.0 rows were therefore right and the 2 middle rows wrong, which is why the table looked internally plausible. Recomputed from f(E,M) = E·(α + (1−α)·M) = 0.799, C_M = 1 − (1 − 0.7·0.3)³ = 0.506961 and C_H = 1 − (1 − 0.9·0.799)² = 0.921095; SymPy (exact rationals) and Wolfram agree to 6 significant figures. Reproduce with `scripts/verify_appendix_numerical_illustration.py`.
 
 The methodology formality gap at constant expertise E = 0.85:
 

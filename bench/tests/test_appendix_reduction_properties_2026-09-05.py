@@ -31,6 +31,10 @@ appendix. cc2 could not reproduce 32 under any counting rule it tried (43, 39,
 reduction statements are reproducible from a stated regex and that figure stands.
 """
 
+import itertools
+import math
+import sys
+
 import sympy as sp
 
 
@@ -331,41 +335,99 @@ class TestSection0_1_TheBoundednessConstraintIsMisjustified:
             assert all(w >= 0 for w in weights), f"a weight went negative at psi={psi}"
 
 
-    def test_what_the_constraint_WOULD_bound_if_it_were_needed(self):
-        """A FIX, not merely a refutation. The founder's standing position is that
-        a review returning only problems is of limited value.
+    def test_the_all_ones_bound_is_NOT_sufficient_for_n_at_least_3(self):
+        """MY OWN PROPOSED FIX WAS WRONG. This test records the refutation.
 
-        If the model were UNNORMALISED -- no partition function, so P(x) had to be
-        at most 1 directly -- a bound WOULD be needed. It is not the stated one.
-        The all-ones state carries the full coupling and has unnormalised weight
-        prod(q_i) * exp(sum psi), so the requirement is
-        sum(psi) <= -sum(log(q_i)). The appendix writes -sum(log(1 - q_i)).
+        The 2026-09-05 pinned test derived, from the all-ones state, that an
+        UNNORMALISED variant would need sum(psi) <= -sum(log q_i), and offered
+        that as the correction to the appendix. A panel reviewer showed it is
+        not sufficient once n >= 3, because a proper SUBSET can bind harder than
+        the full state. Reproduced here with exact rationals, and cross-checked
+        against mpmath and Wolfram on the same day, all returning 19 exactly.
 
-        The argument is wrong, and the error is not cosmetic. At q = 0.9 with 2
-        passes the stated bound is 4.6052 and admits an unnormalised all-ones
-        weight of 81; the correct bound is 0.2107 and admits exactly 1. Worse, the
-        all-zeros state carries exp(0) = 1, so no coupling can affect it -- a
-        bound expressed in terms of (1 - q_i) constrains the single state the
-        coupling does not touch.
-
-        PROPOSED RESOLUTION, for the founder: with Z present the constraint is
-        unnecessary in either form and the justification should be struck. If it
-        is retained for numerical conditioning -- a real concern, since exp
-        overflows -- it should say so and cite the overflow threshold, not
-        non-negativity.
+        The construction: put the ENTIRE all-ones budget on a single pair. The
+        all-ones inequality is then satisfied with equality, and yet the 2-element
+        state carrying that pair has unnormalised weight (1-q)/q, which exceeds 1
+        for every q < 1/2.
         """
-        q1, q2, psi = sp.symbols('q_1 q_2 psi', positive=True)
-        # the requirement that the all-ones UNNORMALISED weight not exceed 1
-        derived = sp.solve(sp.Eq(q1 * q2 * sp.exp(psi), 1), psi)[0]
-        assert _zero(sp.expand_log(derived, force=True)
-                     - (-sp.log(q1) - sp.log(q2)))
-        # and the appendix's form is a DIFFERENT quantity
-        stated = -sp.log(1 - q1) - sp.log(1 - q2)
-        assert _witness_closed(sp.expand_log(derived, force=True) - stated)
-        # numerically, the stated bound admits a weight far above 1
-        at_stated = (q1 * q2 * sp.exp(stated)).subs({q1: sp.Rational(9, 10),
-                                                     q2: sp.Rational(9, 10)})
-        assert float(at_stated) > 1
+        n = 3
+        q = sp.Rational(1, 20)
+        budget = -n * sp.log(q)                    # the all-ones bound
+        psi = {(0, 1): budget}                     # whole budget on one pair
+
+        def weight(S):
+            pr = sp.Integer(1)
+            for i in range(n):
+                pr *= q if i in S else (1 - q)
+            coupled = sum(psi.get((a, b), 0)
+                          for a, b in itertools.combinations(sorted(S), 2))
+            return pr * sp.exp(coupled)
+
+        # the all-ones inequality is satisfied, with equality
+        assert _zero(sum(psi.values()) - budget)
+        assert _zero(weight({0, 1, 2}) - 1)
+
+        # ...and yet a SUBSET exceeds 1, by a wide margin
+        offender = sp.simplify(weight({0, 1}))
+        assert offender == 19, f"expected exactly 19, got {offender}"
+        assert _zero(offender - (1 - q) / q)
+
+    def test_the_per_subset_condition_is_the_correct_one(self):
+        """The necessary and sufficient form, which the appendix now states.
+
+        w(S) <= 1  <=>  sum_{i<j in S} psi_ij
+                        <= -sum_{i in S} log q_i - sum_{i not in S} log(1 - q_i)
+
+        Checked as an identity on log w(S), so it holds for every S rather than
+        for a sampled few -- the discharge rule this project adopted says a
+        sampled agreement may never CONFIRM a universal claim.
+        """
+        n = 3
+        qs = [sp.Symbol(f'q_{i}', positive=True) for i in range(n)]
+        p01 = sp.Symbol('psi_01', real=True)
+        S = {0, 1}
+
+        pr = sp.Integer(1)
+        for i in range(n):
+            pr *= qs[i] if i in S else (1 - qs[i])
+        log_w = sp.expand_log(sp.log(pr * sp.exp(p01)), force=True)
+
+        slack = p01 + sp.log(qs[0]) + sp.log(qs[1]) + sp.log(1 - qs[2])
+        assert _zero(log_w - slack)
+
+        # discrimination: the ALL-ONES form is a different, weaker quantity
+        all_ones = p01 + sp.log(qs[0]) + sp.log(qs[1]) + sp.log(qs[2])
+        assert _witness_closed(slack - all_ones)
+
+    def test_the_complement_error_crosses_over_at_one_half(self):
+        """The stated bound is not uniformly conservative -- it flips at q = 1/2.
+
+        Below 1/2 it over-constrains; ABOVE 1/2 it under-constrains, admitting
+        couplings it was meant to exclude. That half is the reportable one, and
+        neither panel seat reported it.
+        """
+        q = sp.Symbol('q', positive=True)
+        stated = -sp.log(1 - q)          # what the appendix said
+        derived = -sp.log(q)             # the all-ones requirement
+        crossover = sp.solve(sp.Eq(stated, derived), q)
+        assert crossover == [sp.Rational(1, 2)], crossover
+
+        below = (stated - derived).subs(q, sp.Rational(1, 20))
+        above = (stated - derived).subs(q, sp.Rational(19, 20))
+        assert below < 0, "below 1/2 the stated bound should be the stricter one"
+        assert above > 0, "above 1/2 the stated bound should be the looser one"
+
+    def test_the_bound_is_not_an_overflow_guard_either(self):
+        """The remaining candidate justification, also refuted.
+
+        float64 exp overflows near 709.78; the stated bound at q=0.05, n=3 is
+        0.1539. It is 3 orders of magnitude away from being an overflow guard.
+        """
+        overflow = math.log(sys.float_info.max)
+        stated = float(-3 * sp.log(1 - sp.Rational(1, 20)))
+        assert 709 < overflow < 710
+        assert stated < 1
+        assert overflow / stated > 1000
 
     def test_the_reason_is_exp_being_strictly_positive(self):
         """The one-line argument, stated symbolically so it cannot be mislaid."""
@@ -429,6 +491,29 @@ class TestTheGnReductionTable:
         G, w, CM, CH, rho = self._G()
         assert _zero(G.subs(CH, 0) - w * CM)
         assert _witness_closed(G.subs(CH, sp.Rational(1, 2)) - w * CM)
+
+    def test_the_exact_human_residual_and_its_complete_zero_set(self):
+        """The appendix now STATES the residual instead of enumerating conditions.
+
+        G_n - w*C_M = w * C_H * (1 - rho_MH) * (1 - C_M)
+
+        My earlier claim that the row needs "n_H = 0" as a NECESSARY condition was
+        wrong -- 3 panel seats said so independently on 2026-09-05 and they were
+        right. n_H = 0 is one SUFFICIENT route (via C_H = 0) and never necessary.
+        Wolfram's Reduce supplied a 4th branch, w = 0, that the enumeration missed;
+        that is precisely why the appendix now gives the residual rather than a list.
+        """
+        G, w, CM, CH, rho = self._G()
+        residual = sp.factor(sp.simplify(G - w * CM))
+        assert _zero(residual - w * CH * (1 - rho) * (1 - CM))
+
+        # every branch of the zero set, including the one enumeration missed
+        for name, sub in [("C_H=0", {CH: 0}), ("rho_MH=1", {rho: 1}),
+                          ("C_M=1", {CM: 1}), ("w=0", {w: 0})]:
+            assert _zero(residual.subs(sub)), f"{name} should kill the residual"
+
+        # discrimination: with none of them, the residual is genuinely non-zero
+        assert _witness_closed(residual)
 
     def test_full_priming_reduces_G_n_to_F_n(self):
         """rho_MH = 1: the human's contribution is fully absorbed."""

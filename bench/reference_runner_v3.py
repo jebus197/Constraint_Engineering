@@ -9920,6 +9920,35 @@ def _evaluate_sk_for_findings(
             )
             entry["sk_result"]["s_star"] = s_star
             entry["sk_result"]["passes_threshold"] = passes
+            # RECORD THE GATE'S INPUTS, NOT ONLY ITS VERDICT (2026-09-05).
+            #
+            # Measured this day across every archived report: 3816 gate records
+            # carry s_star and passes_threshold, and NOT ONE carries nu_b, nu_f,
+            # q or s_floor. So the archive says what the gate decided and makes
+            # it impossible to reconstruct WHY.
+            #
+            # That gap cost a wrong answer to the founder. s_star reads 0.0 in
+            # 3816 of 3816 records, and with the inputs absent there was no way
+            # to tell whether that came from the nu_f < 1e-12 short-circuit or
+            # from the [0,1] clamp -- two different defects with two different
+            # fixes. The first attempt to explain it INFERRED nu_f = 0 and was
+            # wrong: at the shipped defaults (nu_b=0.05, nu_f=0.20) S* clamps to
+            # 0 for q*R >= 0.24 and to 1 for q*R <= 0.05, so the gate can only
+            # discriminate inside the narrow band q*R in (0.05, 0.24) -- derived
+            # with SymPy, and the band is invisible without q.
+            #
+            # A decision whose inputs are not recorded cannot be audited, and
+            # this project's standing rule is that a measured result travels
+            # with what produced it. The verdict is the result; these are what
+            # produced it.
+            entry["sk_result"]["gate_inputs"] = {
+                "nu_b": nu_b,
+                "nu_f": nu_f,
+                "q": q,
+                "R_old": R_old,
+                "s_floor": s_floor,
+                "effective_threshold": max(s_star, s_floor),
+            }
             if passes:
                 # Close the R_k loop: compute updated risk
                 # F2 (2026-04-21): route through compute_rk_with_eta_channel
