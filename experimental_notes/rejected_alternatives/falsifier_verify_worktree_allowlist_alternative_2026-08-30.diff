@@ -1,0 +1,108 @@
+--- bench/falsifier_verify.py	2026-09-01 13:24:12
++++ /private/tmp/cdsfl_review_89557/bench/falsifier_verify.py	2026-08-30 01:56:13
+@@ -75,7 +75,7 @@
+ **A rejection is a THIRD OUTCOME, not a verdict.** :func:`reverify_falsifier`
+ returns :data:`INTEGRITY_VIOLATION` — never CONFIRMED, never REFUTED. The
+ finding is neither closed nor dropped. At the runner's gate
+-(``reference_runner_v3.apply_falsifier_verdicts``) any verdict that is not
++(``reference_runner_v2.apply_falsifier_verdicts``) any verdict that is not
+ CONFIRMED, and not a REFUTED sub-critical, falls to the escalation branch, so an
+ integrity rejection sets ``escalated`` and goes to a human. Every rejection also
+ prints a banner to stderr quoting the matched text, and is appended to
+@@ -356,6 +356,36 @@
+                 out.append(expanded)
+                 out.append(expanded + ".away")
+     return out
++
++
++_MAIN_WORK_TREE_CACHE: list = []
++
++
++def _main_work_tree() -> str:
++    """The canonical work tree of the repository this file lives in.
++
++    Returns `REPO_ROOT` itself when this is not a worktree, or when git cannot
++    answer -- the failure direction is "no extra root", which is the status quo
++    and never a widening. Cached: `_allow_roots` is called per falsifier and a
++    subprocess per call would be paid hundreds of times a run.
++    """
++    if _MAIN_WORK_TREE_CACHE:
++        return _MAIN_WORK_TREE_CACHE[0]
++    root = os.path.normpath(str(REPO_ROOT))
++    try:
++        import subprocess as _sp
++        common = _sp.run(["git", "rev-parse", "--git-common-dir"],
++                         capture_output=True, text=True, timeout=10,
++                         cwd=str(REPO_ROOT)).stdout.strip()
++        if common:
++            cand = os.path.dirname(os.path.abspath(
++                os.path.join(str(REPO_ROOT), common)))
++            if os.path.isdir(cand):
++                root = os.path.normpath(cand)
++    except Exception:                                    # noqa: BLE001
++        pass
++    _MAIN_WORK_TREE_CACHE.append(root)
++    return root
+ 
+ 
+ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str] = ()) -> list[str]:
+@@ -377,46 +407,19 @@
+     roots = [os.path.normpath(repo_root or str(REPO_ROOT)),
+              os.path.normpath(str(REPO_ROOT)),
+              STAGED_TARGET_ROOT]
+-    # THE CANONICAL TREE, WHEN A DISPATCHER NAMES IT (founder ruling 2026-08-30,
+-    # option B). NOT a general widening: this is read from an environment
+-    # variable that only the panel dispatcher sets, so it is inert in every
+-    # experiment and in every ordinary suite run.
+-    #
+-    # THE DEFECT IT CLOSES. `REPO_ROOT` is derived from this file's own location,
+-    # which inside a git worktree names THE WORKTREE. Archived falsifiers that
+-    # name the canonical tree by absolute path were therefore rejected as
+-    # INTEGRITY_VIOLATION -- 17 of 469 where the guard's own test expects 2
+-    # (3.62%, Wilson CI [2.28%, 5.73%], p = 4.5e-11 against the expected rate).
+-    # A rejection routes the finding to a human and NEVER to CONFIRMED, so the
+-    # guard was quietly blocking honest work everywhere panels run.
+-    #
+-    # Option A -- deriving the canonical tree inside the guard via
+-    # `git rev-parse --git-common-dir` -- would widen the allowlist in EVERY
+-    # context, including live experiments. That allowlist was closed after the
+-    # one run this project had to discard, because a model wrote a falsifier
+-    # that opened the scoring key. This does not touch that.
+-    #
+-    # WHAT ACTUALLY BOUNDS THIS -- the earlier comment here gave a reason that
+-    # is FALSE about its own function, and both reviewers proved it by execution
+-    # on 2026-08-31.
+-    #
+-    # The old claim was that a model-authored falsifier "cannot reach this"
+-    # because the value is read by the parent. `_allow_roots` is ALSO called at
+-    # the `_observer_source` site, which builds the CHILD's runtime allowlist,
+-    # so with CDSFL_CANONICAL_REPO set the directory does appear in the child's
+-    # allow list. Measured both ways.
+-    #
+-    # The conclusion survives for a DIFFERENT reason: `_denied` tests the
+-    # PROTECTED set before the allow set, so a protected path under a widened
+-    # root is still refused -- proved by executing a protected key under the
+-    # widened root (denied) beside a sibling (allowed).
+-    #
+-    # The reason matters as much as the conclusion here. A wrong reason written
+-    # beside the permission boundary closed after the one discarded run reads as
+-    # clearance, and the next reader inherits it.
+-    _canon = os.environ.get("CDSFL_CANONICAL_REPO", "").strip()
+-    if _canon and os.path.isdir(_canon):
+-        roots.append(os.path.normpath(_canon))
++    # ...AND THE MAIN WORK TREE, when this copy of the harness is running from a
++    # git worktree. `REPO_ROOT` is `parents[1]` of THIS FILE, so in a worktree it
++    # names the worktree and the CANONICAL tree drops out of the allowlist. Panels
++    # are dispatched into throwaway worktrees, and archived falsifiers name the
++    # canonical tree by absolute path, so those falsifiers are rejected as
++    # INTEGRITY_VIOLATION -- a verdict that routes the finding to a human and
++    # never to CONFIRMED. MEASURED 2026-08-30 from a worktree, over the 560
++    # archived falsifier sources in `test_the_guard_rejects_nothing_else_in_the
++    # _whole_tracked_archive`: 17 rejected against the 2 that are real. 15 honest
++    # falsifiers blocked, which is precisely what that test's docstring says must
++    # never happen. The reasoning is the same as the line above it: the repository
++    # holds no key material, so allowing it costs nothing.
++    roots.append(_main_work_tree())
+     for mod_name in ("bench.experiment_11_orchestrator", "experiment_11_orchestrator"):
+         mod = sys.modules.get(mod_name)
+         panel = getattr(mod, "_PANEL_CWD", None) if mod is not None else None
