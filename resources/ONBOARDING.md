@@ -2498,6 +2498,14 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
   Each change measured independently.
 - **Next:** Run 5 complete → apply findings → γ_input complexity routing →
   CX flags → parallel dispatch → WBA attribution → Exp 19 → Exp 20 → Bench Run 2.
+
+  **[CORRECTION 2026-09-05 — THE LINE ABOVE IS 158 DAYS OUT OF DATE AND IS NOT THE NEXT ACTION.]**
+  Exp 19 and Exp 20 never ran and are not queued; `bench/run_exp19_fff.py` and
+  `bench/run_exp20_confer.py` still describe themselves as "Ready to run" and appear
+  in no live state document. The live resume pointer is the operational tracker,
+  `experimental_notes/CDSFL_Agent_Operational_Plan.md`. The actual blocker as of
+  2026-09-05 is the held-out ruling on experiments 50, 51 and 52, open since
+  2026-08-08; nothing has produced a run directory since 2026-08-23.
   Founder observations: `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`.
   Outstanding items: `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`.
 - **Experimental design:** 2x2 factorial — Control (no methodology),

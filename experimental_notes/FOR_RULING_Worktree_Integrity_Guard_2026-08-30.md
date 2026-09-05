@@ -1,5 +1,18 @@
 # For a founder ruling — the integrity guard rejects honest falsifiers when run from a worktree
 
+> **[CORRECTION 2026-09-05 — THIS RULING IS SPENT. NO FOUNDER ACTION IS REQUIRED.]**
+> This file asks for a ruling on whether to widen a path allowlist so that
+> archived falsifiers naming the canonical tree by absolute path stop being
+> rejected. The underlying defect WAS closed, by a different and more
+> conservative route than the one proposed here: `bench/falsifier_verify.py:385-412`
+> resolves the canonical repository explicitly (`CDSFL_CANONICAL_REPO`) instead of
+> widening what a model-authored falsifier may read. Its own comment records the
+> measurement — 17 of 469 rejections where the guard's test expects 2, which is
+> 3.62%, Wilson [2.28%, 5.73%]. So the allowlist was never widened and the
+> question this file poses no longer arises. Retained, not deleted, per the
+> project's dated-correction convention; the original text follows unaltered.
+
+
 **Found by cc2 on the repair-loop panel, 2026-08-30. Diagnosis verified here. The fix is NOT applied,
 because it widens a security allowlist.**
 
