@@ -27,6 +27,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from experiment_11_orchestrator import (  # noqa: E402
     call_claude_cli, call_deepseek, call_openrouter)
+from openrouter_tools import (  # noqa: E402
+    TOOL_SPECS, call_openrouter_with_tools)
 
 _REPO = Path(__file__).resolve().parent.parent
 _env = _REPO / ".env"
@@ -83,23 +85,46 @@ SYSTEM = (
 
 
 def dispatch(name, model_id, route):
+    """EVERY SEAT GETS TOOLS. Founder ruling 2026-09-05: "Tool use is at the core
+    of what CDSFL is."
+
+    The first dispatch of this panel used the tool-FREE OpenRouter and DeepSeek
+    paths, so 3 of 5 seats could only reason. That inverts the founding principle
+    -- a seat that cannot execute cannot decide by execution, and the panel
+    degenerates toward exactly the model agreement CDSFL exists to reject.
+
+    `bench/openrouter_tools.py` was built for precisely this (Exp 40 item 1E.11)
+    and its own docstring says so: the non-Anthropic seats "have no tool execution
+    unless the host wires structured function-calling". It was built and not used.
+
+    Tools offered: sympy_verify, z3_verify, pytest_run, ruff_check, mypy_check.
+    Every tool call made by every seat is recorded in the seat's JSON, so the
+    claim "this panel used tools" is itself checkable rather than asserted.
+    """
     t0 = time.time()
+    tool_log = []
     try:
         if route == "claude_cli":
-            resp = call_claude_cli(model_id, SYSTEM, PROMPT)
+            resp = call_claude_cli(model_id, SYSTEM, PROMPT)      # native Bash
         elif route == "deepseek":
-            resp = call_deepseek(model_id, SYSTEM, PROMPT)
+            resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
         else:
-            resp = call_openrouter(model_id, SYSTEM, PROMPT)
+            r = call_openrouter_with_tools(model_id, SYSTEM, PROMPT,
+                                           tools=TOOL_SPECS, max_tokens=32768,
+                                           timeout=300)
+            resp = r.get("final_text", "")
+            tool_log = r.get("tool_calls", [])
         ok = bool(resp and resp.strip())
         out = {"model": name, "route": route, "ok": ok, "chars": len(resp or ""),
+               "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": resp or ""}
     except Exception as e:  # noqa: BLE001
         out = {"model": name, "route": route, "ok": False,
                "error": f"{type(e).__name__}: {e}",
                "elapsed_s": round(time.time() - t0, 1), "response": ""}
     (LOGS / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
-    print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} {out['elapsed_s']}s"
+    print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} "
+          f"tools={out.get('n_tool_calls', 'native')} {out['elapsed_s']}s"
           + (f" ERR={out.get('error')}" if not out["ok"] else ""), flush=True)
     return out
 

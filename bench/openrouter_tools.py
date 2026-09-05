@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -38,6 +39,20 @@ from typing import Any, Callable, Dict, List, Optional
 # ── Constants ──────────────────────────────────────────────────────────────
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# The sympy/z3 verifiers are reached as ``bench.immune_agents``, which requires
+# the REPO ROOT on sys.path, not this file's own directory. Running a caller as
+# a script (``python3 bench/confer_*.py``) sets sys.path[0] to ``bench/``, so
+# ``bench`` is not an importable package and every sympy_verify / z3_verify call
+# returns {"error": "ModuleNotFoundError: No module named 'bench.immune_agents'"}
+# instead of a verdict. The model still sees a tool "result" and reasons on,
+# so the failure is silent: the panel looks tool-enabled and is not.
+# Measured 2026-09-05: 19 such calls in panel_maths_tools_20260905T034234Z.
+# test_openrouter_tools.py never caught it because pytest puts rootdir on the
+# path, so the test and the script disagree about what is importable.
+# Appended, not inserted at 0, so nothing here can shadow an installed package.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.append(str(REPO_ROOT))
 
 # Hard cap on the tool-call loop. At 6 iterations a model can: call a tool,
 # read the result, call another, etc. through a short chain. Beyond that we
@@ -449,7 +464,46 @@ def call_openrouter_with_tools(
                 "content": result_json,
             })
     else:
+        # THE CAP MUST STOP THE TOOLS, NOT DISCARD THE ANSWER.
+        #
+        # Measured 2026-09-05: with the sys.path defect above fixed, the tools
+        # actually worked, and cx immediately went from 10 calls to 31 -- straight
+        # through this cap. It returned final_text="" and ok=False, so a full paid
+        # seat produced nothing at all. Before the fix the same seat "succeeded",
+        # because every tool errored instantly and it gave up and wrote prose.
+        # Repairing the tools is what made the cap bite; the two defects were
+        # masking each other.
+        #
+        # The cap exists to stop pathological tool spam, and exhausting it does
+        # that -- no further tool call is permitted below. Throwing away the
+        # reasoning as well is a separate, unintended loss. So: one final
+        # tool-free round-trip to harvest the verdict from the work already done.
+        # Bounded (exactly 1 extra call, only on cap exhaustion) and it cannot
+        # loop, because `tools` is omitted so no tool_calls can come back.
         stopped_reason = "max_iterations"
+        messages.append({
+            "role": "user",
+            "content": (
+                "You have reached this review's tool-call limit, so no further "
+                "tool calls are available. Write your final answer NOW using the "
+                "tool results you already have. Where a check did not complete, "
+                "say so explicitly and mark that claim UNVERIFIED rather than "
+                "asserting it."
+            ),
+        })
+        try:
+            final_response = client.chat.completions.create(
+                model=model_id,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=0.0,
+            )
+            if final_response.choices:
+                final_text = (final_response.choices[0].message.content or "").strip()
+                if final_text:
+                    stopped_reason = "max_iterations_harvested"
+        except Exception as exc:  # harvest is best-effort; never mask the cap
+            stopped_reason = f"max_iterations_harvest_failed: {type(exc).__name__}"
 
     return {
         "final_text": final_text,
