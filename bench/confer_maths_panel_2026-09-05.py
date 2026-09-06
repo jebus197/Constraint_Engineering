@@ -105,7 +105,16 @@ def dispatch(name, model_id, route):
     tool_log = []
     try:
         if route == "claude_cli":
-            resp = call_claude_cli(model_id, SYSTEM, PROMPT)      # native Bash
+            # 900s, NOT the 300s default. THE PROJECT ALREADY LEARNED THIS AND I
+            # DID NOT CARRY IT ACROSS. experiment_11_orchestrator.py:136 sets
+            # `timeout=900,  # WP4a: 300->900s to prevent CC2 timeout cascade`
+            # for exactly this seat. This dispatcher took the function default
+            # instead, so on 2026-09-06 the cc2 seat failed 3 attempts at 300s
+            # each -- 900s of wall clock producing nothing -- on a brief that
+            # fable completed in 237s. The seat did not fail on merit; it ran out
+            # of clock while executing the tool work the brief demanded, and the
+            # seat that was asked to DEFEND the proposal was the one lost.
+            resp = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=900)  # native Bash
         elif route == "deepseek":
             resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
         else:
