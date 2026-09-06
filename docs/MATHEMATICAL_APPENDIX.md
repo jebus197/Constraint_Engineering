@@ -637,6 +637,43 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | d_ik (class-specific diversity) | Well-defined, reduces to d_i | Cross-architecture defect data available (Claude/Codex/Gemini) | Estimate per-class correlations from review data |
 | Parameter uncertainty | Standard Bayesian treatment | Initial data from completed review rounds | Point estimates first, intervals as data accumulates |
 | Severity separation | Well-defined, reduces to w_k model | Requires domain-specific severity data | Conflate for non-safety work, separate for safety-critical |
+
+### The discharge rule for reduction claims (ADOPTED 2026-09-06, founder ruling)
+
+**Scope: identity claims only.** This governs claims that one form *reduces to* another — that a difference is exactly zero. Empirical fits, calibrations and approximations keep their existing vocabulary and are untouched by it.
+
+**The scope is declared BEFORE the simplification is proposed.** This is the refinement the founder selected, and it is the load-bearing half: a scope chosen after the checking is a scope chosen to fit what the checking happened to cover.
+
+| Verdict | Permitted when | Never |
+|---|---|---|
+| **CONFIRMED** | the difference is shown to be exactly zero across the **whole declared scope**, by proof or by exhaustive enumeration | awarded on sampling, however dense |
+| **REFUTED** | one counterexample, which may be found by sampling | — |
+| **SAMPLED** | agreement observed at a stated number of points, quoted with an interval | promoted to CONFIRMED without a proof |
+| **UNDISCHARGED** | no attempt was made, or the attempt was incomplete | left implicit — it is a verdict, not a silence |
+
+**Why the project adopted it.** The alternative is the arrangement that already existed, stated honestly: CONFIRMED could be awarded on a proof, on sampled agreement, or on a written assertion that something was checked, with the record not distinguishing between them. That arrangement never blocked work, and it produced **4 failures in a single 48-hour window**, none caught by the test suite or by the falsification pass, all caught by other models reading the work.
+
+**The worked difference, on 2 adjacent lines of this appendix.** The claim that the correlated branch collapses to the independent product when couplings vanish is genuinely provable, was proved with 2 tools, and keeps its label under either arrangement. The neighbouring claim — a constraint on coupling constants — was marked verified in March 2026, is false, and carried that status for **6 months**. Under this rule it could never have acquired it: no proof existed across the declared scope, so the honest label was UNDISCHARGED.
+
+**Applied retroactively where it is cheap and honest to do so**, not as a sweep: the reduction properties of G_n are CONFIRMED (proof across the declared scope, 3 tools), the 5-stage chain links are CONFIRMED individually, and the 2→3 link is REFUTED with a stated counterexample rather than left as a vague caveat.
+
+### The severity number and the consequence rubric: a measured account (added 2026-09-06)
+
+**The archived record contains a disagreement between 2 severity authorities, and this is what it actually is.** CDSFL gates on severity through 2 things: a consequence-based rubric, pre-registered and frozen in May 2026 and standing as authoritative wherever the 2 disagree; and a numeric cut at 0.7 described as the rubric's operational proxy. Across 259 judgeable audit cases they disagree on **118, which is 45.56%, Wilson [39.60%, 51.65%]**. That figure has been quoted as a conflict between authorities. **It is not one**, and recording it as such would have been wrong.
+
+**All 259 judgeable cases lie inside the band [0.65, 0.74].** The audit is a boundary sample by construction, so the figure says nothing — in either direction — about how the proxy behaves outside that band, where it remains unaudited.
+
+**Inside the band the 2 are not diverging; they are unrelated.** Cohen's κ = **−0.0227**, 95% CI [−0.159, +0.114]; Fisher exact **p = 0.78**. Disagreement expected under full independence is **44.55%** against an observed 45.56%. Independently: the area under the curve for the number predicting a CRITICAL rubric verdict is **0.464**, against 0.5 for chance (point-biserial r = −0.054, p = 0.39), while 2 blind readers applying the rubric agree with each other **92.5%** of the time, **κ = 0.837**. In the band the rubric is reproducible and the number carries no information.
+
+**The mechanism is the instrument's noise floor, not the authorities.** Measured from **273** duplicate pairs in which 2 different models independently scored the same defect — pairs the runner itself ruled identical — the per-assignment noise in the severity number has **σ = 0.1419**, bootstrap 95% CI [0.1241, 0.1575]. The audit band is **0.09** wide. **The gate is asking for finer resolution than the instrument possesses.** Same defect, 2 models, opposite sides of the 0.7 line: **82 of 273 = 30.04%**, Wilson [24.9%, 35.7%]. A forward simulation using only σ and the corpus severity distribution, with **no parameter fitted to the audit**, predicts **45.58%** against the measured 45.56%.
+
+**2 alternative explanations were killed rather than assumed away.** Restricted range alone does not produce it: at σ = 0 the same simulation gives **0.00%** disagreement and κ = +1.0. A precise number with a mis-centred cut does not either, because that predicts one-sided error, and the measured split is **67 over-calls to 51 under-calls, binomial p = 0.167**; the fit also holds for every latent rubric threshold τ ∈ [0.60, 0.80].
+
+**Consequence for the model: the 0.7 cut is not the fault and does not move.** No new dated pre-registration is required, and the anti-cooking condition that governs any move of that cut is not engaged.
+
+**The missing-falsifier count is 4, not 91.** Of the 118 disagreements, 91 carry no executable falsifier — but that decomposes: **85** are archived runs predating the `falsifier_verdict` field entirely, **2** were settled by a merge whose parent governs, and **4** are a genuine queue. Reproduced by `scripts/reproduce_rubric_human_queue_partition.py`.
+
+Established by a 2-seat panel (cc2, fable) on 2026-09-06, each reaching it independently, and the 85/2/4 partition confirmed against the project's own committed reproducer. **DERIVED** where the simulation is concerned; **MEASURED** for every proportion quoted, each with its interval.
 | G_n (combined detection) | Well-defined, all reductions verified | Numerical illustration computed; empirical calibration pending | Integrate into benchmark when HIL review data is collected |
 | κ (calibration metric) | Well-defined, asymmetric variant specified | Simulated convergence (~5 reviews); empirical confirmation pending | Deploy when repeated HIL reviews generate sufficient data |
 | Cognitive measurement (§7) | All 9 components verified (SymPy + Wolfram) | 2 components implemented, 7 ready | Implement remaining components in bench pipeline |
