@@ -9558,6 +9558,15 @@ def compute_rk(
     R_old = _finite(R_old, worst=1.0)   # unknown risk is maximum risk
     q = _finite(q, worst=0.0)           # unknown detection detects nothing
     sk = _finite(sk, worst=0.0)         # unknown efficacy fixes nothing
+    # EXTENDED 2026-09-06 (panel, cc2). The first version of this guard hardened 3
+    # of the 5 inputs and I described it as a property of compute_rk. cc2 executed
+    # the other 2 and broke the claim: nu_b=-inf returned 0.475000, nu_b=nan
+    # returned 0.910880 and nu_f=+inf returned 0.708995, against a finite baseline
+    # of 0.501250. A guard that covers 3 of 5 arguments is not a guard on the
+    # function. Unknown re-injection is MAXIMUM re-injection; the nu_b+nu_f<=1
+    # constraint below then rescales, which is the existing, tested behaviour.
+    nu_b = _finite(nu_b, worst=1.0)
+    nu_f = _finite(nu_f, worst=1.0)
     nu_b = max(0.0, min(1.0, float(nu_b)))
     nu_f = max(0.0, min(1.0, float(nu_f)))
     # HARD CONSTRAINT: nu_b + nu_f <= 1
@@ -9980,6 +9989,22 @@ def sk_break_even(
     b = -(R - 1.0) * (nu_b - 1.0) * (2.0 * R * nu_f * q - R * q - nu_f)
     c = (R - 1.0) * (R * q - 1.0) * (nu_b * nu_f - nu_b - nu_f)
 
+    # DEGENERATE CASE, CORRECTED 2026-09-06 (panel, cc2). At R = 1 the whole
+    # polynomial vanishes -- a, b and c are all 0 -- because residual risk is
+    # already certain and no fix efficacy can change it: compute_rk(1,q,s) == 1 for
+    # every s. The previous code fell into the `abs(b) < 1e-15` branch and returned
+    # None, which sk_threshold_shadow then recorded as "no break-even in [0,1] at
+    # these parameters". That is FALSE in the opposite direction: it is not that no
+    # s is a break-even, it is that EVERY s is. Conflating "no root" with "all
+    # roots" is exactly the class of silent wrongness this project keeps finding.
+    #
+    # It is returned as None rather than as a floor of 0.0 ON PURPOSE. A floor of
+    # 0.0 reads as "every fix passes", and R = 1 is precisely what the non-finite
+    # guard above coerces a corrupt R_old to -- so a floor of 0.0 would turn a
+    # corrupt input into a maximally permissive gate. None keeps the shadow silent
+    # instead, and the reason string now says which case it is.
+    if abs(a) < 1e-15 and abs(b) < 1e-15 and abs(c) < 1e-15:
+        return None
     if abs(a) < 1e-15:                          # degenerates to linear
         if abs(b) < 1e-15:
             return None
@@ -9995,6 +10020,25 @@ def sk_break_even(
     if not inside:
         return None
     return max(0.0, min(1.0, min(inside)))
+
+
+def _no_break_even_reason(nu_b: float, nu_f: float, q: float, R: float) -> str:
+    """Say WHICH degenerate case produced no usable break-even.
+
+    Added 2026-09-06 (panel, cc2). The single string "no break-even in [0,1] at
+    these parameters" was false at R = 1, where the equation is identically zero
+    and EVERY s is a break-even. A record that names the wrong cause is worse than
+    one that names none, because it is quotable.
+    """
+    if abs(float(R) - 1.0) < 1e-12:
+        return ("degenerate: R is already 1, so every s leaves it unchanged and "
+                "every s is a break-even. Not comparable to a threshold, and NOT "
+                "a licence to pass everything")
+    if abs(float(R)) < 1e-12:
+        return "degenerate: R is 0, there is no risk to trade against"
+    if float(nu_b) + float(nu_f) < 1e-12:
+        return "degenerate: no re-injection is possible, so no fix can do net harm"
+    return "no break-even lies in [0,1] at these parameters"
 
 
 def sk_threshold_shadow(
@@ -10015,7 +10059,7 @@ def sk_threshold_shadow(
             "true_break_even": None,
             "corrected_passes": None,
             "would_flip": None,
-            "reason": "no break-even in [0,1] at these parameters",
+            "reason": _no_break_even_reason(nu_b, nu_f, q, R),
         }
     corrected_passes = float(sk) >= max(true_floor, float(s_floor))
     return {

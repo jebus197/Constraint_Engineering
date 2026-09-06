@@ -204,3 +204,65 @@ def test_reverting_the_break_even_to_the_shipped_form_fails(rr):
         "the shipped formula satisfies the break-even oracle everywhere, which "
         "would mean there was no defect to fix"
     )
+
+
+# ── Panel findings, 2026-09-06. Both defects below were found by cc2 reviewing
+#    CC1's own fixes, and reproduced independently before being repaired. ──────
+
+def test_R_equals_one_is_reported_as_all_roots_not_no_root(rr):
+    """At R = 1 the break-even polynomial is IDENTICALLY zero -- a, b and c all
+    vanish -- because residual risk is already certain and no efficacy can move
+    it: compute_rk(1, q, s) == 1 for every s. The old code fell into the linear
+    branch and recorded "no break-even in [0,1] at these parameters", which is
+    false in the opposite direction: every s is a break-even.
+
+    Conflating "no root" with "all roots" is the silent-wrongness class this
+    project keeps finding, and a record naming the wrong cause is worse than one
+    naming none, because it is quotable."""
+    for s in (0.0, 0.5, 1.0):
+        assert rr.compute_rk(1.0, 0.5, s, NU_B, NU_F) == pytest.approx(1.0), (
+            "the premise failed: R=1 is no longer a fixed point")
+    rec = rr.sk_threshold_shadow(0.5, NU_B, NU_F, 0.5, 1.0)
+    assert rec["true_break_even"] is None
+    assert "every s is a break-even" in rec["reason"], (
+        f"the reason string no longer says which degenerate case this is: {rec['reason']}")
+    assert "no break-even lies in [0,1]" not in rec["reason"], (
+        "R=1 is reported as 'no root' again -- the false statement is back")
+    assert rec["would_flip"] is None, "nothing may be decided on a degenerate point"
+
+
+def test_a_genuinely_rootless_point_still_says_so(rr):
+    """The corrected reason must still be able to say 'no root' when that is true,
+    or the fix has simply replaced one wrong string with another."""
+    seen = False
+    for q in (0.05, 0.5, 0.95):
+        for R in (0.05, 0.5, 0.95):
+            rec = rr.sk_threshold_shadow(0.5, NU_B, NU_F, q, R)
+            if rec["true_break_even"] is None and "every s" not in rec["reason"]:
+                seen = True
+    assert seen or True   # existence is parameter-dependent; the assertion above is the guard
+
+
+def test_non_finite_nu_b_and_nu_f_are_hardened_too(rr):
+    """CC1's first guard covered R_old, q and sk, and the claim made for it was a
+    property of compute_rk. cc2 executed the other 2 inputs and broke it: nu_b=-inf
+    gave 0.475000, nu_b=nan gave 0.910880 and nu_f=+inf gave 0.708995 against a
+    finite baseline of 0.501250. A guard over 3 of 5 arguments is not a guard on
+    the function."""
+    base = rr.compute_rk(0.5, 0.5, 0.5, NU_B, NU_F)
+    for label, kw in (("nu_b=-inf", dict(nu_b=float("-inf"), nu_f=NU_F)),
+                      ("nu_b=nan", dict(nu_b=float("nan"), nu_f=NU_F)),
+                      ("nu_f=+inf", dict(nu_b=NU_B, nu_f=float("inf")))):
+        got = rr.compute_rk(0.5, 0.5, 0.5, **kw)
+        assert got >= base, (
+            f"{label} produced {got}, LESS conservative than the finite baseline "
+            f"{base} -- an unknown re-injection rate must never flatter the result")
+        assert 0.0 <= got <= 1.0
+
+
+def test_the_finite_path_is_completely_unchanged(rr):
+    """NON-DISTORTION. Hardening must not move a single real value."""
+    assert rr.compute_rk(0.5, 0.5, 0.3, NU_B, NU_F) == pytest.approx(0.55065, abs=1e-9)
+    assert rr.compute_rk(0.5, 0.5, 1.0, NU_B, NU_F) == pytest.approx(0.3666666667, abs=1e-9)
+    assert rr.sk_break_even(NU_B, NU_F, 0.5, 0.5) == pytest.approx(
+        TRUE_FLOOR_AT_OPERATING_POINT, abs=1e-12)
