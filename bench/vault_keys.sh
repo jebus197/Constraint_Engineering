@@ -104,16 +104,37 @@ status() {
     rc=1
   }
   check_one "$CDSFL_STORE"
-  printf '%s\n' $CDSFL_LEGACY_STORES | while IFS= read -r loc; do
-    [ -n "$loc" ] && check_one "$loc"
-  done
+  # `|| true`, and the emptiness guard, added 2026-09-06. Under `set -e` an empty
+  # CDSFL_LEGACY_STORES made the final `read` return non-zero and killed the whole
+  # script SILENTLY -- no output, exit 1. It failed safe, because
+  # arc_sequencer.sh greps for '^VAULTED' and an empty string does not match, but a
+  # status command that prints nothing at all is its own hazard: the operator
+  # cannot tell "clean" from "crashed".
+  if [ -n "${CDSFL_LEGACY_STORES:-}" ]; then
+    printf '%s\n' $CDSFL_LEGACY_STORES | while IFS= read -r loc; do
+      [ -n "$loc" ] && check_one "$loc"
+    done || true
+  fi
   for loc in $CDSFL_LEGACY_STORES; do
     if [ -d "$loc" ] && [ -n "$(ls -A "$loc" 2>/dev/null)" ]; then rc=1; fi
   done
   # A copy somewhere nobody recorded is the case this is really guarding against.
   known=$(printf '%s\n' "$CDSFL_STORE" $CDSFL_LEGACY_STORES | sed 's/[].[^$*\\/]/\\&/g' | paste -sd'|' -)
-  stray=$(find "$HOME" -maxdepth 4 -name '*answer_key*.json' 2>/dev/null \
-          | grep -v "Developer_Projects" \
+  # PATTERNS AND SCOPE, CORRECTED 2026-09-06 — the previous form reported VAULTED
+  # while 29 plaintext answer keys sat on disk, and bench/arc_sequencer.sh:50 gates
+  # a whole experiment arc on that line. It was blind twice over:
+  #   1. It matched only '*answer_key*.json'. The BR2 keys are named
+  #      'ft-NNN_KEY.json' and the exp55 pair are '*_KEY.md' / '*GROUND_TRUTH.json',
+  #      so the pattern matched 0 of 29 real keys.
+  #   2. It excluded "Developer_Projects" outright — the directory the keys are in.
+  #      Measured before removing it: the corrected patterns match 0 files inside
+  #      the repository, so the exclusion suppressed only true positives.
+  # Depth 5, not 4, because the BR2 keys sit one level deeper (br2_keys/).
+  stray=$(find "$HOME" -maxdepth 5 \
+            \( -name '*answer_key*.json' -o -name '*_KEY.json' \
+               -o -name '*_KEY.md' -o -name '*GROUND_TRUTH.json' \
+               -o -name '*planted*.json' \) 2>/dev/null \
+          | grep -v '/\.git/' \
           | grep -Ev "^(${known})/" || true)
   if [ -n "$stray" ]; then
     echo "UNVAULTED — stray plaintext key file(s) outside every known store:"
