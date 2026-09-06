@@ -68,7 +68,7 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `sth` | Synthesise — consolidate findings into a coherent whole |
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches. Avoids stressing Anthropic servers during long runs. Sub-agents inherit the same constraint. |
-| `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds; CX2/Codex-CLI optional 6th) on a completed analysis or design question under sy, sth, f, e, d, t. NO compelled convergence: each model gives an independent verdict + its strongest falsification; disagreement is preserved as information; CC1 actively participates with its own position and synthesizes the range. Mirror to TTS. |
+| `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. NO compelled convergence: each model gives an independent verdict + its strongest falsification; disagreement is preserved as information; CC1 actively participates with its own position and synthesizes the range. Mirror to TTS. |
 
 ### Model Confer Dispatch (combinable)
 

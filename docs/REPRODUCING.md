@@ -379,7 +379,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `sth` | Synthesise — consolidate findings into a coherent whole |
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
-| `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds; CX2/Codex-CLI optional 6th) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
+| `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
 
 ### Model Confer Dispatch
 

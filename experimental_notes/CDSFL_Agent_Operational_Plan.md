@@ -86,7 +86,7 @@
 
 **DECISION 8 — PERSIST RHO FROM THE NEXT RUN.** `resources/RECOVERY.md:159` ends "Decide whether to persist rho from the next run." **No archived report carries a rho series in any form**, which is why one third of Runway 1.7 is permanently unavailable for past runs. Never decided, in no summary. Recommendation: **persist it** — it only helps if taken BEFORE the next run.
 
-**FOUR OLDER OPEN RULINGS**, named not imported: the **133 unadjudicated pairs** (`RECOVERY.md:374`); **gamma-unification** (panel-endorsed, uncoded, maths-model-adjacent, `RECOVERY.md:1325`); **G7 arbitration direction** (tracker :1027); and the **18 May definitional confer's one-month PoC plan** (tracker :794, ran clean, awaiting a decision since).
+**FOUR OLDER OPEN RULINGS**, named not imported: the **133 unadjudicated pairs** (`RECOVERY.md:374`); **gamma-unification** (panel-endorsed, uncoded, maths-model-adjacent, `RECOVERY.md:1325`); **G7 arbitration direction** (tracker :1027); and the **18 May definitional confer's one-month PoC plan** — **CLOSED 2026-09-06 by founder ruling**: *"Close it. This is now irrelevant archaeology. We have moved on a great deal since then."* Its substantive recommendations were absorbed independently: the bare 0.7 severity cut is the live rubric decision, the OR-gate became the two-sided conjunction on 2026-06-10, and apply-back is on.
 
 **★ THE SIX DECISIONS BELOW ARE UNCHANGED.**
 

@@ -41,7 +41,7 @@ reader-facing summary; it must remain aligned with those files.
 | `re` | External research (web search, arXiv, Semantic Scholar) |
 | `ext` | External research — shorter alias for `re` |
 | `x` | Override sleep/rest warnings for current session |
-| `pr` | Panel review — dispatch the full model panel (`cc2`, `cx`, `ge`, `cgpt`, `ds`; CX2/Codex-CLI optional 6th) on a completed analysis or design question under `sy sth f e d t`. NO compelled convergence: each model returns an independent verdict plus its strongest falsification, and disagreement is preserved as information rather than smoothed to consensus. CC1 participates with its own position and synthesises the range. Mirror to TTS. |
+| `pr` | Panel review — dispatch the full model panel (`cc2`, `cx`, `ge`, `cgpt`, `ds`) on a completed analysis or design question under `sy sth f e d t`. NO compelled convergence: each model returns an independent verdict plus its strongest falsification, and disagreement is preserved as information rather than smoothed to consensus. CC1 participates with its own position and synthesises the range. Mirror to TTS. |
 
 ## Model Confer Dispatch (combinable)
 
