@@ -217,12 +217,46 @@ def check_distributed_compute_reduction() -> bool:
     return ok
 
 
+
+def check_limits_are_regular() -> bool:
+    """Batterman's test: is each reduction a REGULAR limit or a SINGULAR one?
+
+    Batterman (2002, The Devil in the Details) calls a limit SINGULAR when "the
+    behavior in the limit is of a fundamentally different character than the
+    nearby solutions one obtains on the way to the limit". Singular limits block
+    derivational reduction; regular limits pose no problem for it.
+
+    Operationally: the limit is regular iff the value AT the point equals the
+    limit approaching it, from both sides where the parameter is interior. This
+    is what licenses calling these reductions at all, in Nickles' (1973)
+    limiting-case sense.
+    """
+    print("7. Are the reductions REGULAR limits in Batterman's sense?")
+    ok = True
+    cases = [
+        ("C_H -> 0 (no human passes)", C_H, 0, F_kernel),
+        ("rho_MH -> 1 (fully primed)", rho, 1, F_kernel),
+        ("C_M -> 1 (machine certain)", C_M, 1, sp.Integer(1)),
+        ("rho_MH -> 0 (independence)", rho, 0, 1 - (1 - C_M) * (1 - C_H)),
+    ]
+    for name, var, point, target in cases:
+        at_point = sp.simplify(G_kernel.subs(var, point))
+        lim_minus = sp.limit(G_kernel, var, point, dir="-")
+        lim_plus = sp.limit(G_kernel, var, point, dir="+")
+        regular = (sp.simplify(at_point - lim_minus) == 0
+                   and sp.simplify(at_point - lim_plus) == 0
+                   and sp.simplify(at_point - target) == 0)
+        ok &= _report(regular, f"{name} is a REGULAR limit",
+                      f"value at point = two-sided limit = {sp.simplify(at_point)}")
+    return ok
+
+
 def main() -> int:
     print("Reduction properties of G_n, executed rather than read")
     print("=" * 70)
     results = [check_residual(), check_rho_endpoints(),
                check_uniform_reduction(), check_r_k_is_not_nested(),
-               check_which_models_nest(), check_distributed_compute_reduction()]
+               check_which_models_nest(), check_distributed_compute_reduction(), check_limits_are_regular()]
     print("=" * 70)
     if all(results):
         print("ALL CHECKS PASS -- PAPER.md:528 as corrected is discharged by execution.")
