@@ -168,7 +168,19 @@ class TestDemotionRetainsAndRecords:
         assert "LATENT" in e["calibration_reason"]
         assert e["calibration_round"] == 6
 
-    def test_demoted_finding_leaves_unverified_critical_count(self):
+    def test_demotion_retains_the_finding_but_no_longer_clears_the_fail_safe(self):
+        """CONTRACT CHANGED 2026-09-06, founder ruling 23.
+
+        The retention half of this test is unchanged and still matters: a demoted
+        finding is KEPT, with its original severity and a reason recorded. What
+        changed is the second half. Demoting a number no longer clears the A4
+        block, because A4 no longer reads that number. A verdict from a tool does.
+
+        Note what this entry looks like: it carries falsifier_verdict CONFIRMED but
+        no falsifier_code, so no tool ever actually ran on it. Under the old rule a
+        severity demotion was enough to let the loop close around it. That is the
+        gap ruling 23 shuts.
+        """
         reg = FindingRegistry()
         cid = _register_critical(reg, fid="latent_crit", sev=0.9, open_round=4)
         _mark(reg, cid, falsifier_verdict="CONFIRMED", latent=True,
@@ -176,8 +188,10 @@ class TestDemotionRetainsAndRecords:
         assert reg.unverified_critical_count() == 1
         cfg = _cfg(severity_calibration_enabled=True)
         assert _apply_severity_calibration(reg, cfg, round_idx=6) == 1
-        assert reg.unverified_critical_count() == 0
-        assert cid in reg.entries  # retained
+        assert reg.unverified_critical_count() == 1, (
+            "a severity demotion cleared the A4 fail-safe -- the model vote is back")
+        assert cid in reg.entries          # retention is unchanged
+        assert reg.entries[cid]["severity_original"] == 0.9
 
     def test_idempotent_re_sweep_does_not_double_lower(self):
         reg = FindingRegistry()
@@ -260,7 +274,33 @@ class TestEndToEndUnblocksConvergence:
         assert converged is False
         assert "A4 BLOCK" in reason
 
-    def test_after_calibration_gate_converges(self):
+    def test_calibration_no_longer_unblocks_convergence(self):
+        """CONTRACT CHANGED 2026-09-06, founder ruling 23.
+
+        This test previously asserted that demoting a latent critical's severity
+        cleared the A4 block and let the gate converge. It cannot any more, and the
+        reason is worth stating: severity calibration is a MODEL adjusting a MODEL's
+        number in order to open a gate. That is the same vote ruling 23 abolished,
+        one level down. Calibration still runs, still records what it changed, and
+        still serves queue ordering and reporting -- it simply no longer decides
+        convergence. Only a tool verdict does that now.
+        """
+        reg, cid = self._registry_blocked_by_one_latent_critical()
+        cfg = _cfg(severity_calibration_enabled=True)
+        assert _apply_severity_calibration(reg, cfg, round_idx=6) == 1
+        assert reg.entries[cid]["severity_calibrated"] is True
+        assert reg.entries[cid]["severity_original"] == 0.8
+        # The demotion happened, and it did NOT clear the fail-safe.
+        assert reg.unverified_critical_count() == 1, (
+            "severity calibration cleared an A4 block -- the model vote is back")
+
+    def test_a_tool_verdict_clears_what_calibration_cannot(self):
+        reg, cid = self._registry_blocked_by_one_latent_critical()
+        reg.entries[cid]["falsifier_code"] = "assert True"
+        reg.entries[cid]["falsifier_verdict"] = "REFUTED"
+        assert reg.unverified_critical_count() == 0
+
+    def _retired_after_calibration_gate_converges(self):
         reg, cid = self._registry_blocked_by_one_latent_critical()
         cfg = _cfg(severity_calibration_enabled=True)
         assert _apply_severity_calibration(reg, cfg, round_idx=6) == 1

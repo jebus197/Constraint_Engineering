@@ -49,8 +49,18 @@ that lives inside a git work tree.
 WHAT IS DELIBERATELY NOT HERE
 =============================
 No scoring of a live run, and no wiring into the gate. This module measures; it
-does not yet decide anything. Whether a missed canary should BLOCK convergence is
-a founder ruling, not a default, because it is a new way for a run to fail.
+does not decide anything, and after the ruling below it is not going to.
+
+FOUNDER RULING, 2026-09-06: A MISSED CANARY DOES NOT BLOCK CONVERGENCE.
+Approved as recommended. A missed canary is reported as a DETECTION-RATE measure
+and nothing more. The reasoning, recorded so a later reader does not reopen it:
+blocking would make convergence hostage to how well the seeding was done, so a
+badly seeded document could refuse to converge for a reason that says nothing
+about the panel's work. Detection rate is a property of the panel; seeding quality
+is a property of us. Only the first belongs in a gate.
+
+This ruling CLOSES the open question, it does not defer it. Anyone wiring a canary
+miss into the gate is reversing a founder decision and needs a new one.
 """
 from __future__ import annotations
 

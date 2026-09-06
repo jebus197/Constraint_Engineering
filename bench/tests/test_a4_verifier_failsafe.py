@@ -84,11 +84,39 @@ class TestUnverifiedCriticalCount:
         reg.resolve(cid, "UNCONFIRMED", round_idx=6)
         assert reg.unverified_critical_count() == 1
 
-    def test_unconfirmed_below_threshold_not_counted(self):
+    def test_unconfirmed_below_threshold_IS_now_counted(self):
+        """CONTRACT CHANGED 2026-09-06, founder ruling 23: "There are no votes in
+        CDSFL." A4 no longer reads the model-assigned severity float. A low
+        severity no longer excuses a finding from the fail-safe, because that
+        number is the source model's opinion and was measured uninformative in
+        the band where it decided (AUC 0.464 against 0.5 for chance).
+
+        What clears the block now is a tool verdict -- see the test below."""
         reg = FindingRegistry()
         cid = reg.register(_make_finding(severity=0.5), "CC2")
         reg.resolve(cid, "UNCONFIRMED", round_idx=6)
+        assert reg.unverified_critical_count() == 1
+
+    def test_a_resolved_falsifier_clears_the_block_at_any_severity(self):
+        """The replacement criterion, executed: whether a tool ran and returned a
+        verdict. That is a fact; severity was an opinion."""
+        reg = FindingRegistry()
+        for sev in (0.1, 0.5, 0.95):
+            cid = reg.register(_make_finding(finding_id=f"f{sev}", severity=sev), "CC2")
+            reg.resolve(cid, "UNCONFIRMED", round_idx=6)
+            reg.entries[cid]["falsifier_code"] = "assert False"
+            reg.entries[cid]["falsifier_verdict"] = "REFUTED"
         assert reg.unverified_critical_count() == 0
+
+    def test_an_absent_falsifier_blocks_at_any_severity(self):
+        """The conservative direction. Measured over 87 archived reports: the new
+        rule blocks MORE in 36.8%, identically in 63.2%, and FEWER in 0 of 87,
+        Wilson [0.0%, 4.2%] -- so convergence can only get harder."""
+        reg = FindingRegistry()
+        for sev in (0.1, 0.95):
+            cid = reg.register(_make_finding(finding_id=f"g{sev}", severity=sev), "CC2")
+            reg.resolve(cid, "UNCONFIRMED", round_idx=6)
+        assert reg.unverified_critical_count() == 2
 
     def test_open_critical_not_counted(self):
         """OPEN is in-play (settled series counts it) -> NOT an A4 trigger."""

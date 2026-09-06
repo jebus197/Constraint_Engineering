@@ -496,14 +496,30 @@ def pm_verify_findings(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Patterns used to detect mathematical claims in finding descriptions
+# UNIFIED 2026-09-06 with the copy in bench/immune_agents.py (founder ruling 30).
+#
+# THE DEFECT. 2 live copies of this pattern existed and they DIFFERED: immune_agents
+# carried 7 alternatives this one lacked (log, exp, bound, threshold, inequality,
+# formula, equation). So whether a finding routed to mathematical verification
+# depended on WHICH MODULE ASKED. Measured over 8709 distinct archived finding
+# descriptions: the 2 copies disagree on 40, which is 0.46%, Wilson [0.34%, 0.62%],
+# and in 100% of those immune_agents routed as MATH while this module did not.
+#
+# UNIFIED ON THE BROADER FORM, deliberately. Routing MORE claims to tool
+# verification is the conservative direction: the cost of a false positive is a
+# wasted check, the cost of a false negative is an unchecked mathematical claim.
+# Guarded by test_math_pattern_copies_agree_2026-09-06.py, which compares the 2 by
+# EXECUTING both over the archived corpus rather than by comparing their source
+# text -- 2 patterns can be individually well-described and still disagree.
 _MATH_PATTERN = re.compile(
     r"(?:"
     r"[=<>!]=?"          # comparison/equality operators
     r"|[+\-*/^]"         # arithmetic operators
-    r"|\bsqrt\b"         # sqrt keyword
+    r"|\bsqrt\b|\blog\b|\bexp\b"
     r"|\b\d+\s*[*/+\-]"  # digit followed by operator
-    r"|\bEq\("           # sympy Eq()
-    r"|\bGt\(|\bLt\("    # sympy Gt(), Lt()
+    r"|\bEq\(|\bGt\(|\bLt\("
+    r"|\bbound\b|\bthreshold\b|\binequality\b"
+    r"|\bformula\b|\bequation\b"
     r")"
 )
 

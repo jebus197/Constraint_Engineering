@@ -22,6 +22,7 @@ Run: python3 scripts/founder_decision_ledger.py [--tts]
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -187,6 +188,15 @@ GROUPS = [
 
 
 def main() -> int:
+    # Reject unknown flags loudly. The project standard: a script that silently
+    # ignores a flag it does not implement will one day be run with a flag the
+    # operator believes is doing something.
+    ap = argparse.ArgumentParser(
+        description="Group the open founder decisions and report which still need a ruling.")
+    ap.add_argument("--tts", action="store_true",
+                    help="also print the numbered list of decisions still needing a ruling")
+    ap.parse_args()
+
     raw = []
     for line in JOURNAL.read_text().splitlines():
         try:

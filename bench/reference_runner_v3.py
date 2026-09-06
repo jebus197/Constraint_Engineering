@@ -1993,7 +1993,32 @@ class FindingRegistry:
             # small-queue alarm.
             if e.get("irreducible_escalation"):
                 continue
-            if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+            # SEVERITY NO LONGER GATES (2026-09-06, founder ruling 23: "Verdict:
+            # do it. There are no votes in CDSFL.", with a 2-seat panel converging
+            # independently on the same replacement).
+            #
+            # WHY. `severity` is a float the SOURCE MODEL assigns. A model-assigned
+            # number deciding convergence is a vote wearing a number's clothes, and
+            # this project confirms findings programmatically or by a human, never
+            # by vote. Measured 2026-09-06: inside the band where the 0.7 cut
+            # actually decides, that float carries no information -- AUC 0.464
+            # against 0.5 for chance -- because per-assignment noise is sigma =
+            # 0.1419 (bootstrap CI [0.1241, 0.1575], from 273 duplicate pairs
+            # independently scored by 2 models) against a band 0.09 wide. Same
+            # defect, 2 models, opposite sides of 0.7: 82 of 273 = 30.04%.
+            #
+            # WHAT REPLACES IT: whether a tool ran and resolved. That is a fact,
+            # not an opinion.
+            #
+            # WHY THIS CANNOT CAUSE A FALSE CONVERGENCE. It blocks a SUPERSET.
+            # Replayed over 87 archived reports carrying an entries block: the new
+            # rule blocks MORE in 36.8%, identically in 63.2%, and FEWER in 0,
+            # Wilson [0.0%, 4.2%]. Convergence can only get harder, never easier.
+            #
+            # The float survives as QUEUE ORDERING, which is what it is fit for.
+            _fc = (e.get("falsifier_code") or "").strip()
+            _fv = (e.get("falsifier_verdict") or "").strip().upper()
+            if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
                 count += 1
         return count
 
@@ -3414,6 +3439,12 @@ def _disc_sha(text: str) -> str:
 # Root only: that is the only level at which git resolves a repository, and a
 # `.git` deeper in the tree is ordinary content.
 _OVERLAY_NEVER_MIRROR = frozenset({".git"})
+
+# A falsifier has RESOLVED a finding when a tool actually returned a verdict on it.
+# Anything else -- no falsifier code at all, or code that never produced one of
+# these -- leaves the finding unresolved, and an unresolved critical candidate is
+# what the A4 fail-safe exists to block. Added 2026-09-06 with founder ruling 23.
+_FALSIFIER_RESOLVED_VERDICTS = frozenset({"CONFIRMED", "REFUTED", "CLOSED"})
 
 
 def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str,
@@ -9493,10 +9524,29 @@ def compute_rk(
     :func:`compute_rk_with_eta_channel` which decomposes q and validates
     the assignment is on eta_int, not on R_k or q directly.
     """
-    # Defensive cast and clamp all probability-space inputs to [0, 1]
-    R_old = max(0.0, min(1.0, float(R_old)))
-    q = max(0.0, min(1.0, float(q)))
-    sk = max(0.0, min(1.0, float(sk)))
+    # NON-FINITE INPUTS FAIL SAFE, NOT SILENT (2026-09-06, founder ruling 18 --
+    # C0017, "non-finite control inputs", confirmed as iteration and fixed).
+    #
+    # The plain clamp below has a trap: min(1.0, nan) returns 1.0, because every
+    # comparison with NaN is False. So a NaN fix-efficacy silently became a PERFECT
+    # fix. Executed before the change: compute_rk(0.5, 0.5, nan) and
+    # compute_rk(0.5, 0.5, +inf) both returned 0.3666666666666667 -- identical, and
+    # both flattering. A corrupt input scoring as the best possible outcome is the
+    # exact silent-failure shape this project keeps finding.
+    #
+    # Non-finite now resolves to the CONSERVATIVE end of each range instead: no
+    # detection, no efficacy, maximum residual risk. That can only make the gate
+    # stricter, never looser, so it cannot manufacture a convergence.
+    def _finite(value: float, *, worst: float) -> float:
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            return worst
+        return worst if not math.isfinite(v) else max(0.0, min(1.0, v))
+
+    R_old = _finite(R_old, worst=1.0)   # unknown risk is maximum risk
+    q = _finite(q, worst=0.0)           # unknown detection detects nothing
+    sk = _finite(sk, worst=0.0)         # unknown efficacy fixes nothing
     nu_b = max(0.0, min(1.0, float(nu_b)))
     nu_f = max(0.0, min(1.0, float(nu_f)))
     # HARD CONSTRAINT: nu_b + nu_f <= 1
