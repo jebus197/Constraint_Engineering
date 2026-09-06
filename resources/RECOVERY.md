@@ -27,9 +27,9 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
-## SESSION STATE — 2026-09-06 02:25 BST (READ THIS FIRST)
+## SESSION STATE — 2026-09-06 02:25 BST [SUPERSEDED by the 04:05 block above; its suite figure is correct for its own commit and is not current state]
 
-**HEAD `4a5aa73`, main. Suite: 5194 passed, 0 failed, measured 2026-09-06T02:28:31+01:00 at that commit with `python3 -m pytest bench/tests/ -q --netguard-strict` in 371.67 s. This is a PASS count from an offline run, not a collection count — the 2 are routinely confused and the 2026-07-31 correction block below exists because of it.**
+**HEAD `4a5aa73`, main. Suite AT THAT COMMIT: 5194 passed, 0 failed, measured 2026-09-06T02:28:31+01:00 with `python3 -m pytest bench/tests/ -q --netguard-strict` in 371.67 s. This is a PASS count from an offline run, not a collection count — the 2 are routinely confused and the 2026-07-31 correction block below exists because of it.**
 
 **★★★ THE S_k GATE IS NOT MIS-CLAMPED, IT IS MISPRICED — AND THIS SUPERSEDES THE 2026-09-05 FRAMING.** That entry read the threshold clamping to 0 as an artefact at one corner of the parameter space. It is not. `check_sk_threshold` solves `nu_eff(s) = q*R`, which is nu\*(sigma=1) — the re-injection budget evaluated as though the fix were perfect — while sigma IS s_k. Solving `compute_rk(R,q,s) == R` for s is a **QUADRATIC**; the shipped ratio is not a root of it. Wolfram `Reduce` gives the exact coincidence set: the surface **`nu_b == q*R`**, measure zero in the reachable box.
 
