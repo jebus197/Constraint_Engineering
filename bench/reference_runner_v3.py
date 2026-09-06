@@ -9808,6 +9808,99 @@ def check_sk_threshold(
     return sk >= effective_threshold, round(s_star, 4)
 
 
+def sk_break_even(
+    nu_b: float, nu_f: float, q: float, R: float,
+) -> Optional[float]:
+    """The S_k that leaves residual risk EXACTLY unchanged: the true Valley floor.
+
+    WHY THIS IS NOT ``check_sk_threshold``. The shipped S* solves
+    ``nu_eff(s) = q*R``, which is nu*(sigma=1) -- the re-injection budget
+    evaluated as though the fix were perfect. But sigma IS s_k, so the budget
+    must be evaluated at the s_k under test. Solving ``compute_rk(R,q,s) == R``
+    for s is a QUADRATIC, not the shipped ratio, and the two coincide only on
+    the surface ``nu_b == q*R`` (Wolfram ``Reduce`` over the reachable box).
+
+    Measured 2026-09-06, ``scripts/measure_sstar_understates_breakeven.py``:
+    the shipped threshold sits BELOW this value at 297 of 297 reachable grid
+    points, Wilson [98.72%, 100.00%], and Wolfram returns False to "does any
+    reachable point have shipped > the true root". The gate is biased permissive
+    everywhere and never errs conservative, so every disagreement admits a fix
+    that RAISES residual risk. At the shipped operating point (q=0.5, R=0.5,
+    nu_b=0.05, nu_f=0.20) the shipped value is the exact rational -1/19, clamps
+    to 0 and admits everything, while the true floor is 0.504931170970423.
+
+    Coefficients derived with SymPy and validated against scipy.optimize.brentq
+    at 1005 reachable points with 0 mismatches.
+
+    Returns None when no break-even exists in [0, 1] -- the honest answer, never
+    a substituted 0.0, because "no floor exists" and "the floor is zero" are
+    opposite statements about whether a fix can help.
+
+    THIS FUNCTION DECIDES NOTHING BY DEFAULT. It is recorded beside the shipped
+    verdict so the gap stops being silent; promotion needs the founder's ruling
+    with shadow evidence in hand.
+    """
+    nu_b = max(0.0, min(1.0, float(nu_b)))
+    nu_f = max(0.0, min(1.0, float(nu_f)))
+    q = max(0.0, min(1.0, float(q)))
+    R = max(0.0, min(1.0, float(R)))
+    if nu_b + nu_f > 1.0:                      # same HARD constraint as compute_rk
+        scale = 1.0 / (nu_b + nu_f)
+        nu_b *= scale
+        nu_f *= scale
+
+    a = R * nu_f * q * (R - 1.0) * (nu_b - 1.0)
+    b = -(R - 1.0) * (nu_b - 1.0) * (2.0 * R * nu_f * q - R * q - nu_f)
+    c = (R - 1.0) * (R * q - 1.0) * (nu_b * nu_f - nu_b - nu_f)
+
+    if abs(a) < 1e-15:                          # degenerates to linear
+        if abs(b) < 1e-15:
+            return None
+        roots = [-c / b]
+    else:
+        disc = b * b - 4.0 * a * c
+        if disc < 0.0:
+            return None
+        root_disc = math.sqrt(disc)
+        roots = [(-b - root_disc) / (2.0 * a), (-b + root_disc) / (2.0 * a)]
+
+    inside = [r for r in roots if -1e-12 <= r <= 1.0 + 1e-12]
+    if not inside:
+        return None
+    return max(0.0, min(1.0, min(inside)))
+
+
+def sk_threshold_shadow(
+    sk: float, nu_b: float, nu_f: float, q: float, R: float, s_floor: float = 0.0,
+) -> Dict[str, Any]:
+    """Record what the shipped gate decided AND what the true floor would decide.
+
+    Pure. Changes nothing. Exists because a gate that has passed every fix it
+    ever saw (s_star reads 0.0 in 3181 of 3181 archived records, Wilson
+    [99.88%, 100.00%]) is a mechanical failure that no artefact currently names.
+    """
+    shipped_passes, shipped_s_star = check_sk_threshold(sk, nu_b, nu_f, q, R, s_floor)
+    true_floor = sk_break_even(nu_b, nu_f, q, R)
+    if true_floor is None:
+        return {
+            "shipped_s_star": shipped_s_star,
+            "shipped_passes": shipped_passes,
+            "true_break_even": None,
+            "corrected_passes": None,
+            "would_flip": None,
+            "reason": "no break-even in [0,1] at these parameters",
+        }
+    corrected_passes = float(sk) >= max(true_floor, float(s_floor))
+    return {
+        "shipped_s_star": shipped_s_star,
+        "shipped_passes": shipped_passes,
+        "true_break_even": round(true_floor, 6),
+        "corrected_passes": corrected_passes,
+        "would_flip": shipped_passes != corrected_passes,
+        "reason": "shadow only; shipped verdict is in force",
+    }
+
+
 def _evaluate_sk_for_findings(
     registry: FindingRegistry,
     source_code: str,
@@ -9949,6 +10042,13 @@ def _evaluate_sk_for_findings(
                 "s_floor": s_floor,
                 "effective_threshold": max(s_star, s_floor),
             }
+            # SHADOW (2026-09-06, panel cc2 + fable, both independently). The
+            # shipped threshold is biased permissive at every reachable point
+            # measured, so record what the true break-even would have decided.
+            # Recorded, never applied: the shipped verdict above is in force.
+            entry["sk_result"]["threshold_shadow"] = sk_threshold_shadow(
+                sk_result.sk, nu_b, nu_f, q, R_old, s_floor,
+            )
             if passes:
                 # Close the R_k loop: compute updated risk
                 # F2 (2026-04-21): route through compute_rk_with_eta_channel
