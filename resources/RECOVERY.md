@@ -5,9 +5,35 @@ Last updated: 5 September 2026 14:13 BST — state files only; the narrative bel
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
+## SESSION STATE — 2026-09-06 02:25 BST (READ THIS FIRST)
+
+**HEAD `4a5aa73`, main. Suite: 5194 passed, 0 failed, measured 2026-09-06T02:28:31+01:00 at that commit with `python3 -m pytest bench/tests/ -q --netguard-strict` in 371.67 s. This is a PASS count from an offline run, not a collection count — the 2 are routinely confused and the 2026-07-31 correction block below exists because of it.**
+
+**★★★ THE S_k GATE IS NOT MIS-CLAMPED, IT IS MISPRICED — AND THIS SUPERSEDES THE 2026-09-05 FRAMING.** That entry read the threshold clamping to 0 as an artefact at one corner of the parameter space. It is not. `check_sk_threshold` solves `nu_eff(s) = q*R`, which is nu\*(sigma=1) — the re-injection budget evaluated as though the fix were perfect — while sigma IS s_k. Solving `compute_rk(R,q,s) == R` for s is a **QUADRATIC**; the shipped ratio is not a root of it. Wolfram `Reduce` gives the exact coincidence set: the surface **`nu_b == q*R`**, measure zero in the reachable box.
+
+**THE BIAS RUNS ONE WAY ONLY.** Shipped sits BELOW the true break-even at **297 of 297** reachable grid points, Wilson [98.72%, 100.00%], Clopper-Pearson [98.77%, 100.00%], **0 points conservative** — and Wolfram returns **False** to *"does any reachable point have shipped > the true root"*, so it is universal, not a grid artefact. At every one of those points a harmful fix is demonstrably admitted. Concretely at the shipped operating point: **sk = 0.30 passes a threshold of 0.0 and drives R_k from 0.500 to 0.5506.** Reproduce: `scripts/measure_sstar_understates_breakeven.py`.
+
+**SHIPPED AS SHADOW, NOT AS A DECISION.** `sk_break_even()` (closed form from the quadratic; SymPy coefficients validated against scipy `brentq` at 1005 points, 0 mismatches; returns **None**, never 0.0, when no floor exists) and `sk_threshold_shadow()`, recorded into the `gate_inputs` block on every gate decision. **The shipped verdict remains in force.** Promotion needs a founder ruling, because it changes which fixes are accepted and therefore invalidates replay of archived runs. 16 executing tests across 2 files, including a non-distortion test pinning the live verdict byte-identical, a revert test proving the suite is not vacuous, and a test driving the REAL round pipeline to prove the recorder is reached at all.
+
+**`model_params` HAS 0 WRITERS (AST-confirmed).** So nu_b, nu_f and q can only ever be their literal defaults on a real run — corroborated by execution: a live gate decision records exactly `nu_b 0.05, nu_f 0.2, q 0.5, R_old 0.5`.
+
+**PAPER.md:528, THE CANONICAL FORMAL STATEMENT, WAS THE ONE LEFT WRONG.** The appendix was corrected on 2026-09-05 and the canon was not; cc2 found it. Executing its 5 reduction claims refuted 2. (a) "K=1, d=1, uniform p → C(n)" omits the independence condition; at rho_MH = 0 the reduction holds and is STRONGER than claimed — G_n = **C(n_M + n_H)**, human passes simply add to the machine's count — and at rho_MH = 0.5 with p=0.2, n_M=3, n_H=2 the value 0.58016 is C(n) for **no integer n at all** (Wolfram: `Exists[n in PositiveIntegers, ...]` → False). (b) "Every simpler model is a special case of G_n" is a universal asserted without the enumeration. Enumerated: **C(n), F_n and D(n) nest; R_k(i) does not** — it carries a pole at R = 1/q and a novelty floor nu, and the G_n kernel is a degree-3 polynomial with neither. Discharged by `scripts/verify_paper_reduction_properties.py`: 7 checks, SymPy + mpmath, Wolfram-crosschecked. It also closes PAPER.md:1111, which claimed *"Verified computationally"* and named no artefact.
+
+**ALL 4 REDUCTION BRANCHES ARE REGULAR LIMITS** in Batterman's (2002) sense — value at the point equals the two-sided limit — so singular-limit objections do not reach them. Our reductions are **limiting-case** reductions in Nickles' (1973, *J. Phil.* 70(7):181–201) sense, where the direction inverts and the richer theory reduces to the simpler one in a limit. **Nagel (1961) is the broad tradition but the wrong lead citation**: Nagelian reduction derives across vocabularies via bridge laws, and ours never leaves the vocabulary.
+
+**PANEL SPLIT, PRESERVED RATHER THAN SMOOTHED.** fable: reach enters BOTH homes with opposite signs (edit reach raises nu, flaw coverage raises sigma). cc2: sigma only, because **3871 of 3886** archived fixes that applied anything applied exactly 1 block (99.61%, Wilson [99.36%, 99.77%]) so breadth has no variance to explain. **Caveat that must travel with cc2's number: it silently dropped 1617 zero-block records, 29.38% of 5503.** Unresolved; the shadow run settles it cheaply.
+
+**2 PREMISES IN CC1'S OWN PANEL BRIEF WERE FALSE, both caught by cc2.** `bench/input_complexity.py` has **12 importing modules** including `reference_runner_v3.py:221`, not "no caller" (it is still irrelevant — it imports only math/re/dataclasses/typing and computes Heaps'-law exponents). And **nu IS computed**: `nu_eff = 1-(1-nu_b)(1-(1-sk)nu_f)` is already a function of sk; what are constant are the 2 COEFFICIENTS. That changes the fix from a new term to a coefficient law.
+
+**THE TRACKER'S OWN RESUME POINTER carried "REPAIR IS INERT", refuted the day it was written.** Corrected in both copies, kept byte-identical, original struck through.
+
+**OPEN FOR FOUNDER RULING:** promoting the corrected threshold to live; where reach belongs (the panel split); the references section (deferred to discussion by the founder). **STILL OUTSTANDING:** the comprehensive doc sweep including the white paper and the founder's notes; the 7 figures with no reproducing script; the rubric conflict and gate constants under the same panel treatment the threshold got; then the simulated run.
+
+---
+
 ### 2026-09-05 overnight — the panel was never tool-enabled, and 3 of 4 red guards were wrong
 
-**SESSION STATE.** HEAD `b6a2032`, main, **89 ahead of origin/main**. Suite **5153 passed, 0 failed** under `--netguard-strict` (45 outbound attempts across 19 tests, all denied).
+**SESSION STATE [HISTORICAL — this block describes commit `b6a2032` and is NOT current state; the 2026-09-06 block above supersedes it].** HEAD `b6a2032`, main, **89 ahead of origin/main**. Suite **5153 passed, 0 failed** under `--netguard-strict` AT THAT COMMIT (45 outbound attempts across 19 tests, all denied).
 
 **THE PANEL WAS NOT TOOL-ENABLED.** 16 of its 17 tool calls returned `ModuleNotFoundError` and each model read the error AS A TOOL RESULT and reasoned on. Cause was 2 things: `openrouter_tools` reaches the verifiers as `bench.immune_agents`, which needs REPO_ROOT on `sys.path` while a script run puts `bench/` there; **and** `bench/` has no `__init__.py`, so an empty stray tree `bench/bench/results/phase2` made `bench` resolve SUCCESSFULLY to the wrong directory — which is why the error named the submodule, never the package. Fixed, strays removed, re-dispatch: **49 tool calls, 0 errors**. Guarded by `test_tool_dispatch_survives_script_path_2026-09-05.py`, which subprocesses a real script from inside `bench/` (10 pass; 6 fail on revert).
 
