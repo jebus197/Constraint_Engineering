@@ -182,6 +182,64 @@ def reduction_is_many_to_one():
     return ok
 
 
+def aggregation_breaks_the_coordinate_story():
+    """cc2's refutation of CC1's own consolation, 2026-09-06. Verified, and it holds.
+
+    CC1 told the founder that coverage and risk are "the same information in
+    different coordinates". That is TRUE PER FLAW CLASS and FALSE for the
+    aggregates the appendix actually writes, because both F_n and R_n are
+    w-weighted sums over classes and the Mobius readout is strictly CONCAVE, so
+    it does not commute with a convex combination.
+
+    The decisive form is not "phi does not commute" but "NO function does":
+    two different class-coverage vectors give the SAME F_n and DIFFERENT R_n, so
+    no psi with R_n = psi(F_n) can exist for K >= 2.
+    """
+    print("AGGREGATION   does the coordinate story survive the sum over classes?")
+    Cv, pi_v = sp.symbols("C_v pi_v", positive=True)
+    phi = pi_v * (1 - Cv) / ((1 - pi_v) + pi_v * (1 - Cv))
+
+    ok = _report(sp.simplify(phi.subs(Cv, 0) - pi_v) == 0 and sp.simplify(phi.subs(Cv, 1)) == 0,
+                 "the risk readout has range [0, pi], not [0, 1]",
+                 "so for pi < 1 it cannot even emit coverage's values")
+
+    d2 = sp.factor(sp.simplify(sp.diff(phi, Cv, 2)))
+    at = sp.N(d2.subs({pi_v: sp.Rational(1, 2), Cv: sp.Rational(3, 10)}))
+    ok &= _report(at < 0, "the readout is strictly concave", f"phi'' = {d2}, e.g. {at:.6f} < 0")
+
+    def F_agg(cs, ws):
+        return sum(wi * ci for wi, ci in zip(ws, cs))
+
+    def R_agg(cs, ws, prior):
+        return sum(wi * (prior * (1 - ci) / ((1 - prior) + prior * (1 - ci)))
+                   for wi, ci in zip(ws, cs))
+
+    ws = [sp.Rational(1, 2)] * 2
+    prior = sp.Rational(1, 2)
+    spread = [sp.Rational(1, 5), sp.Rational(4, 5)]
+    flat = [sp.Rational(1, 2), sp.Rational(1, 2)]
+    same_F = sp.simplify(F_agg(spread, ws) - F_agg(flat, ws)) == 0
+    gap = sp.simplify(R_agg(flat, ws, prior) - R_agg(spread, ws, prior))
+    ok &= _report(same_F and gap != 0,
+                  "same F_n, different R_n -- so no psi with R_n = psi(F_n) exists at K >= 2",
+                  f"F_n = 1/2 for both; R_n = {sp.nsimplify(R_agg(spread, ws, prior))} vs "
+                  f"{sp.nsimplify(R_agg(flat, ws, prior))}, gap exactly {sp.nsimplify(gap)}")
+
+    # Jensen fixes the direction.
+    phi_of_F = phi.subs({pi_v: prior, Cv: F_agg(spread, ws)})
+    ok &= _report(sp.N(R_agg(spread, ws, prior)) <= sp.N(phi_of_F),
+                  "concavity fixes the direction: R_n <= phi(F_n)",
+                  "equality only under uniform coverage across classes")
+
+    # And the K=1 case -- the collapsed equation's own setting -- is untouched.
+    Rsym = sp.Symbol("R_sym", positive=True)
+    inv = sp.solve(sp.Eq(Rsym, phi), Cv)[0]
+    ok &= _report(sp.simplify(phi.subs(Cv, inv) - Rsym) == 0,
+                  "at K = 1 the map is still exactly invertible",
+                  "so the COLLAPSED EQUATION, which is K=1 by construction, is unaffected")
+    return ok
+
+
 def main() -> int:
     print("The appendix says each stage is a strict generalisation of the previous.")
     print("Testing every link.")
@@ -194,6 +252,7 @@ def main() -> int:
         "5->6": link_5_to_6(),
         "collapse": the_stage_1_reduction_of_stage_4(),
         "directionality": reduction_is_many_to_one(),
+        "aggregation": aggregation_breaks_the_coordinate_story(),
     }
     print("=" * 72)
     for k, v in results.items():
