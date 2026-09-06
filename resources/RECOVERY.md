@@ -5,6 +5,28 @@ Last updated: 5 September 2026 14:13 BST — state files only; the narrative bel
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
+## SESSION STATE — 2026-09-06 04:05 BST (READ THIS FIRST)
+
+**Suite 5203 passed, 0 failed under `--netguard-strict` in 393.33 s.**
+
+**★★★ WE WERE SHIPPING A FALSE MATHEMATICAL CLAIM TO EVERY MODEL.** `bench/directives/universal/cdsfl_core_formal.md` stated *"C(n) is a special case of R_k(i) with π = 0"*. **At π = 0 the recursion is IDENTICALLY 0 at every step** — 0 is a fixed point of the update — so the stated parameter yields the constant 0 and can never yield C(n). SymPy unrolling and Wolfram `NestList` both return `{0,0,0,0,0,0}`. Found by fable in the reach panel; re-derived before fixing. **Blast radius, executed not assumed:** `reference_runner_v3.py:13251` reads this file IN FULL (26,909 chars) and ships it, so every model dispatched through the runner received it; the **composer path is CLEAN** (`compose("software", model)` excludes the note — verified for opus_4_6, deepseek_v3, gemini_3_1_pro, 0 of 3 carrying any phrase). Load-bearing on 1 of 2 dispatch paths. **FIXED**, with a test that EXTRACTS the prior the directive claims and EXECUTES the recursion at it — reverting fails 4 of 6.
+
+**★★ THE APPENDIX'S 5-STAGE CHAIN CLAIM WAS OVER-BROAD, AND 9 SITES CARRIED IT.** `MATHEMATICAL_APPENDIX.md:165` said *"Each is a strict generalisation of the previous"*. Executed link by link: **4 are nestings** (1→2 at K=1/d=1/uniform p; 4→5 at η=1, σ=1, ν=0; 5→6 at c_ext=0), **3→4 is an IDENTITY** — stronger than a nesting: the recursion unrolls to the batch posterior for every n, because one pass multiplies the odds `(1−R)/R` by exactly `1/(1−q)` — and **2→3 is NOT a generalisation**: R_n's range is `[0, π_k]`, so for any prior below 1 it cannot emit F_n's values, and the prior that would make them agree is `(1−m)/(1−m+m²)`, which depends on m. All 9 sites corrected: PAPER.md :158/:180, README.md:144, appendix :119/:165/:200/:249/:256/:324, plus an off-by-one ("five stages" above a 6-row table).
+
+**THE COLLAPSED EQUATION IS CORRECT** — Stage 4 at π=0.5, d=1, q=p equals `(1−p)ⁿ/(1+(1−p)ⁿ)` exactly (SymPy, mpmath 40 dp, Wolfram). The founder's instinct that the chain must trace both ways **holds wherever information is preserved**: per flaw class and at the vector level the coverage↔risk map is an exact bijection, `C = (π−R)/(π−πR)`, round-trip residual 0.
+
+**CC2'S REFUTATION OF CC1, AND CC1'S AMENDMENT TO CC2.** cc2 correctly refuted CC1's claim that coverage and risk are "the same information": class coverages (0.2, 0.8) and (0.5, 0.5) give the SAME F_n = 0.5 and DIFFERENT R_n (11/36 vs 1/3), so no ψ with `R_n = ψ(F_n)` exists at K ≥ 2. **But cc2's framing that this is where the coordinate story FAILS is itself too strong:** F_n is already many-to-one over its own class vector, and so is R_n (a third vector reproduces R_n exactly while giving a different F_n). The loss is caused by the WEIGHTED SUM and is identical in both coordinate systems — neither is privileged. Both positions are recorded; the appendix now states the amended form.
+
+**:200 AND :249 CARRIED A SUBTLER ERROR** — both called `(1−p)ⁿ/(1+(1−p)ⁿ)` "the white paper C(n)". It is C(n) REMAPPED: at p=0.1, n=3 coverage is 0.271 and risk is 0.421631, a gap of 0.150631.
+
+**NOT OVER-CORRECTED.** 3 surviving "strict generalisation" claims were each executed and each is TRUE, so each was left alone: Stage 6 over Stage 5 at c_ext=0 (README:276, FOUNDERS_NOTES:689) and source-diversity over C(S) at uniform source quality (appendix:1608).
+
+**★ THE FOUNDER'S NOTES ARE 141 DAYS STALE.** `docs/FOUNDERS_NOTES.md` ends at 18 April 2026. The gap holds **494 commits** (Apr 15, May 51, Jun 40, Jul 34, Aug 245, Sep 109) and **9 of 9 sampled milestones have no entry** — Exp 41/42/44/45/46 convergences, the June divergence analysis, the offline-suite correction, the instrument audit, the S_k gate finding, and the tool-enablement failure. (A first pass reported 6 of 9; the 3 apparent hits were CC1's own matcher finding pre-gap text, all in sections dated 18 April or earlier.) The founder has authorised filling this; **NOT STARTED** — it is 141 days of first-person narrative and wants its own pass.
+
+**STILL OUTSTANDING:** the founder's-notes backfill; the 7 figures with no reproducing script; promoting the corrected S* threshold from shadow to live (founder ruling); where reach belongs (panel split, unresolved); the references section (founder deferred to discussion); then the simulated run.
+
+---
+
 ## SESSION STATE — 2026-09-06 02:25 BST (READ THIS FIRST)
 
 **HEAD `4a5aa73`, main. Suite: 5194 passed, 0 failed, measured 2026-09-06T02:28:31+01:00 at that commit with `python3 -m pytest bench/tests/ -q --netguard-strict` in 371.67 s. This is a PASS count from an offline run, not a collection count — the 2 are routinely confused and the 2026-07-31 correction block below exists because of it.**
