@@ -3420,12 +3420,20 @@ def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str,
                                   *, is_root: bool = False) -> None:
     """Mirror one directory as symlinks, omitting `skip`.
 
-    Symlinks, not copies: the repo is large and the control runs per finding.
-    The links are absolute, so they resolve identically from the sandbox's
-    throwaway cwd. `shutil.rmtree` does not follow symlinks when deleting, so
-    tearing an overlay down cannot reach the real tree.
+    ⚠ CONTAINMENT: THIS FUNCTION DOES NOT CONTAIN WRITES, and is retained only as
+    the fallback path. Symlinks are transparent to writes: a falsifier that opens a
+    SIBLING path for writing inside the overlay follows the absolute link and
+    modifies the REAL working tree. Reproduced 2026-09-06 in a throwaway repo --
+    one `open(link, "w")` and the real file changed. `shutil.rmtree` not following
+    symlinks protects DELETION only, which is what the old note below described and
+    what made this look safe.
 
-    At the root, `_OVERLAY_NEVER_MIRROR` is omitted as well -- see its comment.
+    `_build_discrimination_overlay` now prefers an APFS clone, which gives real
+    files and therefore real containment. This path runs only where cloning is
+    unavailable, and the caller raises rather than degrading silently.
+
+    The links are absolute, so they resolve identically from the sandbox's
+    throwaway cwd. At the root, `_OVERLAY_NEVER_MIRROR` is omitted as well.
     """
     over_dir.mkdir(parents=True, exist_ok=True)
     for child in real_dir.iterdir():
@@ -3459,15 +3467,73 @@ def _build_discrimination_overlay(repo_root: Path, target_rel: str,
     if not real_target.is_file():
         raise FileNotFoundError(f"discrimination control: target not found: {real_target}")
     root = Path(tempfile.mkdtemp(prefix="cdsfl_disc_"))
-    real_dir, over_dir = repo_root, root
-    first = True
+
+    # CONTAINMENT, 2026-09-06 (founder ruling 35: "a containment fix, not a
+    # preference"). The previous overlay mirrored every sibling as an ABSOLUTE
+    # SYMLINK, and symlinks are transparent to writes -- a falsifier opening a
+    # sibling path for writing modified the REAL working tree. Reproduced in a
+    # throwaway repo: one open(link, "w") and the real file changed. Panel agents
+    # were separately caught editing the repo mid-run twice, so this is not
+    # hypothetical.
+    #
+    # An APFS clone gives REAL FILES at metadata cost, so writes stay inside the
+    # overlay. Measured on this repository: 683 MB, 15837 files, 2.77 s mean over
+    # 3 runs (sd 0.19 s). The control is default-off and runs per finding, so that
+    # is affordable; the old docstring's "the repo is large" objection was
+    # measured against copying, not cloning.
+    # Clone DIRECTLY onto the overlay path. An earlier draft cloned to a child and
+    # renamed each entry up one level; that failed with EPERM on `.env`, which
+    # carries flags that forbid rename. Renaming was never necessary -- `cp -Rc`
+    # creates its destination.
+    cloned = False
+    try:
+        root.rmdir()                       # free the path mkdtemp just reserved
+        _clone = subprocess.run(["cp", "-Rc", str(repo_root), str(root)],
+                                capture_output=True, text=True)
+        cloned = _clone.returncode == 0 and root.is_dir()
+    except OSError:
+        cloned = False
+    if not root.exists():
+        root.mkdir(parents=True, exist_ok=True)
+    if cloned:
+        for name in _OVERLAY_NEVER_MIRROR:
+            victim = root / name
+            if victim.is_dir() and not victim.is_symlink():
+                shutil.rmtree(victim, ignore_errors=True)
+            elif victim.exists() or victim.is_symlink():
+                victim.unlink(missing_ok=True)
+
+    if not cloned:
+        # FAIL LOUD RATHER THAN DEGRADE. This function's own contract is "Raises
+        # rather than degrading: an overlay that silently failed to replace the
+        # target would make every downstream verdict wrong in the confident
+        # direction." An overlay that silently failed to CONTAIN is worse: it lets
+        # a falsifier edit the tree the experiment is measuring. The escape hatch
+        # is explicit and must be set deliberately.
+        if os.environ.get("CDSFL_ALLOW_UNCONTAINED_OVERLAY") != "1":
+            shutil.rmtree(root, ignore_errors=True)
+            raise RuntimeError(
+                "discrimination control: could not build a CONTAINED overlay "
+                f"(clone failed on {repo_root}). The symlink fallback does not "
+                "contain writes -- a falsifier writing to a sibling path would "
+                "modify the real working tree. Set "
+                "CDSFL_ALLOW_UNCONTAINED_OVERLAY=1 only if you accept that.")
+        real_dir, over_dir = repo_root, root
+        first = True
+        for comp in parts[:-1]:
+            _discrimination_mirror_except(real_dir, over_dir, comp, is_root=first)
+            first = False
+            real_dir = real_dir / comp
+            over_dir = over_dir / comp
+        _discrimination_mirror_except(real_dir, over_dir, parts[-1], is_root=first)
+
+    over_dir = root
     for comp in parts[:-1]:
-        _discrimination_mirror_except(real_dir, over_dir, comp, is_root=first)
-        first = False
-        real_dir = real_dir / comp
         over_dir = over_dir / comp
-    _discrimination_mirror_except(real_dir, over_dir, parts[-1], is_root=first)
+    over_dir.mkdir(parents=True, exist_ok=True)
     leaf = over_dir / parts[-1]
+    if leaf.is_symlink():
+        leaf.unlink()
     leaf.write_text(content, encoding="utf-8")
     if leaf.is_symlink() or leaf.read_text(encoding="utf-8") != content:  # pragma: no cover
         raise RuntimeError("discrimination control: overlay leaf did not take")

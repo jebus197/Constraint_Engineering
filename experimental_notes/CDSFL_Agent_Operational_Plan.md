@@ -10,6 +10,57 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
+## ★ FOUNDER RULINGS OF 2026-09-06 — SCHEDULED ITEMS (added 16:05 BST)
+
+Every item below carries a founder ruling from the answer file of 2026-09-06. They are
+scheduled, not open: nothing here needs a further decision, only execution at the named point.
+
+### Study programme for the SIMULATED RUN (founder: "mark it in our simulated run programme of study")
+
+| # | Item | What to measure during the run |
+|---|---|---|
+| 14 | Critical-severity ceiling | Whether the ceiling ever binds, and at what severity. Ruling: leave as is until the run gives data. |
+| 28 | The sweep cannot clear a critical (38 sub-criticals stuck) | Whether the sweep clears criticals at all, and what blocks it. Investigate live rather than ruling blind. |
+| 29 | Falsifier guard-versus-broken ERROR classes (16 of 25 unexplained) | Classify each ERROR as guard-raises vs missing-target while the run produces them. |
+| 46 | The rho = 0.564 cross-architecture correlation | Founder: "Study this in the upcoming simulated run, then make recommendations when complete." |
+| — | S\* threshold, corrected values | Founder ruled the run uses CORRECTED values, not shadow: "better to run with corrected values and precision". Mark firmly as a topic for study with recommendations after. |
+| — | Reach: both homes | Founder: "we can test both conditions to see what gives the better result, or even if they might be non-binary". The panel split (fable: both homes; cc2: sigma only) is the hypothesis under test. |
+
+**Founder standing instruction on the run:** *"you don't need to stop at one simulated run. You can run as many as it takes to guarantee accuracy."*
+
+### Runway — AFTER the simulated run, BEFORE Bench Run 2
+
+| # | Item | Ruling |
+|---|---|---|
+| 17 | Re-run Exp 48 and 49 under the new design | "Make this our plan" — wait for the simulated run. Costs money. |
+| 19 | Gamma unification (headline gamma on the genuine-critical series) | "Do it as you suggest" — after the run, because it touches convergence machinery. |
+| 20 | One paid sentinel dispatch | "Do it as you suggest" — only once the simulated run is clean. One dispatch, not a panel. |
+| 31 | Residual key exposure via the assistant's own session store | "mark it as an item to be dealt with on the runway after the simulated run". |
+
+### Runway — IMMEDIATELY BEFORE Exp 54
+
+| # | Item | Ruling |
+|---|---|---|
+| 24 | Exp 54 Cell A entry-method decision (RQ3) | "Defer, but mark clearly on the runway as a decision for immediately before then." |
+| 42 | The DECISIVE form of the false-CONFIRMED discrimination control | Defer until Exp 53 completes. |
+
+### Runway — AFTER Bench Run 2
+
+| # | Item | Ruling |
+|---|---|---|
+| 34 | FW.6 harvested historical revisions as a recall target | "mark it on the runway at an appropriate point after BR2". Blocked on securing the 676-commit branch. |
+| 36 | Open-topology anti-dispute safeguard | "mark all 3 on the runway at an appropriate point after BR2". |
+| 37 | A1 directive-pruning cuts plus ablation | as above |
+| 38 | dm consolidation steps 2 to 6 plus rename | as above |
+| 43 | Disposition of ruling 1 (prose-similarity / hierarchical novelty) | "mark it on the runway at an appropriate point after BR2". |
+
+### HELD FOR THE FOUNDER'S RETURN — do not start
+
+* **The answer-key sealing.** 29 plaintext key files, 27 of them BR2 answer keys for exams never run. Founder: do it *"as soon as all these outstanding issues have been addressed, and immediately before the simulated run"*. Needs his passphrase AND his fold-or-separate choice.
+* **The simulated run itself.** Held for his return by his own instruction.
+
+---
+
 **★ RESUME POINTER (2026-09-06 10:55 BST). SUPERSEDES EVERY POINTER BELOW.**
 
 **HEAD `6908eec`, main, clean, UP TO DATE with origin/main. Suite 5203 passed, 0 failed, 0 errors under `--netguard-strict` in 393.33 s (measured 2026-09-06 04:00).**
