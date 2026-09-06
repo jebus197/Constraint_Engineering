@@ -130,6 +130,6 @@ NEW FALSIFIABLE QUESTIONS. The measured noise in the severity number, a standard
 I have not run it, because it is a new question rather than an approved decision, and it belongs to you.
 
 
-THE MEASURED FIGURE. The test suite stands at 5232 passing and 0 failing, measured at 16:36 on 2026-09-06 at commit 6445aa6, with outbound calls denied, in 409 seconds. That is a count of tests that ran and passed. Everything described above is committed and pushed.
+THE MEASURED FIGURE. The test suite stands at 5232 passing and 0 failing, measured at 16:36 on 2026-09-06 at commit 6445aa6, with outbound calls denied, in 409 seconds. Those 5232 are tests that ran and passed, not tests collected. Everything described above is committed and pushed.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
