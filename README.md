@@ -141,7 +141,7 @@ The consequence of this arrangement is that the dominant mode of reasoning insid
 
 The mathematical layer of CDSFL is one of its most unusual features and one of its least forgiving to poor exposition. Read badly, it can look like decorative formalism. Read carefully, it is an attempt to quantify the internal logic of scientific scrutiny.
 
-The clearest way to understand it is as a sequence of increasingly refined questions. Each question's answer is a strict generalisation of the last — the earlier model is a special case of the later one under simplifying assumptions. The full lineage is recorded in [docs/MATHEMATICAL_APPENDIX.md](docs/MATHEMATICAL_APPENDIX.md).
+The clearest way to understand it is as a sequence of increasingly refined questions. Each question's answer builds on the last, though not all in the same way. Most steps are strict generalisations, where the earlier model is the later one at fixed parameter values. The step from coverage to residual risk changes what is being measured rather than generalising it — the two are related, per flaw class, by an invertible map. The full lineage is recorded in [docs/MATHEMATICAL_APPENDIX.md](docs/MATHEMATICAL_APPENDIX.md).
 
 ### 6.1 First Question: How Does Survived Falsification Earn Trust?
 

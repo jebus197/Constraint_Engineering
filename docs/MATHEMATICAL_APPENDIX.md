@@ -116,7 +116,7 @@ Under simplifying assumptions (K = 1, d_i = 1, all p_ik = p, π = 0.5), R_n redu
 
 > R_n = (1 − p)^n / (1 + (1 − p)^n)
 
-which is the standard Bayesian posterior for a symmetric prior under repeated Bernoulli non-detection. The residual risk model is the Bayesian generalisation of the coverage model in the same way that F_n is the multi-class generalisation of C(n).
+which is the standard Bayesian posterior for a symmetric prior under repeated Bernoulli non-detection. The residual risk model re-expresses the coverage model as posterior risk. **This is not the same kind of step** as F_n's multi-class generalisation of C(n): F_n contains C(n) at fixed parameter values, whereas R_n reports a different quantity whose range is [0, π_k], so no constant prior makes R_n emit coverage's value. Solving for one gives π = (1−m)/(1−m+m²), which depends on m. Per flaw class the two are related by the invertible map R = π(1−C)/((1−π)+π(1−C)), inverse C = (π−R)/(π−πR). (Corrected 2026-09-06.)
 
 ### Empirical Prior Anchor (Seeded Defect Injection)
 
@@ -162,7 +162,14 @@ The methodology is an efficiency multiplier on the union of substrate capabiliti
 
 ### Model Evolution
 
-The mathematical model evolved through five stages. Each is a strict generalisation of the previous — the earlier model is a special case of the later one under simplifying assumptions.
+The mathematical model evolved through **six** stages. The 5 links between them are **not all of one kind**, and the distinction matters whenever anything reasons across stages. (Corrected 2026-09-06; the previous text called all 5 strict generalisations, and said "five stages" above a 6-row table. Every link is executed by `scripts/verify_five_stage_chain.py`.)
+
+- **Nesting** — the earlier model *is* the later one at fixed parameter values, so the later can output the earlier: **1→2** (K=1, d=1, uniform p), **4→5** (η=1, σ=1, ν=0), **5→6** (c_ext=0).
+- **Identity** — the same function in 2 forms, invertible both ways: **3→4**. One pass multiplies the odds (1−R)/R by exactly 1/(1−q), so the recursion's closed form `1/(1+((1−π)/π)/(1−q)ⁿ)` *is* the batch posterior, for every n. This link is stronger than a nesting, not weaker.
+- **Recoordination, per flaw class** — **2→3**, and this one is not a generalisation. F_n reports coverage; R_n reports residual risk, whose range is [0, π_k], so for any prior below 1 it cannot emit F_n's values at all, and at π = 1 it is the constant 1. Solving for a prior that makes them agree gives π = (1−m)/(1−m+m²), which depends on m — a parameter that must be retuned at every evaluation point is not a parameter restriction. What is true: R_n reuses F_n's kernel m_k = Π_i(1−d_i·p_ik) verbatim and applies the Möbius readout R_k = π_k(1−C_k)/((1−π_k)+π_k(1−C_k)), invertible as C_k = (π_k−R_k)/(π_k(R_k−1)), round-trip residual exactly 0.
+- **What the aggregate does, and what it does not mean.** Summed over classes, neither scalar determines the other: class coverages (0.2, 0.8) and (0.5, 0.5) both give F_n = 0.5 while giving R_n of 11/36 and 1/3. **That is a property of the weighted sum, not of the coordinate change.** F_n is already many-to-one over its own class vector, and so is R_n — both discard the same information at the same step, and neither is privileged. The correspondence is exact wherever information is preserved, which is per class and at the vector level.
+
+Reduction is also **many-to-one**: F_n, D(n) and G_n are structurally distinct and all reduce to C(n). So "X reduces to Y" never licenses reasoning back up the chain from Y to X — the output alone does not identify its ancestor. That is why reductions are tested here rather than assumed.
 
 | Stage | Equation | What it adds | Source |
 |---|---|---|---|
@@ -197,7 +204,7 @@ Substituting m_k = Π_j(1 − q_jk) and unrolling the product one factor at a ti
 
 The (1 − R_k) factor encodes diminishing returns: the less risk remains, the less there is to gain. The stopping rule follows naturally — continue while Σ_k w_k · ΔR_k > θ, where θ is the consequence threshold.
 
-**Reduction.** Under K=1, d=1, all q=p, π=0.5, the recursive form produces R_n = (1−p)^n / (1 + (1−p)^n), the standard Bayesian posterior for repeated Bernoulli non-detection. This is the simplified model in the white paper §2.1, re-derived from first principles.
+**Reduction.** Under K=1, d=1, all q=p, π=0.5, the recursive form produces R_n = (1−p)^n / (1 + (1−p)^n), the standard Bayesian posterior for repeated Bernoulli non-detection. This is the white paper §2.1 model **expressed in risk coordinates**, not C(n) itself: the two are related by R = (1−C)/(2−C) and are numerically different. At p = 0.1, n = 3 the coverage is 0.271 and the risk is 0.421631, a gap of 0.150631. (Corrected 2026-09-06; the previous wording called it the simplified model, which conflates a quantity with its remapping.)
 
 ### Three-Phase Extension (Stage 4 → 5)
 
@@ -246,14 +253,14 @@ This is consistent with §1's substrate ceiling result but more precise — the 
 | Condition | Result | Meaning |
 |---|---|---|
 | η = 1, σ = 1, ν = 0 | Stage 4 (detection-only recursive) | Clean fix, novel finding |
-| Additionally K=1, d=1, p uniform, π=0.5 | Stage 1 (white paper C(n)) | All simplifications applied |
+| Additionally K=1, d=1, p uniform, π=0.5 | Stage 1 **in risk coordinates**, R = (1−C)/(2−C) — not C(n) itself | All simplifications applied |
 | σ = 0, ν = 0 | R unchanged | Fix failed, no side effects |
 | σ = 0, ν > 0 | R increases | Fix failed and introduced new problems |
 | η = 0 | q = 0, R unchanged | Redundant finding adds nothing |
 | ν = 1 | R = 1 | Fix always breaks something |
 | q = 1, σ = 1, ν > 0 | R = ν | Perfect detection, re-injection is the floor |
 
-The complete lineage from C(n) to the three-phase operational form is a chain of strict generalisations, each adding one mechanistic dimension that the previous stage assumed away.
+The complete lineage from C(n) to the three-phase operational form is a chain of 4 strict generalisations, 1 exact identity (the recursive collapse) and 1 change of coordinates (F_n to R_n), each step adding one mechanistic dimension that the previous stage assumed away, except the coordinate change, which adds the prior and changes the reported quantity.
 
 ### Literature-Calibrated Extension (Stage 5 → 6)
 
@@ -321,7 +328,7 @@ The ordering R_known > R_partial > R_novel = R_Stage5 is correct: Stage 6 provid
 
 (Stage 6 derived 14 April 2026. Prompted by Hossenfelder, "The AI Maths Revolution Has Begun" (2026). SymPy + Wolfram Alpha verified: all boundary conditions, monotonicity, integration test, reduction property. Holland CAS and AIS literature inform the continuous suppression (§1.4) and frequency-scaled confidence (§1.5) components. Stanford POPPER framework (arXiv:2502.09858) informs the e-value gate (§1.8). Design notes: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`.)
 
-The complete lineage from C(n) to the literature-calibrated form is a chain of strict generalisations, each adding one mechanistic dimension that the previous stage assumed away.
+The complete lineage from C(n) to the literature-calibrated form is a chain of 4 strict generalisations, 1 exact identity (the recursive collapse) and 1 change of coordinates (F_n to R_n), each step adding one mechanistic dimension that the previous stage assumed away, except the coordinate change, which adds the prior and changes the reported quantity.
 
 (Unified equation derived 8 April 2026. Three-phase extension derived 8–9 April 2026. Literature-calibrated extension derived 14 April 2026. Confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 (Stages 4–5), pending confer for Stage 6. SymPy + Wolfram Alpha verified. Full derivation logs: `bench/logs/confer_unified_equation/`. Operational specification: `bench/directives/universal/cdsfl_operational.md` §3.)
 

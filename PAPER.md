@@ -155,7 +155,7 @@ A further extension — the combined machine-HIL detection model (G_n) — is pr
 
 #### 2.3 Model Evolution: From C(n) to the Operational Self-Assessment Equation
 
-The models presented above evolved through operational use. Each stage is a strict generalisation — the previous model is a special case under simplifying assumptions.
+The models presented above evolved through operational use. The links between stages are **not all of one kind**. Most are strict generalisations, where the previous model is the later one at fixed parameter values. The step from coverage (F_n) to residual risk (R_n) is not: the two report different quantities, and R_n's range is [0, π_k], so no constant prior makes it emit F_n's value. Per flaw class they are related by an invertible map; aggregated over classes neither determines the other, because a weighted sum is many-to-one in either coordinate system.
 
 **Stage 1: C(n) = 1 − (1−p)ⁿ** (§2.1 above). Single flaw type, single detection probability, independence assumed. Captures the core dynamic: corroboration accumulates through survived falsification.
 
@@ -177,7 +177,7 @@ where q = d · p. The prior π_k enters once as R_k(0) = π_k and then vanishes 
 
 The three phases per cycle — detection (Bayesian update), resolution (σ-weighted interpolation), re-injection (ν floor) — are specified operationally in the CDSFL operational directive and derived formally in the Mathematical Appendix §1.1. The break-even re-injection rate ν* = σ · R · q / (1 − q · R · (1−σ)) determines whether a cycle does net good or net harm.
 
-The complete lineage is a chain of strict generalisations. C(n) captures the principle. F_n adds structure. R_n adds risk. The recursive collapse makes it self-contained. The three-phase extension makes it operational. Each step was verified computationally (SymPy, Wolfram Alpha) and validated through multi-architecture confer (Gemini 3.1 Pro, Codex GPT-5.4, April 2026). Full derivation: Mathematical Appendix §1.1.
+The complete lineage is a chain of 4 strict generalisations and 1 change of coordinates. C(n) captures the principle. F_n adds structure. R_n re-expresses coverage as residual risk — a different question in different units, not a generalisation of F_n. The recursive collapse makes it self-contained, and is an exact identity rather than a further generalisation: the recursion unrolls to the batch posterior for every n. The three-phase extension makes it operational. Each step was verified computationally (SymPy, Wolfram Alpha) and validated through multi-architecture confer (Gemini 3.1 Pro, Codex GPT-5.4, April 2026). Full derivation: Mathematical Appendix §1.1.
 
 ### 3. Constraint Classification
 
