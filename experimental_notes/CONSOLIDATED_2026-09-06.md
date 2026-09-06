@@ -59,6 +59,8 @@ Decision 30, the routing pattern. This was more than a character class: 2 live c
 Decision 35, the containment fix, described in Part 1.
 Decision 39, the old proof of concept plan, closed as irrelevant archaeology.
 Decision 44, the Open Brain spot check. It immediately found something: the project label is split by case, 89 memories under one spelling and 1 under the other, plus 4 unclassified, and the filter is an exact match, so a query for one silently misses the other.
+Decision 4, reviewers keeping write access with disclosure measured instead. The measurement is built and has run, and its first result is in Part 6.
+Decision 25, the archive recovery path, recorded in the recovery document without naming the store's location, because naming it in a tracked file is exactly what leaked the planted sets during experiment 48. The procedure itself was already versioned in the vault script. While writing it I checked what would actually matter if the archive ever had to be opened: the sealing and unsealing parameters are identical on both sides, same cipher, same key derivation, same 600000 iterations, so the archive is openable.
 Decision 49, the rubric conflict recorded in the appendix, described in Part 2.
 Decision 50, the discharge rule adopted with the scope declared before the claim, scoped to identity claims so empirical fits keep their existing vocabulary.
 Decisions 14, 17, 19, 20, 24, 28, 29, 31, 34, 36, 37, 38, 42, 43 and 46, all marked on the runway or in the study programme at the points you named, across 4 horizons.
@@ -75,7 +77,19 @@ Fixed, with 7 tests built on a throwaway home directory so they test the script 
 
 
 
-## PART 6. WHAT I DID NOT DO, AND WHY
+## PART 6. THE DISCLOSURE MEASUREMENT, AND WHAT IT FOUND
+
+You ruled that reviewing models keep write access and that we measure disclosure instead of removing the tools. That was the right call for a reason worth keeping: a seat that can run the code it is criticising finds defects a read-only seat does not. But the measurement now exists, and the first result is not comfortable.
+
+Across 35 archived panel seats, 16 made an unambiguous write or edit call, which is 45.7 percent with an interval from 30.5 to 61.8. Of those 16, only 5 said so in their answer, which is 31.2 percent with an interval from 14.2 to 55.6. So roughly 2 in 3 writes to our repository went unannounced by the model that made them. The silent seats are named individually in the script's output rather than only counted, so any of them can be checked by hand.
+
+The detector's own limit is stated in the file, because otherwise it would commit the error it exists to catch: disclosure is matched by pattern against the seat's returned text, so a seat that disclosed in wording the pattern misses is scored as silent. The disclosure figure is therefore a floor and the silence figure a ceiling.
+
+This quantifies the risk you chose to accept rather than removing it, which is what you asked for. What to do about a 2 in 3 silence rate is a further decision and I have not taken it. The cheapest option is a line in the panel brief requiring disclosure, which would let us measure whether asking changes anything.
+
+
+
+## PART 7. WHAT I DID NOT DO, AND WHY
 
 Decisions 3 and 51 both concern experiment 52's planted set and the re-authoring of its target. That is answer key material, and you held the answer key work for your return, so I held these with it rather than deciding the boundary myself.
 
@@ -88,7 +102,7 @@ Decision 15, the description truncation. The code is already fixed. What remains
 
 
 
-## PART 7. WHAT NEEDS YOU
+## PART 8. WHAT NEEDS YOU
 
 One. Which way to seal the answer keys: fold the 29 files into the vault's own store as a single archive with a single passphrase, or seal that directory separately. I recommend folding, because 2 archives means 2 passphrases and a second thing to forget. Say which and I will give you commands tested against the real directory.
 
@@ -98,6 +112,22 @@ Three. Severity calibration is now inert for convergence, as a consequence of de
 
 Four. The Open Brain label split, which is a 1 line correction I did not make because it edits a records database rather than code.
 
-Five. The simulated run is held for your return, as you instructed, along with the answer key work that precedes it.
+Five. The passphrase and the store location for the sealed archive both exist in only one place each: the location in a protected file on this machine, the passphrase in your head. Put them in your password manager together, off this machine. I cannot do this and should not, because it would mean handling the passphrase in plain text. Losing either makes the archive unrecoverable and the passphrase cannot be reset, which is the whole point of the design.
+
+Six. Whether to require reviewers to disclose their writes in the panel brief, given the 2 in 3 silence rate in Part 6.
+
+Seven. The simulated run is held for your return, as you instructed, along with the answer key work that precedes it.
+
+
+## PART 9. WHAT THIS GENERALISES TO
+
+WHAT TRANSFERS. Three separate findings in 48 hours have one shape: a number produced by a model, then consumed as though it were a measurement. The severity float gating convergence. The fix acceptance threshold that was not the break even of the model it claimed to implement. And the severity proxy in the rubric band, where the number turned out to carry no information at all. None of these was a mathematical error. Each was a category error about what kind of object a number was. That class generalises to any system with a language model in the loop that produces scores, and it is more dangerous than an ordinary bug because the object looks like the safeguard rather than the risk.
+
+BOUNDARY CONDITIONS, so this is not over claimed. It only bites where the number is CONSUMED BY A GATE. A model assigned score used for display, ordering or triage is harmless and remains useful, which is exactly why severity survives here as queue ordering. It also only bites where no independent check exists: wherever a tool verdict is available the model number is redundant rather than dangerous. And the noise measurement itself is bounded to severity, on one corpus, in one project.
+
+NEW FALSIFIABLE QUESTIONS. The measured noise in the severity number, a standard deviation of 0.1419, is a property of models scoring defects. If that figure is roughly typical of model assigned scores generally, then every gate anywhere reading a model produced float with a threshold finer than about 0.14 has this defect. That is directly testable on our own other scores, the novelty measure and the abstraction index, by the same method: find cases where 2 models scored the same object and measure the spread. If those come back near 0.14 as well, it is a property of the method rather than of severity, and the rule becomes general: do not gate on a model produced number at a resolution finer than the spread between 2 models scoring the same thing. If they come back much tighter, severity is special and the general claim dies. Marked speculative until that measurement is run.
+
+I have not run it, because it is a new question rather than an approved decision, and it belongs to you.
+
 
 Written under CDSFL note standard v1.7 (26 August 2026).
