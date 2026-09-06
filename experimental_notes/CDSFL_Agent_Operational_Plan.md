@@ -10,6 +10,22 @@
 
 **★ DETACHED-LAUNCH RULE (founder directive 2026-07-29, standing).** ALL experiment runners + panel dispatches launch via `bench/detached_launch.sh` (nohup+disown, PPID 1) so they survive Claude-Code host restarts — harness-tracked background tasks die with the host (proven: the 01:37 restart killed the tracked Exp 47 runner; the detached physics review survived and completed). Monitors are attention-window tools: re-arm on wake by tailing the run log named in this tracker. PID files sit beside logs (`/tmp/exp47_launch_20260728.pid` etc.). Exp 47 RESUMED detached 01:47 (PID in pidfile; checkpoint-resume guard validated round 5 coverage). The run itself is CDSFL LLM-reliability work exclusively; all component names are analogy only.
 
+**★ RESUME POINTER (2026-09-06 10:55 BST). SUPERSEDES EVERY POINTER BELOW.**
+
+**HEAD `6908eec`, main, clean, UP TO DATE with origin/main. Suite 5203 passed, 0 failed, 0 errors under `--netguard-strict` in 393.33 s (measured 2026-09-06 04:00).**
+
+**★★★ WE WERE SHIPPING A FALSE MATHEMATICAL CLAIM TO EVERY MODEL, AND IT IS FIXED.** `bench/directives/universal/cdsfl_core_formal.md` stated *"C(n) is a special case of R_k(i) with π = 0"*. At π = 0 the recursion is **identically 0 at every step** (0 is a fixed point), so the stated parameter yields the constant 0 and can never yield C(n). SymPy and Wolfram `NestList` agree. **Blast radius, executed not assumed:** `reference_runner_v3.py:13251` reads the file IN FULL (26,909 chars) and ships it, so every runner-dispatched model received it; the composer path is CLEAN (0 of 3 models carry it). Live on 1 of 2 dispatch paths. Guarded by `test_directive_stage_claims_are_true_2026-09-06.py`, which EXTRACTS the prior the directive claims and EXECUTES the recursion at it — reverting fails 4 of 6.
+
+**★★ THE 5-STAGE CHAIN CLAIM WAS OVER-BROAD; 9 SITES CARRIED IT, ALL CORRECTED.** 4 links are nestings, **3→4 is an exact IDENTITY** (stronger than a nesting), and **2→3 is not a generalisation at all** — R_n's range is [0, π_k]. Sites: PAPER.md :158/:180, README.md:144, appendix :119/:165/:200/:249/:256/:324. Executed by `scripts/verify_five_stage_chain.py` (8 checks). **The collapsed equation itself is CORRECT** and was never in doubt.
+
+**★★ THE S_k GATE IS MISPRICED, NOT MIS-CLAMPED.** Shipped S\* is not the break-even of the shipped `nu_eff`: the true condition is a QUADRATIC, the shipped one a ratio, coinciding only on the surface `nu_b == q*R` (Wolfram `Reduce`). Shipped sits BELOW the true floor at **297 of 297** reachable points, Wilson [98.72%, 100.00%], **0 conservative**, and Wolfram returns False to "does any reachable point have shipped > the true root". At the shipped operating point sk=0.30 passes a threshold of 0.0 and drives R_k from 0.500 to **0.5506**. `sk_break_even()` + `sk_threshold_shadow()` now RECORD the corrected value beside every verdict. **Shipped verdict still in force — promotion needs a founder ruling.**
+
+**★ THE FOUNDER'S NOTES ARE 141 DAYS STALE.** `docs/FOUNDERS_NOTES.md` ends 2026-04-18. Gap: **494 commits**, and **9 of 9 sampled milestones have no entry**. Founder has authorised the backfill; NOT STARTED.
+
+**OPEN FOR FOUNDER RULING:** promote the corrected S\* threshold to live; where reach belongs (panel split — fable says both homes, cc2 says sigma only); the references section (deferred to discussion). **NEXT:** founder's-notes backfill, the 7 figures with no reproducing script, then the simulated run under full `cy` discipline.
+
+---
+
 **★ RESUME POINTER (2026-09-05 00:11 BST). SUPERSEDES EVERY POINTER BELOW. THE VALLEY GATE HAS NEVER FIRED.**
 
 **HEAD 59af19b, main, clean, 76 AHEAD OF origin/main AND UNPUSHED. Suite 4876 passed, 0 failed, 0 errors (--netguard-strict).**
