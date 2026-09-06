@@ -27,6 +27,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from experiment_11_orchestrator import (  # noqa: E402
     call_claude_cli, call_deepseek, call_openrouter)
+import panel_sandbox  # noqa: E402
+_PANEL_SANDBOX_CWD: str | None = None
+from experiment_11_orchestrator import set_panel_cwd  # noqa: E402
 from openrouter_tools import (  # noqa: E402
     TOOL_SPECS, call_openrouter_with_tools)
 
@@ -85,6 +88,17 @@ SYSTEM = (
 
 
 def dispatch(name, model_id, route):
+    # SET THE SANDBOX CWD ON *THIS* THREAD (2026-09-06). `_PANEL_CWD_TLS` is a
+    # `threading.local()`, and this function runs inside a ThreadPoolExecutor, so a
+    # value set on the main thread is invisible here -- each worker reads its own,
+    # which is None. Proven: main sees the path, both pool workers see None.
+    #
+    # That is why the first attempt at founder ruling 35's second half FAILED
+    # SILENTLY: main logged "seats confined to a copy", every worker passed
+    # cwd=None, and the seats ran in the live repository. cc2 caught it by running
+    # `pwd`, and fable had already written a file into the canonical tree.
+    if _PANEL_SANDBOX_CWD:
+        set_panel_cwd(_PANEL_SANDBOX_CWD)
     """EVERY SEAT GETS TOOLS. Founder ruling 2026-09-05: "Tool use is at the core
     of what CDSFL is."
 
@@ -144,9 +158,51 @@ def main() -> int:
     print(f"    PAID seats: {', '.join(n for n, _, _ in paid)}  "
           f"(brief {len(PROMPT):,} chars, about {len(PROMPT)//4:,} tokens each)")
     print(f"    free seats: cc2, fable (Max subscription)")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
-        futs = {pool.submit(dispatch, n, m, r): n for n, m, r in MODELS}
-        results = [f.result() for f in concurrent.futures.as_completed(futs)]
+
+    # SEATS WORK IN A COPY, NOT THE LIVE TREE (founder ruling 35, second half,
+    # 2026-09-06). `--allowedTools` already withholds Write and Edit and says "No
+    # file modification", and a seat still edited 4 tracked files -- through Bash,
+    # which no tool list can restrain. Confinement has to be positional.
+    #
+    # The cwd mechanism has existed since August (`set_panel_cwd`, fail-closed on a
+    # bad path) and was never called. Runway 0C.9 has carried this at HIGH since
+    # then, describing the confinement half as unbuilt when in fact it was built
+    # and unwired -- the project's most repeated failure shape.
+    global _PANEL_SANDBOX_CWD
+    baseline = panel_sandbox.fingerprint(_REPO)
+    sandbox = panel_sandbox.build(_REPO)
+    _PANEL_SANDBOX_CWD = str(sandbox)      # workers read this and set their own TLS
+    print(f"    seats confined to a copy: {sandbox}")
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
+            futs = {pool.submit(dispatch, n, m, r): n for n, m, r in MODELS}
+            results = [f.result() for f in concurrent.futures.as_completed(futs)]
+    finally:
+        _PANEL_SANDBOX_CWD = None
+        set_panel_cwd(None)
+        # KEEP what a seat changed rather than discarding it. The 2026-09-06 seat's
+        # edit was CORRECT -- it repaired a real false-convergence path -- so
+        # throwing such work away to enforce hygiene would be its own loss. It
+        # returns as a PROPOSAL for CC1 to test under f and sy, which is what the
+        # founder asked for.
+        proposals = panel_sandbox.changes(sandbox, _REPO)
+        if proposals:
+            (LOGS / "seat_proposals.diff").write_text(
+                "\n".join(f"### {rel}\n{d}" for rel, d in sorted(proposals.items())),
+                encoding="utf-8")
+            print(f"    seats proposed edits to {len(proposals)} file(s) IN THE COPY "
+                  f"-> {LOGS / 'seat_proposals.diff'} (untested; not applied)")
+        # DETECTION for what a sandbox cannot prevent: a seat writing to an
+        # absolute path it already knows. vault_keys.sh records that limit exactly.
+        touched = panel_sandbox.canonical_was_touched(baseline, _REPO)
+        if touched:
+            print(f"    *** CANONICAL TREE MODIFIED DURING THE PANEL: {touched} ***")
+            (LOGS / "canonical_touched.json").write_text(
+                json.dumps(touched, indent=2), encoding="utf-8")
+        else:
+            print("    canonical tree unchanged (7900 tracked files re-hashed)")
+        panel_sandbox.teardown(sandbox)
+
     ok = sum(1 for r in results if r["ok"])
     print(f"\n  {ok}/{len(MODELS)} responded. Logs: {LOGS}")
     return 0
