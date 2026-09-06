@@ -5,6 +5,26 @@ Last updated: 6 September 2026 10:55 BST — state files only; the narrative bel
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
+## ★ RECOVERING THE SEALED KEY ARCHIVE (recorded 2026-09-06, founder ruling 25)
+
+**This section deliberately does NOT name the archive's location.** Naming the key store in a tracked file is exactly what leaked every planted set during Exp 48, and the script's own comment records that. What follows is the recovery PATH, which is safe to version; the 2 secrets it depends on are named as things to hold, not written down here.
+
+**The procedure is already in the repository and needs no separate note.** `bench/vault_keys.sh` carries it as live code: `unvault()` runs `openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000` against the archive and untars the result. So a reader with the archive and the passphrase can recover the keys from this repository alone, even if every note is lost.
+
+**3 things are needed, and only 1 of them is in danger.**
+
+| What | Where it lives | Risk |
+|---|---|---|
+| The decryption procedure | `bench/vault_keys.sh`, versioned and pushed | none |
+| The store LOCATION | `~/.config/cdsfl/scoring.env` (mode 0600) on this machine, plus the project memory note | **single machine** |
+| The PASSPHRASE | the founder's memory / password manager only, deliberately not on this machine | **single point of loss** |
+
+**THE ACTION THIS RULING IMPLIES, and it is the founder's, not CC1's.** Put the store location and the passphrase in the password manager, together, off this machine. Losing either makes the sealed archive unrecoverable, and the passphrase cannot be reset — the whole point of the design is that nothing running here can reach it. CC1 cannot do this and should not: it would mean handling the passphrase in plain text.
+
+**What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
+
+---
+
 ## SESSION STATE — 2026-09-06 04:05 BST (READ THIS FIRST)
 
 **Suite 5203 passed, 0 failed under `--netguard-strict` in 393.33 s.**
