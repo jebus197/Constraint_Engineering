@@ -3444,7 +3444,18 @@ _OVERLAY_NEVER_MIRROR = frozenset({".git"})
 # Anything else -- no falsifier code at all, or code that never produced one of
 # these -- leaves the finding unresolved, and an unresolved critical candidate is
 # what the A4 fail-safe exists to block. Added 2026-09-06 with founder ruling 23.
-_FALSIFIER_RESOLVED_VERDICTS = frozenset({"CONFIRMED", "REFUTED", "CLOSED"})
+_FALSIFIER_RESOLVED_VERDICTS = frozenset({"CONFIRMED"})
+# REPAIR 2026-09-06 (panel): "REFUTED" and "CLOSED" removed.
+#  * REFUTED -- apply_falsifier_verdicts (~:4670) DEMOTES a critical whose
+#    falsifier returned REFUTED to status UNCONFIRMED and escalates it, because
+#    CONFIRM-only refuses to trust a passive clean exit (Exp 42: 2/3 of REFUTED
+#    criticals were wrong). Treating REFUTED as "resolved" here RELEASED exactly
+#    the entries CONFIRM-only had just refused to release: the new rule blocked
+#    FEWER than the old one on that path, contradicting the superset claim.
+#  * CLOSED is a STATUS, never a falsifier verdict (reverify_falsifier returns
+#    CONFIRMED/REFUTED/ERROR/UNTOOLABLE; the control writes NON_DISCRIMINATING).
+# With {CONFIRMED} the released set is a strict SUBSET of the old released set,
+# so "blocks a superset" becomes true by construction rather than by frequency.
 
 
 def _discrimination_mirror_except(real_dir: Path, over_dir: Path, skip: str,

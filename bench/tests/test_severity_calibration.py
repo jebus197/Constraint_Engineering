@@ -297,7 +297,7 @@ class TestEndToEndUnblocksConvergence:
     def test_a_tool_verdict_clears_what_calibration_cannot(self):
         reg, cid = self._registry_blocked_by_one_latent_critical()
         reg.entries[cid]["falsifier_code"] = "assert True"
-        reg.entries[cid]["falsifier_verdict"] = "REFUTED"
+        reg.entries[cid]["falsifier_verdict"] = "CONFIRMED"
         assert reg.unverified_critical_count() == 0
 
     def _retired_after_calibration_gate_converges(self):

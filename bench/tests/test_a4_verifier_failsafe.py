@@ -105,8 +105,23 @@ class TestUnverifiedCriticalCount:
             cid = reg.register(_make_finding(finding_id=f"f{sev}", severity=sev), "CC2")
             reg.resolve(cid, "UNCONFIRMED", round_idx=6)
             reg.entries[cid]["falsifier_code"] = "assert False"
-            reg.entries[cid]["falsifier_verdict"] = "REFUTED"
+            reg.entries[cid]["falsifier_verdict"] = "CONFIRMED"
         assert reg.unverified_critical_count() == 0
+
+    def test_a_refuted_critical_still_blocks(self):
+        """REGRESSION (panel, 2026-09-06). apply_falsifier_verdicts demotes a
+        CRITICAL whose falsifier returned REFUTED to UNCONFIRMED and escalates it,
+        because CONFIRM-only refuses to trust a passive clean exit (Exp 42: 2/3 of
+        REFUTED criticals were real defects). If A4 counted REFUTED as "resolved"
+        it released precisely those entries -- blocking FEWER than the severity
+        rule did, which is the one thing the replacement promised it could not do."""
+        reg = FindingRegistry()
+        cid = reg.register(_make_finding(finding_id="refcrit", severity=0.9), "CC2")
+        reg.resolve(cid, "UNCONFIRMED", round_idx=6)
+        reg.entries[cid]["falsifier_code"] = "assert True"
+        reg.entries[cid]["falsifier_verdict"] = "REFUTED"
+        reg.entries[cid]["escalated"] = True
+        assert reg.unverified_critical_count() == 1
 
     def test_an_absent_falsifier_blocks_at_any_severity(self):
         """The conservative direction. Measured over 87 archived reports: the new
