@@ -137,13 +137,25 @@ Each falsification pass that a claim survives increases trust in that claim,
 but never reaches certainty. Diminishing returns apply — each additional pass
 contributes less than the previous one.
 
-> **Stage-awareness note.** C(n) is Stage 1 of a five-stage model evolution.
-> Later stages subsume it: Stage 4's recursive R_k(i) generalises C(n) to
-> include prior flaw rate π and detection capability p per flaw class; Stage
-> 5 extends R_k(i) with novelty (η), fix efficacy (σ/S_k), and re-injection
-> (ν); Stage 6 adds literature-calibrated novelty (η_int, ν_k, c_ext). Each
-> stage is a strict generalisation — C(n) is a special case of R_k(i) with
-> π = 0 and all pass-specific factors collapsed into a single p. The
+> **Stage-awareness note.** C(n) is Stage 1 of a six-stage model evolution.
+> Later stages extend it: Stage 4's recursive R_k(i) adds the prior flaw rate
+> π and per-class detection; Stage 5 extends R_k(i) with novelty (η), fix
+> efficacy (σ/S_k), and re-injection (ν); Stage 6 adds literature-calibrated
+> novelty (η_int, ν_k, c_ext). **The 5 links are not all of one kind.** Four
+> are nestings, where the earlier model is the later one at fixed parameter
+> values (1→2 at K=1, d=1, uniform p; 4→5 at η=1, σ=1, ν=0; 5→6 at c_ext=0),
+> and 3→4 is an identity — the recursion unrolls to the batch posterior
+> exactly, for every n. Link 2→3 is neither: F_n reports coverage while R_n
+> reports residual risk, whose range is [0, π_k], so no constant prior makes
+> R_n emit F_n's value. **C(n) is NOT R_k(i) at π = 0.** At π = 0 the
+> recursion is identically 0 at every step, because 0 is a fixed point of the
+> update. What is true is that at π = 1/2, K = 1, d = 1, q = p, R_k(i) gives
+> (1−p)ⁿ / (1 + (1−p)ⁿ), which is C(n) expressed in risk coordinates through
+> the invertible per-class map R = (1−C)/(2−C). Aggregated over classes the
+> correspondence does not survive, because a weighted sum is many-to-one in
+> either coordinate system. (Corrected 2026-09-06; the previous text asserted
+> π = 0 and called all 5 links strict generalisations. Every link is executed
+> by `scripts/verify_five_stage_chain.py`.) The
 > operational specification that models actually use is
 > `cdsfl_operational.md` §3 (Stage 5) and §16 (Stage 6). The full derivation
 > chain is in `docs/MATHEMATICAL_APPENDIX.md` §1.1. C(n) is retained below
