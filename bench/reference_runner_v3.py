@@ -3532,12 +3532,45 @@ def _build_discrimination_overlay(repo_root: Path, target_rel: str,
         root.rmdir()                       # free the path mkdtemp just reserved
         _clone = subprocess.run(["cp", "-Rc", str(repo_root), str(root)],
                                 capture_output=True, text=True)
-        cloned = _clone.returncode == 0 and root.is_dir()
+        # stderr must be empty too (cc2): a PARTIAL clone returning 0 would
+        # otherwise yield a hybrid overlay that looks contained and is not.
+        cloned = (_clone.returncode == 0 and root.is_dir()
+                  and not (_clone.stderr or "").strip())
     except OSError:
         cloned = False
     if not root.exists():
         root.mkdir(parents=True, exist_ok=True)
     if cloned:
+        # CLEAR IMMUTABILITY BEFORE ANYTHING ELSE (panel, 2026-09-06, fable + cc2).
+        # `.env` carries the BSD `uchg` flag and `cp -Rc` PRESERVES flags, so every
+        # clone contained an undeletable file. The caller's cleanup is
+        # `shutil.rmtree(ov, ignore_errors=True)`, which swallows the resulting
+        # EPERM and returns as though it worked -- so each overlay leaked ~683 MB
+        # permanently. Measured evidence: 264 orphaned `cdsfl_disc_*` clones were
+        # sitting in TMPDIR when the panel looked.
+        #
+        # I ALREADY KNEW ABOUT THIS FLAG. The comment above records EPERM on `.env`
+        # killing the rename-based draft. I routed around it for CREATION and never
+        # re-tested DELETION -- the overlay was verified to build and never verified
+        # to be removable.
+        subprocess.run(["chflags", "-R", "nouchg,noschg", str(root)],
+                       capture_output=True)
+
+        # AND THE CLONE MUST NOT CARRY A PATH THAT RESOLVES OUT OF ITSELF.
+        # `cp -R` RECREATES symlinks rather than dereferencing them, so an ABSOLUTE
+        # symlink would survive into the overlay and still write through to the real
+        # tree -- the exact defect this function was rewritten to remove. It is not
+        # exploitable in the current tree (all 3 symlinks here are relative, checked
+        # by both seats), but "no absolute symlink is ever committed" was an
+        # invariant nobody stated, enforced or tested. Now it is enforced.
+        for link in root.rglob("*"):
+            if not link.is_symlink():
+                continue
+            target = Path(os.readlink(link))
+            resolved = (link.parent / target).resolve()
+            if target.is_absolute() or not str(resolved).startswith(str(root.resolve()) + os.sep):
+                link.unlink()          # a link that escapes is not containment
+
         for name in _OVERLAY_NEVER_MIRROR:
             victim = root / name
             if victim.is_dir() and not victim.is_symlink():

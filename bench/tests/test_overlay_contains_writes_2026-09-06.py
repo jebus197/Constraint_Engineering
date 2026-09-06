@@ -111,3 +111,46 @@ def test_the_escape_hatch_works_but_must_be_deliberate(rr, fake_repo, monkeypatc
     monkeypatch.setenv("CDSFL_ALLOW_UNCONTAINED_OVERLAY", "1")
     overlay = rr._build_discrimination_overlay(fake_repo, "bench/target.md", "REPLACED\n")
     assert (overlay / "bench" / "target.md").read_text() == "REPLACED\n"
+
+
+def test_the_overlay_can_actually_be_deleted(rr, fake_repo):
+    """PANEL, 2026-09-06 (fable). `.env` carries the BSD `uchg` immutable flag and
+    `cp -Rc` PRESERVES flags, so every clone contained an undeletable file. The
+    caller cleans up with `shutil.rmtree(ov, ignore_errors=True)`, which swallows
+    the EPERM and returns as though it worked -- leaking ~683 MB per overlay,
+    silently. 264 orphaned clones were found in TMPDIR.
+
+    The overlay was verified to BUILD and never verified to be REMOVABLE."""
+    import shutil
+    import subprocess as sp
+    env = fake_repo / ".env"
+    env.write_text("SECRET=1")
+    sp.run(["chflags", "uchg", str(env)], capture_output=True)
+    try:
+        overlay = rr._build_discrimination_overlay(fake_repo, "bench/target.md", "R\n")
+        shutil.rmtree(overlay, ignore_errors=True)
+        assert not overlay.exists(), (
+            "the overlay survived rmtree -- every run leaks a full clone of the repo")
+    finally:
+        sp.run(["chflags", "-R", "nouchg", str(fake_repo)], capture_output=True)
+
+
+def test_an_absolute_symlink_cannot_write_through_the_overlay(rr, fake_repo):
+    """PANEL, 2026-09-06 (cc2). `cp -R` RECREATES symlinks rather than dereferencing
+    them, so an ABSOLUTE symlink survives into the clone and still resolves to the
+    real tree -- the exact defect the clone was meant to remove. Not exploitable in
+    the current repo (all 3 symlinks are relative) but that was an invariant nobody
+    stated, enforced or tested."""
+    victim = fake_repo / "real"
+    victim.mkdir()
+    (victim / "v.txt").write_text("ORIGINAL\n")
+    os.symlink(str(victim), str(fake_repo / "abs_link"))
+    overlay = rr._build_discrimination_overlay(fake_repo, "bench/target.md", "R\n")
+    escaped = overlay / "abs_link"
+    if escaped.exists() or escaped.is_symlink():
+        try:
+            (escaped / "v.txt").write_text("WRITTEN VIA OVERLAY\n")
+        except OSError:
+            pass
+    assert (victim / "v.txt").read_text() == "ORIGINAL\n", (
+        "an absolute symlink wrote through the overlay into the real tree")

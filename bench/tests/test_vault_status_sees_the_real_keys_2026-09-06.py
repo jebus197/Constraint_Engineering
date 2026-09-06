@@ -132,3 +132,39 @@ def test_the_arc_sequencer_still_gates_on_this_line(tmp_path):
     assert "vault_keys.sh status" in seq
     assert "grep -q '^VAULTED'" in seq, (
         "arc_sequencer no longer gates on the VAULTED line; re-point this test")
+
+
+def test_a_legacy_store_whose_path_contains_a_space_is_not_a_false_all_clear(tmp_path):
+    """PANEL, 2026-09-06 (cc2, with fable concurring). CDSFL_LEGACY_STORES was read
+    3 ways here, 2 of them word-splitting on an unquoted expansion. A store path
+    CONTAINING A SPACE was split into 2 non-existent directories, both of which
+    "passed", so the check printed VAULTED with a plaintext key sitting in it.
+
+    That is the same false all-clear the scan was rewritten to end -- reintroduced
+    by the loop that had been added to work around a SUBSHELL bug, where a piped
+    `while` could not export rc=1 to the caller. Both are fixed together by feeding
+    the loop with a here-document instead of a pipe.
+    """
+    home = tmp_path / "home"
+    empty = tmp_path / "empty"
+    legacy = tmp_path / "zzq wsp" / "keys"          # <- the space is the point
+    for d in (home / ".config" / "cdsfl", empty, legacy,
+              home / "Library" / "Application Support"):
+        d.mkdir(parents=True, exist_ok=True)
+    (legacy / "ft-001_KEY.json").write_text('{"ground_truth_notes": "sentinel"}')
+    vault = home / "Library" / "Application Support" / "v.enc"
+    vault.write_bytes(b"ciphertext")
+    conf = home / ".config" / "cdsfl" / "scoring.env"
+    conf.write_text(
+        f'CDSFL_STORE="{home}/Library/Application Support/store"\n'
+        f'CDSFL_VAULT="{vault}"\n'
+        f'CDSFL_LEGACY_STORES="{legacy}"\n'
+        f'CDSFL_TARGETS="{home}/t"\n')
+    env = dict(os.environ)
+    env["HOME"] = str(empty)                        # keep the stray scan out of it
+    env["CDSFL_SCORING_CONF"] = str(conf)
+    out = _status(env)
+    assert "UNVAULTED" in out, (
+        f"a plaintext key in a legacy store with a space in its path was reported "
+        f"as VAULTED:\n{out}")
+    assert "ft-001_KEY.json" in out or "1 key" in out

@@ -110,16 +110,26 @@ status() {
   # arc_sequencer.sh greps for '^VAULTED' and an empty string does not match, but a
   # status command that prints nothing at all is its own hazard: the operator
   # cannot tell "clean" from "crashed".
-  if [ -n "${CDSFL_LEGACY_STORES:-}" ]; then
-    printf '%s\n' $CDSFL_LEGACY_STORES | while IFS= read -r loc; do
-      [ -n "$loc" ] && check_one "$loc"
-    done || true
-  fi
-  for loc in $CDSFL_LEGACY_STORES; do
-    if [ -d "$loc" ] && [ -n "$(ls -A "$loc" 2>/dev/null)" ]; then rc=1; fi
-  done
+  # REDIRECTION, NOT A PIPE (panel, 2026-09-06, cc2 + fable). CDSFL_LEGACY_STORES
+  # was read 3 ways here, 2 of them word-splitting on unquoted expansion. A legacy
+  # store whose path CONTAINS A SPACE was therefore split into 2 non-existent
+  # directories, both of which "passed", and the check printed VAULTED with a
+  # plaintext key sitting in it -- the exact false all-clear this scan was rewritten
+  # to end, reintroduced by the very loop added to work around the first bug.
+  #
+  # The first bug was that a PIPED `while` runs in a subshell, so `rc=1` set inside
+  # it cannot escape. That is why a second, word-splitting `for` loop existed at all.
+  # Feeding by redirection keeps the loop in the current shell, so rc survives and
+  # the second loop is deleted rather than patched. 10 lines to 5.
+  while IFS= read -r loc; do
+    [ -n "$loc" ] && check_one "$loc"
+  done <<EOF
+${CDSFL_LEGACY_STORES:-}
+EOF
   # A copy somewhere nobody recorded is the case this is really guarding against.
-  known=$(printf '%s\n' "$CDSFL_STORE" $CDSFL_LEGACY_STORES | sed 's/[].[^$*\\/]/\\&/g' | paste -sd'|' -)
+  # Quoted, and the class widened: an unescaped +?(){}| in a store path would
+  # otherwise corrupt the regex that excludes known stores from the stray scan.
+  known=$(printf '%s\n' "$CDSFL_STORE" "${CDSFL_LEGACY_STORES:-}" | sed 's/[].[^$*\\\/+?(){}|]/\\&/g' | paste -sd'|' -)
   # PATTERNS AND SCOPE, CORRECTED 2026-09-06 — the previous form reported VAULTED
   # while 29 plaintext answer keys sat on disk, and bench/arc_sequencer.sh:50 gates
   # a whole experiment arc on that line. It was blind twice over:

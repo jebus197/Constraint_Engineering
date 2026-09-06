@@ -5,9 +5,25 @@ ASKED. Measured 2026-09-06 over 8709 distinct archived finding descriptions: the
 copies disagreed on 40, Wilson [0.34%, 0.62%], and in 100% of those
 `immune_agents` routed as MATH while `verification_utils` did not.
 
-THIS TEST EXECUTES BOTH PATTERNS rather than comparing their source text. Under
-`execute-do-not-grep`: a test asserting on source proves only that each module
-describes itself consistently, which is exactly true of 2 patterns that disagree.
+THIS TEST EXECUTES BOTH PATTERNS rather than comparing their source text, over the
+14-item corpus below.
+
+WHAT IT DOES NOT DO, corrected 2026-09-06 after fable caught it. An earlier version
+of this docstring said agreement was enforced "by EXECUTING both over the archived
+corpus". It is not: the corpus here is 14 hand-written strings chosen to cover the 7
+alternatives that had diverged. The 40-of-8709 figure was real when CC1 measured it
+and NOTHING COMMITTED REPRODUCED IT -- which is precisely the
+`measured-rate-travels-with-its-script` violation CC1 had cited at others 4 times
+that same day, committed inside a test written to enforce rigour.
+
+The missing artefact now exists: `scripts/measure_math_pattern_divergence.py`
+replays both historical forms over every distinct archived description and
+reproduces 40 of 8709, 0.46%, Wilson [0.34%, 0.62%], all 40 broad-only.
+
+AND THE ROOT CAUSE IS GONE RATHER THAN GUARDED. `immune_agents` now IMPORTS the
+pattern from `verification_utils` instead of holding a second copy, so the 2 cannot
+drift again -- `A is B` is literally true. This file remains as the guard against
+someone re-introducing a copy, and as the record of what the divergence cost.
 """
 from __future__ import annotations
 

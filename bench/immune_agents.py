@@ -427,17 +427,19 @@ def load_domain_config(domain: str) -> Dict[str, Any]:
 # Claim detection patterns
 # ═══════════════════════════════════════════════════════════════════════════════
 
-_MATH_PATTERN = re.compile(
-    r"(?:"
-    r"[=<>!]=?"
-    r"|[+\-*/^]"
-    r"|\bsqrt\b|\blog\b|\bexp\b"
-    r"|\b\d+\s*[*/+\-]"
-    r"|\bEq\(|\bGt\(|\bLt\("
-    r"|\bbound\b|\bthreshold\b|\binequality\b"
-    r"|\bformula\b|\bequation\b"
-    r")"
-)
+# ONE DEFINITION, IMPORTED (panel, 2026-09-06, fable + cc2). This was a SECOND COPY
+# of the pattern in verification_utils, and the 2 had drifted: this one carried 7
+# alternatives (log, exp, bound, threshold, inequality, formula, equation) the other
+# lacked, so whether a finding routed for mathematical checking depended on WHICH
+# MODULE ASKED. Measured over 8709 distinct archived descriptions, they disagreed on
+# 40 -- 0.46%, Wilson [0.34%, 0.62%] -- and in all 40 this copy routed as maths and
+# the other did not. Reproduce: scripts/measure_math_pattern_divergence.py.
+#
+# CC1's first repair copied the broader text into both files, which left 2 copies
+# that merely happened to agree. Both seats said the same thing: make it one
+# definition. verification_utils imports nothing from this module, so there is no
+# cycle.
+from bench.verification_utils import _MATH_PATTERN  # noqa: E402
 
 _LOGIC_PATTERN = re.compile(
     r"(?:"
@@ -4112,6 +4114,13 @@ import math as _math
 
 # ── Dendritic Cell v2 — tightened patterns, citation detection ────────
 
+# DELIBERATELY DIFFERENT FROM _MATH_PATTERN ABOVE, and now said so (panel,
+# 2026-09-06). V2 demands STRUCTURE -- a backtick-wrapped expression, a numeric or
+# named comparison, a function call with parens -- where the V1 pattern matches any
+# bare operator anywhere in the text. V1 is a wide net for routing a claim to a
+# specialist; V2 is a narrow net for deciding a claim is a checkable mathematical
+# assertion. The divergence is intended. It was previously undocumented, which meant
+# nobody could tell it apart from the accidental drift repaired above.
 _MATH_PATTERN_V2 = re.compile(
     r"(?:"
     r"`[^`]*[=<>!]=?[^`]*`"                     # backtick-wrapped: `x >= 0.5`
