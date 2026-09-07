@@ -59,5 +59,10 @@ out += ["", f"*{present} of {len(ORDER)} panellists returned a usable response (
         "Written under CDSFL note standard v1.4 (13 August 2026, Rule 24 added 16 August)."]
 
 dest = pathlib.Path("experimental_notes/Panel_Stage1_Audit_FULL_RECORD_2026-08-18.md")
-dest.write_text("\n".join(out), encoding="utf-8")
-print(f"{dest}  —  {len('\n'.join(out)):,} chars, {present}/{len(ORDER)} panellists")
+# HOISTED, 2026-09-07. A backslash inside an f-string replacement field is PEP 701
+# and parses only on Python 3.12+; before that it is a hard SyntaxError. Joining
+# once is also the honest form -- the previous line already built the same string,
+# so the report counted characters in a SECOND join rather than in what was written.
+_written = "\n".join(out)
+dest.write_text(_written, encoding="utf-8")
+print(f"{dest}  —  {len(_written):,} chars, {present}/{len(ORDER)} panellists")

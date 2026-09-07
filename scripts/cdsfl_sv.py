@@ -2265,11 +2265,19 @@ def _reconcile_tracker(
     else:
         say("MIRROR-STALE", f"the repo copy is newer; a real run would refresh {desk} "
                             f"(keeping a .superseded- backup)")
+    # HOISTED OUT OF THE F-STRING, 2026-09-07. A MULTI-LINE expression inside a
+    # replacement field is PEP 701 and parses only on Python 3.12+. Below that it
+    # is "unterminated string literal" at this line, and 14 test files import this
+    # module, so the whole suite fails to COLLECT on any interpreter under 3.12.
+    # This machine carries 3.11.2 and a system 3.9.6 alongside the 3.13 on PATH,
+    # and the project declares no minimum version anywhere. Rendered text
+    # unchanged; verified by comparing both forms' output.
+    _mirror_action = ('refreshed, with a .superseded- backup of the previous contents'
+                      if apply else 'left alone (check only)')
     return _Check(
         name, True, why=why, expected=expected,
         observed=f"the repo copy was the newer one; the Desktop mirror was "
-                 f"{'refreshed, with a .superseded- backup of the previous contents'
-                    if apply else 'left alone (check only)'}. " + stat,
+                 f"{_mirror_action}. " + stat,
         look_at=str(desk),
         wrote=str(desk) if apply else "",
     )
