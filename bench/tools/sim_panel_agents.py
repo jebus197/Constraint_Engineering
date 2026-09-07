@@ -98,7 +98,9 @@ def _one_agent(label: str, target: str, timeout: int) -> list:
     t0 = time.monotonic()
     try:
         r = subprocess.run(
-            ["claude", "-p", prompt, "--model", "sonnet", "--output-format", "text",
+            # opus, not sonnet (founder, 2026-09-07). This was a bare literal with no
+            # parameter at all, so it could not even be overridden at the call site.
+            ["claude", "-p", prompt, "--model", "opus", "--output-format", "text",
              "--no-session-persistence",
         "--setting-sources", "",  # panellists read the directive, not the operator config
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],

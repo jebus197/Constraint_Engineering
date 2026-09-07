@@ -70,6 +70,20 @@ def main() -> int:
                              "bench/tests/test_immune_memory_evaluation.py -q"),
                     help="command S_k runs for its e2_regression gate")
     ap.add_argument("--name", default="sim45_memory")
+    # THE STAND-IN MODEL IS NOW SELECTABLE. `--models` is a COUNT, not a name, and
+    # there was no way to choose the model at all: it was a Python default in two
+    # function signatures and a bare literal in a third file.
+    ap.add_argument("--model", default="opus",
+                    help="stand-in model for the simulated seats (default: opus)")
+    # SEVERITY CALIBRATION, wired 2026-09-07. Measured the same day: the harness
+    # built RunnerConfig with 24 keyword arguments and this was not among them, so
+    # it took its default of False and `_apply_severity_calibration` returned 0
+    # immediately -- meaning a simulated run exercised NONE of the demotion half of
+    # the severity-proof enforcement it exists to study. `latent_tagger_enabled`
+    # feeds that same path and was equally absent. Both default ON here, because a
+    # rehearsal that skips the mechanism under test is not a rehearsal.
+    ap.add_argument("--no-severity-calibration", action="store_true",
+                    help="run WITHOUT the severity-calibration sweep (default: on)")
     args = ap.parse_args()
 
     if os.path.isabs(args.target):
@@ -242,6 +256,9 @@ def main() -> int:
         # Semantic Scholar, and a simulated run should not depend on an external
         # service being up. Stated rather than silently dropped.
         shadow_cell_config={"_macrophage": {"mode": "patrol"}},
+        # The half of the overnight severity work a simulated run could not reach.
+        severity_calibration_enabled=not args.no_severity_calibration,
+        latent_tagger_enabled=not args.no_severity_calibration,
     )
 
     print(f"=== SIMULATED EXPERIMENT (runner {R.RUNNER_VERSION}) ===", flush=True)
@@ -270,7 +287,7 @@ def main() -> int:
         return _orig_gai(host, port, *a, **kw)
 
     _sock.getaddrinfo = _no_paid
-    original = SHIM.install(timeout=args.timeout)
+    original = SHIM.install(model=args.model, timeout=args.timeout)
     t0 = time.monotonic()
     try:
         # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).

@@ -30,6 +30,7 @@
 #   bench/vault_keys.sh vault              # before a run
 #   bench/vault_keys.sh unvault            # for scoring
 #   bench/vault_keys.sh verify            # prove the seal opens, restores nothing
+#   bench/vault_keys.sh register          # what each key IS, no passphrase needed
 #   bench/vault_keys.sh status
 #   bench/vault_keys.sh run -- <command>   # unvault only for the duration
 set -eu
@@ -143,6 +144,78 @@ EOF
   echo "VERIFY IT NOW, before you rely on it:  $0 verify"
 }
 
+describe() {
+  # WHAT EACH KEY RESOURCE IS, readable WITHOUT the passphrase.
+  #
+  # FOUNDER, 2026-09-07: "Make sure you maintain a record next to these of what all
+  # our sealed answer key resources are, both for already completed runs and
+  # upcoming tasks/experiments on the runway. Humans sometimes forget passwords.
+  # The last thing we need is for you to forget what you have called a thing!"
+  #
+  # The existing 174112-byte archive is exactly that failure already realised: it
+  # was sealed BEFORE the manifest feature existed, so nothing on disk records what
+  # is inside it, and the answer keys for the 2 completed exam runs are nowhere
+  # loose on the filesystem. Their location is currently unknowable without opening
+  # it. That is why `unvault` is no longer optional in the sealing procedure.
+  #
+  # Names, purposes and hashes only. No answer content ever leaves the archive.
+  case "$1" in
+    ft-*_KEY.json)                 echo "Bench Run 2 answer key, exam ${1%%_KEY.json}, not yet run" ;;
+    control_two_distinct_defects_KEY.md)      echo "Exp 55 control, planted-defect key (prose)" ;;
+    control_two_distinct_defects_GROUND_TRUTH.json) echo "Exp 55 control, ground truth" ;;
+    canary_catalogue_*.json)       echo "Canary catalogue for a simulated run target" ;;
+    manifest_cdsfl_sim.*.json)     echo "Seed manifest, one sandboxed simulated run" ;;
+    README.md)                     echo "not a key -- store documentation" ;;
+    *)                             echo "UNCLASSIFIED -- describe it here before sealing" ;;
+  esac
+}
+
+register() {
+  # Build the register from whichever source is authoritative right now:
+  # the plaintext store if it exists, otherwise the archive's manifest.
+  out="$VAULT.register"
+  {
+    echo "CDSFL sealed-key register"
+    echo "Generated $(date -u +%Y-%m-%dT%H:%M:%SZ). Names and purposes only -- no answers."
+    echo
+    # EVERY location the seal will cover, not just $STORE. The first version read
+    # $STORE alone and described NOTHING, because all 36 plaintext files live in
+    # LEGACY stores that `vault` folds in at seal time. A register that omits what
+    # is about to be sealed is the failure it exists to prevent.
+    _any=0
+    for _loc in "$STORE" $(printf '%s\n' ${CDSFL_LEGACY_STORES:-}); do
+      [ -d "$_loc" ] && [ -n "$(ls -A "$_loc" 2>/dev/null)" ] || continue
+      _any=1
+      echo "SOURCE: plaintext, not yet sealed -- $_loc"
+      ( cd "$_loc" && find . -type f | sed "s|^\./||" | sort ) | while IFS= read -r rel; do
+        printf '  %-46s %s\n' "$rel" "$(describe "$(basename "$rel")")"
+      done
+      echo
+    done
+    if [ "$_any" = "1" ]; then
+      :
+    elif [ -f "$VAULT.manifest" ]; then
+      echo "SOURCE: the manifest beside the sealed archive"
+      echo
+      while IFS= read -r line; do
+        f=${line#*  }
+        printf '  %-46s %s\n' "$f" "$(describe "$(basename "$f")")"
+      done < "$VAULT.manifest"
+    else
+      echo "NEITHER a plaintext store NOR a manifest exists."
+      echo "The archive at $VAULT cannot be described without its passphrase."
+      echo "Run 'unvault', then 'register', then 'vault' to give it one."
+    fi
+    echo
+    [ -f "$VAULT" ] && echo "Archive: $VAULT ($(wc -c <"$VAULT" | tr -d ' ') bytes, AES-256)"
+  } > "$out"
+  chmod 600 "$out"
+  cp "$out" "$HOME/Desktop/CDSFL_sealed_key_register.txt" 2>/dev/null \
+    && echo "register written: $out" \
+    && echo "  and mirrored to ~/Desktop/CDSFL_sealed_key_register.txt" \
+    || echo "register written: $out (Desktop mirror failed)"
+}
+
 verify() {
   # Prove the archive OPENS and holds what was sealed, without ever putting the
   # plaintext back where a model could reach it. Sealing an archive nobody has
@@ -243,10 +316,18 @@ EOF
   #      Measured before removing it: the corrected patterns match 0 files inside
   #      the repository, so the exclusion suppressed only true positives.
   # Depth 5, not 4, because the BR2 keys sit one level deeper (br2_keys/).
+  #   3. EXTENDED 2026-09-07. It matched 0 of the 5 files in ~/CDSFL_keys: 2 canary
+  #      catalogues and 3 seed manifests, every one of which NAMES the planted
+  #      defects. So the scan could print VAULTED with answer-key-class material in
+  #      plaintext at mode 644 -- and a simulated run writes one more on every
+  #      canary pass. 'manifest_cdsfl_*' rather than 'manifest_*' because the scan
+  #      walks $HOME to depth 5 and a bare 'manifest_*.json' would sweep in
+  #      unrelated project files.
   stray=$(find "$HOME" -maxdepth 5 \
             \( -name '*answer_key*.json' -o -name '*_KEY.json' \
                -o -name '*_KEY.md' -o -name '*GROUND_TRUTH.json' \
-               -o -name '*planted*.json' \) 2>/dev/null \
+               -o -name '*planted*.json' \
+               -o -name '*canary*.json' -o -name 'manifest_cdsfl_*.json' \) 2>/dev/null \
           | grep -v '/\.git/' \
           | grep -Ev "^(${known})/" || true)
   if [ -n "$stray" ]; then
@@ -272,6 +353,7 @@ case "${1:-status}" in
   unvault) unvault ;;
   status)  status ;;
   verify)  verify ;;
+  register) register ;;
   run)
     shift
     [ "${1:-}" = "--" ] && shift
@@ -280,5 +362,5 @@ case "${1:-status}" in
     trap vault EXIT INT TERM
     "$@"
     ;;
-  *) echo "usage: $0 {vault|unvault|verify|status|run -- <command>}" >&2; exit 2 ;;
+  *) echo "usage: $0 {vault|unvault|verify|register|status|run -- <command>}" >&2; exit 2 ;;
 esac

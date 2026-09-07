@@ -86,7 +86,18 @@ def _record(label: str, elapsed: float, chars: int, budget: int,
           + (f" FAILED: {failure}" if failure else ""), flush=True)
 
 
-def make_shim(model: str = "sonnet", timeout: int = 900):
+# THE STAND-IN MODEL IS OPUS, NOT SONNET (founder, 2026-09-07: "They should be Opus
+# Agents! Opus is your dedicated coding platform. Sonnet is its 'chatbot' cousin and
+# significantly less capable").
+#
+# `sonnet` had been the default since this file was written and NO rationale for it
+# appears anywhere in the record -- not a comment, not a note, not a commit message.
+# It was a default nobody revisited, and it mattered: a simulated run exists to
+# rehearse what the paid frontier panel will do, so a stand-in materially weaker
+# than the seats it stands in for biases the rehearsal in the one direction that
+# makes it useless -- it under-finds, and the run looks cleaner than the real one
+# will be. Both entry points now default to opus and both accept an override.
+def make_shim(model: str = "opus", timeout: int = 900):
     """Return a drop-in replacement for ``dispatch_to_model``.
 
     THE SEAM MOVED DOWN ONE LEVEL, 2026-08-30, AND THIS IS WHY
@@ -278,7 +289,7 @@ def make_decomposed_shim(dispatch):
     return _dd
 
 
-def install(model: str = "sonnet", timeout: int = 900):
+def install(model: str = "opus", timeout: int = 900):
     """Patch BOTH dispatch primitives. Returns the originals for restore()."""
     dispatch = make_shim(model, timeout)
     originals = (R.dispatch_to_model, R._multiturn_fallback,

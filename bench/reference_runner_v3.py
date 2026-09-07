@@ -5315,6 +5315,41 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["mechanical_fault"] = False
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
+        elif not (e.get("falsifier_code") or e.get("sk_evaluated")):
+            # NEVER ASSESSED IS NOT IRREDUCIBLE (2026-09-07). THIS IS THE ROUND-0
+            # ESCALATION ROOT CAUSE, and it is why nothing has run for 12 days.
+            #
+            # "Irreducible" asserts something specific: a machine tried and could
+            # not. This branch was reached whenever the rungs of ONE round failed,
+            # with no requirement that the finding had ever been evaluated at all,
+            # and the comment below calls that "full routing ladder exhausted".
+            # At round 0 the ladder cannot have been exhausted in any meaningful
+            # sense.
+            #
+            # MEASURED over 83 escalated entries in archived reports: 33 carry NO
+            # falsifier code (Wilson [29.9%, 50.5%]) and 49 carry NO S_k
+            # evaluation (Wilson [48.3%, 69.0%]) -- roughly half were never
+            # assessed, then labelled as findings no machine could assess. Every
+            # alarm event in the archive, 4 of 4, fired at round 0, and 2 of those
+            # were all-simulated panels.
+            #
+            # The alarm was right and stays unchanged: it was correctly refusing to
+            # let runs proceed on a broken instrument. This repairs the instrument.
+            #
+            # SIMPLEST SUFFICIENT, by the project's own standard: no new mechanism,
+            # no new state, no round counter. Both fields already exist on the
+            # entry and are already written by the paths that do the assessing. The
+            # finding simply stays open and gets its turn next round, which is the
+            # FAIL-SAFE direction -- an unassessed critical keeps blocking rather
+            # than being excused into a queue that then halts the run.
+            e["routing_deferred"] = True
+            e.setdefault(
+                "routing_defer_reason",
+                f"not escalated at round {round_idx}: no falsifier and no S_k "
+                f"evaluation exist, so nothing has been assessed yet. "
+                f"'Irreducible' would assert a machine tried and failed.",
+            )
+            tally["deferred"] = tally.get("deferred", 0) + 1
         else:
             # Full routing ladder exhausted (no model wrote a runnable test). LOCK this
             # critical as an irreducible HIL item: handed to the human (the final
@@ -5334,7 +5369,9 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             tally["hil"] += 1  # genuinely-hard: handed to the HIL static queue
     if any(tally.values()):
         _log(f"  routing: {tally['resolved']} resolved by strong writer, "
-             f"{tally['dup']} dedup'd, {tally['hil']} -> HIL")
+             f"{tally['dup']} dedup'd, {tally['hil']} -> HIL"
+             + (f", {tally['deferred']} deferred (never assessed)"
+                if tally.get("deferred") else ""))
     # PERSISTED, not just logged (CC2, panel review 2026-08-30, ranked 7th).
     # `_routing_attempts` is the ONLY record of whether a rung actually reached
     # a model, and it died with this function. That is why "0 resolved by strong
@@ -10444,6 +10481,37 @@ def _no_break_even_reason(nu_b: float, nu_f: float, q: float, R: float) -> str:
     return "no break-even lies in [0,1] at these parameters"
 
 
+def check_sk_threshold_corrected(
+    sk: float, nu_b: float, nu_f: float,
+    q: float, R: float, s_floor: float = 0.0,
+) -> Tuple[bool, float]:
+    """The gate decided on the TRUE break-even rather than the shipped ratio.
+
+    Same signature and same return shape as `check_sk_threshold`, so it is a drop-in
+    at the one call site. It reuses `sk_break_even`, which already solves
+    `compute_rk(R,q,s) == R` in closed form and was validated against
+    scipy.optimize.brentq at 1005 points with 0 mismatches -- so this adds NO new
+    mathematics, only a different choice of which existing number decides.
+
+    When no break-even exists in [0,1] the shipped behaviour is kept, because the
+    corrected value has nothing to say there and inventing one would be worse than
+    the bias being corrected.
+    """
+    # ARGUMENT ORDER IS (nu_b, nu_f, q, R). The first version of this call passed
+    # (R, q, nu_b, nu_f), so sk_break_even returned None on every real input and
+    # the function fell straight through to the shipped gate -- a promotion that
+    # was INERT while reading as done. Caught by the P-pass: 1100 of 1100 grid
+    # points returned an identical verdict, which is impossible if the corrected
+    # floor is in force, because the shipped threshold is measurably below it at
+    # every reachable point.
+    true_floor = sk_break_even(nu_b, nu_f, q, R)
+    if true_floor is None:
+        return check_sk_threshold(sk, nu_b, nu_f, q, R, s_floor)
+    eff = max(float(true_floor), float(s_floor))
+    eff = max(0.0, min(1.0, eff))
+    return (float(sk) >= eff, eff)
+
+
 def sk_threshold_shadow(
     sk: float, nu_b: float, nu_f: float, q: float, R: float, s_floor: float = 0.0,
 ) -> Dict[str, Any]:
@@ -10581,7 +10649,30 @@ def _evaluate_sk_for_findings(
 
         # S* threshold check
         if sk_result.tristate == SK_ADMISSIBLE:
-            passes, s_star = check_sk_threshold(
+            # CORRECTED VALUES ARE NOW IN FORCE (founder ruling, 2026-09-06:
+            # "It is better to run with corrected values and precision, rather
+            # than risk inaccuracy"). Promoted from shadow 2026-09-07.
+            #
+            # The shipped ratio is NOT the break-even of the shipped nu_eff. The
+            # true condition is a QUADRATIC in sigma; the two coincide only on the
+            # surface nu_b == q*R, which is measure zero in the reachable box
+            # (Wolfram Reduce). MEASURED: the shipped threshold sits BELOW the true
+            # floor at 297 of 297 reachable grid points, Wilson [98.72%, 100.00%],
+            # with 0 conservative -- so it admits harmful fixes universally, not at
+            # a corner. At the shipped operating point sk=0.30 passed a threshold
+            # of 0.0 and drove R_k from 0.500 to 0.5506.
+            #
+            # THE COST, STATED RATHER THAN BURIED: this changes which fixes are
+            # accepted, so archived runs no longer replay identically. That is the
+            # reason it sat in shadow awaiting a ruling, and the ruling was given.
+            # The pair is INVERTED rather than dropped -- the shipped verdict is
+            # still recorded beside the corrected one, so every decision remains
+            # auditable in both coordinate systems.
+            passes, s_star = check_sk_threshold_corrected(
+                sk_result.sk, nu_b=nu_b, nu_f=nu_f,
+                q=q, R=R_old, s_floor=s_floor,
+            )
+            entry["sk_result"]["shipped_verdict_now_shadow"] = check_sk_threshold(
                 sk_result.sk, nu_b=nu_b, nu_f=nu_f,
                 q=q, R=R_old, s_floor=s_floor,
             )
@@ -10608,6 +10699,13 @@ def _evaluate_sk_for_findings(
             # this project's standing rule is that a measured result travels
             # with what produced it. The verdict is the result; these are what
             # produced it.
+            # A MARKER THAT CARRIES NO R_k(0) (2026-09-07). `sk_result` is the only
+            # carrier of R_k(0) and R_new, and a structural guard keeps it unread
+            # outside this function so that R_k(0) cannot reach the convergence
+            # gate. The round-0 escalation repair needs to know only WHETHER a
+            # finding was assessed, never with what value, so it reads this flat
+            # boolean instead and the guard's invariant is preserved exactly.
+            entry["sk_evaluated"] = True
             entry["sk_result"]["gate_inputs"] = {
                 "nu_b": nu_b,
                 "nu_f": nu_f,

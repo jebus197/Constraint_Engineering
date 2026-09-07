@@ -94,23 +94,65 @@ def test_the_shadow_carries_every_field_a_reader_needs(evaluated):
         assert key in shadow, f"shadow record is missing {key}"
 
 
-def test_the_shadow_does_not_move_the_live_verdict(evaluated):
-    """NON-DISTORTION on the real path, not on a grid. The shipped fields must
-    still be present and must still be what the shipped formula produces."""
-    from bench.reference_runner_v3 import check_sk_threshold
+def test_the_live_verdict_is_now_the_CORRECTED_one(evaluated):
+    """THE PAIR WAS INVERTED, 2026-09-07, on the founder's ruling of 2026-09-06:
+    "It is better to run with corrected values and precision, rather than risk
+    inaccuracy."
+
+    Until then the SHIPPED ratio decided and the corrected break-even was recorded
+    beside it. The shipped ratio is not the break-even of the shipped nu_eff at
+    all: the true condition is a quadratic in sigma, the two coincide only on the
+    measure-zero surface nu_b == q*R, and the shipped value sits BELOW the true
+    floor at 297 of 297 reachable grid points, Wilson [98.72%, 100.00%], with 0
+    conservative. So the gate admitted harmful fixes universally.
+
+    The corrected value now decides and the shipped verdict is recorded beside it,
+    so every decision stays auditable in both coordinate systems. Measured on
+    promotion: over 1100 grid points the corrected gate is LOOSER than shipped at
+    0 of them, Wilson [0.000%, 0.348%], and stricter at 215. It can only ever
+    reject more.
+    """
+    from bench.reference_runner_v3 import (
+        check_sk_threshold, check_sk_threshold_corrected)
 
     gi = evaluated["gate_inputs"]
-    passes, s_star = check_sk_threshold(
+    passes, s_star = check_sk_threshold_corrected(
         evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
-    assert evaluated["s_star"] == s_star
+    assert evaluated["s_star"] == s_star, "the live verdict is not the corrected one"
     assert evaluated["passes_threshold"] == passes
-    assert evaluated["threshold_shadow"]["shipped_passes"] == passes
+
+    shipped_passes, shipped_s_star = check_sk_threshold(
+        evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
+    assert evaluated["shipped_verdict_now_shadow"] == (shipped_passes, shipped_s_star), (
+        "the shipped verdict must still be recorded, or the promotion is not auditable")
+
+
+def test_the_promotion_can_only_ever_reject_more(evaluated):
+    """The one property that makes the promotion safe to ship: it never admits a
+    fix the shipped gate would have refused."""
+    from bench.reference_runner_v3 import (
+        check_sk_threshold, check_sk_threshold_corrected)
+    gi = evaluated["gate_inputs"]
+    corrected, _ = check_sk_threshold_corrected(
+        evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
+    shipped, _ = check_sk_threshold(
+        evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
+    assert not (corrected and not shipped), (
+        "the corrected gate admitted something the shipped gate refused")
 
 
 def test_gate_inputs_and_shadow_agree_with_each_other(evaluated):
-    """The 2 records are written from the same variables; if they ever disagree
-    one of them is reading a different operating point than the gate used."""
-    assert evaluated["threshold_shadow"]["shipped_s_star"] == evaluated["s_star"]
+    """The records are written from the same variables; if they ever disagree one
+    of them is reading a different operating point than the gate used.
+
+    UPDATED 2026-09-07: `s_star` is now the CORRECTED floor, so it is the shadow's
+    corrected field that must match it, not its shipped one."""
+    from bench.reference_runner_v3 import check_sk_threshold
+    gi = evaluated["gate_inputs"]
+    _, shipped_s_star = check_sk_threshold(
+        evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
+    assert evaluated["threshold_shadow"]["shipped_s_star"] == shipped_s_star
+    assert evaluated["gate_inputs"]["effective_threshold"] == evaluated["s_star"]
 
 
 def test_the_shadow_reports_a_flip_when_the_two_verdicts_differ():
