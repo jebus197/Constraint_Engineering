@@ -157,3 +157,34 @@ def test_the_scanner_cannot_catch_this_and_admits_it():
         "the scanner no longer catches a half-done correction, which is the "
         "one thing it is for."
     )
+
+
+def test_the_repo_carries_no_count_interval_disagreement():
+    """RUN the checker over the repository, so it is not an unreached addition.
+
+    The additive standard binds symmetrically: "an addition that nothing reaches
+    is not additive either -- every new flag, gate, subcommand or entry point
+    must be wired to a caller and executed by a test." A lint script with no
+    caller is exactly the shape this session found 3 other instances of.
+
+    Precedent for the wiring: `scripts/note_vagueness_lint.py` is reached by 3
+    test files that execute it. This does the same, and as a live ratchet rather
+    than a smoke test -- the repository is at 0 disagreements now, so any future
+    count/interval pair that contradicts itself fails here.
+
+    Intervals merely WIDER than computed are reported as notes and do not fail;
+    outward rounding weakens a claim and is not a defect. 4 such notes stand.
+    """
+    import subprocess
+
+    r = subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "wilson_interval_consistency.py"),
+         str(REPO)],
+        capture_output=True, text=True, timeout=300,
+    )
+    assert r.returncode == 0, (
+        "a stated count and its stated interval disagree somewhere in the "
+        "repository. Correct BOTH -- fixing one leaves the pair still lying.\n\n"
+        + r.stdout[-3000:]
+    )
+    assert "files scanned" in r.stdout, r.stdout[:500]
