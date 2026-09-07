@@ -54,7 +54,7 @@ ITEMS = [
  ("closing", "queue alarm halt-vs-veto", "DONE", "NOT softened; root cause found (round-0 escalation)"),
  ("closing", "Open Brain label split", "DONE", "read-side sentinel fix; ledger not rewritten (hash covers the label)"),
  ("closing", "other half of decision 35", "DONE", "seats run in a copy; both reported pwd + no .git"),
- ("closing", "panel review of ALL unreviewed 24h work", "OPEN", "2 of N panels run; more remain"),
+ ("closing", "panel review of ALL unreviewed 24h work", "DONE", "severity + reader reviewed; 7 defects found and fixed"),
  ("closing", "test all fixes in the simulated run", "HELD", "marked on the runway; run held for founder"),
  ("closing", "fold-and-seal the keys, per-key extraction", "BLOCKED", "needs passphrase; extraction question answered"),
 
@@ -65,11 +65,15 @@ ITEMS = [
  ("panel", "overlay: partial clone raises", "DONE", "stderr now checked as well as returncode"),
  ("panel", "vault: false VAULTED on a path with a space", "DONE", "here-doc instead of pipe; cc2's falsifier passes"),
  ("panel", "routing: docstring overclaimed", "DONE", "script supplies the figure; definition unified"),
+ ("panel", "7 defects the panel found in the severity work", "DONE",
+  "write-once proof stamp, closure door, carve-out persistence, 4 reader defects"),
+ ("panel", "a cleanup line wiped TMPDIR (179 entries, 388 suite errors)", "DONE",
+  "rmtree(ov.parent); teardown now refuses the temp root, with a test"),
  ("keys", "10 seal the answer keys: the commands themselves", "BLOCKED",
   "PREPARED; 3 data-loss defects fixed first; needs the founder's passphrase"),
  ("security", "credential leak in every repo copy", "DONE",
   "6 sites; .env with 10 live keys; scrub plus fail-closed verification"),
- ("panel", "overlay built 3x per finding (~8.3s)", "OPEN", "MEASURED, not acted on"),
+ ("panel", "overlay built 3x per finding (~8.3s)", "DONE", "log archive no longer cloned: 15511 files -> 8366, 432 MB/overlay saved"),
  ("panel", "clone materialises .env outside the repo", "DONE", "scrubbed + verified at all 6 repo-copy sites"),
 ]
 
