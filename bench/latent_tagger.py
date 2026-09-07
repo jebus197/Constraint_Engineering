@@ -335,6 +335,22 @@ def tag_entry(entry: Dict[str, Any]) -> bool:
     entry.setdefault("finding_category", classify_category(_category_text(entry)))
     text = _latency_text(entry)
 
+    # STICKY, fixed 2026-09-07 (panel review, fable). THIS FUNCTION'S OWN
+    # IDEMPOTENCY CLAIM WAS REFUTED BY EXECUTION. An external adjudication
+    # survived exactly ONE round: the branch below stamps latent_source="external"
+    # and returns, but on the NEXT round's tag_registry sweep latent_source was no
+    # longer None, so control fell through and the classifier OVERWROTE the human
+    # ruling from the MODEL'S OWN DESCRIPTION -- latent=True/external became
+    # latent=False/default_reachable, and a human "NOT latent" veto was overturned
+    # by the model's prose one round later. That inverts the no-voting rule
+    # exactly where it is meant to bind: HIL outranks this classifier
+    # permanently, not for a single round. It also silently disarmed the one
+    # carve-out in the severity-proof gate, whose whole basis is that "external"
+    # means a human ruled.
+    if entry.get("latent_source") == "external":
+        entry.setdefault("latent_evidence", "")
+        return bool(entry.get("latent"))
+
     if "latent" in entry and entry.get("latent_source") is None:
         # Externally adjudicated (HIL, or a future classifier cell). Respect it.
         entry["latent_source"] = "external"

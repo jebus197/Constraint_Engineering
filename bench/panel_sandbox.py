@@ -233,6 +233,25 @@ def fingerprint(repo: Path) -> Dict[str, str]:
 
 
 def teardown(sandbox: Path) -> None:
+    """Remove a sandbox. REFUSES to remove the system temp root itself.
+
+    THE ACCIDENT THIS PREVENTS, 2026-09-07. A cleanup line written as
+    `rmtree(x.parent)` is correct when `x` is a CHILD of a mkdtemp directory and
+    catastrophic when `x` IS one: `_build_discrimination_overlay` returns the
+    mkdtemp directory itself, so its `.parent` is TMPDIR. One such line removed
+    179 sibling entries in a single call -- pytest's own working tree among them,
+    producing 388 errors in one suite run -- and destroyed a panel sandbox that
+    was live in another terminal, a loss then mistakenly written up as a review
+    seat deleting its own working directory. Nothing a caller passes here should
+    ever be the temp root, so saying so out loud costs nothing.
+    """
     base = sandbox.parent if sandbox.name == "repo" else sandbox
+    _tmp = Path(tempfile.gettempdir()).resolve()
+    _base = base.resolve()
+    if _base == _tmp or _base in _tmp.parents:
+        raise ValueError(
+            f"refusing to remove {base}: that is the system temp root, not a "
+            f"sandbox. A caller has passed a mkdtemp directory where a child of "
+            f"one was expected.")
     subprocess.run(["chflags", "-R", "nouchg,noschg", str(base)], capture_output=True)
     shutil.rmtree(base, ignore_errors=True)

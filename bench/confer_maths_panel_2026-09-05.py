@@ -128,7 +128,10 @@ def dispatch(name, model_id, route):
             # fable completed in 237s. The seat did not fail on merit; it ran out
             # of clock while executing the tool work the brief demanded, and the
             # seat that was asked to DEFEND the proposal was the one lost.
-            resp = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=900)  # native Bash
+            # 1800s, raised from 900 on 2026-09-07: BOTH seats hit the 900 s wall
+            # with 0 chars on a brief that asked them to run archive-scanning
+            # work. The clock, not the task, was the binding constraint.
+            resp = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=1800)  # native Bash
         elif route == "deepseek":
             resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
         else:

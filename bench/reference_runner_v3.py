@@ -5653,7 +5653,20 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
                 e = registry.entries.get(cid)
                 if e is None or e["status"] in _TERMINAL:
                     continue
-                if float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+                # AN UNPROVEN SEVERITY MAY NOT BUY A CLOSURE (2026-09-07, panel,
+                # cc2, who enumerated the threshold sites and found this one). This
+                # is the one door in the file where a finding is retired on MODEL
+                # PROSE alone -- no tool runs here -- and the only thing in the way
+                # is the severity float sitting below the critical threshold. If
+                # that float carries no proof that reproduces, the retirement is
+                # bought with exactly the number the enforcement exists to police,
+                # in exactly the LOOSENING direction the rule names: an unproven
+                # severity "cannot buy a demotion, a clearance or a closure".
+                # Unproven is therefore treated as critical is treated -- the
+                # reasoning is RECORDED for the human, the finding is not retired,
+                # and nothing is deleted.
+                if (float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+                        or not severity_is_proven(e)):
                     # Same ruling. A reasoned withdrawal may not RETIRE a critical,
                     # but the reasoning is evidence a human should see rather than
                     # something the machine swallows without trace.
@@ -6402,6 +6415,49 @@ def _calibrate_finding_severity(
 # compute_rk: it can only ever be stricter, so it cannot manufacture a
 # convergence.
 _RK_PROOF_ACCEPTED = frozenset({"PASS", "WARN"})
+
+
+def _stamp_severity_proof(entries, cid: str, proof: dict) -> bool:
+    """Record a round's R_k proof on entry ``cid``. True if anything changed.
+
+    RULE 4'S OTHER HALF (2026-09-07, panel, cc2). The stamp was written at ONE
+    site, inside ``if existing is None`` -- FIRST REGISTRATION ONLY. So the loop
+    the rule promises could never close: the runner asks the author for the
+    arithmetic next round, the author supplies it, ``lookup_alias`` hits, the
+    finding is absorbed as a CONFIRM, and the new proof is DISCARDED. The entry
+    stays ABSENT for ever and keeps blocking, however many times the model
+    re-derives it correctly. Findings registered through the id-reuse
+    "different defect" path were never stamped at all, so they were born
+    unprovable.
+
+    That made "supply your working" unanswerable, which is the perverse
+    incentive the design was meant to avoid: after round 1, correct arithmetic
+    bought its author nothing.
+
+    MONOTONE, and one-directional in the same sense as the gate itself:
+      * nothing recorded yet          -> record;
+      * a proof that REPRODUCES       -> record. This is the arrival the rule
+        exists to accept, and the ONLY direction in which this can loosen;
+      * FAIL over an accepted proof   -> record. Strictly stricter;
+      * SKIP or ABSENT over an existing proof -> KEEP what is there. A round in
+        which the model simply did not restate its working must not erase a
+        proof it has already produced.
+    Every write is appended to ``severity_proof_history``, so the sequence stays
+    auditable rather than being silently overwritten.
+    """
+    if not isinstance(entries, dict) or cid not in entries:
+        return False
+    entry = entries[cid]
+    new_status = (proof.get("status") or "ABSENT").strip().upper()
+    old_status = severity_proof_status(entry)
+    if old_status != "ABSENT" and new_status in ("SKIP", "ABSENT"):
+        return False
+    if old_status == new_status and entry.get("severity_proof") == proof:
+        return False
+    entry.setdefault("severity_proof_history", []).append(
+        {"from": old_status, "to": new_status, "round": proof.get("round")})
+    entry["severity_proof"] = proof
+    return True
 
 
 def severity_proof_status(entry: dict) -> str:
@@ -9850,11 +9906,11 @@ def compute_rk_with_eta_channel(
 # Regex patterns for extracting R_k parameters from model corroboration text.
 # Models use varied notation (η vs eta, ν_eff vs nu_eff, × vs * vs ·).
 _RK_RE_R_OLD = re.compile(
-    r'R_?(?:old|prev|prior)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+    r'(?<![A-Za-z0-9_])R_?(?:old|prev|prior)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
 # Same defect, found by sweeping every parameter regex rather than fixing the
 # one that was reported: 'eta = 0.9 x 0.8 = 0.72' captured 0.9.
 _RK_RE_ETA = re.compile(
-    r'(?:[ηη]|eta)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
+    r'(?<![A-Za-z0-9_])(?:[ηη]|eta)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
 _RK_RE_D = re.compile(
     r'\bd\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)')
 _RK_RE_P = re.compile(
@@ -9862,7 +9918,7 @@ _RK_RE_P = re.compile(
 _RK_RE_Q_LINE = re.compile(
     r'^\s*q\s*[=:].*$', re.MULTILINE)
 _RK_RE_SK = re.compile(
-    r'S_?k\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+    r'(?<![A-Za-z0-9_])S_?k\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
 # LAST-VALUE ANCHOR, 2026-08-21. This captured the FIRST float after '='.
 # Models write the formula before the result:
 #   nu_eff = 1 - (1 - 0.02) x (1 - (1 - 0.95) x 0.05) = 0.02245
@@ -9878,9 +9934,9 @@ _RK_RE_SK = re.compile(
 # This is item 1's defect - read the final value, not the first - left
 # unfixed one line away, in the same function, in the same commit.
 _RK_RE_NU_EFF = re.compile(
-    r'(?:[νν]_?eff|nu_?eff)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
+    r'(?<![A-Za-z0-9_])(?:[νν]_?eff|nu_?eff)\s*(?:\([^)]*\)\s*)?[^\n]*[=:]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])(?!\s*[*×x+\-/]\s*[0-9(])', re.IGNORECASE)
 _RK_RE_R_DET = re.compile(
-    r'R_?(?:det|base)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+    r'(?<![A-Za-z0-9_])R_?(?:det|base)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
 # For R_k final value: match lines starting with R_k and extract the last
 # number.  Models write "R_k = 0.272 × (1 - 0.05) + 0.05 = 0.308" —
 # the final value is always the last float on the R_k line.
@@ -9911,7 +9967,7 @@ _RK_RE_R_FINAL_LINE = re.compile(
 # SKIP rather than mining an operand out of it. Guessing there is how the
 # 2026-08-19 form produced accusations against arithmetic no model wrote.
 _RK_RE_TRAILING_FLOAT = re.compile(
-    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])'
+    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9])(?!\.[0-9])'
     r'(?!\s*[*\u00d7x+\-/]\s*[0-9])'
     r'(?!.*[=\u2248\u2243]\s*\**\s*`?\s*[0-9])')
 
@@ -9941,8 +9997,23 @@ _RK_RE_TRAILING_FLOAT = re.compile(
 # The operator set includes the UNICODE minus and middle dot that models
 # actually type; the 2026-08-21 class held ASCII '-' and U+00D7 only.
 _RK_OPERATORS = r'*\u00d7\u00b7\u2219x+\-\u2212/\u2044'
+# A FULL STOP IS SENTENCE PUNCTUATION, NOT PART OF THE NUMBER (2026-09-07, panel,
+# cc2). The guard was `(?![0-9.])`, rejecting any value whose next character is a
+# '.', so a model that ENDED ITS SENTENCE -- "... = 0.444." -- had its answer read
+# as no answer at all. _rk_statement cuts at the newline, so the stop stays inside
+# the fragment and there is no ". " for _rk_clip to remove: the defect bites
+# exactly the value that CLOSES a line, which is where a stated result lives.
+# MEASURED before the change: that text scored SKIP, and preceded by any earlier
+# readable "R_k = ..." mention it scored FAIL at that EARLIER number -- an
+# accusation of bad arithmetic against a model whose answer was right.
+#
+# The guard's real job is refusing a PARTIAL read of a longer dotted token, which
+# needs only the '.'-followed-by-digit case: "1.2.3" still matches nothing there,
+# while "0.444." now reads 0.444. Applied to _RK_RE_TRAILING_FLOAT as well, which
+# carries the identical guard and reads the `q` line, so "q = 0.9 x 0.8 = 0.72."
+# was unreadable for the same reason.
 _RK_RE_STATED_VALUE = re.compile(
-    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])'
+    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9])(?!\.[0-9])'
     r'(?!\s*[' + _RK_OPERATORS + r']\s*[0-9(])')
 _RK_RE_CONTINUATION = re.compile(r'^[ \t]*[=\u2248\u2243]')
 
@@ -9955,7 +10026,15 @@ _RK_RE_CONTINUATION = re.compile(r'^[ \t]*[=\u2248\u2243]')
 # sentence and past it, and the R_k statement ran on into the S* sentence and
 # returned 0.80, the model's S_k, as its stated R_k. A period is only a boundary
 # when whitespace follows, so decimal points are untouched.
-_RK_RE_CLIP = re.compile(r',|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
+# A COMPARISON ALSO ENDS THE STATEMENT (2026-09-07, panel, cc2). First-occurrence
+# defuses the S* trap only when the parameter was DECLARED on an earlier line.
+# When declaration and check are ONE statement -- "S_k = 0.90 > S* = 0.08", which
+# is the model's only S_k statement -- the last-'=' rule inside it still returns
+# S*, the THRESHOLD. MEASURED unpatched: that text yields 0.08, and a section
+# whose arithmetic is right is then recomputed from 0.08 and graded FAIL. A
+# comparison starts a claim about a DIFFERENT quantity, so it bounds a statement
+# exactly as a comma or a sentence end does.
+_RK_RE_CLIP = re.compile(r',|[<>\u2264\u2265]|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
 
 
 def _rk_clip(fragment: str) -> str:
@@ -10010,7 +10089,51 @@ def _rk_stated_value(label_re: "re.Pattern", text: str) -> Optional[float]:
     return None
 
 
-_RK_RE_R_FINAL_LABEL = re.compile(r'R_?k\s*(?:\([^)]*\)\s*)?[=\u2248\u2243:]', re.IGNORECASE)
+# LEFT LABEL BOUNDARY (2026-09-07, panel, fable). Without it 'R_?k' matched the
+# 'rk' INSIDE 'Remark:' and 'framework =' under IGNORECASE, and because the final
+# R_k takes the LAST occurrence that states a value, a trailing "Remark: tolerance
+# = 0.9" REPLACED the model's correct stated R_k and scored FAIL against
+# arithmetic no model ever wrote. Same class as 'residual risk = 0.031' read as
+# S_k -- and 'residual risk' is itself one of the CORROBORATION markers the parser
+# REWARDS, so the text it rewards was the text that poisoned the grade -- and
+# 'beta = 0.93' read as eta. Every label regex now carries the boundary.
+#
+# The optional [*`] run is the CLOSING bold or backtick of a markdown-wrapped
+# label: '**R_k** = 0.26' previously SKIPped because nothing between 'k' and '='
+# was allowed, contradicting the CORRECT-ANCHOR comment above, which promises that
+# bold and backtick wrapping is handled.
+_RK_RE_R_FINAL_LABEL = re.compile(r'(?<![A-Za-z0-9_])R_?k\s*[*`]{0,2}\s*(?:\([^)]*\)\s*)?[=\u2248\u2243:]', re.IGNORECASE)
+
+
+# A HYPOTHETICAL IS NOT THE ANSWER (2026-09-07, panel, cc2). Reading the LAST
+# stated value is right for a result and wrong for a forecast, and the full-stop
+# repair above EXPOSED this rather than causing it: with the model's real answer
+# finally readable, "... = 0.444. If the fix lands next round, R_k = 0.95." now
+# grades FAIL at 0.95 -- the model's own projection. Before the repair the same
+# text also failed, at a different wrong number, because the real answer could not
+# be read at all; neither reading was the model's result.
+#
+# The markers are hypothetical or retrospective framings only. An occurrence
+# introduced by one of them is not a candidate for "the answer". If EVERY
+# occurrence is so framed there is nothing better to fall back on, so the old
+# behaviour stands -- the filter can only ever drop a clause the model ITSELF
+# marked as not its result.
+_RK_RE_HYPOTHETICAL = re.compile(
+    r'\b(?:if|would|were|target|projected|projection|expected|goal|'
+    r'next round|previous round|prior round|last round|after the fix|'
+    r'once the fix|hypothetical\w*)\b', re.IGNORECASE)
+
+
+def _rk_hypothetical_frame(text: str, start: int) -> bool:
+    """True when the label at ``start`` is introduced by a hypothetical clause."""
+    lead = text[max(0, start - 48):start]
+    # SENTENCE boundaries only. Cutting at a comma as well threw the marker away
+    # in the commonest shape there is -- "If the fix lands next round, R_k = 0.95"
+    # -- where the whole hypothetical sits BEFORE the comma, leaving an empty
+    # clause and no guard at all.
+    cut = max(lead.rfind('.'), lead.rfind('\n'), lead.rfind(';'))
+    clause = lead[cut + 1:] if cut != -1 else lead
+    return bool(_RK_RE_HYPOTHETICAL.search(clause))
 
 
 def _rk_last_stated_value(label_re: "re.Pattern", text: str) -> Optional[float]:
@@ -10021,14 +10144,18 @@ def _rk_last_stated_value(label_re: "re.Pattern", text: str) -> Optional[float]:
     first.
     """
     best: Optional[float] = None
+    best_asserted: Optional[float] = None
     for m in label_re.finditer(text):
         hits = list(_RK_RE_STATED_VALUE.finditer(_rk_statement(text, m.start())))
         if hits:
             try:
-                best = float(hits[-1].group(1))
+                val = float(hits[-1].group(1))
             except ValueError:
                 continue
-    return best
+            best = val
+            if not _rk_hypothetical_frame(text, m.start()):
+                best_asserted = val
+    return best_asserted if best_asserted is not None else best
 
 
 def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[float], Optional[float]]:
@@ -12014,9 +12141,8 @@ def run_experiment(
                     "status": "ABSENT", "model_rk": None,
                     "recomputed_rk": None, "delta": None, "round": round_idx,
                 }
-                _entries = getattr(registry, "entries", None)
-                if isinstance(_entries, dict) and cid in _entries:
-                    _entries[cid]["severity_proof"] = _proof
+                _stamp_severity_proof(
+                    getattr(registry, "entries", None), cid, _proof)
                 if _proof.get("status") not in _RK_PROOF_ACCEPTED:
                     rk_proof_requests_for_next_round.append(
                         (cid, _proof.get("status") or "ABSENT",
@@ -12106,6 +12232,16 @@ def run_experiment(
                          f"as before")
                 if _absorb:
                     registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
+                    # THE AUTHOR WAS ASKED FOR THE ARITHMETIC; THIS IS WHERE IT
+                    # ARRIVES. Same finding, so the proof is that finding's. Without
+                    # this the request routed back every round could never be
+                    # answered.
+                    _stamp_severity_proof(
+                        getattr(registry, "entries", None), existing,
+                        _rk_proof_by_fid.get(f.finding_id) or {
+                            "status": "ABSENT", "model_rk": None,
+                            "recomputed_rk": None, "delta": None,
+                            "round": round_idx})
                 else:
                     _why = ("different falsifier code" if _sim < 0 else
                             f"signature overlap {_sim:.3f} < "
@@ -12120,6 +12256,14 @@ def run_experiment(
                     )
                     if getattr(f, "severity", 0.0) >= 0.7:
                         novel_critical_this_round += 1
+                    # Registered here and nowhere else, so without this stamp these
+                    # entries were born unprovable and blocked for ever.
+                    _stamp_severity_proof(
+                        getattr(registry, "entries", None), cid,
+                        _rk_proof_by_fid.get(f.finding_id) or {
+                            "status": "ABSENT", "model_rk": None,
+                            "recomputed_rk": None, "delta": None,
+                            "round": round_idx})
                     result.setdefault("id_reuse_registered", []).append(
                         {"round": round_idx, "model": f.model_id,
                          "local_id": f.finding_id, "absorbed_into_would_be":

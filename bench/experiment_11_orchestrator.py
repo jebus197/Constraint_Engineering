@@ -989,6 +989,22 @@ def call_claude_cli(
     for attempt in range(1, max_retries + 1):
         if attempt > 1:
             _log(f"  [claude-cli:{model_id}] retry {attempt}/{max_retries}")
+        # A RETRY INTO A VANISHED WORKING DIRECTORY CANNOT SUCCEED, and burning
+        # the remaining attempts on it hides the real failure behind two ENOENTs.
+        # Measured 2026-09-07: both seats timed out at 900 s, then failed twice
+        # more in 0.0 s each with "[Errno 2] No such file or directory" on the
+        # panel sandbox, and the surviving log said only that 3 attempts had
+        # failed. Stop at the first attempt that finds its cwd gone, and SAY that
+        # is what happened, so the disappearance is the reported fault rather
+        # than a retry count.
+        _cwd = _get_panel_cwd_raw()
+        if _cwd is not None and not os.path.isdir(_cwd):
+            last_error = FileNotFoundError(
+                f"the panel working directory is gone: {_cwd}. Not retrying -- "
+                f"every further attempt would fail identically and in 0 seconds.")
+            _log(f"  [claude-cli:{model_id}] working directory vanished; "
+                 f"abandoning retries")
+            break
         t0 = time.monotonic()
         try:
             result = subprocess.run(
@@ -997,7 +1013,7 @@ def call_claude_cli(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=_get_panel_cwd_raw(),
+                cwd=_cwd,
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()

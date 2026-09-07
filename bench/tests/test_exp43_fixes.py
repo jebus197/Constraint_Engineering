@@ -59,12 +59,23 @@ def _mk_finding(fid: str, severity: float) -> Finding:
 
 def _register(reg: FindingRegistry, fid: str, severity: float,
               status: str, falsifier_verdict: str = "",
-              last_change: int = 5) -> str:
+              last_change: int = 5, severity_proof: str = "PASS") -> str:
     cid = reg.register(_mk_finding(fid, severity), "DeepSeek")
     e = reg.entries[cid]
     e["status"] = status
     e["falsifier_verdict"] = falsifier_verdict
     e["last_status_change_round"] = last_change
+    # SEVERITY PROOF, added 2026-09-07 (founder ruling; panel review found the
+    # site). A reasoned withdrawal is the ONE door where a finding is retired on
+    # model prose with no tool run, and the only thing admitting it is the
+    # severity float sitting below the critical threshold. If that float carries
+    # no proof that reproduces, the retirement is bought with exactly the number
+    # the enforcement exists to police. These tests are about the sweep's
+    # behaviour, so the default entry carries a severity that reproduces; the
+    # unproven case is asserted explicitly below.
+    if severity_proof:
+        e["severity_proof"] = {"status": severity_proof, "model_rk": 0.31,
+                               "recomputed_rk": 0.31}
     return cid
 
 
@@ -414,6 +425,20 @@ class TestPostConvergenceSweep:
         assert reg.entries[sub]["withdraw_reason"].startswith("duplicate")
         assert reg.entries[crit]["status"] == "OPEN", "criticals cannot be withdrawn"
         assert stats["withdrawn"] == 1 and stats["remaining"] == 1
+
+    def test_withdrawal_needs_a_severity_that_reproduces(self, monkeypatch):
+        """A withdrawal is admitted ONLY by the severity float being sub-critical,
+        so an unproven float is load-bearing for a closure -- the loosening
+        direction the rule names. The reasoning is still recorded for the human
+        and nothing is deleted; the finding simply stays open until the arithmetic
+        arrives, which the next round's request asks for."""
+        reg = FindingRegistry()
+        unproven = _register(reg, "F032u", 0.4, "OPEN", severity_proof="")
+        resp = f"WITHDRAW {unproven}: duplicate of established behaviour"
+        stats, _ = self._run(monkeypatch, reg, resp)
+        assert reg.entries[unproven]["status"] == "OPEN", (
+            "an unproven severity bought a retirement on prose alone")
+        assert stats["withdrawn"] == 0
 
     def test_new_findings_ignored(self, monkeypatch):
         reg = FindingRegistry()

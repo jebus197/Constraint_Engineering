@@ -79,3 +79,27 @@ The discrimination overlay is built 3 times per finding at roughly 8.3 seconds e
 The founder's notes are 141 days stale, covering 494 commits.
 
 Held for the founder: sealing the remaining plaintext answer keys, which needs his passphrase, and then the simulated run.
+
+## The panel found 7 defects in this work, hours after it was written
+
+Two seats, cc2 and fable, reviewed the enforcement and the reader inside a copy of the repository, under a brief that demanded the fix and not only the fault. They found seven defects between them, none overlapping. Every one was reproduced by execution against the canonical file before being repaired, because the rule that a fix must be falsified applies with equal force to a fix proposed by another model.
+
+**The worst made the whole design a trap.** The `severity_proof` stamp was written at one site, inside `if existing is None` — first registration only. So the loop the rule promises could never close: the runner asks the author for the arithmetic next round, the author supplies it, `lookup_alias` hits, the finding is absorbed as a CONFIRM, and the new proof is discarded. The entry stays ABSENT for ever and keeps blocking, however many times the model re-derives it correctly. Findings arriving through the id-reuse path were never stamped at all, so they were born unprovable. That is exactly the perverse incentive the design was meant to avoid — after round 1, correct arithmetic bought its author nothing — sitting inside the code written to prevent it. Repaired with `_stamp_severity_proof`, monotone: record when nothing is recorded, record a proof that reproduces, record a later FAIL because it is stricter, and never let a silent round erase a proof already given. Every write is appended to `severity_proof_history`.
+
+**An unproven severity could still buy a closure.** The reasoned-withdrawal path retires a finding on model prose with no tool run, admitted only by the severity float sitting below the critical threshold — so an unproven float was load-bearing for a closure, in the loosening direction the rule names. Now treated as critical is treated: the reasoning is recorded for the human, the finding is not retired, nothing is deleted.
+
+**The carve-out's persistence was broken, which silently disarmed it.** A human ruling stamped `latent_source = "external"` survived exactly one round: on the next sweep `latent_source` was no longer None, control fell through, and the classifier overwrote the human ruling from the model's own description. A human "not latent" veto became `latent = True` from model prose one round later. The trigger was sound — no model-authored channel can mint `"external"` — but the whole basis of the carve-out is that `"external"` means a human ruled, so a ruling that lasts one round is no ruling. `tag_entry` now returns early on an external source.
+
+**Four more in the reader**, each reproduced before repair. A value that ends a sentence was unreadable, because the guard rejected any number followed by a full stop — and that is exactly where a stated result lives; with the answer unreadable, an earlier `R_k` mention was then graded as the model's claim. `S_k = 0.90 > S* = 0.08` in a single statement still returned the threshold, because first-occurrence only defuses that trap across lines. A trailing forecast beat the answer once the full stop was fixed, so a hypothetical clause the model itself marked as not-its-result is no longer a candidate. And no label carried a left word boundary, so `residual risk = 0.031` was read as S_k — while `residual risk` is itself one of the CORROBORATION markers the parser rewards — `beta = 0.93` as eta, and a trailing `Remark:` as the final R_k.
+
+After these, measured over the same 128 sections: PASS 50, WARN 11, FAIL 28, SKIP 39, against 40 / 7 / 34 / 47 for the reader as originally shipped.
+
+## A correction, and it is the important one
+
+The first panel attempt produced nothing, and the first account of why blamed the seats: they had been invited to verify their own confinement, and the natural way to test whether a directory is disposable is to delete something in it. **That account was wrong.**
+
+The working directory was destroyed by a cleanup line written earlier the same night: `rmtree(ov.parent)`. `_build_discrimination_overlay` returns the `mkdtemp` directory itself, so its parent is the whole of `TMPDIR`. One such call removed 179 sibling entries, and the live panel sandbox was among them. The same line later produced 388 errors in a single suite run by removing pytest's own working tree while it was in use.
+
+The seats did nothing wrong. The shipped callers had always got this right — `shutil.rmtree(ov)`, not its parent — and only the new cleanup line did not. `panel_sandbox.teardown` now refuses outright to remove the temp root, with a test that proves the refusal. The retry path stops at the first attempt that finds its working directory gone, so a disappearance is reported as the fault rather than hidden behind a count saying only that 3 attempts failed, and the seat clock is raised from 900 to 1800 seconds.
+
+The "canonical tree modified during the panel" alarm in that run was a false positive of the same kind: the edits were made by work continuing alongside the panel. The detector cannot distinguish an outside edit from a seat's. The discipline is not to edit the tree while a panel is live.

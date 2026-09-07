@@ -266,5 +266,25 @@ def test_the_falsifier_overlay_does_not_carry_the_log_archive():
         assert (ov / "bench" / "panel_sandbox.py").read_text().strip() == "# probe", (
             "the whole point of the overlay -- replacing one file -- broke")
     finally:
-        _sp.run(["chflags", "-R", "nouchg,noschg", str(ov.parent)], capture_output=True)
-        _sh.rmtree(ov.parent, ignore_errors=True)
+        # `ov` IS the mkdtemp directory, so `ov.parent` is the whole TMPDIR.
+        # Removing that wiped 179 sibling entries including pytest's own
+        # `pytest-of-<user>` tree -- 388 errors in one suite run -- and it
+        # destroyed a live panel sandbox in another terminal, which was then
+        # wrongly written up as a seat deleting its own working directory. The
+        # shipped callers get this right (`shutil.rmtree(ov)` at the overlay
+        # cleanup); only this test did not.
+        _sp.run(["chflags", "-R", "nouchg,noschg", str(ov)], capture_output=True)
+        _sh.rmtree(ov, ignore_errors=True)
+
+
+def test_teardown_refuses_to_remove_the_system_temp_root():
+    """`rmtree(x.parent)` is right when x is a CHILD of a mkdtemp directory and
+    catastrophic when x IS one. _build_discrimination_overlay returns the mkdtemp
+    directory itself, so its .parent is TMPDIR: one such line removed 179 sibling
+    entries, including pytest's own working tree (388 errors in a single suite
+    run), and destroyed a panel sandbox live in another terminal -- a loss then
+    wrongly written up as a review seat deleting its own directory."""
+    import tempfile as _tf
+    with pytest.raises(ValueError, match="temp root"):
+        ps.teardown(Path(_tf.gettempdir()))
+    assert Path(_tf.gettempdir()).is_dir(), "the temp root was removed anyway"
