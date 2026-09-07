@@ -96,3 +96,107 @@ def test_no_sink_means_no_file_and_no_crash(tmp_path, monkeypatch):
     out = orch.call_claude_cli("opus", None, "brief", max_retries=1, backoff_base=0)
     assert out == "a full verdict"
     assert not list(tmp_path.glob("*.json"))
+
+
+# ---------------------------------------------------------------------------
+# THE FIX ITSELF WAS UNGUARDED. Added 2026-09-08 after a panel seat mutation-
+# tested it: replacing `set_tool_log_sink(str(_sink))` with
+# `set_tool_log_sink(None)` in the dispatcher restores the original "0 by
+# construction" defect exactly, and 88 of 88 relevant tests still passed. An
+# addition that nothing can fail on is not guarded, it is merely present --
+# the additive standard's own symmetric clause, violated inside the repair.
+# ---------------------------------------------------------------------------
+import sys as _sys
+
+
+def _load_dispatcher(tmp_path):
+    """Import the panel dispatcher without dispatching anything."""
+    import importlib.util
+
+    repo = REPO
+    path = repo / "bench" / "confer_maths_panel_2026-09-05.py"
+    logs = repo / "bench" / "logs" / "_toollog_probe"
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / "BRIEF.md").write_text("# probe\n", encoding="utf-8")
+    old_argv = _sys.argv[:]
+    _sys.argv = ["confer_maths_panel", "_toollog_probe"]
+    try:
+        spec = importlib.util.spec_from_file_location("_toollog_probe_mod", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod, logs
+    finally:
+        _sys.argv = old_argv
+
+
+def _cleanup(logs):
+    for p in sorted(logs.glob("*")):
+        p.unlink(missing_ok=True)
+    try:
+        logs.rmdir()
+    except OSError:
+        pass
+
+
+def test_the_dispatcher_actually_arms_the_sink(tmp_path, monkeypatch):
+    """Mutating the arming call to None must fail this test.
+
+    Without this, `set_tool_log_sink(str(_sink))` could be deleted and every
+    Claude-route seat would silently return to n_tool_calls == 0.
+    """
+    mod, logs = _load_dispatcher(tmp_path)
+    try:
+        armed = []
+        monkeypatch.setattr(mod, "set_tool_log_sink", lambda p: armed.append(p))
+
+        def fake_cli(model_id, system, prompt, **kw):
+            # a real dispatch writes the sink from inside the orchestrator
+            (logs / "cc2.tools.json").write_text(
+                json.dumps({"model": model_id, "tool_calls": 3,
+                            "calls": [{"name": "Bash"}] * 3}), encoding="utf-8")
+            return "a full verdict"
+
+        monkeypatch.setattr(mod, "call_claude_cli", fake_cli)
+        monkeypatch.setattr(mod, "accept_reply_or_work", lambda _p: (lambda _t: None))
+        out = mod.dispatch("cc2", "opus", "claude_cli")
+
+        assert any(a for a in armed if a), (
+            "the dispatcher never armed the tool-log sink with a path. Without it "
+            "the CLI runs with --output-format text, no tool_use blocks are "
+            "emitted, and n_tool_calls is 0 for every Claude seat by construction")
+        assert out["n_tool_calls"] == 3, (
+            f"sink held 3 calls but the seat record says {out['n_tool_calls']}")
+    finally:
+        _cleanup(logs)
+
+
+def test_a_seat_that_CRASHES_still_reports_the_calls_it_made(tmp_path, monkeypatch):
+    """The counter read 0 exactly when a seat failed.
+
+    `tool_log` is assigned only after `call_claude_cli` RETURNS, so when it
+    raised -- timeout, all attempts rejected, vanished cwd -- the except arm
+    recorded n_tool_calls=0 while the sink on disk held the real count. That is
+    the case the panel actually hit on 2026-09-06 and 2026-09-07, so the
+    original defect survived in the branch where the evidence matters most.
+    """
+    mod, logs = _load_dispatcher(tmp_path)
+    try:
+        monkeypatch.setattr(mod, "set_tool_log_sink", lambda p: None)
+
+        def crashing_cli(model_id, system, prompt, **kw):
+            (logs / "cc2.tools.json").write_text(
+                json.dumps({"model": model_id, "tool_calls": 13,
+                            "calls": [{"name": "Bash"}] * 13}), encoding="utf-8")
+            raise TimeoutError("seat ran out of clock after doing real work")
+
+        monkeypatch.setattr(mod, "call_claude_cli", crashing_cli)
+        monkeypatch.setattr(mod, "accept_reply_or_work", lambda _p: (lambda _t: None))
+        out = mod.dispatch("cc2", "opus", "claude_cli")
+
+        assert out["ok"] is False and "TimeoutError" in out.get("error", "")
+        assert out["n_tool_calls"] == 13, (
+            f"a crashed seat reported {out['n_tool_calls']} tool calls; the sink "
+            f"on disk held 13. The counter must not read 0 precisely when a seat "
+            f"fails -- that is the case the evidence is most needed for")
+    finally:
+        _cleanup(logs)

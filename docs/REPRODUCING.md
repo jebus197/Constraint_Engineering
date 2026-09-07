@@ -437,3 +437,32 @@ Combined examples:
 **Claude CLI not found**: The runner searches PATH, then macOS app bundle locations. Verify Claude.app is installed and the CLI binary exists at `~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude`.
 
 **Import errors**: Install the full package set from the Prerequisites section above, then run `python3 scripts/cdsfl_onboard.py` — it imports each package and names the ones still missing. Do not rely on `bench/requirements.txt` alone; it is a three-line partial that omits `pytest`.
+
+## Reproduce it without any API keys
+
+The whole schema runs offline, with every credential unset. This is the fastest
+way to see what CDSFL actually does, and it needs nothing from the author:
+
+```bash
+python3 bench/tools/simulated_bench.py --scripted
+```
+
+Expect `STAGES: 18/18 passed`, with a detailed record written to
+`bench/logs/simulated_bench_last.json`. Each stage exercises a real mechanism
+against a scripted transcript rather than a live model -- including the one the
+project exists for: a model asserting `VERDICT: CONFIRMED. Two models agree this
+is a critical defect.` is scored **REFUTED**, because its falsifier exits clean.
+Agreement between models decides nothing; the tool decides. `UNTOOLABLE` and
+`ERROR` route to a human, and nothing auto-confirms.
+
+For the historical record rather than the mechanism:
+
+```bash
+python3 scripts/track_record_audit.py
+```
+
+**Why this is stated here.** Until 2026-09-08 every documented entry point led to
+paid model dispatch, and a reader with no keys would reasonably conclude the
+project could not be reproduced without the author's credentials. That was never
+true, and a review seat pointed out that the omission made the project look less
+reproducible than it is.

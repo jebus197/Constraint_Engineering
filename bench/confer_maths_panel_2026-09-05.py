@@ -70,7 +70,33 @@ _ALL = [
 # not cost a second full paid round for the 3 that worked.
 MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
 
+# THE PANEL HAS NEVER RUN UNDER THE CDSFL SCHEMA. Measured 2026-09-07: of the 37
+# dispatchers that call `call_claude_cli`, **0** call the registry composer, and
+# this one carried a 3,015-character hand-written system prompt instead. Meanwhile
+# 28 of them load `bench/directives/universal/cdsfl_core_formal.md` -- 28,183
+# characters, the formal schema itself, covering constraint classification and
+# precedence, the P-pass loop, the proportionality gate, the corroboration model,
+# extended P-pass as a DAG, the survival predicate, epistemic marking, and (§10)
+# Sufficiency Assessment and Convergence Declaration.
+#
+# CC1 first reported "8 of 37 compose the schema, Wilson [11.4%, 37.2%]". That was
+# a SUBSTRING match on "cdsfl_registry", and those files reference it to load a
+# TARGET MODULE, not to compose directives. The true figure is 0 of 37, Wilson
+# [0.0%, 9.4%]. `compose()` is the experiment runners' mechanism for per-model
+# directive composition; it is not what a review panel needs.
+#
+# ADDITIVE, STRICTLY. The schema is PREPENDED and every rule below is kept: none
+# of "no compelled convergence", the additive standard, the one-shot notice or
+# "tools decide, not votes" appears in the formal document (checked: 0 occurrences
+# each), and the one-shot rule is what stopped fable returning a holding note.
+# Removing any of them to make room would be the subtractive failure the additive
+# standard forbids. Cost: the seat prompt goes from ~3.0K to ~31.2K characters,
+# about 7,800 tokens, which is the schema doing its job rather than overhead.
+_SCHEMA_DOC = _REPO / "bench" / "directives" / "universal" / "cdsfl_core_formal.md"
+_SCHEMA = _SCHEMA_DOC.read_text(encoding="utf-8")
+
 SYSTEM = (
+    _SCHEMA + "\n\n" +
     "You are on a six-seat review panel for CDSFL, a research framework that uses "
     "structured Popperian falsification and a multi-model panel to find defects in "
     "STEM artefacts. Biological component names are ANALOGY ONLY -- module names, "
@@ -224,10 +250,25 @@ def dispatch(name, model_id, route):
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": resp or ""}
     except Exception as e:  # noqa: BLE001
-        # KEEP THE COUNTER KEYS ON THE FAILURE PATH (cc2, 2026-09-07). Without
-        # them the log line printed `tools=native` for a seat that CRASHED,
-        # which reads as "this route has no counter" rather than "this seat
-        # failed", and any calls made before the failure were dropped.
+        # READ THE SINK ON THE FAILURE PATH TOO (cc2, 2026-09-08, SS-2b).
+        # The previous fix kept the counter KEYS here but not the counter VALUE.
+        # `tool_log` is only assigned after `call_claude_cli` RETURNS, so when it
+        # raises -- a timeout, every attempt rejected, a vanished cwd -- this arm
+        # reported n_tool_calls=0 while the sink on disk held the real count.
+        # Measured by the seat that found it: "RESULT C all-attempts-rejected:
+        # ok=False n_tool_calls=0 (sink on disk says 13)".
+        #
+        # That is the counter reading 0 EXACTLY WHEN A SEAT FAILS, which is the
+        # case this panel actually hit on 2026-09-06 and again on 2026-09-07 --
+        # so the original "0 by construction" defect survived, in the one branch
+        # where the evidence matters most, inside the commit that repaired it.
+        if not tool_log:
+            try:
+                _s = LOGS / f"{name}.tools.json"
+                if _s.is_file():
+                    tool_log = json.loads(_s.read_text(encoding="utf-8")).get("calls", [])
+            except (OSError, ValueError):
+                pass
         out = {"model": name, "route": route, "ok": False,
                "error": f"{type(e).__name__}: {e}",
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),

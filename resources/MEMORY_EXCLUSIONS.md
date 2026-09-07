@@ -14,16 +14,22 @@ The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **136 files**, of which one is `MEMORY.md` itself
-(the index), leaving **135 individual memory files**. They partition as:
+The directory holds **138 files**, of which one is `MEMORY.md` itself
+(the index), leaving **137 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 78 |
+| Mirrored (in summarised form) in `MEMORY.md` | 80 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 135 |
+| total | 137 |
+
+> **[Correction 2026-09-08.]** Total 135 -> 137, mirrored 78 -> 80, directory 136 -> 138. Two memory files were written on the night of
+> 2026-09-07: `cdsfl_session_2026-09-07_pm_the_counter_read_zero_and_i_invented_a_provenance.md`
+> and `cdsfl_the_answer_keys_were_never_public_2026-09-07.md`. The accounting test
+> (`test_recovery_memory_doc_repairs.py::TestMemoryExclusionsAccounting`) caught the drift the
+> same night, which is the ledger working: a count that is not checked is a claim, not a count.
 
 > **[Correction 2026-09-07, second.]** Mirrored 79 -> 78, total 136 -> 135:
 > `feedback_ext_shorthand.md` was DELETED, not added, because the founder retired

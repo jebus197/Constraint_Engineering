@@ -207,6 +207,25 @@ describe() {
     canary_catalogue_*.json)       echo "Canary catalogue for a simulated run target" ;;
     manifest_cdsfl_sim.*.json)     echo "Seed manifest, one sandboxed simulated run" ;;
     README.md)                     echo "not a key -- store documentation" ;;
+    # THE 17 THAT WERE UNCLASSIFIED, named 2026-09-07 PM. The first register ever
+    # generated warned "17 key(s) UNCLASSIFIED". They are not obscure -- they are
+    # the answer keys for every exam ALREADY RUN, their target articles, and the
+    # clearance files gating the sequencer. A register that cannot name the
+    # completed exams is the exact failure it exists to prevent: "Humans sometimes
+    # forget passwords. The last thing we need is for you to forget what you have
+    # called a thing" (founder, 2026-09-07). Ordering matters below: the specific
+    # exam keys are matched before the `exp*` catch-all, and README.md and the
+    # Exp 55 prose key are matched above `*.md`.
+    exp48_chemistry_answer_key.json)       echo "Exp 48 chemistry exam, answer key -- exam RUN; measurement contaminated, the key was co-located with its target" ;;
+    exp49_engineering_answer_key.json)     echo "Exp 49 engineering exam, answer key -- 42 claims, 7 clusters, 6 planted falses" ;;
+    exp50_physics_answer_key.json)         echo "Exp 50 physics exam, answer key -- 45 claims, 7 clusters, 6 planted falses" ;;
+    exp51_biology_answer_key.json)         echo "Exp 51 biology exam, answer key" ;;
+    exp52_factorial_answer_key.json)       echo "Exp 52 factorial exam, answer key -- 48 claims, 8 clusters, 12 planted defects" ;;
+    exp53_control_zero_answer_key.json)    echo "Exp 53 ZERO-PLANT CONTROL, answer key -- the no-ground-truth regime, which is Bench Run 2's own condition" ;;
+    exp53_zone_controller_answer_key.json) echo "Exp 53 zone controller, answer key" ;;
+    exp*_answer_key.json)                  echo "Exam answer key -- experiment not individually described here yet" ;;
+    .cleared_*.detail)                     echo "Tell-audit clearance -- the sequencer refuses to run this exam leg without one" ;;
+    *.md)                                  echo "TARGET ARTICLE -- the artefact under review, not a key; sealed beside its key so the pair cannot drift apart" ;;
     *)                             echo "UNCLASSIFIED -- describe it here before sealing" ;;
   esac
 }
@@ -281,7 +300,15 @@ verify() {
     || { echo "COULD NOT OPEN THE ARCHIVE — wrong passphrase, or it is damaged." >&2
          exit 1; }
   _inner="$_tmp/$(basename "$STORE")"
-  _n=$(ls -1 "$_inner" 2>/dev/null | wc -l | tr -d " ")
+  # COUNTED RECURSIVELY (2026-09-07). `ls -1 | wc -l` counts TOP-LEVEL entries,
+  # so a store of 53 files reported "opened: 18 file(s)" -- 15 files plus 3
+  # directories -- immediately after `vault` had said "sealed: 53 keys". A
+  # verification step whose own output looks like a 65% data loss is worse than
+  # no output: the operator stops and investigates a seal that is in fact sound.
+  # The hash check below was always complete (`shasum -c` reads the manifest,
+  # which is recursive), so only the DISPLAY was ever wrong -- which is precisely
+  # why it had to be fixed rather than explained away.
+  _n=$(find "$_inner" -type f 2>/dev/null | wc -l | tr -d " ")
   echo "opened: $_n file(s)"
   if [ -f "$VAULT.manifest" ]; then
     if ( cd "$_inner" && shasum -a 256 -c "$VAULT.manifest" >/dev/null 2>&1 ); then
@@ -303,7 +330,25 @@ unvault() {
     | tar -xzf - -C "$(dirname "$STORE")" \
     || { echo "could not open the archive — wrong passphrase, or it is damaged" >&2
          rm -rf "$STORE" 2>/dev/null || true; exit 1; }
-  chmod 700 "$STORE"; chmod 600 "$STORE"/* 2>/dev/null || true
+  # A GLOB CHMOD HITS DIRECTORIES TOO, AND 600 REMOVES THEIR EXECUTE BIT.
+  # 2026-09-07, found the hard way. `chmod 600 "$STORE"/*` set MODE 600 on the
+  # `targets/` and `clearances/` SUBDIRECTORIES restored from the archive. A
+  # directory without +x cannot be traversed, so the very next `vault` failed
+  # with `tar: cdsfl-scoring/targets/exp52_factorial.md: Cannot stat: Permission
+  # denied`, the pipeline failed, `set -o pipefail` aborted the script, and the
+  # seal did not happen. It cost the operator 3 attempts and a 60-mile round
+  # trip, and it would have recurred on EVERY unseal-reseal cycle, because
+  # unvault always restores those directories and always chmodded them shut.
+  #
+  # 4th instance of the same class in this file: the manifest, the register and
+  # 2 counts were all top-level-only and all corrected on 2026-09-07. Globs and
+  # `ls -1` do not descend; `find -type f` / `-type d` do, and they let files and
+  # directories be given DIFFERENT modes, which is what was needed all along.
+  # Directories 700 (traversable by the owner only), files 600. Nothing for
+  # group or other, exactly as before.
+  chmod 700 "$STORE"
+  find "$STORE" -type d -exec chmod 700 {} + 2>/dev/null || true
+  find "$STORE" -type f -exec chmod 600 {} + 2>/dev/null || true
   # RECURSIVE (2026-09-07). Third instance of the same top-level-only count: this
   # would report "4 keys" after restoring 31, because br2_keys/ counts as one entry.
   echo "unvaulted to $STORE ($(find "$STORE" -type f | wc -l | tr -d ' ') key file(s))"
@@ -359,7 +404,19 @@ EOF
   # A copy somewhere nobody recorded is the case this is really guarding against.
   # Quoted, and the class widened: an unescaped +?(){}| in a store path would
   # otherwise corrupt the regex that excludes known stores from the stray scan.
-  known=$(printf '%s\n' "$CDSFL_STORE" "${CDSFL_LEGACY_STORES:-}" | sed 's/[].[^$*\\\/+?(){}|]/\\&/g' | paste -sd'|' -)
+    # DROP EMPTY LINES BEFORE BUILDING THE ALTERNATION (2026-09-08).
+    # With CDSFL_LEGACY_STORES unset or empty, `printf '%s\n' "$STORE" ""` emits a
+    # blank line, `paste -sd'|'` turns it into a TRAILING PIPE, and the resulting
+    # `grep -Ev "^(\/some\/store|)/"` has an EMPTY ALTERNATION BRANCH that matches
+    # the empty string -- so `^(...)/` matches every absolute path and the filter
+    # suppresses EVERY stray file. BSD grep warns "empty (sub)expression" and
+    # proceeds; the scan then prints VAULTED with plaintext keys on disk.
+    #
+    # Total false all-clear from one empty config value. Currently latent only
+    # because the live config happens to name 3 legacy stores. Demonstrated:
+    # known='\/tmp\/store|' suppresses /some/other/path/key.json; with a second
+    # real path present the same file survives the filter correctly.
+  known=$(printf '%s\n' "$CDSFL_STORE" "${CDSFL_LEGACY_STORES:-}" | grep -v '^$' | sed 's/[].[^$*\\\/+?(){}|]/\\&/g' | paste -sd'|' -)
   # PATTERNS AND SCOPE, CORRECTED 2026-09-06 — the previous form reported VAULTED
   # while 29 plaintext answer keys sat on disk, and bench/arc_sequencer.sh:50 gates
   # a whole experiment arc on that line. It was blind twice over:
@@ -377,13 +434,67 @@ EOF
   #      canary pass. 'manifest_cdsfl_*' rather than 'manifest_*' because the scan
   #      walks $HOME to depth 5 and a bare 'manifest_*.json' would sweep in
   #      unrelated project files.
-  stray=$(find "$HOME" -maxdepth 5 \
-            \( -name '*answer_key*.json' -o -name '*_KEY.json' \
-               -o -name '*_KEY.md' -o -name '*GROUND_TRUTH.json' \
-               -o -name '*planted*.json' \
-               -o -name '*canary*.json' -o -name 'manifest_cdsfl_*.json' \) 2>/dev/null \
-          | grep -v '/\.git/' \
-          | grep -Ev "^(${known})/" || true)
+    # THE DEPTH CEILING MADE THIS SCAN BLIND TO THE REPOSITORY (2026-09-08).
+    #
+    # `-maxdepth 5` cannot reach a FILE inside the repository's own key
+    # directory. $HOME/Developer_Projects/Constraint_Engineering is depth 2, so
+    # bench/cdsfl_registry/targets/<file> is depth 6 -- and that is exactly where
+    # the Exp 48 leak came from ("the key was co-located with its target",
+    # describe() above). The 7 answer keys for exps 48-53 were tracked there.
+    # Restore any of them -- a `git checkout` of a pre-move commit, a worktree, a
+    # repair session, an operator copy -- and this scan sees nothing.
+    #
+    # That is not cosmetic. bench/arc_sequencer.sh:50 gates an ENTIRE experiment
+    # arc on `status | grep -q '^VAULTED'`. Measured on a mock home with real key
+    # material at depth 6: the shipped predicate reported 1 of 3 files, and with
+    # only the depth-6 keys present it printed VAULTED and the arc gate PASSED.
+    # A false all-clear arriving by depth instead of by pattern -- the same
+    # failure this scan was rewritten to end on 2026-09-06.
+    #
+    # The ceiling was never chosen as a scope boundary. Its recorded reason was
+    # local: "Depth 5, not 4, because the BR2 keys sit one level deeper" --
+    # raised to reach one KNOWN store. Files inside known stores are filtered out
+    # below anyway, so unknown locations are the only thing this find is for, and
+    # a location nobody recorded cannot be bounded by depth.
+    #
+    # IT ALSO INVALIDATED A COMMITTED NUMBER. The comment above records "the
+    # corrected patterns match 0 files inside the repository". That 0 came from
+    # this truncated walk. The true count is 6 -- canary catalogues and status
+    # vocabularies under bench/logs/sim45_canary_*, all deeper than the ceiling.
+    #
+    # COST, MEASURED not assumed, 2026-09-08: maxdepth 5 finds 0 in 0.37 s; the
+    # pruned unbounded walk finds 6 in 8.56 s, taking `status` from 2.15 s to
+    # about 10 s. It runs once per arc, and it is the gate standing between a
+    # panel and live answer keys. Pruning bounds cost by SKIPPING known-
+    # irrelevant trees rather than by refusing to descend, which is the
+    # distinction the ceiling got wrong. `.git` is pruned, so the separate
+    # `grep -v` for it is no longer needed.
+    # AND THE PATTERN WAS OVER-BROAD, which the depth ceiling had been masking.
+    # Removing the ceiling surfaced 6 files matching '*canary*.json' -- and every
+    # one is RUN OUTPUT whose directory happens to be named sim45_canary_*, not
+    # key material: sim45_canary_*_report.json and *_status_vocabulary.json.
+    # Measured before narrowing, over an unbounded pruned walk of $HOME: 6 files
+    # match '*canary*.json', 0 of them are answer-bearing (no canary_id, no
+    # defect_id, no planted_location, no seeded_defects, no catalogue array --
+    # only a `finding_catalogue` metadata block holding a record count and a path
+    # to a deleted temp directory), and 0 match 'canary_catalogue_*.json'. The 2
+    # real catalogues ARE named canary_catalogue_* and are in the vault now.
+    #
+    # So the narrow pattern loses nothing measurable and stops the arc gate
+    # blocking permanently on run logs. RESIDUAL, stated rather than assumed
+    # away: a catalogue named something other than canary_catalogue_* would be
+    # missed by this clause -- though '*planted*.json' would likely still catch
+    # it, since a catalogue names planted defects.
+    stray=$(find "$HOME" \
+              \( -name '.git' -o -name '__pycache__' -o -name 'node_modules' \
+                 -o -name '.venv' -o -path "$HOME/Library/Caches" \
+                 -o -path "$HOME/Library/Containers" \
+                 -o -path "$HOME/Library/CloudStorage" -o -path "$HOME/.Trash" \) -prune -o \
+              \( -name '*answer_key*.json' -o -name '*_KEY.json' \
+                 -o -name '*_KEY.md' -o -name '*GROUND_TRUTH.json' \
+                 -o -name '*planted*.json' \
+                 -o -name 'canary_catalogue_*.json' -o -name 'manifest_cdsfl_*.json' \) -print 2>/dev/null \
+            | grep -Ev "^(${known})/" || true)
   if [ -n "$stray" ]; then
     echo "UNVAULTED — stray plaintext key file(s) outside every known store:"
     echo "$stray" | sed 's/^/    /'

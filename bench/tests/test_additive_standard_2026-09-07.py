@@ -69,17 +69,51 @@ def _unreached_config_fields() -> list[str]:
 def _system_prompt_value() -> str:
     """The SYSTEM constant as the dispatcher will actually send it.
 
-    Imported rather than read, so comments cannot satisfy the assertion.
+    IMPORTED, NOT SLICED. This function used to locate `SYSTEM = (` in the source
+    and `exec` the text up to the next `\n)`. That worked only while the
+    expression was self-contained, and it stopped working the moment the CDSFL
+    schema was wired in on 2026-09-07: `SYSTEM = (_SCHEMA + ...)` references a
+    name defined ABOVE the slice, so the exec raised
+    `NameError: name '_SCHEMA' is not defined` and this test went red while the
+    property it checks was true -- the additive standard was verbatim in the
+    system prompt of every seat dispatched that night. A panel seat, reviewing a
+    copy taken after the wiring, hit a second failure mode from the same
+    fragility: `src.index("\n)", i)` landing short of the closing paren and
+    exec'ing a SyntaxError. One brittle mechanism, two different red herrings.
+
+    Replacing the slice with an import is justified by measurement, not taste
+    (the additive standard's own removal clause): the named property is
+    robustness to the SYSTEM expression's shape, and the slice form demonstrably
+    fails on an expression the import form handles. The reason the original
+    avoided importing -- that the module exits at import unless argv names a log
+    directory -- is met by staging one, and `main()` is never called, so nothing
+    dispatches.
+
+    The original concern still holds and is still met: the VALUE is read, never
+    the source text, so a comment mentioning the standard cannot satisfy the
+    assertion. That was the 2026-09-04 defect this function was written to fix.
     """
     import importlib.util
+    import sys
+
     path = REPO / "bench" / "confer_maths_panel_2026-09-05.py"
-    src = path.read_text()
-    # The module dispatches on import, so evaluate only the SYSTEM assignment.
-    i = src.index("SYSTEM = (")
-    j = src.index("\n)", i) + 2
-    ns: dict = {}
-    exec(compile(src[i:j], str(path), "exec"), ns)
-    return ns["SYSTEM"]
+    logs = REPO / "bench" / "logs" / "_additive_standard_probe"
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / "BRIEF.md").write_text("# probe\n", encoding="utf-8")
+    old_argv = sys.argv[:]
+    sys.argv = ["confer_maths_panel", "_additive_standard_probe"]
+    try:
+        spec = importlib.util.spec_from_file_location("_additive_probe", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.SYSTEM
+    finally:
+        sys.argv = old_argv
+        (logs / "BRIEF.md").unlink(missing_ok=True)
+        try:
+            logs.rmdir()
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------- layer 1
@@ -98,6 +132,30 @@ def test_the_standard_reaches_every_panel_seat_by_construction():
     assert "COMMITTED MEASUREMENT" in system, (
         "the standard is present but its 'better means measured' clause is gone, "
         "which is the half that makes it decidable rather than a matter of taste")
+    # THE OPERATIVE PROHIBITION, NOT JUST ITS HEADING. Added 2026-09-08 after a
+    # mutation test on this very file: replacing the rule sentence with "Do
+    # broadly whatever seems reasonable" -- while leaving the words ADDITIVE
+    # STANDARD and COMMITTED MEASUREMENT in place -- left this test GREEN, 8
+    # passed. So the rule could be deleted from every seat prompt and the guard
+    # written to prevent that would not notice. A heading is not a rule.
+    #
+    # Same shape a panel seat found the same night in the tool-log fix: mutating
+    # `set_tool_log_sink(str(_sink))` to `set_tool_log_sink(None)` restored the
+    # "0 by construction" defect and 88 of 88 tests still passed. An addition
+    # nothing can fail on is not guarded, it is merely present.
+    assert "NEVER DISABLE OR REMOVE A FEATURE" in system, (
+        "the additive standard's PROHIBITION is gone from the seat prompt. The "
+        "heading and the 'committed measurement' clause can both survive while "
+        "the rule itself is deleted -- measured, 2026-09-08 -- so this is the "
+        "assertion that actually holds the rule in place")
+    # The symmetric half: the one that catches unwired additions, which is the
+    # failure mode this project has actually suffered 11 times and the opposite
+    # of which it has suffered 0 times.
+    assert "NOTHING REACHES" in system, (
+        "the symmetric clause is gone -- 'an addition that nothing reaches is "
+        "not additive either'. Without it the standard reads as a pure "
+        "prohibition on removal, and the 11 confirmed defects in this project's "
+        "record that were additions doing nothing would not be covered by it")
 
 
 def test_the_standard_is_in_the_standing_rules_files():
