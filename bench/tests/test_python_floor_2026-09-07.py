@@ -5,7 +5,8 @@ constructs that parse only on Python 3.12+:
 
   * scripts/cdsfl_sv.py:2271 -- a MULTI-LINE expression inside a replacement
     field; below 3.12 it reads as "unterminated string literal";
-  * scripts/assemble_panel_record.py:63 and _0819.py:63 -- a BACKSLASH inside a
+  * scripts/assemble_panel_record.py:63 and
+    scripts/assemble_panel_record_0819.py:63 -- a BACKSLASH inside a
     replacement field (`len('\\n'.join(out))`), which pre-3.12 is the hard error
     "f-string expression part cannot include a backslash".
 

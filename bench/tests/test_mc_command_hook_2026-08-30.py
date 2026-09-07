@@ -151,3 +151,86 @@ def test_issued_commands_still_arrive_alongside_the_standing_pair():
     assert "STANDING HARD CONSTRAINT" in out
     assert "3 MC command(s) ALSO issued" in out
     assert "rg, a, d" in out
+
+
+class TestRetiredDuplicatesStayRetired:
+    """`ext`, `rc` and `rr` were removed 2026-09-07 as duplicates.
+
+    Founder: *"Some MC commands are dupes. re and rs are fine. Remove the dupes."*
+    Each pair had one command doing the work and one widening the surface that has
+    to stay synchronised across 5 locations:
+
+      * `ext` -- the project table itself called it a "shorter alias for `re`".
+        0 uses measured across the visible transcripts, Wilson [0.00%, 5.35%].
+      * `rc` -- the global shorthand called it "equivalent to `rs`".
+      * `rr` -- not a plain duplicate but a contradiction: the global line declared
+        it superseded by `rs` while 3 separate rules still described it as live,
+        and THIS HOOK never recognised it, so typing it produced no obligation.
+
+    The hook is the only one of the 5 locations with runtime effect, and it was
+    absent from the sync rule until the same day -- so the rule covered the 4
+    places that DESCRIBE the commands and not the one that ACTS on them.
+    """
+
+    @pytest.mark.parametrize("cmd", ["ext", "rc", "rr"])
+    def test_a_retired_command_is_not_recognised(self, cmd):
+        out, rc = _fires(f"do the thing\n\n{cmd}")
+        assert rc == 0
+        issued = out.split("ALSO issued:")[-1] if "ALSO issued:" in out else ""
+        assert cmd not in issued, f"{cmd!r} is recognised again"
+
+    @pytest.mark.parametrize("cmd", ["re", "rs", "t", "a", "d", "sy", "f", "qc"])
+    def test_the_survivors_still_fire(self, cmd):
+        """Without this the test above passes trivially on a hook that recognises
+        nothing at all."""
+        out, rc = _fires(f"do the thing\n\n{cmd}")
+        assert rc == 0
+        assert "ALSO issued:" in out or "STANDING HARD CONSTRAINT" in out, (
+            f"{cmd!r} produced no obligation line at all")
+
+    def test_no_documented_location_still_advertises_a_retired_command(self):
+        """A command removed from the parser but left in a table is worse than
+        leaving it alone: the founder reads it as available and it silently does
+        nothing."""
+        import pathlib
+        repo = pathlib.Path(__file__).resolve().parents[2]
+        home = pathlib.Path.home()
+        locations = {
+            ".claude/CLAUDE.md": repo / ".claude/CLAUDE.md",
+            "docs/REPRODUCING.md": repo / "docs/REPRODUCING.md",
+            "~/.claude/CLAUDE.md": home / ".claude/CLAUDE.md",
+        }
+        offenders = []
+        for name, path in locations.items():
+            if not path.exists():
+                continue
+            text = path.read_text()
+            for cmd in ("ext", "rc", "rr"):
+                for marker in (f"| `{cmd}` |", f"`{cmd}`/", f"{cmd} = ",
+                               f"explicit `{cmd}` command"):
+                    if marker in text:
+                        offenders.append(f"{name}: {marker!r}")
+        assert not offenders, (
+            "retired commands are still advertised: " + ", ".join(offenders))
+
+
+def test_the_repo_copy_and_the_live_hook_are_the_same_file():
+    """THE GAP THAT LET A DUPLICATE-REMOVAL DIVERGE, 2026-09-07.
+
+    There are TWO copies of this hook: `hooks/mc_commands.py` in the repository,
+    which the tests above run, and `~/.claude/hooks/mc_commands.py`, which Claude
+    Code actually executes on every prompt. They were byte-identical, nothing
+    compared them, and editing only the live one left the repository advertising
+    commands the parser had stopped recognising -- with a green suite, because the
+    suite runs the repo copy.
+
+    The failure is silent in the dangerous direction: the tests pass against a file
+    that is not the one doing the work.
+    """
+    import pathlib
+    live = pathlib.Path.home() / ".claude" / "hooks" / "mc_commands.py"
+    if not live.exists():
+        pytest.skip("no live hook installed on this machine")
+    assert HOOK.read_text() == live.read_text(), (
+        f"{HOOK} and {live} have diverged. The tests run the repo copy; Claude "
+        f"Code runs the live one. Whichever was edited, copy it to the other.")

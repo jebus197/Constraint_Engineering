@@ -14,16 +14,24 @@ The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **137 files**, of which one is `MEMORY.md` itself
-(the index), leaving **136 individual memory files**. They partition as:
+The directory holds **136 files**, of which one is `MEMORY.md` itself
+(the index), leaving **135 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 79 |
+| Mirrored (in summarised form) in `MEMORY.md` | 78 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 136 |
+| total | 135 |
+
+> **[Correction 2026-09-07, second.]** Mirrored 79 -> 78, total 136 -> 135:
+> `feedback_ext_shorthand.md` was DELETED, not added, because the founder retired
+> the `ext` command as a duplicate of `re` and a memory describing a command that
+> no longer exists would misinform the next reader. Tenth manual correction. The
+> ninth, hours earlier, argued the figure should be derived; this one is the
+> counter-example that makes the case, since it moves the count DOWNWARD and a
+> derived figure would have handled it without anyone typing anything.
 
 > **[Correction 2026-09-07.]** Mirrored 78 -> 79, total 135 -> 136 for
 > `cdsfl_session_2026-09-07_severity_and_the_tmpdir_wipe.md`. **NINTH consecutive

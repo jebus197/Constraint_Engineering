@@ -40,8 +40,16 @@ import sys
 
 #: Trailing-directive lines only. `a, d` at the end of a message is a command;
 #: the letter "a" inside a sentence is not.
-_KNOWN = {"a", "d", "f", "p", "sy", "e", "re", "rg", "rc", "rs", "rt", "r",
-          "c", "cy", "sq", "pr", "sv", "t", "ag", "ext", "y", "x", "cc2",
+# `ext` and `rc` REMOVED 2026-09-07 on the founder's instruction ("some MC commands
+# are dupes; re and rs are fine; remove the dupes"). Both were self-declared
+# aliases -- the project table called `ext` a "shorter alias for `re`" and the
+# global shorthand called `rc` "equivalent to `rs`" -- so each pair had one command
+# doing the work and one doing nothing but widening the surface that has to stay in
+# sync across 5 locations. `rr` went with them: the global line declared it
+# superseded by `rs` while 3 separate rules still described it as live, and this
+# hook never recognised it, so typing it produced no obligation at all.
+_KNOWN = {"a", "d", "f", "p", "sy", "e", "re", "rg", "rs", "rt", "r",
+          "c", "cy", "sq", "pr", "sv", "t", "ag", "y", "x", "cc2",
           "cx", "ge", "cgpt", "ds", "sth", "qc"}
 
 #: What each command REQUIRES to appear in the turn. Phrased as an artefact, not a mood.
@@ -72,7 +80,6 @@ _OBLIGATION = {
     "sv":  "SV — save state: read canonical docs SEQUENTIALLY, update ONBOARDING and "
            "RECOVERY, commit and push.",
     "re":  "RE — external research (web, arXiv, Semantic Scholar).",
-    "ext": "EXT — external research, same as `re`.",
     "pr":  "PR — full panel review, NO compelled convergence. Preserve disagreement as "
            "information. CC1 holds its own position and does not merely synthesise.",
     "c":   "C — confer with Codex via CLI, bounded rounds, CC->CX direction.",

@@ -9,7 +9,7 @@ On `sv` (save state): make qualitative updates to ONBOARDING.md and RECOVERY.md,
 
 **sv sequential-reading protocol.** ONBOARDING.md, RECOVERY.md, MATHEMATICAL_APPENDIX.md, PAPER.md, CURRENT_STATE.md and project memory files have all grown large enough that a single parallel read inflates context without improving understanding. During sv preparation, read these documents sequentially — top to bottom, one section/chunk at a time — absorb each chunk, decide if it needs updating, then move on. Do NOT fetch several large documents in parallel just to "have them all loaded". The goal is carefully considered updates, not maximum file-awareness. This also reduces API overload risk during the sv window.
 On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues.
-On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and rebuild context from output.
+On `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and rebuild context from output.
 
 ## Key Documentation
 
@@ -61,7 +61,6 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `qc` | Quality control — run `python3 scripts/cdsfl_qc.py`, fix reported issues |
 | `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, rebuild context |
 | `re` | External research (web search, arXiv, Semantic Scholar) |
-| `ext` | External research (shorter alias for `re`) |
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest warnings |
