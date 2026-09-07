@@ -2020,6 +2020,16 @@ class FindingRegistry:
             # Wilson [0.0%, 4.2%]. Convergence can only get harder, never easier.
             #
             # The float survives as QUEUE ORDERING, which is what it is fit for.
+            # THE RELEASE VALVE THAT ALREADY EXISTS (2026-09-07, panel cc2).
+            # `exhausted` is set by _update_finding_statuses at
+            # exhausted_round_threshold and is ALREADY honoured by the sibling
+            # counter open_crit_high_count (line 1969), whose comment reads "this
+            # cannot block for ever." Without it here, a finding the instrument
+            # never read -- now correctly deferred rather than falsely called
+            # irreducible -- blocks A4 for the life of the run. Same property,
+            # same meaning, one line.
+            if e.get("exhausted"):
+                continue
             _fc = (e.get("falsifier_code") or "").strip()
             _fv = (e.get("falsifier_verdict") or "").strip().upper()
             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
@@ -2039,9 +2049,25 @@ class FindingRegistry:
         # as "6 irreducible" where the truth was 0, and on the gamma-alt path
         # the stale count would have FALSELY refused a genuine convergence).
         _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+        # DEFERRED ITEMS STILL COUNT (2026-09-07, panel cc2). The round-0 repair
+        # stops stamping `irreducible_escalation` on findings the instrument never
+        # read -- but that flag was doing TWO jobs: excluding an item from the A4
+        # blocker, AND counting it toward this alarm. Removing items from the first
+        # silently removed them from the second.
+        #
+        # MEASURED BEFORE THIS LINE EXISTED: across the 6 archived runs that alarm,
+        # the deferral dropped 3 of them below the bound -- Wilson [18.8%, 81.2%].
+        # Those runs would no longer HALT with an evidence bundle; they would burn
+        # to max_rounds and end BUDGET_EXHAUSTED, spending paid dispatch on rounds
+        # that cannot close. That is precisely what this alarm's own docstring says
+        # halting exists to prevent, and "the alarm stays unchanged" would have been
+        # false by execution.
+        #
+        # Counting `routing_deferred` here restores the alarm to its shipped
+        # behaviour exactly, while nothing false is asserted about any item.
         return sum(
             1 for e in self.entries.values()
-            if e.get("irreducible_escalation")
+            if (e.get("irreducible_escalation") or e.get("routing_deferred"))
             and e.get("status") not in _TERMINAL
             and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
         )
@@ -5315,9 +5341,27 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["mechanical_fault"] = False
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
-        elif not (e.get("falsifier_code") or e.get("sk_evaluated")):
+        elif (e.get("falsifier_verdict") or "").strip().upper() in EQUIPMENT_FAILURE_VERDICTS:
             # NEVER ASSESSED IS NOT IRREDUCIBLE (2026-09-07). THIS IS THE ROUND-0
             # ESCALATION ROOT CAUSE, and it is why nothing has run for 12 days.
+            #
+            # THE PREDICATE IS THE ONE THAT ALREADY EXISTS (panel, cc2). My first
+            # version tested `not (falsifier_code or sk_evaluated)`. Two faults,
+            # both found by execution:
+            #   * "no falsifier_code" is a RE-DERIVATION of a verdict the registry
+            #     already carries -- it coincides with UNTOOLABLE at 22 of 22 --
+            #     and it is STRICTLY WEAKER, missing the 25 archived entries whose
+            #     falsifier RAN AND CRASHED (ERROR). Those produced no reading
+            #     either, so stamping them irreducible is the same false assertion
+            #     this branch exists to remove.
+            #   * `sk_evaluated` is DEAD where the defect lives: _apply_routing
+            #     runs at 12442 and _evaluate_sk_for_findings at 12713, so the
+            #     flag is structurally False at routing time in the same round,
+            #     and every archived alarm fired at round 0.
+            # EQUIPMENT_FAILURE_VERDICTS (line 1373) already states the rule, in
+            # its own words: "the instrument produced NO reading, so no terminal
+            # status may stand on it." `irreducible_escalation` is exactly a
+            # terminal stamp standing on no reading.
             #
             # "Irreducible" asserts something specific: a machine tried and could
             # not. This branch was reached whenever the rungs of ONE round failed,
@@ -10504,12 +10548,49 @@ def check_sk_threshold_corrected(
     # points returned an identical verdict, which is impossible if the corrected
     # floor is in force, because the shipped threshold is measurably below it at
     # every reachable point.
-    true_floor = sk_break_even(nu_b, nu_f, q, R)
-    if true_floor is None:
-        return check_sk_threshold(sk, nu_b, nu_f, q, R, s_floor)
-    eff = max(float(true_floor), float(s_floor))
-    eff = max(0.0, min(1.0, eff))
-    return (float(sk) >= eff, eff)
+    # NO ROOT-FINDING, AND NO FALLBACK (2026-09-07, panel fable; the simplest
+    # sufficient form, and it deletes machinery rather than patching it).
+    #
+    # The gate does not need to know WHERE the break-even is. Break-even is DEFINED
+    # by compute_rk(R, q, s) == R, so the only question a gate asks -- "does this
+    # fix raise residual risk?" -- is answered by evaluating compute_rk once, at
+    # the s under test. compute_rk already exists, is already trusted, and already
+    # carries the non-finite guard.
+    #
+    # WHY THE FALLBACK HAD TO GO, measured rather than argued. My first version
+    # delegated to the shipped gate whenever sk_break_even returned None. That is
+    # 21.56% of the reachable slice (2199 of 10201 points), and it fails in the
+    # PERMISSIVE direction exactly where the mathematics is degenerate:
+    #   * at R == 1 the polynomial is identically zero, and the shipped gate then
+    #     admits a worthless fix (sk = 0.0) at 77 of the 101 R == 1 points. R == 1
+    #     is the value compute_rk's own non-finite guard COERCES A CORRUPT R_old
+    #     TO, so the fallback handed a corrupt input a maximally permissive gate --
+    #     defeating the exact protection sk_break_even's docstring says its None
+    #     return exists to provide;
+    #   * on the no-root region, 489 of 4800 sampled cells admitted a fix that
+    #     compute_rk shows RAISES risk -- no break-even exists there precisely
+    #     because every s does harm.
+    # Verified: this form agrees with the root-finding gate at all 1125 non-None
+    # grid points, and refuses all 489 harmful admissions.
+    #
+    # s_star is still reported, from sk_break_even, for the record -- but it no
+    # longer decides anything, so a degenerate root cannot move a verdict.
+    # R == 1 IS A CORRUPTION SIGNAL, NOT AN OPERATING POINT (panel, cc2).
+    # At R == 1 residual risk is already certain, so no fix RAISES it and the
+    # sign test below admits everything -- including sk = 0.0. And R == 1 is
+    # exactly what compute_rk's non-finite guard coerces a corrupt R_old to
+    # (verified: compute_rk(nan, 0.5, 1.0) -> 1.0). `model_params` has 0 writers,
+    # so R_old is 0.5 on every real run and R == 1 is not otherwise reachable.
+    # Refusing is the only reading a corrupt input cannot manufacture, and it
+    # matches the direction compute_rk's own guard already established: stricter
+    # only, so it can never fabricate a convergence.
+    if abs(float(R) - 1.0) < 1e-12:
+        return (False, 1.0)
+    _floor = sk_break_even(nu_b, nu_f, q, R)
+    eff = max(0.0, min(1.0, max(float(_floor), float(s_floor)))) if _floor is not None \
+        else max(0.0, min(1.0, float(s_floor)))
+    passes = compute_rk(R, q, sk, nu_b, nu_f) <= float(R) and float(sk) >= float(s_floor)
+    return (bool(passes), eff)
 
 
 def sk_threshold_shadow(
@@ -10672,11 +10753,22 @@ def _evaluate_sk_for_findings(
                 sk_result.sk, nu_b=nu_b, nu_f=nu_f,
                 q=q, R=R_old, s_floor=s_floor,
             )
+            _shipped_verdict = check_sk_threshold(
+                sk_result.sk, nu_b=nu_b, nu_f=nu_f,
+                q=q, R=R_old, s_floor=s_floor,
+            )
             entry["sk_result"]["shipped_verdict_now_shadow"] = check_sk_threshold(
                 sk_result.sk, nu_b=nu_b, nu_f=nu_f,
                 q=q, R=R_old, s_floor=s_floor,
             )
-            entry["sk_result"]["s_star"] = s_star
+            # `s_star` KEEPS ITS OLD MEANING (2026-09-07, panel cc2). The shipped
+            # checker returns round(s_star, 4) -- the RAW S* before the floor --
+            # and scripts/measure_rk_and_gate_are_disconnected.py:98 walks that key
+            # across the whole archive. Writing the corrected EFFECTIVE threshold
+            # into it would silently change what the archive series means from this
+            # commit onward, so the corrected value gets its own name.
+            entry["sk_result"]["s_star"] = _shipped_verdict[1]
+            entry["sk_result"]["s_star_effective"] = s_star
             entry["sk_result"]["passes_threshold"] = passes
             # RECORD THE GATE'S INPUTS, NOT ONLY ITS VERDICT (2026-09-05).
             #
@@ -12830,6 +12922,15 @@ def run_experiment(
             _log(f"  latent-tagger: {_latent_n} finding(s) tagged latent "
                  f"(explicit evidence only; silence reads as reachable)")
         _sev_calib_n = _apply_severity_calibration(registry, cfg, round_idx)
+        # ANSWERABLE FROM THE ARTEFACT (2026-09-07, panel cc2). "Was the demotion
+        # half actually rehearsed?" could only be answered by reading the log. The
+        # tagger already returns how many it flagged and the sweep already returns
+        # how many it demoted, so recording both costs nothing and makes the
+        # question decidable from the run report instead of from prose.
+        result.setdefault("severity_calibration_series", []).append(
+            {"round": round_idx,
+             "latent_tagged": int(_latent_n) if "_latent_n" in dir() else None,
+             "demoted": int(_sev_calib_n)})
         if _sev_calib_n:
             _log(f"  severity-calibration: {_sev_calib_n} finding(s) recalibrated "
                  f"this round (retained, no longer blocking)")

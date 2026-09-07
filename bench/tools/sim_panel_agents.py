@@ -92,15 +92,17 @@ emits none is not a realistic panel.
 Return between 1 and 3 findings. JSON only, no prose, no markdown fence."""
 
 
-def _one_agent(label: str, target: str, timeout: int) -> list:
+def _one_agent(label: str, target: str, timeout: int, model: str = "opus") -> list:
     """Dispatch one agent; return its findings with the label stamped on."""
     prompt = BRIEF.format(target=target)
     t0 = time.monotonic()
     try:
         r = subprocess.run(
-            # opus, not sonnet (founder, 2026-09-07). This was a bare literal with no
-            # parameter at all, so it could not even be overridden at the call site.
-            ["claude", "-p", prompt, "--model", "opus", "--output-format", "text",
+            # opus, not sonnet (founder, 2026-09-07), and now a PARAMETER. Both seats
+            # caught the first version leaving this a bare literal while its own
+            # comment complained that it was one -- "a comment that names a defect
+            # the fix didn't repair will be quoted later as if it had been".
+            ["claude", "-p", prompt, "--model", model, "--output-format", "text",
              "--no-session-persistence",
         "--setting-sources", "",  # panellists read the directive, not the operator config
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],

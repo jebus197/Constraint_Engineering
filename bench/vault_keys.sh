@@ -72,7 +72,14 @@ vault() {
   # in a `br2_keys/` SUBDIRECTORY, and a `_KEY.md` the glob cannot see. The
   # `2>/dev/null || true` meant a total copy failure was silent, and `rm -rf` ran
   # regardless. These keys have no other copy.
-  for legacy in $CDSFL_LEGACY_STORES; do
+  # FED BY REDIRECTION (2026-09-07, panel fable). Unquoted expansion split a store
+  # path containing a space into non-existent directories, so its keys were SILENTLY
+  # NOT FOLDED at seal time -- left in plaintext while the operator believed they
+  # were sealed. Latent today (no current store path has a space) and not latent in
+  # principle: the canonical store lives under "Application Support". Same defect
+  # class status() was repaired for on 2026-09-06.
+  while IFS= read -r legacy; do
+    [ -n "$legacy" ] || continue
     [ -d "$legacy" ] || continue
     mkdir -p "$STORE"
     # Recursive, so subdirectories and non-.json key material travel too.
@@ -98,7 +105,9 @@ EOF
     _n=$(cd "$legacy" && find . -type f | wc -l | tr -d " ")
     rm -rf "$legacy"
     echo "folded legacy store into the vault: $legacy ($_n file(s), all verified)"
-  done
+  done <<EOF
+${CDSFL_LEGACY_STORES:-}
+EOF
   if [ ! -d "$STORE" ]; then
     echo "already vaulted (no plaintext store)"; return 0
   fi
@@ -122,8 +131,18 @@ EOF
   # A manifest of NAMES AND HASHES ONLY -- no key content -- so the seal can be
   # verified later, and so a truncated archive is detectable without the
   # passphrase. Filenames are not the secret; the answers inside them are.
-  _count=$(ls -1 "$STORE" | wc -l | tr -d " ")
-  ( cd "$STORE" && shasum -a 256 * 2>/dev/null || true ) > "$VAULT.manifest"
+  # RECURSIVE, corrected 2026-09-07 (panel, cc2, proved in a sandbox store shaped
+  # like the real one). Both lines were TOP-LEVEL ONLY: `ls -1` counts br2_keys/ as
+  # ONE key, and `shasum -a 256 *` errors "Is a directory" on it -- an error that
+  # 2>/dev/null swallowed and `|| true` cleared. So the manifest omitted 27 of the
+  # 31 keys, `verify`'s MANIFEST MISMATCH check compared against that truncated
+  # manifest and passed, and `register`'s post-seal branch -- the whole reason the
+  # register exists -- described only what the manifest listed. The register's own
+  # stated purpose, "a register that omits what is about to be sealed is the
+  # failure it exists to prevent", was realised.
+  _count=$( cd "$STORE" && find . -type f | wc -l | tr -d " " )
+  ( cd "$STORE" && find . -type f -print0 | sort -z | xargs -0 shasum -a 256 ) \
+    > "$VAULT.manifest"
   chmod 600 "$VAULT.manifest"
 
   tar -czf - -C "$(dirname "$STORE")" "$(basename "$STORE")" \
@@ -139,8 +158,30 @@ EOF
     echo "too small to hold $_count keys. The store is untouched at $STORE." >&2
     exit 1
   fi
+  # THE REGISTER IS WRITTEN BY SEALING, NOT BY REMEMBERING (2026-09-07, panel).
+  # fable: seal time is the unique enforcement point -- the only moment a human is
+  # guaranteed present while the content is still readable. cc2: do NOT refuse on an
+  # unclassified key, because that makes the safe action require a code edit and
+  # leaves the plaintext on disk until someone edits a case statement, which is the
+  # shape of guard people work around. Both are satisfied by writing the register
+  # automatically and making UNCLASSIFIED loud on stderr rather than fatal.
+  # `[ test ] && echo` returns 1 when the test is FALSE, and under `set -e` with
+  # pipefail that aborted the whole seal -- caught by the round-trip test, which is
+  # what it is for. An if/fi cannot return non-zero on the common path.
+  _unclassified=0
+  while IFS= read -r _f; do
+    if [ "$(describe "$(basename "$_f")")" = "UNCLASSIFIED -- describe it here before sealing" ]; then
+      _unclassified=$((_unclassified + 1))
+    fi
+  done <<EOF
+$( cd "$STORE" 2>/dev/null && find . -type f 2>/dev/null | sed "s|^\./||" )
+EOF
   rm -rf "$STORE"
   echo "sealed: $_count keys, $_size bytes of ciphertext, passphrase not on this machine."
+  register
+  if [ "${_unclassified:-0}" -gt 0 ]; then
+    echo "  $_unclassified key(s) UNCLASSIFIED in the register -- name them in describe() before the next run" >&2
+  fi
   echo "VERIFY IT NOW, before you rely on it:  $0 verify"
 }
 
@@ -183,7 +224,15 @@ register() {
     # LEGACY stores that `vault` folds in at seal time. A register that omits what
     # is about to be sealed is the failure it exists to prevent.
     _any=0
-    for _loc in "$STORE" $(printf '%s\n' ${CDSFL_LEGACY_STORES:-}); do
+    # FED BY REDIRECTION, NOT BY UNQUOTED EXPANSION (2026-09-07, panel fable).
+    # The first version split ${CDSFL_LEGACY_STORES} on whitespace, so a store whose
+    # path contains a space was SILENTLY omitted from the register -- and the
+    # canonical store path contains one ("Application Support"). This is the exact
+    # word-splitting defect status() was repaired for on 2026-09-06, reintroduced
+    # the next day in the function beside it. status() established the pattern; this
+    # now uses it.
+    while IFS= read -r _loc; do
+      [ -n "$_loc" ] || continue
       [ -d "$_loc" ] && [ -n "$(ls -A "$_loc" 2>/dev/null)" ] || continue
       _any=1
       echo "SOURCE: plaintext, not yet sealed -- $_loc"
@@ -191,7 +240,10 @@ register() {
         printf '  %-46s %s\n' "$rel" "$(describe "$(basename "$rel")")"
       done
       echo
-    done
+    done <<EOF
+$STORE
+${CDSFL_LEGACY_STORES:-}
+EOF
     if [ "$_any" = "1" ]; then
       :
     elif [ -f "$VAULT.manifest" ]; then
@@ -252,7 +304,9 @@ unvault() {
     || { echo "could not open the archive — wrong passphrase, or it is damaged" >&2
          rm -rf "$STORE" 2>/dev/null || true; exit 1; }
   chmod 700 "$STORE"; chmod 600 "$STORE"/* 2>/dev/null || true
-  echo "unvaulted to $STORE ($(ls -1 "$STORE" | wc -l | tr -d ' ') keys)"
+  # RECURSIVE (2026-09-07). Third instance of the same top-level-only count: this
+  # would report "4 keys" after restoring 31, because br2_keys/ counts as one entry.
+  echo "unvaulted to $STORE ($(find "$STORE" -type f | wc -l | tr -d ' ') key file(s))"
 }
 
 status() {

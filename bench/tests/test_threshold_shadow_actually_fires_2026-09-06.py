@@ -118,7 +118,11 @@ def test_the_live_verdict_is_now_the_CORRECTED_one(evaluated):
     gi = evaluated["gate_inputs"]
     passes, s_star = check_sk_threshold_corrected(
         evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
-    assert evaluated["s_star"] == s_star, "the live verdict is not the corrected one"
+    # `s_star` KEEPS THE SHIPPED RAW VALUE and the corrected effective threshold
+    # gets its own key, because scripts/measure_rk_and_gate_are_disconnected.py
+    # walks `s_star` across the whole archive and would otherwise be comparing two
+    # different quantities either side of this commit.
+    assert evaluated["s_star_effective"] == s_star, "the live verdict is not the corrected one"
     assert evaluated["passes_threshold"] == passes
 
     shipped_passes, shipped_s_star = check_sk_threshold(
@@ -152,7 +156,8 @@ def test_gate_inputs_and_shadow_agree_with_each_other(evaluated):
     _, shipped_s_star = check_sk_threshold(
         evaluated["sk"], gi["nu_b"], gi["nu_f"], gi["q"], gi["R_old"], gi["s_floor"])
     assert evaluated["threshold_shadow"]["shipped_s_star"] == shipped_s_star
-    assert evaluated["gate_inputs"]["effective_threshold"] == evaluated["s_star"]
+    assert evaluated["s_star"] == shipped_s_star, (
+        "s_star must still hold the shipped raw value the archive series expects")
 
 
 def test_the_shadow_reports_a_flip_when_the_two_verdicts_differ():

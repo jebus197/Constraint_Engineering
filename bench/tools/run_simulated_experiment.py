@@ -80,8 +80,24 @@ def main() -> int:
     # it took its default of False and `_apply_severity_calibration` returned 0
     # immediately -- meaning a simulated run exercised NONE of the demotion half of
     # the severity-proof enforcement it exists to study. `latent_tagger_enabled`
-    # feeds that same path and was equally absent. Both default ON here, because a
-    # rehearsal that skips the mechanism under test is not a rehearsal.
+    # feeds that same path and was equally absent. Both default ON here.
+    #
+    # WHAT THIS DOES AND DOES NOT DELIVER (panel, cc2 and fable independently).
+    # Enabling both makes the SWEEP execute. It does NOT make a demotion happen,
+    # because two further conditions gate it and neither is supplied by a flag:
+    #   * `latent` -- true for 1 of 467 falsifier-CONFIRMED criticals in the whole
+    #     archive, 0.21%, Wilson [0.04%, 1.20%], so the expected demotion count on
+    #     a 10-40 finding target is ~0; and
+    #   * `severity_is_proven` -- the 2026-09-06 interlock, requiring a stamped R_k
+    #     proof that recomputes, or a HIL `latent_source == "external"`.
+    # So the rehearsal exercises the tagger and the sweep, not the demotion. That
+    # is stated rather than claimed away: the earlier version of this comment said
+    # "a rehearsal that skips the mechanism under test is not a rehearsal", which
+    # read as though the change delivered the demotion. It does not.
+    #
+    # Checked across all shipped bench/exp*_configs/*.json: neither key appears in
+    # any of them, so there is no paid config to mirror and default-ON is a
+    # deliberate simulation-only divergence, not a parity break.
     ap.add_argument("--no-severity-calibration", action="store_true",
                     help="run WITHOUT the severity-calibration sweep (default: on)")
     args = ap.parse_args()
