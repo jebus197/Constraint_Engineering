@@ -371,7 +371,8 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `c` | Confer with another model, run mutual P-passes until convergence |
 | `sv` | Save state — update docs, generate CURRENT_STATE.md, commit |
 | `qc` | Quality control — run staleness, consistency, and reference checks |
-| `rs` | Recover state — rebuild full working context from recovery resources |
+| `ag` | Use agents to parallelise independent work |
+| `rs` | Recover state — run the recovery script, capture and report its exit code, then rebuild full working context from the recovery resources |
 | `re` | External research (web search, arXiv, Semantic Scholar) |
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |

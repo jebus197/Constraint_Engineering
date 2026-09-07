@@ -77,6 +77,14 @@ _OBLIGATION = {
            "questions. Mark [SPECULATIVE] / [VERIFY:current].",
     "sq":  "SQ — strictly sequential tool use for the rest of the session. One call at a "
            "time, no parallel batches. Sub-agents inherit the constraint.",
+    "rs":  "RS — restore state. Run `python3 scripts/cdsfl_recover.py --full` and "
+           "CAPTURE ITS EXIT CODE; report the code, not merely that it ran. Then the "
+           "universal checks (git log/status, OB session-context), the operational "
+           "tracker, RECOVERY.md's newest SESSION STATE, MEMORY.md, and the MC "
+           "COMMAND TABLE in .claude/CLAUDE.md. Name any resource that is absent "
+           "rather than skipping it silently. Added 2026-09-07: `rs` was recognised "
+           "and carried NO obligation, so the script was run, piped to `tail`, and "
+           "reported as having run with its exit status never examined.",
     "sv":  "SV — save state: read canonical docs SEQUENTIALLY, update ONBOARDING and "
            "RECOVERY, commit and push.",
     "re":  "RE — external research (web, arXiv, Semantic Scholar).",

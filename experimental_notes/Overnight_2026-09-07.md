@@ -60,6 +60,6 @@ Fixed, 6 tests. Existing archives are moved aside, a name-and-hash manifest is w
 
 ## Where the programme stands
 
-Inventory: 45 items — 33 done, 1 open, 5 blocked, 5 held, 1 refuted. **That inventory is incomplete in two directions**: 3 held rows misstate approved work, and at least 4 items are tracked nowhere — the round-0 fault, the founder's-notes backfill (141 days, 494 commits), the 7 figures with no reproducing script, and the references section.
+Inventory: 45 items — 33 done, 1 open, 5 blocked, 5 held, 1 refuted. The night's work is fully inventoried; **the inventory FILE is what is missing rows**, in two directions: 3 held rows misstate approved work, and at least 4 items are tracked nowhere — the round-0 fault, the founder's-notes backfill (141 days, 494 commits), the 7 figures with no reproducing script, and the references section.
 
 The one tracked open item is #16, re-measured overnight and larger than the approved plan assumed: **28 findings need a fix supplied, not 17**; 16 carry a fix that fails its own falsifier; 43 of 133 pairs are exam runs waiting on the held keys.

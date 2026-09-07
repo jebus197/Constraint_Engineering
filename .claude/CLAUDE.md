@@ -59,13 +59,14 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `c` | Confer with another model, mutual P-passes until convergence |
 | `sv` | Save state — run `python3 scripts/cdsfl_sv.py`, update recovery docs, commit |
 | `qc` | Quality control — run `python3 scripts/cdsfl_qc.py`, fix reported issues |
-| `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, rebuild context |
+| `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, **capture and report its exit code**, then rebuild context (git, OB session-context, tracker, RECOVERY, MEMORY, and the MC table above) |
 | `re` | External research (web search, arXiv, Semantic Scholar) |
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest warnings |
 | `sth` | Synthesise — consolidate findings into a coherent whole |
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+| `ag` | Use agents to parallelise independent work (e.g. parallel confer dispatch) |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches. Avoids stressing Anthropic servers during long runs. Sub-agents inherit the same constraint. |
 | `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. NO compelled convergence: each model gives an independent verdict + its strongest falsification; disagreement is preserved as information; CC1 actively participates with its own position and synthesizes the range. Mirror to TTS. |
 
