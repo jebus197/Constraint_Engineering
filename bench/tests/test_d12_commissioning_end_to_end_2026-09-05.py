@@ -91,6 +91,13 @@ def _over_rated_critical():
     """
     return {
         "severity": 0.90,
+        # ADDED 2026-09-07, founder ruling of 2026-09-06: a severity that cannot
+        # be recomputed from its own stated inputs may no longer buy a demotion,
+        # because demotion is where the number makes the gate looser. This
+        # fixture's purpose is "does the calibration gate fire when it is ON", so
+        # it is given a severity that reproduces; the unproven case is asserted
+        # separately in test_severity_proof_2026-09-07.py.
+        "severity_proof": {"status": "PASS", "model_rk": 0.31, "recomputed_rk": 0.31},
         "falsifier_verdict": "CONFIRMED",
         "latent": True,
         "finding_category": "performance",

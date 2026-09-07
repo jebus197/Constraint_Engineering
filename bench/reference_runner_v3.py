@@ -255,6 +255,9 @@ from bench.dm._sk_format import (
     check_sk_format_admissible,
     build_reformat_requests as build_sk_reformat_requests,
 )
+# Founder ruling 2026-09-06: severity must be a calculation, not a vote. The
+# next-round request that makes the prompt's "will be rejected" promise true.
+from bench.dm._rk_proof import build_proof_requests as build_rk_proof_requests
 # Exp 40 fix 1E.7: cross-model diversity metric (compliance-theatre detector).
 from bench.dm._diversity import diversity_signal_from_round
 # Exp 40 fix 1E.7: per-finding alternative extraction for diversity metric.
@@ -3556,6 +3559,24 @@ def _build_discrimination_overlay(repo_root: Path, target_rel: str,
         subprocess.run(["chflags", "-R", "nouchg,noschg", str(root)],
                        capture_output=True)
 
+        # AND IT MUST NOT CARRY THE CREDENTIALS. A clone of the repo materialises
+        # `.env` -- 1264 bytes, 10 live API keys -- into TMPDIR, outside the
+        # protections the repo has, where it is readable by anything running as
+        # this user and outlives the overlay if cleanup ever fails. It was
+        # measured and left alone; the falsifier that runs in here needs no
+        # credential, because the dispatcher holds the keys and makes the calls.
+        # Ordered AFTER the flag clear because `uchg` is what made `.env`
+        # undeletable in the first place.
+        from bench.panel_sandbox import _scrub_secrets, _surviving_secrets
+        _scrub_secrets(root)
+        _leaked = _surviving_secrets(root)
+        if _leaked:
+            shutil.rmtree(root, ignore_errors=True)
+            raise RuntimeError(
+                "discrimination control: overlay still exposes credential-bearing "
+                "files after scrub: "
+                + ", ".join(sorted(p.name for p in _leaked)))
+
         # AND THE CLONE MUST NOT CARRY A PATH THAT RESOLVES OUT OF ITSELF.
         # `cp -R` RECREATES symlinks rather than dereferencing them, so an ABSOLUTE
         # symlink would survive into the overlay and still write through to the real
@@ -6315,6 +6336,56 @@ def _calibrate_finding_severity(
     return True
 
 
+# SEVERITY MUST BE A CALCULATION, NOT A VOTE (founder ruling, 2026-09-06).
+#
+# THE FOUNDER'S FORMULATION, which is better than the one it replaced: "If a model
+# can demonstrably be shown to be using the mathematical model (and tools) to
+# calculate severity, then is that really a vote? The difference is in requiring
+# the models to provide worked proofs in all cases." The earlier proposal was to
+# swap the model's float for a consequence-class rubric lookup -- but the rubric
+# was MEASURED against the number and agrees no better than chance (kappa =
+# -0.0227, Fisher p = 0.78), so it is not a better oracle, only a different one.
+# Requiring a worked proof does something the swap cannot: it turns an
+# unfalsifiable float into a claim the runner can RECOMPUTE. A severity that
+# reproduces from its own stated parameters is arithmetic. One that does not is a
+# vote, and CDSFL has no votes.
+#
+# The machinery to check it already existed and decided nothing.
+# `validate_round_rk` re-derives R_k from the model's stated parameters, and its
+# own docstring said "Advisory only -- logs WARN/FAIL but never rejects
+# findings"; the result was used to build one log line and then discarded, while
+# the round prompt told every model "Findings missing any section will be
+# rejected." That sentence was false.
+#
+# THE ENFORCEMENT IS ONE-DIRECTIONAL, AND THAT IS THE WHOLE DESIGN. An unproven
+# severity may never make the gate LOOSER. If unproven criticals stopped counting
+# as criticals, a model could clear the convergence gate by omitting its
+# arithmetic -- the loophole would reward exactly the behaviour being policed. So
+# an unproven severity still BLOCKS at its claimed value, and simply cannot be
+# used to demote, clear or close. Same direction as the non-finite guard in
+# compute_rk: it can only ever be stricter, so it cannot manufacture a
+# convergence.
+_RK_PROOF_ACCEPTED = frozenset({"PASS", "WARN"})
+
+
+def severity_proof_status(entry: dict) -> str:
+    """PASS / WARN / FAIL / SKIP, or ABSENT when no proof was recorded at all."""
+    proof = entry.get("severity_proof")
+    if not isinstance(proof, dict):
+        return "ABSENT"
+    return (proof.get("status") or "ABSENT").strip().upper()
+
+
+def severity_is_proven(entry: dict) -> bool:
+    """True when the model's stated R_k reproduces from its own stated inputs.
+
+    WARN is accepted alongside PASS: WARN is a rounding-scale discrepancy
+    (tolerance 0.05), which is a model writing 3 significant figures, not a model
+    asserting a number it did not compute.
+    """
+    return severity_proof_status(entry) in _RK_PROOF_ACCEPTED
+
+
 def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -> int:
     """GATED sweep: demote every demotion-eligible over-rated critical.
 
@@ -6332,11 +6403,28 @@ def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -
     floor = getattr(cfg, "severity_calibration_floor", 0.69)
     _terminal = {"MERGED", "CLOSED", "DUPLICATE", "REFUTED"}
     demoted = 0
+    skipped_unproven = 0
     entries = registry.entries if hasattr(registry, "entries") else {}
     for cid, e in list(entries.items()):
         if e.get("status") in _terminal:
             continue
         if not _is_demotion_eligible(e):
+            continue
+        # An UNPROVEN severity cannot buy a demotion. Demotion is the one place
+        # the severity number makes the gate looser -- it lifts a blocking
+        # critical out of the count -- so it is exactly where an unrecomputable
+        # number must not be honoured.
+        #
+        # EXCEPT when a human adjudicated the latency. Eligibility requires
+        # entry["latent"], and latent_tagger.tag_entry records WHERE that came
+        # from: "prose" and "explicit_field" mean the MODEL said so, in its own
+        # words, which is the vote; "external" means HIL or an upstream
+        # adjudication ruled, and HIL outranks every automatic signal in this
+        # system. Blocking a HIL ruling for want of a model's arithmetic would
+        # invert the no-voting rule instead of enforcing it.
+        if (not severity_is_proven(e)
+                and str(e.get("latent_source") or "").strip().lower() != "external"):
+            skipped_unproven += 1
             continue
         if _calibrate_finding_severity(e, floor, round_idx):
             demoted += 1
@@ -6351,6 +6439,12 @@ def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -
             f"  severity-calibration: {demoted} over-rated-but-genuine critical(s) "
             f"demoted below {CRITICAL_SEVERITY_THRESHOLD} this round (retained with "
             f"reason; convergence no longer blocked by them)"
+        )
+    if skipped_unproven:
+        _log(
+            f"  severity-calibration: {skipped_unproven} otherwise-eligible "
+            f"critical(s) NOT demoted because their severity has no worked proof "
+            f"that reproduces -- they keep blocking until the proof arrives"
         )
     return demoted
 
@@ -9780,6 +9874,121 @@ _RK_RE_TRAILING_FLOAT = re.compile(
     r'(?!.*[=\u2248\u2243]\s*\**\s*`?\s*[0-9])')
 
 
+# MULTI-LINE STATEMENT READER, added 2026-09-07. The 2026-08-21 last-value anchor
+# above fixed the SINGLE-LINE form of the defect and left the multi-line form
+# live, because `[^\n]*` cannot cross a newline. Models write the working the
+# directive orders them to show, spread over continuation lines:
+#
+#   nu_eff = 1 - (1 - nu_b)*(1 - (1 - S_k)*nu_f)
+#          = 1 - 0.97*(1 - 0.05*0.07)
+#          = 0.03340
+#
+# The pattern anchored on line 1's '=', captured the leading 1, and never saw
+# the answer. recomputed = R_base*(1-1) + 1 = exactly 1.0, which the clamp then
+# made look legal, and the finding scored FAIL -- an accusation of bad
+# arithmetic against a model whose arithmetic was right. MEASURED over the
+# archive before this fix: 34 of 128 CORROBORATION sections scored FAIL, and
+# every one of the 3 largest discrepancies recomputed to exactly 1.0 with the
+# model's own stated value correct to 3 decimal places.
+#
+# Two further shapes are handled, both present in the real responses:
+#   - a comma-separated parameter list, "R_old=0.50, eta=0.90, d=0.80, ...",
+#     where reading the last value in the line would return nu_f as R_old;
+#   - an UNEVALUATED formula, which states no result, so the honest answer is
+#     None (leading to SKIP) rather than mining an operand out of it.
+# The operator set includes the UNICODE minus and middle dot that models
+# actually type; the 2026-08-21 class held ASCII '-' and U+00D7 only.
+_RK_OPERATORS = r'*\u00d7\u00b7\u2219x+\-\u2212/\u2044'
+_RK_RE_STATED_VALUE = re.compile(
+    r'[=\u2248\u2243]\s*\**\s*`?\s*([0-9]*\.?[0-9]+)(?![0-9.])'
+    r'(?!\s*[' + _RK_OPERATORS + r']\s*[0-9(])')
+_RK_RE_CONTINUATION = re.compile(r'^[ \t]*[=\u2248\u2243]')
+
+
+# A statement ends where the next one begins. In the aligned block form that is
+# the end of the continuation lines; in the DENSE SINGLE-LINE form that models
+# also use -- "...nu_eff=1-(1-0.03)x(1-0.20x0.10)=0.049. R_k=0.402x0.951+0.049
+# =0.432. S*=...=-0.711, so S_k=0.80 is above break-even." -- it is a comma or a
+# sentence boundary. Without this the nu_eff statement ran on into the R_k
+# sentence and past it, and the R_k statement ran on into the S* sentence and
+# returned 0.80, the model's S_k, as its stated R_k. A period is only a boundary
+# when whitespace follows, so decimal points are untouched.
+_RK_RE_CLIP = re.compile(r',|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
+
+
+def _rk_clip(fragment: str) -> str:
+    m = _RK_RE_CLIP.search(fragment)
+    return fragment[:m.start()] if m else fragment
+
+
+def _rk_statement(text: str, start: int) -> str:
+    """The model's statement for the label at ``start``.
+
+    Runs to end of line, truncated at the first comma (which begins the next
+    parameter in a comma-separated list), plus any following lines that open
+    with '=' and are therefore continuations of the same statement.
+    """
+    end = text.find('\n', start)
+    first = _rk_clip(text[start:end] if end != -1 else text[start:])
+    parts = [first]
+    if end != -1:
+        i = end + 1
+        while i < len(text):
+            j = text.find('\n', i)
+            line = text[i:j] if j != -1 else text[i:]
+            if not _RK_RE_CONTINUATION.match(line):
+                break
+            parts.append(_rk_clip(line))
+            if j == -1:
+                break
+            i = j + 1
+    return "\n".join(parts)
+
+
+def _rk_stated_value(label_re: "re.Pattern", text: str) -> Optional[float]:
+    """The value the model STATES for a parameter, or None if it states none.
+
+    ``label_re`` is used only as a locator: its match start marks the label, and
+    the value is read from the statement that follows. Returning None where no
+    value is stated is deliberate -- a SKIP is honest, a mined operand is not.
+    """
+    # FIRST label occurrence that states a value, not the last. Taking the last
+    # read "S* check: S_k=0.90 > S* = 0.08" as S_k = 0.08 -- the THRESHOLD, not
+    # the parameter -- and turned 6 correct sections into FAILs. Within one
+    # statement the LAST value is still the right one, because that is where the
+    # model's chain of '=' ends. Skipping an occurrence that states nothing
+    # handles a formula written before its answer.
+    for m in label_re.finditer(text):
+        hits = list(_RK_RE_STATED_VALUE.finditer(_rk_statement(text, m.start())))
+        if hits:
+            try:
+                return float(hits[-1].group(1))
+            except ValueError:
+                continue
+    return None
+
+
+_RK_RE_R_FINAL_LABEL = re.compile(r'R_?k\s*(?:\([^)]*\)\s*)?[=\u2248\u2243:]', re.IGNORECASE)
+
+
+def _rk_last_stated_value(label_re: "re.Pattern", text: str) -> Optional[float]:
+    """As ``_rk_stated_value`` but takes the LAST occurrence that states a value.
+
+    Correct for the model's final R_k, which is its answer and therefore the end
+    of its working, and wrong for a parameter, which is a declaration and comes
+    first.
+    """
+    best: Optional[float] = None
+    for m in label_re.finditer(text):
+        hits = list(_RK_RE_STATED_VALUE.finditer(_rk_statement(text, m.start())))
+        if hits:
+            try:
+                best = float(hits[-1].group(1))
+            except ValueError:
+                continue
+    return best
+
+
 def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[float], Optional[float]]:
     """Recompute R_k from stated parameters and compare with model's result.
 
@@ -9806,20 +10015,12 @@ def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[flo
     # Extract the model's stated final R_k.
     # Models write "R_k = 0.272 × (1 - 0.05) + 0.05 = 0.308" — the final
     # value is the last float on the last line containing "R_k =".
-    model_rk = None
-    for line_match in _RK_RE_R_FINAL_LINE.finditer(corroboration_text):
-        line = line_match.group()
-        trail = _RK_RE_TRAILING_FLOAT.search(line)
-        if trail:
-            try:
-                model_rk = float(trail.group(1))
-            except ValueError:
-                pass
+    model_rk = _rk_last_stated_value(_RK_RE_R_FINAL_LABEL, corroboration_text)
     if model_rk is None:
         return "SKIP", None, None
 
     # Extract R_old — required
-    R_old = _first_float(_RK_RE_R_OLD, corroboration_text)
+    R_old = _rk_stated_value(_RK_RE_R_OLD, corroboration_text)
     if R_old is None:
         return "SKIP", model_rk, None
 
@@ -9836,9 +10037,9 @@ def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[flo
             except ValueError:
                 pass
     if q is None:
-        eta = _first_float(_RK_RE_ETA, corroboration_text)
-        d = _first_float(_RK_RE_D, corroboration_text)
-        p = _first_float(_RK_RE_P, corroboration_text)
+        eta = _rk_stated_value(_RK_RE_ETA, corroboration_text)
+        d = _rk_stated_value(_RK_RE_D, corroboration_text)
+        p = _rk_stated_value(_RK_RE_P, corroboration_text)
         if eta is not None and d is not None and p is not None:
             q = eta * d * p
         else:
@@ -9852,8 +10053,8 @@ def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[flo
         R_det = R_old * (1.0 - q) / denom
 
     # Extract S_k and nu_eff for full three-phase computation
-    sk = _first_float(_RK_RE_SK, corroboration_text)
-    nu_eff = _first_float(_RK_RE_NU_EFF, corroboration_text)
+    sk = _rk_stated_value(_RK_RE_SK, corroboration_text)
+    nu_eff = _rk_stated_value(_RK_RE_NU_EFF, corroboration_text)
 
     if sk is not None and nu_eff is not None:
         # Full three-phase: detection -> resolution -> re-injection
@@ -11555,6 +11756,12 @@ def run_experiment(
                 )
                 if _sk_reformat:
                     _relay_prompt = _sk_reformat + "\n\n" + base_prompt
+            if rk_proof_requests_for_next_round:
+                _rk_proof_section = build_rk_proof_requests(
+                    rk_proof_requests_for_next_round,
+                )
+                if _rk_proof_section:
+                    _relay_prompt = _rk_proof_section + "\n\n" + _relay_prompt
             # Ouroboros brief from round K-1 rides ahead of the base prompt so
             # it reaches every relay hop, same slot as the S_k reformat request.
             if ouroboros_brief_section_for_next_round:
@@ -11671,6 +11878,15 @@ def run_experiment(
                 )
                 if _sk_reformat:
                     _context_prefix += _sk_reformat + "\n\n"
+            # Severity-proof requests ride the same prefix on the star branch as
+            # the reformat requests do; both must reach EVERY dispatch path or
+            # the enforcement is real on one topology and cosmetic on the other.
+            if rk_proof_requests_for_next_round:
+                _rk_proof_section = build_rk_proof_requests(
+                    rk_proof_requests_for_next_round,
+                )
+                if _rk_proof_section:
+                    _context_prefix += _rk_proof_section + "\n\n"
             # Ouroboros brief from round K-1. Rides in the same context prefix
             # as the consolidation/fix-summary/window blocks, which _make_prompt
             # splices in immediately before "=== ARTIFACT:" — so it lands inside
@@ -11697,6 +11913,19 @@ def run_experiment(
 
         # R_k recomputation validation (advisory)
         rk_validation = validate_round_rk(findings, responses)
+        # THE VERDICT IS NOW KEPT. It used to be counted into one log line and
+        # dropped, which is why the severity it grades decided things unchecked.
+        _rk_proof_by_fid: Dict[str, Dict[str, Any]] = {}
+        for _res in rk_validation.values():
+            for _fid, _st, _mrk, _rec in _res:
+                _rk_proof_by_fid[_fid] = {
+                    "status": _st,
+                    "model_rk": _mrk,
+                    "recomputed_rk": _rec,
+                    "delta": (abs(_mrk - _rec)
+                              if (_mrk is not None and _rec is not None) else None),
+                    "round": round_idx,
+                }
         rk_summary = {
             model: {s: sum(1 for _, st, _, _ in res if st == s)
                     for s in ("PASS", "WARN", "FAIL", "SKIP")}
@@ -11717,6 +11946,9 @@ def run_experiment(
         # but does not parse as an S_k block. Fed to next round as a
         # reformat-request prompt section.
         sk_reformat_requests_for_next_round = []
+        # Findings whose severity carries no reproducing proof, routed back to
+        # their author next round.
+        rk_proof_requests_for_next_round: List[Tuple[str, str, Optional[float], Optional[float]]] = []
         # Exp 40 1D.3: per-model counters for this round (novel + raw).
         per_model_novel_this_round: Dict[str, int] = {}
         per_model_raw_this_round: Dict[str, int] = {}
@@ -11733,6 +11965,20 @@ def run_experiment(
                 )
                 if getattr(f, "severity", 0.0) >= 0.7:
                     novel_critical_this_round += 1
+                # Stamp the severity proof onto the registry entry, so every
+                # channel that reads severity can also see whether that severity
+                # is arithmetic or assertion.
+                _proof = _rk_proof_by_fid.get(f.finding_id) or {
+                    "status": "ABSENT", "model_rk": None,
+                    "recomputed_rk": None, "delta": None, "round": round_idx,
+                }
+                _entries = getattr(registry, "entries", None)
+                if isinstance(_entries, dict) and cid in _entries:
+                    _entries[cid]["severity_proof"] = _proof
+                if _proof.get("status") not in _RK_PROOF_ACCEPTED:
+                    rk_proof_requests_for_next_round.append(
+                        (cid, _proof.get("status") or "ABSENT",
+                         _proof.get("model_rk"), _proof.get("recomputed_rk")))
                 # 1D.5 pre-check: only for novel findings with a proposed fix.
                 fix_text = getattr(f, "proposed_fix", "") or ""
                 if fix_text.strip():

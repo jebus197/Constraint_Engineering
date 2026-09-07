@@ -135,3 +135,57 @@ def test_the_dispatcher_sets_the_cwd_per_worker_not_on_main():
     body = src[src.index("def dispatch("):src.index("def main(")]
     assert "set_panel_cwd(_PANEL_SANDBOX_CWD)" in body, (
         "dispatch() no longer sets the sandbox cwd on its own thread")
+
+
+# --------------------------------------------------------------------------
+# The containment fix CREATED a credential exposure. These pin the repair.
+# --------------------------------------------------------------------------
+
+def test_the_sandbox_does_not_carry_the_credentials():
+    """Confining a seat to a copy is worthless if the copy holds the keys.
+
+    Measured on the first working sandbox: `.env` arrived readable, 1264 bytes,
+    declaring 10 live API keys. A seat has shell access -- that is precisely why
+    positional confinement was needed -- so it could simply `cat` it."""
+    sb = ps.build(REPO)
+    try:
+        assert not (sb / ".env").exists(), "the seat's copy still holds .env"
+        assert ps._surviving_secrets(sb) == [], (
+            f"credential-bearing files survived: {ps._surviving_secrets(sb)}")
+        assert (sb / "bench" / "reference_runner_v3.py").is_file(), (
+            "the scrub must not break the copy it is protecting")
+    finally:
+        ps.teardown(sb)
+
+
+def test_an_example_env_is_kept_because_it_holds_names_not_values():
+    sb = ps.build(REPO)
+    try:
+        if (REPO / ".env.example").exists():
+            assert (sb / ".env.example").exists(), (
+                "the scrub removed a values-free example file for no gain")
+    finally:
+        ps.teardown(sb)
+
+
+def test_the_scrub_is_verified_not_assumed(tmp_path, monkeypatch):
+    """A scrub that silently missed a file would leave the sandbox looking safe
+    while it is not -- worse than no scrub, because it would be trusted. build()
+    re-scans and raises."""
+    fake = tmp_path / "repo"
+    (fake / "sub").mkdir(parents=True)
+    (fake / ".env").write_text("export OPENAI_API_KEY=sk-live-should-not-travel")
+    (fake / "sub" / "deep.pem").write_text("-----BEGIN PRIVATE KEY-----")
+    (fake / "keep.py").write_text("x = 1")
+    sb = ps.build(fake)
+    try:
+        assert not (sb / ".env").exists()
+        assert not (sb / "sub" / "deep.pem").exists(), "nested secrets must go too"
+        assert (sb / "keep.py").is_file()
+    finally:
+        ps.teardown(sb)
+
+    # And the verification itself fires when the scrub is defeated.
+    monkeypatch.setattr(ps, "_scrub_secrets", lambda dest: 0)
+    with pytest.raises(RuntimeError, match="credential-bearing"):
+        ps.build(fake)

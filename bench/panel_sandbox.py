@@ -41,6 +41,55 @@ from typing import Dict
 
 _NEVER_COPY = frozenset({".git"})
 
+# SECRETS MUST NOT SURVIVE INTO THE SANDBOX, added 2026-09-07.
+#
+# The containment fix CREATED this exposure. Confining a seat to a copy of the
+# repo is worthless if the copy carries the credentials: measured on the first
+# working sandbox, `.env` arrived readable, 1264 bytes, declaring 10 live API
+# keys (OpenAI, Google, Gemini, GitHub, Groq, DeepSeek, OpenRouter, Semantic
+# Scholar). A seat with shell access -- which is exactly what a seat has, and why
+# positional confinement was needed in the first place -- could simply `cat` it.
+# Nothing a falsifier or a review seat does requires a credential; the dispatcher
+# holds the keys and makes the calls.
+#
+# Glob patterns, matched at every depth. Deletion happens AFTER the flag clear,
+# because `.env` carries the BSD `uchg` flag that `cp -Rc` faithfully preserves
+# and that made 264 earlier clones permanently undeletable.
+_NEVER_EXPOSE = (
+    ".env", ".env.*", "*.env",
+    "*.key", "*.pem", "*.p12", "*.pfx",
+    "id_rsa", "id_ed25519", "*.keystore",
+    ".netrc", ".pgpass", ".npmrc", ".pypirc",
+    "credentials.json", "client_secret*.json", "service_account*.json",
+    "*answer_key*.json", "*_KEY.json", "*_KEY.md", "*GROUND_TRUTH.json",
+)
+# `.env.example` holds NAMES and no values, and removing it would change what the
+# repo looks like to a seat for no security gain.
+_EXPOSE_EXEMPT = frozenset({".env.example", ".env.sample", ".env.template"})
+
+
+def _scrub_secrets(dest: Path) -> int:
+    """Delete credential-bearing files from the sandbox. Returns the count."""
+    removed = 0
+    for pattern in _NEVER_EXPOSE:
+        for victim in list(dest.rglob(pattern)):
+            if victim.name in _EXPOSE_EXEMPT:
+                continue
+            try:
+                if victim.is_dir() and not victim.is_symlink():
+                    shutil.rmtree(victim, ignore_errors=True)
+                else:
+                    victim.unlink(missing_ok=True)
+                removed += 1
+            except OSError:
+                pass
+    return removed
+
+
+def _surviving_secrets(dest: Path) -> list:
+    return [p for pattern in _NEVER_EXPOSE for p in dest.rglob(pattern)
+            if p.exists() and p.name not in _EXPOSE_EXEMPT]
+
 
 def _tracked_digest(repo: Path) -> Dict[str, str]:
     """Fingerprint of the canonical tree: tracked files AND untracked paths.
@@ -99,6 +148,17 @@ def build(repo: Path) -> Path:
             resolved = (link.parent / target).resolve()
             if target.is_absolute() or not str(resolved).startswith(str(dest.resolve()) + os.sep):
                 link.unlink()
+    # Credentials last, and VERIFIED rather than assumed: a scrub that silently
+    # missed a file would leave the sandbox looking safe while it is not, which is
+    # worse than no scrub at all because it would be trusted.
+    _scrub_secrets(dest)
+    survivors = _surviving_secrets(dest)
+    if survivors:
+        shutil.rmtree(base, ignore_errors=True)
+        raise RuntimeError(
+            "panel sandbox still exposes credential-bearing files after scrub: "
+            + ", ".join(sorted(str(p.name) for p in survivors))
+        )
     return dest
 
 

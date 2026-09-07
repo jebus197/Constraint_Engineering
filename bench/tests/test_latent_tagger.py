@@ -59,6 +59,15 @@ def _entry(**kw):
         "falsifier_verdict": "CONFIRMED",
         "status": "CONFIRMED",
         "open_since_round": 0,
+        # ADDED 2026-09-07, founder ruling of 2026-09-06: a severity that cannot
+        # be recomputed from its own stated inputs may no longer buy a demotion.
+        # These tests exercise the LATENCY classifier and the calibration sweep,
+        # not the proof rule, so the default entry carries a severity that
+        # reproduces. The unproven case is asserted in
+        # test_severity_proof_2026-09-07.py, which also pins that a HIL-adjudicated
+        # latency still demotes without one.
+        "severity_proof": {"status": "PASS", "model_rk": 0.31,
+                           "recomputed_rk": 0.31},
     }
     e.update(kw)
     return e

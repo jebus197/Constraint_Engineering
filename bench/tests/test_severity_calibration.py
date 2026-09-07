@@ -76,6 +76,19 @@ def _register_critical(reg, *, fid, sev, open_round, model="CC2"):
 
 
 def _mark(reg, cid, **flags):
+    """Stamp the flags that make an entry demotion-eligible.
+
+    UPDATED 2026-09-07, founder ruling of 2026-09-06 ("there are no votes in
+    CDSFL"): a severity that cannot be recomputed from its own stated inputs may
+    no longer buy a demotion, because demotion is the one place the number makes
+    the gate LOOSER -- it lifts a blocking critical out of the count. These tests
+    are about whether the calibration sweep FIRES, not about the proof rule, so
+    the default entry now carries a severity that reproduces. A test that wants
+    the unproven case passes severity_proof explicitly; the unproven behaviour is
+    asserted directly in test_severity_proof_2026-09-07.py.
+    """
+    flags.setdefault("severity_proof",
+                     {"status": "PASS", "model_rk": 0.31, "recomputed_rk": 0.31})
     reg.entries[cid].update(flags)
 
 

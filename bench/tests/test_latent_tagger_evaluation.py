@@ -234,10 +234,19 @@ class TestNeverDemoteInterlock:
 
     @staticmethod
     def _maximally_eligible(category):
-        """Everything the calibrator asks for, so ONLY the category can refuse."""
+        """Everything the calibrator asks for, so ONLY the category can refuse.
+
+        UPDATED 2026-09-07: the calibrator now also asks for a severity that
+        reproduces from its own stated inputs (founder ruling, 2026-09-06). Left
+        out, the proof rule would refuse these entries and the interlock control
+        below would pass for the wrong reason -- it would confirm the sweep does
+        not fire, while proving nothing about the never-demote categories.
+        """
         return {
             "canonical_id": "C0001",
             "severity": 0.99,
+            "severity_proof": {"status": "PASS", "model_rk": 0.31,
+                               "recomputed_rk": 0.31},
             "status": "CONFIRMED",
             "falsifier_verdict": "CONFIRMED",
             "latent": True,
