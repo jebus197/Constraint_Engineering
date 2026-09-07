@@ -30,6 +30,8 @@ from experiment_11_orchestrator import (  # noqa: E402
 import panel_sandbox  # noqa: E402
 _PANEL_SANDBOX_CWD: str | None = None
 from experiment_11_orchestrator import set_panel_cwd  # noqa: E402
+from experiment_11_orchestrator import accept_reply_or_work  # noqa: E402
+from experiment_11_orchestrator import set_tool_log_sink  # noqa: E402
 from openrouter_tools import (  # noqa: E402
     TOOL_SPECS, call_openrouter_with_tools)
 
@@ -90,6 +92,19 @@ SYSTEM = (
     # additive was itself an addition wired to nothing. Here it cannot be
     # omitted by whoever writes the next brief.
     "\n\n" "THE ADDITIVE STANDARD (founder, standing). Work is additive: it adds to the reliability, functionality, accuracy, robustness and stated aims of the project. NEVER disable or remove a feature -- removal ONLY when something better renders it redundant, and 'better' means a COMMITTED MEASUREMENT showing the replacement dominates on a named property. A judgement that something is better is not evidence that it is. Symmetrically: an addition that nothing reaches is not additive either -- every new flag, gate or entry point must be wired to a caller and executed by a test. Measured over this project's own record since 2026-08-01: 11 confirmed defects were additions that did nothing, and 0 were removals of something needed."
+    # THE SEAT GETS ONE TURN (2026-09-07). Diagnosed after fable spent 647 s,
+    # made 0 tool calls, and returned "I'll hold until the completion
+    # notification" -- a reply only reachable in a multi-turn session.
+    # `claude -p` is one-shot: the turn that ends IS the answer. Nothing we
+    # sent corrected that belief, because the prompt never said so.
+    "\n\n"
+    "THIS IS A ONE-SHOT DISPATCH. You will NOT be re-invoked and there is no "
+    "later turn. Do not end your turn waiting for a background task or a "
+    "notification: whatever you have written when the turn ends IS your answer. "
+    "Do not start the full test suite -- it takes over 8 minutes and you will "
+    "lose the budget waiting. Run targeted tests instead. If you run short of "
+    "time, WRITE YOUR FINDINGS SO FAR. A partial answer carrying evidence is "
+    "worth everything; a holding note is worth nothing."
 )
 
 
@@ -118,8 +133,11 @@ def dispatch(name, model_id, route):
     unless the host wires structured function-calling". It was built and not used.
 
     Tools offered: sympy_verify, z3_verify, pytest_run, ruff_check, mypy_check.
-    Every tool call made by every seat is recorded in the seat's JSON, so the
-    claim "this panel used tools" is itself checkable rather than asserted.
+    Every tool call made by a `claude_cli` or `openrouter` seat is recorded in
+    the seat's JSON, so the claim "this panel used tools" is checkable rather
+    than asserted. The `deepseek` branch is the remaining gap: it is passed
+    TOOL_SPECS but returns only text, so its n_tool_calls is still structurally
+    0 and must be read as "not recorded", never as "ran nothing".
     """
     t0 = time.time()
     tool_log = []
@@ -137,7 +155,62 @@ def dispatch(name, model_id, route):
             # 1800s, raised from 900 on 2026-09-07: BOTH seats hit the 900 s wall
             # with 0 chars on a brief that asked them to run archive-scanning
             # work. The clock, not the task, was the binding constraint.
-            resp = call_claude_cli(model_id, SYSTEM, PROMPT, timeout=1800)  # native Bash
+            # THE SUBSTANCE TEST WAS BUILT AND NEVER PASSED HERE.
+            # accept_reply_or_work (experiment_11_orchestrator.py:781) exists for
+            # exactly this and takes the sandbox path: it accepts a SHORT reply
+            # only when real work sits beside it, and rejects a holding note.
+            # Without it a 168-character "I'll hold until..." was recorded as
+            # ok=True and counted as a seat that answered. max_retries=2 bounds
+            # the cost.
+            # THE TOOL-CALL COUNTER WAS 0 BY CONSTRUCTION, NOT BY MEASUREMENT.
+            # 2026-09-07. `tool_log` is initialised empty and, on this branch,
+            # was never assigned again -- only the `openrouter` branch below
+            # ever set it. So `n_tool_calls` read 0 for cc2 and fable on every
+            # panel ever run here, however much work the seats actually did,
+            # while the docstring above promised the opposite: "Every tool call
+            # made by every seat is recorded in the seat's JSON, so the claim
+            # 'this panel used tools' is itself checkable rather than asserted."
+            # It was not checkable. It was 0 with no way to be anything else.
+            #
+            # Concretely, fable.json of 2026-09-06 23:01 carries n_tool_calls 0
+            # beside a reply quoting verbatim `pwd` output and a real sandbox
+            # path -- unreadable as either proof or fabrication, because the
+            # only field that could tell them apart was hard-wired to 0.
+            #
+            # BUILT AND UNWIRED, again, and this file NAMES that shape 40 lines
+            # below about `set_panel_cwd`: "carried this at HIGH ... describing
+            # the confinement half as unbuilt when in fact it was built and
+            # unwired -- the project's most repeated failure shape." The sibling
+            # mechanism, in the same file, had the same defect at the same time.
+            #
+            # `set_tool_log_sink` (experiment_11_orchestrator.py:331) is thread-
+            # local, which is what makes it safe under the ThreadPoolExecutor
+            # below, and setting it also switches the CLI from --output-format
+            # text to stream-json, which is the ONLY format carrying tool_use
+            # blocks. Pattern copied from confer_panel_2026-08-28.py:173, the 1
+            # of 37 dispatchers that had it right.
+            _sink = LOGS / f"{name}.tools.json"
+            # A STALE SINK WOULD BE READ AS THIS RUN'S (cc2, 2026-09-07). Two
+            # dispatches into the same LOGS directory -- exactly what a
+            # PANEL_ONLY re-dispatch does -- would otherwise report the earlier
+            # run's tool calls as belonging to this one.
+            _sink.unlink(missing_ok=True)
+            set_tool_log_sink(str(_sink))
+            try:
+                resp = call_claude_cli(
+                    model_id, SYSTEM, PROMPT, timeout=1800, max_retries=2,
+                    accept=accept_reply_or_work(_PANEL_SANDBOX_CWD or str(_REPO)),
+                )  # native Bash
+            finally:
+                set_tool_log_sink(None)
+            # Read the sink BACK into the seat record. The reference dispatcher
+            # leaves it in a side file, which keeps n_tool_calls wrong in the
+            # record a reader actually opens.
+            if _sink.is_file():
+                try:
+                    tool_log = json.loads(_sink.read_text(encoding="utf-8")).get("calls", [])
+                except (OSError, ValueError) as _e:  # noqa: BLE001
+                    print(f"  [{name}] tool log unreadable: {_e}", flush=True)
         elif route == "deepseek":
             resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
         else:
@@ -151,8 +224,13 @@ def dispatch(name, model_id, route):
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": resp or ""}
     except Exception as e:  # noqa: BLE001
+        # KEEP THE COUNTER KEYS ON THE FAILURE PATH (cc2, 2026-09-07). Without
+        # them the log line printed `tools=native` for a seat that CRASHED,
+        # which reads as "this route has no counter" rather than "this seat
+        # failed", and any calls made before the failure were dropped.
         out = {"model": name, "route": route, "ok": False,
                "error": f"{type(e).__name__}: {e}",
+               "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": ""}
     (LOGS / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} "
@@ -179,6 +257,12 @@ def main() -> int:
     # and unwired -- the project's most repeated failure shape.
     global _PANEL_SANDBOX_CWD
     baseline = panel_sandbox.fingerprint(_REPO)
+    # THE CONTROL PLANE IS OUTSIDE THE REPO AND WAS UNWATCHED (2026-09-07).
+    # A seat wrote to the operator's real ~/.claude/settings.json at 15:04:45
+    # and `canonical_was_touched` did not fire, because it digests the repo's
+    # tracked files and $HOME is not among them. That write appended a hook --
+    # code that then runs on every turn of every unrelated session.
+    home_baseline = panel_sandbox.control_plane_fingerprint()
     sandbox = panel_sandbox.build(_REPO)
     _PANEL_SANDBOX_CWD = str(sandbox)      # workers read this and set their own TLS
     print(f"    seats confined to a copy: {sandbox}")
@@ -203,6 +287,12 @@ def main() -> int:
                   f"-> {LOGS / 'seat_proposals.diff'} (untested; not applied)")
         # DETECTION for what a sandbox cannot prevent: a seat writing to an
         # absolute path it already knows. vault_keys.sh records that limit exactly.
+        home_touched = panel_sandbox.control_plane_was_touched(home_baseline)
+        if home_touched:
+            print(f"    *** OPERATOR CONTROL PLANE MODIFIED DURING THE PANEL: "
+                  f"{home_touched} ***")
+            (LOGS / "control_plane_touched.json").write_text(
+                json.dumps(home_touched, indent=2), encoding="utf-8")
         touched = panel_sandbox.canonical_was_touched(baseline, _REPO)
         if touched:
             print(f"    *** CANONICAL TREE MODIFIED DURING THE PANEL: {touched} ***")

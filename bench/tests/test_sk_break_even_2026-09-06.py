@@ -63,7 +63,7 @@ def test_break_even_is_the_actual_fixed_point_of_compute_rk(rr):
     """fable's oracle: at the returned s, R_new must equal R_old to 1e-9."""
     checked = 0
     for q, R, nb, nf in _grid():
-        be = rr.sk_break_even(nb, nf, q, R)
+        be = rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R)
         if be is None:
             continue
         assert abs(rr.compute_rk(R, q, be, nb, nf) - R) < 1e-9, (q, R, nb, nf, be)
@@ -80,7 +80,7 @@ def test_closed_form_agrees_with_independent_root_finding(rr):
             continue
         numeric = brentq(f, 0.0, 1.0, xtol=1e-14)
         mp_root = float(mp.findroot(lambda s: rr.compute_rk(R, q, float(s), nb, nf) - R, 0.5))
-        closed = rr.sk_break_even(nb, nf, q, R)
+        closed = rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R)
         assert closed is not None, (q, R, nb, nf)
         assert abs(closed - numeric) < 1e-9, (q, R, nb, nf, closed, numeric)
         assert abs(closed - mp_root) < 1e-9, (q, R, nb, nf, closed, mp_root)
@@ -93,7 +93,7 @@ def test_shipped_threshold_is_never_conservative(rr):
     the true floor, this fails and the 'permissive by construction' claim dies."""
     below = total = 0
     for q, R, nb, nf in _grid():
-        be = rr.sk_break_even(nb, nf, q, R)
+        be = rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R)
         if be is None:
             continue
         _, shipped = rr.check_sk_threshold(0.5, nb, nf, q, R)
@@ -114,7 +114,7 @@ def test_operating_point_is_the_recorded_value(rr):
         0.30, NU_B, NU_F, OPERATING_Q, OPERATING_R)
     assert s_star == 0.0
     assert passes is True
-    be = rr.sk_break_even(NU_B, NU_F, OPERATING_Q, OPERATING_R)
+    be = rr.sk_break_even(nu_b=NU_B, nu_f=NU_F, q=OPERATING_Q, R=OPERATING_R)
     assert be == pytest.approx(TRUE_FLOOR_AT_OPERATING_POINT, abs=1e-12)
 
 
@@ -132,11 +132,11 @@ def test_no_break_even_returns_none_not_zero(rr):
     discipline: not scored is not scored zero."""
     seen_none = False
     for q, R, nb, nf in _grid():
-        if rr.sk_break_even(nb, nf, q, R) is None:
+        if rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R) is None:
             seen_none = True
             break
     # Degenerate parameters must not silently yield 0.0.
-    assert rr.sk_break_even(0.0, 0.0, 0.0, 0.0) in (None, 0.0)
+    assert rr.sk_break_even(nu_b=0.0, nu_f=0.0, q=0.0, R=0.0) in (None, 0.0)
     assert seen_none or True   # existence is parameter-dependent, not asserted
 
 
@@ -264,5 +264,5 @@ def test_the_finite_path_is_completely_unchanged(rr):
     """NON-DISTORTION. Hardening must not move a single real value."""
     assert rr.compute_rk(0.5, 0.5, 0.3, NU_B, NU_F) == pytest.approx(0.55065, abs=1e-9)
     assert rr.compute_rk(0.5, 0.5, 1.0, NU_B, NU_F) == pytest.approx(0.3666666667, abs=1e-9)
-    assert rr.sk_break_even(NU_B, NU_F, 0.5, 0.5) == pytest.approx(
+    assert rr.sk_break_even(nu_b=NU_B, nu_f=NU_F, q=0.5, R=0.5) == pytest.approx(
         TRUE_FLOOR_AT_OPERATING_POINT, abs=1e-12)

@@ -986,6 +986,17 @@ def call_claude_cli(
         cmd.extend(["--system-prompt", system_prompt])
 
     last_error = None
+    # A REJECTED ATTEMPT'S TOOL CALLS WERE DESTROYED BY THE NEXT ONE.
+    # 2026-09-07, cc2 seat, with an executed repro. The sink write below sits
+    # INSIDE this retry loop and `write_text` REPLACES, so attempt 2 erased
+    # attempt 1's record: 7 calls then 2 calls was logged as 2, losing 7. That
+    # is the worst possible bias, because `accept_reply_or_work` rejects a short
+    # reply with no work beside it -- so the attempt MOST likely to be rejected
+    # is the one that did the most tool work before running short of clock.
+    # Accumulating across attempts makes `tool_calls` mean what the panel
+    # docstring has always claimed: every call the seat made in this dispatch.
+    _sink_calls: list = []
+    _sink_attempts: list = []
     for attempt in range(1, max_retries + 1):
         if attempt > 1:
             _log(f"  [claude-cli:{model_id}] retry {attempt}/{max_retries}")
@@ -1020,12 +1031,20 @@ def call_claude_cli(
             _sink = _get_tool_log_sink()
             if _sink and text:
                 text, _calls = _parse_stream_json(text)
+                _sink_calls.extend(_calls)
+                _sink_attempts.append({"attempt": attempt,
+                                       "elapsed_s": round(elapsed, 1),
+                                       "tool_calls": len(_calls)})
                 try:
                     pathlib.Path(_sink).write_text(json.dumps(
                         {"model": model_id, "elapsed_s": round(elapsed, 1),
-                         "tool_calls": len(_calls), "calls": _calls}, indent=2),
+                         # TOTAL ACROSS THE DISPATCH, not this attempt alone.
+                         "tool_calls": len(_sink_calls), "calls": _sink_calls,
+                         "attempts": len(_sink_attempts),
+                         "per_attempt": _sink_attempts}, indent=2),
                         encoding="utf-8")
-                    _log(f"  [claude-cli:{model_id}] {len(_calls)} tool call(s) logged")
+                    _log(f"  [claude-cli:{model_id}] {len(_calls)} tool call(s) "
+                         f"this attempt, {len(_sink_calls)} in total")
                 except OSError as _e:                       # noqa: BLE001
                     _log(f"  [claude-cli:{model_id}] tool log not written: {_e}")
             if result.returncode != 0:

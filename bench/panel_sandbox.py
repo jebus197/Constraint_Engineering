@@ -232,6 +232,81 @@ def fingerprint(repo: Path) -> Dict[str, str]:
     return _tracked_digest(repo)
 
 
+# THE CONTROL PLANE LIVES OUTSIDE THE REPO, AND NOTHING WATCHED IT.
+#
+# 2026-09-07, 15:04:45: a seat running under this sandbox wrote to the operator's
+# REAL ~/.claude/settings.json. `canonical_was_touched` did not fire and could
+# not have -- it digests the repo's tracked files, and $HOME is not among them.
+# The write happened to be benign (it appended a hook entry and removed nothing),
+# which is luck, not containment.
+#
+# These paths are not ordinary files. ~/.claude/settings.json names HOOKS, which
+# are commands executed on every turn of every session; ~/.claude/hooks/ holds
+# their code; ~/.claude/CLAUDE.md is the directive set every model is handed; the
+# memory directory is the record those directives are built from. A seat editing
+# any of them changes the behaviour of the operator's other sessions, silently
+# and after the panel has ended.
+#
+# DETECTION, NOT PREVENTION, AND DELIBERATELY SO. The obvious prevention is to
+# rewrite HOME for the seat process. This project already ran that experiment
+# from the other end: `--bare` was added to confine the CLI, and because it also
+# skips keychain reads it selected an auth mode this account does not have, so
+# every headless dispatch returned "Not logged in" (experiment_11_orchestrator,
+# 2026-07-29). Moving HOME would break OAuth the same way. The layered position
+# taken everywhere else applies here too: the pointer stays reachable, the use
+# is detected. See `canonical_was_touched`, whose docstring states the same
+# limit for the repo half.
+_CONTROL_PLANE = (
+    ".claude/settings.json",
+    ".claude/settings.local.json",
+    ".claude/CLAUDE.md",
+)
+_CONTROL_PLANE_GLOBS = (
+    ".claude/hooks/*.py",
+    ".claude/projects/-Users-georgejackson-Developer-Projects/memory/*.md",
+)
+
+
+def control_plane_fingerprint(home: "Path | None" = None) -> Dict[str, str]:
+    """Digest the operator files a seat could reach by absolute path.
+
+    Missing files are recorded as absent rather than skipped, so a seat CREATING
+    one is caught. That was the hole in the repo-side check until it started
+    reporting "CREATED".
+    """
+    base = Path(home) if home else Path.home()
+    out: Dict[str, str] = {}
+    paths = [base / rel for rel in _CONTROL_PLANE]
+    for pat in _CONTROL_PLANE_GLOBS:
+        paths.extend(sorted(base.glob(pat)))
+    for path in paths:
+        rel = str(path.relative_to(base))
+        try:
+            out[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+        except (OSError, ValueError):
+            out[rel] = "ABSENT"
+    return out
+
+
+def control_plane_was_touched(
+    before: Dict[str, str], home: "Path | None" = None
+) -> Dict[str, str]:
+    """What changed in the operator's control plane while the panel ran."""
+    after = control_plane_fingerprint(home)
+    touched: Dict[str, str] = {}
+    for rel, sha in after.items():
+        if rel not in before:
+            touched[rel] = "CREATED"
+        elif before[rel] != sha:
+            touched[rel] = "CREATED" if before[rel] == "ABSENT" else "modified"
+    for rel, sha in before.items():
+        if rel not in after:
+            touched[rel] = "deleted"
+        elif after[rel] == "ABSENT" and sha != "ABSENT":
+            touched[rel] = "deleted"
+    return {k: v for k, v in touched.items() if v != "ABSENT"}
+
+
 def teardown(sandbox: Path) -> None:
     """Remove a sandbox. REFUSES to remove the system temp root itself.
 

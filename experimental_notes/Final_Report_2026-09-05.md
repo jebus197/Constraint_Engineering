@@ -28,7 +28,7 @@ My 122 came from extracting every question-shaped sentence across 3 days — dup
 | | What it is | State |
 |---|---|---|
 | `hil_review` | A **run-pause switch** — stops after each round for review | Never set in a config. **Not unreachable**: `--hil-review` is a CLI flag, and the runner prints *"Resume with `--resume --hil-review`"* |
-| `hil_escalated` / queue | Findings **routed to a person** when no tool can settle them | **Always worked.** 90 escalated + 41 irreducible across 6,929 findings = **1.30%**, Wilson [1.06%, 1.59%] |
+| `hil_escalated` / queue | Findings **routed to a person** when no tool can settle them | **Always worked.** **90 escalated of 6,929 = 1.30%**, Wilson [1.06%, 1.59%]; **41 irreducible** of 6,929 = 0.59%, Wilson [0.44%, 0.80%]; **together 131 of 6,929 = 1.89%**, Wilson [1.60%, 2.24%]. (CORRECTED 2026-09-07: this read "90 escalated + 41 irreducible across 6,929 findings = 1.30%, Wilson [1.06%, 1.59%]". 90 + 41 = 131, which is 1.89%, not 1.30% -- the percentage and the interval were 90's alone, carried across a sum that changed the numerator. All 3 figures are given now so the reader can take whichever the claim needs.) |
 
 Your remark that *"a minor issue like reviewing a paused run"* was being oversold was exactly right.
 

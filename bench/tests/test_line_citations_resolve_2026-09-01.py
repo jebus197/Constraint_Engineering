@@ -36,7 +36,14 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 
-CITATION = re.compile(r"([A-Za-z0-9_/]+\.py):(\d{2,5})\b")
+# HYPHENS BELONG IN THE CLASS. Without them every citation to a DATED
+# filename -- which is most new files in this repo -- was mangled at the
+# last hyphen: "confer_panel_2026-08-28.py:173" parsed as "28.py", a file
+# that does not exist, and was then reported as a broken citation. The
+# checker was manufacturing the defect it exists to find. Measured before
+# the change: 913 citations parsed, 2 of them mangled this way, and 0
+# hyphenated citations name a file that is actually missing.
+CITATION = re.compile(r"([A-Za-z0-9_/\-]+\.py):(\d{2,5})\b")
 
 # Illustrative names used in prose and test fixtures. They are not citations.
 PLACEHOLDER = re.compile(
