@@ -35,6 +35,8 @@ import py_compile
 import re
 import shlex
 import shutil
+
+from bench.panel_sandbox import secret_ignore
 import subprocess
 import sys
 import tempfile
@@ -2513,7 +2515,14 @@ def _run_effect_regression(
         shutil.copytree(
             REPO_ROOT, sandbox,
             symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # CREDENTIALS EXCLUDED, 2026-09-07. This is the FROZEN v1 baseline,
+            # so the change is justified rather than assumed: every `.env` load
+            # in bench/ resolves `REPO_ROOT / ".env"` -- an absolute path from
+            # the module's own location -- so a sandbox copy's `.env` is never
+            # the file that gets loaded, and excluding it cannot alter any
+            # Exp 38/39 result. What it does alter is that a repo copy in TMPDIR
+            # no longer materialises 10 live API keys outside the repo.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs",
             ),
         )

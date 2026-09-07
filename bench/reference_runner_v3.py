@@ -258,6 +258,7 @@ from bench.dm._sk_format import (
 # Founder ruling 2026-09-06: severity must be a calculation, not a vote. The
 # next-round request that makes the prompt's "will be rejected" promise true.
 from bench.dm._rk_proof import build_proof_requests as build_rk_proof_requests
+from bench.panel_sandbox import secret_ignore
 # Exp 40 fix 1E.7: cross-model diversity metric (compliance-theatre detector).
 from bench.dm._diversity import diversity_signal_from_round
 # Exp 40 fix 1E.7: per-finding alternative extraction for diversity metric.
@@ -7745,7 +7746,10 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
         sb = Path(td) / "sb"
         shutil.copytree(
             REPO_ROOT, sb, symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # Credentials excluded alongside the size/noise exclusions: a repo
+            # copy in TMPDIR otherwise materialises `.env` -- 10 live API keys --
+            # outside the protections the repo has. 2026-09-07.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs"),
         )
         tgt = sb / rel_target
@@ -9247,7 +9251,10 @@ def _run_effect_regression(
         shutil.copytree(
             REPO_ROOT, sandbox,
             symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # Credentials excluded alongside the size/noise exclusions: a repo
+            # copy in TMPDIR otherwise materialises `.env` -- 10 live API keys --
+            # outside the protections the repo has. 2026-09-07.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs",
             ),
         )

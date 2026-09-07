@@ -32,6 +32,7 @@ simplest and most sufficient fixes... to then suggest them to you".
 from __future__ import annotations
 
 import hashlib
+import fnmatch
 import os
 import shutil
 import subprocess
@@ -66,6 +67,30 @@ _NEVER_EXPOSE = (
 # `.env.example` holds NAMES and no values, and removing it would change what the
 # repo looks like to a seat for no security gain.
 _EXPOSE_EXEMPT = frozenset({".env.example", ".env.sample", ".env.template"})
+
+
+def secret_ignore(*extra_patterns):
+    """An ignore callable for `shutil.copytree` that also drops credentials.
+
+    The 4 other places in bench/ that copy the repo into a temporary directory
+    all pass `shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache",
+    "*.pyc", "logs")` -- a list about SIZE and NOISE that says nothing about
+    secrets, so every one of them materialises `.env` outside the repo. Wrapping
+    the same list here keeps their existing exclusions and adds the credential
+    patterns, rather than leaving 4 copies of the rule to drift apart.
+    """
+    base = shutil.ignore_patterns(*extra_patterns) if extra_patterns else None
+
+    def _ignore(src, names):
+        drop = set(base(src, names)) if base is not None else set()
+        for name in names:
+            if name in _EXPOSE_EXEMPT:
+                continue
+            if any(fnmatch.fnmatch(name, pattern) for pattern in _NEVER_EXPOSE):
+                drop.add(name)
+        return drop
+
+    return _ignore
 
 
 def _scrub_secrets(dest: Path) -> int:

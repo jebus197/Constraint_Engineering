@@ -38,6 +38,8 @@ import json
 import os
 import shlex
 import shutil
+
+from bench.panel_sandbox import secret_ignore
 import subprocess
 import sys
 import tempfile
@@ -117,7 +119,10 @@ def sandbox_gate(candidate_source: str) -> Tuple[bool, str]:
         sb = Path(td) / "sb"
         shutil.copytree(
             REPO_ROOT, sb, symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # Credentials excluded alongside the size/noise exclusions: a repo
+            # copy in TMPDIR otherwise materialises `.env` -- 10 live API keys --
+            # outside the protections the repo has. 2026-09-07.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs"),
         )
         tgt = sb / TARGET.relative_to(REPO_ROOT)

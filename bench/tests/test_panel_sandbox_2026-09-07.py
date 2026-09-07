@@ -189,3 +189,52 @@ def test_the_scrub_is_verified_not_assumed(tmp_path, monkeypatch):
     monkeypatch.setattr(ps, "_scrub_secrets", lambda dest: 0)
     with pytest.raises(RuntimeError, match="credential-bearing"):
         ps.build(fake)
+
+
+def test_secret_ignore_keeps_the_existing_exclusions_and_adds_credentials(tmp_path):
+    """EXECUTED through a real copytree, not asserted about. The 5 other places
+    in bench/ that copy the repo passed an exclusion list about SIZE and NOISE
+    ('.git', '__pycache__', '*.pyc', 'logs') that said nothing about secrets, so
+    every one of them materialised `.env` into TMPDIR."""
+    import shutil
+    src = tmp_path / "src"
+    (src / "sub").mkdir(parents=True)
+    (src / ".git").mkdir()
+    (src / ".git" / "HEAD").write_text("ref: refs/heads/main")
+    (src / ".env").write_text("export OPENAI_API_KEY=sk-live")
+    (src / ".env.example").write_text("OPENAI_API_KEY=")
+    (src / "sub" / "deep.pem").write_text("-----BEGIN PRIVATE KEY-----")
+    (src / "keep.py").write_text("x = 1")
+    (src / "junk.pyc").write_bytes(b"\x00")
+
+    dst = tmp_path / "dst"
+    shutil.copytree(src, dst, symlinks=True,
+                    ignore=ps.secret_ignore(".git", "__pycache__", "*.pyc", "logs"))
+
+    assert not (dst / ".env").exists(), "the credential file still travels"
+    assert not (dst / "sub" / "deep.pem").exists(), "nested secrets still travel"
+    assert not (dst / ".git").exists(), "an existing exclusion was lost"
+    assert not (dst / "junk.pyc").exists(), "an existing exclusion was lost"
+    assert (dst / "keep.py").is_file(), "the copy lost real content"
+    assert (dst / ".env.example").is_file(), "a values-free example was dropped"
+
+
+def test_no_repo_copy_in_bench_still_uses_the_secret_blind_exclusion_list():
+    """WIRING GUARD, deliberately structural. The behaviour is executed above;
+    this stops the old pattern being pasted back into a new copy site, which is
+    how the same leak reached 6 places."""
+    import re
+    offenders = []
+    for path in (REPO / "bench").rglob("*.py"):
+        if "/tests/" in str(path) or "/logs/" in str(path):
+            continue
+        text = path.read_text(errors="replace")
+        for m in re.finditer(r"ignore_patterns\(([^)]*)\)", text, re.S):
+            args = m.group(1)
+            if '".git"' in args and "secret_ignore" not in text[max(0, m.start() - 200):m.start()]:
+                # panel_sandbox's own fallback is followed by _scrub_secrets +
+                # verification, so it is covered by construction.
+                if path.name != "panel_sandbox.py":
+                    offenders.append(f"{path.relative_to(REPO)}:{text[:m.start()].count(chr(10)) + 1}")
+    assert not offenders, (
+        "these repo copies exclude .git but not credentials: " + ", ".join(offenders))

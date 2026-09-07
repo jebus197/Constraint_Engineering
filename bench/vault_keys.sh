@@ -29,9 +29,18 @@
 # Usage:
 #   bench/vault_keys.sh vault              # before a run
 #   bench/vault_keys.sh unvault            # for scoring
+#   bench/vault_keys.sh verify            # prove the seal opens, restores nothing
 #   bench/vault_keys.sh status
 #   bench/vault_keys.sh run -- <command>   # unvault only for the duration
 set -eu
+# PIPEFAIL, added 2026-09-07. Without it the seal below had an unrecoverable
+# data-loss path, PROVED by execution rather than reasoned about: a pipeline's
+# status is its LAST command's, so `tar ... | openssl ... -out "$VAULT"` returns 0
+# whenever openssl succeeds, EVEN IF TAR FAILED. `set -e` then does not fire, and
+# `rm -rf "$STORE"` runs anyway -- deleting the only plaintext copy of 29 scoring
+# keys while the archive holds whatever openssl managed to write. Measured:
+# `set -eu` reaches the delete step with exit 0; `set -euo pipefail` aborts first.
+set -o pipefail
 
 # Location is read from a file OUTSIDE the repository. Naming the key store in a
 # tracked file is what leaked it during Exp 48: the note recording where the keys
@@ -50,12 +59,44 @@ VAULT="$CDSFL_VAULT"
 vault() {
   # Fold any legacy store into the canonical one first, so a single archive
   # holds everything and no copy is left behind outside the vault system.
+  # FOLD EVERYTHING, AND PROVE IT ARRIVED BEFORE DELETING ANYTHING.
+  #
+  # THE DEFECT THIS REPLACES, found 2026-09-07 while preparing the founder's own
+  # sealing commands. The previous form was:
+  #     cp -p "$legacy"/*.json "$STORE"/ 2>/dev/null || true
+  #     rm -rf "$legacy"
+  # which copies TOP-LEVEL *.json only and then deletes the whole directory.
+  # Measured against the real stray store: 31 files present, 1 matched the glob,
+  # 30 would have been destroyed -- including all 27 BR2 answer keys, which live
+  # in a `br2_keys/` SUBDIRECTORY, and a `_KEY.md` the glob cannot see. The
+  # `2>/dev/null || true` meant a total copy failure was silent, and `rm -rf` ran
+  # regardless. These keys have no other copy.
   for legacy in $CDSFL_LEGACY_STORES; do
     [ -d "$legacy" ] || continue
     mkdir -p "$STORE"
-    cp -p "$legacy"/*.json "$STORE"/ 2>/dev/null || true
+    # Recursive, so subdirectories and non-.json key material travel too.
+    # COPYFILE_DISABLE stops macOS tar emitting AppleDouble `._` sidecars, which
+    # would otherwise double the file count inside the sealed archive.
+    ( cd "$legacy" && COPYFILE_DISABLE=1 tar -cf - . ) \
+      | ( cd "$STORE" && COPYFILE_DISABLE=1 tar -xf - )
+    # Every source file must now exist in the destination with the same bytes.
+    _missing=0
+    while IFS= read -r rel; do
+      if [ ! -f "$STORE/$rel" ] || ! cmp -s "$legacy/$rel" "$STORE/$rel"; then
+        echo "  NOT FOLDED: $rel" >&2
+        _missing=$((_missing + 1))
+      fi
+    done <<EOF
+$(cd "$legacy" && find . -type f | sed "s|^\./||")
+EOF
+    if [ "$_missing" -ne 0 ]; then
+      echo "REFUSING TO REMOVE $legacy: $_missing file(s) did not fold." >&2
+      echo "Nothing has been deleted. The keys are still at $legacy." >&2
+      exit 1
+    fi
+    _n=$(cd "$legacy" && find . -type f | wc -l | tr -d " ")
     rm -rf "$legacy"
-    echo "folded legacy store into the vault: $legacy"
+    echo "folded legacy store into the vault: $legacy ($_n file(s), all verified)"
   done
   if [ ! -d "$STORE" ]; then
     echo "already vaulted (no plaintext store)"; return 0
@@ -66,11 +107,68 @@ vault() {
   echo "Sealing the scoring keys. The passphrase is NOT stored anywhere on this"
   echo "machine — you will be asked for it again to score, and it cannot be"
   echo "recovered if lost. Keep it in your password manager."
+
+  # NEVER OVERWRITE AN EXISTING ARCHIVE. A vault already on disk may hold keys
+  # that are not in the current plaintext store; writing straight over it would
+  # destroy them with no way back, and the passphrase that opens it is by design
+  # not available here to check first. Moved aside, never deleted.
+  if [ -f "$VAULT" ]; then
+    _prev="$VAULT.prev-$(date -u +%Y%m%dT%H%M%SZ)"
+    mv "$VAULT" "$_prev"
+    echo "existing archive preserved as: $_prev"
+  fi
+
+  # A manifest of NAMES AND HASHES ONLY -- no key content -- so the seal can be
+  # verified later, and so a truncated archive is detectable without the
+  # passphrase. Filenames are not the secret; the answers inside them are.
+  _count=$(ls -1 "$STORE" | wc -l | tr -d " ")
+  ( cd "$STORE" && shasum -a 256 * 2>/dev/null || true ) > "$VAULT.manifest"
+  chmod 600 "$VAULT.manifest"
+
   tar -czf - -C "$(dirname "$STORE")" "$(basename "$STORE")" \
     | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -out "$VAULT"
   chmod 600 "$VAULT"
+
+  # ONLY NOW may the plaintext go, and only against evidence the archive exists
+  # and is not a stub. pipefail above catches a failed tar; this catches a write
+  # that produced a file but not an archive.
+  _size=$(wc -c <"$VAULT" | tr -d " ")
+  if [ ! -s "$VAULT" ] || [ "$_size" -lt 1024 ]; then
+    echo "REFUSING TO DELETE THE PLAINTEXT: the archive is $_size bytes, which is" >&2
+    echo "too small to hold $_count keys. The store is untouched at $STORE." >&2
+    exit 1
+  fi
   rm -rf "$STORE"
-  echo "sealed: the keys are on disk only as ciphertext, and the passphrase is not."
+  echo "sealed: $_count keys, $_size bytes of ciphertext, passphrase not on this machine."
+  echo "VERIFY IT NOW, before you rely on it:  $0 verify"
+}
+
+verify() {
+  # Prove the archive OPENS and holds what was sealed, without ever putting the
+  # plaintext back where a model could reach it. Sealing an archive nobody has
+  # opened is how a backup turns out to be empty on the day it is needed.
+  [ -f "$VAULT" ] || { echo "NO VAULT at $VAULT" >&2; exit 1; }
+  _tmp=$(mktemp -d)
+  trap 'rm -rf "$_tmp"' EXIT INT TERM
+  echo "Enter the passphrase to verify the seal. Nothing is restored to $STORE."
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in "$VAULT" \
+    | tar -xzf - -C "$_tmp" \
+    || { echo "COULD NOT OPEN THE ARCHIVE — wrong passphrase, or it is damaged." >&2
+         exit 1; }
+  _inner="$_tmp/$(basename "$STORE")"
+  _n=$(ls -1 "$_inner" 2>/dev/null | wc -l | tr -d " ")
+  echo "opened: $_n file(s)"
+  if [ -f "$VAULT.manifest" ]; then
+    if ( cd "$_inner" && shasum -a 256 -c "$VAULT.manifest" >/dev/null 2>&1 ); then
+      echo "manifest: every file matches its recorded hash"
+    else
+      echo "MANIFEST MISMATCH — the archive does not hold what was sealed." >&2
+      exit 1
+    fi
+  else
+    echo "no manifest beside the archive (sealed before 2026-09-07); count only"
+  fi
+  echo "VERIFIED. The keys are recoverable with this passphrase."
 }
 
 unvault() {
@@ -100,7 +198,12 @@ status() {
   # space-truncation class of bug the forensics scanner was just fixed for.
   check_one() {
     [ -d "$1" ] && [ -n "$(ls -A "$1" 2>/dev/null)" ] || return 0
-    echo "UNVAULTED — $(ls -1 "$1" 2>/dev/null | wc -l | tr -d ' ') key(s) in plaintext at: $1"
+    # COUNTED RECURSIVELY, corrected 2026-09-07. `ls -1 | wc -l` counts top-level
+    # ENTRIES, so the store holding 29 keys reported "4" -- 3 files plus the
+    # `br2_keys` directory counted once, with its 27 answer keys invisible. An
+    # operator reading "4 keys in plaintext" would materially misjudge the
+    # exposure he is being warned about.
+    echo "UNVAULTED — $(find "$1" -type f 2>/dev/null | wc -l | tr -d ' ') key file(s) in plaintext at: $1"
     rc=1
   }
   check_one "$CDSFL_STORE"
@@ -168,6 +271,7 @@ case "${1:-status}" in
   vault)   vault ;;
   unvault) unvault ;;
   status)  status ;;
+  verify)  verify ;;
   run)
     shift
     [ "${1:-}" = "--" ] && shift
@@ -176,5 +280,5 @@ case "${1:-status}" in
     trap vault EXIT INT TERM
     "$@"
     ;;
-  *) echo "usage: $0 {vault|unvault|status|run -- <command>}" >&2; exit 2 ;;
+  *) echo "usage: $0 {vault|unvault|verify|status|run -- <command>}" >&2; exit 2 ;;
 esac

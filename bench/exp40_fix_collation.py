@@ -23,6 +23,8 @@ import json
 import os
 import py_compile
 import shutil
+
+from bench.panel_sandbox import secret_ignore
 import subprocess
 import sys
 import tempfile
@@ -62,7 +64,10 @@ def _get_sandbox() -> Path:
         sb = Path(td) / "sb"
         shutil.copytree(
             REPO, sb, symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # Credentials excluded alongside the size/noise exclusions: a repo
+            # copy in TMPDIR otherwise materialises `.env` -- 10 live API keys --
+            # outside the protections the repo has. 2026-09-07.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs"),
         )
         _SB_HOLDER["sb"] = sb
@@ -119,7 +124,10 @@ def final_gate(cleaned_path: Path) -> dict:
         sb = Path(td) / "sb"
         shutil.copytree(
             REPO, sb, symlinks=True,
-            ignore=shutil.ignore_patterns(
+            # Credentials excluded alongside the size/noise exclusions: a repo
+            # copy in TMPDIR otherwise materialises `.env` -- 10 live API keys --
+            # outside the protections the repo has. 2026-09-07.
+            ignore=secret_ignore(
                 ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs"),
         )
         (sb / "bench/dm/_feedback.py").write_text(
