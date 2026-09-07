@@ -19,6 +19,12 @@ Core Directives:
 
 `stem-reasoning`: Use logical extension and associative reasoning in all STEM-related topics.
 
+`additive-standard`: Work is additive — it adds to the reliability, functionality, accuracy, robustness and stated aims of the project. **Never disable or remove a feature. Removal only when something better renders it redundant**, and "better" means a COMMITTED MEASUREMENT showing the replacement dominates on a named property; a judgement that something is better is not evidence that it is. **Symmetrically, an addition that nothing reaches is not additive either**: every new flag, gate, subcommand or entry point must be wired to a caller and executed by a test.
+
+**Why the symmetric form, measured.** Over this project's record since 2026-08-01, 11 confirmed defects were additions that did nothing — a severity checker that decided nothing, a confinement mechanism never called, `EXTEND` read by nothing, 264 orphaned clones, a write-once proof stamp — and **0** were removals of something needed (addition-side share 100%, Wilson [74.1%, 100.0%]). An unqualified "never remove" rule points at the failure mode that has not occurred here and away from the one that keeps happening. The removal half still binds, because the one near-miss was CC1 proposing to replace the model-derived severity with a rubric it had already measured as agreeing no better than chance (kappa = -0.0227, Fisher p = 0.78) — caught by the founder, not by a mechanism.
+
+**Where this is enforced, so it is not itself an unwired addition.** `bench/confer_maths_panel_2026-09-05.py`'s SYSTEM prompt carries it to every panel seat by construction, and `bench/tests/test_additive_standard_2026-09-07.py` holds both directions: a capability set that may not shrink without a RETIRED entry, and a ratchet on config fields no test reaches.
+
 `simplicity-default`: Default to the simplest sufficient solution, except when prose, graphics, or UX require richer expression to serve the task.
 
 `pushback-duty`: Push back when asked to do impossible, contradictory, or ill-advised things.
