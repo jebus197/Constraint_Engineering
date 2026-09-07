@@ -238,3 +238,33 @@ def test_no_repo_copy_in_bench_still_uses_the_secret_blind_exclusion_list():
                     offenders.append(f"{path.relative_to(REPO)}:{text[:m.start()].count(chr(10)) + 1}")
     assert not offenders, (
         "these repo copies exclude .git but not credentials: " + ", ".join(offenders))
+
+
+# --------------------------------------------------------------------------
+# The falsifier overlay: built 3x per finding, so what it carries costs 3x.
+# --------------------------------------------------------------------------
+
+def test_the_falsifier_overlay_does_not_carry_the_log_archive():
+    """`bench/logs` is 432 MB of the repo's 689 MB and 7108 of its 15511 files,
+    and the overlay is built THREE times per finding -- baseline, tripwire,
+    corrected. Those are separate clones on purpose, so a falsifier writing in one
+    stage cannot contaminate the next; the isolation is worth keeping, carrying
+    the archive into it three times is not. Safe by evidence: of 99 archived
+    falsifiers carrying code, 0 reference a logs path, Wilson [0.00%, 3.74%]."""
+    import shutil as _sh
+    import subprocess as _sp
+    rrv3 = __import__("reference_runner_v3")
+    ov = rrv3._build_discrimination_overlay(REPO, "bench/panel_sandbox.py", "# probe\n")
+    try:
+        assert (ov / "bench" / "logs").is_dir(), (
+            "the directory must still EXIST, so a falsifier that only checks the "
+            "path behaves as before")
+        assert not any((ov / "bench" / "logs").iterdir()), "the archive was cloned"
+        assert not (ov / ".git").exists(), "git history reached the overlay"
+        assert not (ov / ".env").exists(), "credentials reached the overlay"
+        assert (ov / "bench" / "reference_runner_v3.py").is_file(), "overlay unusable"
+        assert (ov / "bench" / "panel_sandbox.py").read_text().strip() == "# probe", (
+            "the whole point of the overlay -- replacing one file -- broke")
+    finally:
+        _sp.run(["chflags", "-R", "nouchg,noschg", str(ov.parent)], capture_output=True)
+        _sh.rmtree(ov.parent, ignore_errors=True)
