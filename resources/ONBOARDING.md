@@ -5,6 +5,21 @@ Last updated: 8 September 2026 02:14 BST — state files only; the narrative bel
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
 
+## CURRENT STATE — 2026-09-08 16:22 BST
+
+**HEAD `5921bd6`, main, 8 commits ahead of `origin/main` (`071f1ed`). Suite 5426 passed, 4 skipped, 0 failed under `--netguard-strict`, pytest exit code 0.**
+
+**The Exp 45 simulated run is FINISHED and did NOT converge.** 4 rounds, 61 findings, 311.6 minutes, terminal verdict `HALTED_IRREDUCIBLE_QUEUE_ALARM`. The halt was correct. **The cause is falsifier supply: 5 of the 14 critical findings arrived with no runnable falsifier** (64.3%, Wilson [38.8%, 83.7%]), from 4 different seats, and those 5 are the locked queue. Everything downstream of that worked — the routing ladder absorbed **10 of the 12 findings it was given (83.3%)**, indistinguishable from the healthy archive band at p = 0.179 and 54:1 against the impaired band, with a residual human queue of **1** across all 4 rounds.
+
+**The escalation diagnostic is ABSORPTION, not escalation.** Runs the record calls mechanically impaired absorb 1 of 50 (2.0%); healthy runs absorb 82 of 120 (68.3%); z = 7.88, p = 1.6e-15. Experiment 49 escalated 76.5% at the gate — the archive's highest — and was healthy, because its ladder absorbed 25 of 26. Script: `scripts/hil_escalation_by_run.py`.
+
+**The compaction alarm had never reached the founder: 0 of 11 compactions**, Wilson [0.00%, 25.88%]. Ten were invisible by construction; the eleventh was silenced by a P-pass that wrote the restore marker 175 seconds after the compaction. The marker recorded *that the script ran* rather than *that context was restored*. It now requires `--record-restore`; `--full` records nothing and says so, and forgetting the flag leaves the alarm sounding.
+
+**Founder rulings, 2026-09-08:** "broken machinery" must read **"broken machinery OR MISCONFIGURATION or both"**, and the rule should point at where the fault might lie. Public git history stays as it is — disclosure, not rewrite. `exp39-experimental` is to be adjudicated by Fable and CC2 against a sandboxed copy before any deletion.
+
+**Open for the founder:** falsifier supply; the absolute-path ruling (seats hold the absolute repo path, so a working directory cannot confine a shell-bearing seat); and one run writing two log directories, which doubles every directory-walking archive count.
+
+
 ## What This Project Is
 
 CDSFL (Constraint-Driven Synthesis and Falsification) is a methodology for
