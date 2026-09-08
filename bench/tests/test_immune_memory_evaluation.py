@@ -426,27 +426,53 @@ class TestCounterfactual:
 # 3. THE DRIFT DETECTOR
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Extracted from the test below on 2026-09-08 so it can be CALLED against a
+# temporary tree rather than only against this repository. A scan that can only
+# be run one way cannot be shown to catch what it claims to catch.
+#
+# `bench/logs/` IS EXCLUDED, and that is not a new convention: the two sibling
+# scanners already had it and this one alone did not.
+#   bench/tests/test_panel_sandbox_2026-09-07.py  -> skips "/logs/"
+#   bench/tests/test_python_floor_2026-09-07.py   -> skips "bench/logs/"
+# `bench/logs/` holds run OUTPUT, never imported by anything, and it contains
+# code that models wrote during experiments -- including a directory named
+# `QUARANTINE_T01_model_written`, quarantined precisely because a model wrote
+# it. Scanning that as "production" inverts the question the test asks.
+# Measured 2026-09-08: 29 of the 492 files matching bench/**/*.py live under
+# bench/logs/, and 7 of those 29 predate the archive that exposed this.
+DRIFT_SYMBOLS = ("update_drift", "is_drifting")
+
+
+def find_drift_callers(root: str) -> list[str]:
+    """Return "relpath:lineno" for every call to a DRIFT_SYMBOLS attribute
+    under <root>/bench, skipping tests, caches and archived run output."""
+    callers = []
+    for path in glob.glob(os.path.join(root, "bench", "**", "*.py"), recursive=True):
+        rel = os.path.relpath(path, root)
+        padded = os.sep + rel
+        if (os.sep + "tests" + os.sep in padded
+                or os.sep + "logs" + os.sep in padded
+                or "__pycache__" in rel):
+            continue
+        try:
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+        except (SyntaxError, UnicodeDecodeError, OSError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and \
+                    isinstance(node.func, ast.Attribute) and \
+                    node.func.attr in DRIFT_SYMBOLS:
+                callers.append(f"{rel}:{node.lineno}")
+    return callers
+
+
 class TestDriftDetector:
 
     def test_update_drift_has_no_production_caller(self):
         """Structural, not by inspection. 'It never fired' and 'it never ran'
         are different claims and only the second is true."""
-        callers = []
-        for path in glob.glob(os.path.join(_project_root, "bench", "**", "*.py"),
-                              recursive=True):
-            rel = os.path.relpath(path, _project_root)
-            if os.sep + "tests" + os.sep in os.sep + rel or "__pycache__" in rel:
-                continue
-            try:
-                with open(path, encoding="utf-8") as fh:
-                    tree = ast.parse(fh.read())
-            except (SyntaxError, UnicodeDecodeError, OSError):
-                continue
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and \
-                        isinstance(node.func, ast.Attribute) and \
-                        node.func.attr in ("update_drift", "is_drifting"):
-                    callers.append(f"{rel}:{node.lineno}")
+        callers = find_drift_callers(_project_root)
         assert not callers, (
             f"update_drift/is_drifting now has a production caller: {callers}. "
             f"The detector is live — its calibration (see the asymmetry test "
