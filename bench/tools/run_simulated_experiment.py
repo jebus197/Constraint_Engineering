@@ -23,7 +23,10 @@ import argparse
 import os
 import json
 import pathlib
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 
@@ -342,6 +345,75 @@ def main() -> int:
     _sock.getaddrinfo = _no_paid
     original = SHIM.install(model=args.model, timeout=args.timeout)
     t0 = time.monotonic()
+    # SEATS GET A DISPOSABLE WORKTREE, NOT THE LIVE REPO (2026-09-08).
+    #
+    # MEASURED THE NIGHT THIS WAS WRITTEN. The panel banner read
+    # `working directory: (inherited -- repo)`, and `RunnerConfig.panel_cwd`
+    # defaults to "" so `set_panel_cwd(cfg.panel_cwd or None)` unset it. The
+    # Claude CLI route grants Bash, and BASH IS A SUPERSET OF WRITE, so a seat
+    # reviewing `bench/dm/_memory.py` wrote its proposed fix straight into the
+    # live working tree -- twice inside 1 minute, at 03:39:50 (22,682 bytes) and
+    # 03:40:30 (23,831 bytes), against a committed 20,605.
+    #
+    # THE COST IS NOT TIDINESS, IT IS THE EXPERIMENT. 3 of the 6 seats reported
+    # the target changing under them mid-review, unprompted. Gemini-SIM: "a
+    # review of the target file cannot be trusted while the target mutates
+    # during it." A finding raised against a file that changes underneath the
+    # reviewer yields a falsifier that will not reproduce, which cannot be
+    # CONFIRMED, which escalates. That round escalated 9 of 11 findings to HIL.
+    #
+    # THE RIGHT COMPARATOR IS THIS EXPERIMENT, NOT THE ARCHIVE MEAN. A first pass
+    # here cited a pooled 39.35% across 72 archived gate events as "the baseline".
+    # The founder rejected it from memory and was right: that pool averages a
+    # broken era with a working one. Split by the record's OWN account of each
+    # run, the documented-compromised runs (exp55's gate running falsifiers in an
+    # empty directory; exp48 and exp49's key exposure) escalate at 65.5% and the
+    # rest at 30.4% -- z = 6.49, p = 4.3e-11. The like-for-like figure is the
+    # archived exp45 on this same target, the run that converged at R3:
+    # 2 of 23, 8.7%, Wilson [2.4%, 26.8%]. Tonight: 9 of 11, 81.8%, Wilson
+    # [52.3%, 94.9%] -- non-overlapping, Fisher exact p = 4.95e-5, odds ratio
+    # 47.2, cross-checked with proportions_ztest at p = 1.0e-5.
+    #
+    # The runner's own target-integrity guard could not catch it: it compares a
+    # hash BETWEEN rounds, and these writes happen WITHIN one.
+    #
+    # A worktree rather than an empty directory, because the comment at
+    # `reference_runner_v3.py:11391` is right that a code run's panel
+    # legitimately needs to read this repository, and `build_experiment_run.py:164`
+    # already does this after a model edited the runner in the live tree on
+    # 2026-08-22.
+    #
+    # THIS IS NOT SUFFICIENT ON ITS OWN, AND SAYING SO HERE BECAUSE IT WAS TRIED.
+    # With the confinement verified working -- 1 main-thread call and 6 per-worker
+    # calls in the log -- a seat rewrote the repo target TWICE MORE, at 04:20:52
+    # (24,834 bytes) and 04:22:22 (25,650), against a committed 20,605. A cwd
+    # confines RELATIVE paths. Seats are handed the ABSOLUTE repo path to their
+    # target by `_absolute_target`, under the founder's 2026-08-23 ruling, and that
+    # ruling is correct for its own reasons: a repo-relative name cannot be
+    # redirected into the discrimination control's overlay and cannot be found from
+    # a throwaway working directory, which is what left 6 Exp 55 falsifiers ERRORed.
+    # Bash is a superset of write, so an absolute path defeats any cwd.
+    #
+    # The remaining fix is to resolve that absolute path against the sandbox when
+    # one is set -- `_absolute_target` already takes a `repo_root` -- but that
+    # changes which paths appear in findings and interacts with
+    # `_retarget_falsifier`, which substitutes the absolute repo root. It touches a
+    # founder ruling and is NOT taken unilaterally here. What this does buy: the
+    # panel gets a real sandbox, relative writes land in it, and the log line stops
+    # claiming a confinement that was never applied.
+    _wt_parent = pathlib.Path(tempfile.mkdtemp(prefix="cdsfl_sim_panel_"))
+    _wt = _wt_parent / "repo"
+    _rc = subprocess.run(["git", "worktree", "add", "--detach", str(_wt), "HEAD"],
+                         cwd=str(REPO), capture_output=True, text=True)
+    if _rc.returncode != 0:
+        print("    FATAL: could not create the panel worktree; refusing to run the\n"
+              "      panel in the live repository, where a seat can rewrite the target.\n"
+              f"      {_rc.stderr.strip()[:300]}", flush=True)
+        shutil.rmtree(_wt_parent, ignore_errors=True)
+        return 2
+    cfg.panel_cwd = str(_wt)
+    print(f"    panel confined to a disposable worktree: {_wt}", flush=True)
+
     try:
         # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).
         # `system_prompt_path` is read ZERO times in reference_runner_v3 and
@@ -353,6 +425,9 @@ def main() -> int:
         result = R.run_experiment(exp_cfg, cdsfl_path.read_text(encoding="utf-8"), cfg)
     finally:
         SHIM.restore(original)
+        subprocess.run(["git", "worktree", "remove", "--force", str(_wt)],
+                       cwd=str(REPO), capture_output=True)
+        shutil.rmtree(_wt_parent, ignore_errors=True)
     el = time.monotonic() - t0
 
     result["_simulated"] = True

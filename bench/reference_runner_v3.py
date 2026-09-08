@@ -592,6 +592,34 @@ DIRECTIVE_FACTOR_FIELDS: Dict[str, Tuple[str, str]] = {
 # Empty tuple => every factor's directive text ships, i.e. legacy behaviour.
 _DIRECTIVE_OMISSION: Dict[str, Any] = {"factors": ()}
 
+# Module mirror of `RunnerConfig.panel_cwd`, same pattern and same reason as
+# _DIRECTIVE_OMISSION above -- and it closes a containment hole.
+#
+# THE DEFECT. `set_panel_cwd` stores into a `threading.local`, and run_experiment
+# called it ONCE on the MAIN thread. Every seat is dispatched from a
+# ThreadPoolExecutor, and a fresh worker has no value, so each seat subprocess
+# launched with cwd=None and inherited the repository. Demonstrated by execution:
+# main thread sees the sandbox, 3 workers see [None, None, None]. panel_cwd was
+# therefore INERT for every threaded dispatch, including the withheld-exam runs it
+# exists to confine, and on 2026-09-08 a seat wrote its proposed fix into
+# bench/dm/_memory.py twice inside a minute while 5 other seats reviewed that file.
+#
+# The remedy is the one this project already chose for the confer panel on
+# 2026-09-07 and pinned in test_panel_sandbox_2026-09-07.py: set it PER WORKER, on
+# the worker's own thread.
+#
+# IT IS NECESSARY AND NOT SUFFICIENT. Verified working (1 main-thread call, 6
+# per-worker calls) a seat still rewrote the repo target twice, because seats are
+# handed the ABSOLUTE repo path by `_absolute_target` under the 2026-08-23 ruling
+# and Bash is a superset of write. A cwd confines relative paths only. Closing that
+# needs the absolute path itself resolved against the sandbox, which touches the
+# ruling and is left to the founder. The thread-local is deliberately kept -- concurrent
+# reviewers must each own their value so one dispatch's cleanup cannot unsandbox
+# another -- so a module-level fallback inside `_get_panel_cwd_raw` was the WRONG
+# fix and was withdrawn; it broke that guard, which is exactly what the guard is
+# for. This mirror carries the value to the worker instead of weakening the store.
+_PANEL_CWD_FOR_WORKERS: Dict[str, Any] = {"path": None}
+
 # Module mirror of `RunnerConfig.discrimination_control_ask`, same pattern and
 # same reason as _DIRECTIVE_OMISSION above.
 #
@@ -7996,6 +8024,11 @@ def _dispatch_single_model(
     pattern_name: str, domain: str, logs_dir: Path,
     enable_tools: bool = True,
 ) -> Tuple[List[Finding], Optional[str]]:
+    # CONFINE THIS SEAT ON ITS OWN THREAD. See _PANEL_CWD_FOR_WORKERS. A no-op
+    # when unset, so a code run's default behaviour is byte-identical.
+    _seat_cwd = _PANEL_CWD_FOR_WORKERS.get("path")
+    if _seat_cwd:
+        set_panel_cwd(_seat_cwd)
     # enable_tools DEFAULTS ON (founder ruling 2026-08-30). It was GATED and
     # defaulted OFF, forwarded from cfg.falsifier_gate_enabled, so any gate-off
     # configuration dispatched panellists with no execute_python loop -- able to
@@ -11393,6 +11426,8 @@ def run_experiment(
     # directory rather than falling back to the repo — failing open here would
     # silently reinstate the exposure that let a model read the key in Exp 48.
     set_panel_cwd(cfg.panel_cwd or None)
+    # Carry it to the pool workers, which have their own thread-local.
+    _PANEL_CWD_FOR_WORKERS["path"] = cfg.panel_cwd or None
 
     # Per-run reset for the target integrity guard (runway 0C.9). It is keyed by
     # target path, but a legitimate edit BETWEEN two runs on the same target

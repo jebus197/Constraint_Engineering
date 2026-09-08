@@ -39,13 +39,70 @@ The residual is stated rather than assumed away. Losing 3 of 6 is still inconsis
 
 **The explanation first written here was wrong, and the correction matters.** This note originally said the runner splices corrected passages into the target as normal mid-run behaviour, and that killing a run leaves the mutation behind. Read rather than assumed: `_splice_corrected_copy` and `_derive_corrected_copy_from_fix` in `bench/reference_runner_v3.py` are **pure string transformations with no disk write**. The log line `corrected copy DERIVED C0027 ... spliced into bench/dm/_memory.py (20,829 chars)` names the target path for context and describes an **in-memory** copy. The only write to a target anywhere in the runner is `reference_runner_v3.py:9436`, and it writes into a **sandbox** copy under a comment that says so.
 
-**So something else wrote to a tracked source file during a run.** The panel seats are launched with `working directory: (inherited — repo)` — they execute inside the repository. This project has already measured panel agents editing the repository mid-run, twice, on 2026-09-01. A seat applying a fix it had just proposed is the explanation most consistent with the diff, which reads exactly like a proposed repair: a `MAX_DECAY_RATE` constant and a bound check raising `MemoryIntegrityError`. **That is the leading explanation, not an established one** — the write was not observed directly, and no record attributes it.
+**A seat wrote it, and this was then observed directly rather than inferred.** The panel seats are launched with `working directory: (inherited — repo)` — they execute inside the repository. A later run was watched with a continuous integrity check, and the target was caught being rewritten **twice inside 1 minute** while 5 other seats were reviewing it: 22,682 bytes at 03:39:50 and 23,831 at 03:40:30, against a committed 20,605. The diff is unmistakably a model's proposed repair, carrying prose comments in the project's own house style — "A THRESHOLD IS COMPARED, SO IT MUST BE COMPARABLE" — written 4 minutes into the round, before any seat had returned a reply.
+
+**Three of the six seats reported it themselves, unprompted.** Gemini-SIM: "a review of the target file cannot be trusted while the target mutates during it." CC2-SIM: "The target file mutated under me mid-review." Fable-SIM described a complete apply-then-revert cycle.
+
+**An intermediate explanation was wrong and is withdrawn.** Fable-SIM attributed the cycle to process 2369, an orphaned 27-hour runaway with the repository as its working directory. That process was real and was killed, but the target was rewritten again afterwards, which refutes it. The seat had also misidentified 2369 as "the Exp 45 simulated run" — a misattribution visible at the time, since 2369 started the previous day — and that error was noticed and the conclusion adopted anyway. Model output about the environment is data to check, not evidence to adopt.
+
+## The confinement that should have prevented it has never worked
+
+`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:11395` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+
+Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+
+**So the confinement was inert for every threaded panel dispatch, including the withheld-exam runs it exists to protect.** `bench/build_experiment_run.py` works only because it sets the value inside the same function that dispatches — its own comment records why it was added, after a model edited the runner in the live tree on 2026-08-22.
+
+The runner's target-integrity guard could not catch the writes either: it compares a hash **between** rounds, and these happen **within** one. A check whose granularity is coarser than the event it exists to detect.
+
+Repaired the way this project had already chosen for its confer panel on 2026-09-07: the value is carried to the worker by a module mirror and applied **on the worker's own thread**. A first attempt used a module-level fallback inside the accessor so a main-thread set would reach workers; that made `test_panel_sandbox_2026-09-07.py` fail, which is exactly what that guard exists for — the thread-local is deliberate, so one dispatch's cleanup cannot unsandbox another — and it was withdrawn. `bench/tests/test_panel_cwd_reaches_worker_threads_2026-09-08.py` executes the real seat dispatcher from a real pool worker, 4 tests, mutation-verified.
+
+## The confinement is necessary and NOT sufficient, and the reason is a ruling working correctly
+
+With the repair verified live — 1 main-thread call and 6 per-worker calls in the run log — **a seat rewrote the repository target twice more**, at 04:20:52 and 04:22:22, reaching 24,834 and 25,650 bytes against a committed 20,605. The mutation was captured mid-cycle. It is unmistakably a seat's proposed fix, carrying its own experiment in prose: "measured over 400 in-control sequences ... 400/400 alarmed, median 37 observations to the false alarm, earliest 8."
+
+A working directory confines **relative** paths. Seats are handed the **absolute** repository path to their target by `_absolute_target`, under the founder's ruling of 2026-08-23, and that ruling is right for reasons its own docstring records: a repo-relative name cannot be redirected into the discrimination control's overlay, and cannot be found at all from a throwaway working directory — which is what left 6 Experiment 55 falsifiers returning ERROR while the 2 detached ones returned CONFIRMED. Bash is a superset of write, so an absolute path defeats any working directory.
+
+**So `panel_cwd` is not merely unwired for threaded dispatch; for a shell-bearing seat it is the wrong mechanism.** That could not be seen before, because it never functioned well enough to fail visibly.
+
+The remaining repair is to resolve the absolute path against the sandbox when one is set — `_absolute_target` already accepts a `repo_root` — but it changes which paths appear in findings and interacts with `_retarget_falsifier`, which substitutes the absolute repository root. It touches a founder ruling and was not taken unilaterally.
+
+## A causal claim made in this note, and withdrawn
+
+An earlier version of this note presented the target mutation as the cause of the round's high escalation. **That does not survive checking.** `panel_cwd` has been inert for threaded dispatch throughout, so the archived Experiment 45 — the run that converged at round 3 with 2 of 23 escalated — was equally exposed to seats editing the repository. A condition shared by both runs cannot explain the difference between them. The mutation is a real defect; it is not the explanation for the escalation, and what does explain that remains open.
 
 **The current run is clean, and was watched for this.** `git status` reports no tracked file differing from HEAD, and the target is byte-identical to blob `539f6a4`. Three tracked files unrelated to the experiment — `scripts/replay_accounting.py` and 2 panel-record notes — had their modification times touched at 03:09:22 and 03:14:21 during the adjudication phase, with **content identical to HEAD** in all 3 cases. Touched, not changed.
 
 Whatever wrote it, the consequence is the same: the restart would have produced an "Experiment 45 comparison" against a target rewritten during a half-empty blind round, which is precisely the confound Experiment 45 was chosen to avoid.
 
 It was caught 2 minutes in, by noticing that the run banner said 25,861 bytes where the previous banner had said 20,563. The check that catches this cheaply: **compare the byte count in the run banner against `git show HEAD:<target> | wc -c` before accepting any restart.** The target was restored to blob `539f6a4` from commit `ce08914`, verified by hash equality rather than by inspection, and the mutated file preserved as `_memory.py.MUTATED_BY_ABORTED_RUN` beside an `ABORTED.txt` in the dead run's directory. Both abandoned run directories carry that marker so no future archive scan reads them as evidence.
+
+## The escalation queue: the diagnostic is absorption, not escalation
+
+The founder's standing rule is that an unusually high human-escalation queue signals broken machinery rather than a hard document. Round 0 escalated **9 of 11** findings at the falsifier gate, so the rule fired and the run was paused.
+
+**The first attempt to judge that number was the wrong instrument, twice over.** A pooled rate across every archived gate event — 170 of 432, **39.35%** — was computed and called "the archive baseline". The founder rejected it from memory. He was right: split by the record's own account of each run, documented-compromised runs escalate at **65.5%** and the rest at **30.4%** (z = 6.49, p = 4.3 x 10^-11). A pooled mean over a population that is heterogeneous by a property already known is a mixture, not a norm. `docs/GLOSSARY.md` had already recorded the governing doctrine, including the trap: the alarm's premise is that a large irreducible pile "almost always indicates broken machinery rather than an unusually hard document", vindicated on 2026-08-01, and **"raising the bound twice was wrong both times"**. Searching for a number like 39.35% to judge escalation against is the same move as raising the bound from 2 to 3.
+
+**The second error ran the other way.** The report then compared the archived Exp 45 at 2 of 23 against tonight's 9 of 11 and implied a large residual queue. But `_apply_routing` — the only absorber between the falsifier gate and the human queue — runs *after* the gate, and the run had been stopped while it was still working. The gate tally is the load arriving at the absorber, not the queue leaving it.
+
+**The instrument that does separate the record is absorption: how many of the escalated findings the ladder actually cleared, 1 of 50 against 82 of 120.**
+
+| run | gate escalated | absorbed by routing | rate | what the record says |
+|---|---|---|---|---|
+| Exp 45 | 2 | 2 | 100% | converged at round 3 |
+| **Exp 49** | **26** | **25** | **96.2%** | key-exposure run |
+| Exp 48 | 18 | 16 | 88.9% | key-exposure run |
+| Exp 44 | 34 | 21 | 61.8% | clean convergence, round 12 |
+| Exp 47 | 26 | 10 | 38.5% | converged |
+| Exp 43 | 9 | 1 | 11.1% | did not converge |
+| Exp 43 rerun | 13 | 0 | 0.0% | needed mechanical repairs |
+| **Exp 55** | **28** | **0** | **0.0%** | halted at round 0, falsifiers starved |
+
+Runs the record calls mechanically impaired absorbed **1 of 50, 2.0%**; the rest absorbed **82 of 120, 68.3%**. z = 7.88, p = 1.6 x 10^-15; Fisher exact p = 1.6 x 10^-17, odds ratio 105.7.
+
+**Experiment 49 escalated 76.5% at the gate — the highest figure in the archive — and was healthy, because the ladder absorbed 25 of its 26.** A high escalation rate is not the alarm. A ladder that absorbs nothing is. That is exactly the 2026-08-01 case, where routing went 0 for 25 because it was handed findings carrying no target path and no target text while recording "no model produced a runnable test".
+
+**Tonight is unclassified by this instrument**, because the run was stopped mid-absorption. Producing that measurement is the purpose of the restart. The script is `scripts/hil_escalation_by_run.py`, which prints the absorption table and refuses the pooled figure in its own output.
 
 ## The shape of the night: a bounded traversal standing in for a complete one
 
