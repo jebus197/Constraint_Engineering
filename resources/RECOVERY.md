@@ -25,6 +25,18 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-08 03:20 BST (READ THIS FIRST)
+
+**HEAD `551d7aa`, main, NOT YET PUSHED (`origin/main` is at `071f1ed`). Suite AT THIS COMMIT: 5418 passed, 4 skipped, 0 failed, 691.12 s, `python3 -m pytest bench/tests -q --netguard-strict`, pytest exit code 0 captured directly rather than through a pipe.**
+
+**★★★ THE SEAT WALL-CLOCK CAP WAS 900s AND THE PANEL'S OWN DURATIONS STRADDLE IT.** The 02:18 simulated Exp 45 run lost **3 of 6 seats in round 0, the blind baseline**, each killed at exactly 900s with 0 chars. Measured over 2,221 deduplicated archived dispatches by `scripts/seat_timeout_budget.py`: at 900s per-seat loss is **5.45%** and P(a 6x16 run loses NO seat) is **0.5%**. Raised to **3600s** in `bench/tools/run_simulated_experiment.py`. The clean 02:42 run's round 0 returned all 6 seats at 662, 887, 958, 976, 1076 and **1870s** — **4 of 6 exceed the old ceiling**. Half-panel round 0 yielded **8** findings; full panel yielded **27**.
+
+**★★★ AN ABORTED RUN LEAVES THE TARGET REWRITTEN.** `bench/dm/_memory.py` was left at 25,861 bytes instead of its committed 20,605 after the first run was killed mid-splice, and the restart inherited it. **Before accepting any restart, compare the run banner's byte count against `git show HEAD:<target> | wc -c`.** Restored to blob `539f6a4`; both dead run dirs carry `ABORTED.txt`.
+
+**LIVE:** the clean run writes to `bench/logs/sim45_memory_20260908T014200Z`, 6 seats, max 16 rounds, 3600s cap, started 02:42 against blob `539f6a4`. Round 0 closed 03:13 with 27 findings, rho 1.000, 20 corrected copies derived of 22 findings carrying a fix, falsifier gate 2 CONFIRMED / 0 REFUTED / 9 -> HIL, and 2 mechanical faults escalated (C0016, C0018: the falsifier fires on the CORRECTED copy). Standing rule in force: **if convergence looks out of reach, or the run completes without converging, assume broken machinery — pause, diagnose, fix, restart.**
+
+**OPEN, NOT ACTIONED:** `refs/heads/exp39-experimental` still exists locally at `e49a021`, 107 commits off `origin/main`, holding **5** retrievable answer keys (272,686 bytes). The remote carries only `main`. The 2026-08-23 instruction says KEEP it; the founder stated on 2026-09-08 that it is fully retired. **Nothing deleted pending his ruling.**
+
 ## SESSION STATE — 2026-09-06 04:05 BST (READ THIS FIRST)
 
 **Suite 5203 passed, 0 failed under `--netguard-strict` in 393.33 s.**
