@@ -14,16 +14,31 @@ The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **138 files**, of which one is `MEMORY.md` itself
-(the index), leaving **137 individual memory files**. They partition as:
+The directory holds **139 files**, of which one is `MEMORY.md` itself
+(the index), leaving **138 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 80 |
+| Mirrored (in summarised form) in `MEMORY.md` | 81 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 137 |
+| total | 138 |
+
+> **[Correction 2026-09-08, second.]** Total 137 -> 138, mirrored 80 -> 81, directory 138 -> 139. One
+> memory file was written in the small hours of 2026-09-08:
+> `cdsfl_session_2026-09-08_the_cap_sat_inside_the_distribution.md`, mirrored in `MEMORY.md` on
+> creation.
+>
+> **A claim first written here has been withdrawn.** This correction was originally annotated as the
+> "8th consecutive manual correction" to a table that "should be derived", echoing the drift guard's
+> own message. That was asserted without checking, and it is wrong: `_update_memory_exclusions_ledger`
+> in `scripts/cdsfl_sv.py:1550` ALREADY derives all 5 figures from the memory directory, and is already
+> called from `sv` at line 2569. Verified by executing it: it derives mirrored 81, excluded 15,
+> handoffs 3, unclassified 39, total 138 — identical to the figures typed above. Its dry run reports a
+> change only because it also restamps the "counted" date. **There is no missing mechanism.** The drift
+> exists solely because a memory file was written and the guard was run before `sv` was. The remedy is
+> ordering, not new code.
 
 > **[Correction 2026-09-08.]** Total 135 -> 137, mirrored 78 -> 80, directory 136 -> 138. Two memory files were written on the night of
 > 2026-09-07: `cdsfl_session_2026-09-07_pm_the_counter_read_zero_and_i_invented_a_provenance.md`

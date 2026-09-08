@@ -166,6 +166,24 @@ originally section 3 of the target itself, inside the file the runner reads whol
 and places in the panel prompt, and was split out on 2026-08-23 before anything
 ran. Its five predictions are frozen in the config's `_pre_registration`.
 
+**What Exp 55 actually did, so nobody re-derives it.** Both archived runs —
+`bench/logs/exp55_v3_control_20260823T144624Z` and `…T153955Z` — completed **1 round of
+6** and stopped on the terminal verdict `HALTED_IRREDUCIBLE_QUEUE_ALARM`. That is a
+real stop, not a crash: each produced 10 findings, sealed an 8-record verification
+chain (`merkle_root=sha256:0ef98ba7…` and `sha256:5138d4c1…` respectively), and wrote a
+full report carrying `convergence_reason: HALTED_IRREDUCIBLE_QUEUE_ALARM`. The halt is
+the irreducible-queue alarm firing at round 0 — 6 criticals locked as irreducible in the
+first run, 7 in the second. A reader reproducing it should expect that halt rather than
+a convergence. Note also
+that `checkpoint.json` shows `converged=false` with an EMPTY reason for both, because
+the runner copies its stop cause into `convergence_reason` only inside `if converged:`
+— see `bench/insect_brain.py:132`. The cause is in the run report, not the checkpoint.
+
+**And its target is spent.** `experimental_notes/Exp55_Key_Exposure_And_Sync_Repair_2026-08-26.md`
+establishes that both runs began 2026-08-23, three days after the control's ground-truth
+file was published to `origin/main` history. A re-run needs a NEW target; purging history
+does not restore this one's validity.
+
 The exam articles are released on request under an embargo, to a named custodian with
 stated conditions of use — the arrangement controlled-access scientific datasets use.
 The terms, and what a request should say, are in

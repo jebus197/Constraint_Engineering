@@ -139,7 +139,9 @@ def main() -> int:
         if r.is_file():
             paths.append(r)
         elif r.is_dir():
-            paths.extend(sorted(r.glob("*.md")))
+            # RECURSIVE (2026-09-08): a stale hold in a nested note was
+            # unreachable by this scan. Same shape as `cdsfl_qc.py`.
+            paths.extend(sorted(r.rglob("*.md")))
 
     findings = scan(paths)
     print(f"  scanned {len(paths)} markdown files under "

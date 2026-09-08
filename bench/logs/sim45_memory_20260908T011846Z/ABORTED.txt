@@ -1,0 +1,17 @@
+ABORTED 2026-09-08 02:35 BST, before round 1 completed. DO NOT USE.
+
+Round 0 (the blind baseline) ran with 3 of 6 seats. Codex-SIM, DeepSeek-SIM and
+Gemini-SIM were each killed at exactly 900s having produced 0 characters; the
+runner accepted the round and continued. A blind baseline built on half a panel
+propagates into every convergence statistic downstream, so the run was stopped
+rather than allowed to reach a verdict.
+
+Superseded by the run started after the wall-clock cap was raised to 1800s.
+
+TARGET MUTATION. Before it was stopped this run spliced 3 corrected copies into
+bench/dm/_memory.py, taking it from 20,605 to 25,861 bytes (+99/-9 lines). That
+is normal runner behaviour mid-run, but it meant a restart would have begun from
+a target rewritten on the evidence of a HALF-EMPTY blind round -- the exact
+confound the Exp 45 target was chosen to avoid. The mutated file is preserved
+here as _memory.py.MUTATED_BY_ABORTED_RUN and the working tree was restored to
+ce08914 before the run was started again.

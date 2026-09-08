@@ -610,7 +610,11 @@ def check_broken_references(root: Path, audit: dict | None = None) -> list[dict]
     for doc_dir in doc_dirs:
         if not doc_dir.exists():
             continue
-        for md in doc_dir.glob("*.md"):
+        # RECURSIVE (2026-09-08). `glob` saw 13 top-level documents and missed
+        # 139 nested ones, so the reference checker could not fail on any file
+        # in a subdirectory. Same bounded-traversal shape as the vault and arc
+        # gates repaired the same night.
+        for md in sorted(doc_dir.rglob("*.md")):
             # The OSError (errno 63, name too long) that used to abort this
             # scan is fixed at source by the length guard in
             # check_file_references. This catch stays as a backstop, and a

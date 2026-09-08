@@ -607,3 +607,39 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         f"{_state.total} attempt(s) across {len(_state.per_test)} test(s); "
         f"all denied. {tail}"
     )
+
+
+@pytest.fixture(autouse=True)
+def _restore_tmp_permissions_for_cleanup(request):
+    """Give pytest back the permissions it needs to delete its own temp trees.
+
+    MEASURED 2026-09-08: 4 `garbage-*` directories totalling 11 MB had accumulated
+    under pytest's temp root, each holding directories at mode 000 or 600 that
+    `rm_rf` could not traverse. Every affected run ends with a wall of
+    `PytestWarning: (rm_rf) error removing ...`, which buries the actual pass/fail
+    line -- the summary for one run was invisible behind 30 lines of it.
+
+    The cause is legitimate: `test_vault_seal_is_safe_2026-09-07` and
+    `test_sv_memory_unreadable_2026-08-26` chmod directories DOWN on purpose,
+    because that is the condition under test. They simply never chmod back, and a
+    helper function has no teardown to do it in.
+
+    Contents checked before writing this: the leftovers hold fixture strings
+    (`{"nested": "secret-1"}`), NOT real key material. So this is hygiene, not
+    exposure.
+
+    Teardown-only, so a test asserting on modes still sees them; this runs after.
+    """
+    yield
+    tmp = request.node.funcargs.get("tmp_path") if hasattr(request.node, "funcargs") else None
+    if tmp is None:
+        return
+    try:
+        for p in sorted(pathlib.Path(tmp).rglob("*"), reverse=True):
+            try:
+                p.chmod(0o700 if p.is_dir() else 0o600)
+            except OSError:
+                pass
+        pathlib.Path(tmp).chmod(0o700)
+    except OSError:
+        pass

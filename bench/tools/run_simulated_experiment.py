@@ -63,8 +63,45 @@ def main() -> int:
     ap.add_argument("--models", type=int, default=6)
     # 300s timed out 7 of 20 dispatches (35%, Wilson CI [18.1%, 56.7%]) on a
     # 20KB target, and two of those left a model with three consecutive ITC
-    # interventions. 900 matches the live CC2 timeout in the real panel.
-    ap.add_argument("--timeout", type=int, default=900)
+    # RAISED 900 -> 3600 ON 2026-09-08, FROM MEASUREMENT.
+    #
+    # 900 was chosen because it "matches the live CC2 timeout in the real panel",
+    # which is a per-seat justification for a parameter whose failures compound
+    # per RUN: 6 seats x 16 rounds is 96 dispatches, and losing any one damages a
+    # round. Run sim45_memory_20260908T011846Z lost 3 of its 6 seats in round 0 --
+    # the BLIND BASELINE -- all three killed at exactly 900s having produced 0
+    # characters, while the three that returned took 624s, 768s and 845s. The
+    # largest success was 94% of the cap: the ceiling sat inside the distribution
+    # rather than above it, and the runner accepted the half-empty round.
+    #
+    # Measured by `scripts/seat_timeout_budget.py` over 2,221 archived dispatches
+    # carrying a duration (median 288s, p95 932s, p99 2068s, max 5194s):
+    #
+    #   cap     per-seat loss    P(a 6-seat x 16-round run loses NO seat)
+    #    900s        5.45%                    0.5%
+    #   1800s        1.44%                   24.8%
+    #   2400s        0.77%                   47.8%
+    #   3600s        0.32%                   73.9%
+    #
+    # So at 900s a full-strength run was a 1-in-200 event. Raising the cap costs
+    # nothing on a healthy round, because a round takes as long as its SLOWEST
+    # seat either way; it costs wall-clock only when a seat genuinely hangs, and
+    # at 3600s that is expected 0.30 times per run.
+    #
+    # AN EARLIER VERSION OF THIS COMMENT CITED 3.43%, 0.87% AND 43.2%, FROM A
+    # SCAN THAT DID NOT DEDUPLICATE. Some runs write each dispatch under both
+    # `r5_gemini_<ts>.json` and `round5_gemini_<ts>.json`, so those runs were
+    # counted twice and the fast ones dominated. The committed script dedupes on
+    # (run, seat, round, duration). The corrected rates are worse, not better.
+    #
+    # NOT PROVEN SUFFICIENT for this configuration. 3 of 6 lost is inconsistent
+    # with even the corrected archive rate (binomial p = 2.9e-3, scipy.stats
+    # binomtest, cross-checked against an exact mpmath tail), so 6 concurrent
+    # seats on a 20,698-char target are slower
+    # than the archive's mixture. If seats still die at the ceiling the answer is
+    # retry-on-timeout, not a bigger number: `ModelConfig.max_retries` exists and
+    # `reference_runner_v3.py` reads it nowhere.
+    ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--test-cmd", dest="test_cmd",
                     default=("python3 -m pytest bench/tests/test_immune_memory_consumption.py "
                              "bench/tests/test_immune_memory_evaluation.py -q"),

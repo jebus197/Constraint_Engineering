@@ -71,8 +71,14 @@ check_staging() {
   [ -n "$PCWD" ] || halt "$(basename "$CFG"): panel_cwd unset — panel would run in the repo"
   [ -d "$PCWD" ] || halt "$(basename "$CFG"): panel_cwd does not exist ($PCWD) — run bench/stage_targets.sh"
   [ -f "$TGT" ]  || halt "$(basename "$CFG"): target missing ($TGT) — run bench/stage_targets.sh"
-  N=$(find "$PCWD" -maxdepth 1 -type f | wc -l | tr -d ' ')
-  [ "$N" = "1" ] || halt "$(basename "$CFG"): panel_cwd holds $N files, expected exactly 1"
+  # RECURSIVE, not -maxdepth 1 (2026-09-08). The bounded form counted only the
+  # TOP LEVEL, so a second document one directory down was invisible to the gate
+  # that exists to guarantee the panel can see exactly one. Same shape as the 5
+  # top-level-only defects found in vault_keys.sh the night before. The staged
+  # layout is flat -- ~/CDSFL_review_targets/current/<docid>.md -- so counting
+  # the whole subtree cannot change a legitimate case; it only closes an evasion.
+  N=$(find "$PCWD" -type f | wc -l | tr -d ' ')
+  [ "$N" = "1" ] || halt "$(basename "$CFG"): panel_cwd holds $N files anywhere beneath it, expected exactly 1"
   case "$PCWD" in "$REPO"*) halt "$(basename "$CFG"): panel_cwd is inside the repository" ;; esac
 
   # 3b. The STAGED copy must match the module it was staged from. Existence is
@@ -170,8 +176,13 @@ run_leg() {
   mv "$CDSFL_TARGETS" "$CDSFL_TARGETS.away" \
     || halt "$LABEL: could not put the target store out of reach"
   check_staging "$CFG"
-  SIBS=$(find ~/CDSFL_review_targets -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d " ")
-  [ "$SIBS" = "1" ] || halt "$LABEL: $SIBS documents staged; the leg must not be able to read a sibling"
+  # EVERY ENTRY, not just directories (2026-09-08). `-type d` meant a sibling
+  # document staged as a FILE at the top level was not counted at all, so the
+  # "one document staged" guarantee held only against siblings that happened to
+  # be directories. Dropping the type filter is strictly stronger and still
+  # counts 1 for the legitimate layout, which is a single `current/` directory.
+  SIBS=$(find ~/CDSFL_review_targets -mindepth 1 -maxdepth 1 | wc -l | tr -d " ")
+  [ "$SIBS" = "1" ] || halt "$LABEL: $SIBS entries staged; the leg must not be able to read a sibling"
   LOG=/tmp/${LABEL}_launch.log
   # Truncate. The log is grepped for "CONVERGED at round" with no run scoping, and
   # re-running the sequencer after a halt is the intended operating mode — so an

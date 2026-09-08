@@ -12124,6 +12124,21 @@ def run_experiment(
     # pairs for findings whose proposed_fix did not parse as an S_k block.
     # Consumed at start of round K+1 as a reformat-request prompt section.
     sk_reformat_requests_for_next_round: List[Tuple[str, str]] = []
+    # INITIALISED BEFORE THE ROUND LOOP, LIKE ITS SIBLING ABOVE (2026-09-08).
+    # This was missing. `rk_proof_requests_for_next_round` is READ at the top of
+    # every round when the context prefix is built (2 sites, one per topology
+    # branch) and only ASSIGNED near the end of a round. On round 0 nothing has
+    # assigned it, so `run_experiment` died with
+    #   UnboundLocalError: cannot access local variable
+    #   'rk_proof_requests_for_next_round' where it is not associated with a value
+    # at the FIRST round of EVERY run.
+    #
+    # The severity-proof round-trip shipped on 2026-09-07 and has therefore never
+    # executed end to end: the last archived run is 2026-09-01, before it landed,
+    # and its unit tests exercise the builder and the stamp in isolation rather
+    # than through `run_experiment`. A feature whose tests pass and whose only
+    # real caller cannot reach round 0 is the project's own most repeated shape.
+    rk_proof_requests_for_next_round: List[Tuple[str, str, Optional[float], Optional[float]]] = []
 
     # Ouroboros loop-close (2026-07-31). The cell runs BETWEEN rounds, so the
     # literature it retrieves after round K is what round K+1 sees — the

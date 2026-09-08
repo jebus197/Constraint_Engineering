@@ -16,8 +16,10 @@ import json
 import os
 import re
 import subprocess
+import datetime
+import pathlib
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -636,6 +638,39 @@ def running_experiment_lines(
     return out
 
 
+def _record_recovery_ran() -> None:
+    """Record that a full restore actually happened.
+
+    THE COMPACTION ALARM ASKS "HAS THE RESTORE BEEN RUN?", SO THE RESTORE SHOULD
+    ANSWER IT. Until 2026-09-08 the alarm cleared on a TEXT PATTERN -- any "rs"
+    token in the prompt -- which made it both too loose and too tight in turn.
+    Too loose: the founder wrote "so I can run `rs` as needed" while ASKING why
+    the alarm had never reached him, and that sentence silenced it. Too tight,
+    after the repair: "a, d (Do the rs first.)" was rejected for containing a
+    7-character token, so a genuine invocation went unrecorded.
+
+    Both failures come from inferring an event from prose. This records the event
+    itself, so the alarm reflects whether context was restored rather than
+    whether two letters were typed.
+    """
+    try:
+        d = pathlib.Path.home() / ".claude" / ".compaction_watch"
+        d.mkdir(parents=True, exist_ok=True)
+        # `datetime` here is the CLASS -- line 22 is `from datetime import date,
+        # datetime, timezone` -- so `datetime.datetime.now()` is wrong. A first
+        # version wrote exactly that; a second "fixed" it to `timezone.utc`
+        # without importing `timezone`. Both raised, and a blanket
+        # `except Exception: pass` reported success either way.
+        (d / "last_recovery").write_text(
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        # An unwritable HOME is environmental and must not break a recovery run,
+        # but it must not read as success either. Programming errors are NOT
+        # caught here: they are the ones that hid twice already.
+        print(f"  !! could not record the restore marker: {exc}", file=sys.stderr)
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="CDSFL Recovery — rebuild working context")
     parser.add_argument("--full", action="store_true", help="Include live test count")
@@ -825,3 +860,10 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # RECORD THE RESTORE, but only for a FULL one -- a partial report is not a
+    # restore and must not silence the compaction alarm. Placed here rather than
+    # inside main() because main() has no return statement to hang it from; an
+    # earlier patch tried to attach it to `return 0`, matched nothing, and left
+    # the function defined and never called. The fix was inert and read as done.
+    if "--full" in sys.argv:
+        _record_recovery_ran()

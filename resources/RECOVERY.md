@@ -116,7 +116,7 @@ session loss, compaction event, or fresh start with a new model instance.
 
 **Provenance correction.** CC1's docstring said exp48 happened "through a path that looked innocuous at the call site". The record says a **MODEL** wrote a falsifier that opened the key, because editing the file would destroy "a seeded fault the panel is scored on". **Seeding created the motive**, which indicts the canary design rather than excusing it.
 
-**OPEN FOR THE FOUNDER:** the **31 plaintext key files** (`bash bench/vault_keys.sh vault`, needs the passphrase); **the push**, ruled to go last; whether a missed canary should BLOCK convergence; and whether target-independent falsifiers should be excluded from the corpus.
+**OPEN FOR THE FOUNDER:** the **31 plaintext key files** (`bash bench/vault_keys.sh vault`, needs the passphrase); ~~**the push**, ruled to go last~~ **— CLEARED 2026-09-08: the founder ruled the hold stale; `main` pushed at `071f1ed`, local level with origin**; whether a missed canary should BLOCK convergence; and whether target-independent falsifiers should be excluded from the corpus.
 
 
 ## TEST-SUITE OFFLINE CORRECTION (2026-07-31 18:57 BST) — supersedes every earlier pass-count figure

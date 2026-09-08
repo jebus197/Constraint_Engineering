@@ -42,7 +42,13 @@ RULE_28 = "CATEGORY NOUN"
 
 def _v17_notes():
     out = []
-    for p in sorted(NOTES.glob("*.md")):
+    # RECURSIVE (2026-09-08). `glob` saw only the top level, so the 10 notes in
+    # subdirectories -- panel_results/, panel_briefs/, data/ and 2 READMEs --
+    # could never fail this enforcement. 0 of them declare v1.7 today, so the
+    # gap was latent rather than active; a nested note adopting the standard
+    # would have been exempt from it silently. Same bounded-traversal shape as
+    # the vault, arc and QC defects repaired the same night.
+    for p in sorted(NOTES.rglob("*.md")):
         m = FOOTLINE.search(p.read_text(encoding="utf-8", errors="replace"))
         if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
             out.append(p)
