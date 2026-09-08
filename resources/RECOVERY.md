@@ -25,6 +25,18 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-08 04:45 BST (READ THIS FIRST)
+
+**HEAD `f011c1a`, main, NOT PUSHED (`origin/main` at `071f1ed`). Suite AT THIS COMMIT: 5425 passed, 4 skipped, 0 failed, 693.40 s, `--netguard-strict`, pytest exit code 0 captured directly.**
+
+**★★★ panel_cwd HAS NEVER CONFINED A SEAT, AND A cwd CANNOT.** `set_panel_cwd` writes a `threading.local`; `run_experiment` calls it once on the MAIN thread (`reference_runner_v3.py:11395`) while seats dispatch from a `ThreadPoolExecutor` — every worker saw None and inherited the repo, so the **withheld-exam confinement never applied**. Fixed per-worker via `_PANEL_CWD_FOR_WORKERS`. **Then, with that verified working, a seat rewrote the target twice more** (24,834 B and 25,650 B vs a committed 20,605), because seats hold the **ABSOLUTE** repo path from `_absolute_target` under the founder's 2026-08-23 ruling and Bash is a superset of write. **FOR THE FOUNDER:** resolve that absolute path against the sandbox — `_absolute_target` already takes `repo_root` — noting it changes finding paths and touches `_retarget_falsifier`.
+
+**★★★ HIGH HIL ESCALATION IS NOT THE ALARM; A LADDER THAT ABSORBS NOTHING IS.** Impaired runs absorb **1/50 (2.0%)**, healthy ones **82/120 (68.3%)**, z = 7.88, p = 1.6e-15. exp49 escalated 76.5% (archive high) and was fine, absorbing 25/26; exp55 absorbed 0/28 and halted. A pooled 39.35% "baseline" cited earlier was a mixture and is **withdrawn**. `scripts/hil_escalation_by_run.py`.
+
+**★★ WITHDRAWN:** the target mutation does NOT explain tonight's escalation — `panel_cwd` was inert throughout, so the archived exp45 that converged was equally exposed.
+
+**LIVE:** run restarted 04:30:25 against blob `539f6a4`, panel in a disposable worktree, 3600s cap. **Owed measurement: round-0 routing ABSORPTION** — two earlier runs were stopped mid-absorption, destroying exactly that number.
+
 ## SESSION STATE — 2026-09-08 03:20 BST (READ THIS FIRST)
 
 **HEAD `551d7aa`, main, NOT YET PUSHED (`origin/main` is at `071f1ed`). Suite AT THIS COMMIT: 5418 passed, 4 skipped, 0 failed, 691.12 s, `python3 -m pytest bench/tests -q --netguard-strict`, pytest exit code 0 captured directly rather than through a pipe.**
