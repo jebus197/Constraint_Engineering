@@ -208,8 +208,26 @@ class TestArchiveExposure:
             "a finding now carries an explicit reachability field — the "
             f"'never exercised' finding is out of date: {with_field}")
 
-    def test_prose_source_tags_five_findings_and_none_reaches_demotion(self):
-        """The measured base rate, pinned so a loosened marker set is visible."""
+    def test_prose_source_tags_the_measured_set_and_none_reaches_demotion(self):
+        """The measured base rate, pinned so a loosened marker set is visible.
+
+        UPDATED 2026-09-08: 5 -> 11. The tagger is UNCHANGED (`bench/latent_tagger.py`
+        last touched 2026-09-07 in a4cc407, no uncommitted edits), so this is archive
+        growth and not the loosened marker set the pin exists to catch. Verified in
+        that order -- the tripwire is only safe to move once the thing it watches is
+        shown not to have moved.
+
+        THE 6 NEW ENTRIES ARE 3 FINDINGS COUNTED TWICE. `sim45_memory_20260908T033008Z`
+        and `...033012Z` are ONE run: the runner writes a second directory 4 seconds
+        after the first, the earlier holding `sim45_memory_report.json` and the later
+        the 48-file run state, and both carry the registry. Any archive scan that
+        walks directories therefore double-counts that run. The same shape corrupted a
+        seat-duration scan the same night, where deduplicating moved the 99th
+        percentile from 1605s to 2068s and the loss rate from 3.43% to 5.45% -- the
+        error ran in the reassuring direction both times. Recorded here rather than
+        silently absorbed: the duplication is a property of the archive layout, and
+        whether the runner should stop emitting 2 directories is a separate decision.
+        """
         tagged = sorted(
             f"{name}/{cid}"
             for name, data in _RUNS
@@ -222,6 +240,13 @@ class TestArchiveExposure:
             "exp40_gate_20260514T020550Z/C0295",
             "exp40_slice_collision_20260518T130744Z/C0002",
             "exp46_stage6_locationkey_live_20260728T103151Z/C0002",
+            # one run, two directories -- 3 findings, listed twice. See the docstring.
+            "sim45_memory_20260908T033008Z/C0024",
+            "sim45_memory_20260908T033008Z/C0026",
+            "sim45_memory_20260908T033008Z/C0040",
+            "sim45_memory_20260908T033012Z/C0024",
+            "sim45_memory_20260908T033012Z/C0026",
+            "sim45_memory_20260908T033012Z/C0040",
         ], tagged
 
 
@@ -475,9 +500,19 @@ class TestQuotedTextIsNotTheFindingsClaim:
                 elif before and not after:
                     removed.append(f"{name}/{cid}")
         assert added == [], f"the fix ADDED latent tags — not fail-safe: {added}"
+        # UPDATED 2026-09-08, 2 -> 6. The SAFETY PROPERTY above is what this test
+        # exists for and it is unchanged: `added == []`, verified before this list
+        # was touched. The 4 new removals are 2 findings counted twice, because
+        # `sim45_memory_20260908T033008Z` and `...033012Z` are one run written to
+        # two directories. Narrowing removing MORE is the fix working; it is the
+        # `added` assertion that would signal a fail-unsafe change.
         assert sorted(removed) == [
             "exp40_slice_records_20260518T160503Z/C0020",
             "exp40_slice_records_20260518T160503Z/C0048",
+            "sim45_memory_20260908T033008Z/C0038",
+            "sim45_memory_20260908T033008Z/C0060",
+            "sim45_memory_20260908T033012Z/C0038",
+            "sim45_memory_20260908T033012Z/C0060",
         ], removed
 
 

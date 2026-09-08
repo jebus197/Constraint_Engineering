@@ -49,6 +49,21 @@ def test_the_sandbox_is_not_the_repo_and_carries_no_git(tmp_path):
 
 
 def test_a_write_inside_the_sandbox_does_not_reach_the_canonical_tree():
+    """OBSERVED FLAKY ONCE, 2026-09-08 — recorded, not suppressed.
+
+    This failed exactly 1 time in 4 full-suite runs on 2026-09-08, and passed in
+    isolation, paired with the derived-docs generator test, and on an immediate
+    re-run of the whole suite (5,425 passed, 0 failed). The assertion compares a
+    fingerprint taken here against the tree a moment later, so it fails if ANY
+    concurrently-running test writes a tracked file inside that window -- it is
+    measuring the whole suite's behaviour, not only this sandbox's.
+
+    Left as-is deliberately. Widening the window or excluding paths would blunt a
+    containment guard to silence a false alarm, and the same sensitivity that
+    produces the false alarm is what lets it see a real escape. What is NOT safe
+    is treating a green run as proof it cannot fail: if it fails again, the cause
+    is a tracked-file write from another test, and the fix belongs in that test.
+    """
     before = ps.fingerprint(REPO)
     sb = ps.build(REPO)
     try:

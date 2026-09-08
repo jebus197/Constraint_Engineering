@@ -77,6 +77,51 @@ Whatever wrote it, the consequence is the same: the restart would have produced 
 
 It was caught 2 minutes in, by noticing that the run banner said 25,861 bytes where the previous banner had said 20,563. The check that catches this cheaply: **compare the byte count in the run banner against `git show HEAD:<target> | wc -c` before accepting any restart.** The target was restored to blob `539f6a4` from commit `ce08914`, verified by hash equality rather than by inspection, and the mutated file preserved as `_memory.py.MUTATED_BY_ABORTED_RUN` beside an `ABORTED.txt` in the dead run's directory. Both abandoned run directories carry that marker so no future archive scan reads them as evidence.
 
+## The run's verdict, and the fault it found
+
+The Experiment 45 run started 04:30 ran **4 rounds in 311.6 minutes** and stopped at `HALTED_IRREDUCIBLE_QUEUE_ALARM` with 61 findings. It did not converge. Under the founder's standing rule that a non-converging run indicates broken machinery, it was diagnosed rather than reported as a result — and the diagnosis found a real fault, though not where the investigation had been looking.
+
+**The halt was correct.** The irreducible-queue alarm fires when criticals locked as unresolvable exceed a bound of 2; it found 5. Its own notification states the governing principle and the trap: "a queue this size is overwhelmingly a MECHANICAL failure ... Do NOT raise max_irreducible_queue to clear this — that is how the same alarm was suppressed twice on 2026-08-01 while it was right."
+
+**The fault is falsifier supply, upstream of every mechanism under examination.** Of the 14 critical-severity findings the run produced, **5 arrived with no runnable falsifier** — a supply rate of 64.3 percent, Wilson 95 percent confidence interval [38.8%, 83.7%] — and those 5 are exactly the queue that halted the run. They came from 4 different seats, so this is not one misbehaving panellist. The project's founding requirement is that every critical finding arrives with a runnable check; it held for 9 of 14.
+
+**Everything downstream of that worked.** The routing ladder absorbed **10 of the 12 findings it was actually given, 83.3 percent**, Wilson [55.2%, 95.3%]; against the archive's mechanically impaired band of 2.0 percent that is z = 5.13, p = 1.4 x 10^-7, Fisher exact p = 2.6 x 10^-6 with an odds ratio of 54, and against the healthy band of 68.3 percent it is statistically indistinguishable at p = 0.179. The residual human queue across all 4 rounds was **1**.
+
+| round | novel | escalated | absorbed | to human | deferred |
+|---|---|---|---|---|---|
+| 0 | 27 | 7 | 6 | 1 | 1 |
+| 1 | 9 | 2 | 1 | 0 | 1 |
+| 2 | 7 | 2 | 1 | 0 | 0 |
+| 3 | 18 | 8 | 2 | 0 | 5 |
+
+The round-3 rebound in novel findings, 7 to 18, is not itself anomalous: the archived Experiment 45 that converged cleanly went 11, 11, 6, 11. What differs is the deferral column, which is the falsifier-supply shortfall arriving as a queue.
+
+## One run, two directories — and every archive count is doubled for it
+
+Measured while repairing the drift the run caused: **the runner writes two directories per run.** Tonight's produced `sim45_memory_20260908T033008Z`, holding the immune-pipeline log and the run report, and `...033012Z` four seconds later, holding the 48-file run state. **Both carry the registry**, so any archive scan that walks directories counts each of that run's 61 findings twice.
+
+This is not theoretical and it has now bitten twice in one night. A seat-duration scan double-counted every run written this way; deduplicating moved the 99th percentile from 1,605 to 2,068 seconds and the per-seat loss rate from 3.43 to 5.45 percent — the error ran in the reassuring direction. Then the latent tagger's archive-exposure tripwire grew from 5 entries to 11, of which the 6 new ones are 3 findings listed twice, and its companion safety test from 2 removals to 6, of which 4 are 2 findings listed twice.
+
+Both tripwires were updated rather than suppressed, and in the safe order: the tagger was confirmed unchanged before the exposure list was moved, and the fail-safe property `added == []` was confirmed to still hold before the removal record was extended. A tripwire is only safe to move once the tagger it watches is shown not to have moved.
+
+**Whether the runner should stop emitting 2 directories is a separate decision and is not taken here.** What is recorded is that until it does, every directory-walking measurement over this archive is inflated for runs written since the pattern began, and the correct guard is to deduplicate on the tuple of run, seat, round and value rather than on directory.
+
+## The gate-count pair, re-measured because the archive grew
+
+`sk_threshold_shadow`'s docstring stated that `s_star` is zero in 3,816 of 3,816 archived gate records, Wilson [99.90%, 100.00%]. Tonight's run added 326, and `test_stated_gate_count_matches_measurement_2026-09-07.py` refused the stale pair with its own instruction: "Correct the count AND recompute the Wilson interval beside it — fixing one leaves the pair lying."
+
+Re-measured: **4,142 of 4,142, Wilson [99.91%, 100.00%]**, across 6,727 JSON files. The encoding split is 3,507 strict floats and **635 strings, unchanged**, still confined to the same 4 `sim45_*` families. The lower bound rose exactly as the closed form n/(n+z²) requires at k = n, 99.90 to 99.91 percent, cross-checked in mpmath to 1 part in 10^16. Both halves were corrected together.
+
+## Two defects in the alarm's own evidence path
+
+Both were found by trying to act on the halt, and both defeat the adjudication the halt exists to enable.
+
+**The evidence bundle was empty.** `irreducible_queue_count()` counts entries flagged `irreducible_escalation` **or** `routing_deferred`; the loop that collects the per-finding evidence tested only the first. A repair on 2026-09-07 added `routing_deferred` to the count for well-measured reasons and did not add it to the collector. So a queue made entirely of deferred items — which is what tonight's was — fires the alarm and then describes nothing. The run log reads "5 criticals are locked as irreducible" and, three lines later, "Evidence for all 0 item(s)" and "0 of 0 carry no falsifier at all". The alarm's own instruction is to read the bundle rather than move the line, and the bundle was unreadable. Fixed so the collector matches the counting predicate exactly. Verified against the halted run's saved state, where the headline of 1 and a bundle of 0 became 1 and 1, and mutation-tested by restoring the old predicate, which returned the bundle to 0.
+
+**The deferral reason stated a falsehood.** It recorded "no falsifier and no S_k evaluation exist, so nothing has been assessed yet" for entries that carry one: C0055 has an S_k result of REJECTED, and C0057 a complete passing evaluation — ADMISSIBLE, 0.9782, 52 of 55 sandbox tests, ruff and bandit clean. Deferring them remains correct, because a critical is resolved by a runnable falsifier and S_k measures the quality of a fix rather than the truth of a claim, but the record must give the reason that applies instead of denying evidence sitting on the same entry. The message now states the verdict that triggered the deferral and discloses any S_k result.
+
+A first version of that second fix asserted "an equipment failure" as fixed text, on the reasoning that the branch is only reachable on ERROR or UNTOOLABLE. Replaying it against the halted run showed it printing "the falsifier verdict is CONFIRMED, an equipment failure", because the post-halt sweep can rewrite a verdict after the deferral was recorded. The phrase is now checked rather than asserted.
+
 ## The escalation queue: the diagnostic is absorption, not escalation
 
 The founder's standing rule is that an unusually high human-escalation queue signals broken machinery rather than a hard document. Round 0 escalated **9 of 11** findings at the falsifier gate, so the rule fired and the run was paused.

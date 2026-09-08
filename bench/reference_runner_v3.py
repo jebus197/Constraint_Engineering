@@ -5415,9 +5415,55 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             # FAIL-SAFE direction -- an unassessed critical keeps blocking rather
             # than being excused into a queue that then halts the run.
             e["routing_deferred"] = True
+            # SAY WHAT THE PREDICATE ACTUALLY TESTED (2026-09-08). This branch is
+            # reached on `falsifier_verdict in EQUIPMENT_FAILURE_VERDICTS`, i.e.
+            # the falsifier ERRORed or was UNTOOLABLE. The old wording claimed
+            # "no falsifier and no S_k evaluation exist", which is FALSE whenever
+            # S_k ran: measured in sim45_memory_20260908T033012Z, C0055 carried
+            # sk_result tristate=REJECTED and C0057 carried a COMPLETE passing
+            # evaluation -- tristate=ADMISSIBLE, sk=0.9782, 52/55 sandbox tests,
+            # ruff and bandit clean -- while both were recorded as "nothing has
+            # been assessed yet" and counted into the queue that halted the run.
+            #
+            # Deferring them is still right: a critical is resolved by a runnable
+            # FALSIFIER, and S_k measures the quality of a FIX, not the truth of
+            # the claim. But the record must state the reason that applies, not
+            # deny evidence sitting on the same entry.
+            # SAY WHAT THE PREDICATE TESTED, AND CLAIM NOTHING ELSE (2026-09-08).
+            #
+            # The old wording asserted "no falsifier and no S_k evaluation exist,
+            # so nothing has been assessed yet". Measured in
+            # sim45_memory_20260908T033012Z, that was FALSE on 2 of the 5 entries
+            # that halted the run: C0055 carried an S_k tristate of REJECTED and
+            # C0057 a complete passing one -- ADMISSIBLE, 0.9782, 52/55 sandbox
+            # tests, ruff and bandit clean.
+            #
+            # THE FIX IS TO CLAIM LESS, NOT TO READ MORE. A first version quoted
+            # the entry's S_k state in the message. That put a read of
+            # `sk_result` inside `_apply_routing`, and
+            # `test_immune_memory_consumption.py:395` pins the set of functions
+            # permitted to consume it precisely so S_k cannot influence routing
+            # and let R_k(0) reach a verdict. The guard counts a READ, because a
+            # read is the precursor to acting on one. It failed, correctly, and
+            # the claim about S_k was dropped rather than the boundary widened.
+            #
+            # Deferring is still right: a critical is resolved by a runnable
+            # FALSIFIER, and S_k measures a FIX rather than the truth of a claim.
+            # The message now names the verdict that triggered the deferral and
+            # says nothing about S_k either way.
+            _defer_verdict = (e.get("falsifier_verdict") or "MISSING")
+            _defer_is_equipment = (
+                str(_defer_verdict).strip().upper() in EQUIPMENT_FAILURE_VERDICTS
+            )
             e.setdefault(
                 "routing_defer_reason",
-                f"not escalated at round {round_idx}: no falsifier and no S_k "
+                f"not escalated at round {round_idx}: the falsifier verdict was "
+                f"{_defer_verdict}"
+                f"{', an equipment failure,' if _defer_is_equipment else ','} "
+                f"so the CLAIM itself has not been tested by a runnable "
+                f"falsifier. Any S_k result on this entry speaks to a FIX, not "
+                f"to the truth of the claim, and is not consulted here. "
+                f"Legacy wording follows: no falsifier and no S_k "
                 f"evaluation exist, so nothing has been assessed yet. "
                 f"'Irreducible' would assert a machine tried and failed.",
             )
@@ -5966,7 +6012,24 @@ def build_irreducible_queue_alarm(
     _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
     evidence: List[Dict[str, Any]] = []
     for cid, e in registry.entries.items():
-        if not e.get("irreducible_escalation"):
+        # MATCH `irreducible_queue_count()` EXACTLY (2026-09-08). That method
+        # counts `irreducible_escalation OR routing_deferred`; this loop tested
+        # only the first. The 2026-09-07 repair that added `routing_deferred` to
+        # the COUNT did not add it to the COLLECTOR, so a queue made entirely of
+        # DEFERRED items fired the alarm and then described nothing.
+        #
+        # MEASURED, sim45_memory_20260908T033012Z: the alarm halted the run at
+        # round 3 reporting "5 criticals are locked as irreducible" and, three
+        # lines later, "Evidence for all 0 item(s)" and "0 of 0 carry no
+        # falsifier at all". All 5 -- C0048, C0050, C0051, C0055, C0057 -- were
+        # routing_deferred with irreducible_escalation False.
+        #
+        # This is the alarm's own promise broken at the moment it matters: its
+        # docstring says ATTACH the per-finding evidence "so the human
+        # adjudicating it does not have to reconstruct anything", and its notify
+        # text says "read the bundle, not move the line". The bundle was empty,
+        # so the only documented way to act on the halt was unavailable.
+        if not (e.get("irreducible_escalation") or e.get("routing_deferred")):
             continue
         if e.get("status") in _TERMINAL:
             continue
@@ -10647,10 +10710,18 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 3816 of 3816 gate records in `bench/logs`, Wilson
-    [99.90%, 100.00%] -- 3181 of them encoded as the float `0.0` and 635 as the
+    is zero in 4142 of 4142 gate records in `bench/logs`, Wilson
+    [99.91%, 100.00%] -- 3507 of them encoded as the float `0.0` and 635 as the
     STRING "0", the latter confined to the 4 `sim45_*` families, which stringify
     every numeric field ("sk": "0.9345", "s_star": "0", "R_old": "0.5").
+
+    RE-MEASURED 2026-09-08 after `sim45_memory_20260908T033012Z` added 326 gate
+    records: 3816 -> 4142 total, 3181 -> 3507 strict floats, and the string count
+    UNCHANGED at 635 across the same 4 families. The Wilson lower bound rises with
+    n at k = n, exactly as the closed form n/(n+z^2) below requires: 99.90% ->
+    99.91%. The pair was updated together because
+    `test_stated_gate_count_matches_measurement_2026-09-07.py` refuses a count
+    corrected without its interval -- "fixing one leaves the pair lying".
 
     BOTH NUMBERS ARE REAL MEASUREMENTS. THE STORY THAT SAID OTHERWISE WAS MINE
     AND IT WAS FABRICATED. This docstring read "3181 of 3181" until 2026-09-07,
@@ -10678,12 +10749,13 @@ def sk_threshold_shadow(
     asserted after checking one member (the float ones).
 
     WHAT "READS 0.0" MEANS DEPENDS ON THE PREDICATE, so state it. A strict
-    `x == 0.0` gives 3181. A coercing `float(x) == 0.0` gives 3816. The claim
+    `x == 0.0` gives 3507. A coercing `float(x) == 0.0` gives 4142. The claim
     intended here is the coercing one -- the gate admitted everything, whatever
-    the encoding -- so 3816 is the number the sentence needs, and the encoding
-    split is stated rather than flattened.
+    the encoding -- so 4142 is the number the sentence needs, and the encoding
+    split is stated rather than flattened. (Before 2026-09-08 these read 3181 and
+    3816; the same two predicates over a smaller archive.)
 
-    CORPUS. `bench/logs` only: 6663 JSON files carrying 3816 gate records.
+    CORPUS. `bench/logs` only: 6727 JSON files carrying 4142 gate records.
     `bench/logs_quarantine` is EXCLUDED and holds 78 more, so a repo-wide count
     would be 3894. `bench/results` holds 0. An earlier version of this note said
     "7351 archived files", which was `bench/logs` plus `bench/results` and
