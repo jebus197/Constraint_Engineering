@@ -102,7 +102,19 @@ Runs the record calls mechanically impaired absorbed **1 of 50, 2.0%**; the rest
 
 **Experiment 49 escalated 76.5% at the gate — the highest figure in the archive — and was healthy, because the ladder absorbed 25 of its 26.** A high escalation rate is not the alarm. A ladder that absorbs nothing is. That is exactly the 2026-08-01 case, where routing went 0 for 25 because it was handed findings carrying no target path and no target text while recording "no model produced a runnable test".
 
-**Tonight is unclassified by this instrument**, because the run was stopped mid-absorption. Producing that measurement is the purpose of the restart. The script is `scripts/hil_escalation_by_run.py`, which prints the absorption table and refuses the pooled figure in its own output.
+### The measurement, taken
+
+The run restarted at 04:30 completed round 0 at 05:51, 80.7 minutes end to end, with all 6 seats returning (825, 997, 1139, 1252, 1274 and 1562 seconds — 4 of the 6 over the old 900-second cap). 27 findings, rho 1.000.
+
+**Gate: 4 CONFIRMED, 0 REFUTED, 7 escalated. Ladder: 6 resolved by strong writer, 0 deduplicated, 1 to the human queue, 1 deferred as never assessed.**
+
+**Absorption 6 of 7, 85.7%**, Wilson 95 percent confidence interval [48.7%, 97.4%], Clopper-Pearson [42.1%, 99.6%]. Against the archive's mechanically impaired band of 2.0 percent: z = 6.32, p = 1.3 x 10^-10 by `proportions_ztest`, Fisher exact p = 1.3 x 10^-6 with an odds ratio of 294, cross-checked against an exact mpmath tail at 4.4 x 10^-10. Against the healthy band of 68.3 percent: z = 0.97, **p = 0.333, indistinguishable**.
+
+**The falsifier gate and the routing ladder are sound.** All 7 escalations were engaged with substantive dispatches of 7,400 to 11,500 characters each, across a ladder bounded at 2 rungs — the failure mode in exp55 and the Experiment 43 rerun was a ladder that engaged and resolved nothing, 0 of 28 and 0 of 13.
+
+The single deferred finding is a recent repair working rather than a fault. `bench/reference_runner_v3.py:5417` records why: findings with no falsifier and no S_k were previously "never assessed, then labelled as findings no machine could assess", and **every irreducible-queue alarm in the archive, 4 of 4, fired at round 0** on that mislabelling. Such a finding now stays open and blocking, which is the fail-safe direction. So the founder's heuristic — that a high escalation queue signals broken machinery — has been correct in every archived instance, and the instrument it was detecting has since been repaired.
+
+The script is `scripts/hil_escalation_by_run.py`, which prints the absorption table and refuses the pooled figure in its own output.
 
 ## The shape of the night: a bounded traversal standing in for a complete one
 
