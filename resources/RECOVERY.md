@@ -25,6 +25,24 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-08 16:10 BST (READ THIS FIRST)
+
+HEAD `beb39fb` + 4 uncommitted files (the compaction-marker fix), main, **7 ahead of `origin/main` at `071f1ed` — NOT PUSHED**.
+
+**★★★ THE EXP 45 RUN IS FINISHED AND IT DID NOT CONVERGE.** 4 rounds, 61 findings, 311.6 min, terminal verdict `HALTED_IRREDUCIBLE_QUEUE_ALARM`. **The halt was correct and the cause is FALSIFIER SUPPLY: 5 of 14 criticals arrived with NO runnable falsifier** (64.3%, Wilson [38.8%, 83.7%]) from 4 different seats, and those 5 ARE the locked queue. Everything downstream worked — the ladder absorbed **10 of the 12 it was given (83.3%)**, indistinguishable from the healthy band at p = 0.179 and 54:1 against the impaired one, with a **residual human queue of 1** across all 4 rounds. Per-round escalated/absorbed/HIL/deferred: 7/6/1/1, 2/1/0/1, 2/1/0/0, 8/2/0/5.
+
+**★★★ THE COMPACTION ALARM NEVER REACHED THE FOUNDER — 0 of 11 COMPACTIONS**, Wilson [0.00%, 25.88%]. Ten were invisible by construction (`suppressOutput: True` until 02:20:40 today). The eleventh, at **01:25:08Z**, was silenced by MY OWN P-PASS: 3 runs of `cdsfl_recover.py --full` between 01:26:22 and 01:29:37 wrote the marker at 01:28:04Z, 175 s after the compaction, and the hook read `ran >= compaction` as True. Proven by replaying the real hook in a sandboxed HOME. **ROOT CAUSE: the marker recorded "the script executed" while the alarm asks "has context been restored?"** — a proxy standing in for the restore itself, and a test and a real restore run identical code.
+
+**FIXED 16:05 BST:** the marker now needs `--record-restore` (implies `--full`); `--full` alone records nothing and SAYS so. Fail-safe — forgetting the flag leaves the alarm sounding. `rs` re-defined in `.claude/CLAUDE.md`, `resources/SHORTCUTS.md` and `~/.claude/CLAUDE.md`. 10 tests, including one pinning that `--full` alone must not record.
+
+**`rs` RAN 16:09 BST, exit code 0**, marker recorded by a genuine restore.
+
+**STALE IN THE `rs` DEFINITION:** it names `ACTION_QUEUE.md` and `QWERTY_CHECKPOINT.md`; **neither exists**. The live queue is `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` (last touched 2026-08-27).
+
+**THREE DECISIONS SIT WITH THE FOUNDER.** (1) **Falsifier supply** — 5 of 14 criticals with no runnable check; the halt cause. (2) **The absolute-path ruling** — seats hold the absolute repo path by the 2026-08-23 ruling, so a cwd cannot confine a Bash-bearing seat; `_absolute_target` already takes a `repo_root`. (3) **One run, two directories** — the runner writes both a report dir and a state dir carrying the same registry, so every directory-walking archive count is doubled; it has corrupted 2 measurements in one night, both in the reassuring direction.
+
+---
+
 ## SESSION STATE — 2026-09-08 04:45 BST (READ THIS FIRST)
 
 **HEAD `f011c1a`, main, NOT PUSHED (`origin/main` at `071f1ed`). Suite AT THIS COMMIT: 5425 passed, 4 skipped, 0 failed, 693.40 s, `--netguard-strict`, pytest exit code 0 captured directly.**

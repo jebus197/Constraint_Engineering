@@ -674,7 +674,15 @@ def _record_recovery_ran() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="CDSFL Recovery — rebuild working context")
     parser.add_argument("--full", action="store_true", help="Include live test count")
+    parser.add_argument(
+        "--record-restore", action="store_true",
+        help=("Record that a REAL context restore happened, clearing the "
+              "compaction alarm. Implies --full. Omit it when testing or "
+              "inspecting: --full alone deliberately records nothing."),
+    )
     args = parser.parse_args()
+    if args.record_restore:
+        args.full = True          # recording a restore means a full one happened
 
     root = repo_root()
     print(f"CDSFL Recovery — {timestamp_iso()}")
@@ -860,10 +868,29 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    # RECORD THE RESTORE, but only for a FULL one -- a partial report is not a
-    # restore and must not silence the compaction alarm. Placed here rather than
-    # inside main() because main() has no return statement to hang it from; an
-    # earlier patch tried to attach it to `return 0`, matched nothing, and left
-    # the function defined and never called. The fix was inert and read as done.
-    if "--full" in sys.argv:
+    # THE MARKER NOW NEEDS EXPLICIT INTENT (2026-09-08, founder-directed).
+    #
+    # WHAT WENT WRONG, MEASURED. `--full` alone used to write the marker. On
+    # 2026-09-08 a compaction landed at 01:25:08Z; between 01:26:22 and 01:29:37
+    # this script was run 3 times as a P-PASS OF THE MARKER ITSELF, absorbing
+    # nothing; the marker landed at 01:28:04Z, 175 seconds after the compaction.
+    # The hook's predicate `ran >= compaction` then read True and the alarm was
+    # never raised. Verified by replaying the real hook in a sandboxed HOME: with
+    # no marker it fires, with that marker it does not.
+    #
+    # THE ROOT CAUSE IS NOT THE TEST, IT IS THE EVENT BEING RECORDED. The marker
+    # answered "did this script execute?" while the alarm asks "has context been
+    # restored?" -- a proxy standing in for the thing. A test run and a real
+    # restore execute identical code, so nothing intrinsic separates them and the
+    # only honest discriminator is a statement of intent.
+    #
+    # FAIL-SAFE BY CONSTRUCTION: forgetting the flag leaves the alarm SOUNDING,
+    # never silent. The old default failed the other way.
+    #
+    # The automated tests were never the hazard -- they redirect HOME. Manual
+    # invocation during development was, and is what happened here.
+    if "--record-restore" in sys.argv:
         _record_recovery_ran()
+    elif "--full" in sys.argv:
+        print("  (restore NOT recorded: pass --record-restore when this is a real "
+              "restore rather than a test or an inspection)", flush=True)

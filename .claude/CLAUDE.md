@@ -9,7 +9,7 @@ On `sv` (save state): make qualitative updates to ONBOARDING.md and RECOVERY.md,
 
 **sv sequential-reading protocol.** ONBOARDING.md, RECOVERY.md, MATHEMATICAL_APPENDIX.md, PAPER.md, CURRENT_STATE.md and project memory files have all grown large enough that a single parallel read inflates context without improving understanding. During sv preparation, read these documents sequentially — top to bottom, one section/chunk at a time — absorb each chunk, decide if it needs updating, then move on. Do NOT fetch several large documents in parallel just to "have them all loaded". The goal is carefully considered updates, not maximum file-awareness. This also reduces API overload risk during the sv window.
 On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues.
-On `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and rebuild context from output.
+On `rs` (recover): run `python3 scripts/cdsfl_recover.py --record-restore` and rebuild context from output.
 
 ## Key Documentation
 
@@ -59,7 +59,7 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `c` | Confer with another model, mutual P-passes until convergence |
 | `sv` | Save state — run `python3 scripts/cdsfl_sv.py`, update recovery docs, commit |
 | `qc` | Quality control — run `python3 scripts/cdsfl_qc.py`, fix reported issues |
-| `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, **capture and report its exit code**, then rebuild context (git, OB session-context, tracker, RECOVERY, MEMORY, and the MC table above) |
+| `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --record-restore`, **capture and report its exit code**, then rebuild context (git, OB session-context, tracker, RECOVERY, MEMORY, and the MC table above) |
 | `re` | External research (web search, arXiv, Semantic Scholar) |
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |

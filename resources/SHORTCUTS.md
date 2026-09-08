@@ -33,7 +33,7 @@ reader-facing summary; it must remain aligned with those files.
 | `t` | Send output to TTS file |
 | `r` | Re-read key context files (quick check) |
 | `rt` | Read all recovery resources + continue |
-| `rs` | Recover state — run `scripts/cdsfl_recover.py --full`, then rebuild full working context from session-context + action queue + checkpoints + memory + recovery resources |
+| `rs` | Recover state — run `scripts/cdsfl_recover.py --record-restore`, then rebuild full working context from session-context + action queue + checkpoints + memory + recovery resources |
 | `rg` | Regain full context on a named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output; name the resources consulted in a one-line preamble |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs; sub-agents inherit the same constraint |
 | `sv` | Save state — run `scripts/cdsfl_sv.py`, update recovery docs, commit and push |

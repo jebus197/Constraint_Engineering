@@ -36,8 +36,33 @@ def _marker(home):
     return home / ".claude" / ".compaction_watch" / "last_recovery"
 
 
-def test_full_restore_writes_the_marker(tmp_path):
+def test_full_alone_records_nothing(tmp_path):
+    """THE REGRESSION THIS FLAG EXISTS FOR, and it is not hypothetical.
+
+    A compaction landed at 2026-09-08T01:25:08Z. Between 01:26:22 and 01:29:37
+    this script was run 3 times as a P-PASS OF THE MARKER ITSELF, absorbing
+    nothing, and the marker landed at 01:28:04Z -- 175 seconds later. The hook's
+    `ran >= compaction` predicate then read True and the founder was never told
+    the session had been compacted. Measured: 0 of 11 compactions in that session
+    produced an alert he could see, Wilson 95% CI [0.00%, 25.88%].
+
+    So `--full` is a REPORT and records nothing. Only `--record-restore` asserts
+    that a human-or-assistant actually rebuilt context from it.
+    """
     proc = _run_recover(tmp_path, "--full")
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert not _marker(tmp_path).exists(), (
+        "--full wrote the marker. A test or an inspection can now silence a real "
+        "compaction alarm, which is exactly what happened on 2026-09-08."
+    )
+    assert "restore NOT recorded" in proc.stdout, (
+        "it recorded nothing but did not SAY so; silence here is how the omission "
+        f"goes unnoticed. stdout tail: {proc.stdout[-400:]}"
+    )
+
+
+def test_recording_a_restore_writes_the_marker(tmp_path):
+    proc = _run_recover(tmp_path, "--record-restore")
     assert proc.returncode == 0, proc.stderr[-2000:]
     m = _marker(tmp_path)
     assert m.is_file(), (
@@ -65,7 +90,7 @@ def test_the_marker_is_not_written_silently_on_failure(tmp_path):
     """
     (tmp_path / ".claude").mkdir()
     (tmp_path / ".claude" / ".compaction_watch").write_text("not a directory")
-    proc = _run_recover(tmp_path, "--full")
+    proc = _run_recover(tmp_path, "--record-restore")
     assert proc.returncode == 0, "bookkeeping must not break the recovery run"
     assert "could not record the restore marker" in proc.stderr, (
         "the failure was swallowed -- silent failure is what hid the bug twice.\n"
@@ -92,7 +117,7 @@ def test_hook_decision_tracks_the_marker(tmp_path, compaction_ts, prompt, expect
     Two halves shipped separately and neither proved the other. This runs the real
     hook over a synthetic transcript, with HOME redirected, after a real `--full`.
     """
-    assert _run_recover(tmp_path, "--full").returncode == 0
+    assert _run_recover(tmp_path, "--record-restore").returncode == 0
     tr = tmp_path / "transcript.jsonl"
     tr.write_text(json.dumps({"type": "user", "isCompactSummary": True,
                               "timestamp": compaction_ts}) + "\n")
@@ -113,7 +138,7 @@ def test_removing_the_marker_re_arms_the_alarm(tmp_path):
     nothing. A guard that cannot fail is not a guard, so this deletes the marker and
     requires the alarm to come back.
     """
-    assert _run_recover(tmp_path, "--full").returncode == 0
+    assert _run_recover(tmp_path, "--record-restore").returncode == 0
     tr = tmp_path / "transcript.jsonl"
     tr.write_text(json.dumps({"type": "user", "isCompactSummary": True,
                               "timestamp": "2000-01-01T00:00:00.000Z"}) + "\n")
