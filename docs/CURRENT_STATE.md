@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 6 September 2026 10:55 BST (2026-09-06T10:55:38+01:00)
+Generated: 8 September 2026 02:14 BST (2026-09-08T02:14:44+01:00)
 
 ---
 
@@ -18,19 +18,16 @@ Generated: 6 September 2026 10:55 BST (2026-09-06T10:55:38+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `6908eec` Date the superseded suite figures rather than rewriting them
-- **Committed:** 2026-09-06 04:08:50 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- **Last commit (the PARENT of the commit containing this file):** `2230744` One defect shape, 12 instances, and 2 things that would have made a PoC release misleading
+- **Committed:** 2026-09-08 00:35:09 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 18
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**5203 tests collected** at 6 September 2026 10:55 BST, HEAD `6908eec` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**5404 tests collected** at 8 September 2026 02:14 BST, HEAD `2230744` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `6908eec Date the superseded suite figures rather than rewriting them`
-- `b5638c5 Today's single note, rewritten: the directive finding supersedes the 02:30 version`
-- `061d4be Recovery state: the directive shipped a false claim, and 9 sites carried an over-broad one`
-- `2813a99 9 sites called all 5 stage links strict generalisations. Four are; one is not`
-- `b815abf We were telling every model a false thing about our own model's lineage`
-- `b6599ba cc2 refuted my own consolation: the coordinate story holds per class, not aggregated`
-- `74b4458 4 of the 5 stages nest. Link 2 to 3 does not, and the founder's instinct is why`
-- `351da30 Instrument inventory picks up tonight's new gate coverage`
-- `1148052 Recovery state for 2026-09-06, and the READ-THIS-FIRST block was not first`
-- `4a5aa73 Prove the S* shadow RUNS, not that it is written down`
+- `2230744 One defect shape, 12 instances, and 2 things that would have made a PoC release misleading`
+- `ebd9e34 Wire the Wilson checker into the suite as a live ratchet`
+- `0ebe0ee The panel's tool-call counter was 0 by construction, and I invented a provenance for a number that was already right`
+- `29a432f The additive standard, enforced in both directions -- and it was itself unwired`
+- `ae234e1 The panel broke 4 of my 5 fixes. All repaired, and the two seats disagreed on the worst one.`
+- `cd40243 Five approved fixes: Opus seats, severity wiring, round-0 root cause, S* promoted, second key store`
+- `4319935 `rs` now has to report the recovery script's exit code, and it never had an obligation at all`
+- `2bab3ff Remove the duplicate MC commands: ext, rc and rr`
+- `25fefbf Overnight report for 2026-09-07, with 3 corrections to what was reported earlier`
+- `2c1b57c Codex was right: 3 files parse only on Python 3.12+, and 14 tests import one`

@@ -8,7 +8,7 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-09-06 10:55 BST)
+## Accounting (counted 2026-09-08 02:14 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
