@@ -1166,6 +1166,31 @@ _FALSIFIER_BLOCK_RE = re.compile(
     r"FALSIFIER:\s*```(?:python|py)?[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
     re.DOTALL | re.IGNORECASE,
 )
+# TOLERANT COMPANION, added 2026-09-09. It is an ADDITION, not a replacement:
+# results are UNIONED with _FALSIFIER_BLOCK_RE's, so it cannot lose a block the
+# existing pattern already captures. Replacing the pattern outright was tried
+# first and MEASURED WORSE -- a widened single regex recovered 4,867 blocks
+# against the current 5,295, a net loss of 428 -- which is why this is a union.
+#
+# WHAT IT RECOVERS AND WHY. The existing pattern requires the fence to follow
+# `FALSIFIER:` with nothing but whitespace between. Measured across 6,727
+# archived reply files: of 6,363 labels with a fenced block within 3 lines, 5,282
+# were captured and 1,081 missed, a 16.99% miss rate, Wilson [16.09%, 17.93%] --
+# and 1,066 of those misses carry a DESCRIPTION between the label and the fence,
+# which is the whole of the loss.
+#
+# WHY THE GAP IS CONSTRAINED. A looser version recovered 507 additional blocks of
+# which 4 were the label appearing INSIDE test code (`assert "FALSIFIER:" not in
+# minimal`), a 0.8% false-positive rate, Wilson [0.3%, 2.0%]. A false falsifier is
+# worse than a missing one because the harness EXECUTES it. So the gap must open
+# with a letter or bracket and carry no quote or backtick: a description, not a
+# code fragment. That recovers 492 and excludes all 4, at a cost of 11 genuine
+# blocks out of 6,363 (0.17%).
+_FALSIFIER_BLOCK_DESCRIBED_RE = re.compile(
+    r"FALSIFIER:[ \t]*(?P<gap>[A-Za-z(*\[][^\n`\"']{0,160})\n+[ \t]*"
+    r"```(?:python|py)?[ \t]*\n(?P<code>.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
+    re.DOTALL | re.IGNORECASE,
+)
 # Captures the finding key (id or description text) that precedes a falsifier,
 # so multiple falsifiers in one response can be matched to the right finding.
 _FALSIFIER_LABELLED_RE = re.compile(
@@ -1193,7 +1218,15 @@ def extract_falsifiers(response: str) -> "tuple[dict, list]":
         code = (m.group("code") or "").strip()
         if key and code and key not in by_key:
             by_key[key[:60]] = code
-    ordered = [m.group(1).strip() for m in _FALSIFIER_BLOCK_RE.finditer(response)]
+    # UNION, ordered by position in the document so the positional fallback still
+    # aligns with the order the findings were written in. A dict keyed on the
+    # match start deduplicates the overlap between the 2 patterns.
+    found: dict = {}
+    for m in _FALSIFIER_BLOCK_RE.finditer(response):
+        found[m.start()] = m.group(1).strip()
+    for m in _FALSIFIER_BLOCK_DESCRIBED_RE.finditer(response):
+        found.setdefault(m.start(), (m.group("code") or "").strip())
+    ordered = [found[k] for k in sorted(found) if found[k]]
     return by_key, ordered
 
 

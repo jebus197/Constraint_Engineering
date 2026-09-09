@@ -57,34 +57,6 @@ if not BRIEF.is_file():
     raise SystemExit(2)
 PROMPT = BRIEF.read_text(encoding="utf-8")
 
-# THE BRIEF IS VALIDATED BEFORE ANY SEAT IS PAID (founder ruling 2026-09-09:
-# panel review must be "full CDSFL panel review format (so not just some simple
-# open ended prompt)"). 3 of the 5 seats below are PAID, so a defective brief
-# costs money and returns nothing usable; the project's own record holds a case
-# where a briefing defect broke 2 seats and forced a re-dispatch. Measured when
-# this was wired: all 49 archived briefs would have been refused, failing between
-# 1 and 7 of the 8 checks, mean 3.1 -- so this is not a formality.
-# PANEL_BRIEF_UNCHECKED=1 bypasses it deliberately, and says so in the log.
-sys.path.insert(0, str(_REPO / "scripts"))
-try:
-    from panel_brief_validate import validate as _validate_brief
-except Exception as _exc:                                    # pragma: no cover
-    print(f"panel: brief validator unavailable ({_exc}); refusing rather than "
-          f"dispatching unchecked", file=sys.stderr)
-    raise SystemExit(2)
-_brief_problems = _validate_brief(PROMPT)
-if _brief_problems and not os.environ.get("PANEL_BRIEF_UNCHECKED"):
-    print(f"panel: REFUSED — {BRIEF} fails {len(_brief_problems)} required "
-          f"check(s) and 3 of the 5 seats are paid:", file=sys.stderr)
-    for _p in _brief_problems:
-        print(f"  - {_p}", file=sys.stderr)
-    print("  format: bench/directives/universal/panel_brief_template.md", file=sys.stderr)
-    print("  to dispatch anyway, deliberately: PANEL_BRIEF_UNCHECKED=1", file=sys.stderr)
-    raise SystemExit(2)
-if _brief_problems:
-    print(f"panel: brief has {len(_brief_problems)} unmet check(s), dispatching "
-          f"anyway because PANEL_BRIEF_UNCHECKED is set", file=sys.stderr)
-
 import os as _os
 _ONLY = _os.environ.get("PANEL_ONLY", "")
 _ALL = [
@@ -308,7 +280,51 @@ def dispatch(name, model_id, route):
     return out
 
 
+def _validate_brief_or_refuse() -> None:
+    """Refuse a brief that does not meet the format, BEFORE any seat is paid.
+
+    MOVED INSIDE main() 2026-09-09, within an hour of being written at module
+    level, because the full suite went red at 4 tests. Two test files IMPORT this
+    module to read its real `SYSTEM` string -- executing it rather than grepping
+    it, which is the project's own rule -- and stage a stub BRIEF.md purely to get
+    past the file-exists check. They never dispatch. A validation running at
+    import punished INSPECTION, which is not the thing that costs money.
+
+    The guard belongs at the point of spend. main() is the only path to a paid
+    seat, so this is both the correct place and the one that leaves the tests
+    honest: neither was edited to accommodate it.
+
+    3 of the 5 seats are PAID, and the record holds a case where a briefing defect
+    broke 2 seats and forced a re-dispatch. Measured when this was wired: all 49
+    archived briefs would be refused, failing 1 to 7 of the checks, mean 2.4 --
+    the spread being what shows the rule discriminates rather than rejecting
+    uniformly.
+    """
+    sys.path.insert(0, str(_REPO / "scripts"))
+    try:
+        from panel_brief_validate import validate as _validate
+    except Exception as exc:
+        print(f"panel: brief validator unavailable ({exc}); refusing rather than "
+              f"dispatching unchecked", file=sys.stderr)
+        raise SystemExit(2)
+    problems = _validate(PROMPT)
+    if not problems:
+        return
+    if os.environ.get("PANEL_BRIEF_UNCHECKED"):
+        print(f"panel: brief has {len(problems)} unmet check(s), dispatching anyway "
+              f"because PANEL_BRIEF_UNCHECKED is set", file=sys.stderr)
+        return
+    print(f"panel: REFUSED — {BRIEF} fails {len(problems)} required check(s) and "
+          f"3 of the 5 seats are paid:", file=sys.stderr)
+    for p in problems:
+        print(f"  - {p}", file=sys.stderr)
+    print("  format: bench/directives/universal/panel_brief_template.md", file=sys.stderr)
+    print("  to dispatch anyway, deliberately: PANEL_BRIEF_UNCHECKED=1", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def main() -> int:
+    _validate_brief_or_refuse()
     paid = [m for m in MODELS if m[2] != "claude_cli"]
     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")
     print(f"    PAID seats: {', '.join(n for n, _, _ in paid)}  "

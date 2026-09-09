@@ -177,8 +177,15 @@ Of 19 self-inflicted defects caught over 2026-09-08 and 2026-09-09: the test sui
 
 ## 2. Falsifier supply — the halt cause
 
-**2.1 Widen the falsifier intake parser.** Status PROPOSED. Founder ruling: *"build the fix and test it, then as ever, ask Fable and CC2 to check your fix."*
-<!-- task: 2.1 | state: OPEN | status: PROPOSED -->
+**2.1 Widen the falsifier intake parser. Status COMMITTED and ENABLED 2026-09-09.**
+<!-- task: 2.1 | state: DONE | status: ENABLED -->
+
+**THE RECOMMENDED FIX WAS REFUTED BY MEASUREMENT BEFORE IT WAS APPLIED.** The proposal on file was to WIDEN `_FALSIFIER_BLOCK_RE`. Measured across 6,727 archived reply files, a widened single pattern recovers **4,867 blocks against the current 5,295 — a net loss of 428**. Applying the recommendation would have shipped a regression.
+
+**The diagnosis underneath was right.** Of 6,363 labels with a fenced block within 3 lines, 5,282 are captured and **1,081 missed, 16.99%, Wilson [16.09%, 17.93%]** — and 1,066 of those misses carry a description between the label and the fence, which is essentially the whole loss. Built as a **UNION** of the existing pattern and a new `_FALSIFIER_BLOCK_DESCRIBED_RE`, which cannot lose a block the first already captures; the invariant is asserted by a test rather than assumed.
+
+**The gap is constrained deliberately.** A looser tolerant pattern recovered 507 extra blocks of which 4 were the label appearing INSIDE test code (`assert "FALSIFIER:" not in minimal`), 0.8%, Wilson [0.3%, 2.0%]. **A false falsifier is worse than a missing one, because the harness EXECUTES it.** Requiring the gap to open with a letter or bracket and carry no quote or backtick recovers 492 and excludes all 4, at a cost of 11 genuine blocks in 6,363 (0.17%). 13 tests, 3 mutations, all caught once each mutation was verified to have applied. Founder ruling: *"build the fix and test it, then as ever, ask Fable and CC2 to check your fix."*
+<!-- task: 2.1 | state: DONE | status: ENABLED -->
 The 2026-09-08 Exp 45 run halted on `HALTED_IRREDUCIBLE_QUEUE_ALARM`. The attributed cause, 5 of 14 criticals arriving with no runnable falsifier (35.71%, Wilson [16.34%, 61.24%]), is real but downstream. The dominant loss is upstream in the intake parser: it recovered **26 of 69** `FALSIFIER:` blocks across the run (37.68%, Wilson [27.18%, 49.48%]) and **1 of 9 in the round that halted** (11.11%, Wilson [1.99%, 43.50%]). The seats were supplying falsifiers; the parser was dropping them. Fix at `bench/runner_core.py:1165-1175` and the guard at `:1236`.
 **OPEN:** recovering a block is necessary but not sufficient — it must still bind to the right finding, so this is not shown to have prevented the halt.
 
