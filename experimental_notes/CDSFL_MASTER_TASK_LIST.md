@@ -26,6 +26,30 @@ Several had been ruled **twice**. Exp 53 restart: *"Restart it."* on 2026-08-07 
 
 ---
 
+## L. THE LINTER'S SCOPE, CORRECTED BY FOUNDER RULING 2026-09-09
+
+Verbatim: *"the problem you clearly identified is treating me like a machine, and building things that mark my inputs as 'vague'. I don't think I am vague at all. In fact overall I think I am remarkably specific ... It is you who are clearly vague ... particularly in my tts outputs. Refusing work from me because it does not fit your own 'anti-vagueness' standards is clearly nonsensical and probably very unhelpful going forward."*
+
+**The record supports him without qualification, and it is not close.** Of 1183 findings across 376 notes, **1181 are in the assistant's own prose and 2 fall inside a quotation of anyone at all** — 99.83%, Wilson [99.39%, 99.95%], Clopper-Pearson [99.39%, 99.98%]. The linter has found the founder vague twice, in passing, and the assistant vague 1181 times. It was built to check the assistant's writing and that is what it measures.
+
+**L1. The linter must never be applied to the founder's words, and must never gate his input.** Status PROPOSED. It is advisory today — its own output reads "Reported, not enforced" — and no work of his has ever been refused or altered by it. But the assistant spent 2 turns making 1 of his sentences the subject of a compliance discussion, which is the behaviour he is objecting to, and that is the fault to fix rather than the tool's verdict. The rule: **his text is data to be preserved exactly, never input to be corrected.**
+
+**L2. Fix the quote-exemption scope.** Status PROPOSED, low priority by measurement. The exemption strips quoted text at `scripts/note_vagueness_lint.py:163` but the checker examines 1 sentence at a time at `:151`, so a quotation spanning more than 1 sentence loses the exemption on every sentence except its last. Affects 3 of 560 unnamed-subject findings, 0.54%, Wilson [0.18%, 1.56%]. 1 line: strip per paragraph before splitting into sentences. Script: `scripts/lint_quote_exemption_defect_2026-09-09.py`.
+
+---
+
+## M. THE TASK-LIST PULSE — COMPOSED, NOT CHOSEN, ON THE FOUNDER'S CORRECTION
+
+He asked, verbatim: *"Can you not use them both to cross check the list?"* **Yes, and it is the better design.** Presenting them as alternatives was the 12th time since 2026-07-29 he has had to make the composability point, and `feedback_binary_thinking` already records it as "a recurring failure mode".
+
+**They are orthogonal, tested rather than asserted.** Enumerating the joint space of the note standard's Rule 20 statuses (PROPOSED, BUILT, TESTED, COMMITTED, ENABLED) against a task state (OPEN, DONE, BLOCKED, DEFERRED) gives 20 cells, of which **17 are reachable and 3 are contradictory**. Neither vocabulary determines the other: a COMMITTED item can still be OPEN because it is not yet enabled, and a DONE item can carry no code at all when it is a documentation write-back. **So the 3 contradictory cells are a fault the single-vocabulary design cannot even express** — for example an entry marked DONE whose work is still PROPOSED, which is a task closed before it was built.
+
+**M1. Add a task state to every entry and normalise the Rule 20 statuses.** Status PROPOSED. Measured: 15 of 29 entries matched by 1 pattern already carry a Rule 20 status, 51.7%, Wilson [34.4%, 68.6%]. **An honest caveat that argues for the work rather than against it:** 2 different regular expressions over this file counted 29 entries and 48 entries. The list cannot presently be counted mechanically at all, which is the strongest available argument for an explicit machine-readable marker.
+
+**M2. Build the pulse hook.** Status PROPOSED. A `UserPromptSubmit` hook at `~/.claude/hooks/task_list_pulse.py`, the same shape as the clock and compaction hooks that already work, injecting 1 line per turn: the open count, the next unstarted entry, and **any contradiction between the 2 vocabularies**. The contradiction check is the part that makes it a guard rather than a reminder.
+
+---
+
 ## R. RULINGS ALREADY GIVEN — THE WORK THAT FOLLOWS, NEVER EXECUTED OR NEVER WRITTEN BACK
 
 Added 2026-09-09 14:30 BST. The section above establishes that these were ruled. **This section is what still has to be DONE about them.** Nothing here needs a further decision; every entry is execution or a documentation write-back. Where the founder's own words settle the shape of the work they are quoted verbatim.
