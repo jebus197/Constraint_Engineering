@@ -68,7 +68,7 @@ can tell.
 *answers*. It never called two same-defect findings different, and its answers
 separate at p = 1.4 x 10^-7. Both true. But the tier only *changes a decision* on
 3 of 318 pairs — and all 3 were wrong. A statistic about a mechanism's opinions
-is not a statistic about its effects, and thirty-six passing tests never told
+is not a statistic about its effects, and 36 passing tests never told
 those apart.
 
 All three bad merges trace to one finding whose only number is a bare 0.6, which

@@ -570,7 +570,7 @@ Two caveats on the fix, neither of which changes the verdict. (a) Blast radius i
 `F2` · CDSFL human/agent-readable recovery document set — resources · `/Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md:13`
 · verification: **CONFIRMED**
 
-**Root cause.** The file is a hand-written snapshot taken when the index held 65 entries, with no regeneration step and no check in sv or qc that re-derives it. Thirty-six memory files have been added since; none appears in either the mirror or the exclusion list. The '65' figure is stated in the present tense with no date attached, so nothing on the page signals that it is a snapshot.
+**Root cause.** The file is a hand-written snapshot taken when the index held 65 entries, with no regeneration step and no check in sv or qc that re-derives it. 36 memory files have been added since; none appears in either the mirror or the exclusion list. The '65' figure is stated in the present tense with no date attached, so nothing on the page signals that it is a snapshot.
 
 **Consequence.** This is the one document in the repository whose entire function is to be honest about what is withheld — 'so the public record is honest about the shape of what is withheld, not only what is shown'. It currently under-reports the private store by 36 files and silently withholds 25 entries it does not name. For a reviewer assessing whether the public record is complete, the page answers a question it can no longer answer correctly. Two of the silently-withheld entries are feedback_no_fake_model_labels.md and feedback_read_the_clock.md — both provenance-integrity rules, in a project whose headline claim is tamper-evident provenance.
 

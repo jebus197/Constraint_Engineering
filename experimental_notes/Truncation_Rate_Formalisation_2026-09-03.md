@@ -32,7 +32,7 @@ That second property should be weighted carefully rather than led with. The conc
 
 ## Where it belongs
 
-It is not a new term in the recursive risk update, and it should not be one. It is an admissibility predicate applied at fix acceptance, together with a definition in the mathematical appendix. The appendix already contains twenty-nine statements of exactly this form, described there as reduction properties, none of which is verified by any test. The proposal is therefore not to invent machinery but to name a quantity the appendix already relies on, state how it may be established, and make it checkable.
+It is not a new term in the recursive risk update, and it should not be one. It is an admissibility predicate applied at fix acceptance, together with a definition in the mathematical appendix. The appendix already contains 29 statements of exactly this form, described there as reduction properties, none of which is verified by any test. The proposal is therefore not to invent machinery but to name a quantity the appendix already relies on, state how it may be established, and make it checkable.
 
 The scope of the claim should be stated plainly. The test discriminates among candidate simplifications; it does not generate them, which is a limitation it inherits from the razor it descends from. It applies only to claims that a simpler form suffices; an ordinary fix making no such claim passes through the existing gate unchanged. And it can be gamed by declaring a narrow scope after the candidate is known, which is why the scope must be fixed by the brief beforehand. That defence relocates the vulnerability to the brief, where it is visible and reviewable, rather than removing it.
 

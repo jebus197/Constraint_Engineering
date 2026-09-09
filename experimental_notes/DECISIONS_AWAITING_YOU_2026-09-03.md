@@ -3,7 +3,7 @@
 > **Retrospective mirror, created 2026-09-05.** This note was written as a spoken-word file only; `tts-output-protocol` requires both forms and the markdown copy was never made. Content is the spoken version's, unaltered apart from headings. Source: `~/Desktop/CDSFL_tts/DECISIONS_AWAITING_YOU_2026-09-03.txt`.
 
 
-This file replaces twelve separate notes written over the last 48 hours, totalling about eighteen thousand words. Everything already ruled, already done, or now pointless has been removed. What is left is twelve decisions, numbered so you can answer by number alone. Each has one recommendation, not a menu.
+This file replaces twelve separate notes written over the last 48 hours, totalling about 18000 words. Everything already ruled, already done, or now pointless has been removed. What is left is twelve decisions, numbered so you can answer by number alone. Each has one recommendation, not a menu.
 
 Two things at the top, because they change what the older notes say.
 
@@ -14,7 +14,7 @@ The temporary working copy is probably moot. Three notes ask you to decide wheth
 ## Section One. New Overnight. Highest Consequence.
 
 DECISION 1. The gate that accepts fixes has never rejected anything.
-The threshold that decides whether a proposed fix does more good than harm was derived with one variable frozen at the value one, and that variable is the very thing the gate is testing. At the only operating point the pipeline reaches, the threshold works out to minus one nineteenth, which clamps to zero, so everything passes. The correct threshold is about one half. This has been true since 10 April, so 146 days, across roughly 122 run directories. It was confirmed four independent ways, including by a local Wolfram kernel working in exact fractions. Across twenty three thousand parameter combinations where the gate and the risk model disagree, every disagreement admits a harmful fix and not one rejects a helpful one.
+The threshold that decides whether a proposed fix does more good than harm was derived with one variable frozen at the value one, and that variable is the very thing the gate is testing. At the only operating point the pipeline reaches, the threshold works out to minus one nineteenth, which clamps to zero, so everything passes. The correct threshold is about one half. This has been true since 10 April, so 146 days, across roughly 122 run directories. It was confirmed four independent ways, including by a local Wolfram kernel working in exact fractions. Across 23000 parameter combinations where the gate and the risk model disagree, every disagreement admits a harmful fix and not one rejects a helpful one.
 Recommendation. Fix it, but second, not first. See decision 2.
 
 DECISION 2. Four constants that nothing sets.
@@ -60,10 +60,10 @@ In April two panel seats were deliberately different and that difference was los
 Recommendation. Give one seat a shell and restore the contrast. If you prefer not to, the alternative is to state openly in the record that the panel has four genuinely different architectures rather than five.
 
 DECISION 12. Configuration settings that nothing ever sets. Now verified, and corrected twice.
-The older notes said nine gates that no configuration enables. Checking that against the real population of forty four configuration files rather than the four I first looked at: the runner reads sixty four settings, and twenty five are never named in any configuration file, which is 39.1 percent with a confidence interval from 28.1 to 51.3 percent.
-Never set is not the same as dead. Twenty one of those twenty five carry real numeric defaults, so they are live and simply never varied. I then said four were genuinely unreachable. That was also wrong. Two of the four, human in the loop review and resume, have command line flags, so they are switched on per run rather than per configuration. Human in the loop review is therefore an operating choice made run by run, not a disabled feature, and my suggestion that you ask why it has never been enabled was based on a mistake.
+The older notes said nine gates that no configuration enables. Checking that against the real population of 44 configuration files rather than the four I first looked at: the runner reads 64 settings, and 25 are never named in any configuration file, which is 39.1 percent with a confidence interval from 28.1 to 51.3 percent.
+Never set is not the same as dead. 21 of those 25 carry real numeric defaults, so they are live and simply never varied. I then said four were genuinely unreachable. That was also wrong. Two of the four, human in the loop review and resume, have command line flags, so they are switched on per run rather than per configuration. Human in the loop review is therefore an operating choice made run by run, not a disabled feature, and my suggestion that you ask why it has never been enabled was based on a mistake.
 Only two settings have neither a configuration entry nor a command line path: severity calibration, and stall based termination. Those two cannot currently be switched on by any means.
-Recommendation. Two small matters, neither urgent. Rule on whether severity calibration and stall based termination should be wired up or deleted. The twenty one never varied numbers are not a separate decision, they are decision 2 appearing in another place and should be handled there.
+Recommendation. Two small matters, neither urgent. Rule on whether severity calibration and stall based termination should be wired up or deleted. The 21 never varied numbers are not a separate decision, they are decision 2 appearing in another place and should be handled there.
 
 DECISION 13. Half of a pre-registration from May has never been built. Found only on a second sweep.
 This one was missing from the first version of this sheet and was surfaced by re-deriving the list from the notes mechanically rather than from memory, which is why it is worth having done.

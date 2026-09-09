@@ -9,7 +9,7 @@ The agreed programme had four parts. Three approved repairs. Three build and mea
 
 All of it ran. The work was carried out by fourteen separate agents working on separate files at the same time, followed by an independent checking pass over the whole result, and a final gate that refused to approve the work until a blocker was cleared.
 
-The gate was right to refuse, the blocker is now fixed, and the full test suite stands at three thousand four hundred and eighty one passing with none failing.
+The gate was right to refuse, the blocker is now fixed, and the full test suite stands at 3481 passing with none failing.
 
 
 ## The headline, which is a correction rather than a discovery
@@ -61,7 +61,7 @@ It is fixed. The closing mark must now stand alone on its own line, which distin
 
 The proofs were never lost. They survive in the raw record of what each model said, and only the extracted copies were damaged.
 
-Re-reading that raw record with the corrected extractor recovers forty two working proofs, all of which run, where the stored version had twenty six of which twelve could not run at all.
+Re-reading that raw record with the corrected extractor recovers 42 working proofs, all of which run, where the stored version had 26 of which twelve could not run at all.
 
 This means the control experiment does not need to be paid for again. It can be re-scored from material already held, and the re-scored result rests on better evidence than the original run produced.
 
@@ -89,7 +89,7 @@ Three routes by which a proof could still reach the material that states the ans
 
 A naming check that failed to notice one of five simulated agents.
 
-The quality control sweep, which reported one hundred and thirty seven broken document references and now reports none, with the arithmetic published so the reduction can be checked rather than trusted.
+The quality control sweep, which reported 137 broken document references and now reports none, with the arithmetic published so the reduction can be checked rather than trusted.
 
 A gap in the safety net around configuration. A previous fix made the two paths that read configuration agree by construction, and a test enforces it by walking every field. But a renamed setting is not a field, so it was invisible to that test. One such rename exists, covering a component enabled by seventeen configurations. Breaking it would have silently switched that component off with every test still passing. The new test discovers renames by inspection, so future ones are covered without anybody remembering.
 
@@ -130,6 +130,6 @@ Six. A record of claims that survived challenge was built four days ago without 
 
 ## The state of things
 
-Nothing has been committed and nothing pushed. The main read me file is untouched, verified by comparing its contents rather than trusting a status listing. No experiment is running. The test suite passes in full, and the network guard confirms that all forty one attempts to reach outside during the tests were blocked, so nothing in the test run cost money.
+Nothing has been committed and nothing pushed. The main read me file is untouched, verified by comparing its contents rather than trusting a status listing. No experiment is running. The test suite passes in full, and the network guard confirms that all 41 attempts to reach outside during the tests were blocked, so nothing in the test run cost money.
 
 Written under CDSFL note standard v1.2 (14 May 2026).

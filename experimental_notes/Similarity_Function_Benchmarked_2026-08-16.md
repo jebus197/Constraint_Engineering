@@ -20,13 +20,13 @@ Tier three is the computed outcome. It asks one narrow question per pair: do the
 
 ## What was measured internally
 
-Across six completed runs and one hundred and sixty five critical findings.
+Across six completed runs and 165 critical findings.
 
-Tier two covers one hundred and sixty one of those one hundred and sixty five findings, which is ninety seven point six percent. Pairs labelled as the same defect share a median overlap of zero point five five nine. Pairs labelled as different defects share a median of exactly zero. The separation test returns a probability of one point nine times ten to the power minus twenty five.
+Tier two covers 161 of those 165 findings, which is 97 point six percent. Pairs labelled as the same defect share a median overlap of zero point five five nine. Pairs labelled as different defects share a median of exactly zero. The separation test returns a probability of one point nine times ten to the power minus 25.
 
 That median of zero is the striking figure. It does not mean different pairs overlap a little. It means the typical pair of findings about different defects shares no hard token at all.
 
-Tier three covers ninety four of the one hundred and sixty five, which is fifty seven percent. On pairs labelled the same defect it answered same nineteen times and unknown nine times. It answered different zero times. Not once in the entire sample did it call a same defect pair different.
+Tier three covers 94 of the 165, which is 57 percent. On pairs labelled the same defect it answered same nineteen times and unknown nine times. It answered different zero times. Not once in the entire sample did it call a same defect pair different.
 
 For comparison, a rival tier was built to a design proposed by the model panel. That rival perturbed the target document and compared how two falsifiers responded. Measured on the same archive it returned a probability of zero point seven one, meaning no association whatever between its output and defect identity. It was removed from the code on 12 August 2026.
 
@@ -35,9 +35,9 @@ For comparison, a rival tier was built to a design proposed by the model panel. 
 
 The nearest established problem is duplicate bug report detection: given a newly filed bug report, decide whether it describes a fault someone has already reported.
 
-After nineteen years of published research, the best systems find the right match roughly fifty five to sixty five percent of the time when allowed ten guesses, and roughly thirty five to forty two percent of the time on a single guess.
+After nineteen years of published research, the best systems find the right match roughly 55 to 65 percent of the time when allowed ten guesses, and roughly 35 to 42 percent of the time on a single guess.
 
-A second finding from that literature is more surprising and it supports the choice made here. A benchmark published in the ACM Transactions on Software Engineering and Methodology in 2023 found that a keyword matching method from 2011 outperformed every deep learning successor on five of six projects, by an average of twenty two percent. Plain full text search, meaning exact word matching, beat two neural models on all six.
+A second finding from that literature is more surprising and it supports the choice made here. A benchmark published in the ACM Transactions on Software Engineering and Methodology in 2023 found that a keyword matching method from 2011 outperformed every deep learning successor on five of six projects, by an average of 22 percent. Plain full text search, meaning exact word matching, beat two neural models on all six.
 
 So choosing token matching over neural methods is not a bold call. In this literature it is close to the expected outcome.
 
@@ -101,7 +101,7 @@ The second is a hard floor on text length. A peer reviewed study published in Di
 
 A finding is a paragraph. That is two orders of magnitude below the floor.
 
-The founder's separate intuition, that he could tell four frontier models apart by how they write, is empirically supported. Machines do this at ninety seven point one percent accuracy across five candidate models, and trained humans outperform most commercial detectors. But that is a different question asked of far more text.
+The founder's separate intuition, that he could tell four frontier models apart by how they write, is empirically supported. Machines do this at 97 point one percent accuracy across five candidate models, and trained humans outperform most commercial detectors. But that is a different question asked of far more text.
 
 
 ## The blunt judgement
@@ -110,7 +110,7 @@ The research's closing verdict was that this project is under evidencing a sound
 
 The method is right for the material. The separation measured is large. The strongest peer reviewed evidence on the nearest analogous task says simple retrieval beats sophisticated learned models.
 
-But the headline statistics describe the easy seventy two point six percent of pairs, against labels a model generated, with no baseline comparison, no stated operating threshold, and error bars that assume an independence the data does not have.
+But the headline statistics describe the easy 72 point six percent of pairs, against labels a model generated, with no baseline comparison, no stated operating threshold, and error bars that assume an independence the data does not have.
 
 None of that is a reason to change the method. All of it is a reason to distrust the numbers.
 
@@ -119,7 +119,7 @@ The risk this project carries is not that the similarity function is too simple.
 
 ## Three specific weaknesses
 
-The first is that the hard cases were discarded before measurement. Three hundred and eighteen pairs were labelled out of four hundred and thirty eight same location pairs. The remainder sat in an ambiguous band and were excluded. Those are, by construction, the difficult ones. Removing the ambiguous middle before measuring separation is a known way to make results look better than they are, and a reviewer would send the evaluation back.
+The first is that the hard cases were discarded before measurement. 318 pairs were labelled out of 438 same location pairs. The remainder sat in an ambiguous band and were excluded. Those are, by construction, the difficult ones. Removing the ambiguous middle before measuring separation is a known way to make results look better than they are, and a reviewer would send the evaluation back.
 
 The second is that the answer key is a machine. Every peer reviewed study in this area uses a human triager's judgement as ground truth. This project used a sentence embedding model to decide which pairs were really the same. That model is independent of both tiers, so the measurement is not circular, but it is a machine grading machine output.
 
@@ -139,13 +139,13 @@ Status of that work: proposed only. No code exists and no labelling has begun.
 
 ## Two corrections to earlier reporting
 
-The first concerns coverage. This assistant reported fifty seven percent coverage as though it described the similarity function as a whole. Fifty seven percent is tier three's coverage alone. The rule's reach is tier two's ninety seven point six percent. The earlier figure understated the work.
+The first concerns coverage. This assistant reported 57 percent coverage as though it described the similarity function as a whole. 57 percent is tier three's coverage alone. The rule's reach is tier two's 97 point six percent. The earlier figure understated the work.
 
 The second concerns determinism. This assistant defended the design on the grounds that it is fully deterministic. That is not quite true, because the ground truth labels came from a pinned embedding checkpoint, so the evaluation pipeline was never purely deterministic end to end. The defensible claim is auditability: every step can be read and checked by hand. That claim holds. The stronger one did not.
 
 
 ## One figure that remains unresolved
 
-Two research strands disagree on how many pairs were excluded from the evaluation. Simple arithmetic gives one hundred and twenty, being four hundred and thirty eight same location pairs less the three hundred and eighteen labelled. One strand reports eighty seven. The discrepancy has not been reconciled and neither number should be quoted until it is.
+Two research strands disagree on how many pairs were excluded from the evaluation. Simple arithmetic gives 120, being 438 same location pairs less the 318 labelled. One strand reports 87. The discrepancy has not been reconciled and neither number should be quoted until it is.
 
 Written under CDSFL note standard v1.4 (13 August 2026).

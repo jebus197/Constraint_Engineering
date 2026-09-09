@@ -38,7 +38,7 @@ Three things, all small and explicit. First, three API keys for the external mod
 
 ## The immediate path
 
-Keys into the credential file, then launch Experiment 43 under live monitoring. Fold the findings of Experiment 42 back into the system, checking each for staleness. Build the remaining small pieces, each accepted only when an integration test proves its output changes a real decision. And put the instruction-pruning question to the full model panel: measurement during the June work established that each model receives about fifty thousand characters of standing instructions, of which nearly forty-four thousand bypass the trimming machinery entirely, and a careful reduction plan exists awaiting the panel's critique.
+Keys into the credential file, then launch Experiment 43 under live monitoring. Fold the findings of Experiment 42 back into the system, checking each for staleness. Build the remaining small pieces, each accepted only when an integration test proves its output changes a real decision. And put the instruction-pruning question to the full model panel: measurement during the June work established that each model receives about 50000 characters of standing instructions, of which nearly 44000 bypass the trimming machinery entirely, and a careful reduction plan exists awaiting the panel's critique.
 
 ## Bottom line
 

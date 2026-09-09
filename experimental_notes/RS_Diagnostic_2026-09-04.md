@@ -17,7 +17,7 @@ But there is a sharper finding underneath, which only appeared once both halves 
 
 Second, the rubric, which you asked me to check on the grounds that it sounded like a very old term. It is not archaic. It is the authority. The live work queue records a standing ruling: the numeric severity cut of 0.7 stays, and it is described there as the operational proxy for a consequence based rubric that was pre-registered and frozen in May, which is authoritative wherever the rubric and the number disagree. Moving the number requires a new dated pre-registration. So my audit finding is sharper than I presented it: the authority and its proxy disagree on 45.6 percent of cases in exactly the band where the gate is decided, and nothing reports that gap.
 
-Third, the seat contrast, which you approved. The tracker gives the reasoning I could not find last night. Nine of twenty eight archived runs were already effectively single model runs, six seats all filled by one model, and they converged. The recorded finding states that with one model, diversity has to come from instruction conditions, which is exactly the contrast that lapsed in April. So it is the mechanism that decides whether a lone researcher can use the harness at all.
+Third, the seat contrast, which you approved. The tracker gives the reasoning I could not find last night. Nine of 28 archived runs were already effectively single model runs, six seats all filled by one model, and they converged. The recorded finding states that with one model, diversity has to come from instruction conditions, which is exactly the contrast that lapsed in April. So it is the mechanism that decides whether a lone researcher can use the harness at all.
 
 ## What Else The Restore Surfaced That I Did Not Have
 
@@ -25,7 +25,7 @@ A live work queue to the second bench run that I did not know existed. A recover
 
 ## Self Diagnostic
 
-Before the restore I made four measurement errors in three hours. Every one had the same shape: a conclusion drawn from a narrow slice without checking the population it claimed to describe. I scanned four configuration files out of forty four. I called four settings unreachable without checking for command line flags. I counted a verdict using a text label the code never writes. I read phrase occurrences inside model replies as if they were events.
+Before the restore I made four measurement errors in three hours. Every one had the same shape: a conclusion drawn from a narrow slice without checking the population it claimed to describe. I scanned four configuration files out of 44. I called four settings unreachable without checking for command line flags. I counted a verdict using a text label the code never writes. I read phrase occurrences inside model replies as if they were events.
 
 After the restore I have made four substantive claims and verified each with at least two independent tools, including one that corrected the headline finding of the entire previous night. The difference is not carefulness. It is that the restore supplied the record those checks needed. Your diagnosis identified the cause correctly and the remedy worked.
 

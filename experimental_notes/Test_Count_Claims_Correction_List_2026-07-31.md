@@ -178,7 +178,7 @@ decision, not the orchestrator's. This file is the record to act from.
 
 **Corrected**
 
-> *CDSFL. Fundamentalist open source under the MIT License. Forty-nine experiments on the record; 2089 bench tests collected and 2055+ passing offline as of 2026-07-31 at HEAD `d4d4d7f`; a mathematical appendix under iterative extension.* — and drop bare pass-counts from the strapline entirely, or bind every one to a date, a commit, and the command that produced it. The 1250 figure came from a full-suite run that made live model calls and is not a hermetic reproducibility figure.
+> *CDSFL. Fundamentalist open source under the MIT License. 49 experiments on the record; 2089 bench tests collected and 2055+ passing offline as of 2026-07-31 at HEAD `d4d4d7f`; a mathematical appendix under iterative extension.* — and drop bare pass-counts from the strapline entirely, or bind every one to a date, a commit, and the command that produced it. The 1250 figure came from a full-suite run that made live model calls and is not a hermetic reproducibility figure.
 
 ### `PAPER.md:11`
 

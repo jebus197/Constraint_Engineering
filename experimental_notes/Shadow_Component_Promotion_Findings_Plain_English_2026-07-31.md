@@ -9,7 +9,7 @@ Four dormant parts of the machinery were built, wired and tested. None was switc
 
 Three of the four turned out to have problems that would have caused real damage if they had been enabled without testing. One of those problems would have quietly ruined the capstone experiment. Another would have crashed every run it touched. A third would have fed the reviewing panel academic papers about the wrong subject entirely.
 
-Total cost, nothing. No reviewing model was paid to run. Everything was tested against the two hundred and ninety three findings already sitting in the six completed experiments.
+Total cost, nothing. No reviewing model was paid to run. Everything was tested against the 293 findings already sitting in the six completed experiments.
 
 There is one decision needed urgently and two that can wait.
 
@@ -89,7 +89,7 @@ That last point matters more than it sounds. If this had been switched on as ins
 
 ## Part Four. The Severity Adjuster, Which Works And Does Not Earn Its Place
 
-A component exists to bring down the severity of findings that models have overstated. It needed a missing part built first, which was done, and it was then tested against the two hundred and ninety three real findings already recorded.
+A component exists to bring down the severity of findings that models have overstated. It needed a missing part built first, which was done, and it was then tested against the 293 real findings already recorded.
 
 Its own verdict, and the independent check agrees after reproducing the numbers, is that it should not be switched on. It does not improve the honesty of the severity scores enough to justify the risk of distorting them.
 
@@ -108,11 +108,11 @@ Both have been fixed, and in the right order: the character is now cleaned out a
 
 The second. Running the test suite writes into the archive.
 
-The archive is the record of what the reviewing panel actually did. It is never edited, and corrections are filed beside it rather than applied to it. But one part of the machinery opens an archive file for writing the moment it is loaded, and the tests load it, so every test run has been appending imitation results into the same file that holds real experiment history. Three hundred and thirty two such lines have accumulated, continuously since the middle of May. Someone reading that file afterwards cannot tell the imitation entries from the real ones without checking the names line by line, and nothing in the file says any of it is artificial.
+The archive is the record of what the reviewing panel actually did. It is never edited, and corrections are filed beside it rather than applied to it. But one part of the machinery opens an archive file for writing the moment it is loaded, and the tests load it, so every test run has been appending imitation results into the same file that holds real experiment history. 332 such lines have accumulated, continuously since the middle of May. Someone reading that file afterwards cannot tell the imitation entries from the real ones without checking the names line by line, and nothing in the file says any of it is artificial.
 
 This was found by noticing that the archive showed as changed after a test run that should have touched nothing.
 
-The fix sends the test output to a temporary location instead. The existing three hundred and thirty two lines are being left exactly where they are, because they sit interleaved with genuine records, and rewriting an archive to tidy it is the thing the rule against editing exists to prevent.
+The fix sends the test output to a temporary location instead. The existing 332 lines are being left exactly where they are, because they sit interleaved with genuine records, and rewriting an archive to tidy it is the thing the rule against editing exists to prevent.
 
 
 ## What Is Needed From You

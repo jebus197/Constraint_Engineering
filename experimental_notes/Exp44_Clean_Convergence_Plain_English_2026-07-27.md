@@ -12,7 +12,7 @@ The Headline Numbers
 
 The run reviewed the evidence layer module, about 23 thousand characters, under the same instrument as the two prior landmark experiments, with the five fixes as the only declared changes.
 
-Eighty two findings were registered across thirteen rounds. At convergence, sixty three were closed with verified fixes, thirteen were confirmed by runnable demonstration, one was merged as a duplicate, and five were refuted. Nothing was left open, nothing unconfirmed, nothing contested. Six items exhausted the full escalation ladder and sit in the small guarded queue for human review, which is the designed role of the human as final falsifier. The residual queue of un-demonstrated low-severity items, the new mechanism from fix one, finished empty.
+82 findings were registered across thirteen rounds. At convergence, 63 were closed with verified fixes, thirteen were confirmed by runnable demonstration, one was merged as a duplicate, and five were refuted. Nothing was left open, nothing unconfirmed, nothing contested. Six items exhausted the full escalation ladder and sit in the small guarded queue for human review, which is the designed role of the human as final falsifier. The residual queue of un-demonstrated low-severity items, the new mechanism from fix one, finished empty.
 
 The convergence gate passed all its conditions together for three consecutive rounds, ten, eleven, and twelve. At the end, the critical decay measure, gamma critical, stood at 0.453, well above the 0.30 threshold, and the location keyed count of new critical findings had been zero for five consecutive rounds. Both sides of the two sided gate, the decay curve and the strict zero count, agreed, as the mathematical model says they should.
 

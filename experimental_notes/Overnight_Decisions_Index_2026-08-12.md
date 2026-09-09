@@ -30,7 +30,7 @@ Recommendation. No. Leave it recording, and build the perturbation test instead.
 
 ## Decision two. Two real defects in the zero plant control document.
 
-What it is. The zero plant control is a technical document, roughly twenty four kilobytes, used to measure whether the review panel raises serious findings against material that has nothing wrong with it. The name means only that nobody deliberately seeded a defect in it. It is staged outside the repository under the filename SW-21-REF-04.md and its content hash matches the published manifest.
+What it is. The zero plant control is a technical document, roughly 24 kilobytes, used to measure whether the review panel raises serious findings against material that has nothing wrong with it. The name means only that nobody deliberately seeded a defect in it. It is staged outside the repository under the filename SW-21-REF-04.md and its content hash matches the published manifest.
 
 What was found. The document contains two genuine defects in working code that nobody meant to break.
 
@@ -40,7 +40,7 @@ The second is in HashRing.locate. It uses bisect right, which returns the positi
 
 Both were raised by the panel and both are correct. Both were checked against the document's own source. Both are still in the document.
 
-Why the claim audit did not catch them. The claim audit was thorough. All forty four claims were executed rather than read, using symbolic algebra, a constraint solver, dimensional analysis and Monte Carlo sampling. The claims are all true.
+Why the claim audit did not catch them. The claim audit was thorough. All 44 claims were executed rather than read, using symbolic algebra, a constraint solver, dimensional analysis and Monte Carlo sampling. The claims are all true.
 
 The defects sit outside every claim. Claim ZC-17 states that the index used by HashRing.locate always stays within the bounds of the list of ring points. That is true. The panel's finding is that the key reaches the wrong point. That is also true. The two statements are about different properties of the same three lines of code, so neither contradicts the other.
 
@@ -84,7 +84,7 @@ What the external research found. The founder's reasoning about large scale work
 
 This component does not serve that purpose. An abstract syntax tree scan across 202 source files found its only entry chain has zero call sites outside tests. It has never allocated anything. Where the older runners did build tasks, they built exactly one, so the allocator would have had nothing to balance.
 
-It also contains two live defects. Its own docstring in the dynamic manager module line 194 claims it adapts using live capability fingerprints. It has never read a fingerprint; it reads only context length, cost, latency and criticality. That same false claim was reported in Exp 14 at severity 0.97 and is still in place four and a half months later. Second, an impossible allocation is reported as a successful one, demonstrated by constructing two models with a context limit of one thousand and two tasks of five thousand tokens each and observing a balanced result.
+It also contains two live defects. Its own docstring in the dynamic manager module line 194 claims it adapts using live capability fingerprints. It has never read a fingerprint; it reads only context length, cost, latency and criticality. That same false claim was reported in Exp 14 at severity 0.97 and is still in place four and a half months later. Second, an impossible allocation is reported as a successful one, demonstrated by constructing two models with a context limit of 1002 tasks of 5000 tokens each and observing a balanced result.
 
 If the answer is retire it, the file is removed or marked as not implemented, the false docstring goes with it, and the scaling question is treated as a fresh design problem informed by the research.
 
@@ -99,7 +99,7 @@ What it is. A component the project records describe as running in shadow, meani
 
 What was found. Stage 6 leaves no shadow record in any run directory. It is not running in shadow. It is not running at all.
 
-The contrast makes this concrete. The ouroboros component has left shadow records in ten run directories, and those records show it reaching decisions, including entries reading would have injected true. The macrophage component has left shadow records in twenty eight run directories, each reporting pipeline modified false. Stage 6 has left records in none.
+The contrast makes this concrete. The ouroboros component has left shadow records in ten run directories, and those records show it reaching decisions, including entries reading would have injected true. The macrophage component has left shadow records in 28 run directories, each reporting pipeline modified false. Stage 6 has left records in none.
 
 If the answer is connect it, it starts producing shadow records like the other two, and a later decision about enabling it can rest on evidence.
 

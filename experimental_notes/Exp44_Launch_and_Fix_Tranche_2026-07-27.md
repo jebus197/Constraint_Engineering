@@ -49,7 +49,7 @@ On the founder's repeated instruction, the physics, chemistry, and engineering s
 
 What Experiment 44 Tests
 
-The run reviews the evidence layer, about 23 thousand characters, under exactly the instrument that produced the Experiment 42 landmark and the Experiment 43 generalisation, with the five fixes as the only declared changes. The prediction, registered before launch: clean convergence within the round budget, expected around rounds six to eight, with no sub-critical item blocking the gate and the residual queue explicitly logged. If it does not converge, the cause is assumed mechanical and will be diagnosed under live monitoring. Estimated cost is fifteen to twenty five dollars. A clean result is the founder's decision point on funding the remainder of the arc.
+The run reviews the evidence layer, about 23 thousand characters, under exactly the instrument that produced the Experiment 42 landmark and the Experiment 43 generalisation, with the five fixes as the only declared changes. The prediction, registered before launch: clean convergence within the round budget, expected around rounds six to eight, with no sub-critical item blocking the gate and the residual queue explicitly logged. If it does not converge, the cause is assumed mechanical and will be diagnosed under live monitoring. Estimated cost is fifteen to 25 dollars. A clean result is the founder's decision point on funding the remainder of the arc.
 
 The run is under continuous monitoring, with a live terminal window open showing the full output.
 

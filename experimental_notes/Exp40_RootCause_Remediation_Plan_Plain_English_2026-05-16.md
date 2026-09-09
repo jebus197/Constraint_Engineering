@@ -32,7 +32,7 @@ whole project.
 The convergence measure tells the story cleanly. It needs to reach a set line
 to count as converged. Early on it climbed almost to that line — the easy
 repeats were being cleared and progress looked real. Then it fell back and sat
-flat, just above one-sixth of the way to the line, for twenty-five rounds in a
+flat, just above one-sixth of the way to the line, for 25 rounds in a
 row. The mathematical model the project is built on actually predicts this:
 when new findings are re-injected faster than old ones are exhausted, the
 system stops converging and starts churning. An unfixed file guarantees that

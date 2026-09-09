@@ -19,7 +19,7 @@ told to refute the first agent's findings rather than agree with them, and to re
 anything they could not reproduce themselves; and one to consolidate. Seventy-one findings
 came back. **Sixty were confirmed on independent reproduction, eight were judged less
 serious than first claimed, three were judged worse, and none were refuted.** The checkers
-also found twenty-five further faults the auditors had missed.
+also found 25 further faults the auditors had missed.
 
 Nothing was changed. This was read-only.
 
@@ -179,7 +179,7 @@ a correction is as much a result as a fault.
 No finding was refuted. That is unusual and should not simply be taken as a compliment to
 the auditors. Most of these faults are of a kind where reproduction is easy and refutation
 correspondingly rare: run the command, and either the false output appears or it does not.
-The checkers did adjust eleven severities in both directions and did add twenty-five faults
+The checkers did adjust eleven severities in both directions and did add 25 faults
 the auditors missed, so they were not merely nodding along. But a zero-refutation rate on a
 first pass is worth noting rather than celebrating.
 

@@ -60,7 +60,7 @@ A second Gemini-specific finding worth noting: in three of the ten rounds (round
 
 ## Merge conflicts arrived earlier than predicted
 
-The project's pre-launch panel review had specified that a particular class of issue — the runner's auto-merge pipeline deadlocking when specialist subsystems disagree about which canonical finding a new finding should merge into — was unlikely to surface before experiment 49 (the cross-domain synthesis experiment). Experiment 40 produced this class of issue abundantly. At least eight merge-deadlock events occurred across the rounds, including one event with twenty-one separate target disagreements on a single finding. Three specific canonical entries (one of them being the parser-bug canonical entry mentioned above) recurred as deadlock anchors across multiple rounds.
+The project's pre-launch panel review had specified that a particular class of issue — the runner's auto-merge pipeline deadlocking when specialist subsystems disagree about which canonical finding a new finding should merge into — was unlikely to surface before experiment 49 (the cross-domain synthesis experiment). Experiment 40 produced this class of issue abundantly. At least eight merge-deadlock events occurred across the rounds, including one event with 21 separate target disagreements on a single finding. Three specific canonical entries (one of them being the parser-bug canonical entry mentioned above) recurred as deadlock anchors across multiple rounds.
 
 This is rich evidence that the project can use to design the deferred arbitration rule. The pre-launch decision to wait for evidence before designing the rule has paid off — the evidence is now in hand, earlier than expected.
 

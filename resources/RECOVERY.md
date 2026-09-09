@@ -37,7 +37,7 @@ HEAD `beb39fb` + 4 uncommitted files (the compaction-marker fix), main, **7 ahea
 
 **`rs` RAN 16:09 BST, exit code 0**, marker recorded by a genuine restore.
 
-**STALE IN THE `rs` DEFINITION:** it names `ACTION_QUEUE.md` and `QWERTY_CHECKPOINT.md`; **neither exists**. The live queue is `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` (last touched 2026-08-27).
+**RESOLVED 2026-09-09 (task 8.1).** The `rs` definition used to name `ACTION_QUEUE.md` and `QWERTY_CHECKPOINT.md` unconditionally; neither has ever existed here, and `git log --all` over the full history returns 0 commits touching either path. Both are Project_Genesis artefacts from February and March 2026, later copied into Metis. The global definition is now PROJECT-CONDITIONAL and `resources/SHORTCUTS.md` names this project's real queue, `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`, alongside `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.
 
 **THREE DECISIONS SIT WITH THE FOUNDER.** (1) **Falsifier supply** — 5 of 14 criticals with no runnable check; the halt cause. (2) **The absolute-path ruling** — seats hold the absolute repo path by the 2026-08-23 ruling, so a cwd cannot confine a Bash-bearing seat; `_absolute_target` already takes a `repo_root`. (3) **One run, two directories** — the runner writes both a report dir and a state dir carrying the same registry, so every directory-walking archive count is doubled; it has corrupted 2 measurements in one night, both in the reassuring direction.
 

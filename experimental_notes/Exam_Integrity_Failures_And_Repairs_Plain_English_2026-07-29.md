@@ -35,7 +35,7 @@ that the panel cannot reach the marking scheme.
 A note inside that folder said where the answer keys had been moved to. The keys
 had been moved out of the project folder that same morning, precisely to hide them.
 The note recording their new location was committed inside the project folder
-seventy-six minutes before the chemistry exam began. The fix advertised the thing
+76 minutes before the chemistry exam began. The fix advertised the thing
 it was hiding.
 
 Older copies of the keys remained in the project's version history, where two
@@ -168,7 +168,7 @@ paired with a correct twin in a way that lets a reader spot the pattern, and so
 that the number of seeded claims cannot be worked out by counting anything. Correct
 claims are now paired with other correct claims as often as with seeded ones.
 
-A zero-plant control document has been added. It contains forty-four claims and
+A zero-plant control document has been added. It contains 44 claims and
 none of them are seeded. It is written in the same register and structure as the
 seeded exams and, on a formal comparison against its closest sibling, is
 statistically indistinguishable from it. It measures the stopping decision

@@ -5,16 +5,16 @@ The Overnight Run. What Happened, What Broke, And The Six Decisions Waiting For 
 
 The Short Version
 
-Two experiments completed successfully overnight. Four things were found that would have quietly corrupted the results, three of which were fixed and one of which is genuinely unresolved and is the reason the chain is now paused. Roughly one hundred dollars was spent, leaving three hundred and sixty five. No work has been lost and nothing done so far is irreversible.
+Two experiments completed successfully overnight. Four things were found that would have quietly corrupted the results, three of which were fixed and one of which is genuinely unresolved and is the reason the chain is now paused. Roughly 100 dollars was spent, leaving 365. No work has been lost and nothing done so far is irreversible.
 
 
 What Completed
 
-Experiment 47 reviewed the divergence module, the largest piece of real code left in the programme, and converged at round thirteen. Seventy findings, sixty one closed with verified fixes, forty four of them critical, forty two of those proved by a runnable test. The two that were not proved are honest residue: one could not be tested by any model, and one had a test that errored and could not be repaired even by the clearing sweep. Those two are the genuine human decisions the design always intended to produce, rather than a failure.
+Experiment 47 reviewed the divergence module, the largest piece of real code left in the programme, and converged at round thirteen. Seventy findings, 61 closed with verified fixes, 44 of them critical, 42 of those proved by a runnable test. The two that were not proved are honest residue: one could not be tested by any model, and one had a test that errored and could not be repaired even by the clearing sweep. Those two are the genuine human decisions the design always intended to produce, rather than a failure.
 
 Experiment 48 was the first of the four subject exams, on chemistry, and it converged at round five with every finding resolved. Measured against the answer key it detected all six deliberately planted false claims. That is the first detection score in the project's history.
 
-The cross experiment memory recorded its first experiment during Experiment 47. The system now holds real learned priors, sixty five confirmed against two rejected across five classes of flaw. That was an item on the founder's own roadmap from the thirtieth of March.
+The cross experiment memory recorded its first experiment during Experiment 47. The system now holds real learned priors, 65 confirmed against two rejected across five classes of flaw. That was an item on the founder's own roadmap from the thirtieth of March.
 
 
 The Four Things That Broke

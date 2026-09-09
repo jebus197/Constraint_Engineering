@@ -49,13 +49,13 @@ Three of these matter. Nine are small and can be answered in a word each. The th
 
 ### Ruling one. The Open Brain backfill.
 
-**The situation.** The memory store holds one hundred and fourteen records. Each is supposed to carry a label saying which project it belongs to, so that a query can ask for only this project's material. One hundred and six of them have no label, because for the past two months every write went through an older copy of the code that does not write one. That copy is now out of the path, so new records will be labelled correctly from here on. The existing hundred and six will not.
+**The situation.** The memory store holds 114 records. Each is supposed to carry a label saying which project it belongs to, so that a query can ask for only this project's material. 106 of them have no label, because for the past two months every write went through an older copy of the code that does not write one. That copy is now out of the path, so new records will be labelled correctly from here on. The existing 106 will not.
 
-**Why this is a choice and not just a repair.** Adding the labels means writing to records that already exist, and it means deciding what each one is. Most are obvious from their content, but not all, and a wrong label is worse than no label, because a wrong label makes a record show up in a query where it does not belong and vanish from the one where it does. I can pattern match on content and on which agent wrote it, but I cannot be certain, and I would rather not guess a hundred and six times unsupervised.
+**Why this is a choice and not just a repair.** Adding the labels means writing to records that already exist, and it means deciding what each one is. Most are obvious from their content, but not all, and a wrong label is worse than no label, because a wrong label makes a record show up in a query where it does not belong and vanish from the one where it does. I can pattern match on content and on which agent wrote it, but I cannot be certain, and I would rather not guess a 106 times unsupervised.
 
 **One extra wrinkle, found during the repairs.** Of the eight records that do carry a label, seven say CDSFL in capitals and one says cdsfl in lower case. The filter is a plain equality test, so those are currently two different projects. Asking for CDSFL misses the lower case one; asking for cdsfl misses the other seven. Whether to normalise case is part of this same ruling, and the answer is almost certainly yes.
 
-**The options.** First, I classify all one hundred and six by content and you spot check a sample. Second, I classify only the clearly unambiguous ones and leave the rest labelled as unclassified, which is honest and leaves a smaller pile for later. Third, leave them all unlabelled and never use the project filter, relying on reading the whole store.
+**The options.** First, I classify all 106 by content and you spot check a sample. Second, I classify only the clearly unambiguous ones and leave the rest labelled as unclassified, which is honest and leaves a smaller pile for later. Third, leave them all unlabelled and never use the project filter, relying on reading the whole store.
 
 **The cost of doing nothing.** The project filter is currently a trap rather than a feature. Run it today and it returns a session summary from the third of June presented as the current state, because everything newer is invisible to it. Unfiltered, the store gives a cluttered but honest answer. So doing nothing is survivable, as long as nobody ever uses the filter, which is exactly the kind of standing exception that gets forgotten.
 
@@ -98,7 +98,7 @@ The save command now writes a session summary to Open Brain automatically, so th
 
 ### Ruling five. The retired message service.
 
-It is named as a recovery step in eight places. It does not fail when run. It succeeds, returning fifty three well formed entries about an unrelated project whose newest is dated the fourth of April, with nothing marking them as retired or stale.
+It is named as a recovery step in eight places. It does not fail when run. It succeeds, returning 53 well formed entries about an unrelated project whose newest is dated the fourth of April, with nothing marking them as retired or stale.
 
 **The choice is to delete the eight instructions, or to keep them behind an explicit retired banner.**
 
@@ -116,18 +116,18 @@ Fourteen substantive documents exist as plain text on the Desktop with no versio
 
 ### Ruling seven. The memory index size.
 
-The index is at ninety seven percent of a twenty five thousand character loading limit. A note from the second of July claimed it truncates every session. That claim was measured and is wrong: nothing is being lost today. But the headroom is roughly eight more sessions at the current rate of writing.
+The index is at 97 percent of a 25000 character loading limit. A note from the second of July claimed it truncates every session. That claim was measured and is wrong: nothing is being lost today. But the headroom is roughly eight more sessions at the current rate of writing.
 
 The overrun comes from ten session entries carrying full paragraph summaries in a file whose own specification says one line per entry. The content is duplicated inside the files they point at, so trimming them loses nothing.
 
-**The choice is to trim the six longest entries now, reclaiming about four thousand characters, or to wait until it actually starts truncating.**
+**The choice is to trim the six longest entries now, reclaiming about 4000 characters, or to wait until it actually starts truncating.**
 
 **Recommendation.** Trim now, and add a size check to the save command. Waiting means discovering the problem by losing something, and what would be lost first is the newest entries, which are the ones most likely to matter.
 
 
 ### Ruling eight. Which section of the onboarding document owns the state block.
 
-The onboarding script has a mode that has done nothing since the day it was written, one hundred and eighteen days ago, and its own self test reports success. The cause is that the reader looks for markers in one section of the document while the writer puts them in a different section. Fixing it requires deciding which section is right, and I do not know which you intended.
+The onboarding script has a mode that has done nothing since the day it was written, 118 days ago, and its own self test reports success. The cause is that the reader looks for markers in one section of the document while the writer puts them in a different section. Fixing it requires deciding which section is right, and I do not know which you intended.
 
 **The choice is to make the reader search the whole document for the markers wherever they are, or to move the writer's output into the section the reader expects.**
 
@@ -152,7 +152,7 @@ The tracker lists strictly sequential tool use as non negotiable on every turn. 
 
 ### Ruling eleven. Test coverage for the operational scripts.
 
-None of the five operational scripts has any test coverage. That is why one script crashed on every run for one hundred and five days and another did nothing for one hundred and eighteen without anyone noticing. Individual tests have been added alongside today's repairs, but there is no systematic coverage.
+None of the five operational scripts has any test coverage. That is why one script crashed on every run for 105 days and another did nothing for 118 without anyone noticing. Individual tests have been added alongside today's repairs, but there is no systematic coverage.
 
 Every defect found today is detectable by a test of under ten lines. The work is about half a day.
 
@@ -174,7 +174,7 @@ Second, and more seriously, the service writes through whichever copy of the mem
 
 ### Ruling thirteen. Seven records that cannot be verified.
 
-The memory store's verification command now correctly refuses to pass. It reports eight valid records, ninety nine that predate the introduction of hashing and are legitimately unverifiable, and seven that were written AFTER hashing was introduced and still have no hash. Those seven span the eighth of June to today, and they are the ones that matter, because they were written by a path that should have hashed them and did not. Until this morning all one hundred and six were being reported together as legacy, and the command exited successfully.
+The memory store's verification command now correctly refuses to pass. It reports eight valid records, 99 that predate the introduction of hashing and are legitimately unverifiable, and seven that were written AFTER hashing was introduced and still have no hash. Those seven span the eighth of June to today, and they are the ones that matter, because they were written by a path that should have hashed them and did not. Until this morning all 106 were being reported together as legacy, and the command exited successfully.
 
 **The choice is what to do about the seven.** They can be re-hashed now, which makes the verification pass again but is a slightly odd thing to do: hashing a record after the fact records that it has not changed since you hashed it, not that it has not changed since it was written. Or they can be left, accepted as a known gap with the command staying red until the store is next rebuilt.
 

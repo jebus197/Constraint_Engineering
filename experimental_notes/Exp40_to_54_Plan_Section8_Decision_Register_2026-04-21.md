@@ -42,7 +42,7 @@ Experiment 54 is the capstone integration experiment. Its first cell, Cell A, is
 
 ### Decision 3. Construction of the target articles for Experiments 47, 51, 52, and 53
 
-Four of the later experiments test CDSFL against technical articles in specific domains — physics for Experiment 51, and three other domains for 47, 52, and 53. The panel unanimously rejected the option of adapting existing third-party articles, and instead chose **minimal native synthesis**: short target modules, roughly fifteen to twenty-five thousand characters per domain, written for the purpose. These must be drafted ahead of each experiment.
+Four of the later experiments test CDSFL against technical articles in specific domains — physics for Experiment 51, and three other domains for 47, 52, and 53. The panel unanimously rejected the option of adapting existing third-party articles, and instead chose **minimal native synthesis**: short target modules, roughly fifteen to 25000 characters per domain, written for the purpose. These must be drafted ahead of each experiment.
 
 - **Trigger.** The entry to each of Experiments 47, 51, 52, and 53. Experiment 47 is the first.
 - **Stake.** The target articles control the difficulty and shape of each experiment.

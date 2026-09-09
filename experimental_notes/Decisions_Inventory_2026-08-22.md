@@ -123,7 +123,7 @@ The instrument inventory. Roughly seventeen components in this system emit a num
 
 The 67 findings whose repair matched no stored version of its file, and the 30 that produced an error. That is a quarter of the population that could not be scored at all, and it is a finding in its own right.
 
-The fault where a test that never ran can still write a final verdict. Four cases out of twenty four, two of them writing a refutation on no evidence. All four were escalated to a human at the time, so nothing was hidden, but the status is still wrong.
+The fault where a test that never ran can still write a final verdict. Four cases out of 24, two of them writing a refutation on no evidence. All four were escalated to a human at the time, so nothing was hidden, but the status is still wrong.
 
 The control script that overwrites its own committed output when run with a limit. It needs a dry run option.
 

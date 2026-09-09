@@ -19,7 +19,7 @@ calculator returning one definitive answer rather than five models arguing
 indefinitely. Experiment 40 had repeatedly failed to reach that state. One
 recurring mechanical fault was a "merge deadlock": two findings that should be
 combined into one get stuck, unresolved, round after round — one of them had
-been stuck for twenty-one rounds, the longest in the project's history. A
+been stuck for 21 rounds, the longest in the project's history. A
 resolver was built that breaks such deadlocks by a panel majority vote. The
 test: switch the resolver on, hold everything else stable, run exactly five
 rounds, and see whether convergence follows.
@@ -27,7 +27,7 @@ rounds, and see whether convergence follows.
 ## The answer
 
 It did not. The resolver worked perfectly on its own terms — it cleared eight
-to ten stuck deadlocks by proper majority, including the twenty-one-round one,
+to ten stuck deadlocks by proper majority, including the 21-round one,
 resolved unanimously. But the convergence measure did not move. In the five
 rounds with the resolver on, that measure sat flat at about 0.05, the same
 level as the preceding rounds with the resolver off. The system ended exactly
@@ -41,11 +41,11 @@ not what was holding convergence back.
 
 ## The more revealing number
 
-Looking at the whole twenty-nine-round history, the convergence measure tells
+Looking at the whole 29-round history, the convergence measure tells
 a sharper story. It needs to reach 0.30 for the system to count as converged.
 Very early, at round 3, it reached 0.2967 — within about one percent of the
 line. Then it fell, every stretch of rounds, and settled at roughly 0.05,
-where it stayed for the next twenty-five rounds and never recovered.
+where it stayed for the next 25 rounds and never recovered.
 
 That is the important picture. It is not that the system cannot get near
 convergence — it got to the doorstep almost immediately. It is that, on this

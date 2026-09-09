@@ -66,7 +66,7 @@ Recommendation: your option. Mark them as residuals, clear them in the sweep.
 
 ## Decision four. Stage 6, and a numbering fault you spotted while I was writing this
 
-Status of Stage 6: built. Not running. It leaves no shadow record in any run directory, whereas the ouroboros component has left records in ten and the macrophage component in twenty eight.
+Status of Stage 6: built. Not running. It leaves no shadow record in any run directory, whereas the ouroboros component has left records in ten and the macrophage component in 28.
 
 You said the numbering mismatch was probably never fixed. You were right, and it is worse than not fixed. There is a dated correction notice in the operational tracker from 20 July, written to stop exactly this confusion, and that notice is itself wrong.
 
@@ -123,7 +123,7 @@ Second change. Cap the spend explicitly and run it after the control target is b
 
 ## The sequence, with what each step depends on
 
-Stage zero. Free, offline, can start immediately. Enable the structured statement of numbers and replay it across the archive to confirm it changes no historical outcome. The structured statement of numbers is built, tested at ninety four passing tests, committed, and not enabled: zero configurations switch it on. The combined identity rule is in the same state. No money, no dispatch.
+Stage zero. Free, offline, can start immediately. Enable the structured statement of numbers and replay it across the archive to confirm it changes no historical outcome. The structured statement of numbers is built, tested at 94 passing tests, committed, and not enabled: zero configurations switch it on. The combined identity rule is in the same state. No money, no dispatch.
 
 Stage one. Build the new clean control target with the panel, as you ruled. Generated from a script rather than written and then checked, so that correctness is a property of the generator. Small paid panel task. Keep the old control document as the planted arm alongside it.
 
@@ -142,7 +142,7 @@ The dependency chain is now short and every link is named. The only step that ca
 
 ## Money
 
-The last balance recorded in the recovery document is four hundred and seventy one dollars and nine cents, dated 28 July. That figure is two weeks old and I have not verified it. It is worth checking before stage two, because the shakedown is the one step whose cost is genuinely open ended.
+The last balance recorded in the recovery document is 471 dollars and nine cents, dated 28 July. That figure is two weeks old and I have not verified it. It is worth checking before stage two, because the shakedown is the one step whose cost is genuinely open ended.
 
 One paid dispatch has been made since, at roughly three pounds.
 

@@ -61,7 +61,7 @@ Gemini's mathematics is correct. Its recommendation does not apply to this proje
 
 Nothing it proposes is new to the project. One thing it identifies as the critical weakness of the method turns out not to apply at all, and the reason is a design choice made here some time ago.
 
-The advice would be sound for a different problem: ten thousand documents, long texts, general vocabulary. This project has one hundred and sixty five critical findings, signatures of four tokens, and a vocabulary of numbers.
+The advice would be sound for a different problem: 10000 documents, long texts, general vocabulary. This project has 165 critical findings, signatures of four tokens, and a vocabulary of numbers.
 
 
 ## Claim one. Jaccard similarity over n-grams is the right measure
@@ -73,11 +73,11 @@ Correct, and the project already does exactly this. Tier two of the similarity f
 
 This is the load bearing claim and it fails on measurement.
 
-Gemini's worked example is ten thousand papers, which requires roughly fifty million comparisons. The project's whole archive is one hundred and sixty five critical findings, which is thirteen thousand five hundred and thirty pairs.
+Gemini's worked example is 10000 papers, which requires roughly 50000000 comparisons. The project's whole archive is 165 critical findings, which is 13530 pairs.
 
-Measured: those thirteen thousand five hundred and thirty exact comparisons complete in fifteen milliseconds.
+Measured: those 13530 exact comparisons complete in fifteen milliseconds.
 
-The problem Gemini solves is about three thousand seven hundred times larger than the one this project has.
+The problem Gemini solves is about 3700 times larger than the one this project has.
 
 
 ## Claim three. The MinHash theorem
@@ -91,13 +91,13 @@ The theorem holds. Gemini is right about the mathematics.
 
 True in general, and misleading here. This was tested at two set sizes.
 
-On large sets of three hundred tokens, the scaling behaves as advertised: mean absolute error falls from zero point zero eight three at sixteen hash functions to zero point zero three one at one thousand and twenty four.
+On large sets of 300 tokens, the scaling behaves as advertised: mean absolute error falls from zero point zero eight three at sixteen hash functions to zero point zero three one at one thousand and twenty four.
 
-On the project's actual signatures, which have a measured median of four tokens, the same sixty four fold increase in computation improves error from zero point zero nine four to zero point zero six eight, and then it plateaus.
+On the project's actual signatures, which have a measured median of four tokens, the same 64 fold increase in computation improves error from zero point zero nine four to zero point zero six eight, and then it plateaus.
 
 The reason is that with four tokens, Jaccard can only take a few discrete values. The error floor is set by the coarseness of the sets, not by the number of hash functions. Buying more hashing buys almost nothing.
 
-Tested against real project signatures rather than synthetic ones, MinHash at two hundred and fifty six hash functions produced a mean absolute error of zero point zero zero seven, but a maximum error of zero point three five eight.
+Tested against real project signatures rather than synthetic ones, MinHash at 256 hash functions produced a mean absolute error of zero point zero zero seven, but a maximum error of zero point three five eight.
 
 That maximum matters. Same defect pairs sit at a median overlap of zero point five five nine, and different defect pairs at zero. A worst case error of zero point three five is large enough to move a pair across the decision boundary.
 
@@ -110,9 +110,9 @@ Gemini's argument is that lexical methods fail when two documents use different 
 
 That example was run through the project's actual signature extractor.
 
-Both sentences produced the identical signature: the tokens seventeen, two, three hundred and fifty, four hundred, and Z C dash seventeen. The Jaccard score was one point zero zero zero. A perfect match.
+Both sentences produced the identical signature: the tokens seventeen, two, 350, 400, and Z C dash seventeen. The Jaccard score was one point zero zero zero. A perfect match.
 
-The reason is that the similarity function does not extract words. It extracts numbers, units, claim identifiers and symbols. Numbers do not have synonyms. Four hundred is four hundred in every phrasing.
+The reason is that the similarity function does not extract words. It extracts numbers, units, claim identifiers and symbols. Numbers do not have synonyms. 400 is 400 in every phrasing.
 
 As a control, a sentence on the same topic with different quantities scored zero point one one one.
 
@@ -139,9 +139,9 @@ Every technique Gemini names is either already implemented here, or solves a pro
 
 At scale, and it is worth knowing where that line sits.
 
-Exact all pairs comparison was measured at increasing sizes. One hundred and sixty five findings takes five milliseconds. One thousand takes zero point one six seconds. Two thousand takes zero point six five seconds. Five thousand takes four and a half seconds.
+Exact all pairs comparison was measured at increasing sizes. 165 findings takes five milliseconds. 1000 takes zero point one six seconds. 2000 takes zero point six five seconds. 5000 takes four and a half seconds.
 
-The argument for MinHash becomes real somewhere past two thousand findings in a single comparison set. The largest single run this project has produced carried forty eight critical findings. That is roughly forty times of growth before the question arises at all.
+The argument for MinHash becomes real somewhere past 2000 findings in a single comparison set. The largest single run this project has produced carried 48 critical findings. That is roughly forty times of growth before the question arises at all.
 
 If Bench Run Two produces runs an order of magnitude larger than anything so far, this should be revisited. Not before.
 
@@ -154,12 +154,12 @@ The first is that the choice of features mattered more than the choice of algori
 
 The second is that a technique can be standard, correct and widely recommended, and still be wrong for a given scale. MinHash exists to trade accuracy for speed. A system that does not need the speed is paying the accuracy cost for nothing.
 
-The third is a boundary condition worth stating because it is testable. The reason MinHash performs poorly here is that signatures are small, with a median of four tokens. If findings grew richer in quantities, that error would fall toward the large set curve. This yields a falsifiable prediction: at a median signature size around thirty tokens, MinHash error at two hundred and fifty six hash functions should approach the large set figure of roughly zero point zero three five. That has not been tested and no run currently produces signatures of that size.
+The third is a boundary condition worth stating because it is testable. The reason MinHash performs poorly here is that signatures are small, with a median of four tokens. If findings grew richer in quantities, that error would fall toward the large set curve. This yields a falsifiable prediction: at a median signature size around thirty tokens, MinHash error at 256 hash functions should approach the large set figure of roughly zero point zero three five. That has not been tested and no run currently produces signatures of that size.
 
 
 ## A note on how this was assessed
 
-Gemini's response was not evaluated by reading it and forming a view. Each checkable claim was run against project data or against a controlled experiment: the theorem was verified over four thousand hash functions, the scaling was tested at two set sizes, the error was measured against one thousand one hundred and forty four real signatures extracted from the archive by the project's own function, and Gemini's own worked failure case was executed through the live extractor.
+Gemini's response was not evaluated by reading it and forming a view. Each checkable claim was run against project data or against a controlled experiment: the theorem was verified over 4000 hash functions, the scaling was tested at two set sizes, the error was measured against 1144 real signatures extracted from the archive by the project's own function, and Gemini's own worked failure case was executed through the live extractor.
 
 That is the only reason the semantic boundary claim was caught. Read on its own terms it is persuasive, correctly reasoned, and would have justified building something expensive and unnecessary.
 

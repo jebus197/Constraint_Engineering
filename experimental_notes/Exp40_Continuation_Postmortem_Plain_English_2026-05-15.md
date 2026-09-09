@@ -43,11 +43,11 @@ been given a two-hour budget and used 2 hours 4 minutes 38 seconds, then
 gracefully saved state and exited.
 
 The panel processed 280 raw findings during the entire 17-round arc,
-reconciling them into 179 distinct canonical entries. Twenty-six of
-those reached the CLOSED state, twenty-five with verified fixes that
+reconciling them into 179 distinct canonical entries. 26 of
+those reached the CLOSED state, 25 with verified fixes that
 passed four code-quality gates: a linter, a type checker, a security
-scanner, and the existing test suite. Forty-two are confirmed but not
-yet fixed. Sixty-eight remain open, and twenty-three were unable to
+scanner, and the existing test suite. 42 are confirmed but not
+yet fixed. 68 remain open, and 23 were unable to
 resolve a peer challenge after multiple rounds and were escalated to
 human review.
 
@@ -76,7 +76,7 @@ chunk-by-chunk analysis, and Round 11 closed with Gemini's content
 preserved rather than lost. The fix did exactly what it was designed for.
 
 The Bugzilla close-the-loop module is the run's biggest validation. Of
-the twenty-six findings that reached the CLOSED state, twenty-five
+the 26 findings that reached the CLOSED state, 25
 arrived there through this module — the runner taking a model's proposed
 fix, applying it to a sandboxed copy of the target file, running four
 code-quality gates against the result, and only closing the finding if

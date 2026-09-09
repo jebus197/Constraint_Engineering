@@ -149,7 +149,7 @@ Roughly 2-3% in the era that produces today's results, against 12.67%-23% duplic
 - §7.5, §7.6 and §8.2 take intersections, differences and unions over a finding space that is never defined.
 - The Notation Summary (`:1871-1983`) lists `s(f1,f2)` and has **no entry for a sameness, identity or equivalence relation**.
 
-Deduplication is an unmodelled primitive. That is the root defect, and it is invisible from inside any single section — which is presumably how an eight-round, six-model, thirty-nine-check coherence audit passed it. Each equation is coherent *given* a sameness relation. None supplies one.
+Deduplication is an unmodelled primitive. That is the root defect, and it is invisible from inside any single section — which is presumably how an eight-round, six-model, 39-check coherence audit passed it. Each equation is coherent *given* a sameness relation. None supplies one.
 
 ## B.2 What the appendix does have, and why it is not enough
 
@@ -159,7 +159,7 @@ Meanwhile the live system carries at least four different values of it at four s
 
 ## B.3 Which quantities inherit the gap
 
-Twenty-three named quantities are functions of a deduplicated count, a set cardinality, or a cross-set operation. Three of them gate live runs.
+23 named quantities are functions of a deduplicated count, a set cardinality, or a cross-set operation. Three of them gate live runs.
 
 **Direct — a dedup decision is the input:** η novelty `:198` and `q = η·d·p` `:207`, hence `R_det`/`R_base`/`R_k(i)` `:209`/`:213`/`:218` — the entire unified self-assessment equation; η_int `:263`; η_combined `:260`; ρ `:866`; ρ̄₃ and churn(t) `:872-876`; κ_set `:1728` and `:1408`; κ_rate `:1734`; κ(r) `:1746` and the convergence predicate `:1752`; γ_hat `:1760`; γ = 1 − β via λ(t) `:817`; λ_itc `:846`; A and C in the capability fingerprint `:1131-1132`; Y(t) = N(t)·H̄(t) `:903`.
 

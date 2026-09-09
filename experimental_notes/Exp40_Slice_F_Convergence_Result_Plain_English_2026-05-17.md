@@ -23,7 +23,7 @@ alarms failed. The run stopped itself early — the false alarms never
 did. The settle is recorded as a top-level fact in the run's own
 report, not inferred from a log line. The progress measure rose steadily
 (roughly 0.16 to 0.27) instead of sitting flat near 0.05 as it did for
-twenty-five rounds in the earlier run. And the repair loop was visibly
+25 rounds in the earlier run. And the repair loop was visibly
 working: four checked fixes were written into the working copy of the
 file — each one only after the whole test suite still passed — and the
 panel then reviewed the improved file and ran out of new serious
@@ -44,7 +44,7 @@ cure works; it does not, on its own, prove the whole problem is solved
 for bigger targets, nor say which single change did the most work — that
 needs the planned controlled comparison. Third, settling does not mean
 every issue was resolved: of forty tracked items, sixteen were closed,
-twenty-one were left unconfirmed, none contested. "Settled" means the
+21 were left unconfirmed, none contested. "Settled" means the
 panel stopped raising new serious issues, not that it finished
 everything. Fourth, the run printed a stock end-of-run line claiming it
 ended without settling; that line is a known wrong default — the
@@ -52,7 +52,7 @@ authoritative record says it settled at round six.
 
 ## Why it matters
 
-The earlier run, on the whole unrepaired file, sat flat for twenty-five
+The earlier run, on the whole unrepaired file, sat flat for 25
 rounds and never settled. This run, on a right-sized piece with fixes
 actually written back, settled at round six with the progress measure
 climbing. The contrast is large and points exactly where the diagnosis

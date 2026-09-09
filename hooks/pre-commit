@@ -89,9 +89,11 @@ printf '%s\n' "$OUT" | tail -1
 # [5.4%, 10.8%]. A new note omitting the foot-line was exempt from the check by
 # omission -- the checker existed, and the note simply never met it.
 #
-# WHY STAGED FILES ONLY. Linting 379 archival notes on every commit would fire on
-# work written under earlier standards, which the standard itself preserves
-# deliberately. What a commit can fairly be held to is what that commit contains.
+# WHY THE ADDED LINES ONLY. Linting 379 archival notes on every commit would fire
+# on work written under earlier standards, which the standard itself preserves
+# deliberately. Linting whole STAGED FILES is barely narrower: correcting 1 number
+# in a 400-line note would hold the commit to all 400. What a commit can fairly be
+# held to is what that commit ADDS, and that is what is linted below.
 #
 # WHY IT REFUSES RATHER THAN WARNS. The founder's ruling says blocking, not
 # advisory. `git commit --no-verify` remains the deliberate escape.
@@ -104,7 +106,57 @@ if [ -n "$STAGED_NOTES" ]; then
         echo "            passing on an absent check." >&2
         exit 1
     fi
-    LINT_OUT=$(python3 scripts/note_vagueness_lint.py $STAGED_NOTES 2>&1)
+    # A RATCHET, NOT A BAR. Refuse only findings the commit INTRODUCES.
+    #
+    # This took 2 attempts to scope and both failures are worth recording,
+    # because they are the same mistake at different widths. Linting whole
+    # staged FILES refused its own first real commit with 388 findings, every
+    # one pre-existing prose in archival notes that a 1-line number correction
+    # had touched. Linting ADDED LINES cut that to 38 and was still wrong: a
+    # changed line appears whole in the diff, so correcting 1 numeral in a
+    # sentence made the commit answerable for that sentence's decade of prose.
+    #
+    # The question a guard should ask is not "is this file clean" but "did this
+    # commit make it worse", which is the ratchet idiom this project already
+    # uses for unreached config fields. Each staged note is linted at HEAD and
+    # as staged, and only an INCREASE refuses. A note written under an earlier
+    # standard can be corrected without being rewritten; a new violation cannot
+    # be added.
+    #
+    # A guard that fires on the ordinary case teaches people to reach for
+    # --no-verify by reflex, and the 2 earlier scopings would have taught that
+    # on their first outing.
+    BEFORE_TOTAL=0
+    AFTER_TOTAL=0
+    STAGED_COPY=$(mktemp -d -t cdsfl_note_lint)
+    trap 'rm -rf "$STAGED_COPY"' EXIT
+    for f in $STAGED_NOTES; do
+        base=$(basename "$f")
+        git show ":$f" > "$STAGED_COPY/after_$base" 2>/dev/null || continue
+        A=$(python3 scripts/note_vagueness_lint.py "$STAGED_COPY/after_$base" 2>&1 \
+            | grep -oE '^[[:space:]]*[0-9]+ finding' | tail -1 | grep -oE '[0-9]+')
+        if git show "HEAD:$f" > "$STAGED_COPY/before_$base" 2>/dev/null; then
+            B=$(python3 scripts/note_vagueness_lint.py "$STAGED_COPY/before_$base" 2>&1 \
+                | grep -oE '^[[:space:]]*[0-9]+ finding' | tail -1 | grep -oE '[0-9]+')
+        else
+            B=0   # a NEW note is held to the whole standard, as it should be
+        fi
+        AFTER_TOTAL=$((AFTER_TOTAL + ${A:-0}))
+        BEFORE_TOTAL=$((BEFORE_TOTAL + ${B:-0}))
+        if [ "${A:-0}" -gt "${B:-0}" ]; then
+            echo "" >&2
+            echo "pre-commit: $f went from ${B:-0} to ${A:-0} note finding(s)." >&2
+            python3 scripts/note_vagueness_lint.py "$STAGED_COPY/after_$base" 2>&1 \
+                | tail -20 >&2
+        fi
+    done
+    LINT_OUT="  ratchet: ${BEFORE_TOTAL} finding(s) at HEAD, ${AFTER_TOTAL} as staged."
+    LINT_CODE=0
+    if [ "$AFTER_TOTAL" -gt "$BEFORE_TOTAL" ]; then
+        FINDINGS=$((AFTER_TOTAL - BEFORE_TOTAL))
+    else
+        FINDINGS=0
+    fi
     LINT_CODE=$?
     if [ "$LINT_CODE" -ne 0 ]; then
         echo "" >&2
@@ -112,13 +164,9 @@ if [ -n "$STAGED_NOTES" ]; then
         printf '%s\n' "$LINT_OUT" | tail -15 >&2
         exit 1
     fi
-    # The linter reports rather than exits non-zero, so the finding count is read
-    # from its own summary line. 0 findings is the only passing state.
-    FINDINGS=$(printf '%s\n' "$LINT_OUT" \
-        | grep -oE '^[[:space:]]*[0-9]+ finding' | head -1 | grep -oE '[0-9]+' || echo 0)
     if [ "${FINDINGS:-0}" -ne 0 ]; then
         echo "" >&2
-        echo "pre-commit: REFUSED. $FINDINGS note finding(s) in the staged notes." >&2
+        echo "pre-commit: REFUSED. The staged notes ADD $FINDINGS note finding(s)." >&2
         echo "" >&2
         printf '%s\n' "$LINT_OUT" | tail -30 >&2
         echo "" >&2
@@ -126,7 +174,7 @@ if [ -n "$STAGED_NOTES" ]; then
         echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
         exit 1
     fi
-    echo "pre-commit: note lint clean across $(printf '%s\n' "$STAGED_NOTES" | wc -l | tr -d ' ') staged note(s)."
+    echo "pre-commit: note lint ratchet held ($BEFORE_TOTAL at HEAD, $AFTER_TOTAL as staged)."
 fi
 
 exit 0

@@ -17,7 +17,7 @@ The whole machine has now been run, on a document with a known planted error, re
 
 ## What the run actually did
 
-The document is a short technical reference, about one hundred and fifty lines, with seven claims and exactly one deliberately false claim, plus two runnable code listings. That last detail matters: printed code inside an English document is the exact shape that halted the control experiment last week.
+The document is a short technical reference, about 150 lines, with seven claims and exactly one deliberately false claim, plus two runnable code listings. That last detail matters: printed code inside an English document is the exact shape that halted the control experiment last week.
 
 Five agents were each given the document and the review rules and told to find false claims and prove them. Proving means writing a small program that fails only if the error is genuinely there, and running it before reporting. They were barred from opening the file that holds the answers.
 
@@ -77,6 +77,6 @@ Two. The first question, on telling two defects apart, now with five panel answe
 
 Three. Restarting the control experiment. The evidence supports it considerably better than it did last night.
 
-Nothing is running. Everything is committed and saved. The test suite stands at two thousand five hundred and forty nine passing, none failing, with no network access.
+Nothing is running. Everything is committed and saved. The test suite stands at 2549 passing, none failing, with no network access.
 
 Written under CDSFL note standard v1.2, 14 May 2026.

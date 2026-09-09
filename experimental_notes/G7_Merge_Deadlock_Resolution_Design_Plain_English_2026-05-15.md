@@ -12,7 +12,7 @@ When language models on the panel review the same piece of code, they often surf
 
 For most cases the runner's automatic merge logic decides cleanly. But sometimes a new finding matches multiple existing entries plausibly — the description matches one, the proposed fix overlaps another, the target file is the same as a third. The algorithm has no principled way to choose, so it defers the decision. The finding sits unresolved.
 
-In Experiment 40, this deferral happened at least eight times, including once with a finding that could have plausibly merged into twenty-one different existing entries. That's the post-mortem evidence the project was waiting for before designing the resolution rule.
+In Experiment 40, this deferral happened at least eight times, including once with a finding that could have plausibly merged into 21 different existing entries. That's the post-mortem evidence the project was waiting for before designing the resolution rule.
 
 ## Why the rule has been deferred
 

@@ -31,7 +31,7 @@ Tier two is property based falsification: generate pseudo random inputs across t
 
 Tier three is satisfiability modulo theories solving: assert that the two solutions differ, hand the assertion to a solver, and read equivalence off the result.
 
-Every tool named is already installed here and already routed by the tool manifest, which carries twenty one entries. Syntax tree analysis is imported directly in the immune agents module. Symbolic mathematics has a dedicated verification function. The property based testing framework Gemini names is installed at version six point one five one point nine. The satisfiability solver is installed at version four point one six point zero. Symbolic execution is installed as well.
+Every tool named is already installed here and already routed by the tool manifest, which carries 21 entries. Syntax tree analysis is imported directly in the immune agents module. Symbolic mathematics has a dedicated verification function. The property based testing framework Gemini names is installed at version six point one five one point nine. The satisfiability solver is installed at version four point one six point zero. Symbolic execution is installed as well.
 
 So the pipeline is not new capability. It is a proposed arrangement of capability the project already has.
 
@@ -46,7 +46,7 @@ It was built to a design proposed by the model panel, measured against the archi
 
 The measurement: a Fisher exact probability of zero point seven one, meaning no association whatever between the response vector and defect identity.
 
-The reason it failed is recorded in the code and is worth stating, because it is a property of the material rather than of the implementation. Seventy four of one hundred and one falsifiers shared a single identical response vector: confirmed on the original document and confirmed on every mutation. Seventy three percent of falsifiers responded the same way to every change, so the vector carried no information to distinguish anything.
+The reason it failed is recorded in the code and is worth stating, because it is a property of the material rather than of the implementation. 74 of 101 falsifiers shared a single identical response vector: confirmed on the original document and confirmed on every mutation. 73 percent of falsifiers responded the same way to every change, so the vector carried no information to distinguish anything.
 
 There is a further detail in that code worth noting. An early version of that syntax tree mutation engine spent most of its budget mutating docstrings, which are no operation changes that look like real mutations, and reported a confident and meaningless result. That bug was found and fixed, and the mechanism still did not work after the fix. The failure was not an implementation error.
 
@@ -101,7 +101,7 @@ The first is that a model reasoning about a repository it has read at surface le
 
 The second is that the value of an external opinion here was not the architecture. It was the reversal. A source that recommends an approach and then, when pressed, recommends against the same approach has thereby disclosed how much confidence to place in either.
 
-The third is a testable prediction. If structured value emission is built, the third tier's coverage should rise from its current fifty seven percent toward the proportion of findings that assert any quantity at all, because the tier would no longer depend on a pattern matcher recovering the number from prose. That prediction can be checked against the archive without any live run, by measuring how many findings state a quantity that the current extractor misses.
+The third is a testable prediction. If structured value emission is built, the third tier's coverage should rise from its current 57 percent toward the proportion of findings that assert any quantity at all, because the tier would no longer depend on a pattern matcher recovering the number from prose. That prediction can be checked against the archive without any live run, by measuring how many findings state a quantity that the current extractor misses.
 
 
 ## A note on method

@@ -15,9 +15,9 @@ Nothing in section one is urgent enough to have been guessed at. Each item state
 
 ### Decision 1 — permission to rewrite the working branch's history
 
-What is being asked. Permission to remove the file control two distinct defects KEY dot md from the fifty nine commits on the working branch, using git's history rewriting tool.
+What is being asked. Permission to remove the file control two distinct defects KEY dot md from the 59 commits on the working branch, using git's history rewriting tool.
 
-Why it needs asking. The environment running this session refuses history rewriting as a destructive operation, so it cannot be done without an explicit instruction. It is also not free. Eighteen of the branch's fifty nine commits are referenced by their commit hash inside the project's own markdown documents, most of them in the current state document. Rewriting changes every one of those hashes, so all eighteen references would have to be remapped from the rewrite's own record of old hash to new hash, and each one verified afterwards.
+Why it needs asking. The environment running this session refuses history rewriting as a destructive operation, so it cannot be done without an explicit instruction. It is also not free. Eighteen of the branch's 59 commits are referenced by their commit hash inside the project's own markdown documents, most of them in the current state document. Rewriting changes every one of those hashes, so all eighteen references would have to be remapped from the rewrite's own record of old hash to new hash, and each one verified afterwards.
 
 What is at stake. The file is an answer key. Its contents are already public by another route, described in section three, so removing it publishes nothing new either way. What changes is whether a file named scorer key appears in the public repository's default branch history. That is a statement about how this project operates, separate from what the file reveals.
 
@@ -28,9 +28,9 @@ Recommendation. Grant it, and pair it with decision 2. The remapping is mechanic
 
 What is being asked. Whether to merge the working branch into main and push, or to push the branch by itself.
 
-The measured position. Public main is fifty nine commits behind the working branch. The branch has never been pushed at all, so nothing of the last several weeks is visible to anyone reading the repository.
+The measured position. Public main is 59 commits behind the working branch. The branch has never been pushed at all, so nothing of the last several weeks is visible to anyone reading the repository.
 
-The difference. Pushing the branch creates a copy on the hosting service that nobody reading the project would think to look at, and main stays fifty nine commits stale. Merging into main makes the public repository current, and also makes every commit on the branch reachable from the default branch, including the one holding the answer key if decision 1 is declined.
+The difference. Pushing the branch creates a copy on the hosting service that nobody reading the project would think to look at, and main stays 59 commits stale. Merging into main makes the public repository current, and also makes every commit on the branch reachable from the default branch, including the one holding the answer key if decision 1 is declined.
 
 Recommendation. Merge into main and push, after decision 1 is executed. The founder's own standing rule is that main is the only branch that gets updated unless there is a stated reason for an experimental branch, and the mechanism that broke that rule left main sixteen days stale in August.
 
@@ -46,7 +46,7 @@ Recommendation. An external model authors both, from a written specification the
 
 ### Decision 4 — the panel dispatches, which cost money
 
-What is being asked. Two panel reviews were approved in the founder's last written instructions and have not been run. The first is the falsifier gate repair recommendation, to be reviewed with the second Claude instance and with Fable 5. The second is panel confirmation of the twenty seven instruments whose commissioning status is recorded as not verified, together with clean run readiness.
+What is being asked. Two panel reviews were approved in the founder's last written instructions and have not been run. The first is the falsifier gate repair recommendation, to be reviewed with the second Claude instance and with Fable 5. The second is panel confirmation of the 27 instruments whose commissioning status is recorded as not verified, together with clean run readiness.
 
 Why they were not run overnight. They spend real money and produce findings the founder has to read. Starting them while the founder slept would have meant a queue of unread panel output waiting in the morning, competing with the six decisions above. Neither is blocked by anything technical.
 
@@ -84,7 +84,7 @@ Separately, and requiring no action unless the founder wants it: this session lo
 
 ### Finding 1 — exp55's answers were public three days before it ran
 
-The rule that has been stopping this project from publishing its work named the wrong file. It guarded the scorer key, which was split out of the target document on the twenty third of August. That split was correct and necessary. But the key's sibling, the ground truth file for the same target, states the same two defects in the same terms and has been on the public main branch since the twentieth of August at twenty one minutes past one in the morning. The target document itself is public too. Both experiment 55 runs started on the twenty third. The ground truth file also names which single edit would appear to cure both defects, and names the disagreement between two panel models that the control was built to settle, which is the experiment's design rather than merely its answers.
+The rule that has been stopping this project from publishing its work named the wrong file. It guarded the scorer key, which was split out of the target document on the twenty third of August. That split was correct and necessary. But the key's sibling, the ground truth file for the same target, states the same two defects in the same terms and has been on the public main branch since the twentieth of August at 21 minutes past one in the morning. The target document itself is public too. Both experiment 55 runs started on the twenty third. The ground truth file also names which single edit would appear to cure both defects, and names the disagreement between two panel models that the control was built to settle, which is the experiment's design rather than merely its answers.
 
 Both files now live outside any repository, in a folder called CDSFL experiment keys, with a README recording why the target is spent. The repository's ignore rules refuse the whole class by filename pattern.
 
@@ -92,9 +92,9 @@ A correction to what was reported at half past midnight. It was stated then that
 
 ### Finding 2 — the renumbering premise does not hold, and two other things do
 
-The founder asked for the experiments to be renumbered by actual run order. Measuring first showed there is nothing to fix. Sorted by start time, the experiment number is already perfectly monotonic across all forty four non-empty run directories, with zero violations. The three apparent exceptions are empty directories written on the seventh of August by aborted re-invocations of experiments 35 and 36, which are not runs. Renumbering would also be expensive, because both the run directory name and the report filename embed the experiment number, so it would mean renaming fifty six directories and severing every document reference that points into them.
+The founder asked for the experiments to be renumbered by actual run order. Measuring first showed there is nothing to fix. Sorted by start time, the experiment number is already perfectly monotonic across all 44 non-empty run directories, with zero violations. The three apparent exceptions are empty directories written on the seventh of August by aborted re-invocations of experiments 35 and 36, which are not runs. Renumbering would also be expensive, because both the run directory name and the report filename embed the experiment number, so it would mean renaming 56 directories and severing every document reference that points into them.
 
-Two real problems sit underneath the request. First, four numbers in the span never ran at all: 50, 51 and 52 have configurations and no run directory, and 54 has neither. A reader counting the span infers twenty seven experiments; twenty three numbers produced a directory and twenty two produced a report. Second, each run's outcome is recorded in two places that disagree. Twenty of thirty one completion signals carry an empty reason field, and in seven of those the run report does name an outcome the signal lost. Tooling reading only the signal sees a converged run as incomplete. The runner's own source code names this defect and dates a partial fix to the eighteenth of May; runs after that date still show it.
+Two real problems sit underneath the request. First, four numbers in the span never ran at all: 50, 51 and 52 have configurations and no run directory, and 54 has neither. A reader counting the span infers 27 experiments; 23 numbers produced a directory and 22 produced a report. Second, each run's outcome is recorded in two places that disagree. Twenty of 31 completion signals carry an empty reason field, and in seven of those the run report does name an outcome the signal lost. Tooling reading only the signal sees a converged run as incomplete. The runner's own source code names this defect and dates a partial fix to the eighteenth of May; runs after that date still show it.
 
 A ledger now derives all of this from the artefacts rather than from anyone's memory, and fails if the committed copy stops matching what is on disk.
 
@@ -106,7 +106,7 @@ The persistent memory index recorded five straight convergences across experimen
 
 The founder asked for a specification framing this project as striving toward a general purpose STEM calculator on massively distributed compute and epistemic diversity, inspired by the at home projects without copying them.
 
-The prior question is whether adding cognitive architectures buys coverage. The project's own coverage model says that depends on the correlation between architectures, and that correlation has been recorded every round all along without anyone summing it. Across two hundred and eighty nine observations in thirty one run directories the mean is 0.564.
+The prior question is whether adding cognitive architectures buys coverage. The project's own coverage model says that depends on the correlation between architectures, and that correlation has been recorded every round all along without anyone summing it. Across 289 observations in 31 run directories the mean is 0.564.
 
 At that correlation the fifth architecture contributes three point six percent of what the first contributes, and the panel fields five. Going from five architectures to fifty gains between two and five thousandths of coverage across every plausible detection rate. Optimal stopping lands between three and six, which derives the saturation figure the project has carried as an observation for months. It was never a property of the problem. It is a property of how correlated the available architectures are. The arithmetic was done twice, symbolically and numerically, agreeing to twelve decimal places.
 
@@ -122,7 +122,7 @@ It was claimed on the twenty fifth of August that supersession across documents 
 
 ### Finding 6 — sv crashed, an hour after being declared working
 
-At fifty three minutes past midnight the save command exited cleanly. At fifty two minutes past one the same command on the same tree exited with a traceback. Nothing in the repository had changed. This process had lost read access to the persistent memory folder.
+At 53 minutes past midnight the save command exited cleanly. At 52 minutes past one the same command on the same tree exited with a traceback. Nothing in the repository had changed. This process had lost read access to the persistent memory folder.
 
 Under that condition the folder still reports that it exists and that it is a directory, while every attempt to list or read it fails, and the pattern matching call used to find files returns an empty list without raising an error at all. Every memory access in the save routine and in the drift guards was gated on existence rather than on readability, so no guard fired. The save routine crashed outright. One drift guard reported that no note standard files were found, asserting absence where there was only denial, inside the guard written the previous day to catch exactly that class of mistake. Another died with a type error, a permission denial wearing the costume of a different defect entirely.
 
@@ -139,7 +139,7 @@ It now measures again afterwards and reports one block last, which re-reads the 
 
 ## Test state
 
-Sixty seven new tests were added across six files during this window, every one of them falsified by deliberately breaking the thing it tests. The full suite result at the close of the window is recorded in the chat summary and in the final commit of this window.
+67 new tests were added across six files during this window, every one of them falsified by deliberately breaking the thing it tests. The full suite result at the close of the window is recorded in the chat summary and in the final commit of this window.
 
 
 Written under CDSFL note standard v1.6 (24 August 2026).

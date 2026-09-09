@@ -82,7 +82,7 @@ Fourth, a test that fails to import is labelled as a fix that did not work. Logg
 
 Fifth, the results file is overwritten by every resume. Worked around: both the report and the composition check rebuild from the append only run log, which is the reason a run log is append only.
 
-Five of twenty five attempts were decided by one of these defects rather than by the model's work. Any ranking of the models drawn from this run would be an artefact of that, and none is offered.
+Five of 25 attempts were decided by one of these defects rather than by the model's work. Any ranking of the models drawn from this run would be an artefact of that, and none is offered.
 
 
 ## The Round Robin Objection, Demonstrated

@@ -33,7 +33,7 @@ reader-facing summary; it must remain aligned with those files.
 | `t` | Send output to TTS file |
 | `r` | Re-read key context files (quick check) |
 | `rt` | Read all recovery resources + continue |
-| `rs` | Recover state — run `scripts/cdsfl_recover.py --record-restore`, then rebuild full working context from session-context + action queue + checkpoints + memory + recovery resources |
+| `rs` | Recover state — run `scripts/cdsfl_recover.py --record-restore`, CAPTURE ITS EXIT CODE, then rebuild full working context from session-context + `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` + `experimental_notes/CDSFL_MASTER_TASK_LIST.md` + memory + recovery resources. Amended 2026-09-09: this said "action queue + checkpoints", which named artefacts this project has never had — `ACTION_QUEUE.md` and `QWERTY_CHECKPOINT.md` are Project_Genesis files and `git log --all` returns 0 commits touching either path here |
 | `rg` | Regain full context on a named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output; name the resources consulted in a one-line preamble |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs; sub-agents inherit the same constraint |
 | `sv` | Save state — run `scripts/cdsfl_sv.py`, update recovery docs, commit and push |

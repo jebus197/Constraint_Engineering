@@ -84,9 +84,14 @@ def main() -> int:
         print(f"Clopper-Pearson 95% : [{lo_s*100:.1f}%, {hi_s*100:.1f}%]  (scipy cross-check)")
         print(f"tools agree to 1e-9 : {abs(lo_s-lo_c) < 1e-9 and abs(hi_s-hi_c) < 1e-9}")
     if changed:
-        print("\nnotes whose finding set changed (removed, added):")
-        for name, g, n in sorted(changed, key=lambda r: -r[1])[:15]:
+        SHOWN = 15
+        ordered = sorted(changed, key=lambda r: -r[1])
+        print(f"\nnotes whose finding set changed (removed, added): "
+              f"{len(ordered)} in total")
+        for name, g, n in ordered[:SHOWN]:
             print(f"  {name[:62]:62s} -{g}  +{n}")
+        if len(ordered) > SHOWN:
+            print(f"  ... and {len(ordered) - SHOWN} more not listed")
     return 1 if added else 0
 
 

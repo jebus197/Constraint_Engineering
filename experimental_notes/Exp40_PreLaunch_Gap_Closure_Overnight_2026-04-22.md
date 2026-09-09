@@ -86,7 +86,7 @@ The arbitration rules for G6 and G7 are deliberately left unspecified at design 
 
 ## Test-count impact
 
-The shift added fifty-six new tests across five new test files:
+The shift added 56 new tests across five new test files:
 
 | Test file | New tests | Class count | Wall-clock |
 |-----------|-----------|-------------|------------|

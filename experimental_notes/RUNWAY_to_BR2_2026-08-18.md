@@ -587,7 +587,7 @@ than found later.
    drifted two versions and four months); that each document's declared Desktop mirror matches its
    canonical copy (the runway's was 127 lines stale); and deriving the memory ledger inside `sv`
    instead of typing it (seven consecutive manual bumps, two in one session).
-5. **An archive scheme for the TTS folder.** Roughly four hundred files going back to March sit in
+5. **An archive scheme for the TTS folder.** Roughly 400 files going back to March sit in
    one directory the founder reads from. Offered 2026-08-24 and not taken up; recorded so it is not
    lost.
 

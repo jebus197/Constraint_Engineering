@@ -7,7 +7,7 @@
 
 The founder's read is correct. This is a routing fault, and the other specialist types exist precisely to handle it. Nothing found today contradicts that, and the measurements support it directly.
 
-The project is closer to the goal than it feels tonight, and the numbers say so rather than the narrative. The six clean convergences were real and they still stand. Two of them, the chemistry exam and the engineering exam, were English documents carrying their arguments in prose, tables and equations. Both converged. Between them they produced seventy five findings and exactly one went to a human, and that one was cleared automatically afterwards. The instrument already works on prose STEM.
+The project is closer to the goal than it feels tonight, and the numbers say so rather than the narrative. The six clean convergences were real and they still stand. Two of them, the chemistry exam and the engineering exam, were English documents carrying their arguments in prose, tables and equations. Both converged. Between them they produced 75 findings and exactly one went to a human, and that one was cleared automatically afterwards. The instrument already works on prose STEM.
 
 What broke was narrower than it looked all day. One document shape, English prose containing printed code listings, meets one stage of the system that was never told such documents exist. That is it. It is a prompt, not an architecture.
 
@@ -20,7 +20,7 @@ The instruction sent up that ladder is written for program code only. It tells t
 
 So a model asked to test a defect in a printed listing inside an English document is told to import a module that does not exist, and is never told where the document is. Both rungs fail. The system then records the reason as, no model produced a runnable test. That sentence is false. No model was ever given the target.
 
-The numbers. On the two exams with no printed listings, the ladder resolved forty one findings out of forty one attempts. On the two attempts at the control document, which does carry printed listings, it resolved zero out of twenty five, and the run halted at round three of sixteen.
+The numbers. On the two exams with no printed listings, the ladder resolved 41 findings out of 41 attempts. On the two attempts at the control document, which does carry printed listings, it resolved zero out of 25, and the run halted at round three of sixteen.
 
 A fourteen line test that simply opens the control document by name and exercises the listing returns a confirmed result from the system's own verifier, for the very finding the instrument had called impossible. The findings were always computable. The instrument withheld the input and then recorded the failure as irreducibility.
 
@@ -33,7 +33,7 @@ One. A note written into the control experiment's configuration blames the halt 
 
 Two. Today's repair was framed as a possible risk to prose convergence. It is not. Both exams converged under the worst version of that code the project has shipped, and in both runs the fix verification stage verified nothing at all. Every closure came from the demonstration stage instead.
 
-Three. The fifty one tests written today measured neither convergence nor human queue load. No test in the set touches a convergence gate or a queue counter, and none asserts that any finding ever reaches a closed state. They prove the machinery declines to close things wrongly, which is worth having, but that is not what was claimed for them.
+Three. The 51 tests written today measured neither convergence nor human queue load. No test in the set touches a convergence gate or a queue counter, and none asserts that any finding ever reaches a closed state. They prove the machinery declines to close things wrongly, which is worth having, but that is not what was claimed for them.
 
 
 ## One thing that needs a ruling, and cannot be engineered around quietly
@@ -55,7 +55,7 @@ There is a good reason behind the underlying rule, and it is backed by evidence 
 4. Correct the panel instruction, which still tells every model every round that fixes are linted, tested and closed on a clean pass. On an English document none of that now happens.
 5. Fix the test transport that truncates any test carrying its own code fence, then reinstate the four tests that were skipped because of it.
 6. Require a confirming test to also pass cleanly against a corrected copy of the document. This closes a newly found hole where a valid but logically wrong test closed a finding against a claim that was true.
-7. Give a route out to the thirty eight findings across ten archives that are stuck with no way forward and remain exposed to a late objection that blocks convergence.
+7. Give a route out to the 38 findings across ten archives that are stuck with no way forward and remain exposed to a late objection that blocks convergence.
 8. Stop re dispatching findings up a ladder that has already been recorded as exhausted. Pure cost saving.
 9. The linter success message that is being counted as a violation, which has been quietly confirming code quality findings that do not exist across the whole arc.
 10. The launch check that refuses to start a run whose settings contradict its target, and the feed that tells the panel why its repairs were rejected. Fifty rejections across four rounds and no model was ever told.
@@ -66,7 +66,7 @@ There is a good reason behind the underlying rule, and it is backed by evidence 
 
 1. The control run. Recommendation: neither restart nor resume until the ladder fix lands and its configuration note is corrected. Then restart rather than resume, because four of its rounds were produced by broken machinery.
 
-2. The five remaining prose targets do not exist yet. They are named in the physics, biology and capstone configurations but have not been written. Recommendation: author them with their claims in prose, tables and equations rather than in printed code listings. The two exams that converged had no printed listings and produced one human escalation in seventy five findings. This decouples the whole remaining arc from the ladder defect and costs nothing. This is probably the single highest value decision available tonight.
+2. The five remaining prose targets do not exist yet. They are named in the physics, biology and capstone configurations but have not been written. Recommendation: author them with their claims in prose, tables and equations rather than in printed code listings. The two exams that converged had no printed listings and produced one human escalation in 75 findings. This decouples the whole remaining arc from the ladder defect and costs nothing. This is probably the single highest value decision available tonight.
 
 3. The serious finding ceiling described above. Either accept it explicitly, or authorise recording the computed answer even where the sweep declines to act on it, so that a human adjudicating a permanent resident at least sees the computation the instrument already performed and discarded. Recommendation: record the answer at minimum.
 

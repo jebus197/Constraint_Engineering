@@ -16,13 +16,13 @@ One qualification, made dispassionately. The mass-energy relation is sufficient 
 
 ## The codification already exists in this project
 
-The mathematical appendix contains twenty-nine statements of the required form. They are called reduction properties, and each says that a richer formulation collapses exactly onto a simpler one under stated conditions. The most important is the vanishing of the prior flaw rate from the recursive risk update: once the current risk estimate exists, the prior plays no further part, and the update depends only on the present state and the effectiveness of the next pass. Symbolic evaluation confirms this is exact, not approximate. The risk after two passes computed from the prior and the risk after two passes computed from the intermediate state differ by exactly zero, and the prior does not appear in the update rule at all. A forty-digit numerical evaluation agrees to seventeen decimal places.
+The mathematical appendix contains 29 statements of the required form. They are called reduction properties, and each says that a richer formulation collapses exactly onto a simpler one under stated conditions. The most important is the vanishing of the prior flaw rate from the recursive risk update: once the current risk estimate exists, the prior plays no further part, and the update depends only on the present state and the effectiveness of the next pass. Symbolic evaluation confirms this is exact, not approximate. The risk after two passes computed from the prior and the risk after two passes computed from the intermediate state differ by exactly zero, and the prior does not appear in the update rule at all. A forty-digit numerical evaluation agrees to seventeen decimal places.
 
 That is compression, and it is distinguishable from truncation by a mechanical test. The prior was removed by derivation. Nothing that depended on it was lost, because nothing depends on it.
 
 ## The state of that codification
 
-Of the twenty-nine reduction properties claimed in the appendix, zero are verified by any test. The unverified fraction is therefore 1.00, with a 95 percent Wilson interval from 0.883 to 1.000. Targeted searches for each specific reduction condition, including the vanishing prior, the delivery-feasibility limit, the decomposition-yield limit, the deferral limit, the severity-weighting collapse and the scope-expansion limit, return no matching test in any test module.
+Of the 29 reduction properties claimed in the appendix, zero are verified by any test. The unverified fraction is therefore 1.00, with a 95 percent Wilson interval from 0.883 to 1.000. Targeted searches for each specific reduction condition, including the vanishing prior, the delivery-feasibility limit, the decomposition-yield limit, the deferral limit, the severity-weighting collapse and the scope-expansion limit, return no matching test in any test module.
 
 This is not because the checks are hard. Two of them were carried out during this analysis in about ten lines of symbolic algebra each. The caveat is that the two chosen were the two most self-contained; others involve pipeline state and would cost more.
 

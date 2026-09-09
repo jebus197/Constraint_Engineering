@@ -93,9 +93,9 @@ The Evidence That The Instrument Already Works On Maths In Prose
 
 A reasonable worry about all of the above is that disabling the fix scoring pipeline for prose amounts to a refusal to handle any target where logic and mathematics live side by side in ordinary language. A structural engineering problem, say. That worry is answerable from the record, and the answer is reassuring.
 
-Two such experiments have already been run. The chemistry exam and the engineering exam are exactly that kind of target: buckling loads, factors of safety, unit algebra, molar masses, all argued in prose. Both converged, at rounds five and six. Thirty one of thirty two criticals in one, and thirty one of thirty one in the other, were confirmed by a runnable demonstration and then closed.
+Two such experiments have already been run. The chemistry exam and the engineering exam are exactly that kind of target: buckling loads, factors of safety, unit algebra, molar masses, all argued in prose. Both converged, at rounds five and six. 31 of 32 criticals in one, and 31 of 31 in the other, were confirmed by a runnable demonstration and then closed.
 
-They did that while the fix scoring pipeline rejected every single proposed fix. All thirty one and all thirty two scored zero. The parse barrier described earlier was already in force, so the pipeline contributed nothing but rejections, and the experiments succeeded regardless.
+They did that while the fix scoring pipeline rejected every single proposed fix. All 31 and all 32 scored zero. The parse barrier described earlier was already in force, so the pipeline contributed nothing but rejections, and the experiments succeeded regardless.
 
 The reason is that findings are not resolved by the scoring pipeline. They are resolved by a falsifier: a short program that computes the true value and compares it against what the document claims. For a mathematical claim in prose that is entirely natural and it is what actually did the work in both experiments.
 
@@ -113,7 +113,7 @@ On naming. One model calls the faults stragglers within a well defined unsound r
 
 On the alarm. One model wants the queue threshold removed entirely. The other four want it kept but retargeted, so that instead of refusing to finish it halts, notifies, and attaches the evidence. The last seat named the removal proposal for what it is: this assistant's own error, promoted to architecture. That alarm was correct today, it was suppressed twice, and deleting it because it proved inconvenient would discard the only instrument that noticed anything was wrong.
 
-Worth recording: the model proposing removal had earlier proposed raising the threshold to two hundred, which was precisely the error made twice this morning. Two other models rejected that independently and named it as the error it was, without being told which position belonged to whom. The panel caught the mistake from inside.
+Worth recording: the model proposing removal had earlier proposed raising the threshold to 200, which was precisely the error made twice this morning. Two other models rejected that independently and named it as the error it was, without being told which position belonged to whom. The panel caught the mistake from inside.
 
 
 Cost

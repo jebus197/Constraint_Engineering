@@ -24,7 +24,7 @@ what was preventing late-round convergence.
 A second, sharper observation comes from the full 29-round γ trajectory: γ
 **peaked at 0.2967 at Round 3 — within ≈1.1% of the 0.30 convergence
 threshold — then declined monotonically and stabilised on a non-converged
-plateau ≈0.05 for the remaining twenty-five rounds.** The system reached the
+plateau ≈0.05 for the remaining 25 rounds.** The system reached the
 threshold of convergence early and then diverged from it and never returned.
 
 ## Run parameters and outcome

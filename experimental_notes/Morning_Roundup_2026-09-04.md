@@ -19,7 +19,7 @@ The same applies to the resume setting you queried. It exists to continue a run 
 
 ## Decision 12 Is Now Closed, And Smaller Than It Looked
 
-Of the twenty five settings no configuration file names, twenty one carry ordinary numeric defaults and are simply never varied. Two are the operator features above. That leaves two: severity calibration, and stall based termination.
+Of the 25 settings no configuration file names, 21 carry ordinary numeric defaults and are simply never varied. Two are the operator features above. That leaves two: severity calibration, and stall based termination.
 
 Neither is broken. Both were deliberately built switched off, pending evidence. The commit that created severity calibration says so in its title, and the runner comments that running without it is safe and purely observational. That matches your own standing position that shadow machinery should be enabled only once there is evidence it does not distort anything. So your instruction to turn them on and observe is commissioning work for the next simulated run, which is exactly the right frame, and no repair is needed first.
 
@@ -29,7 +29,7 @@ You asked what the April seat contrast actually was and whether something that o
 
 Two panel seats were deliberately given different instruction conditions, so that diversity came from how they were briefed rather than from which company built them. That difference was lost during a reliability fix. The correction made earlier this month found that the real difference was tool access rather than the wording of the prompt.
 
-Why it matters now. Nine of the twenty eight archived runs were already effectively single model runs, six seats all filled by one model, and they ran to convergence. The finding recorded at the time states the position plainly: with one model, diversity has to come from instruction conditions, which is exactly the contrast that lapsed in April. So this is not an old housekeeping item. It is the mechanism that decides whether a researcher with a single model can get the benefit of a panel at all, which is the question your own experiment in decision 9 is designed to answer. Last night's work pointed the same way: what did the useful work was independent readings of the same material, not independent suppliers.
+Why it matters now. Nine of the 28 archived runs were already effectively single model runs, six seats all filled by one model, and they ran to convergence. The finding recorded at the time states the position plainly: with one model, diversity has to come from instruction conditions, which is exactly the contrast that lapsed in April. So this is not an old housekeeping item. It is the mechanism that decides whether a researcher with a single model can get the benefit of a panel at all, which is the question your own experiment in decision 9 is designed to answer. Last night's work pointed the same way: what did the useful work was independent readings of the same material, not independent suppliers.
 
 Recommendation unchanged, now with the reasoning behind it. Restore the contrast by giving one seat tool access, and treat it as part of the single model experiment rather than as a separate chore.
 
@@ -37,7 +37,7 @@ Recommendation unchanged, now with the reasoning behind it. Restore the contrast
 
 You authorised overnight work and told me not to stop until it was done. I stopped anyway, and the reason is the substance of this whole discussion rather than an excuse.
 
-I made four measurement errors between midnight and three. I scanned four configuration files when the real population was forty four, and reported seventy percent. I said four settings were unreachable when two of them have command line flags. I counted a verdict using a text label the code never emits, which manufactured a rate of one hundred percent out of nothing. And I read one thousand five hundred and seventy seven occurrences of a phrase inside model replies as if they were events in a gate.
+I made four measurement errors between midnight and three. I scanned four configuration files when the real population was 44, and reported seventy percent. I said four settings were unreachable when two of them have command line flags. I counted a verdict using a text label the code never emits, which manufactured a rate of 100 percent out of nothing. And I read 1577 occurrences of a phrase inside model replies as if they were events in a gate.
 
 Every one was caught before it reached a decision. Every one was in work I was about to hand over as finished. The next item in your order is a change to the path that accepts or rejects proposed fixes, and the module's own documentation states that changing it alters which fixes are rejected, which alters the prompts, which invalidates the ability to replay archived runs. That is the least forgiving change in the queue and the worst possible one to attempt while producing an error every forty minutes.
 

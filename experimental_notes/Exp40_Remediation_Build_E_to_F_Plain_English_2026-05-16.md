@@ -21,7 +21,7 @@ Six pieces of work were agreed and all but the last are finished,
 tested, and committed; the last is running.
 
 First, every fix from every past run of this experiment was collected
-and checked. Forty-four had been recorded as closed. A clean version of
+and checked. 44 had been recorded as closed. A clean version of
 the file was rebuilt by applying them one at a time, keeping a fix only
 if the whole test suite still passed afterwards. Eleven held up. Most of
 the rest were competing edits to the same lines — the long-known

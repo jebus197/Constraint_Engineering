@@ -114,7 +114,7 @@ happens when logic and mathematics have to live side by side in the same target.
 The answer is that the system now handles it by refusing to pretend, rather than
 by refusing to engage.
 
-Fifty-one tests exercise these documents. Among them is a deliberate tripwire: a
+51 tests exercise these documents. Among them is a deliberate tripwire: a
 test that asserts the broken behaviour and is configured to fail loudly if it
 ever starts passing. That tripwire is what refused to let the third repair's
 defect settle in quietly.
@@ -138,7 +138,7 @@ still passes.
 An alarm that had been refusing to let the run finish was raised twice, to eight
 and then to thirty, to get past it. Both changes are reverted. The alarm was
 right. It had detected that the fix-scoring machinery was rejecting every
-proposed repair — thirty-eight rejections, twenty-nine of them from the same
+proposed repair — 38 rejections, 29 of them from the same
 broken check — and raising the threshold was suppressing a working instrument
 rather than fixing anything.
 

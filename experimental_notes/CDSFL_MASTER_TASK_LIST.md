@@ -306,14 +306,32 @@ Following from 4.2: the term that encodes simplicity in the model is a constant,
 **6.6** Instrument target rewrites with an author, not only a blob hash. Attribution of the 12 rewrites of `bench/dm/_memory.py` is OPEN because the watch recorded hashes and not actors.
 <!-- task: 6.6 | state: OPEN | status: PROPOSED -->
 **6.7** Assess whether the seat's `update_drift` guard is correct. It is a candidate finding against a detector the committed source still describes as unreached.
-<!-- task: 6.7 | state: OPEN | status: COMMITTED -->
+<!-- task: 6.7 | state: DONE | status: COMMITTED -->
+**ASSESSED 2026-09-09. The assessment is the deliverable, and it finds the question underneath is a founder decision.** `update_drift` **has no production caller**: `test_update_drift_has_no_production_caller` establishes that structurally, with an AST scan for call sites rather than a grep, and it passes. The committed source's own header says the same. **So the seat's candidate finding is correct and not actionable** — it concerns the calibration of a detector that has never run, and a calibration claim about code that never executes can be neither confirmed nor refuted by any run.
+
+**Replayed over the 3 recording runs, measured rather than described:** the largest CUSUM excursion is **0.5595 against a threshold of 2.0, 27.98% of it**, cross-verified with mpmath and numpy agreeing to 16 significant figures, leaving **72.0% headroom**. It would not have fired, and not narrowly.
+
+**What follows is a ruling, not more work.** An addition nothing reaches is not additive, so the detector should be WIRED — at which point its calibration becomes live and the seat's finding becomes urgent — or RETIRED with an explicit entry. Leaving it unreached is a third state the additive standard does not recognise. Carried as I31 in the issues log.
 
 ---
 
 ## 7. The notes remediation
 
 **7.1** Repair the experimental notes. Status PROPOSED. Founder ruling, verbatim: *"Fix them all, or at least those that a technical reader would be likely to find insufficient in the interests of reproducibility."*
-<!-- task: 7.1 | state: OPEN | status: PROPOSED -->
+<!-- task: 7.1 | state: OPEN | status: BUILT -->
+**BOUNDED SLICE DONE 2026-09-09; the other 2 slices are scoped, not swept.** The scope was split at the start rather than at the debrief, per `feedback_fix_all_scope_split`.
+
+**BOUNDED, done.** SPELLED NUMBER: **207 of 283 converted, 73.14%, Wilson [67.7%, 78.0%]**, Clopper-Pearson [67.6%, 78.2%], statsmodels and scipy agreeing to 1e-9. Script: `scripts/spelled_number_repair_2026-09-09.py`, 21 tests. The remaining 76 are DELIBERATE REFUSALS, not misses.
+
+**The refusals matter more than the conversions.** Reading the first dry run caught 4 classes of false figure before anything was written, and a wrong number is worse than a spelled one because it reads as a measurement: "ten thousand million million" summed to 2010000; "the location series reaches zero three times" would have become "reaches 3 times"; "between one pound forty and two pounds thirty" became 42; "between fifteen and twenty five thousand" became 40000. A 5th was caught by reading the diff AFTER the first apply and was reverted — a sentence teaching note-standard Rule 11 had its number-words converted, breaking the rule the sentence exists to state.
+
+**No verbatim quotation was rewritten**, verified exactly rather than hoped: the double-quoted spans of all 67 changed files were compared before and after, and the only difference is a quotation this list itself gained.
+
+**SPEC-ONLY, not swept.** UNNAMED SUBJECT, 558 findings, of which the single commonest phrase, "the system", accounts for 251. Naming the right subject needs per-instance judgement about what each sentence meant; a regex sweep here is the mechanical rewrite `feedback_no_mechanical_tts` forbids.
+
+**SWEEP LATER.** QUANTITY WITHOUT A VALUE, 296. Mixed: some want a figure that exists, some want one nobody measured, and the 2 need different answers.
+
+**NEEDS YOUR RULING on the TTS half.** The Desktop TTS folder carries **622 spelled-number sites across 138 of 486 files**. That folder is UNVERSIONED, so a bulk edit there is not revertible, and it was left untouched.
 **1158 findings across 217 of the 373 notes** (58.18%, Wilson [53.11%, 63.07%]), of which **535 are the unnamed-subject class** (46.20%, Wilson [43.35%, 49.08%]) — the exact class complained of. 1 offending phrase accounts for 235 findings, 20.29% of the corpus.
 **7.2** Wire the vagueness linter to something. Whether any hook, test or continuous-integration step invokes it is OPEN; the evidence suggests it is only ever run by hand, which is the 2026-09-04 lesson repeating.
 <!-- task: 7.2 | state: DONE | status: COMMITTED -->
@@ -327,7 +345,8 @@ Following from 4.2: the term that encodes simplicity in the model is a constant,
 ## 8. Housekeeping
 
 **8.1** Amend the `rs` definition in the global configuration. `ACTION_QUEUE.md` and `QWERTY_CHECKPOINT.md` are **Project_Genesis artefacts from February and March 2026**, later copied into Metis, and were never present in Constraint_Engineering across 1,161 revisions. Make the 2 names project-conditional rather than unconditional; a flat delete is also safe, since every consumer already has a project-local pointer. Also sweep the residual mention at `resources/SHORTCUTS.md:36`.
-<!-- task: 8.1 | state: OPEN | status: PROPOSED -->
+<!-- task: 8.1 | state: DONE | status: COMMITTED -->
+**DONE 2026-09-09.** The global `rs` definition is now project-conditional and says why, rather than deleting the 2 names outright: a reader of another project still needs to know what they were. **Verified rather than assumed:** neither file is present here, `git log --all` returns 0 commits touching either path across the full history, and neither exists in any sibling project directory. `resources/SHORTCUTS.md` said "action queue + checkpoints" — generic phrasing for the same absent artefacts — and now names this project's real queue. `resources/RECOVERY.md` carried a note reporting the staleness, which was itself stale the moment the fix landed; it now records the resolution.
 **8.2** Adjudicate the exp39-experimental branch with Fable and CC2. Founder ruling, verbatim: *"Get Fable and CC2 to look at this with you, decide which elements on this branch remain useful and should be adopted in light of everything else we have done and which should be considered superseded."* It holds 107 commits unreachable from `origin/main`, 865 orphan-candidate objects and 12 file paths existing nowhere else, but its tip tree is byte-identical to main commit `043a0a8`. One tag command pins everything before any deletion.
 <!-- task: 8.2 | state: OPEN | status: PROPOSED -->
 **8.3** Rebuild the figure that justifies keeping that branch. "20 of 21 falsifiers reproduce against an earlier stored version" exists only as prose and as a code comment at `scripts/adjudicate_by_repair.py:270`, with no committed output. The rule covering this explicitly names code comments.

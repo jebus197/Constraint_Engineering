@@ -49,7 +49,7 @@ Both were found by the panel. Both are real. Both are still in the document.
 ## Why this is not a failure of the audit
 
 It would be easy, and wrong, to conclude that whoever checked the document was
-careless. The checking was thorough. Every one of the document's forty-four claims
+careless. The checking was thorough. Every one of the document's 44 claims
 was not merely read but actually executed, using symbolic algebra, a constraint
 solver, dimensional analysis and random sampling, according to what each claim
 needed. That is a serious standard.
@@ -117,7 +117,7 @@ cuts the program off in mid-sentence. What survives is a fragment that looks lik
 program, is not valid, and fails the moment it runs.
 
 Five findings in the later run died exactly this way, each cut off at the same point,
-one hundred and thirty-four characters in, halfway through a piece of text the program
+134 characters in, halfway through a piece of text the program
 never finished writing.
 
 The direction of this fault is the worst part. A proof that does the lazy thing, and
@@ -137,8 +137,8 @@ would have grown worse as the work continued.
 
 The proofs were never actually lost. They were preserved in the raw record of what
 each model said; only the extracted copies were damaged. Re-reading that raw record
-with the corrected extractor recovers forty-two working proofs where the damaged
-version had twenty-six, twelve of which could not run at all.
+with the corrected extractor recovers 42 working proofs where the damaged
+version had 26, twelve of which could not run at all.
 
 That matters practically. This experiment does not need to be paid for again. It can
 be re-scored from material already on disk, and the re-scored version rests on a

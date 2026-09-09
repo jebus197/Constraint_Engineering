@@ -30,7 +30,7 @@ The five decisions from the earlier note are all still open and none of them hel
 
 The routing ladder now knows what it is looking at. On an English document it receives the document's location, the document's text, and an instruction to open it by name and extract the listing a claim refers to. Previously it received the finding's identifier, its description, which model raised it, and its severity, and was told to import a program module that does not exist.
 
-The measurement that justified this was forty one successful resolutions out of forty one attempts on documents without printed code listings, against zero out of twenty five on the document that has them.
+The measurement that justified this was 41 successful resolutions out of 41 attempts on documents without printed code listings, against zero out of 25 on the document that has them.
 
 Two smaller repairs travelled with it. The failure message no longer claims something it cannot know: instead of no model produced a runnable test, it now records how many rungs actually reached a model and that none returned a test the system could confirm. And both versions of the instruction now warn against putting a code fence inside the answer, which is the transport fault that truncated two of five test cases into errors.
 
@@ -101,6 +101,6 @@ And the control run itself, which should now be restarted rather than resumed, b
 
 ## What is left that needs no ruling
 
-The thirty eight findings stuck with no route to a settled state. The hole where a valid but logically wrong test can settle a finding against a true claim. The transport truncation and the four checks currently skipped because of it. Clearing the flag that makes the system re dispatch findings up a ladder already recorded as exhausted, which is pure cost. The log that writes into the run archive when it should not. And a documentation sweep.
+The 38 findings stuck with no route to a settled state. The hole where a valid but logically wrong test can settle a finding against a true claim. The transport truncation and the four checks currently skipped because of it. Clearing the flag that makes the system re dispatch findings up a ladder already recorded as exhausted, which is pure cost. The log that writes into the run archive when it should not. And a documentation sweep.
 
 Written under CDSFL note standard v1.2, 14 May 2026.

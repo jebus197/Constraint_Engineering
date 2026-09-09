@@ -27,7 +27,7 @@ Every fix was confirmed working in production, not just in tests:
 The reasoning-trace recovery fix fired sixteen times. Each time, one
 of the two "thinking" models returned an empty answer field but a full
 chain-of-thought; the fix recovered the analysis from the
-chain-of-thought — sometimes thirty thousand characters of it — that
+chain-of-thought — sometimes 30000 characters of it — that
 the old code would have thrown away as nothing. The original
 empty-output anomaly is closed.
 
@@ -57,7 +57,7 @@ proven correct rather than assumed, and the detector stays in place to
 catch it if it ever does happen.
 
 The merge-deadlock resolver stayed off, as decided. The deadlocks duly
-recurred — one of them has now been stuck for twenty-one rounds, the
+recurred — one of them has now been stuck for 21 rounds, the
 longest in the project's history — exactly as the review predicted and
 accepted. They stayed contained and logged; they corrupted nothing.
 That growing pile of evidence is exactly what justifies switching the

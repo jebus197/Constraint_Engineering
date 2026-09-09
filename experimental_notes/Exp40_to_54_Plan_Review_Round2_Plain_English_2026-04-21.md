@@ -64,7 +64,7 @@ Experiment 51 tests CDSFL on a physics article. The question was whether the tar
 
 **Round 2 outcome.** Five of five native. DeepSeek withdrew the `composer.py` claim on its own reread, judging that the file handles routing and composition across the CDSFL architecture, not physics reasoning, and so is not a candidate physics target.
 
-**What this means in practice.** A short native physics module is to be synthesised for Experiment 51, of the order fifteen to twenty-five thousand characters. Decision 3 in the companion register tracks this target article and the three others as still-open.
+**What this means in practice.** A short native physics module is to be synthesised for Experiment 51, of the order fifteen to 25000 characters. Decision 3 in the companion register tracks this target article and the three others as still-open.
 
 ## Question 6b — and for Experiments 47, 52, and 53?
 
@@ -72,7 +72,7 @@ Round 1 split three synthesise, one adapter, one synthesise-with-a-physics-excep
 
 **Round 2 outcome.** Five of five synthesise. Codex yielded on an **orthogonality** argument raised by the other models — orthogonality here meaning that two variables are meant to vary independently of each other. Using an adapter would conflate **c_ext** (a search-quality metric measuring how well the loop explores the claim space) with **target-module validity** (whether the article under review is sound in its domain). Those are meant to be independent variables in the experiment design, and an adapter would bind them together in a way that muddies the interpretation.
 
-**What this means in practice.** Four target articles (one each for Experiments 47, 51, 52, 53) are to be written natively, each approximately fifteen to twenty-five thousand characters, under the same standard. Decision 3 in the companion register covers all four.
+**What this means in practice.** Four target articles (one each for Experiments 47, 51, 52, 53) are to be written natively, each approximately fifteen to 25000 characters, under the same standard. Decision 3 in the companion register covers all four.
 
 ## What now remains open
 

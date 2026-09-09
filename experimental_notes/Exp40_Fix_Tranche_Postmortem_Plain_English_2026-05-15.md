@@ -144,7 +144,7 @@ chooses; nothing is blocked by waiting.
 
 ## Where things stand
 
-Two hundred and twenty-nine tests pass across the whole body of work.
+229 tests pass across the whole body of work.
 Every behavioural change is either off by default, opt-in, or covered
 by its own new tests. The working tree is clean of regressions and
 ready to be committed as one coherent set whenever the founder directs.

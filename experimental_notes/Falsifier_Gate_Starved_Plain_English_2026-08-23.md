@@ -56,7 +56,7 @@ worthless. The sample was size two and was selected by the very defect under inv
 - **"An internal counter mechanically detects detachment."** False. That counter only
 counts substitutions of the project's full address, so it reads zero for every falsifier using a short relative name, whether or not it reads the document. Refuted by six executed counterexamples, including one that reads the document through the standard library's line cache and so contains none of the usual file-opening words. The sandbox's own design notes already state the principle violated: a path is a string a program computes, so reading the source cannot decide where the program will read.
 - **"Seven of thirty-four instruments remain."** Wrong by roughly four times, in the
-reassuring direction. Five instruments are verified by measurement; the true open count is **twenty-nine of thirty-four**. The heuristic behind the other twenty-seven is wrong three times in five by its own printed calibration, always over-claiming — it scored the falsifier gate as commissioned one day before this defect was found inside it.
+reassuring direction. Five instruments are verified by measurement; the true open count is **29 of 34**. The heuristic behind the other 27 is wrong three times in five by its own printed calibration, always over-claiming — it scored the falsifier gate as commissioned one day before this defect was found inside it.
 
 ## The right fix was already written, and switched off
 

@@ -10,7 +10,7 @@ auto-merge cannot decide which canonical entry a new finding should fold into,
 what rule should resolve the deadlock? Experiment 40 produced abundant evidence
 that the runner's existing auto-merge defers more often than the §6b spec
 predicted — at least eight MERGE DEFERRED events surfaced across the original
-run, including one with twenty-one target disagreements on a single finding.
+run, including one with 21 target disagreements on a single finding.
 The founder explicitly authorised beginning the G7 design work after the
 Round 3 panel review and reaffirmed it during the 14 May post-mortem response.
 

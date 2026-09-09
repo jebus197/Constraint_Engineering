@@ -88,6 +88,99 @@ def test_the_hook_names_the_linter():
         "the linter is not reached by the commit path, so it is run only by hand")
 
 
+def test_untouched_prose_in_a_touched_file_is_not_held_against_the_commit(tmp_path):
+    """THE SCOPING THAT MAKES THIS GUARD USABLE, and it was wrong first time.
+
+    The first version linted whole staged FILES and refused its own first real
+    commit with 388 findings -- every one pre-existing prose in archival notes
+    that a 1-line spelled-number correction had merely touched. That contradicted
+    the guard's own stated principle, "what a commit can fairly be held to is what
+    that commit contains", which had been implemented as "what files it touches".
+
+    Holding a commit to 400 lines written under an earlier standard because it
+    corrected 1 number in them is how a guard teaches people to reach for
+    --no-verify by reflex."""
+    work, env = _repo(tmp_path)
+    legacy = ("# An archival note\n\n"
+              "There were twenty-nine of them, written under an earlier standard.\n")
+    (work / "experimental_notes" / "old.md").write_text(legacy, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "legacy"],
+                   cwd=work, check=True, env=env, capture_output=True)
+
+    # Now touch it with a CLEAN addition. The legacy violation must not block.
+    (work / "experimental_notes" / "old.md").write_text(
+        legacy + "\nA later correction adds 29 clean findings.\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "touch"], cwd=work, env=env,
+                       capture_output=True, text=True, timeout=180)
+    assert r.returncode == 0, (
+        f"a clean addition to a file with legacy prose was refused:\n{r.stderr}")
+
+
+def test_a_violating_ADDED_line_is_still_refused_in_such_a_file(tmp_path):
+    """DISCRIMINATION for the same case: the narrowing must not disarm it."""
+    work, env = _repo(tmp_path)
+    legacy = "# An archival note\n\nThere were twenty-nine of them.\n"
+    (work / "experimental_notes" / "old.md").write_text(legacy, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "legacy"],
+                   cwd=work, check=True, env=env, capture_output=True)
+
+    (work / "experimental_notes" / "old.md").write_text(
+        legacy + "\nAnd the assistant then added forty seven more.\n",
+        encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "touch"], cwd=work, env=env,
+                       capture_output=True, text=True, timeout=180)
+    assert r.returncode != 0, "a spelled number ADDED to the file was let through"
+    assert "forty seven" in r.stderr, r.stderr
+
+
+def test_correcting_an_archival_note_always_passes(tmp_path):
+    """THE PROPERTY THE 2026-09-09 REMEDIATION DEPENDS ON.
+
+    207 spelled numbers were corrected across 67 archival notes that carry
+    plenty of older prose the current standard would flag. A guard that refuses
+    a commit for REDUCING the finding count would make the standard
+    unenforceable: the only way to touch an old note would be to rewrite it
+    entirely, which is the mechanical rewrite the standard forbids."""
+    work, env = _repo(tmp_path)
+    legacy = ("# An archival note\n\nThe system recorded twenty-nine of them "
+              "and the mechanism agreed.\n")
+    (work / "experimental_notes" / "old.md").write_text(legacy, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "legacy"],
+                   cwd=work, check=True, env=env, capture_output=True)
+
+    # Correct ONLY the number. The vague subjects stay, as they must.
+    (work / "experimental_notes" / "old.md").write_text(
+        legacy.replace("twenty-nine", "29"), encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "correct the number"], cwd=work,
+                       env=env, capture_output=True, text=True, timeout=180)
+    assert r.returncode == 0, (
+        f"correcting a number in an archival note was refused:\n{r.stderr}")
+
+
+def test_a_brand_new_note_is_held_to_the_whole_standard(tmp_path):
+    """The ratchet must not become an amnesty for new work.
+
+    A note with no version at HEAD has a baseline of 0, so every finding in it
+    is an addition."""
+    work, env = _repo(tmp_path)
+    r = _commit(work, env, "brand_new.md",
+                "# New\n\nThe system recorded twenty-nine findings.\n\n"
+                "Written under CDSFL note standard v1.7 (26 August 2026).\n")
+    assert r.returncode != 0, "a new note carrying violations was let through"
+
+
 def test_a_violating_note_is_REFUSED(tmp_path):
     """THE PROPERTY, driven through a real `git commit`."""
     work, env = _repo(tmp_path)
@@ -118,7 +211,7 @@ def test_a_clean_note_commits(tmp_path):
     assert r.returncode == 0, f"a clean note was refused:\n{r.stdout}\n{r.stderr}"
     # git routes a hook's stdout to its own stderr, so the confirmation can
     # arrive on either stream depending on the git version.
-    assert "note lint clean" in (r.stdout + r.stderr), (r.stdout, r.stderr)
+    assert "ratchet held" in (r.stdout + r.stderr), (r.stdout, r.stderr)
 
 
 def test_a_commit_touching_no_note_is_unaffected(tmp_path):
@@ -130,7 +223,7 @@ def test_a_commit_touching_no_note_is_unaffected(tmp_path):
     r = subprocess.run(["git", "commit", "-m", "unrelated"], cwd=work, env=env,
                        capture_output=True, text=True, timeout=180)
     assert r.returncode == 0, r.stderr
-    assert "note lint" not in (r.stdout + r.stderr), (r.stdout, r.stderr)
+    assert "ratchet" not in (r.stdout + r.stderr), (r.stdout, r.stderr)
 
 
 def test_a_missing_linter_refuses_rather_than_passes(tmp_path):
