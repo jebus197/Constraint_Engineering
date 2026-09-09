@@ -56,7 +56,7 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ### HELD FOR THE FOUNDER'S RETURN — do not start
 
-* **The answer-key sealing.** 29 plaintext key files, 27 of them BR2 answer keys for exams never run. Founder: do it *"as soon as all these outstanding issues have been addressed, and immediately before the simulated run"*. Needs his passphrase AND his fold-or-separate choice.
+* ~~**The answer-key sealing.**~~ **DONE BY THE FOUNDER HIMSELF, 2026-09-07 at 22:03 — 53 files into 1 archive, 0 plaintext keys left.** He drove home from his hotel to do it, at the assistant's request. **This line stayed here claiming it was still waiting for him for 2 days**, and on 2026-09-09 at 23:00 the assistant read it during an `rs` restore and repeated it back to him. Verified independently before striking it: `find` over the home directory to depth 4 and over the repository returns **0** files matching `*answer_key*.json`. The correction already existed in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, written 2026-09-09 14:15, which says in terms that this tracker was stale on it. **The restore protocol reads this tracker FIRST and with the greater authority, and it was the older document.**
 * **The simulated run itself.** Held for his return by his own instruction.
 
 ---
@@ -75,7 +75,7 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 **6 DECISIONS NOW SIT WITH THE FOUNDER**, listed in full in `experimental_notes/Closing_Report_2026-09-09.md` and its TTS companion: the frozen `exhausted_round_threshold`; C0050's contested premise; the leftover mutant in the git stash; wire-or-retire the drift detector; the root-privilege limit on task 6.6; and 622 spelled numbers in the unversioned Desktop TTS folder.
 
-**NOTHING IS RUNNING.** No paid dispatch occurred at any point on 2026-09-09, verified before the panel by resolving the seat list with `PANEL_ONLY=cc2,fable` and printing it: 0 paid seats. The simulated run and the answer-key sealing remain HELD for the founder's return by his own instruction, and Experiment 56 is deferred until the task list is complete.
+**NOTHING IS RUNNING.** No paid dispatch occurred at any point on 2026-09-09, verified before the panel by resolving the seat list with `PANEL_ONLY=cc2,fable` and printing it: 0 paid seats. The simulated run remains HELD for the founder's return by his own instruction, and Experiment 56 is deferred until the task list is complete. **CORRECTED 2026-09-09 23:40: an earlier version of this pointer said the answer-key sealing was also held. It is not, and was not — the founder executed it himself on 2026-09-07 at 22:03. The claim was read out of the stale HELD block below and repeated without being checked.**
 
 ---
 

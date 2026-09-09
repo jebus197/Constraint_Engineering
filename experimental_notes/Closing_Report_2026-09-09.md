@@ -48,7 +48,11 @@ Fixed by deriving `EXHAUSTED_VALVE_STATUSES` from the readers rather than listin
 
 ---
 
-## The 6 decisions that need the founder
+## Decisions with the founder
+
+**CORRECTED.** An earlier version of this section was headed "The 6 decisions that need the founder" and read as a complete account. Those 6 are the ones **arising from this session**. Others were already standing, and the `rs` restore at 23:00 on 2026-09-09 surfaced them.
+
+### The 6 that arose today
 
 | Issue | Decision |
 |---|---|
@@ -60,6 +64,23 @@ Fixed by deriving `EXHAUSTED_VALVE_STATUSES` from the readers rather than listin
 | **7.1 TTS half** | 622 spelled-number sites across 138 of 486 Desktop TTS files. Unversioned, so not revertible. |
 
 ---
+
+### Already standing before this session
+
+| Source | Decision |
+|---|---|
+| RECOVERY.md, 2026-09-08 16:10 | The **absolute-path ruling** for seat confinement. Seats hold the absolute repo path by the 2026-08-23 ruling, so a cwd cannot confine a Bash-bearing seat; `_absolute_target` already takes a `repo_root`. |
+| RECOVERY.md, 2026-09-08 16:10 | **Falsifier supply** — the Exp 45 halt cause, 5 of 14 criticals with no runnable check. Moved on both halves this session (task 2.1's union, task 3.2's measurement) but not closed. |
+| RECOVERY.md, 2026-09-08 16:10 | ~~One run, two directories~~ — **CLOSED by task 6.3 on 2026-09-09.** |
+| RECOVERY.md, 2026-09-06 04:05 | Promoting the corrected **S\* threshold** from shadow to live. Ruled for the simulated run; not for general use. |
+| RECOVERY.md, 2026-09-06 04:05 | **Where reach belongs** — the fable/cc2 panel split, unresolved. |
+| RECOVERY.md, 2026-09-06 04:05 | The **references section**, deferred to discussion by the founder. |
+
+### A correction the restore itself caused
+
+The `rs` protocol names `experimental_notes/CDSFL_Agent_Operational_Plan.md` as FIRST READ. That tracker still listed the **answer-key sealing** as HELD awaiting the founder. It was not: he executed it himself on **2026-09-07 at 22:03, 53 files into 1 archive, 0 plaintext keys left**, having driven home from his hotel to do it. The assistant read the stale line during the restore and repeated it in the resume pointer committed as `8f411e2`.
+
+**The correct record already existed.** `CDSFL_MASTER_TASK_LIST.md`, written 2026-09-09 14:15, states he executed it *and* states the tracker was stale on it. **So the restore reads the older document first and with the greater authority** — a defect in the protocol, not only in the reading. Verified before striking it: `find` over `$HOME` to depth 4 and over the repository returns **0** files matching `*answer_key*.json`.
 
 ## What is not established
 

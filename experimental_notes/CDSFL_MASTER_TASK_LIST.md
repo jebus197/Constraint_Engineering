@@ -398,6 +398,51 @@ Verbatim: *"Zenodo key switching can go at the very bottom of this list. It isn'
 
 ---
 
+## A. ARISING — added 2026-09-09 23:41 BST, at the founder's instruction
+
+**Founder instruction, verbatim:** *"If there are additional/unlisted tasks that arose from your work, then this is not quite a surprise and should probably be expected. You should add them there too."*
+
+**These sit after Z1 by arrival, not by priority.** Z1 was placed "at the very bottom" on 2026-09-09 relative to the list as it then stood. If the founder wants Z1 to remain literally last, these move above it on his word.
+
+**A1. Assess how complete, functional and useful Open Brain actually is.** Founder instruction, verbatim: *"This is the problem OpenBrain was original built to solve. I have never fully tested yet how complete/functional, or useful it is, but perhaps this is another task you can add to the bottom of the existing task list."*
+<!-- task: A1 | state: OPEN | status: PROPOSED -->
+**The occasion for it is a measured failure of exactly the kind Open Brain exists to prevent.** On 2026-09-09 at 23:00 an `rs` restore read a stale line in the operational tracker and reported to the founder that the answer-key sealing was still waiting for him. He had driven home from his hotel and done it himself on 2026-09-07 at 22:03, at the assistant's request. The correct record existed in this very file, written 2026-09-09 14:15, which states both that he executed it and that the tracker was stale on it. **The restore protocol reads the older document FIRST and treats it as authoritative.** Open Brain holds session context, anchors and reasoning chains and is reachable from this session; whether it would have answered "has the sealing been done" correctly is UNTESTED. The assessment should be adversarial and measured, not a feature tour: pose questions whose answers are known from the record, and count how many it gets right, wrong, and cannot answer.
+
+**A2. Make the suite pass in a fresh clone.** From I6. Measured 2026-09-09: a clean `git clone` plus the full suite gives **11 failed, 5487 passed, exit 1**, against 0 failures in the working tree. 10 of the 11 are pre-existing; 1 was the assistant's and is fixed. **For a project whose stated purpose is reproducibility this is central, not cosmetic** — a reader who follows the documented steps does not see what the maintainer sees.
+<!-- task: A2 | state: OPEN | status: PROPOSED -->
+
+**A3. Guard the CONTENT of a cited line, not merely the file.** From I9. Hand-written line citations into `bench/reference_runner_v3.py` break whenever anything is inserted above them, and the existing citation guard checks only that the FILE exists. The run ledger self-heals because it has a generator; the hand-written citations do not. This session moved the same citation 3 times in one day.
+<!-- task: A3 | state: OPEN | status: PROPOSED -->
+
+**A4. Check a panel brief's CURRENCY at dispatch, not only its format.** From I26. The round-2 brief asserted that a question had not been asked. That was true when it was written at 20:37 and false by the 21:12 dispatch, because a test answering it landed in between. Both seats spent effort on a bolted door. The validator checks the brief's 7 required sections and nothing about whether the brief is older than the artefacts it names.
+<!-- task: A4 | state: OPEN | status: PROPOSED -->
+
+**A5. Make the panel's canonical-tree alarm attribute, or say that it cannot.** From I27. It fired on 14 files in round 2, all of them the assistant's own concurrent edits, and confinement did hold — 0 canonical-path references in either seat's tool log. It fired the same false positive in round 1. **An alarm that fires on the ordinary case is on its way to being ignored**, which is what this project's own irreducible-queue alarm text warns about.
+<!-- task: A5 | state: OPEN | status: PROPOSED -->
+
+**A6. Audit the tests that assert on source text, and the tests carried by a sibling.** From I11 and I13, which are 2 faces of one question: does a test detect what its docstring claims? I11 — a source-text test breaks on an edit that changes nothing it asserts, inventing a defect; that is the converse of `execute-do-not-grep` and the class is unaudited. I13 — a test can be green because a NEIGHBOUR catches the regression while its own docstring claims the coverage, confirmed by mutation on 2026-09-09. **Both are measurable by mutation across the suite and neither has been measured.**
+<!-- task: A6 | state: OPEN | status: PROPOSED -->
+
+**A7. Decide what to do about 25 archived escalated criticals with no falsifier.** From I17, and it is the archive half of item 2.2. Across 9 runs; `exp53_control_zero_live` accounts for 10 across its 2 runs and `exp55_v3_control` for 8. Archived runs cannot be retro-fixed, so the actionable half is the falsifier-gate path that let a critical escalate with no runnable check, not the backlog — but the backlog's disposition is still a decision.
+<!-- task: A7 | state: OPEN | status: PROPOSED -->
+
+**A8. Rule on the 177 cited `bench/logs/` paths that are untracked.** From I1. 177 of 3803, **4.65%**, Wilson [4.03%, 5.37%]. The assistant's own instance was fixed at `3c6f143`; the remaining 177 are a body of cited evidence that exists on 1 machine only, and `.gitignore:41` excludes the directory by design. **NEEDS A POLICY RULING**: track them, relocate them, or accept and label them.
+<!-- task: A8 | state: OPEN | status: PROPOSED -->
+
+**A9. Remove the stray `.py` under `experimental_notes/`.** From I5. 1 file sits inside the source-scanner surface where notes live. Small.
+<!-- task: A9 | state: OPEN | status: PROPOSED -->
+
+**A10. Forbid a mutation harness that leaves its mutants in git.** From I19, and I18 is the live instance. A harness that holds a mutant in `git stash` depends on a later `pop` running, and nothing enforces it. The harness used on 2026-09-09 writes the original back in a `finally` block and touches no git state, which is the safe pattern and should be the only one.
+<!-- task: A10 | state: OPEN | status: PROPOSED -->
+
+**A11. Five rulings await the founder, and each blocks work rather than opinion.** Detail in `experimental_notes/ISSUES_LOG_2026-09-09.md`. **I23** — `exhausted_round_threshold` defaults to 8 while every exp56 arm sets `max_rounds: 8`, so `age >= 8` is unsatisfiable and the repaired valve stays inert; cc2 proposes 6; frozen pre-registration files. **I16** — C0050, where all 6 seats withdrew the finding as a claim about the review process; the 2 possible answers lead to opposite work. **I18** — a `# MUTANT M9` in `stash@{0}` that removes a live guard; the guard is verified intact and the stash still exists; dropping it is a deletion. **I31** — `update_drift` has no production caller; wire it or retire it. **I28** — task 6.6 needs root for `fs_usage`; candidate-recording is achievable and must not be called attribution.
+<!-- task: A11 | state: BLOCKED | status: PROPOSED -->
+
+**A12. Fold in, or explicitly exclude, the 11 founder-ruled runway items this list does not carry.** Measured 2026-09-09: of 15 scheduled items in the operational tracker that carry a founder ruling, **11 return 0 hits on this list** — gamma unification (19), re-run Exp 48 and 49 (17), the paid sentinel dispatch (20), Exp 54 Cell A entry method (24), residual key exposure (31), FW.6 harvested revisions (34), the open-topology anti-dispute safeguard (36), A1 directive-pruning cuts (37), dm consolidation (38), the decisive discrimination control (42), and the disposition of ruling 1 (43). **The list declares itself "the ordered executable subset" of a 121-item inventory, so their absence is scoped rather than silent — but it names none of the exclusions, so a reader cannot tell a deliberate omission from a lost item.** The fix is to name them, here, which this entry does.
+<!-- task: A12 | state: OPEN | status: PROPOSED -->
+
+---
+
 ## Sources
 
 `experimental_notes/Research_FULL_RECORD_2026-09-09.md` (1221 lines, the unfiltered agent output behind every entry above); `experimental_notes/CDSFL_Agent_Operational_Plan.md`; `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`; `experimental_notes/RUNWAY_to_BR2_2026-08-18.md`; `resources/RECOVERY.md`; `experimental_notes/Morning_Report_2026-09-09.md`.
