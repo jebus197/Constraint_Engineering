@@ -31,6 +31,38 @@ Every change is a `git revert` away. The 3 categories that would NOT be recovera
 
 ## OUTCOMES, newest first
 
+### 3.1a — the roster repair took the suite RED, and the panel found a hole the repair opened
+
+**The suite went to 6 failed, 5560 passed at 20:17.** Three distinct causes, all reproduced against the working tree before anything was touched.
+
+**Cause 1, the material one, self-inflicted.** `_declared_models` treated a NON-EMPTY `cfg.models` as an arm's declaration. `RunnerConfig.models` defaults to a hardcoded `['CC2', 'Codex', 'Gemini', 'DeepSeek', 'ChatGPT']`, and the runner's own comment above `run_experiment` records that this is the pre-Fable panel and that a run leaving it untouched is the launcher config-drop class the project has hit 7 times. Reading that stale default as a declaration made it 8. Executed against the wiring fixture: roster `['SIM-A']`, `cfg.models` at its default, intersection EMPTY, so routing and the post-convergence sweep dispatched to nobody and stamped nothing, in silence. The first version's docstring argued at length that falling back to the full roster was "the one unacceptable outcome". That ruling was wrong and is reversed: a declaration sharing no vocabulary with the roster is not a restriction on it, and erasing a roster disables a feature, which the additive standard forbids. The fallback cannot leak, because the leak case is not disjoint. **Archive reach measured, not asserted: 0 of 60 archived runs carry a panel disjoint from the default, Wilson [0.0%, 6.0%], Clopper-Pearson [0.0%, 6.0%], statsmodels and scipy agreeing to 1e-9, from 89 panel records across 2 independent sources with 0 disagreements.** Script: `scripts/roster_disjointness_2026-09-09.py`. Real and reachable, never suffered — and an earlier draft of the fix's own docstring said it "would have disabled routing in every simulated run", which the measurement refutes and which has been corrected in all 3 places it appeared.
+
+**Cause 2, a source-text test broken by a behaviour-preserving rename.** `test_the_sweep_does_not_reclear_2026-09-02.py` anchored on the literal string `for mc in exp_config.models:` and raised ValueError the moment the iterable changed. Re-anchored on the loop rather than on what it iterates. A test that breaks on an edit that changes nothing it asserts reports a defect that does not exist.
+
+**Cause 3, ledger drift, and `test_experiment_run_ledger_2026-08-26.py` doing its job.** The ledger cites a runner line number that is DERIVED from where the gamma-alt comment sits, and today's edits shifted it from 13753 to 13848. Regenerated; 1 line changed.
+
+### C-A — REFUSED on measurement. The panel's observation was right and its prescription was wrong
+
+Fable and CC2 found that `_verification_step` receives `exp_config.models` unfiltered while the 2 sibling call sites had just been repaired, and proposed filtering it for consistency. **The observation is correct and the fix is not.** `_verification_step` does not dispatch to the roster: it selects the single seat whose base label is CC2 as a verifier and returns `{"skipped": True}` if that seat is absent. **Measured against the 3 real arm configs: filtering keeps CC2v reachable in the 1-seat arm and the 5-seat arm and removes it from the contrast arm alone**, which declares `['Codex', 'ChatGPT']`. That converts a control held constant across arms into a confound in exactly 1 of 3, and disables a capability in that arm. No exp56 arm config sets any `verification_*` key, so all 3 inherit the same default — which is what held-constant means. Refused, with the reasoning pinned at the call site and by `test_cc2v_is_held_constant_across_arms_2026-09-09.py`, 8 tests, written to go RED if the refusal ever stops being correct rather than to pass forever.
+
+### C-B — DONE. Enabling routing opened a hole in the arm that most depends on the alarm
+
+Found by fable, confirmed by execution before it was applied. `_apply_routing` reached one branch for 2 different situations: no rung reached a model because the transport failed, and no rung reached a model because there were no rungs. Both took "retry a later round". That is right for a transport fault, which may clear, and wrong for an empty ladder, which cannot: `route` excludes the finding's own source model, so `rank_falsifier_writers(['CC2'], exclude=('CC2',))` returns 0 rungs while `rank_falsifier_writers(['Codex', 'ChatGPT'], exclude=('Codex',))` returns 1.
+
+**The cost was not a slow retry loop.** The finding got neither `irreducible_escalation` nor `routing_deferred`, and `irreducible_queue_count` counts exactly those 2, so the critical blocked convergence to the round cap while never entering the queue count, and `HALTED_IRREDUCIBLE_QUEUE_ALARM` could not fire. **The exp56 1-seat arm pre-registers that halt as its reportable outcome, in its own words "a reportable outcome of this design, not a mechanical fault to be tuned away".** The path was unreachable while all 3 arms held `routing_enabled: false` and became reachable the moment routing was enabled earlier the same day. Fixed by stamping `routing_deferred` with a reason on `rungs_tried == 0`, which is a clean discriminator rather than a heuristic. 7 tests including an end-to-end assertion that `build_irreducible_queue_alarm` actually returns an alarm at 3 deferred criticals against a bound of 2.
+
+### Mutation testing — 6 of 6 caught, and the root-cause mutant survived the first round
+
+Every mutation asserts it APPLIED before any conclusion is drawn from the run, per the standing rule that a mutation which fails to apply is indistinguishable from one not caught. **The first round caught 5 of 6.** The survivor was the root cause itself: reverting the default check left all 64 tests green, because the 2 fixes mask each other — the fail-open rescues the default-as-declaration case. The test was vacuous because its roster equalled the 5 default labels, so the intersection was the whole roster either way. Only a roster carrying a seat the stale default omits can separate the behaviours, which is exactly the 2026-08-30 episode: 6 ModelConfigs supplied, `cfg.models` left at its 5-item default, the run reporting a 5-model panel while dispatching a sixth. Re-aimed on a post-Fable roster; 6 of 6 caught.
+
+### CC2's criticism of my own test — CONFIRMED by mutation, and fixed
+
+CC2 found that the re-aimed routing test in `test_d9_d11_configs_valid_2026-09-05.py` calls `_declared_models` directly, "exactly the weakness its own docstring criticises in its predecessor". **Confirmed precisely: reverting the routing wiring site left that test green, and the file went red only through a sibling test that already drove the sweep.** A test carried by its neighbour while claiming to catch the wiring itself is worse than no test, because the claim is what gets believed. Rewritten to drive `_apply_routing` per arm with a stubbed dispatcher; it now fails with "d9_single_model_with_agents.json declares ['CC2'] but routing DISPATCHED to ['ChatGPT', 'Codex']". The duplicated `_base` helper CC2 flagged is also gone, replaced by `base_model_label` at rr:449 after cross-verifying the 2 forms agree on 9 inputs including edge cases.
+
+### The stale config notes — corrected in all 3 arms
+
+`_routing_note` and `_sweep_note` still read "OFF IN ALL THREE ARMS" beside `routing_enabled: true` and `post_convergence_sweep_rounds: 2`, stale from the moment the flags were flipped. Rewritten to state the repair, the measured per-arm outcome, and the pre-registered consequence that survives it. A third note records the C-A refusal so the next reader does not re-propose it.
+
 ### 3.1 — SUPERSEDED. The "misconfiguration" was a deliberate mitigation. Commit `560c93a`
 **Nothing changed in the configs.** The founder ruled that `routing_enabled: false` and `post_convergence_sweep_rounds: 0` in the 3 exp56 arms should be fixed, on an assistant report that said it was OPEN whether they were deliberate. **The record says deliberate.** They mitigate 2 live runner defects, each proven by an executing test: `_apply_routing` builds its ladder from the full orchestrator roster rather than `cfg.models`, so the 1-seat arm would dispatch to the vendors it exists to exclude, 3 of the 5 seats being paid; and the post-convergence sweep reaches undeclared seats. Both tests **passed rather than skipped** on 2026-09-09, so both defects are live. Flipping the flags would have destroyed the experiment and spent money. Superseded by **3.1a**, repair the runner to respect `cfg.models`, after which the guard lifts itself.
 
@@ -60,11 +92,11 @@ Commit `3c4987d` stated the log and 22 snapshots "are now in the repo". They wen
 
 | Measure | Value |
 |---|---|
-| Full suite | 5555 passed, 4 skipped, 0 failed |
+| Full suite | see the closing report; last green 5555, went red at 6 failed 20:17, repaired |
 | Task list | 60 entries, 6 done, 1 withdrawn, 1 blocked |
 | Commits today | 17 |
 | Files deleted today | 0 |
-| Mutations run today | 20, all caught once verified applied |
+| Mutations run today | 27, all caught once verified applied; 1 survived a first round and was re-aimed |
 
 ---
 

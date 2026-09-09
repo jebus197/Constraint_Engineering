@@ -5,7 +5,11 @@ WHY THIS EXISTS. On 2026-09-08 a simulated Exp 45 round escalated 9 of 11 findin
 to the human queue. To judge whether that was unusual, a pooled mean was computed
 across every archived gate event -- 170 of 432, 39.35% -- and presented as "the
 archive baseline". The founder rejected the number from memory: an escalation rate
-of that order had, in this project, always turned out to be mechanical failure.
+of that order had, in this project, always turned out to be a fault in the
+instrument. Amended 2026-09-09: that fault is EITHER mechanical failure OR
+MISCONFIGURATION, and the 2 need separating because they are diagnosed
+differently. A 1-seat arm's routing ladder is empty by construction, so its
+escalation rate is high with nothing broken at all.
 
 He was right, and the pooled mean was the wrong instrument. It averages a broken era
 with a working one. Splitting the same data by the project's OWN account of each run:

@@ -145,7 +145,7 @@ import sys
 import tempfile
 import time
 from copy import deepcopy
-from dataclasses import dataclass, field, replace
+from dataclasses import MISSING, dataclass, field, fields, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -5133,6 +5133,108 @@ def _routing_similarity(a: dict, b: dict) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
+def _runner_config_models_default():
+    """The hardcoded `RunnerConfig.models` default, read from the dataclass.
+
+    DERIVED, never typed. `_declared_models` has to tell "this arm declared a
+    roster" from "this arm left the field alone", and the only signal available
+    is equality with the default. Typing the 5 labels here would create a second
+    copy that drifts the moment the default changes -- the exact defect the
+    default already caused once, being the pre-Fable panel left untouched.
+    """
+    for fld in fields(RunnerConfig):
+        if fld.name == "models":
+            if fld.default_factory is not MISSING:
+                return list(fld.default_factory())
+            if fld.default is not MISSING:
+                return list(fld.default)
+    return []
+
+
+def _declared_models(exp_config, cfg):
+    """The seats a run is ALLOWED to dispatch to: the roster, filtered by the arm.
+
+    WHY THIS EXISTS. `_apply_routing` and `_post_convergence_sweep` both iterated
+    `exp_config.models`, the full orchestrator roster, rather than the models the
+    running arm declared. Measured 2026-09-09: the exp56 1-seat arm declares
+    ['CC2'] while the roster is ['CC2', 'Codex', 'ChatGPT', 'Gemini', 'DeepSeek'],
+    so routing would have dispatched to 4 seats the arm exists to do without, 4 of
+    them paid. Both arms carried `routing_enabled: false` and
+    `post_convergence_sweep_rounds: 0` as a MITIGATION for exactly that, with an
+    executing guard in test_d9_d11_configs_valid_2026-09-05.py whose docstring
+    says the guard lifts once the runner is repaired to intersect with cfg.models.
+    This is that repair.
+
+    THE -SIM SUFFIX IS NORMALISED, and getting this wrong would have been worse
+    than the defect. In a simulated run the roster is ['CC2-SIM', 'Codex-SIM', ...]
+    while a config may declare bare vendor names. A naive set intersection would
+    therefore return EMPTY for every simulated run, silently disabling the routing
+    that the archive shows absorbing 53 of 69 findings, 76.8%, Wilson [65.6%,
+    85.2%]. The same normalisation already exists at bench/routing.py:95 and is
+    repeated here rather than imported, because routing.py must not import its
+    own caller.
+
+    A DEFAULT IS NOT A DECLARATION, and reading it as one disabled two features.
+    `RunnerConfig.models` defaults to a hardcoded ['CC2', 'Codex', 'Gemini',
+    'DeepSeek', 'ChatGPT'] — the comment at the top of `run_experiment` records
+    that this is the OLD panel, from before Fable joined, and that a run leaving
+    it untouched is the launcher config-drop class this project has hit 7 times.
+    The first version of this function treated that stale default as an arm's
+    declaration. Executed 2026-09-09 against the wiring fixture: roster ['SIM-A'],
+    cfg.models at its default, intersection EMPTY — so routing and the post-
+    convergence sweep dispatched to nobody and stamped nothing, in silence. That
+    took 2 executing tests red. ITS ARCHIVE REACH IS 0, MEASURED RATHER THAN
+    ASSERTED: an earlier draft of this docstring said it 'would have disabled
+    routing in every simulated run', and that is false. Simulated seats carry
+    vendor-SIM labels, which the normalisation below already resolves onto the
+    default; only a roster in a wholly different vocabulary is gagged.
+    scripts/roster_disjointness_2026-09-09.py reads 89 panel records from 2
+    independent sources with 0 disagreements and finds 0 of 60 archived runs
+    disjoint from the default -- Wilson [0.0%, 6.0%], Clopper-Pearson
+    [0.0%, 6.0%], statsmodels and scipy agreeing to 1e-9. The defect is real
+    and reachable, and it is not something the archive ever suffered. So the default is
+    compared against and treated as "no declaration made".
+
+    AN EMPTY INTERSECTION FALLS BACK TO THE ROSTER. Reversing the first version's
+    ruling, which was wrong: a declaration sharing NO vocabulary with the roster
+    (vendor names against SIM-A..E) says nothing about this roster, so filtering
+    on it is not a restriction but an erasure, and the additive standard forbids
+    disabling a feature. The fallback cannot leak, because the leak case is not
+    disjoint: the exp56 1-seat arm declares ['CC2'] against a roster carrying
+    'CC2', so the intersection is non-empty and the filter binds. Falling back is
+    exactly HEAD's behaviour, so it cannot regress; the condition is already
+    recorded at run start by the PANEL MISMATCH check in `run_experiment`.
+
+    KNOWN LIMIT, stated rather than assumed away. An arm that declares exactly
+    the 5 default labels is byte-identical to one that declared nothing, and is
+    read as the latter. No sentinel distinguishes them at this layer. If such an
+    arm is ever run against a LARGER roster, the PANEL MISMATCH warning fires and
+    this function returns the roster unfiltered.
+    """
+    roster = list(getattr(exp_config, "models", None) or [])
+    declared = [str(m).strip() for m in (getattr(cfg, "models", None) or [])
+                if str(m).strip()]
+    if not declared or declared == list(_runner_config_models_default()):
+        # No declaration is not the same as declaring nothing: an arm that names
+        # no models -- or that carries the stale hardcoded default untouched --
+        # is asking for the roster it was launched with.
+        return roster
+
+    want = {base_model_label(m) for m in declared}
+    kept = [mc for mc in roster
+            if base_model_label(getattr(mc, "label", mc)) in want]
+    if not kept:
+        _log(f"  ROSTER DECLARATION DOES NOT DESCRIBE THIS ROSTER: the arm "
+             f"declares {declared} and the orchestrator roster carries "
+             f"{[getattr(mc, 'label', str(mc)) for mc in roster]}; nothing "
+             f"matches even after normalising the -SIM suffix. Falling back to "
+             f"the full roster, because a declaration in another vocabulary is "
+             f"no instruction about this one, and erasing the roster would "
+             f"silently disable routing and the sweep.")
+        return roster
+    return kept
+
+
 def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
     """GATED capability-aware routing for un-confirmed criticals (was _apply_take_up_slack).
 
@@ -5147,8 +5249,9 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
     from bench.routing import route
     from bench.falsifier_verify import reverify_falsifier
 
-    models = [mc.label for mc in exp_config.models]
-    cfg_by_label = {mc.label: mc for mc in exp_config.models}
+    _roster = _declared_models(exp_config, cfg)
+    models = [mc.label for mc in _roster]
+    cfg_by_label = {mc.label: mc for mc in _roster}
     confirmed = [
         {"id": cid, "description": e.get("description", "")}
         for cid, e in registry.entries.items()
@@ -5305,6 +5408,44 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             if len(_routing_attempts) > _n0:
                 e["error_routed"] = True
             elif not result.resolved and result.verdict != "DUPLICATE":
+                # AN EMPTY LADDER IS NOT A DEAD TRANSPORT, and conflating them
+                # silenced this arm's own reportable outcome (fable, panel review
+                # 2026-09-09; confirmed here by execution before being applied).
+                #
+                # Both cases arrive with no model reached, so both used to take
+                # the `continue` below -- "retry a later round". That is right for
+                # a transport fault, which may clear. It is wrong when the ladder
+                # was EMPTY BY CONSTRUCTION, because it will be empty every round
+                # forever: `route` excludes the finding's own source model, so in
+                # a 1-seat arm the ladder is the empty set. Executed against the
+                # real helper: rank_falsifier_writers(['CC2'], exclude=('CC2',))
+                # returns 0 rungs, while rank_falsifier_writers(['Codex',
+                # 'ChatGPT'], exclude=('Codex',)) returns 1.
+                #
+                # WHAT THAT COST, and why it is newly reachable. The finding got
+                # neither `irreducible_escalation` nor `routing_deferred`, and
+                # `unverified_critical_count` counts exactly those two -- so the
+                # critical blocked convergence to the round cap while never
+                # entering the irreducible-queue count, and
+                # HALTED_IRREDUCIBLE_QUEUE_ALARM could not fire. The exp56 1-seat
+                # arm pre-registers that halt as its reportable outcome. The path
+                # was unreachable while routing was held off in all 3 arms and
+                # became reachable the moment routing was enabled.
+                #
+                # `rungs_tried == 0` is a clean discriminator, not a heuristic: a
+                # ladder with any rung increments `tried` before dispatching, so 0
+                # means the ladder was empty. The DUPLICATE early return also
+                # carries 0 and is excluded by the branch condition above.
+                if getattr(result, "rungs_tried", 0) == 0:
+                    e["routing_deferred"] = True
+                    e["routing_deferred_reason"] = (
+                        "routing ladder empty by construction: the roster "
+                        "carries no writer other than this finding's own source "
+                        "model, so no rung exists to try in any round")
+                    _log(f"  ROUTING LADDER EMPTY {cid}: no writer available "
+                         f"besides its own source; deferred rather than retried, "
+                         f"so it still counts toward the irreducible queue")
+                    continue
                 continue  # transport-dead: no model reached; retry a later round
         if result.verdict == "DUPLICATE":
             # NO VOTING (founder ruling 2026-08-19). routing_enabled is unset in
@@ -5700,7 +5841,7 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
         stats["rounds"] += 1
         _log(f"  sweep round {_sweep_i + 1}/{n_rounds}: "
              f"{len(residuals)} residual(s) -> panel")
-        for mc in exp_config.models:
+        for mc in _declared_models(exp_config, cfg):
             live = {cid: e for cid, e in residuals.items()
                     if registry.entries[cid]["status"] not in _TERMINAL
                     and cid not in _handled}
@@ -6094,8 +6235,18 @@ def build_irreducible_queue_alarm(
         f"IRREDUCIBLE-QUEUE ALARM at round {round_idx}: {count} criticals are "
         f"locked as irreducible, over the bound of {bound}.\n"
         f"Genuinely irreducible criticals are rare, so a queue this size is "
-        f"overwhelmingly a MECHANICAL failure — routing, dedup, or a gate that "
-        f"cannot speak to this target — presenting as irreducibility.\n"
+        f"overwhelmingly the INSTRUMENT rather than the document. There are 3 "
+        f"causes and they are checked in this order.\n"
+        f"  1. MISCONFIGURATION — the machinery works and THIS RUN cannot reach "
+        f"it. Checked first because it is the cheapest to rule out. The routing "
+        f"ladder is EMPTY BY CONSTRUCTION whenever the arm declares 1 seat, "
+        f"since the ladder excludes the finding's own source model; read "
+        f"`routing_enabled`, `post_convergence_sweep_rounds` and the declared "
+        f"`models` list before reading any code.\n"
+        f"  2. MECHANICAL failure — routing, dedup, or a gate that cannot speak "
+        f"to this target, presenting as irreducibility.\n"
+        f"  3. An unusually hard document — the rarest of the 3, and the only "
+        f"one that is not a defect.\n"
         f"The run is HALTED, not merely blocked from converging. Nothing "
         f"further can close while the cause stands.\n"
         f"Evidence for all {len(evidence)} item(s) is attached under "
@@ -12995,6 +13146,24 @@ def run_experiment(
                  f"ν̄_k={ouroboros_rk_inputs['nu_k_mean']:.4f} → R_k channel")
 
         # CC2v verification (A5)
+        #
+        # THE UNFILTERED ROSTER IS CORRECT HERE, and this comment exists because
+        # a panel review proposed filtering it and the proposal was refused on
+        # measurement. `_verification_step` does not dispatch to the roster: it
+        # searches the roster for the ONE seat whose base label is CC2 and uses
+        # it as a verifier, returning {"skipped": True} if that seat is absent.
+        # CC2v is therefore infrastructure held constant across arms, not a panel
+        # seat that varies by arm -- no exp56 arm config sets any verification_*
+        # key, so all 3 inherit the same default.
+        #
+        # Measured 2026-09-09 against the 3 real arm configs: passing
+        # `_declared_models(exp_config, cfg)` here leaves CC2v reachable in
+        # d9_single_model_with_agents (declares ['CC2']) and d9_multi_model_panel
+        # (declares all 5) but REMOVES it from d11_seat_contrast_diversity_arm
+        # (declares ['Codex', 'ChatGPT']). That converts a constant into a
+        # confound in exactly 1 of 3 arms and disables a capability in that arm,
+        # which the additive standard forbids. Pinned by
+        # test_cc2v_is_held_constant_across_arms_2026-09-09.py.
         verification_stats = _verification_step(
             registry, round_idx, full_code, exp_config.models, cfg)
 

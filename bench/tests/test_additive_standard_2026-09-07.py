@@ -54,9 +54,16 @@ RETIRED = {
 }
 
 #: Config fields no test file names, pinned 2026-09-07. A RATCHET, not a target:
-#: 22 of 89 is a backlog, and failing the suite on a backlog teaches people to
-#: delete the test. What it forbids is GROWTH — a new switch that nothing exercises.
-UNREACHED_BASELINE = 22
+#: a backlog, and failing the suite on a backlog teaches people to delete the
+#: test. What it forbids is GROWTH — a new switch that nothing exercises.
+#:
+#: LOWERED 22 -> 21 on 2026-09-09, which is the ratchet doing its job rather than
+#: being loosened. `verification_min_round` was named by no test file until
+#: test_cc2v_is_held_constant_across_arms_2026-09-09.py set it to drive
+#: `_verification_step` past its round guard. Measured by moving those 4 new test
+#: files out of the directory and re-running `_unreached_config_fields`: 22
+#: without them, 21 with, and the single difference is that field.
+UNREACHED_BASELINE = 21
 
 
 def _unreached_config_fields() -> list[str]:

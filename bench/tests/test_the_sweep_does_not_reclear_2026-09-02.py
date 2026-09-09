@@ -56,16 +56,32 @@ class TestTheGuardStopsARepeatClear:
             "guard is still the thing preventing re-clears")
 
 
+def _model_loop_offset(sweep_src):
+    """Where the sweep's per-model loop starts.
+
+    ANCHORED ON THE LOOP, NOT ON WHAT IT ITERATES. This was
+    `.index("for mc in exp_config.models:")` and it raised ValueError -- taking
+    2 tests red -- the moment the iterable changed to `_declared_models(...)`,
+    a change that altered WHICH seats are reached and nothing at all about
+    WHERE the prompt is built, which is the only thing these 2 tests assert.
+    A test that breaks on a behaviour-preserving edit reports a defect that
+    does not exist, and its next maintainer learns to re-anchor without
+    reading, which is how a real regression gets waved through."""
+    m = re.search(r"^\s*for mc in .+:\s*$", sweep_src, re.MULTILINE)
+    assert m, "the sweep no longer has a per-model loop"
+    return m.start()
+
+
 class TestThePromptReflectsWhatIsStillLive:
     def test_it_is_built_inside_the_model_loop(self, sweep_src):
-        i = sweep_src.index("for mc in exp_config.models:")
+        i = _model_loop_offset(sweep_src)
         after = sweep_src[i:i + 1400]
         assert "_sweep_prompt(live," in after, (
             "the prompt must be built from `live` inside the loop; built once "
             "outside it, every model is shown work already done")
 
     def test_it_is_not_also_built_before_the_loop(self, sweep_src):
-        i = sweep_src.index("for mc in exp_config.models:")
+        i = _model_loop_offset(sweep_src)
         before = sweep_src[:i]
         assert "_sweep_prompt(residuals," not in before, (
             "the pre-loop build is back; `live` is then computed and discarded")

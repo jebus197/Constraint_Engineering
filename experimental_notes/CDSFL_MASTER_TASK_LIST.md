@@ -202,8 +202,8 @@ Includes C0050, confirmed as the single residual human-queue item at severity 0.
 
 ## 3. Enable the machinery that is switched off
 
-**3.1 Turn routing and the sweep back on in the exp56 configurations. — THE PREMISE IS WRONG AND THE FLAGS MUST NOT BE FLIPPED. Status: SUPERSEDED by 3.1a.**
-<!-- task: 3.1 | state: OPEN | status: PROPOSED -->
+**3.1 Turn routing and the sweep back on in the exp56 configurations. — THE PREMISE IS WRONG AND THE FLAGS MUST NOT BE FLIPPED AS WRITTEN. Status: SUPERSEDED by 3.1a, which landed 2026-09-09 and lifted the flags as a CONSEQUENCE of the repair rather than in place of it.**
+<!-- task: 3.1 | state: WITHDRAWN | status: PROPOSED -->
 
 **The founder ruled on 2026-09-09, verbatim:** *"these are the class of misconfigurations I observed as significant previously and they should be fixed."* **He gave that ruling on an assistant report which said it was OPEN whether the setting was a deliberate control or an omission. The record says deliberate, and gives the reason.**
 
@@ -217,8 +217,14 @@ Includes C0050, confirmed as the single residual human-queue item at severity 0.
 **Flipping the flags would destroy the experiment the arm exists to run and spend money doing it.** That is not what the founder asked for; it is the literal reading of a ruling given on incomplete information.
 
 **3.1a Repair the runner so routing and the sweep respect `cfg.models`, after which the flags lift themselves.** Status PROPOSED. This serves the founder's actual intent — machinery that works — rather than the letter of a ruling based on a report that should have carried this. The guard is written to stand down automatically once the repair lands, so no config edit is needed at all. Founder ruling, verbatim: *"these are the class of misconfigurations I observed as significant previously and they should be fixed."*
-<!-- task: 3.1 | state: OPEN | status: PROPOSED -->
-All 3 files carry `routing_enabled: false` and `post_convergence_sweep_rounds: 0`. All 4 capabilities the founder suspected of being broken — fingerprinting, routing, the sweep, decomposed dispatch — are still reached by live callers. Nothing is unwired; it is configuration.
+<!-- task: 3.1a | state: DONE | status: COMMITTED -->
+**DONE 2026-09-09.** `_declared_models(exp_config, cfg)` intersects the orchestrator roster with the arm's declaration, normalising the `-SIM` suffix, and is wired into both `_apply_routing` and `_post_convergence_sweep`. All 3 arm configs now carry `routing_enabled: true` and `post_convergence_sweep_rounds: 2`, and their `_routing_note` and `_sweep_note` are rewritten to say so. Executed against the real config files rather than asserted: the 1-seat arm keeps `['CC2']`, the contrast arm keeps `['Codex', 'ChatGPT']`, the 5-seat arm keeps all 5.
+
+**The repair itself got 3 things wrong, all caught and fixed the same day.** The first version read the hardcoded `RunnerConfig.models` default as an arm's declaration and returned an EMPTY roster when nothing matched, which dispatched to nobody in silence and took 2 executing tests red; archive reach measured at 0 of 60 runs, Wilson [0.0%, 6.0%], by `scripts/roster_disjointness_2026-09-09.py`. Enabling routing made a previously unreachable path live, in which an empty ladder was misclassified as a dead transport so `HALTED_IRREDUCIBLE_QUEUE_ALARM` could not fire in the 1-seat arm — see the C-B entry in the outcomes log. And the guard test written to prove the repair called the helper directly rather than the caller, so it did not go red when the wiring was reverted; CC2 caught that in panel review.
+
+**One further finding was REFUSED.** The panel proposed filtering `_verification_step` for consistency. Measured against the 3 arm configs, that removes CC2v from the contrast arm alone and converts a held-constant control into a confound in 1 of 3 arms. Refused, pinned at the call site and by `test_cc2v_is_held_constant_across_arms_2026-09-09.py`.
+
+All 4 capabilities the founder suspected of being broken — fingerprinting, routing, the sweep, decomposed dispatch — are reached by live callers and 2 of them are now confined to the declared roster.
 
 **3.2 Restore tool use to the DeepSeek route.** Status PROPOSED. Founder ruling, verbatim: *"Why does DeepSeek get a free pass on tool use? ... No tool use is an unacceptable condition in the CDSFL schema, when an item exists that is genuinely computable. Verdict, fix DeepSeek and test it."*
 <!-- task: 3.2 | state: OPEN | status: PROPOSED -->
@@ -231,12 +237,14 @@ All 3 files carry `routing_enabled: false` and `post_convergence_sweep_rounds: 0
 
 ## 4. The doctrine corrections
 
-**4.1 Amend the escalation rule to name misconfiguration.** Status PROPOSED. Founder ruling, verbatim: *"Verdict, do it, test it, then same answer as above, then test the fixes under f, and sy and then apply them to the simulation experimental runner if they check out."*
-<!-- task: 4.1 | state: OPEN | status: PROPOSED -->
+**4.1 Amend the escalation rule to name misconfiguration. DONE 2026-09-09.** Status COMMITTED. Founder ruling, verbatim: *"Verdict, do it, test it, then same answer as above, then test the fixes under f, and sy and then apply them to the simulation experimental runner if they check out."*
+<!-- task: 4.1 | state: DONE | status: COMMITTED -->
+**DONE.** All 5 sites carry it. The runner's notify text now lists 3 causes in check order, misconfiguration first because it costs 3 config reads against opening the source, and names `routing_enabled`, `post_convergence_sweep_rounds` and the declared `models` list as the things to read. **The evidence the amendment needed arrived the same day:** the exp56 1-seat arm's routing ladder is empty by construction, so criticals accumulate with the machinery working as designed and the document irrelevant, which the old 2-cause wording could not express. `resources/RECOVERY.md` and the operational tracker carry the founder's own standing rule verbatim and were ANNOTATED rather than rewritten, because altering a quoted ruling would put words in his mouth in the one record meant to preserve them. 8 tests that CALL `build_irreducible_queue_alarm` and assert on the returned string, per the item's own requirement; 5 mutations, each verified applied, all caught.
 The rule appears in 5 live places and the word appears in 0 of them: `docs/GLOSSARY.md:168`, `bench/reference_runner_v3.py:6096-6098`, `scripts/hil_escalation_by_run.py:8`, `resources/RECOVERY.md:66`, `experimental_notes/CDSFL_Agent_Operational_Plan.md:132`. It must also point at where the fault might lie. No test asserts on the wording; a new one must CALL `build_irreducible_queue_alarm` and assert on the returned string, not read the source.
 
-**4.2 Correct the simplicity note that propagated a wrong definition.** Status PROPOSED.
-<!-- task: 4.2 | state: OPEN | status: PROPOSED -->
+**4.2 Correct the simplicity note that propagated a wrong definition. DONE 2026-09-09.** Status COMMITTED.
+<!-- task: 4.2 | state: DONE | status: COMMITTED -->
+**DONE.** The sentence is removed from `memory/feedback_simplest_sufficient.md` and replaced by a dated correction section recording what was wrong and why. The note's own worked instance does not support the removed line, which is the tell: the sweep won because 1 set entry was the simplest sufficient fix and was shown to work, not because the sweep was older. What survives is the question, not the preference — cheaper is the criterion, where it lives is not.
 `memory/feedback_simplest_sufficient.md` carries the sentence *"Prefer extending machinery that exists and is already trusted over inventing a new component."* That single line is the source of the formulation the founder rejected on 2026-09-09, and it reappeared on 2026-09-07 and 2026-09-09. **His objection is correct and the record backs him:** simplicity is a property of the solution, not of its ancestry, and framing it as a preference for reuse tells models never to innovate and to keep building on worse foundations.
 
 **The 3 axes are distinct, and 2 of the 3 are already in the mathematics.**
@@ -301,7 +309,8 @@ Following from 4.2: the term that encodes simplicity in the model is a constant,
 **7.2** Wire the vagueness linter to something. Whether any hook, test or continuous-integration step invokes it is OPEN; the evidence suggests it is only ever run by hand, which is the 2026-09-04 lesson repeating.
 <!-- task: 7.2 | state: OPEN | status: PROPOSED -->
 **7.3** Record the two-document distinction, founder ruling 2026-09-09, verbatim: *"The experimental notes (all of them) are intended for the technical reader to allow them to follow along with everything we have done exactly, and exist in the interests of scientific reproducibility. My TTS notes are a more generally comprehensible version of these accessible to the skill level of a technical, but non-coding engineer ... They are separate, but related resources. This should be clearly marked and remembered in all your output."*
-<!-- task: 7.3 | state: OPEN | status: PROPOSED -->
+<!-- task: 7.3 | state: DONE | status: COMMITTED -->
+**DONE 2026-09-09.** Recorded as `memory/cdsfl_two_document_audiences.md` and indexed in `MEMORY.md`, so it survives compaction. It names the 2 readers, what each needs, and what does not change between them: numbers stay in digits in both, project concepts the founder designed are explained in neither.
 
 ---
 

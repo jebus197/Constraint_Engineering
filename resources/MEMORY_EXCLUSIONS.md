@@ -19,11 +19,11 @@ The directory holds **141 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 83 |
+| Mirrored (in summarised form) in `MEMORY.md` | 84 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 140 |
+| total | 141 |
 
 > **[Correction 2026-09-08, second.]** Total 137 -> 138, mirrored 80 -> 81, directory 138 -> 139. One
 > memory file was written in the small hours of 2026-09-08:

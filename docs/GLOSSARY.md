@@ -165,7 +165,7 @@ Immune pipeline cell type. Duplicate detection. HT v2 flags approximate duplicat
 
 Fires when the number of findings locked in an unresolvable state exceeds a bound
 (default 2). Its premise is that a large pile of genuinely irreducible findings
-almost always indicates broken machinery rather than an unusually hard document —
+almost always indicates the INSTRUMENT rather than the document. The instrument fails in 2 distinct ways that must be separated: **misconfiguration**, where the machinery works and this run cannot reach it, and **mechanical failure**, where it is broken. Misconfiguration is checked first because it is cheaper to rule out and was the cause on 2026-09-09, when the 1-seat exp56 arm's routing ladder was empty by construction. An unusually hard document is the rarest cause and the only one that is not a defect —
 vindicated on 2026-08-01, when the pile was caused by a routing ladder that never
 received the target and raising the bound twice was wrong both times. Since
 2026-08-02 it HALTS the run rather than merely refusing to declare convergence.

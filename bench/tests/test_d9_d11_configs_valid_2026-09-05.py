@@ -346,20 +346,59 @@ class TestSubsetPanelLeaks:
             f"ladder built from the full roster: {leaked}")
         assert set(leaked) - {source}, "the leaked ladder reaches other seats"
 
-    def test_routing_is_off_in_every_arm_while_the_ladder_reads_the_full_roster(self):
-        """Conditional on the measurement above, not on a description of it. If
-        the runner is repaired to intersect with `cfg.models`, the guard lifts."""
-        full = list(_live_seats())
-        declared = _load("d9_single_model_with_agents.json")["models"]
-        ladder_leaks = bool(
-            rank_falsifier_writers(full, exclude=declared[:1]))
-        if not ladder_leaks:
-            pytest.skip("ladder no longer reaches undeclared seats; guard moot")
+    def test_the_routing_ladder_reaches_only_seats_the_arm_declared(self, monkeypatch):
+        """REPLACED 2026-09-09. The guard lifted, exactly as its predecessor said.
+
+        The previous version asserted `routing_enabled is False` in every arm,
+        conditional on the ladder still leaking, and its own docstring said: "If
+        the runner is repaired to intersect with `cfg.models`, the guard lifts."
+        The runner has been repaired, so the condition it waited for is met and
+        the flag assertion is retired -- the founder has since ruled routing and
+        the sweep ON everywhere.
+
+        The LEAK CHECK is not retired, it is promoted. The predecessor exercised
+        `rank_falsifier_writers` directly, which was never where the defect lived:
+        that function is pure and ranks whatever labels it is handed. The defect
+        was the CALLER handing it the full orchestrator roster.
+
+        SO THIS DRIVES THE CALLER, and the first version of this replacement did
+        not. It called `_declared_models` directly -- the same weakness its own
+        paragraph above criticises in its predecessor, one level up. CC2 caught
+        that in panel review on 2026-09-09 and it was confirmed by mutation:
+        reverting BOTH wiring sites to `exp_config.models` left this test green,
+        and the file only went red through a sibling test that already drove the
+        sweep. A test carried by its neighbour while claiming the coverage itself
+        is worse than no test, because the claim is what gets believed.
+        """
+        import bench.reference_runner_v3 as rr
+
         for name in ARM_FILES:
-            assert _load(name)["routing_enabled"] is False, (
-                f"{name} enables routing while `_apply_routing` builds its "
-                f"ladder from the full orchestrator roster. In the 1-seat arm "
-                f"that dispatches the very vendors the arm exists to do without.")
+            declared = _load(name)["models"]
+            reached: list = []
+
+            def _stub(mc, prompt, system, **kw):
+                reached.append(getattr(mc, "label", str(mc)))
+                return "", 0.0
+
+            monkeypatch.setattr(rr, "dispatch_to_model", _stub)
+            cfg = build_runner_config_from_dict(
+                {**_load(name), "routing_enabled": True}, _ARGS)
+            registry = rr.FindingRegistry()
+            registry.entries["C0001"] = {
+                "canonical_id": "C0001", "status": "OPEN", "severity": 0.9,
+                "description": "an escalated critical for the ladder to route",
+                "falsifier_code": "", "verdicts": [],
+                "source_model": declared[0], "source_aliases": ["F001"],
+                "open_since_round": 0, "last_status_change_round": 0,
+                "escalated": True, "falsifier_verdict": "UNTOOLABLE",
+            }
+            rr._apply_routing(registry, 4, launcher_core.load_experiment_config(),
+                              cfg=cfg, repo_root=str(REPO))
+            undeclared = sorted(set(reached) - set(declared))
+            assert not undeclared, (
+                f"{name} declares {declared} but routing DISPATCHED to "
+                f"{undeclared}. In the 1-seat arm that reaches the very vendors "
+                f"the arm exists to do without, and 3 of the 5 are paid.")
 
     def test_the_post_convergence_sweep_dispatches_to_undeclared_seats(self, monkeypatch):
         """EXECUTED, not read. The sweep is driven with a stub in place of
@@ -386,13 +425,18 @@ class TestSubsetPanelLeaks:
 
         assert reached, "the sweep dispatched to nobody; the probe is not exercising it"
         undeclared = sorted(set(reached) - set(cfg.models))
-        assert undeclared, (
-            "expected the sweep to reach seats the config never declared")
-        # And the mitigation the configs actually carry.
-        for name in ARM_FILES:
-            assert _load(name)["post_convergence_sweep_rounds"] == 0, (
-                f"{name} enables the post-convergence sweep while the sweep "
-                f"reaches undeclared seats {undeclared}")
+        # REPAIRED 2026-09-09, AND THE ASSERTION IS INVERTED RATHER THAN DELETED.
+        # This test was written to PROVE the sweep reached seats the arm never
+        # declared, so that `post_convergence_sweep_rounds: 0` could be justified
+        # as a mitigation rather than merely asserted as one. The sweep now
+        # iterates `_declared_models(exp_config, cfg)` instead of
+        # `exp_config.models`, so the defect is gone and the original assertion
+        # can no longer hold. The property worth guarding is unchanged; it is
+        # simply stated the other way round. Deleting the test would have
+        # discarded the guard along with the defect it was guarding against.
+        assert not undeclared, (
+            f"the sweep reached seats the arm never declared: {undeclared}. "
+            f"cfg.models={cfg.models}, reached={sorted(set(reached))}")
 
     def test_merge_arbitration_is_off_in_every_arm(self):
         """The third site: `run_experiment` arms the arbitration context with
@@ -742,12 +786,34 @@ class TestLaunchPreflight:
         cannot refuse anything is not a guard."""
         from bench.reference_runner_v3 import (
             TARGET_KIND_PROSE, preflight_target_machinery)
-        rc = build_runner_config_from_dict(
-            copy.deepcopy(_load("d9_multi_model_panel.json")), _ARGS)
+        # THE FIXTURE IS CONSTRUCTED, NOT BORROWED, corrected 2026-09-09.
+        # This previously loaded d9_multi_model_panel.json and relied on that
+        # live config carrying `routing_enabled: false`. When the founder ruled
+        # routing ON everywhere, the test's own SUBJECT disappeared and it failed
+        # -- not because the preflight had broken, but because a production value
+        # it happened to borrow had legitimately changed. A test that depends on
+        # a config value it does not control cannot distinguish "the guard broke"
+        # from "the setting moved", and its own docstring says a guard that
+        # cannot refuse anything is not a guard. The property under test is the
+        # PREFLIGHT'S behaviour, so the routing-off condition is now built here.
+        cfg_dict = copy.deepcopy(_load("d9_multi_model_panel.json"))
+        cfg_dict["routing_enabled"] = False
+        rc = build_runner_config_from_dict(cfg_dict, _ARGS)
         refusals = preflight_target_machinery(
             rc, str(REPO / "bench/cdsfl_registry/targets/"
                     "control_two_distinct_defects.md"), TARGET_KIND_PROSE)
         assert any("routing_enabled is false" in r for r in refusals), refusals
+
+        # And the converse, so the guard is shown to DISCRIMINATE rather than to
+        # refuse everything: with routing on, this refusal must not fire.
+        cfg_on = copy.deepcopy(_load("d9_multi_model_panel.json"))
+        cfg_on["routing_enabled"] = True
+        rc_on = build_runner_config_from_dict(cfg_on, _ARGS)
+        refusals_on = preflight_target_machinery(
+            rc_on, str(REPO / "bench/cdsfl_registry/targets/"
+                       "control_two_distinct_defects.md"), TARGET_KIND_PROSE)
+        assert not any("routing_enabled is false" in r for r in refusals_on), (
+            f"the refusal fires even with routing ON: {refusals_on}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
