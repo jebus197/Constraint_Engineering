@@ -13582,6 +13582,15 @@ def run_experiment(
             result["convergence_reason"] = IRREDUCIBLE_QUEUE_HALT
             result["registry"] = registry.to_dict()
             converged = False
+            # THE SAME FAULT AS 2026-05-18, IN A DIFFERENT BRANCH. The comment at
+            # the gamma-alt gate below records it verbatim: setting only the
+            # result dict meant "post-mortem tooling read every hardened
+            # convergence as INCOMPLETE". That was repaired for the gate and not
+            # for this halt, so the 2026-09-08 run wrote status INCOMPLETE with
+            # reason "" while its own report named HALTED_IRREDUCIBLE_QUEUE_ALARM.
+            # `_save_checkpoint()` is called on the NEXT line and reads
+            # brain.state, so the assignment must precede it.
+            brain.state.stop_reason = IRREDUCIBLE_QUEUE_HALT
             brain._save_checkpoint()
             break
 
@@ -13808,6 +13817,26 @@ def run_experiment(
             registry.resolve(canonical_id, "UNCONFIRMED", final_round)
 
     _save_fingerprints(observed_fingerprints, cfg.experiment_name)
+    # LAST-RESORT FALLBACK, added 2026-09-09. Measured across the archive: 23 of
+    # 41 completion signals carry an empty reason, 56.1%, Wilson [41.0%, 70.1%],
+    # and all 23 are INCOMPLETE while all 16 CONVERGED runs carry one -- which is
+    # the "reason recorded only on convergence" defect stated as a census rather
+    # than an inference. Structurally: the round loop has 8 `break` statements and
+    # only 2 of them set stop_reason.
+    #
+    # Naming each remaining exit individually would be 6 more edits and would miss
+    # the 9th `break` somebody adds next month. This catches every path instead,
+    # and says plainly when it could not find a cause -- because "the runner did
+    # not record why" is a different and worse condition than any named halt, and
+    # must not be indistinguishable from it.
+    if not (getattr(brain.state, "stop_reason", "") or "").strip():
+        _fallback = (result.get("convergence_reason")
+                     or result.get("terminated")
+                     or result.get("failure_reason")
+                     or "")
+        brain.state.stop_reason = _fallback.strip() or (
+            "UNRECORDED_STOP (the round loop exited by a path that names no "
+            "reason; see the run log)")
     signal = brain.signal_complete()
 
     total_elapsed = time.monotonic() - experiment_start
