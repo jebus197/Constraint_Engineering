@@ -443,6 +443,31 @@ Verbatim: *"Zenodo key switching can go at the very bottom of this list. It isn'
 
 ---
 
+## V. THE VERIFICATION GAP — added 2026-09-10 00:42 BST, and V1 is the mechanism the founder asked for and did not get
+
+**Founder question, verbatim:** *"But you were supposed to have built a mechanism that ensured you could complete this work mechanically, and in such a way that it would survive future compaction events until all the work was complete. Did you do this?"*
+
+**Half of it, and the half that failed is the half he meant.** The compaction half works, measured: 5 `UserPromptSubmit` hooks are wired, one reports task-list state, and it fired on every turn after the 19:19:57 compaction; the list and its outcomes companion are files with Desktop mirrors. **The mechanical-completion half does not exist.** `task_list_markers.py`'s `CONTRADICTORY` set refuses an entry only when its own 2 labels disagree — DONE beside PROPOSED. **Nothing compares a DONE marker against the repository.** It records what the assistant CLAIMS.
+
+**The gap, measured 2026-09-10 by 18 adversarial agents over 689 tool calls:** of 19 entries marked DONE, **11 were overstated — 57.89%, Wilson [36.3%, 76.9%], Clopper-Pearson [33.5%, 79.7%]**, with 2 independent reviewers agreeing on every one. 2 disputed entries were cleared on appeal.
+
+**V1. A DONE marker must carry executable evidence, and a suite-level guard must check it.** THE MISSING HALF OF THE TASK-LIST MARKER ENGINE, which the founder asked for and did not get. Today an entry is marked DONE by assertion. The additive form: every DONE entry names the test file(s) that prove it, and a suite-level guard runs them and fails if any is missing, empty, or green against a reverted fix. That last clause is the load-bearing one — 6.3's 8 tests were green while the code was broken, because every one built a fake config by hand.
+<!-- task: V1 | state: OPEN | status: PROPOSED -->
+
+**V2. Repair the 11 overstated entries.** Each is a separate correction and they are not equal. **6.3 is already FIXED** — it was a live regression, not an overstatement, and is committed at `25e5b34`. **7.2 is the urgent one**: 2 demonstrated bypasses, below. The rest: **6.7** declined a question that was answerable (`ImmuneMemory` has no `has_evidence`, so the seat's guard raises on first call, and the premise IS executable); **6.4** wired 5 of the 6 named sites; **4.2**'s `status: COMMITTED` is false because the memory file was never committed; **8.1** contains a sentence its own opening line contradicts; **1.1, 5.1, 6.2, 6.5, M1** carry figures that do not reproduce or cite no producing script.
+<!-- task: V2 | state: OPEN | status: PROPOSED -->
+
+**V3. The note-lint commit guard has 2 demonstrated bypasses and is believed.** URGENT, second only to 6.3. (1) The ratchet compares TOTALS, so a commit that nets findings downward can add brand-new Rule 27 violations — reproduced by a reviewer, HEAD moved, exit 0. (2) A linter that errors is scored as 0 findings and the commit passes, because `LINT_CODE=$?` at `hooks/pre-commit:160` reads the preceding if/else, which always succeeds, making the fail-closed branch at :161-166 unreachable. **A guard that is believed and does not hold is worse than no guard.**
+<!-- task: V3 | state: OPEN | status: PROPOSED -->
+
+**V4. Commit the scripts behind the figures that have none.** `measured-rate-travels-with-its-script` is a founder ruling the assistant quotes constantly and broke in at least 5 entries. The reviewers named: 1.1's "28 tests in 1.26 s" (actually 56 in 2.00 s, and never true at any revision), 5.1's brief-archive figures, 6.2's watchdog figures, M1's "15 of 29" and the 29-versus-48 regex counts, and 7.2's "29 of 379".
+<!-- task: V4 | state: OPEN | status: PROPOSED -->
+
+**V5. Make `rs` prefer the FRESHER source, not the older one.** The restore protocol names the operational tracker FIRST READ. On 2026-09-09 at 23:00 it fed the assistant a stale line saying the answer-key sealing awaited the founder — he had driven home from his hotel and done it himself on 2026-09-07 at 22:03 — and the assistant repeated it back to him. **The correct record was in the master task list, written 8 hours earlier.** The restore reads the older document first and treats it as authoritative.
+<!-- task: V5 | state: OPEN | status: PROPOSED -->
+
+---
+
 ## Sources
 
 `experimental_notes/Research_FULL_RECORD_2026-09-09.md` (1221 lines, the unfiltered agent output behind every entry above); `experimental_notes/CDSFL_Agent_Operational_Plan.md`; `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md`; `experimental_notes/RUNWAY_to_BR2_2026-08-18.md`; `resources/RECOVERY.md`; `experimental_notes/Morning_Report_2026-09-09.md`.

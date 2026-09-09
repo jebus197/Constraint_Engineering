@@ -82,6 +82,26 @@ The `rs` protocol names `experimental_notes/CDSFL_Agent_Operational_Plan.md` as 
 
 **The correct record already existed.** `CDSFL_MASTER_TASK_LIST.md`, written 2026-09-09 14:15, states he executed it *and* states the tracker was stale on it. **So the restore reads the older document first and with the greater authority** — a defect in the protocol, not only in the reading. Verified before striking it: `find` over `$HOME` to depth 4 and over the repository returns **0** files matching `*answer_key*.json`.
 
+## THE VERIFICATION, 2026-09-10 — 11 of 19 completion claims overstated
+
+18 adversarial agents, 689 tool calls, 28 minutes, running the tests rather than reading the claims, with a second reviewer on every disputed entry.
+
+| | |
+|---|---|
+| Claims checked | 19 |
+| **Overstated, 2 reviewers agreeing** | **11 — 57.89%**, Wilson [36.3%, 76.9%], Clopper-Pearson [33.5%, 79.7%] |
+| Confirmed | 8 (6 first pass, plus 2.1 and L2 cleared on appeal) |
+
+**One was a live regression, not an overstatement, and is FIXED at `25e5b34`.** Task 6.3 sent every production run into `bench/logs/experiment_11` — name and timestamp dropped, colliding with 22 artefacts from 2026-03-28, resume scan bypassed. `ExperimentConfig.logs_dir` carries a truthy default that `load_default_config` sets on every launch, and the repair read it as a choice. **It is the identical error to `0c0f450`, titled "a default is not a declaration", made 20 minutes later.** All 8 tests passed throughout because every one built its config from `SimpleNamespace`; the shape production passes was never constructed. 3 tests added that build the real `ExperimentConfig`. The first repair also failed — it compared raw strings while the launcher resolves the default to an absolute path — and was caught by re-running the production path rather than assuming.
+
+**The urgent remainder is V3**, the note-lint commit guard built the same evening: the ratchet compares totals, so a net-downward commit can add new violations (reproduced, HEAD moved, exit 0); and a linter that errors scores 0 findings because `LINT_CODE=$?` reads an if/else that always succeeds, making the fail-closed branch dead code.
+
+**The rest:** 6.7 declined an answerable question; 6.4 wired 5 of 6 sites; 4.2's status marker is false; 8.1 contradicts its own opening line; and 1.1, 5.1, 6.2, 6.5 and M1 carry figures that do not reproduce or cite no script.
+
+## The mechanism the founder asked for, and did not get
+
+He asked whether the marker engine ensures the work completes mechanically and survives compaction. **The compaction half works, measured**: 5 `UserPromptSubmit` hooks wired, the task pulse fired on every turn after the 19:19:57 compaction, and the list and outcomes log are files with Desktop mirrors. **The completion half does not exist.** `task_list_markers.py`'s `CONTRADICTORY` set refuses an entry only when its 2 labels disagree with each other. Nothing compares DONE against the repository, so it records claims. The 57.89% is the measurement of that gap, and V1 is the missing mechanism.
+
 ## What is not established
 
 The panel's canonical-tree alarm cannot distinguish an assistant edit from a seat escape (**I27**); it fired on 14 files, all of them this session's own concurrent work, and confinement did hold — 0 canonical-path references in either seat's tool log. The dispatcher's DEFAULT is 3 paid seats, with only an environment variable preventing it (**I20**). And 3 of this session's own measurements used a broken instrument before being corrected (**I35**) — in each case the defect was in the ruler, not the code under study.
