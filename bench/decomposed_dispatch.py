@@ -348,12 +348,26 @@ def _falsifier_format_repair(
     try:
         r = client.chat.completions.create(**kwargs)
         repaired = (r.choices[0].message.content or "").strip() if r.choices else ""
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        # SAY SO (task 3.2). Returning the original silently made a failed repair
+        # indistinguishable from a repair that was never needed, and for the
+        # DeepSeek route -- which has no tool loop at all -- this call IS the
+        # mechanism that makes its falsifiers runnable.
+        _log(f"  [{model_id}] falsifier format-repair FAILED to dispatch: "
+             f"{type(exc).__name__}: {exc}; returning the unrepaired response")
         return response
     if repaired and _RUNNABLE_FALSIFIER_RE.search(repaired):
         _log(f"  [{model_id}] falsifier format-repair applied "
              f"({len(response):,} -> {len(repaired):,} chars)")
         return repaired
+    # THE LAST SILENT OUTCOME (task 3.2). The repair dispatched, returned
+    # something, and that something still carried no runnable block. Keeping the
+    # original is right -- the guard above exists so a worse reply cannot
+    # replace a better one -- but saying nothing left 3 different endings
+    # indistinguishable in the record: not needed, dispatched and useless, and
+    # never attempted. Only the success path spoke.
+    _log(f"  [{model_id}] falsifier format-repair returned no runnable block "
+         f"({len(repaired):,} chars back); keeping the original response")
     return response
 
 

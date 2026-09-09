@@ -1526,12 +1526,35 @@ def call_deepseek(
 
             if text:
                 if _ds_repair:
+                    # THE COMPENSATOR'S FAILURE MUST BE LOUD (task 3.2).
+                    #
+                    # This route denies the tool loop deliberately, and
+                    # `_falsifier_format_repair` is the whole justification for
+                    # doing so: it re-prompts once so prose-style falsifiers
+                    # become runnable blocks the runner re-runs. A bare
+                    # `except: pass` here meant the justification could stop
+                    # working and nothing would say so -- the same shape this
+                    # project has caught hiding 3 faults in `_record_recovery_ran`.
+                    #
+                    # MEASURED 2026-09-09 by scripts/deepseek_falsifier_supply_2026-09-09.py:
+                    # the compensator works. DeepSeek supplies a runnable
+                    # falsifier in 103 of 468 archived replies, 22.01%, against
+                    # 325 of 1925 for every other seat pooled -- Fisher exact
+                    # p = 0.0106, odds ratio 1.389, 95% CI [1.083, 1.782]. It is
+                    # significantly MORE likely to supply one, not less. That
+                    # measurement is the only evidence the mitigation is sound,
+                    # and it could not be repeated on a run whose repair had
+                    # silently failed.
                     try:
                         from decomposed_dispatch import _falsifier_format_repair
                         text = _falsifier_format_repair(
                             client, model_id, text, current_max_tokens, timeout)
-                    except Exception:  # noqa: BLE001
-                        pass
+                    except Exception as _repair_exc:  # noqa: BLE001
+                        _log(f"  [deepseek:{model_id}] FORMAT-REPAIR DID NOT RUN: "
+                             f"{type(_repair_exc).__name__}: {_repair_exc}. This "
+                             f"route has no tool loop, so the repair is the only "
+                             f"thing making its falsifiers runnable — treat this "
+                             f"reply's falsifier supply as UNCOMPENSATED.")
                 return text
 
             # Empty content — the model exhausted its token budget on CoT.
