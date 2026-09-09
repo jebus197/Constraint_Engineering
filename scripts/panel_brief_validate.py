@@ -127,9 +127,20 @@ def validate(text: str) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Validate a CDSFL panel brief.")
-    ap.add_argument("brief", type=Path, help="path to BRIEF.md")
+    # `nargs="?"` is DELIBERATE, added 2026-09-09 after the suite refused this
+    # script. With a required positional, argparse reports the missing argument
+    # BEFORE it reaches an unrecognised flag, so `--fix-timestamps` -- a flag this
+    # script does not have -- produced "the following arguments are required"
+    # rather than "unrecognized arguments". The repository guard on that exists
+    # because a script that silently accepts a retired flag and does nothing with
+    # it is the 118-day no-op again. Making the positional optional lets argparse
+    # reach the unknown-flag check; the requirement is then enforced below, with a
+    # clearer message than argparse's own.
+    ap.add_argument("brief", type=Path, nargs="?", help="path to BRIEF.md")
     ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args()
+    if a.brief is None:
+        ap.error("a path to a BRIEF.md is required")
     if not a.brief.is_file():
         print(f"panel-brief: {a.brief} does not exist", file=sys.stderr)
         return 2
