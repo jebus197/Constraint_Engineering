@@ -11609,6 +11609,65 @@ def _build_rk0_prior(
     return prior, receipt
 
 
+def _experiment_config_logs_dir_default():
+    """`ExperimentConfig.logs_dir`'s dataclass default, read rather than typed.
+
+    A DEFAULT IS NOT A DECLARATION, AND THIS FUNCTION EXISTS BECAUSE THE SAME
+    MISTAKE WAS MADE TWICE IN ONE EVENING. `_declared_models` was repaired at
+    commit 0c0f450, titled "a default is not a declaration", for reading the
+    hardcoded `RunnerConfig.models` default as an arm's choice. 20 minutes later
+    the logs-dir repair read `ExperimentConfig.logs_dir` the same way.
+
+    That default is `bench/logs/experiment_11` and `load_default_config()` sets
+    it on every launch, so the first version of the fix returned it for EVERY
+    production run: the experiment name dropped, the timestamp dropped, every run
+    colliding in one directory that already holds 22 Experiment 11 artefacts from
+    2026-03-28, and the resume scan bypassed because the same path came back
+    whether resuming or not. Executed against `load_experiment_config()`, not
+    argued.
+
+    ITS 8 TESTS ALL PASSED THROUGHOUT, because every one built its exp_config
+    from `types.SimpleNamespace`. The only shape production ever passes -- a real
+    `ExperimentConfig` carrying its dataclass default -- was the one shape
+    untested. Found by an adversarial review of the completion claim itself.
+    """
+    from bench.experiment_11_orchestrator import ExperimentConfig
+    for fld in fields(ExperimentConfig):
+        if fld.name == "logs_dir":
+            if fld.default_factory is not MISSING:
+                return fld.default_factory()
+            if fld.default is not MISSING:
+                return fld.default
+    return None
+
+
+def _is_the_logs_dir_default(named) -> bool:
+    """True when `named` is the untouched default rather than a real choice.
+
+    THE COMPARISON HAS TO BE MADE ON RESOLVED PATHS, and a first version of this
+    repair compared raw strings and did not work at all. The dataclass default is
+    the RELATIVE `bench/logs/experiment_11`, but `load_default_config` sets
+    `logs_dir=repo_root / "bench" / "logs" / "experiment_11"` -- the same default,
+    resolved. So the raw comparison saw two different strings and returned the
+    default anyway, leaving the regression exactly where it was. Caught by
+    running the production path again after applying the fix instead of assuming
+    it had worked.
+    """
+    default = _experiment_config_logs_dir_default()
+    if default is None:
+        return False
+    try:
+        a = Path(named)
+        b = Path(default)
+        if not a.is_absolute():
+            a = REPO_ROOT / a
+        if not b.is_absolute():
+            b = REPO_ROOT / b
+        return a.resolve() == b.resolve()
+    except Exception:      # noqa: BLE001 - a path we cannot resolve is not the default
+        return False
+
+
 def _find_or_create_logs_dir(cfg: RunnerConfig, exp_config=None) -> Path:
     """Where this run's artefacts go: the caller's directory if it named one.
 
@@ -11628,7 +11687,7 @@ def _find_or_create_logs_dir(cfg: RunnerConfig, exp_config=None) -> Path:
     named a directory has already answered the question the scan exists to ask.
     """
     named = getattr(exp_config, "logs_dir", None) if exp_config is not None else None
-    if named:
+    if named and not _is_the_logs_dir_default(named):
         return Path(named)
     if cfg.resume:
         logs_root = REPO_ROOT / "bench" / "logs"

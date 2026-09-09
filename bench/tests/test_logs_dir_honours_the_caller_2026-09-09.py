@@ -120,3 +120,57 @@ def test_the_runner_actually_passes_exp_config_at_the_call_site():
     assert "_find_or_create_logs_dir(cfg, exp_config)" in src, (
         "run_experiment calls the helper without exp_config, so logs_dir is "
         "written and still read nowhere")
+
+
+# ── THE SHAPE PRODUCTION ACTUALLY PASSES, which nothing above tested ─────────
+#
+# Every test above builds its exp_config from `types.SimpleNamespace`. All 8
+# passed while the shipped code sent EVERY production run into one shared
+# directory, because the only shape production ever passes -- a real
+# `ExperimentConfig` carrying its dataclass default -- was the one shape never
+# constructed. Found by an adversarial review of the completion claim, not by
+# the suite.
+
+def test_the_real_ExperimentConfig_default_is_not_read_as_a_choice():
+    """A DEFAULT IS NOT A DECLARATION, and this is the second time in one
+    evening that the same error had to be fixed.
+
+    `ExperimentConfig.logs_dir` defaults to `bench/logs/experiment_11` -- a
+    TRUTHY path -- and `load_default_config` sets it on every launch. Reading
+    that as the caller's choice dropped the experiment name and the timestamp,
+    collided every run in a directory already holding 22 artefacts from
+    2026-03-28, and bypassed the resume scan."""
+    from bench.experiment_11_orchestrator import ExperimentConfig
+    cfg = _cfg(experiment_name="probe_real")
+    got = _find_or_create_logs_dir(cfg, ExperimentConfig(models=[]))
+    assert got.name.startswith("probe_real_"), (
+        f"the untouched dataclass default was read as a choice: {got}")
+    assert "experiment_11" not in str(got), got
+
+
+def test_the_launcher_s_own_config_is_not_read_as_a_choice():
+    """The production path end to end. `load_experiment_config` RESOLVES the
+    default against the repository root, so it is absolute where the dataclass
+    default is relative -- a raw string comparison misses it, and the first
+    repair of this regression did exactly that and changed nothing."""
+    import sys
+    sys.path.insert(0, str(REPO / "bench"))
+    import launcher_core
+    cfg = _cfg(experiment_name="probe_launcher")
+    got = _find_or_create_logs_dir(cfg, launcher_core.load_experiment_config())
+    assert got.name.startswith("probe_launcher_"), (
+        f"the launcher's resolved default was read as a choice: {got}")
+
+
+def test_resume_still_scans_when_the_config_carries_only_the_default(tmp_path, monkeypatch):
+    """The resume path must not be bypassed by a default either."""
+    import bench.reference_runner_v3 as rr
+    from bench.experiment_11_orchestrator import ExperimentConfig
+    logs_root = tmp_path / "bench" / "logs"
+    newer = logs_root / "probe_resume_20260101T000000Z"
+    newer.mkdir(parents=True)
+    (newer / "checkpoint.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(rr, "REPO_ROOT", tmp_path)
+    got = _find_or_create_logs_dir(_cfg(experiment_name="probe_resume", resume=True),
+                                   ExperimentConfig(models=[]))
+    assert got == newer, f"the resume scan was bypassed by a default: {got}"
