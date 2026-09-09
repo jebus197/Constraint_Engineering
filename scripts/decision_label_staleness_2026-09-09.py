@@ -61,7 +61,8 @@ def founder_message_times() -> list[dt.datetime]:
     buried: an entry is a typed message only if it carries no toolUseResult, and
     its text is non-empty and does not begin with "<".
     """
-    out = []
+    out: list[dt.datetime] = []
+    unparsed: list[str] = []
     if not TRANSCRIPT.exists():
         return out
     with TRANSCRIPT.open(errors="replace") as fh:
@@ -88,11 +89,26 @@ def founder_message_times() -> list[dt.datetime]:
             if not text.strip() or text.lstrip().startswith("<"):
                 continue
             ts = o.get("timestamp")
-            if ts:
-                try:
-                    out.append(dt.datetime.fromisoformat(ts.replace("Z", "+00:00")))
-                except Exception:
-                    pass
+            if not ts:
+                unparsed.append("(no timestamp field)")
+                continue
+            try:
+                out.append(dt.datetime.fromisoformat(ts.replace("Z", "+00:00")))
+            except (ValueError, TypeError) as exc:
+                # NOT SWALLOWED. A dropped message understates the very count this
+                # script reports, and `except Exception: pass` is the shape that hid
+                # 3 successive faults in _record_recovery_ran on 2026-09-08 -- each
+                # failure concealing the next. Caught by the suite on 2026-09-09,
+                # which is the mechanism working.
+                unparsed.append(f"{ts!r}: {type(exc).__name__}: {exc}")
+    if unparsed:
+        print(f"  WARNING: {len(unparsed)} message timestamp(s) could not be parsed "
+              f"and are MISSING from the count below:", file=sys.stderr)
+        for u in unparsed[:5]:
+            print(f"    {u}", file=sys.stderr)
+        if len(unparsed) > 5:
+            print(f"    ... and {len(unparsed) - 5} more not listed here",
+                  file=sys.stderr)
     return sorted(out)
 
 

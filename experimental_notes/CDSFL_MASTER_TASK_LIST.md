@@ -26,6 +26,28 @@ Several had been ruled **twice**. Exp 53 restart: *"Restart it."* on 2026-08-07 
 
 ---
 
+## P. THE PANEL REVIEW CONDITION — BINDING ON EVERY ENTRY IN THIS FILE
+
+**Founder ruling 2026-09-09, verbatim and complete:** *"In all cases and with all fixes always check them with Fable and CC2 in full CDSFL panel review format (so not just some simple open ended prompt), they must use whatever aspects of the harness are currently working, including our mathematical model and all relevant mechanics in the formation of their answers/fixes, as should you. this format should then be saved as the standard for all future 6 full paid model reviews also."*
+
+**This is not advice attached to some items. It is a precondition on closing ANY item in this file.** No entry may move to DONE until its fix has been through a panel review meeting every clause below. The clauses are his, restated as checkable conditions.
+
+**P1. Full CDSFL format, not an open-ended prompt.** The dispatcher is `bench/confer_maths_panel_2026-09-05.py` — the only 1 of 39 that carries the 28,183-character formal schema in its system prompt, with sandbox confinement, control-plane fingerprinting, real tool-call recording, and a test that executes rather than greps. Its `SYSTEM` string needs no replacing.
+
+**P2. The brief must be a FORMAT, and one does not yet exist.** Measured across all 49 archived briefs: they are hand-written markdown read straight off disk with no template, no schema, no validation and no test. **0 of 49 require a seat to use the mathematical model as an instrument. 8 require a fix. 2 require the fix to be tested.** His diagnosis is confirmed by measurement; his presupposition that a format exists to be saved is contradicted. **It must be written before it can be standardised, which makes this the item that gates every other item in this file.**
+
+**P3. Seats must USE the harness, not merely discuss it.** The brief must require each seat to form its answer using whatever parts of the machinery are currently working — the mathematical model included, naming gamma, the two-sided gate, rho, severity and the S_k threshold where they bear on the question. A seat that returns prose about a fix without having run anything has not met the condition.
+
+**P4. Seats must PRODUCE and TEST a fix, not report a problem.** The founder has made this point repeatedly and it is still true of 47 of 49 briefs. A finding without a runnable falsifier and a tested repair does not discharge the condition.
+
+**P5. No compelled convergence.** Each seat returns an independent verdict and its strongest falsification; disagreement is preserved as information rather than smoothed. CC1 participates with its own position and synthesises the range.
+
+**P6. The same format becomes the standard for the full 6-model paid panel.** His explicit instruction. Once written, it is not a one-off brief for one review; it is the template every future paid review uses.
+
+**P7. The assistant is bound by the same conditions.** His words: *"as should you."* The same harness, the same mathematical model, the same requirement to produce and test rather than describe.
+
+---
+
 ## L. THE LINTER'S SCOPE, CORRECTED BY FOUNDER RULING 2026-09-09
 
 Verbatim: *"the problem you clearly identified is treating me like a machine, and building things that mark my inputs as 'vague'. I don't think I am vague at all. In fact overall I think I am remarkably specific ... It is you who are clearly vague ... particularly in my tts outputs. Refusing work from me because it does not fit your own 'anti-vagueness' standards is clearly nonsensical and probably very unhelpful going forward."*
@@ -101,7 +123,13 @@ Added 2026-09-09 14:30 BST. The section above establishes that these were ruled.
 
 ## 1. The reliability mechanism — founder ruling: top of the list
 
-**1.1 Add a pre-commit hook that refuses a commit when the cheap guards are red.** Status PROPOSED.
+**1.1 Add a pre-commit hook that refuses a commit when the cheap guards are red. Status COMMITTED and ENABLED 2026-09-09.** Task state: DONE pending panel review under section P.
+
+**Built, wired and proven against the real repository.** `hooks/pre-commit` runs the 4 cheap guards and refuses on non-zero exit. `core.hooksPath` now points at the repository's versioned `hooks/`, set by `wire_git_hooks()` in `scripts/cdsfl_onboard.py` rather than by hand, because that setting is per-clone local configuration and a fresh clone would otherwise have no guard at all. **Live proof: staging a ledger corrupted exactly as it was on 2026-09-08 returns COMMIT EXIT CODE 1, prints REFUSED, and leaves HEAD untouched.**
+
+**11 tests, and 3 of the 4 mutations were caught immediately. The 4th was not, and that matters more than the 3.** Deleting the python3-availability check left all 7 tests green. The reason: `git` and `python3` both live in `/opt/homebrew/bin`, so the test's PATH restriction to git's own directory never removed python3, and the test passed because the hook refused for an unrelated reason. **A test that survives deleting the check it exists to guard is the fault this project names as "a guard that cannot fail is not a guard".** Corrected to a PATH holding exactly 1 entry, a symlink to git, with an assertion that python3 is genuinely absent before the test proves anything. The mutation is now caught.
+
+**FOLLOW turned up a defect nobody was looking for.** 3 of the 4 live hooks — `prompt_clock.py`, `compaction_watch.py`, `ffafp_audit.py` — existed only in `~/.claude/hooks/` and were in no repository. The 4 hooks enforcing this project's discipline were unversioned on a single machine. All 3 are now in `hooks/`.
 
 **The finding, and it is unambiguous.** A commit-time guard was discussed on 5 separate occasions between 2026-08-25 and 2026-09-07 and **was never built**. All 4 installed hooks are `UserPromptSubmit` context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0. There is no git hook (14 files in `.git/hooks`, all `.sample`), no continuous integration, and `core.hooksPath` is unset. Nothing anywhere inspects repository state before a commit. **Commit `57d5a0e` reached HEAD on 2026-09-09 at 08:16:17 with the suite red**, which is the proof rather than the theory.
 

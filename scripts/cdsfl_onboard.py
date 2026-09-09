@@ -833,6 +833,47 @@ def parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
+def wire_git_hooks(root: Path) -> bool:
+    """Point git at the repository's versioned hooks/ directory.
+
+    WHY THIS IS HERE RATHER THAN IN A README. `core.hooksPath` is per-clone local
+    configuration: it is not carried by the repository, so a fresh clone has NO
+    pre-commit guard until someone runs 1 command. A guard that depends on
+    remembering to install it has the same reliability as the discipline it
+    replaces, which is the failure this whole mechanism exists to end.
+
+    Measured 2026-09-09 before this was wired: `git config --get core.hooksPath`
+    was unset, `.git/hooks` held 14 files and every one was a `.sample`, and
+    commit 57d5a0e had reached HEAD that morning with the full suite red.
+
+    Setting it is safe and was checked rather than assumed: of the files in
+    `hooks/`, git executes only those bearing a git-hook name, so the Claude Code
+    hooks stored alongside (mc_commands.py and the rest) are ignored by git, and
+    nothing in `.git/hooks` was active to lose.
+    """
+    hooks_dir = root / "hooks"
+    if not hooks_dir.is_dir():
+        print("  [WARN] hooks/ is missing; git hooks not wired")
+        return False
+    current = subprocess.run(["git", "config", "--get", "core.hooksPath"],
+                             cwd=root, capture_output=True, text=True).stdout.strip()
+    if current == "hooks":
+        print("  [OK] core.hooksPath already points at hooks/")
+    else:
+        subprocess.run(["git", "config", "core.hooksPath", "hooks"], cwd=root, check=False)
+        print(f"  [SET] core.hooksPath: {current or '(unset)'} -> hooks")
+    pre = hooks_dir / "pre-commit"
+    if not pre.is_file():
+        print("  [WARN] hooks/pre-commit is missing; commits are unguarded")
+        return False
+    if not os.access(pre, os.X_OK):
+        pre.chmod(0o755)
+        print("  [SET] hooks/pre-commit made executable (git ignores it otherwise)")
+    else:
+        print("  [OK] hooks/pre-commit present and executable")
+    return True
+
+
 def main() -> int:
     args = parse_args()
     root = repo_root()
@@ -870,6 +911,11 @@ def main() -> int:
     print()
 
     check_packages(OPTIONAL_PACKAGES, "Optional")
+
+    # --- GIT HOOKS ---
+    print_header("GIT HOOKS")
+    wire_git_hooks(root)
+    print()
 
     # --- SYSTEM TOOLS ---
     print_header("SYSTEM TOOLS")
