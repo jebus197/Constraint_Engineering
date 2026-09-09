@@ -2,6 +2,8 @@
 
 **Opened 2026-09-09 13:45 BST (Europe/London). This is the standing work list. Update it as each task closes; do not rewrite it from scratch.**
 
+**Outcomes companion: `experimental_notes/CDSFL_OUTCOMES_LOG.md`, mirrored at `~/Desktop/CDSFL_OUTCOMES_LOG.md`.** This file says what is to be done; that one says what was done, what it cost, and whether it can be undone. Founder instruction 2026-09-09.
+
 **Desktop mirror: `~/Desktop/CDSFL_MASTER_TASK_LIST.md`.** The repository copy is canonical, because an unversioned file on one machine is a single point of failure.
 
 **Why this file exists.** The founder ruled on 2026-09-09 that the programme is large enough that important elements will not survive the next compaction, and asked for one place that survives it. The full evidence behind every entry is in `experimental_notes/Research_FULL_RECORD_2026-09-09.md`, 1221 lines, which is the unfiltered output of 6 read-only research agents.
