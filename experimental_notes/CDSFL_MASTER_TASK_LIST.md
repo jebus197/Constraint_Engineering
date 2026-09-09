@@ -26,14 +26,47 @@ Several had been ruled **twice**. Exp 53 restart: *"Restart it."* on 2026-08-07 
 
 ---
 
+## R. RULINGS ALREADY GIVEN — THE WORK THAT FOLLOWS, NEVER EXECUTED OR NEVER WRITTEN BACK
+
+Added 2026-09-09 14:30 BST. The section above establishes that these were ruled. **This section is what still has to be DONE about them.** Nothing here needs a further decision; every entry is execution or a documentation write-back. Where the founder's own words settle the shape of the work they are quoted verbatim.
+
+**R1. Restart Exp 53, the zero-plant control.** Ruled twice — *"7: Restart or resume Exp 53. Restart it."* (2026-08-07) and `# restart` (2026-09-06). **Carried 33 days without execution.** 2 run directories exist, both predating the ruling; no post-ruling restart directory exists. Blocked on the A1 to A10 engineering gate, which is execution work rather than a decision. Large, and it costs money.
+
+**R2. Carry out the exp50 and exp51 redesign.** Ruled 2026-08-22: *"5: Redesign with all uncovered fixes in place after the upcoming build experiment and any fixed it uncovers in place also."* The precondition he attached — the build experiment — has been met, so this is now execution work. It has not been carried out. Large.
+
+**R3. Arm or leave `discrimination_control_blocks`, when it is actually due.** He ruled *"Go with option A"* on 2026-08-30, and option A was phrased as putting the block behind a switch that **cannot silently reverse a result until he says so**. The flag at `bench/reference_runner_v3.py:956` defaults to False. **This is reserved to him BY HIS OWN RULING — raise it when the run needs it, not before.** Small.
+
+**R4. Write the FW.7 ruling back into 4 documents.** He ruled on 2026-09-06 at 22:15, rejecting both removal and the rubric swap and ordering worked proofs instead; the fix was built, panel-reviewed and enforced on 2026-09-07 and reaffirmed 2026-09-08. `RUNWAY_to_BR2_2026-08-18.md:813` and 3 other documents still carry it as NEEDS FOUNDER or OPEN. Documentation only. Small.
+
+**R5. Write the C0015 and C0017 materiality ruling back into 5 places.** Ruled 2026-09-06 as item 18 of the 51-decision file, and both footnotes were fixed in code the same day. `RECOVERY.md:1521`, `CDSFL_Agent_Operational_Plan.md:592` and `:668` still say it is pending. Small.
+**R5a.** Separately and genuinely open: the population problem at `CLOSING_2026-09-06.md:39` belongs to decision 32, not to this item, and is unresolved. Medium.
+
+**R6. Answer the 2 factual questions he asked on 2026-09-08 about the absolute-path fix.** He ruled the fix itself — *"for sure we should fix it"* — so the ruling is not in question. What is owed TO him: **(a) what is the blast radius** — which files a seat rewrote, across which runs, and whether any archived measurement is contaminated; **(b) do we need to revert anything.** These are the assistant's to answer, not his to decide. Medium.
+
+**R7. Strike the answer-key sealing from the tracker.** He did not merely rule fold-over-separate on 2026-09-07 — **he executed it himself at 22:03 that night: 53 files into 1 AES-256 archive, 0 plaintext key files left where the scan reaches.** `CDSFL_Agent_Operational_Plan.md:59` still lists it as awaiting his passphrase. Small.
+
+**R8. Write the BR2 blind-validity ruling into the test that still calls it open.** He answered on 2026-08-27 at 00:53, **6 minutes and 46 seconds after the docstring asking the question was written**, verbatim: *"The answer kets for BR2 being public is a non-issue, since clearly it has never been ran."* `bench/tests/test_br2_keys_are_split_out_2026-08-27.py:20-22` still says it is open. Small.
+
+**R9. Write the load-balancer ruling into the runway note.** Ruled 2026-08-22 — *"shelve it rather than retire it and clearly mark it as such in our docs"* — refined 2026-08-25 to "shelved, but not abandoned", and executed. `RUNWAY_to_BR2_2026-08-18.md:75` still carries the superseded "retire" recommendation. Small.
+
+**R10. Hand him the Zenodo token-rotation commands. OWED TO HIM FOR 21 DAYS.** He ruled twice to defer it as least pressing, and then asked, verbatim: *"You need to give me clear instructions how to do this!"* on **2026-08-19**. They were never supplied. The `.env` is unchanged since 2026-08-16 and the token has not been rotated. **This is 4 minutes of his time once someone hands him the commands, and 21 days of not handing them over.** Small.
+
+**R11. Put the reductionism reading in front of him as a file he can read.** He ruled twice on the references section in 69 minutes on 2026-09-06, deferring the final selection to a discussion **conditional on both of them having read the sources first**. The reading was delivered in chat only, never as a TTS file. His own precondition is therefore unmet through no fault of his. Roughly 400 words, and the material already exists in `resources/RECOVERY.md`. Small.
+
+**R12. Decide which quantity carries the complexity statistic.** Following 4.3 and settled by execution: putting it in nu moves the fix-admission gate at 84.3% of the reachable box. The alternative is `gamma_input` from the input-complexity module, which the gate does not read. **This is the 1 genuinely new decision arising from today**, and it is small.
+
+---
+
 ## 0. URGENT — expires 2026-09-11, 2 days from opening
 
-**0.1 Renew the Wolfram Engine licence. FOUNDER RULING 2026-09-09: DEFERRED** — verbatim, *"Let's deal with Wolfram and look into it once all this work is complete."* Status DEFERRED BY RULING.
+**0.1 Wolfram Engine licence. FOUNDER RULING 2026-09-09: LEAVE IT TO AUTO-RENEW.** Verbatim: *"I have consulted the Wolfram documentation, it says my licence should auto-renew at the appropriate time (2 days from now). It clearly cannot be renewed before it expires anyway. This wouldn't make any sense."* Status: OBSERVE ON THE DAY, no action.
 
-**The consequence, stated once and then accepted.** The licence expires 2026-09-11, which is 2 days from this ruling, and the programme below is 121 recorded items. If the programme runs past Friday — and on any realistic reading it will — the Engine stops mid-programme and `sy` loses 1 of its 2 cross-verification routes, the other having already been dead since 2026-09-04. Reactivation is documented as a prompt rather than a degradation, so the failure will be loud rather than silent, which is the good case. Noted, not re-argued.
-The Engine is documented to reactivate itself as expiry approaches, and **on this machine it has not**: `~/Library/WolframEngine/Licensing/mathpass` still carries its original mtime of 2026-08-02T21:09:38+0100 with 2 days left, while the Engine has demonstrably run and reached the cloud since (paclet files rewritten 2026-09-09T11:26:04+0100). No Wolfram-owned page promises an email reminder; the founder's assumption that one would arrive is **not supported by any published Wolfram source**. At expiry the kernel prompts for reactivation — a stop, not a degradation. Route: `wolframscript -activate`, or a fresh licence at `https://www.wolfram.com/engine/free-license/`. The Wolfram ID is reused; no re-download. **Not run here because it writes to the licence file and needs his credentials.**
+**The assistant's earlier reading was one-sided and is withdrawn.** It reported that the Engine "is documented to reactivate itself near expiry and on this machine it has NOT", treating the unchanged licence-file mtime as evidence of failure. Measured properly: the file's **birth time and mtime are identical at 2026-08-02 21:09:38**, so it has never been rewritten, so **there is no prior renewal on this machine to observe**. This is the first expiry cycle — the Engine was installed 2026-05-28 and the licence written 2026-08-02, a 40-day window now 95.0% elapsed. An unchanged mtime 2 days out is equally consistent with "the renewal has failed" and with "it is not due yet", and Wolfram's own published text says reactivation happens "when the actual date is close to the expiration date". The founder's reading is the documented one; the assistant reported one branch of a 2-branch observation as though it were the only one.
 
-**Open and material to this project:** how that reactivation prompt surfaces to a non-interactive `wolframscript -code` call driven from a bench runner is unconfirmed. This project has a recorded history of error strings being ingested as answers, so a licence prompt arriving as stdout is a live risk to any run after 2026-09-11.
+**What remains, and it is a check rather than an action:** on 2026-09-11, confirm `$LicenseExpirationDate` has moved and the licence file has been rewritten. If it has not, that is the moment the question becomes real. The material risk to this project is unchanged and stated once: how a reactivation prompt reaches a non-interactive `wolframscript` call driven by a bench runner is unconfirmed, and this project has a recorded history of error strings being ingested as answers.
+
+
+**A note on the 1 standing lint finding in this file.** `note_vagueness_lint.py` flags "the appropriate" as an unnamed subject inside the founder's own verbatim quote above. It is **not** corrected, because altering a founder quotation to satisfy a checker would corrupt the record to make a tool green — a far worse fault than the finding. The linter has no verbatim-quote exemption; adding one is a small, genuinely additive improvement and is logged here rather than done, per the discuss-first directive in force.
 
 **0.2 The WolframCloud MCP route is dead and should be retired, not repaired.** Status PROPOSED.
 39 connection failures, first at 2026-09-04 23:12:11 and most recent 2026-09-09 09:02:48, against 2 successes in the whole log. The founder states the service was retired or changed such that it became impractical, and that the local Engine replaced it. The record agrees. The remaining work is to stop the app retrying a dead endpoint every few minutes and to make the local Engine the named route in the tool constraint box.
