@@ -200,7 +200,21 @@ Includes C0050, confirmed as the single residual human-queue item at severity 0.
 
 ## 3. Enable the machinery that is switched off
 
-**3.1 Turn routing and the sweep back on in the exp56 configurations.** Status PROPOSED. Founder ruling, verbatim: *"these are the class of misconfigurations I observed as significant previously and they should be fixed."*
+**3.1 Turn routing and the sweep back on in the exp56 configurations. — THE PREMISE IS WRONG AND THE FLAGS MUST NOT BE FLIPPED. Status: SUPERSEDED by 3.1a.**
+<!-- task: 3.1 | state: OPEN | status: PROPOSED -->
+
+**The founder ruled on 2026-09-09, verbatim:** *"these are the class of misconfigurations I observed as significant previously and they should be fixed."* **He gave that ruling on an assistant report which said it was OPEN whether the setting was a deliberate control or an omission. The record says deliberate, and gives the reason.**
+
+`routing_enabled: false` and `post_convergence_sweep_rounds: 0` are a **documented mitigation for 2 live runner defects**, each proven by an EXECUTING test in `bench/tests/test_d9_d11_configs_valid_2026-09-05.py`:
+
+1. **`_apply_routing` builds its ladder from the full orchestrator roster, not from `cfg.models`.** In the 1-seat arm, which declares only `CC2`, enabling routing would dispatch to the very vendors the arm exists to do without — and 3 of the 5 panel seats are paid.
+2. **The post-convergence sweep dispatches to undeclared seats.** Proven at `:363` by driving the sweep with a stub in place of `dispatch_to_model` and counting the seats reached.
+
+**Both defects are LIVE, not historical.** `test_routing_is_off_in_every_arm_while_the_ladder_reads_the_full_roster` is deliberately CONDITIONAL — its own docstring says *"If the runner is repaired to intersect with `cfg.models`, the guard lifts"* — and it PASSED rather than skipping on 2026-09-09, which means the ladder still leaks. The sweep test likewise passed.
+
+**Flipping the flags would destroy the experiment the arm exists to run and spend money doing it.** That is not what the founder asked for; it is the literal reading of a ruling given on incomplete information.
+
+**3.1a Repair the runner so routing and the sweep respect `cfg.models`, after which the flags lift themselves.** Status PROPOSED. This serves the founder's actual intent — machinery that works — rather than the letter of a ruling based on a report that should have carried this. The guard is written to stand down automatically once the repair lands, so no config edit is needed at all. Founder ruling, verbatim: *"these are the class of misconfigurations I observed as significant previously and they should be fixed."*
 <!-- task: 3.1 | state: OPEN | status: PROPOSED -->
 All 3 files carry `routing_enabled: false` and `post_convergence_sweep_rounds: 0`. All 4 capabilities the founder suspected of being broken — fingerprinting, routing, the sweep, decomposed dispatch — are still reached by live callers. Nothing is unwired; it is configuration.
 
