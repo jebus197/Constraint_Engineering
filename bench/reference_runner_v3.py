@@ -8333,8 +8333,35 @@ def _dispatch_single_model(
                           "decomposed": True, "multiturn": True})
             return model_findings, text
 
-    wall_limit = (mc.timeout * 5 if base_model_label(mc.label) == "CC2"
-                  else mc.timeout * 3)
+    # THE WATCHDOG MUST NOT CUT INSIDE THE CONFIGURED RETRY BUDGET (task 6.2).
+    #
+    # Two numbers are set in different files and were never compared.
+    # `bench/experiment_11_orchestrator.py` gives each seat a `timeout` and a
+    # `max_retries`, so the worst case a seat may legitimately consume is
+    # timeout * max_retries, every attempt running to its full timeout. This line
+    # independently capped the wall clock at a fixed multiple of the timeout
+    # alone. `max_retries` is PRESENT on every ModelConfig the runner receives
+    # and was read 0 times in this file -- the written-but-never-read half of the
+    # additive standard, sitting on a field with a bill attached.
+    #
+    # MEASURED by scripts/watchdog_vs_retry_budget_2026-09-09.py, which reads
+    # both numbers from source rather than repeating them: 1 of 5 seats was
+    # strictly over, 20.0%, Wilson [3.6%, 62.4%]. Gemini carries timeout=300 with
+    # max_retries=5, a 1500 s budget against a 900 s cap, so the watchdog killed
+    # it 600 s inside its own allowance and the run recorded a timeout rather
+    # than a misconfiguration. The task list said 4 of 5 and that verb was wrong:
+    # Codex, ChatGPT and DeepSeek sit at exactly 900 s against exactly 900 s --
+    # not truncated, but with 0 seconds of slack for dispatch overhead. 4 of 5
+    # are AT-OR-OVER; 1 of 5 is OVER. No slack allowance is added here, because
+    # the overhead has not been measured and inventing a constant to cover it
+    # would be the defect this project keeps finding, not a fix for it.
+    #
+    # `max` MAKES THIS STRICTLY ADDITIVE: no seat's cap can fall. CC2 keeps its
+    # x5 (4500 s against a 900 s budget), which a naive derivation would have
+    # CUT to 900 s and reinstated the timeout cascade that x5 exists to prevent.
+    _mult = 5 if base_model_label(mc.label) == "CC2" else 3
+    _retry_budget = mc.timeout * max(1, int(getattr(mc, "max_retries", 1) or 1))
+    wall_limit = max(mc.timeout * _mult, _retry_budget)
     try:
         text, elapsed = dispatch_to_model(
             mc, prompt, model_cdsfl, wall_clock_limit=wall_limit,
@@ -11540,7 +11567,27 @@ def _build_rk0_prior(
     return prior, receipt
 
 
-def _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:
+def _find_or_create_logs_dir(cfg: RunnerConfig, exp_config=None) -> Path:
+    """Where this run's artefacts go: the caller's directory if it named one.
+
+    THE CALLER'S CHOICE WAS WRITTEN AND NEVER READ (task 6.3). `ExperimentConfig`
+    carries a `logs_dir`, `bench/tools/run_simulated_experiment.py:222` sets it
+    on every simulated launch, and this file read it 0 times -- it minted a
+    second directory from `cfg.experiment_name` plus a fresh timestamp instead.
+    A launcher that has already created a directory, told the founder where to
+    tail it, and passed the path in, then watched the run write somewhere else.
+    That is the unwired-addition half of the additive standard, and it is why
+    14 of 119 archived runs left artefacts under 2 directories.
+
+    THE FALLBACK IS UNCHANGED, so a caller that names nothing is byte-identical
+    to before: resume still scans for the newest checkpoint, and a fresh run
+    still mints `<experiment_name>_<timestamp>`. Only an EXPLICIT `logs_dir` is
+    honoured, and it is honoured before the resume scan, because a caller that
+    named a directory has already answered the question the scan exists to ask.
+    """
+    named = getattr(exp_config, "logs_dir", None) if exp_config is not None else None
+    if named:
+        return Path(named)
     if cfg.resume:
         logs_root = REPO_ROOT / "bench" / "logs"
         candidates = sorted(
@@ -11583,7 +11630,7 @@ def run_experiment(
     This is the generic entry point for Exp 37+ and Bench Run 2.
     All experiment-specific parameters come from cfg (RunnerConfig).
     """
-    logs_dir = _find_or_create_logs_dir(cfg)
+    logs_dir = _find_or_create_logs_dir(cfg, exp_config)
     logs_dir.mkdir(parents=True, exist_ok=True)
 
     # THE TWO PANEL LISTS MUST AGREE, AND A MISMATCH MUST BE LOUD.
@@ -12119,6 +12166,11 @@ def run_experiment(
                 mc, prompt,
                 "You are a careful code-review panelist. Answer "
                 "exactly as instructed.",
+                # DELIBERATELY NOT DERIVED FROM max_retries, unlike the seat
+                # watchdog (task 6.2). These queries are short and
+                # self-contained by design, so widening this to a 5-retry
+                # budget would spend wall clock on a call the site above
+                # states is meant to stay cheap.
                 wall_clock_limit=getattr(mc, "timeout", 120) * 2,
             )
         _merge_arb_ctx.update({
