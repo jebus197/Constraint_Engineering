@@ -115,3 +115,75 @@ class TestItIsAReportNotAGate:
         assert LINT.main() == 0, (
             "a linter that blocks gets worked around; this one is meant to be read")
         assert "not enforced" in capsys.readouterr().out
+
+
+# ── The multi-sentence quote exemption (task L2, fixed 2026-09-09) ───────────
+
+class TestAQuotationSpanningSentencesStaysExempt:
+    """The exemption lapsed on exactly the LONGEST quotations, which here are
+    the founder's.
+
+    `lint` stripped balanced `"..."` pairs from each SENTENCE, but a quotation
+    running across a sentence boundary is split first, so each fragment carries
+    an unbalanced quote character and matches nothing. Measured on the master
+    task list: 1 of 3 findings was a fragment of a verbatim founder quote.
+
+    IT BECAME URGENT ON 2026-09-09, when a pre-commit guard made this linter
+    BLOCKING. A false positive inside a quotation would leave 2 choices --
+    editing the founder's words, or bypassing the guard -- and the standing rule
+    is that the linter is never applied to his words and never gates his input.
+    """
+
+    def _findings(self, tmp_path, body):
+        p = tmp_path / "n.md"
+        p.write_text(body, encoding="utf-8")
+        return LINT.lint(p)
+
+    def test_a_single_sentence_quote_was_always_exempt(self, tmp_path):
+        """The case that already worked, kept as the comparator."""
+        body = ('The founder ruled, verbatim: "there were twenty-nine of them". '
+                'The count is 29 and the rate is 0.5.\n')
+        assert not [f for f in self._findings(tmp_path, body)
+                    if "SPELLED" in str(f[1])]
+
+    def test_a_quote_spanning_two_sentences_is_exempt_too(self, tmp_path):
+        """THE DEFECT. Before the fix the spelled number in the 2nd sentence of
+        the quotation was reported, because the fragment's quote was unbalanced."""
+        body = ('The founder ruled, verbatim: "The first point stands. There '
+                'were twenty-nine of them and that settles it." The count is 29.\n')
+        spelled = [f for f in self._findings(tmp_path, body)
+                   if "SPELLED" in str(f[1])]
+        assert not spelled, (
+            f"a spelled number inside a multi-sentence verbatim quotation was "
+            f"reported: {spelled}")
+
+    def test_the_same_violation_OUTSIDE_a_quote_is_still_reported(self, tmp_path):
+        """DISCRIMINATION. An exemption that swallows everything is not an
+        exemption, it is a disabled rule."""
+        body = ('The founder ruled, verbatim: "The first point stands." There '
+                'were twenty-nine of them in the assistant\'s own prose.\n')
+        spelled = [f for f in self._findings(tmp_path, body)
+                   if "SPELLED" in str(f[1])]
+        assert spelled, "the rule stopped firing outside quotations"
+
+    def test_the_quote_does_not_erase_the_subject_it_names(self, tmp_path):
+        """THE REGRESSION THIS FIX CAUSED AND THEN REMOVED.
+
+        A first version yielded the MASKED sentence, deleting the nouns inside
+        the quotation, so sentences whose specificity was carried by the quote
+        were newly reported as vague. Measured across 379 notes: 8 false
+        positives removed and 3 introduced. The mask now guides the sentence
+        SPLIT only; the text yielded is the original."""
+        # THE FIGURE MUST LIVE INSIDE THE QUOTE AND NOWHERE ELSE, or this test
+        # cannot see the regression. A first version left "12 items" outside it,
+        # so `DIGIT.search` found a digit either way and the quantity rule was
+        # skipped in both worlds -- the mutation survived and the test passed.
+        # The 2 real instances measured across the corpus both had their only
+        # figure inside the quotation.
+        body = ('The "29 confirmed items" above is withdrawn as a confirmed '
+                'count.\n')
+        vague = [f for f in self._findings(tmp_path, body)
+                 if "UNNAMED" in str(f[1]) or "WITHOUT A VALUE" in str(f[1])]
+        assert not vague, (
+            f"the quotation names the subject; masking it made the sentence "
+            f"look vague: {vague}")

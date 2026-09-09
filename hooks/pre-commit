@@ -71,4 +71,62 @@ if [ "$CODE" -ne 0 ]; then
 fi
 
 printf '%s\n' "$OUT" | tail -1
+
+# ── 5th guard: LINT THE NOTES BEING COMMITTED ────────────────────────────────
+#
+# WHY, and it is the founder's own ruling rather than an idea. On 2026-09-04 he
+# wrote, after the spelled-number rule had been stated and re-violated
+# repeatedly: "THE RULE ALREADY EXISTED ... and the linter already caught it ...
+# The failure was never the absence of a rule or a checker; it was never running
+# the checker. Therefore: run `python3 scripts/note_vagueness_lint.py <file>` on
+# every note and every TTS file BEFORE delivering it, and treat a spelled-number
+# finding as blocking rather than advisory."
+#
+# WHAT WAS ACTUALLY WIRED BEFORE THIS. The linter's LOGIC is exercised by 3 test
+# files, which is not the same thing as running it over the notes. The only test
+# that lints real notes selects those declaring a v1.7 foot-line: measured
+# 2026-09-09, 29 of 379 files under experimental_notes, 7.65%, Wilson
+# [5.4%, 10.8%]. A new note omitting the foot-line was exempt from the check by
+# omission -- the checker existed, and the note simply never met it.
+#
+# WHY STAGED FILES ONLY. Linting 379 archival notes on every commit would fire on
+# work written under earlier standards, which the standard itself preserves
+# deliberately. What a commit can fairly be held to is what that commit contains.
+#
+# WHY IT REFUSES RATHER THAN WARNS. The founder's ruling says blocking, not
+# advisory. `git commit --no-verify` remains the deliberate escape.
+STAGED_NOTES=$(git diff --cached --name-only --diff-filter=ACM \
+    | grep -E '^experimental_notes/.*\.md$' || true)
+
+if [ -n "$STAGED_NOTES" ]; then
+    if [ ! -f scripts/note_vagueness_lint.py ]; then
+        echo "pre-commit: the note linter is missing. Refusing rather than" >&2
+        echo "            passing on an absent check." >&2
+        exit 1
+    fi
+    LINT_OUT=$(python3 scripts/note_vagueness_lint.py $STAGED_NOTES 2>&1)
+    LINT_CODE=$?
+    if [ "$LINT_CODE" -ne 0 ]; then
+        echo "" >&2
+        echo "pre-commit: the note linter could not run (exit $LINT_CODE). Refusing." >&2
+        printf '%s\n' "$LINT_OUT" | tail -15 >&2
+        exit 1
+    fi
+    # The linter reports rather than exits non-zero, so the finding count is read
+    # from its own summary line. 0 findings is the only passing state.
+    FINDINGS=$(printf '%s\n' "$LINT_OUT" \
+        | grep -oE '^[[:space:]]*[0-9]+ finding' | head -1 | grep -oE '[0-9]+' || echo 0)
+    if [ "${FINDINGS:-0}" -ne 0 ]; then
+        echo "" >&2
+        echo "pre-commit: REFUSED. $FINDINGS note finding(s) in the staged notes." >&2
+        echo "" >&2
+        printf '%s\n' "$LINT_OUT" | tail -30 >&2
+        echo "" >&2
+        echo "pre-commit: founder ruling 2026-09-04 makes these blocking, not advisory." >&2
+        echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
+        exit 1
+    fi
+    echo "pre-commit: note lint clean across $(printf '%s\n' "$STAGED_NOTES" | wc -l | tr -d ' ') staged note(s)."
+fi
+
 exit 0

@@ -1,0 +1,154 @@
+"""The note linter must be reached by a commit, not only by a hand.
+
+Task 7.2. Founder ruling 2026-09-04, verbatim: *"THE RULE ALREADY EXISTED as
+Rule 27 of the note standard and the linter already caught it ... The failure was
+never the absence of a rule or a checker; it was never running the checker.
+Therefore: run `python3 scripts/note_vagueness_lint.py <file>` on every note and
+every TTS file BEFORE delivering it, and treat a spelled-number finding as
+blocking rather than advisory."*
+
+WHAT WAS ACTUALLY WIRED BEFORE THIS. The linter's LOGIC is exercised by 3 test
+files, which is not the same as running it over the notes. The only test that
+lints real notes selects those declaring a v1.7 foot-line: measured 2026-09-09,
+**29 of 379 files under `experimental_notes`, 7.65%, Wilson [5.4%, 10.8%],
+Clopper-Pearson [5.2%, 10.8%]**. A new note that simply omitted the foot-line was
+exempt by omission -- the checker existed, and the note never met it.
+
+WHY STAGED FILES ONLY. Linting 379 archival notes on every commit would fire on
+work written under earlier standards, which the standard preserves deliberately.
+What a commit can fairly be held to is what that commit contains.
+
+PROVEN LIVE, not asserted: staging a note containing a spelled number and
+attempting a commit returns "REFUSED. 1 note finding(s) in the staged notes",
+naming the token, and HEAD does not move. These tests reproduce that.
+"""
+
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[2]
+HOOK = REPO / "hooks" / "pre-commit"
+LINT = REPO / "scripts" / "note_vagueness_lint.py"
+
+CLEAN = ("# A clean note\n\nWritten 2026-09-09. It carries 29 findings and 3 "
+         "scripts, all in digits.\n\nWritten under CDSFL note standard v1.7 "
+         "(26 August 2026).\n")
+DIRTY = ("# A note with a spelled number\n\nWritten 2026-09-09. It carries "
+         "twenty-nine findings, which Rule 27 forbids.\n\nWritten under CDSFL "
+         "note standard v1.7 (26 August 2026).\n")
+
+
+def _repo(tmp_path):
+    """A real git repository with the hook wired the way this one wires it."""
+    work = tmp_path / "repo"
+    (work / "experimental_notes").mkdir(parents=True)
+    (work / "scripts").mkdir()
+    (work / "hooks").mkdir()
+    (work / "bench" / "tests").mkdir(parents=True)
+    shutil.copy(LINT, work / "scripts" / "note_vagueness_lint.py")
+    shutil.copy(HOOK, work / "hooks" / "pre-commit")
+    os.chmod(work / "hooks" / "pre-commit", 0o755)
+    for g in ("test_documentation_drift_guards_2026-08-25.py",
+              "test_recovery_memory_doc_repairs.py",
+              "test_memory_index_limits_match_the_loader_2026-09-01.py",
+              "test_line_citations_resolve_2026-09-01.py"):
+        # The 4 earlier guards are stubbed to pass, so these tests isolate the
+        # 5th. Stubbing them out entirely would let the hook exit before it.
+        (work / "bench" / "tests" / g).write_text("def test_stub():\n    pass\n",
+                                                  encoding="utf-8")
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+    for cmd in (["git", "init", "-q"], ["git", "config", "core.hooksPath", "hooks"],
+                ["git", "add", "-A"],
+                ["git", "commit", "-q", "--no-verify", "-m", "base"]):
+        subprocess.run(cmd, cwd=work, check=True, env=env,
+                       capture_output=True, text=True)
+    return work, env
+
+
+def _commit(work, env, name, body):
+    (work / "experimental_notes" / name).write_text(body, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    return subprocess.run(["git", "commit", "-m", "probe"], cwd=work, env=env,
+                          capture_output=True, text=True, timeout=180)
+
+
+def test_the_hook_and_the_linter_both_exist():
+    assert HOOK.is_file() and LINT.is_file()
+
+
+def test_the_hook_names_the_linter():
+    assert "note_vagueness_lint.py" in HOOK.read_text(encoding="utf-8"), (
+        "the linter is not reached by the commit path, so it is run only by hand")
+
+
+def test_a_violating_note_is_REFUSED(tmp_path):
+    """THE PROPERTY, driven through a real `git commit`."""
+    work, env = _repo(tmp_path)
+    r = _commit(work, env, "bad.md", DIRTY)
+    assert r.returncode != 0, (
+        f"the commit succeeded with a spelled number staged:\n{r.stdout}\n{r.stderr}")
+    assert "REFUSED" in r.stderr and "note finding" in r.stderr, r.stderr
+    assert "twenty-nine" in r.stderr, (
+        "the refusal must name the offending token, or it cannot be acted on")
+
+
+def test_the_refused_commit_does_not_land(tmp_path):
+    """A guard that prints a refusal and commits anyway is worse than none."""
+    work, env = _repo(tmp_path)
+    before = subprocess.run(["git", "rev-parse", "HEAD"], cwd=work, env=env,
+                            capture_output=True, text=True).stdout.strip()
+    _commit(work, env, "bad.md", DIRTY)
+    after = subprocess.run(["git", "rev-parse", "HEAD"], cwd=work, env=env,
+                           capture_output=True, text=True).stdout.strip()
+    assert before == after, "HEAD moved despite the refusal"
+
+
+def test_a_clean_note_commits(tmp_path):
+    """DISCRIMINATION. A guard that fires on everything is as useless as one
+    that fires on nothing."""
+    work, env = _repo(tmp_path)
+    r = _commit(work, env, "good.md", CLEAN)
+    assert r.returncode == 0, f"a clean note was refused:\n{r.stdout}\n{r.stderr}"
+    # git routes a hook's stdout to its own stderr, so the confirmation can
+    # arrive on either stream depending on the git version.
+    assert "note lint clean" in (r.stdout + r.stderr), (r.stdout, r.stderr)
+
+
+def test_a_commit_touching_no_note_is_unaffected(tmp_path):
+    """The guard must not tax every commit in the repository."""
+    work, env = _repo(tmp_path)
+    (work / "scripts" / "unrelated.py").write_text("x = 1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "unrelated"], cwd=work, env=env,
+                       capture_output=True, text=True, timeout=180)
+    assert r.returncode == 0, r.stderr
+    assert "note lint" not in (r.stdout + r.stderr), (r.stdout, r.stderr)
+
+
+def test_a_missing_linter_refuses_rather_than_passes(tmp_path):
+    """FAILS CLOSED. "A guard that cannot fail is not a guard" is this project's
+    own line, with 3 instances recorded in a single night."""
+    work, env = _repo(tmp_path)
+    (work / "scripts" / "note_vagueness_lint.py").unlink()
+    r = _commit(work, env, "any.md", CLEAN)
+    assert r.returncode != 0, "a missing linter let the commit through"
+    assert "linter is missing" in r.stderr, r.stderr
+
+
+def test_no_verify_remains_the_documented_escape(tmp_path):
+    """Bypassing must stay possible and stay deliberate."""
+    work, env = _repo(tmp_path)
+    (work / "experimental_notes" / "bad.md").write_text(DIRTY, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "--no-verify", "-m", "deliberate"],
+                       cwd=work, env=env, capture_output=True, text=True, timeout=180)
+    assert r.returncode == 0, r.stderr

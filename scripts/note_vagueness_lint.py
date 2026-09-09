@@ -143,14 +143,66 @@ def future_stamp(path: pathlib.Path):
     return None
 
 
+#: A double-quoted span, which may run across sentence boundaries.
+_QUOTED_SPAN = re.compile(r'"[^"]*"', re.DOTALL)
+
+
+def mask_quoted(flat: str) -> str:
+    """Blank every double-quoted span, preserving length and sentence structure.
+
+    THE EXEMPTION HAS TO BE APPLIED BEFORE THE SENTENCE SPLIT, and applying it
+    after was a real defect. `lint` stripped balanced `"..."` pairs from each
+    SENTENCE, but a quotation spanning more than 1 sentence is split first, so
+    each fragment carries an unbalanced quote character and matches nothing --
+    the exemption silently lapses on exactly the longest quotations, which are
+    the founder's. Measured 2026-09-09 on the master task list: 1 of 3 findings
+    was a fragment of a verbatim founder quote.
+
+    THIS MATTERS MORE SINCE 2026-09-09 than when it was first recorded, because
+    the linter became BLOCKING at commit time that day. A false positive inside
+    a quotation would leave 2 choices, editing the founder's words or bypassing
+    the guard, and the standing rule is that the linter is NEVER applied to his
+    words and never gates his input.
+
+    Sentence terminators inside the quote are blanked too, so the quote cannot
+    fragment the sentences around it. SINGLE quotes are deliberately NOT masked:
+    the founder's convention is that single quotes mark paraphrase or emphasis
+    and double quotes mark verbatim quotation, so only the latter is exempt.
+    """
+    return _QUOTED_SPAN.sub(lambda m: " " * len(m.group(0)), flat)
+
+
 def sentences(text: str):
+    """Yield (paragraph number, sentence) with quotes kept WHOLE.
+
+    THE MASK GUIDES THE SPLIT AND NOTHING ELSE, and getting that wrong was a
+    measured regression rather than a hypothetical one. A first version yielded
+    the MASKED text, which deleted the nouns and figures living inside a
+    quotation -- so `NAMED` stopped seeing them and sentences whose specificity
+    was carried by the quote were reported as vague. Measured across 379 notes:
+    it removed 8 false positives and INTRODUCED 3, among them "The [blank] above
+    is withdrawn as a confirmed count", which names its subject perfectly well
+    inside the quotation the mask had erased.
+
+    `mask_quoted` preserves length, so offsets in the masked string index the
+    original exactly. The split points come from the mask; the text comes from
+    the original. `lint` then does its own per-sentence quote handling on a
+    sentence that now contains the whole quotation rather than a fragment of it.
+    """
     for para_no, para in enumerate(text.split("\n\n"), 1):
         flat = " ".join(para.split())
         if not flat or flat.startswith(("|", "#", "```")):
             continue
-        for s in re.split(r"(?<=[.!?])\s+", flat):
-            if len(s.split()) >= 5:
-                yield para_no, s
+        masked = mask_quoted(flat)
+        start = 0
+        for brk in re.finditer(r"(?<=[.!?])\s+", masked):
+            seg = flat[start:brk.start()]
+            if len(seg.split()) >= 5:
+                yield para_no, seg
+            start = brk.end()
+        seg = flat[start:]
+        if len(seg.split()) >= 5:
+            yield para_no, seg
 
 
 def lint(path: pathlib.Path) -> list:
