@@ -14,9 +14,23 @@ Status vocabulary is the note standard's: PROPOSED / BUILT / TESTED / COMMITTED 
 
 ---
 
+## THE "17 OUTSTANDING FOUNDER DECISIONS" WERE NOT OUTSTANDING — CORRECTED 2026-09-09 14:15 BST
+
+The founder objected to being handed 17 decisions after 10 days of answering questions. He was right. 12 were checked against the record by 12 read-only agents: **9 ALREADY RULED, 2 PARTLY RULED where what is outstanding is something owed TO him, 1 that was never a ruling question. 0 needed a new decision.** A further 7 of the original 17 he had ruled that same morning, in the message the inventory predates.
+
+Several had been ruled **twice**. Exp 53 restart: *"Restart it."* on 2026-08-07 and *"# restart"* on 2026-09-06. The discrimination gate: 2026-08-22 and again 2026-08-30 (*"Go with option A"*). The load balancer: shelve rather than retire, 2026-08-22, refined 2026-08-25. The answer-key sealing was not merely ruled — **he executed it himself on 2026-09-07 at 22:03, 53 files into 1 archive, 0 plaintext keys left**, while the tracker still lists it as awaiting him.
+
+**The mechanism, measured.** All 5 sources the inventory read were written before at least 1 later message from him — 5 of 5, Wilson [56.6%, 100.0%]. `OUTSTANDING_QUEUE_to_BR2.md` was last written 2026-08-23, **16 days ago, with all 311 of his typed messages arriving since**. A document written before he spoke cannot record what he said. **The defect is in the write-back, not in his answering, and the remedy is to write his rulings back into the documents that still ask for them.** Script: `scripts/decision_label_staleness_2026-09-09.py`.
+
+**TWO THINGS ARE OWED TO HIM, and neither is a question.** First, the Zenodo token rotation: he asked *"You need to give me clear instructions how to do this!"* on **2026-08-19, 21 days ago**, and the commands were never supplied. Second, the reductionism reading he made a precondition of the references discussion was delivered in chat only, never as a file he could read.
+
+---
+
 ## 0. URGENT — expires 2026-09-11, 2 days from opening
 
-**0.1 Renew the Wolfram Engine licence.** Status PROPOSED, needs the founder.
+**0.1 Renew the Wolfram Engine licence. FOUNDER RULING 2026-09-09: DEFERRED** — verbatim, *"Let's deal with Wolfram and look into it once all this work is complete."* Status DEFERRED BY RULING.
+
+**The consequence, stated once and then accepted.** The licence expires 2026-09-11, which is 2 days from this ruling, and the programme below is 121 recorded items. If the programme runs past Friday — and on any realistic reading it will — the Engine stops mid-programme and `sy` loses 1 of its 2 cross-verification routes, the other having already been dead since 2026-09-04. Reactivation is documented as a prompt rather than a degradation, so the failure will be loud rather than silent, which is the good case. Noted, not re-argued.
 The Engine is documented to reactivate itself as expiry approaches, and **on this machine it has not**: `~/Library/WolframEngine/Licensing/mathpass` still carries its original mtime of 2026-08-02T21:09:38+0100 with 2 days left, while the Engine has demonstrably run and reached the cloud since (paclet files rewritten 2026-09-09T11:26:04+0100). No Wolfram-owned page promises an email reminder; the founder's assumption that one would arrive is **not supported by any published Wolfram source**. At expiry the kernel prompts for reactivation — a stop, not a degradation. Route: `wolframscript -activate`, or a fresh licence at `https://www.wolfram.com/engine/free-license/`. The Wolfram ID is reused; no re-download. **Not run here because it writes to the licence file and needs his credentials.**
 
 **Open and material to this project:** how that reactivation prompt surfaces to a non-interactive `wolframscript -code` call driven from a bench runner is unconfirmed. This project has a recorded history of error strings being ingested as answers, so a licence prompt arriving as stdout is a live risk to any run after 2026-09-11.
@@ -41,8 +55,8 @@ Of 19 self-inflicted defects caught over 2026-09-08 and 2026-09-09: the test sui
 
 **The part that survives falsification.** Reclassifying every arguable entry in all 16 combinations moves the counts a long way — worst case p rises to 0.598 — but leaves one thing untouched: **all 4 founder-caught defects are CLAIMS, not code**, and all 8 mechanism-caught defects are artefacts a checker can read. A wrong statistical instrument, a misread clock, a stale "the push is blocked" carried across a compaction, and a conclusion drawn from measuring the wrong object. **A test suite evaluates code; nothing in this project evaluates a claim.** That split holds whichever way the 19 entries are classified, which is why it is the part worth acting on.
 
-**1.3 The ancestor of this idea already existed and was the one command that did not survive.** Status PROPOSED, needs a founder ruling.
-`qwerty` was a 5-point per-turn self-verification protocol in the February 2026 shorthand table, and `QWERTY_CHECKPOINT.md` was the file it wrote. Of that table's 5 entries, 4 survive verbatim in the current metacognitive command list; `qwerty` is the single one that does not. The self-check command is the one that was dropped. Whether to revive it, and in what form, is his call.
+**1.3 CLOSED BY FOUNDER RULING 2026-09-09** — verbatim, *"Forget QWERTY, I think it is an archeological fossil of this project. Almost certainly no longer relevant."* Retained below as provenance only; no work follows from it.
+`qwerty` was a 5-point per-turn self-verification protocol in the February 2026 shorthand table, and `QWERTY_CHECKPOINT.md` was the file it wrote. Of that table's 5 entries, 4 survive verbatim in the current metacognitive command list; `qwerty` is the single one that does not. The self-check command is the one that was dropped. The founder has ruled it a fossil and it will not be revived. The observation that the dropped command was the self-check one stands as an interesting coincidence, not as an argument against his ruling.
 
 ---
 
@@ -86,8 +100,13 @@ The rule appears in 5 live places and the word appears in 0 of them: `docs/GLOSS
 
 **Correction to the founder's framing, on the record:** he recalls one considerable chat covering all 3. The chat about simplicity versus sufficiency is real and documented, 2026-08-18 to 2026-09-04, with 4 of his messages on 2026-09-02 alone and 2 committed notes. But additivity was a neighbouring strand of the Bugzilla arc, first raised 2026-08-20 23:04 and made standing 2026-09-07 12:13 — the word appears 0 times in either 2026-09-02 note. There was a 2-way conversation, not a 3-way one.
 
-**4.3 Make nu actually measure complexity.** Status PROPOSED, needs a founder ruling.
+**4.3 Make nu actually measure complexity, and report it. FOUNDER RULING 2026-09-09** — verbatim, *"Yes we should measure complexity and make it a reported statistic in our reported results at the end of each experiment. But maybe as an informative statistic only, since I don't think you are saying if measuring it should also change behaviour too?"* Status PROPOSED, ruled.
+
 Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+
+**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:10936`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+
+**Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
 
 ---
 
