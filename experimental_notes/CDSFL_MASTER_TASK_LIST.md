@@ -49,11 +49,9 @@ Added 2026-09-09 14:30 BST. The section above establishes that these were ruled.
 
 **R9. Write the load-balancer ruling into the runway note.** Ruled 2026-08-22 — *"shelve it rather than retire it and clearly mark it as such in our docs"* — refined 2026-08-25 to "shelved, but not abandoned", and executed. `RUNWAY_to_BR2_2026-08-18.md:75` still carries the superseded "retire" recommendation. Small.
 
-**R10. Hand him the Zenodo token-rotation commands. OWED TO HIM FOR 21 DAYS.** He ruled twice to defer it as least pressing, and then asked, verbatim: *"You need to give me clear instructions how to do this!"* on **2026-08-19**. They were never supplied. The `.env` is unchanged since 2026-08-16 and the token has not been rotated. **This is 4 minutes of his time once someone hands him the commands, and 21 days of not handing them over.** Small.
+**R10. Put the reductionism reading in front of him as a file he can read.** He ruled twice on the references section in 69 minutes on 2026-09-06, deferring the final selection to a discussion **conditional on both of them having read the sources first**. The reading was delivered in chat only, never as a TTS file. His own precondition is therefore unmet through no fault of his. Roughly 400 words, and the material already exists in `resources/RECOVERY.md`. Small.
 
-**R11. Put the reductionism reading in front of him as a file he can read.** He ruled twice on the references section in 69 minutes on 2026-09-06, deferring the final selection to a discussion **conditional on both of them having read the sources first**. The reading was delivered in chat only, never as a TTS file. His own precondition is therefore unmet through no fault of his. Roughly 400 words, and the material already exists in `resources/RECOVERY.md`. Small.
-
-**R12. Decide which quantity carries the complexity statistic.** Following 4.3 and settled by execution: putting it in nu moves the fix-admission gate at 84.3% of the reachable box. The alternative is `gamma_input` from the input-complexity module, which the gate does not read. **This is the 1 genuinely new decision arising from today**, and it is small.
+**R11. Decide which quantity carries the complexity statistic.** Following 4.3 and settled by execution: putting it in nu moves the fix-admission gate at 84.3% of the reachable box. The alternative is `gamma_input` from the input-complexity module, which the gate does not read. **This is the 1 genuinely new decision arising from today**, and it is small.
 
 ---
 
@@ -66,7 +64,11 @@ Added 2026-09-09 14:30 BST. The section above establishes that these were ruled.
 **What remains, and it is a check rather than an action:** on 2026-09-11, confirm `$LicenseExpirationDate` has moved and the licence file has been rewritten. If it has not, that is the moment the question becomes real. The material risk to this project is unchanged and stated once: how a reactivation prompt reaches a non-interactive `wolframscript` call driven by a bench runner is unconfirmed, and this project has a recorded history of error strings being ingested as answers.
 
 
-**A note on the 1 standing lint finding in this file.** `note_vagueness_lint.py` flags "the appropriate" as an unnamed subject inside the founder's own verbatim quote above. It is **not** corrected, because altering a founder quotation to satisfy a checker would corrupt the record to make a tool green — a far worse fault than the finding. The linter has no verbatim-quote exemption; adding one is a small, genuinely additive improvement and is logged here rather than done, per the discuss-first directive in force.
+**A note on the 1 lint finding in this file, now measured rather than asserted.** `note_vagueness_lint.py` flags "the appropriate" inside the founder's verbatim quotation above. **It is not a blocker** — the linter's own output says "Reported, not enforced" — and the earlier description of it as a standing issue over-stated it.
+
+**It is a genuine defect, and a small one.** The linter already exempts quoted text, stripping `"[^"]*"` at `scripts/note_vagueness_lint.py:163` for the stated reason that a sentence quoting someone else's vagueness is not itself vague. But the checker examines 1 sentence at a time (`:151`) while the stripper needs a balanced pair of quote marks inside what it is handed, so **a quotation spanning more than 1 sentence loses the exemption on every sentence except its last.**
+
+**The scale, which refutes the concern that prompted the measurement.** Across 376 notes and 1183 findings, 560 are UNNAMED SUBJECT and **3 of those 560 are this artefact — 0.54%, Wilson [0.18%, 1.56%], Clopper-Pearson [0.11%, 1.56%]**. The hypothesis that founder quotations were generating meaningful lint noise is REFUTED, and the 1183-finding remediation scope does not shrink. Script: `scripts/lint_quote_exemption_defect_2026-09-09.py`. The fix is 1 line — strip quotes per paragraph before splitting into sentences — and it is low priority precisely because the measurement says so.
 
 **0.2 The WolframCloud MCP route is dead and should be retired, not repaired.** Status PROPOSED.
 39 connection failures, first at 2026-09-04 23:12:11 and most recent 2026-09-09 09:02:48, against 2 successes in the whole log. The founder states the service was retired or changed such that it became impractical, and that the local Engine replaced it. The record agrees. The remaining work is to stop the app retrying a dead endpoint every few minutes and to make the local Engine the named route in the tool constraint box.
@@ -203,6 +205,14 @@ And, raised by him for the third time: *"Conduct your outstanding full programme
 **The mechanism is now known rather than guessed:** remote control was re-enabled at 2026-09-08 18:10:21 with `[rcAutoEnable] verdict: enable=true source=explicit_pref trigger=warm_send`. The trigger is a message sent locally at the machine. The preference is already set; only the trigger was missing.
 **A correction the assistant owes here:** it reported that the session recovers unaided and that returning home was very unlikely to be what restored it. That was wrong. It measured `sessions-bridge` reconnecting a persisted cloud session and reported it as this conversation's remote control, which is a different object and was not restored. The founder's account was correct throughout.
 **10.2** Decide whether to enable the private network's own shell service, currently off, which would remove key handling.
+
+---
+
+## Z. LAST, BY FOUNDER RULING 2026-09-09 — the Zenodo key switch
+
+Verbatim: *"Zenodo key switching can go at the very bottom of this list. It isn't pressing. We can cross that bridge when we come to it."* Placed here rather than deleted, because the request he made on 2026-08-19 is still unanswered and should not be lost.
+
+**Z1. Hand him the Zenodo token-rotation commands.** He ruled twice to defer it as least pressing, and then asked, verbatim: *"You need to give me clear instructions how to do this!"* on **2026-08-19**. They were never supplied. The `.env` is unchanged since 2026-08-16 and the token has not been rotated. **This is 4 minutes of his time once someone hands him the commands, and 21 days of not handing them over.** Small.
 
 ---
 
