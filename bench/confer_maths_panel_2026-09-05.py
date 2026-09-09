@@ -57,6 +57,34 @@ if not BRIEF.is_file():
     raise SystemExit(2)
 PROMPT = BRIEF.read_text(encoding="utf-8")
 
+# THE BRIEF IS VALIDATED BEFORE ANY SEAT IS PAID (founder ruling 2026-09-09:
+# panel review must be "full CDSFL panel review format (so not just some simple
+# open ended prompt)"). 3 of the 5 seats below are PAID, so a defective brief
+# costs money and returns nothing usable; the project's own record holds a case
+# where a briefing defect broke 2 seats and forced a re-dispatch. Measured when
+# this was wired: all 49 archived briefs would have been refused, failing between
+# 1 and 7 of the 8 checks, mean 3.1 -- so this is not a formality.
+# PANEL_BRIEF_UNCHECKED=1 bypasses it deliberately, and says so in the log.
+sys.path.insert(0, str(_REPO / "scripts"))
+try:
+    from panel_brief_validate import validate as _validate_brief
+except Exception as _exc:                                    # pragma: no cover
+    print(f"panel: brief validator unavailable ({_exc}); refusing rather than "
+          f"dispatching unchecked", file=sys.stderr)
+    raise SystemExit(2)
+_brief_problems = _validate_brief(PROMPT)
+if _brief_problems and not os.environ.get("PANEL_BRIEF_UNCHECKED"):
+    print(f"panel: REFUSED — {BRIEF} fails {len(_brief_problems)} required "
+          f"check(s) and 3 of the 5 seats are paid:", file=sys.stderr)
+    for _p in _brief_problems:
+        print(f"  - {_p}", file=sys.stderr)
+    print("  format: bench/directives/universal/panel_brief_template.md", file=sys.stderr)
+    print("  to dispatch anyway, deliberately: PANEL_BRIEF_UNCHECKED=1", file=sys.stderr)
+    raise SystemExit(2)
+if _brief_problems:
+    print(f"panel: brief has {len(_brief_problems)} unmet check(s), dispatching "
+          f"anyway because PANEL_BRIEF_UNCHECKED is set", file=sys.stderr)
+
 import os as _os
 _ONLY = _os.environ.get("PANEL_ONLY", "")
 _ALL = [

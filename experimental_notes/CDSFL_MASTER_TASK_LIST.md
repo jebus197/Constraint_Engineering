@@ -236,8 +236,11 @@ Following from 4.2: the term that encodes simplicity in the model is a constant,
 
 ## 5. The panel review format — a standing condition on everything above
 
-**5.1 Write the missing half of the format.** Status PROPOSED. This gates every "check it with Fable and CC2" instruction in this list.
-<!-- task: 5.1 | state: OPEN | status: PROPOSED -->
+**5.1 Write the missing half of the format. Status COMMITTED and ENABLED 2026-09-09.** The template is `bench/directives/universal/panel_brief_template.md`; the validator is `scripts/panel_brief_validate.py`; the dispatcher REFUSES a brief that fails it, before any of the 3 paid seats is reached, with `PANEL_BRIEF_UNCHECKED=1` as the documented deliberate bypass. Measured on wiring: **all 49 archived briefs would be refused**, failing between 1 and 7 of the checks, mean 2.4 — and the spread is what shows the rule discriminates rather than rejecting uniformly. The 2 universal gaps are the output shape (44 of 49) and a termination criterion (43 of 49). 9 tests, 3 mutations, all caught.
+<!-- task: 5.1 | state: DONE | status: ENABLED -->
+
+**Its own test tightened it twice.** The output check first accepted a bare `## Output` heading with nothing under it, then accepted the word "verdict" appearing ANYWHERE in the document — so deleting the entire output specification from a compliant brief left the check green. A document-wide search is the wrong instrument for a question about one section; it is now section-scoped.
+<!-- task: 5.1 | state: DONE | status: ENABLED -->
 **Half of it exists and is test-guarded:** the `SYSTEM` string in `bench/confer_maths_panel_2026-09-05.py` carries the 28,183-character formal schema plus 4 panel rules, has sandbox confinement, control-plane fingerprinting, real tool-call recording, and a test that executes rather than greps. It is the only 1 of 39 dispatchers that does. Both seats are genuinely tool-enabled: 237 and 41 recorded tool calls on 2026-09-07.
 **The other half does not exist as a format at all.** The USER prompt is a hand-written `BRIEF.md` read straight off disk, with no template, no schema, no validation and no test. Measured across all 49 archived briefs: **0 require a seat to use the mathematical model as an instrument, 8 require a fix, 2 require the fix to be tested.**
 
