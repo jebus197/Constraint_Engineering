@@ -33,6 +33,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from bench.repo_paths import is_archived_run_output
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -70,7 +71,7 @@ def _tracked_text_files():
                          timeout=180)
     assert out.returncode == 0, out.stderr
     return [f for f in out.stdout.split()
-            if not f.startswith(("bench/logs/", "bench/results/"))]
+            if not is_archived_run_output(f)]
 
 
 def _is_live(path: str) -> bool:

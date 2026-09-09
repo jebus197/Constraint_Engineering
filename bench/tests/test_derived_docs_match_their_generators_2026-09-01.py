@@ -31,6 +31,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from bench.repo_paths import is_archived_run_output
 
 REPO = Path(__file__).resolve().parents[2]
 NOTES = REPO / "experimental_notes"
@@ -132,7 +133,7 @@ class TestEveryReproducibleDocIsChecked:
                              capture_output=True, text=True, timeout=120)
         found = {}
         for f in out.stdout.split():
-            if f.startswith("bench/logs/"):
+            if is_archived_run_output(f):
                 continue
             try:
                 txt = (REPO / f).read_text(encoding="utf-8", errors="ignore")

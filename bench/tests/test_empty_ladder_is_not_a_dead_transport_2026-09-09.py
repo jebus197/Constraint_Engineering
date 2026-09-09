@@ -195,3 +195,35 @@ def test_a_dead_transport_is_still_retried_not_deferred(mini_repo, monkeypatch):
     assert e.get("routing_deferred") is not True, (
         "a transport fault may clear next round; deferring it converts a "
         "recoverable network failure into a permanent verdict")
+
+
+# --- 4. THE BOUNDARY, closed after cc2 measured it open. ---------------------
+
+def test_severity_exactly_at_the_threshold_counts(mini_repo, monkeypatch):
+    """`>=` MUST STAY `>=`, and nothing asserted that.
+
+    cc2 measured this in panel review 2026-09-09 by mutating
+    `irreducible_queue_count`'s comparison from `>=` to `>`: 44 tests stayed
+    green. The shipped code was correct, so this is a coverage hole rather than
+    a live defect -- but a boundary nothing pins is a boundary that moves. The
+    existing severity test used threshold minus 0.2, which is far enough from
+    the edge to miss the mutation entirely."""
+    from bench import reference_runner_v3 as _R
+    monkeypatch.setattr(_R, "dispatch_to_model", lambda mc, p, s, **kw: ("", 0.1))
+    reg = _registry(model="CC2", severity=CRITICAL_SEVERITY_THRESHOLD)
+    _apply_routing(reg, 4, _roster("CC2"), cfg=_cfg(["CC2"]),
+                   repo_root=str(mini_repo))
+    assert reg.irreducible_queue_count() == 1, (
+        f"a critical at exactly {CRITICAL_SEVERITY_THRESHOLD} must count; with "
+        f"`>` it silently drops out of the queue the alarm reads")
+
+
+def test_severity_just_below_the_threshold_does_not_count(mini_repo, monkeypatch):
+    """The other side of the same edge, so the test cannot pass by counting
+    everything."""
+    from bench import reference_runner_v3 as _R
+    monkeypatch.setattr(_R, "dispatch_to_model", lambda mc, p, s, **kw: ("", 0.1))
+    reg = _registry(model="CC2", severity=CRITICAL_SEVERITY_THRESHOLD - 1e-9)
+    _apply_routing(reg, 4, _roster("CC2"), cfg=_cfg(["CC2"]),
+                   repo_root=str(mini_repo))
+    assert reg.irreducible_queue_count() == 0

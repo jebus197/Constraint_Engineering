@@ -13,12 +13,20 @@ from __future__ import annotations
 import glob
 import os
 import subprocess
+import sys
 
 import mpmath as mp
 from scipy import stats as sps
 from statsmodels.stats.proportion import proportion_confint
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# The repository root must be importable before the shared predicate is, and
+# this script is run from anywhere.
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from bench.repo_paths import is_archived_run_output  # noqa: E402
 
 
 def wilson_closed_form(k: int, n: int, conf: float = 0.95) -> tuple[float, float]:
@@ -44,7 +52,7 @@ def report(label: str, k: int, n: int) -> None:
 def main() -> int:
     paths = glob.glob(os.path.join(ROOT, "bench", "**", "*.py"), recursive=True)
     rels = [os.path.relpath(p, ROOT) for p in paths]
-    in_logs = [r for r in rels if r.startswith("bench/logs/")]
+    in_logs = [r for r in rels if is_archived_run_output(r)]
     report("Files matching bench/**/*.py that are archived run output, not source:",
            len(in_logs), len(rels))
 

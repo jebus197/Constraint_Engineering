@@ -22,7 +22,9 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import ast
 from pathlib import Path
+from bench.repo_paths import line_mentions_archive_path
 
 _root = Path(__file__).resolve().parents[2]
 ARCHIVE = _root / "bench" / "logs"
@@ -93,18 +95,44 @@ class TestTheArchiveStaysClean:
 class TestNoTestWritesAnywhereInTheArchive:
     """Broader than the one log — nothing under bench/logs/ is a test's to write."""
 
+    #: Calls that create, modify or remove something at a path.
+    WRITERS = ("write_text", "write_bytes", "open", "mkdir", "unlink", "rmtree",
+               "touch", "rename", "replace", "copy", "copytree")
+
     def test_no_test_file_names_a_path_inside_the_archive_for_writing(self):
+        """PARSED, not scanned, and the reason is a false positive it produced.
+
+        This was a substring test over each source line: if the line mentioned
+        `bench/logs` and contained a writer's name anywhere, it was an offender.
+        That cannot tell the write TARGET from the write CONTENT. Widening the
+        archive definition to the shared `ARCHIVE_ROOTS` in task 6.4 made the
+        difference visible immediately: `(git_repo / ".gitignore").write_text(
+        "bench/results/\\n")` writes a .gitignore whose TEXT names an archive
+        root, and the line-scan called it a write into the archive.
+
+        So the receiver is parsed instead. `x.write_text(y)` is an offence when
+        `x` names an archive path; what `y` contains is not this test's business.
+        The archive definition itself still comes from `bench/repo_paths.py`, so
+        there remains exactly 1 place that decides what an archive is."""
         offenders = []
         for path in sorted((_root / "bench" / "tests").glob("test_*.py")):
             if path.name == Path(__file__).name:
                 continue
             text = path.read_text(encoding="utf-8")
-            for i, line in enumerate(text.splitlines(), 1):
-                if "bench/logs" not in line and 'logs"' not in line:
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:  # pragma: no cover - a broken test file is its own alarm
+                continue
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr in self.WRITERS):
                     continue
-                if any(w in line for w in ("write_text(", "write_bytes(", "open(",
-                                           "mkdir(", "unlink(", "rmtree(")):
-                    offenders.append(f"{path.name}:{i}: {line.strip()[:90]}")
+                receiver = ast.get_source_segment(text, node.func.value) or ""
+                if not line_mentions_archive_path(receiver):
+                    continue
+                line = text.splitlines()[node.lineno - 1].strip()
+                offenders.append(f"{path.name}:{node.lineno}: {line[:90]}")
         assert not offenders, (
             "tests must read the archive, never write to it:\n  "
             + "\n  ".join(offenders))

@@ -2941,6 +2941,46 @@ def export_finding_catalogue(
     return records
 
 
+#: Statuses the `exhausted` valve must cover: the UNION of the statuses its 2
+#: readers examine. NOT a hand-kept list -- a list that drifts from its readers
+#: is how the valve died.
+#:
+#: FOUND 2026-09-09, cc2 in panel review, and extended by 1 status on
+#: verification. The valve was added 2026-09-07 so an unresolvable critical
+#: "cannot block for ever", and it has NEVER EXECUTED for 2 of the 6 statuses
+#: its readers look at. `_update_finding_statuses` set it for OPEN, CONTESTED,
+#: CORROBORATED and WITHHELD and did `e.pop("exhausted", None)` for everything
+#: else -- including UNCONFIRMED, the ONLY status `unverified_critical_count`
+#: examines, and REOPENED, which `open_crit_high_count` examines. So both
+#: readers' `if e.get("exhausted"): continue` were unreachable for part of their
+#: own population, stripped by one ordinary round tick.
+#:
+#: EXECUTED, per status, flag set then one tick run: OPEN/CONTESTED/
+#: CORROBORATED/WITHHELD survive as True; REOPENED and UNCONFIRMED come back
+#: None. With the flag gone the A4 blocker rose 0 -> 1 on the same entry.
+#:
+#: ITS ONLY TEST WAS A SOURCE GREP. `test_panel_five_fixes_2026-09-07.py:78`
+#: asserted the string `e.get("exhausted")` appears in the counter's body -- that
+#: the line EXISTS. It passed against dead code for 2 days, which is precisely
+#: the `execute-do-not-grep` ruling, in the guard for this very valve.
+#:
+#: WHY IT BECAME LOAD-BEARING ON 2026-09-09. The empty-ladder repair makes
+#: `routing_deferred` the terminal state of every escalated critical in a 1-seat
+#: arm, because that arm's ladder is empty every round forever. `routing_deferred`
+#: is deliberately NOT excluded from the A4 blocker -- this valve was its bound.
+#: Measured: an UNCONFIRMED deferred critical gives A4 = 2 with an irreducible
+#: queue of 2, which is AT the alarm bound rather than over it, so the run can
+#: neither converge nor halt and burns to `max_rounds`. An OPEN one gives A4 = 0,
+#: so the hazard needs the falsifier gate to have moved the finding to
+#: UNCONFIRMED first -- which is exactly what an UNTOOLABLE verdict does.
+EXHAUSTED_VALVE_STATUSES = (
+    # read by open_crit_high_count
+    "OPEN", "CONTESTED", "REOPENED", "CORROBORATED", "WITHHELD",
+    # read by unverified_critical_count
+    "UNCONFIRMED",
+)
+
+
 def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                              cfg: Optional[RunnerConfig] = None):
     # Bugzilla close-the-loop attempt counter for this call. Reset at
@@ -2954,7 +2994,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     # Derived fresh each call — not sticky. Requires review activity.
     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
     for e in registry.entries.values():
-        if (e["status"] in ("OPEN", "CONTESTED", "CORROBORATED", "WITHHELD")
+        if (e["status"] in EXHAUSTED_VALVE_STATUSES
                 and e["severity"] >= 0.7):
             age = round_idx - e.get("last_status_change_round", 0)
             has_reviews = len(e.get("verdicts", [])) > 0
@@ -6322,7 +6362,8 @@ def _check_gamma_alt_convergence(
     string can report it.
 
     A4 VERIFIER FAIL-SAFE (correctness-critical): an UNVERIFIED
-    critical-severity candidate (status UNCONFIRMED, severity >= 0.7)
+    UNCONFIRMED candidate with no resolved falsifier (severity stopped
+    gating this counter on 2026-09-06: there are no votes in CDSFL)
     must NOT silently count as "zero new critical." Such a candidate is
     excluded from the settled novelty series, so without this guard a
     critical the system gave up on (finalize sweep / grace-period reopen)
@@ -6358,7 +6399,8 @@ def _check_gamma_alt_convergence(
     if unresolved_critical > 0:
         return False, (
             f"A4 BLOCK: {unresolved_critical} unverified critical-severity "
-            f"candidate(s) (status UNCONFIRMED, sev>=0.7) pending at round "
+            f"candidate(s) (status UNCONFIRMED, no resolved falsifier) "
+                f"pending at round "
             f"{round_idx} — zero-critical streak does NOT accrue "
             f"(novel_crit_recent={recent_tail}). HIL review required."
         )
@@ -13510,7 +13552,7 @@ def run_experiment(
         _unresolved_crit = registry.unverified_critical_count()
         if _unresolved_crit > 0:
             _log(f"  A4: {_unresolved_crit} unverified critical-severity "
-                 f"candidate(s) (UNCONFIRMED, sev>=0.7) pending — "
+                 f"candidate(s) (UNCONFIRMED, no resolved falsifier) pending — "
                  f"zero-critical streak blocked, HIL review required")
         # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
         _irreducible_q = registry.irreducible_queue_count()

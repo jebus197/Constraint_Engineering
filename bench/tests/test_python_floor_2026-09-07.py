@@ -36,6 +36,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from bench.repo_paths import is_archived_run_output
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -71,7 +72,8 @@ def _sources() -> list[Path]:
     out = []
     for p in sorted(REPO.rglob("*.py")):
         rel = p.relative_to(REPO).as_posix()
-        if rel.startswith((".git/", "bench/logs/")) or "__pycache__" in rel:
+        if (rel.startswith(".git/") or is_archived_run_output(rel)
+                or "__pycache__" in rel):
             continue
         out.append(p)
     return out

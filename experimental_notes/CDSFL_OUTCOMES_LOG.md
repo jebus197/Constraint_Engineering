@@ -31,6 +31,26 @@ Every change is a `git revert` away. The 3 categories that would NOT be recovera
 
 ## OUTCOMES, newest first
 
+### PANEL ROUND 2 — both seats returned, and cc2 found a defect that would have destroyed a paid run
+
+`bench/logs/panel_roster_round2_2026-09-09/`. **0 paid seats**, verified before dispatch by importing the dispatcher with `PANEL_ONLY=cc2,fable` and printing the resolved list. Confinement held: 0 canonical-path references from either seat, all sandbox. The "CANONICAL TREE MODIFIED" alert fired on 14 files, and all 14 are the assistant's own concurrent edits — **the alert cannot tell an assistant edit from a seat escape**, which is I27.
+
+**fable: CONFIRMED**, 4 passes, 55 tool calls, an 8-11 minute run, a 19-check falsifier and 3 of its own mutations. It attacked the C-A refusal and it held. It independently re-derived the gamma answer and went further, naming the genuine series-removal channel: **CC2v REJECT to UNCONFIRMED**, not routing.
+
+**cc2: PARTIAL**, 4 passes, 66 tool calls, 6 mutations. It found **F1**, and F1 is the finding of the day.
+
+**F1 — a valve added so a critical "cannot block for ever" had never executed.** Both `unverified_critical_count` and `open_crit_high_count` skip entries carrying `exhausted`; between them they examine 6 statuses. The setter covered 4, and popped the flag for the rest — so one ordinary round tick stripped it from **UNCONFIRMED**, the only status the A4 counter examines. **Its only test was a source grep** asserting the line exists; it passed against dead code for 2 days, which is `execute-do-not-grep` violated inside the guard for this very valve. cc2 found the UNCONFIRMED half; **the REOPENED half turned up on verification here**, which is why the fix derives the population from the readers instead of adding a status by hand.
+
+**And the empty-ladder repair earlier the same day made that dead valve load-bearing.** `routing_deferred` becomes the terminal state of every escalated critical in a 1-seat arm, and it is deliberately not A4-excluded — the valve was its bound. Measured: an UNCONFIRMED deferred critical gives A4 = 2 against a queue of 2, which is AT the alarm bound rather than over it, so the arm can neither converge nor halt and burns to `max_rounds`. cc2's framing is the right one and is adopted: **not a regression, a 2026-09-07 addition that nothing reached, whose cost became payable the moment the repair started routing traffic into it.**
+
+**The valve is dead a second time, in configuration**, and that half is NOT applied: `exhausted_round_threshold` defaults to 8 while every arm sets `max_rounds: 8`, so `age >= 8` is unsatisfiable. Changing a frozen pre-registration file is the founder's call.
+
+**Both seats independently found the same exposure on Arm B** — its declaration is byte-equal to the stale hardcoded default, so a 6th seat joining the roster would silently widen a frozen 5-seat arm. Closed without touching the frozen file, by a guard recorded as a STRICT expected failure: the day it starts passing, the suite goes red and the marker must be removed deliberately.
+
+**cc2's sharpest criticism is of this assistant's own brief, and it lands.** The brief asserted the gamma question was one "the assistant has NOT asked" — true when written at 20:37, false by the 21:12 dispatch, because a 177-line executing test answering it landed in between. Its format was validated before dispatch; its currency was not. In cc2's words, *"a brief that asserts what has not been looked at is doing the same thing the source grep does."* Logged as I26.
+
+**Its second criticism is also correct and narrows a claim made here.** `_declared_models` is described as "the seats a run is ALLOWED to dispatch to", and after the C-A refusal that is not quite true: Arm C reaches a CC2 verifier it never declared. **The refusal is right and the confinement claim was overstated; both hold at once.** cc2 declined to file its own proposed repair — an explicit verifier key in each arm config — because a new key with no caller would be the additive violation the brief warns about. That is the standard being applied to itself.
+
 ### 3.1a — the roster repair took the suite RED, and the panel found a hole the repair opened
 
 **The suite went to 6 failed, 5560 passed at 20:17.** Three distinct causes, all reproduced against the working tree before anything was touched.
