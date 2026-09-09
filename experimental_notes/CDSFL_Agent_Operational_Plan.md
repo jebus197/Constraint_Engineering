@@ -61,6 +61,24 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ---
 
+**★ RESUME POINTER (2026-09-09 23:01 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `2fd2ea6`, main, working tree CLEAN, **level with `origin/main` — everything pushed.** `rs` ran at 22:59 with `--full` (exit code 0) and again at 23:00 with `--record-restore` (exit code 0); the marker was written by a genuine restore.
+
+**THE 18:17 POINTER BELOW SAYS THE PUSH IS BLOCKED. IT IS NOT, AND IT WAS NOT.** That claim was carried across a compaction without being re-tested and was withdrawn on 2026-09-09 when `git push` succeeded on the first attempt. 6 commits have been pushed since. It is left below unaltered as the record of what was believed.
+
+**Suite: 5721 passed, 4 skipped, 1 xfailed, 0 failed.** Task list: **60 entries, 19 done, 38 open, 1 blocked, 2 withdrawn** — up from 6 done at the start of the 2026-09-09 session.
+
+**★★★ THE FREE PANEL FOUND A DEFECT THAT WOULD HAVE DESTROYED A PAID RUN.** A valve added 2026-09-07 so an unresolvable critical "cannot block for ever" had **never executed**: 2 functions read its flag across 6 statuses, the setter covered 4 and deleted the flag for the rest — including the only status the A4 counter examines. Its sole test asserted a line EXISTS and passed against dead code for 2 days. Found by cc2; a second dead status (REOPENED) was found on verification. It became load-bearing the same day, because the empty-ladder repair made `routing_deferred` terminal in the 1-seat arm: measured, that arm reaches a blocking count of 2 against an alarm bound of 2, so it can neither converge nor halt and burns to `max_rounds` on a paid run.
+
+**ONE OF THE 3 DECISIONS THE 2026-09-08 STATE BLOCK LEFT WITH THE FOUNDER IS NOW DISCHARGED.** "One run, two directories" was task 6.3: `ExperimentConfig.logs_dir` was written by the launcher and read 0 times by the runner, which minted its own. Fixed; the caller's directory is honoured before the resume scan. The other 2 — falsifier supply, and the absolute-path ruling for seat confinement — still stand.
+
+**FALSIFIER SUPPLY, the exp45 halt cause, has moved.** Task 2.1 landed the falsifier-intake union: archive recovery rose from 5,295 to 5,787 blocks with **0 lost**, 83.22% to 90.95%. Task 3.2 then refuted the DeepSeek half of the concern by measurement: that seat supplies a runnable falsifier in **103 of 468 replies, 22.01%**, against 325 of 1925 pooled, Fisher exact p = 0.0106, odds ratio 1.389 [1.083, 1.782] — MORE often than the tool-enabled seats, not less.
+
+**6 DECISIONS NOW SIT WITH THE FOUNDER**, listed in full in `experimental_notes/Closing_Report_2026-09-09.md` and its TTS companion: the frozen `exhausted_round_threshold`; C0050's contested premise; the leftover mutant in the git stash; wire-or-retire the drift detector; the root-privilege limit on task 6.6; and 622 spelled numbers in the unversioned Desktop TTS folder.
+
+**NOTHING IS RUNNING.** No paid dispatch occurred at any point on 2026-09-09, verified before the panel by resolving the seat list with `PANEL_ONLY=cc2,fable` and printing it: 0 paid seats. The simulated run and the answer-key sealing remain HELD for the founder's return by his own instruction, and Experiment 56 is deferred until the task list is complete.
+
+---
+
 **★ RESUME POINTER (2026-09-08 18:17 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `3c4987d`, main, working tree CLEAN, **10 ahead of `origin/main` at `071f1ed` — STILL NOT PUSHED; the push is blocked at this end and is the founder's to run.** `rs` ran 18:10:42 with `--record-restore`, **exit code 0**, marker written by a genuine restore.
 
 **★★★ THE REMOTE DISCONNECTION AT ~16:52 BST WAS THE DESKTOP APP UPDATING ITSELF, AND IT IS RECURRENT.** `~/Library/Logs/Claude/main.log` records it in its own words: **48 consecutive deferrals** at 20-minute intervals, each reading `Deferring auto-restart ... Claude is working`, then at **16:52:11** `Auto-restarting app after update pending for 85 hours`, followed by `onQuitCleanup: mcp-shutdown / direct-mcp-host-shutdown / pty-host-shutdown`, the MCP servers disconnecting, and a new app process at **16:52:38**. The update was staged at the bundle mtime **2026-09-05 02:07:34**, which is **86.74 hours** before it fired. **THE FIRING CONDITION IS IDLENESS, NOT A TIMER:** the deferral message names the reason it waits (`Claude is working`), so the restart lands the moment the session goes quiet — at 16:52 the last tool call had been at 16:42:01 and the founder's next message did not arrive until 18:10. **It has already happened twice** — the same sequence fired at `2026-09-04 23:10:45` after 76 hours. No sleep event, no Wi-Fi event, no crash report, no jetsam: all four checked and all four negative. **Operational consequence: a pending desktop-app update will disconnect a remote session at the first idle moment, so it should be applied deliberately before any long run rather than left to fire mid-arc.**
