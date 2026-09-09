@@ -219,8 +219,24 @@ def test_wire_git_hooks_reports_failure_when_the_hook_is_absent(tmp_path):
 
 
 def test_the_live_repository_is_actually_wired():
-    """The claim that matters on this machine, checked rather than assumed."""
+    """The claim that matters on a working machine, checked rather than assumed.
+
+    CORRECTED 2026-09-09 by FFAFP pass 6, which ran the whole suite inside a fresh
+    clone. This test asserted a property of the DEVELOPER'S environment, so it
+    failed in the clone -- correctly, since a fresh clone genuinely is unguarded
+    until onboarding runs, but uselessly, because it made an unavoidable condition
+    look like a defect. A fresh clone is now detected and skipped WITH THE REASON
+    STATED, which is the true fact rather than a silenced one.
+    """
     got = _git("config", "--get", "core.hooksPath", cwd=REPO, check=False).stdout.strip()
+    if not got:
+        email = _git("config", "--get", "user.email", cwd=REPO, check=False).stdout.strip()
+        if not email:
+            pytest.skip(
+                "this looks like a fresh clone: neither core.hooksPath nor user.email "
+                "is set locally. A fresh clone IS unguarded until "
+                "scripts/cdsfl_onboard.py runs wire_git_hooks(); that is expected, "
+                "not a defect.")
     assert got == "hooks", f"core.hooksPath is {got!r}, so commits here are unguarded"
 
 
@@ -239,7 +255,8 @@ def test_the_guard_list_was_read_from_the_hook_and_is_not_empty():
 
 
 @pytest.mark.parametrize("name", ["mc_commands.py", "prompt_clock.py",
-                                  "compaction_watch.py", "ffafp_audit.py"])
+                                  "compaction_watch.py", "ffafp_audit.py",
+                                  "task_list_pulse.py"])
 def test_the_versioned_hook_matches_the_one_that_actually_runs(name):
     """FOUND ON THE SECOND FFAFP PASS, 2026-09-09.
 

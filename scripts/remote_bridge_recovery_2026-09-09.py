@@ -50,7 +50,7 @@ class NoRestarts(ValueError):
     """The log records no forced restart, so there is nothing to measure."""
 
 
-def parse(text: str) -> tuple[list[dt.datetime], list[tuple[dt.datetime, str]]]:
+def parse_events(text: str) -> tuple[list[dt.datetime], list[tuple[dt.datetime, str]]]:
     """Return (restart times, [(reconnect time, session id)])."""
     quits: list[dt.datetime] = []
     backs: list[tuple[dt.datetime, str]] = []
@@ -75,7 +75,7 @@ def recoveries(text: str, window_s: float = DEFAULT_WINDOW_S,
     `session_id` restricts the match to one session; None accepts any, but the
     id that matched is returned so a caller can see what was credited.
     """
-    quits, backs = parse(text)
+    quits, backs = parse_events(text)
     if not quits:
         raise NoRestarts("no 'Auto-restarting app after update' line in the log")
     out = []
