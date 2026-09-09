@@ -46,7 +46,16 @@ import numpy as np
 from scipy import stats as sps
 from statsmodels.stats.proportion import proportion_confint
 
-DEFAULT_LOG = Path("bench/logs/target_mutation_watch_2026-09-08/target_state_transitions.log")
+# THE TRACKED COPY IS CANONICAL, corrected 2026-09-09. The original path is under
+# bench/logs/, which .gitignore:41 excludes with `bench/logs/**`, so this script
+# read a file no clone has and the measurement could not be reproduced by anyone
+# else -- the exact failure `measured-rate-travels-with-its-script` names, in the
+# script written to satisfy it. The untracked path is kept as a fallback so the
+# script still works on the machine that produced it.
+DEFAULT_LOG = Path("experimental_notes/evidence/target_mutation_watch_2026-09-08/target_state_transitions.log")
+_LEGACY_LOG = Path("bench/logs/target_mutation_watch_2026-09-08/target_state_transitions.log")
+if not DEFAULT_LOG.is_file() and _LEGACY_LOG.is_file():
+    DEFAULT_LOG = _LEGACY_LOG
 LINE = re.compile(r"NEW target state (\d+) at (\d\d):(\d\d):(\d\d): blob (\w+), (\d+) bytes")
 DAY = 86_400
 

@@ -25,7 +25,12 @@ _SPEC = importlib.util.spec_from_file_location(
 tma = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(tma)
 
-REAL_LOG = Path(__file__).resolve().parents[1] / "logs" / "target_mutation_watch_2026-09-08" / "target_state_transitions.log"
+_ROOT = Path(__file__).resolve().parents[2]
+# The tracked copy is canonical; see the README beside it. The bench/logs path
+# is gitignored, so a test bound to it passes only on the machine that made it.
+REAL_LOG = _ROOT / "experimental_notes/evidence/target_mutation_watch_2026-09-08/target_state_transitions.log"
+if not REAL_LOG.is_file():
+    REAL_LOG = _ROOT / "bench/logs/target_mutation_watch_2026-09-08/target_state_transitions.log"
 
 
 def _line(state: int, hhmmss: str, blob: str = "deadbeef", size: int = 21000) -> str:
