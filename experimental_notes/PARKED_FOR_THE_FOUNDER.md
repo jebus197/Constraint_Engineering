@@ -53,3 +53,17 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **WHY NO FIX WAS APPLIED.** Changing which directive text a model receives changes every dispatch and invalidates replay of every archived run. That is the same class as promoting the corrected S\* threshold, which this project already ruled needs your say-so. The disposition is yours: raise the caps, rewrite the reduced rendering as prose rather than flags, or accept the loss and record it. `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py`, 8 tests.
 
 *Parked 2026-09-10T20:08:05+01:00.*
+
+## C0037: the directive dedup deleted a formula and kept its special case
+
+**Raised by DeepSeek on 2026-06-06 at severity 0.70, recorded UNCONFIRMED and UNTOOLABLE, never checked. Confirmed 2026-09-10 with a quantified harm.**
+
+`_semantically_duplicate` treats a short line as a duplicate of a longer one whenever `intersection / min(len(left), len(right)) >= 0.95`, and the dedup keeps whichever came **first**. So the survivor is decided by position, not content. It runs for **4 of the 5 models**, every `concise` and `minimal` phenotype.
+
+**Measured over the real corpus:** 14 of 1,677 lines are dropped (0.8348%, Wilson [0.4979%, 1.3964%]), of which **11 are dropped by containment alone** with a Jaccard below the 0.85 bar (78.5714%, Wilson [52.4108%, 92.4286%], Clopper-Pearson [49.2024%, 95.3421%]).
+
+**The case that makes it real.** In `logistics_supply_chain.txt` the dedup DROPS `SS = z * sqrt(LT * sigma_d^2 + d_bar^2 * sigma_LT^2)` and KEEPS `SS = z * sigma_d * sqrt(LT)`. The kept line is the dropped line at `sigma_LT = 0` — a strict special case, constant lead time. SymPy gives `general^2 - simple^2 = d_bar^2 * sigma_LT^2 * z^2`, and z3 returns **UNSAT** for "can the general form be smaller". At z = 1.645, LT = 9, sigma_d = 20, d_bar = 100, sigma_LT = 0.5 the surviving formula **understates safety stock by 29.778607 units, 128.478607 against 98.700000, or 23.1770%**, with mpmath and numpy agreeing to 1e-9. A model reading that directive is told to size safety stock with a formula that cannot see lead-time variability.
+
+**THE PROPOSED FIX IS 1 LINE, AND IT IS YOURS TO TAKE.** When containment fires, keep the line with **more tokens** rather than the earlier one. That never loses information and changes only which of a matched pair survives, not which pairs are matched. It is not applied because it changes the directive text every model receives and so invalidates replay of archived runs — the same class as C0040 and as the S\* threshold promotion. `bench/tests/test_falsifier_C0037_containment_dedup_2026-09-10.py`, 7 tests.
+
+*Parked 2026-09-10T20:11:38+01:00.*
