@@ -89,6 +89,7 @@ from bench.reference_runner_v3 import (  # noqa: E402
     RK0_PI_BASE,
     check_sk_threshold,
 )
+from bench.repo_paths import is_archived_run_output  # noqa: E402
 
 # The runner defaults every archived run used: `model_params` is populated
 # nowhere in the repository, so these are the values that actually decided
@@ -450,8 +451,11 @@ def find_drift_callers(root: str) -> list[str]:
     for path in glob.glob(os.path.join(root, "bench", "**", "*.py"), recursive=True):
         rel = os.path.relpath(path, root)
         padded = os.sep + rel
+        # ARCHIVE ROOTS COME FROM ONE PLACE (task 6.4, completed 2026-09-10).
+        # The sep-padded "logs" segment missed bench/logs_quarantine and
+        # bench/results, which is what the shared predicate decides.
         if (os.sep + "tests" + os.sep in padded
-                or os.sep + "logs" + os.sep in padded
+                or is_archived_run_output(rel)
                 or "__pycache__" in rel):
             continue
         try:

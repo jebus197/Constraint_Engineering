@@ -36,6 +36,7 @@ for p in (str(REPO), str(REPO / "bench")):
         sys.path.insert(0, p)
 
 import panel_sandbox as ps  # noqa: E402
+from bench.repo_paths import is_archived_run_output  # noqa: E402
 
 
 def test_the_sandbox_is_not_the_repo_and_carries_no_git(tmp_path):
@@ -241,7 +242,12 @@ def test_no_repo_copy_in_bench_still_uses_the_secret_blind_exclusion_list():
     import re
     offenders = []
     for path in (REPO / "bench").rglob("*.py"):
-        if "/tests/" in str(path) or "/logs/" in str(path):
+        # ARCHIVE ROOTS COME FROM ONE PLACE (task 6.4, completed 2026-09-10).
+        # This tested `"/logs/" in str(path)`, a bare substring on an
+        # absolute path: it missed bench/logs_quarantine, whose segment is
+        # "logs_quarantine" rather than "logs", and bench/results entirely.
+        if "/tests/" in str(path) or is_archived_run_output(
+                path.relative_to(REPO)):
             continue
         text = path.read_text(errors="replace")
         for m in re.finditer(r"ignore_patterns\(([^)]*)\)", text, re.S):

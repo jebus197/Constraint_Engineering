@@ -25,6 +25,15 @@ BEFORE = {
     "bench/tests/test_line_citations_resolve_2026-09-01.py:73": ("bench/logs/", "bench/results/"),
     "bench/tests/test_python_floor_2026-09-07.py:74": (".git/", "bench/logs/"),
     "bench/tests/test_archive_is_not_written_by_tests.py:103": ("bench/logs",),
+    # THE 2 SITES THE FIRST PASS MISSED, wired 2026-09-10 after an adversarial
+    # review found task 6.4 had closed 5 of the 6 instances it named. Both are
+    # sibling SCANNERS that walk bench/ for .py files, and both used a bare
+    # substring on a path: "/logs/" and an os.sep-padded "logs". Neither matches
+    # `bench/logs_quarantine`, whose segment is "logs_quarantine", and neither
+    # matches `bench/results` at all -- exactly the 2 roots this predicate was
+    # built to stop 5 checkers disagreeing about.
+    "bench/tests/test_panel_sandbox_2026-09-07.py:244": ("/logs/",),
+    "bench/tests/test_immune_memory_evaluation.py:452": ("logs",),
 }
 
 
