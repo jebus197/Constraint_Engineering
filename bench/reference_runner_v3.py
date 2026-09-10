@@ -673,11 +673,22 @@ def target_hash_event(target_path) -> tuple[str, str | None]:
     "had never run", on the evidence that 0 of 83 archived run directories carry
     `target_integrity_events`. That was the wrong key. The violation record is
     written inside `if _prev_h:`; the UNCONDITIONAL sibling `target_hashes` is
-    written one line below it, in code already read. Measured: **9 run directories
-    carry `target_hashes`, covering 38 hashed rounds.** The guard has run 38 times
-    and been correctly silent every time. "Never reported a violation" is not
-    "never ran", and the difference is a reachability witness sitting in the same
-    try block.
+    written one line below it, in code already read. Measured 2026-09-08: **9 run
+    directories carried `target_hashes`, covering 38 hashed rounds.** The guard
+    had run 38 times and been correctly silent every time. "Never reported a
+    violation" is not "never ran", and the difference is a reachability witness
+    sitting in the same try block.
+
+    RE-MEASURED 2026-09-10 by `scripts/target_mutation_blast_radius_2026-09-10.py`,
+    which counts this population rather than carrying the figure: **17
+    directories, 66 hashed rounds, of which 13 directories are SIMULATION
+    harnesses**. So 4 LIVE run directories carry it. The figure above was true
+    when written and is quoted here with its date, because a bare count that
+    grows is a stale claim waiting to be repeated -- and this project has now
+    corrected the same cost figure 3 times for exactly that reason. The
+    distinction between the 2 populations is load-bearing for task R6: the
+    blast-radius question is about live runs, where the coverage is 4 of 39
+    archived reports, not 17 of anything.
 
     The cross-run false alarm was therefore reachable too, which makes the fix
     more load-bearing rather than less.
