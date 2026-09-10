@@ -219,6 +219,9 @@ from bench.cdsfl_registry.composer import (
     INTERACTION_PATTERN_PRESETS,
 )
 from input_complexity import (
+    MIN_WINDOWS as _IC_MIN_WINDOWS,
+    tokenize as _ic_tokenize,
+    WINDOW_SIZE_CHARS as _IC_WINDOW_CHARS,
     compute_gamma_input,
     compute_gamma_output,
     compute_amplification,
@@ -13153,10 +13156,141 @@ def run_experiment(
             # sharing one process raised a round-0 "CHANGED mid-run" event with
             # nothing mutated. Reproduced 2026-09-01. Not observed in the archive
             # because no archived run pair happens to share a process, NOT
-            # because the guard is dead: 9 run directories carry `target_hashes`
-            # across 38 hashed rounds, so this code has executed 38 times and
-            # been correctly silent each time.
+            # because the guard is dead: measured 2026-09-08, 9 run directories
+            # carried `target_hashes` across 38 hashed rounds, so this code had
+            # executed 38 times and been correctly silent each time. RE-MEASURED
+            # 2026-09-10 by `scripts/target_mutation_blast_radius_2026-09-10.py`:
+            # 17 directories and 66 rounds, of which 13 directories are
+            # SIMULATION harnesses -- so 4 LIVE runs. The date travels with the
+            # figure because a bare count that grows is a stale claim waiting to
+            # be repeated.
             _tgt_h, _prev_h = target_hash_event(_tgt_p)
+
+            # ---- TASK 4.3 / R11: TARGET COMPLEXITY, REPORTED AND NOTHING ELSE.
+            #
+            # HIS RULING, VERBATIM, 2026-09-09: "Yes we should measure complexity
+            # and make it a reported statistic in our reported results at the end
+            # of each experiment. But maybe as an informative statistic only,
+            # since I don't think you are saying if measuring it should also
+            # change behaviour too?"
+            #
+            # His question was not rhetorical and the answer to it is YES, it
+            # would have changed behaviour, which is why this statistic lives
+            # HERE and not in nu. `nu_b` and `nu_f` are literal arguments to
+            # `check_sk_threshold_corrected`, the live fix-admission gate. Held
+            # at s_k = 0.60, q = 0.5, R = 0.5: the shipped nu of (0.05, 0.20)
+            # gives threshold 0.504931 and ADMISSIBLE; (0.10, 0.30) gives
+            # 0.683292 and REJECTED. SymPy confirms nu_eff is strictly increasing
+            # in both terms, so a real measurement cannot leave the gate where it
+            # is -- only move it. Across the reachable nu box, [0, 0.5] squared at
+            # 26 x 26, 570 of 676 grid points differ from the shipped verdict:
+            # 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%],
+            # the 2 tools agreeing to 1e-9. Widening the box to [0, 1] squared
+            # gives 645 of 676, 95.4%, so the conclusion does not turn on where
+            # "reachable" is drawn.
+            #
+            # REPRODUCE: scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py,
+            # which CALLS this module's own gate rather than reimplementing it.
+            # Until 2026-09-10 these figures had no producing script and existed
+            # only as prose, which is a claim about evidence rather than
+            # evidence. Writing this comment is what caught that.
+            #
+            # `gamma_input` is read by no decision path, so writing it here
+            # honours "informative only" BY CONSTRUCTION rather than by
+            # intention. `bench/tests/test_target_complexity_is_reported_2026-09-10.py`
+            # asserts both halves: that it IS reported, and that it does NOT
+            # reach the gate.
+            #
+            # WHY IT ALSO CLOSES THE ADDITIVE STANDARD'S OWN FAILURE MODE.
+            # `compute_gamma_input` was imported by this module at :221 and
+            # CALLED NOWHERE -- an addition nothing reaches, which the standard
+            # forbids as squarely as a removal. Task 4.3's own text named it:
+            # "the term that encodes simplicity in the model is a constant, and
+            # its measuring module is unreached".
+            #
+            # COMPUTED ONCE. The target does not change within a run -- and if it
+            # ever does, the integrity check immediately below is what says so.
+            if "target_complexity" not in result:
+                try:
+                    _tgt_text = _tgt_p.read_text(encoding="utf-8",
+                                                 errors="replace")
+                    _cx = compute_gamma_input(_tgt_text)
+                    _win = _IC_WINDOW_CHARS
+                    # A FALLBACK THAT LOOKS LIKE A MEASUREMENT IS WORSE THAN NO
+                    # MEASUREMENT, and this one nearly shipped. Below
+                    # `MIN_WINDOWS` windows `compute_gamma_input` RETURNS AN
+                    # ASSUMED beta of 0.5 -- gamma 0.5, K 0.0, r_squared 0.0 --
+                    # which is a stated default, not a fit. The default window is
+                    # 10,000 chars, about 2,500 tokens, so 3 windows needs
+                    # roughly 30,000 characters. `bench/dm/_memory.py` is 20,605
+                    # bytes. Every ordinary code target would therefore have
+                    # reported gamma_input 0.5 in a field a reader takes as
+                    # measured. Found by a test written to check the DIRECTION of
+                    # the statistic, which returned 0.5 for both a repetitive and
+                    # a novel text.
+                    #
+                    # So: retry with a window sized to the target, and record
+                    # WHICH window was used and whether the fit is real. The
+                    # module's own docstring invites this -- "Pass a smaller
+                    # value when working with short texts". Nothing in
+                    # `input_complexity` changes, because other callers depend on
+                    # its defaults and the additive standard forbids moving them
+                    # for this.
+                    # THE WINDOW IS DERIVED FROM THE MODULE'S OWN TOKENISER,
+                    # not from a character count. A first attempt divided the
+                    # CHARACTER length by MIN_WINDOWS and still produced 1
+                    # window, because `compute_gamma_input` converts chars to
+                    # tokens at a fixed 4:1 and this repository's code runs at
+                    # about 14:1 -- 20,563 chars to 1,485 tokens in
+                    # `bench/dm/_memory.py`, 771,373 to 54,165 in this file.
+                    # Guessing the ratio is what made the first attempt wrong;
+                    # counting is what makes this right.
+                    #
+                    # AIMING FOR 2 * MIN_WINDOWS, not MIN_WINDOWS. At exactly 3
+                    # windows a 3-point fit returns r_squared 1.0000, which is
+                    # arithmetic rather than evidence. At 7 windows the same
+                    # target gives r_squared 0.9969 and a gamma that has stopped
+                    # moving with the window.
+                    _n_tokens = len(_ic_tokenize(_tgt_text))
+                    if _cx.n_windows < _IC_MIN_WINDOWS and _n_tokens >= _IC_MIN_WINDOWS * 4:
+                        _win = max(4, (4 * _n_tokens) // (_IC_MIN_WINDOWS * 2))
+                        _cx = compute_gamma_input(_tgt_text, window_size=_win)
+                    _measured = _cx.n_windows >= _IC_MIN_WINDOWS
+                    result["target_complexity"] = {
+                        "gamma_input": round(_cx.gamma, 6),
+                        "beta": round(_cx.beta, 6),
+                        "r_squared": round(_cx.r_squared, 6),
+                        "n_windows": _cx.n_windows,
+                        "window_chars": _win,
+                        "target_chars": len(_tgt_text),
+                        "target_tokens": _n_tokens,
+                        # THE FIELD THAT STOPS AN ASSUMPTION READING AS A RESULT.
+                        "fit": "measured" if _measured else "ASSUMED_DEFAULT",
+                        "measured_at_round": round_idx,
+                        # SAID IN WORDS, because a bare number invites the reader
+                        # to guess the direction and the direction is
+                        # counter-intuitive: HIGH gamma is SIMPLE.
+                        "reading": (
+                            ("high gamma is simple and repetitive, low gamma "
+                             "is complex and novel")
+                            if _measured else
+                            ("NOT MEASURED: the target yielded "
+                             f"{_cx.n_windows} window(s), fewer than the "
+                             f"{_IC_MIN_WINDOWS} needed for a Heaps fit, so "
+                             "gamma is the module's assumed default of 0.5 and "
+                             "carries no information about this target")),
+                        "informative_only": True,
+                        "why": ("founder ruling 2026-09-09: a reported "
+                                "statistic, not an input to any gate"),
+                    }
+                except (OSError, ValueError) as _cx_err:
+                    # LOUD, NOT SILENT. A statistic that quietly vanishes is
+                    # indistinguishable from one that was never wired, which is
+                    # the state this block exists to end.
+                    result["target_complexity"] = {
+                        "error": f"{type(_cx_err).__name__}: {_cx_err}",
+                        "informative_only": True,
+                    }
             # DECLARE THE LIST THE MOMENT THE CHECK RUNS (2026-09-04).
             # This was created only by `setdefault(...).append(...)` inside the
             # mutation branch, so a run in which the target was never touched
