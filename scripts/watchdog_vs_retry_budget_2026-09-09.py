@@ -44,22 +44,44 @@ def seats():
 def multipliers():
     """Read the watchdog multipliers from the runner rather than typing them."""
     src = RUNNER.read_text()
-    m = re.search(r"wall_limit = \(mc\.timeout \* (\d+) if base_model_label\("
-                  r"mc\.label\) == \"CC2\"\s*\n\s*else mc\.timeout \* (\d+)\)", src)
-    if not m:
-        raise SystemExit("the watchdog expression at reference_runner_v3.py has moved")
-    return int(m.group(1)), int(m.group(2))
+    # THE FIX BROKE THE SCRIPT THAT MEASURES IT, which is
+    # `measured-rate-travels-with-its-script` failing in the most circular way
+    # available. This pattern matched the PRE-FIX expression
+    # `wall_limit = (mc.timeout * 5 if ... else mc.timeout * 3)`. The 6.2 repair
+    # replaced it with a `_mult` / `_retry_budget` / `max(...)` form on
+    # 2026-09-09, so from that commit onward the script exited 1 with "the
+    # watchdog expression has moved" and produced no figures at all — while the
+    # task-list entry went on citing figures it was supposed to be producing.
+    # Found 2026-09-10 by 2 independent agents measuring the entry's claims.
+    #
+    # BOTH FORMS ARE ACCEPTED so the script also runs against any archived
+    # revision, and it says which form it found rather than silently assuming.
+    post = re.search(
+        r"_mult = (\d+) if base_model_label\(mc\.label\) == \"CC2\" else (\d+)", src)
+    if post:
+        return int(post.group(1)), int(post.group(2)), "post-2026-09-09 (max of multiplier and retry budget)"
+    pre = re.search(r"wall_limit = \(mc\.timeout \* (\d+) if base_model_label\("
+                    r"mc\.label\) == \"CC2\"\s*\n\s*else mc\.timeout \* (\d+)\)", src)
+    if pre:
+        return int(pre.group(1)), int(pre.group(2)), "pre-2026-09-09 (multiplier only)"
+    raise SystemExit("the watchdog expression at reference_runner_v3.py has moved, "
+                     "and neither the pre- nor post-2026-09-09 form was found")
 
 
 def main():
-    cc2_mult, other_mult = multipliers()
+    cc2_mult, other_mult, form = multipliers()
     print(f"watchdog multipliers, read from the runner: CC2 x{cc2_mult}, "
-          f"every other seat x{other_mult}\n")
+          f"every other seat x{other_mult}")
+    print(f"expression form found: {form}\n")
     rows, truncated = [], 0
     for label, timeout, retries in seats():
         mult = cc2_mult if label == "CC2" else other_mult
         budget = timeout * retries
-        cap = timeout * mult
+        # POST-FIX the runner takes max(multiplier cap, retry budget), so the
+        # cap can no longer sit below the budget. Modelling only the multiplier
+        # would report a truncation the shipped code no longer performs.
+        mult_cap = timeout * mult
+        cap = mult_cap if form.startswith("pre-") else max(mult_cap, budget)
         is_trunc = cap < budget
         truncated += is_trunc
         rows.append((label, timeout, retries, budget, cap, is_trunc))

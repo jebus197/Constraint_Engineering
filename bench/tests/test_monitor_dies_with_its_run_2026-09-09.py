@@ -15,10 +15,20 @@ WHY A WRAPPER. GNU `tail --pid` does exactly this and macOS `tail` has no such
 flag: measured, `tail --pid=1 /dev/null` returns "unrecognized option" and the
 flag appears 0 times in `man tail`. No `gtail` is installed.
 
-EVERY TEST HERE RUNS THE SCRIPT against a real background process. None reads its
-source: a shell script that describes itself correctly and behaves wrongly is
-exactly what `execute-do-not-grep` is about, and a monitor's whole contract is
-behavioural.
+MOST TESTS HERE RUN THE SCRIPT against a real background process, because a
+shell script that describes itself correctly and behaves wrongly is exactly what
+`execute-do-not-grep` is about, and a monitor's whole contract is behavioural.
+
+CORRECTED 2026-09-10. This paragraph said "EVERY TEST HERE RUNS THE SCRIPT. None
+reads its source", and an agent measuring the entry's claims found that false on
+2 counts. `test_the_script_exists_and_is_executable` checks a file mode and
+executes nothing, and `test_the_launcher_names_the_monitor` READS
+`bench/detached_launch.sh` as text to assert the monitor is wired. That second
+one is a deliberate source-text test and is defensible -- the property is that a
+launcher NAMES the script, which is a fact about its text -- but the docstring
+denied its existence while it sat 60 lines below. A file that overstates its own
+method is the shape this project keeps finding, and finding it here means the
+claim was never checked against the file it describes.
 """
 
 import os
