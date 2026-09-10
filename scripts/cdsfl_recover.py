@@ -249,8 +249,25 @@ def first_read_lines(root: Path) -> list[str]:
     # Each Desktop copy is offered with a note saying whether it MATCHES its
     # canonical original. A mirror that silently diverged is worse than no
     # mirror, because it is read with the authority of the thing it copies.
+    # THE DIRECTORY COMES FROM `DESKTOP_MIRROR`, NOT FROM `Path.home()`.
+    #
+    # REGRESSION I INTRODUCED AND A TEST CAUGHT, 2026-09-10. Deriving the mirror
+    # SET from `sync_desktop_mirrors.MIRRORS` was right; computing each path with
+    # an inline `Path.home() / "Desktop"` was not. `DESKTOP_MIRROR` exists
+    # precisely so a fixture can displace it -- the comment above it says so, and
+    # `test_the_desktop_mirror_is_a_module_constant` failed the moment the inline
+    # call came back, with the live machine's Desktop leaking into a tmp_path run.
+    #
+    # Taking `.parent` keeps ONE substitution point for the whole set: patch
+    # `DESKTOP_MIRROR` and every mirror moves with it.
+    _desk = DESKTOP_MIRROR.parent
+    _TRACKER = "CDSFL_Agent_Operational_Plan.md"
     for name, (repo_rel, label) in DESKTOP_MIRRORS.items():
-        mirror = Path.home() / "Desktop" / name
+        # The tracker keeps using `DESKTOP_MIRROR` ITSELF, not a path rebuilt
+        # from its parent. That constant IS the tracker's mirror -- a fixture
+        # substitutes it by full path and then asserts that exact path is
+        # offered, which rebuilding from `.parent` + name silently defeats.
+        mirror = DESKTOP_MIRROR if name == _TRACKER else _desk / name
         canonical = root / repo_rel
         note = label
         if mirror.is_file() and canonical.is_file():

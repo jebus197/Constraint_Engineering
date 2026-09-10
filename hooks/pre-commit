@@ -11,7 +11,11 @@
 # discipline failed within the hour. This is the mechanism.
 #
 # WHY ONLY A HANDFUL OF FILES. Measured on this machine over 3 runs:
-# 178 tests in 6.53 s to 7.10 s, against 669.92 s for the full suite.
+# 277 tests, median 7.09 s over 5 runs (range 6.39 s to 8.51 s), against
+# 669.92 s for the full suite. RE-MEASURED 2026-09-10 20:2x BST: the count
+# moved 178 -> 277 because `test_done_markers_carry_evidence` parametrises
+# per DONE entry, and the evening closed 12 more. The gate's cost therefore
+# GROWS WITH THE TASK LIST, which is worth knowing: it is not a fixed price.
 # RE-MEASURED 2026-09-10 14:50 BST by scripts/precommit_gate_cost_2026-09-10.py,
 # which reads this GUARDS list rather than carrying its own copy. The figure has
 # now been wrong 4 times by being typed and carried forward; it is measured.

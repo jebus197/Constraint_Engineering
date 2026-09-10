@@ -101,11 +101,31 @@ class TestP3SeatsUsedTheHarness:
             "contrast and this test cannot show the ruling did anything")
 
 
+#: A reply preserves disagreement if it carries a section ABOUT disagreeing --
+#: not if it contains one particular phrase.
+#:
+#: BROKENED BY MY OWN BRIEF, 2026-09-10. This matched `strongest[_ ]disagreement`
+#: only, the wording of the round-4 output shape. The round-8 brief asked for the
+#: same field as "WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1", both seats
+#: supplied it in full, and the guard reported both as MISSES. A guard keyed to a
+#: literal phrase, checking a requirement that each brief states in its own
+#: words, is the substring-versus-token defect wearing a different hat -- the same
+#: shape that has now cost this project 4 separate findings.
+#:
+#: The requirement is a SECTION about disagreement, so that is what is matched.
+DISAGREEMENT_RE = re.compile(
+    r"strongest[_ ]disagreement"
+    r"|where\s+i\s+disagree"
+    r"|(?:^|\n)\s*#{0,4}\s*\**\s*disagreement\b"
+    r"|i\s+disagree\s+with",
+    re.I)
+
+
 class TestP5DisagreementIsPreserved:
     def test_most_replies_under_the_ruling_carry_their_own_disagreement(self):
         under = [(rnd, d) for rnd, d in _replies() if UNDER_P in rnd]
         got = [(rnd, d["model"]) for rnd, d in under
-               if re.search(r"strongest[_ ]disagreement", d.get("response", ""), re.I)]
+               if DISAGREEMENT_RE.search(d.get("response", ""))]
         assert len(got) >= len(under) - 2, (
             f"only {len(got)} of {len(under)} replies preserved a disagreement; "
             f"the known 2 misses are panel_roster_fix_2026-09-09, dispatched "
@@ -114,7 +134,7 @@ class TestP5DisagreementIsPreserved:
     def test_the_misses_are_the_ones_we_think_they_are(self):
         under = [(rnd, d) for rnd, d in _replies() if UNDER_P in rnd]
         missing = {rnd for rnd, d in under
-                   if not re.search(r"strongest[_ ]disagreement", d.get("response", ""), re.I)}
+                   if not DISAGREEMENT_RE.search(d.get("response", ""))}
         assert missing <= {"panel_roster_fix_2026-09-09"}, (
             f"a round other than the known first one lost its disagreement: {missing}")
 

@@ -94,8 +94,13 @@ class TestTheCountIsExactAndCurrent:
         assert len(files) == 7, (
             f"the hook now runs {len(files)} guard files; entry 1.1 says 7 and "
             f"must be corrected in the same change as this test")
-        assert mod.collected(files) == 178, (
-            "the collected count has moved; entry 1.1 quotes 178. UPDATED 2026-09-10 14:20 BST\n"
+        assert mod.collected(files) == 277, (
+            "the collected count has moved; entry 1.1 quotes 277. UPDATED 2026-09-10 20:25 BST\n"
+            "from 178: the gate's cost is a FUNCTION OF THE TASK LIST, because\n"
+            "test_done_markers_carry_evidence parametrises one test per DONE entry.\n"
+            "Closing an entry moves this number. That is the diagnosis the first 4\n"
+            "corrections lacked, and the reason this test is kept rather than loosened.\n"
+            "Refresh with: python3 scripts/precommit_gate_cost_2026-09-10.py\n"
             "from 169: adding 5 tests to test_done_markers_carry_evidence_2026-09-10.py (task V7)\n"
             "moved it, and this test went red exactly as its docstring says it should.")
 

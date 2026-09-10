@@ -219,7 +219,19 @@ class TestTheRestoreCanSeeThem:
         fake = tmp_path / "Desktop"
         fake.mkdir()
         (fake / "CDSFL_MASTER_TASK_LIST.md").write_text("stale", encoding="utf-8")
-        monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
+        # SUBSTITUTE `DESKTOP_MIRROR`, NOT `Path.home` (changed 2026-09-10).
+        #
+        # The assertion below is untouched -- a diverged copy must be announced.
+        # Only the substitution point moved, and it moved because the module now
+        # has ONE: every mirror path is derived from `DESKTOP_MIRROR`, which
+        # exists to be displaced. Patching `Path.home` used to work because each
+        # path was rebuilt inline from it, which is the very thing
+        # `test_the_desktop_mirror_is_a_module_constant` forbids -- and that test
+        # went red when the inline call came back, with the live machine's
+        # Desktop leaking into a tmp_path run. The 2 fixtures wanted opposite
+        # structures; the module constant is the correct one.
+        monkeypatch.setattr(R, "DESKTOP_MIRROR",
+                            fake / "CDSFL_Agent_Operational_Plan.md")
         out = "\n".join(R.first_read_lines(ROOT))
         assert "DIVERGED" in out, "a diverged Desktop copy was reported as ordinary"
 
