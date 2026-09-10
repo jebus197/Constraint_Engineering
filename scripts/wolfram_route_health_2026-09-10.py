@@ -46,7 +46,14 @@ FAILURE = re.compile(r"Failed to connect to WolframCloud"
                      r"|WolframCloud went away before the attach completed", re.I)
 
 
-def scan() -> tuple[list[str], list[str], list[str]]:
+def attempts() -> tuple[list[str], list[str], list[str]]:
+    # NAMED `attempts`, NOT `scan` (2026-09-10). A tuple-returning `attempts()` here
+    # collided by NAME with the list-returning `attempts()` in
+    # scripts/supersession_check.py, and the verdict-tuple guard in
+    # test_operational_scripts.py matches tuple-returning function names across
+    # the whole repository rather than resolving the call. It flagged that file
+    # for a truth test that is entirely correct on a list. Renaming here is the
+    # cheap half; the guard's name collision is filed as task A17.
     """(failure lines, non-failure lines, stamps) mentioning the route."""
     fails, oks, stamps = [], [], []
     if not LOGDIR.is_dir():
@@ -76,7 +83,7 @@ def main() -> int:
         print(f"no Claude log directory at {LOGDIR} — nothing to measure on this "
               f"machine. This is a SKIP, not a result of 0.")
         return 0
-    fails, oks, stamps = scan()
+    fails, oks, stamps = attempts()
     n = len(fails) + len(oks)
     print(f"log directory : {LOGDIR}")
     print(f"files scanned : {len(list(LOGDIR.glob('*.log')))}")
@@ -105,13 +112,22 @@ def main() -> int:
     if stamps:
         print(f"\nfirst mention : {min(stamps)}")
         print(f"last mention  : {max(stamps)}")
-    print("\nsample of FAILED attempts:")
-    for line in fails[:5]:
+    # A CAPPED LISTING MUST SAY WHAT IT WITHHELD (guard:
+    # test_no_script_prints_a_capped_listing_in_silence). A sample that does not
+    # name its remainder reads as the whole set, which is how a partial listing
+    # becomes a false claim about a population.
+    _SHOW = 5
+    print(f"\nsample of FAILED attempts ({min(_SHOW, len(fails))} shown of {len(fails)}):")
+    for line in fails[:_SHOW]:
         print(f"    {line}")
+    if len(fails) > _SHOW:
+        print(f"    ... {len(fails) - _SHOW} more not shown")
     if oks:
-        print("\nsample of SUCCESSFUL attaches:")
-        for line in oks[:5]:
+        print(f"\nsample of SUCCESSFUL attaches ({min(_SHOW, len(oks))} shown of {len(oks)}):")
+        for line in oks[:_SHOW]:
             print(f"    {line}")
+        if len(oks) > _SHOW:
+            print(f"    ... {len(oks) - _SHOW} more not shown")
     return 0
 
 

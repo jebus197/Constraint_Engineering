@@ -119,10 +119,15 @@ def main() -> int:
     rep("seat replies carrying a strongest_disagreement", disagree_ok, seatn)
     print(f"\nP4 — seats DELIVERED a fix as a file, not as prose:")
     rep("rounds that returned at least 1 source file", len(delivered), len(rs))
+    _SHOW = 6
     for name, src in delivered:
         print(f"      {name}: {len(src)} file(s)")
-        for x in src[:6]:
+        for x in src[:_SHOW]:
             print(f"          {x}")
+        if len(src) > _SHOW:
+            # Naming the remainder, because a capped listing that stays silent
+            # reads as the whole set.
+            print(f"          ... {len(src) - _SHOW} more not shown")
 
     print(f"\nCOST CONTROL — paid seat replies across every round: {paid}")
     return 0

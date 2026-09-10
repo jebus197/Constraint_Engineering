@@ -51,7 +51,7 @@ class TestTheScriptRuns:
         monkeypatch.setattr(mod, "LOGDIR", tmp_path / "nowhere")
         monkeypatch.setattr(sys, "argv", ["w"])
         assert mod.main() == 0
-        assert mod.scan() == ([], [], [])
+        assert mod.attempts() == ([], [], [])
 
 
 class TestTheClassifierCountsATTEMPTS:
@@ -70,7 +70,7 @@ class TestTheClassifierCountsATTEMPTS:
             "2026-09-01 10:00:02 [info] MCP Server connection requested for: WolframCloud",
         ])
         monkeypatch.setattr(mod, "LOGDIR", d)
-        fails, oks, _ = mod.scan()
+        fails, oks, _ = mod.attempts()
         assert (fails, oks) == ([], []), (
             "shutdown and request lines are not connection attempts; counting "
             "them is what produced the meaningless first figure")
@@ -79,7 +79,7 @@ class TestTheClassifierCountsATTEMPTS:
         d = self._log(tmp_path, [
             "2026-09-01 10:00:00 [info] [localMcpBridge] announcing WolframCloud: 3 tool(s)"])
         monkeypatch.setattr(mod, "LOGDIR", d)
-        fails, oks, _ = mod.scan()
+        fails, oks, _ = mod.attempts()
         assert len(oks) == 1 and not fails
 
     @pytest.mark.parametrize("line", [
@@ -89,14 +89,14 @@ class TestTheClassifierCountsATTEMPTS:
     def test_both_failure_shapes_are_counted(self, mod, tmp_path, monkeypatch, line):
         d = self._log(tmp_path, [line])
         monkeypatch.setattr(mod, "LOGDIR", d)
-        fails, oks, _ = mod.scan()
+        fails, oks, _ = mod.attempts()
         assert len(fails) == 1 and not oks, line
 
     def test_a_line_about_another_server_is_ignored(self, mod, tmp_path, monkeypatch):
         d = self._log(tmp_path, [
             "2026-09-05 11:00:00 [error] Failed to connect to SomeOtherServer: Connection closed"])
         monkeypatch.setattr(mod, "LOGDIR", d)
-        assert mod.scan() == ([], [], [])
+        assert mod.attempts() == ([], [], [])
 
 
 class TestTheRetirementIsRecorded:
