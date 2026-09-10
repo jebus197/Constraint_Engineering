@@ -143,6 +143,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from copy import deepcopy
 from dataclasses import MISSING, dataclass, field, fields, replace
@@ -703,6 +704,81 @@ def target_hash_event(target_path) -> tuple[str, str | None]:
     previous = _TARGET_HASH_PREV.get(key)
     _TARGET_HASH_PREV[key] = digest
     return digest, (previous if previous and previous != digest else None)
+
+#: TASK 6.6 -- WHO REWROTE THE TARGET, as far as it can be known without root.
+#:
+#: The 2026-09-08 watch recorded 12 rewrites of `bench/dm/_memory.py` as blob
+#: hashes and byte deltas: "NEW target state 4 at 07:15:49: blob 1ded5f0a, 21046
+#: bytes (+441 vs HEAD)". Every one is unattributable, because a hash says WHAT
+#: changed and nothing about WHO changed it.
+#:
+#: NAMING THE WRITING PROCESS NEEDS ROOT on macOS -- `fs_usage` and friends -- and
+#: that is the founder's to grant, so it is not attempted here. What is free, and
+#: was simply never collected, is enough to narrow "someone" to a short list:
+#:
+#:   * the SEATS IN FLIGHT at the moment of detection, with how long each had
+#:     been running. A seat that started after the write cannot have made it.
+#:   * the file's own `stat`: the writing UID, the mode, and the mtime -- which
+#:     dates the write independently of when the check noticed it.
+#:   * the thread and process doing the noticing, so a runner-side write is
+#:     distinguishable from a seat-side one.
+#:
+#: This changes no prompt, no verdict and no gate. It only records more at a
+#: moment where the record was blank.
+_SEATS_IN_FLIGHT: Dict[int, Dict[str, Any]] = {}
+_SEATS_LOCK = threading.Lock()
+
+
+def seat_in_flight(label: str) -> None:
+    """Register the calling thread as dispatching `label`."""
+    with _SEATS_LOCK:
+        _SEATS_IN_FLIGHT[threading.get_ident()] = {
+            "label": label, "since": time.time()}
+
+
+def seat_done(label: str) -> None:
+    """Deregister the calling thread. Safe to call when never registered."""
+    with _SEATS_LOCK:
+        _SEATS_IN_FLIGHT.pop(threading.get_ident(), None)
+
+
+def seats_in_flight() -> list:
+    """A snapshot of who was dispatching, newest registration last."""
+    with _SEATS_LOCK:
+        return sorted(
+            ({"label": v["label"], "thread": k,
+              "running_for_s": round(time.time() - v["since"], 3)}
+             for k, v in _SEATS_IN_FLIGHT.items()),
+            key=lambda d: -d["running_for_s"])
+
+
+def target_attribution(target_path) -> Dict[str, Any]:
+    """Everything knowable about WHO wrote `target_path`, without privilege.
+
+    Returns a record, never raises: an attribution instrument that can itself
+    fail is worse than none, because its silence would be read as "nothing to
+    report" rather than "the instrument broke".
+    """
+    rec: Dict[str, Any] = {
+        "noticed_by_pid": os.getpid(),
+        "noticed_on_thread": threading.current_thread().name,
+        "seats_in_flight": seats_in_flight(),
+        "root_needed_for_more": (
+            "naming the writing process needs fs_usage or dtrace, which need "
+            "root; this record narrows the candidates without it"),
+    }
+    try:
+        st = Path(target_path).stat()
+        rec["file"] = {
+            "uid": st.st_uid, "gid": st.st_gid, "mode": oct(st.st_mode),
+            "size": st.st_size,
+            "mtime": datetime.fromtimestamp(st.st_mtime).isoformat(timespec="seconds"),
+            "mtime_epoch": round(st.st_mtime, 3),
+        }
+    except OSError as exc:
+        rec["file_error"] = f"{type(exc).__name__}: {exc}"
+    return rec
+
 
 _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
 
@@ -8294,6 +8370,11 @@ def _dispatch_single_model(
     pattern_name: str, domain: str, logs_dir: Path,
     enable_tools: bool = True,
 ) -> Tuple[List[Finding], Optional[str]]:
+    # TASK 6.6: RECORD WHO IS IN FLIGHT, so a target rewrite has candidates.
+    # Registration is per THREAD and overwrites, so the record always names the
+    # seat this thread is currently running. `running_for_s` travels with it, so
+    # a stale entry is visible as stale rather than passing as current.
+    seat_in_flight(mc.label)
     # CONFINE THIS SEAT ON ITS OWN THREAD. See _PANEL_CWD_FOR_WORKERS. A no-op
     # when unset, so a code run's default behaviour is byte-identical.
     _seat_cwd = _PANEL_CWD_FOR_WORKERS.get("path")
@@ -13360,12 +13441,19 @@ def run_experiment(
             # control that cannot state it ran is not yet a control.
             result.setdefault("target_integrity_events", [])
             if _prev_h:
+                # TASK 6.6. The 2026-09-08 watch recorded 12 rewrites of
+                # bench/dm/_memory.py as blob hashes and byte deltas and not one
+                # is attributable, because a hash says WHAT changed and nothing
+                # about WHO. This captures what is knowable without root at the
+                # only moment it can be captured -- the instant of detection.
+                _attrib = target_attribution(_tgt_p)
                 _log(f"  *** TARGET INTEGRITY WARNING: {cfg.test_article} CHANGED "
                      f"mid-run (round {round_idx}): {_prev_h[:12]} -> {_tgt_h[:12]}. "
                      f"Findings/falsifiers from this round may reference a different "
                      f"module than earlier rounds. Review before trusting results. ***")
                 result.setdefault("target_integrity_events", []).append(
-                    {"round": round_idx, "from": _prev_h, "to": _tgt_h})
+                    {"round": round_idx, "from": _prev_h, "to": _tgt_h,
+                     "attribution": _attrib})
             result.setdefault("target_hashes", {})[str(round_idx)] = _tgt_h
         except Exception as _ti_exc:  # noqa: BLE001 — guard must never break a run
             _log(f"  WARNING: target integrity check failed ({_ti_exc})")
