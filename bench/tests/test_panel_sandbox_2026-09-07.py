@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import subprocess
+import pathlib
 import sys
 from pathlib import Path
 
@@ -145,17 +146,100 @@ def test_setting_it_inside_the_worker_does_reach_the_subprocess_call():
 
 
 def test_the_dispatcher_sets_the_cwd_per_worker_not_on_main():
-    """Guard the wiring itself: if the set moves back out of dispatch(), the
-    containment silently stops working and the log line still says it worked."""
+    """The confinement must happen ON THE WORKER THREAD, proved by running it.
+
+    REWRITTEN 2026-09-11. This asserted that the literal string
+    `set_panel_cwd(_PANEL_SANDBOX_CWD)` appeared in `dispatch`'s source. Giving
+    each seat its own sandbox renamed the argument, and the test went red while
+    the behaviour was correct and stronger than before -- the third source-text
+    guard broken by a correct refactor in one day. It now CALLS
+    `confine_this_thread` inside a pool worker and observes the thread-local,
+    which is the property that actually matters: `_PANEL_CWD_TLS` is a
+    `threading.local()`, so a value set on the main thread is invisible to the
+    workers, and the first attempt at the founder's confinement ruling failed
+    silently for exactly that reason.
+    """
+    import concurrent.futures
+    import importlib.util
+
+    # THE DISPATCHER CANNOT SIMPLY BE IMPORTED: it reads `sys.argv[1]` at module
+    # level and validates the brief, exiting 2 when neither is supplied. That is
+    # the same import-time-side-effect class as the `compose_all` defect fixed
+    # under task A2 this morning, and it is recorded on the task list as its own
+    # entry rather than patched over here. Supplying both makes the import
+    # succeed without dispatching anything.
+    import os
+
+    argv, env = sys.argv[:], os.environ.get("PANEL_BRIEF_UNCHECKED")
+    sys.argv = ["confer_maths_panel", "panel_round10_2026-09-10"]
+    os.environ["PANEL_BRIEF_UNCHECKED"] = "1"
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "panelmod", REPO / "bench" / "confer_maths_panel_2026-09-05.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["panelmod"] = mod
+        spec.loader.exec_module(mod)
+    finally:
+        sys.argv = argv
+        if env is None:
+            os.environ.pop("PANEL_BRIEF_UNCHECKED", None)
+        else:
+            os.environ["PANEL_BRIEF_UNCHECKED"] = env
+
+    from experiment_11_orchestrator import get_panel_cwd, set_panel_cwd
+
+    # REAL DIRECTORIES, because `set_panel_cwd` REFUSES a missing one -- and
+    # rightly: "failing open here would silently reinstate the exposure that let
+    # a model read the key in Exp 48". A control that stubs the path with a
+    # string would be testing a weaker function than the one that ships.
+    import tempfile
+
+    base = pathlib.Path(tempfile.mkdtemp(prefix="cdsfl_seatcwd_"))
+    a, b = base / "sbx_cc2", base / "sbx_fable"
+    a.mkdir(); b.mkdir()
+    mod._SEAT_SANDBOXES.clear()
+    mod._SEAT_SANDBOXES.update({"cc2": str(a), "fable": str(b)})
+    try:
+        set_panel_cwd(None)
+        assert get_panel_cwd() is None, "the main thread must start clean"
+
+        def _worker(seat):
+            mod.confine_this_thread(seat)
+            return get_panel_cwd()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            seen = dict(zip(("cc2", "fable"),
+                            pool.map(_worker, ("cc2", "fable"))))
+        # RESOLVED, because `set_panel_cwd` resolves -- on macOS /var is a
+        # symlink to /private/var, and comparing the unresolved strings would
+        # fail on a difference that is the function doing its job.
+        assert {k: str(pathlib.Path(v).resolve()) for k, v in seen.items()} == \
+            {"cc2": str(a.resolve()), "fable": str(b.resolve())}, seen
+        assert get_panel_cwd() is None, (
+            "the worker's setting leaked to the main thread; the thread-local "
+            "is the mechanism and it must stay per-thread")
+    finally:
+        mod._SEAT_SANDBOXES.clear()
+        set_panel_cwd(None)
+        import shutil
+        shutil.rmtree(base, ignore_errors=True)
+
+
+def test_dispatch_still_calls_the_confinement():
+    """An addition nothing reaches is not additive: `confine_this_thread` could
+    be perfect and never called, and the test above would still pass."""
+    import ast
+
     src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text()
-    body = src[src.index("def dispatch("):src.index("def main(")]
-    assert "set_panel_cwd(_PANEL_SANDBOX_CWD)" in body, (
-        "dispatch() no longer sets the sandbox cwd on its own thread")
-
-
-# --------------------------------------------------------------------------
-# The containment fix CREATED a credential exposure. These pin the repair.
-# --------------------------------------------------------------------------
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.FunctionDef) and node.name == "dispatch":
+            called = {getattr(c.func, "id", None) or getattr(c.func, "attr", None)
+                      for c in ast.walk(node) if isinstance(c, ast.Call)}
+            assert "confine_this_thread" in called, (
+                "dispatch no longer confines its own thread, so every seat runs "
+                "in whatever directory the process happens to be in")
+            return
+    raise AssertionError("confer_maths_panel has no dispatch()")
 
 def test_the_sandbox_does_not_carry_the_credentials():
     """Confining a seat to a copy is worthless if the copy holds the keys.

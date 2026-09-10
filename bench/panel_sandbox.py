@@ -218,7 +218,18 @@ _WRITING_SHELL = (">", ">>", "tee ", "cp ", "mv ", "rm ", "sed -i", "truncate",
 #: Shell verbs that only read, listed so the intent is visible rather than
 #: inferred from the absence of a writing verb.
 _READING_SHELL = ("sed -n", "cat ", "head ", "tail ", "grep ", "rg ", "wc ",
-                  "ls ", "diff ", "md5", "shasum", "git show", "git log")
+                  "ls ", "diff ", "md5", "shasum", "git show", "git log",
+                  # ADDED 2026-09-11 after round 10 reported a CONTAINMENT
+                  # FAILURE on the strength of a seat RUNNING THE TEST SUITE.
+                  # `python3 -m pytest <path>` names a path and modifies nothing
+                  # in it; it fell through to the conservative default and was
+                  # counted as a write. An alarm that fires when a seat does
+                  # exactly what the brief told it to do is on its way to being
+                  # ignored -- this file's own docstring says so about a
+                  # different alarm.
+                  "pytest", "python3 -m pytest", "-m pytest",
+                  "git status", "git diff", "git rev-parse", "git ls-files",
+                  "find ", "stat ", "file ")
 
 
 def _call_can_write(tool_name, preview: str) -> bool:
@@ -239,7 +250,8 @@ def _call_can_write(tool_name, preview: str) -> bool:
     return True
 
 
-def attribute_canonical_touch(touched, log_dir, sandbox_root=None) -> Dict[str, Dict]:
+def attribute_canonical_touch(touched, log_dir, sandbox_root=None,
+                              repo_root=None) -> Dict[str, Dict]:
     """For each touched canonical path, can any SEAT be shown to have touched it?
 
     TASK A5. The alarm fired on 14 files in panel round 2, on 11 in round 8 and
@@ -269,7 +281,15 @@ def attribute_canonical_touch(touched, log_dir, sandbox_root=None) -> Dict[str, 
         except (ValueError, OSError):
             continue
 
-    sandbox_root = str(sandbox_root) if sandbox_root else None
+    # ONE OR MANY. Each seat now gets its own sandbox, so this accepts a list
+    # and excludes ALL of them; passing only the first would report every other
+    # seat's own correct edits as escapes.
+    if sandbox_root is None:
+        sandbox_roots = []
+    elif isinstance(sandbox_root, (list, tuple, set)):
+        sandbox_roots = [str(x) for x in sandbox_root]
+    else:
+        sandbox_roots = [str(sandbox_root)]
     out: Dict[str, Dict] = {}
     truncated_previews = 0
     for rel in touched:
@@ -283,8 +303,27 @@ def attribute_canonical_touch(touched, log_dir, sandbox_root=None) -> Dict[str, 
                     continue
                 # A sandbox path CONTAINING the relative path is the ordinary,
                 # correct case: the seat edited its own copy.
-                if sandbox_root and sandbox_root in prev:
+                if any(r in prev for r in sandbox_roots):
                     continue
+                # A RELATIVE PATH CANNOT REACH THE CANONICAL TREE. Added
+                # 2026-09-11 after round 10 declared a containment failure and
+                # was wrong. The seat ran
+                #   python3 - <<'PYEOF' ... pathlib.Path("bench/repo_paths.py")
+                # with its cwd INSIDE the sandbox. The preview holds the relative
+                # path and not the sandbox root, so the exclusion above missed it
+                # and a correct, instructed edit to the seat's own copy was
+                # reported as an escape.
+                #
+                # This file's own `canonical_was_touched` already states the
+                # mechanism: "A sandbox stops relative writes. It cannot stop a
+                # seat writing to an absolute path it already knows." So the
+                # ABSOLUTE canonical path is the only form that is evidence, and
+                # requiring it is not a weakening -- it is the rule the docstring
+                # already described.
+                if repo_root:
+                    absolute = str(Path(repo_root) / rel)
+                    if absolute not in prev:
+                        continue
                 # A READ IS NOT A WRITE, and counting it as one is how an alarm
                 # earns its reputation for crying wolf. The first version of this
                 # counted any mention, and reported round 8 as attributable on

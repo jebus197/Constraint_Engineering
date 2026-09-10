@@ -21,7 +21,7 @@ prompt). The panel is therefore closer to 4 distinct conditions than 5, and the
 brief says so to the seats themselves.
 """
 from __future__ import annotations
-import concurrent.futures, json, os, sys, time
+import concurrent.futures, json, os, sys, threading as _threading, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -29,6 +29,49 @@ from experiment_11_orchestrator import (  # noqa: E402
     call_claude_cli, call_deepseek, call_openrouter)
 import panel_sandbox  # noqa: E402
 _PANEL_SANDBOX_CWD: str | None = None
+
+#: seat name -> its OWN sandbox. Added 2026-09-11.
+#:
+#: THE SEATS SHARED ONE WRITABLE DIRECTORY AND RAN IN IT CONCURRENTLY, which
+#: destroys the independence the whole `pr` protocol rests on: "run WITHOUT
+#: compelled convergence so each model returns an independent verdict". Measured
+#: in round 10, and it is not a theoretical risk -- the fable seat's reply
+#: describes the `.zenodo.json` identity tier that the cc2 seat had just
+#: invented, and reports "my first (background) run reported 33/640 from a stale
+#: .pyc (old repo_paths.py with no declared tier)". Fable reviewed cc2's edited
+#: tree, not the tree under review. Agreement between seats was therefore not
+#: evidence of anything, and `seat_proposals.diff` mixed both seats' edits with
+#: no attribution.
+#:
+#: COST, MEASURED BEFORE CHANGING IT: 6.53 s and 606 MB per copy on this machine.
+#: For a 2-seat round that is 13 s against a 15-to-25-minute panel, which is not
+#: a reason to keep a broken control.
+_SEAT_SANDBOXES: "dict[str, str]" = {}
+_SEAT_SANDBOX_LOCK = _threading.Lock()
+
+
+def confine_this_thread(name: str) -> "str | None":
+    """Set THIS thread's panel cwd to `name`'s own sandbox, and return it.
+
+    EXTRACTED 2026-09-11 so the guard can CALL it. `test_panel_sandbox_2026-09-07`
+    asserted that the literal string `set_panel_cwd(_PANEL_SANDBOX_CWD)` appeared
+    in `dispatch`'s source. Giving each seat its OWN sandbox renamed the argument
+    and the test went red while the behaviour was correct and stronger than
+    before -- the third source-text guard broken by a correct refactor in a
+    single day. `execute-do-not-grep`: a test that reads source proves only that
+    the source describes itself.
+
+    THE THREAD PART IS THE WHOLE POINT and is not incidental. `_PANEL_CWD_TLS` is
+    a `threading.local()` and this runs inside a `ThreadPoolExecutor`, so a value
+    set on the main thread is invisible here. The first attempt at the founder's
+    confinement ruling failed silently for exactly that reason: main logged
+    "seats confined to a copy", every worker passed cwd=None, and the seats ran
+    in the live repository.
+    """
+    cwd = _SEAT_SANDBOXES.get(name) or _PANEL_SANDBOX_CWD
+    if cwd:
+        set_panel_cwd(cwd)
+    return cwd
 from experiment_11_orchestrator import set_panel_cwd  # noqa: E402
 from experiment_11_orchestrator import accept_reply_or_work  # noqa: E402
 from experiment_11_orchestrator import set_tool_log_sink  # noqa: E402
@@ -144,8 +187,7 @@ def dispatch(name, model_id, route):
     # SILENTLY: main logged "seats confined to a copy", every worker passed
     # cwd=None, and the seats ran in the live repository. cc2 caught it by running
     # `pwd`, and fable had already written a file into the canonical tree.
-    if _PANEL_SANDBOX_CWD:
-        set_panel_cwd(_PANEL_SANDBOX_CWD)
+    _seat_cwd = confine_this_thread(name)
     """EVERY SEAT GETS TOOLS. Founder ruling 2026-09-05: "Tool use is at the core
     of what CDSFL is."
 
@@ -225,7 +267,7 @@ def dispatch(name, model_id, route):
             try:
                 resp = call_claude_cli(
                     model_id, SYSTEM, PROMPT, timeout=1800, max_retries=2,
-                    accept=accept_reply_or_work(_PANEL_SANDBOX_CWD or str(_REPO)),
+                    accept=accept_reply_or_work(_seat_cwd or str(_REPO)),
                 )  # native Bash
             finally:
                 set_tool_log_sink(None)
@@ -354,9 +396,17 @@ def main() -> int:
     # tracked files and $HOME is not among them. That write appended a hook --
     # code that then runs on every turn of every unrelated session.
     home_baseline = panel_sandbox.control_plane_fingerprint()
-    sandbox = panel_sandbox.build(_REPO)
-    _PANEL_SANDBOX_CWD = str(sandbox)      # workers read this and set their own TLS
-    print(f"    seats confined to a copy: {sandbox}")
+    # ONE SANDBOX PER SEAT (2026-09-11). See `_SEAT_SANDBOXES` above for why: a
+    # shared writable copy made the seats' verdicts dependent on each other and
+    # left the proposals diff unattributable.
+    sandboxes = {}
+    for _n, _m, _r in MODELS:
+        sandboxes[_n] = panel_sandbox.build(_REPO)
+        _SEAT_SANDBOXES[_n] = str(sandboxes[_n])
+        print(f"    {_n} confined to its own copy: {sandboxes[_n]}")
+    # Kept for any caller still reading it; every seat now uses its OWN.
+    sandbox = next(iter(sandboxes.values()))
+    _PANEL_SANDBOX_CWD = str(sandbox)
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
             futs = {pool.submit(dispatch, n, m, r): n for n, m, r in MODELS}
@@ -369,7 +419,15 @@ def main() -> int:
         # throwing such work away to enforce hygiene would be its own loss. It
         # returns as a PROPOSAL for CC1 to test under f and sy, which is what the
         # founder asked for.
-        proposals = panel_sandbox.changes(sandbox, _REPO)
+        # PER SEAT, so a proposal carries the name of whoever wrote it. Before
+        # 2026-09-11 all seats shared 1 copy and this diff was the union with no
+        # attribution -- round 10 produced 29 files and no way to tell which seat
+        # left which, which is exactly the provenance failure the project's own
+        # "no fake model labels" rule exists to prevent.
+        proposals = {}
+        for _n, _sb in sandboxes.items():
+            for rel, d in panel_sandbox.changes(_sb, _REPO).items():
+                proposals[f"{_n}:{rel}"] = d
         if proposals:
             (LOGS / "seat_proposals.diff").write_text(
                 "\n".join(f"### {rel}\n{d}" for rel, d in sorted(proposals.items())),
@@ -395,8 +453,12 @@ def main() -> int:
             # human re-derived that from the tool logs each time. The evidence
             # was already on disk; now the alarm reads it.
             try:
+                # EVERY seat's sandbox is excluded, not just one, now that each
+                # has its own; and the CANONICAL ROOT is passed, so only an
+                # ABSOLUTE path naming it counts as evidence of an escape.
                 attrib = panel_sandbox.attribute_canonical_touch(
-                    touched, LOGS, sandbox_root=sandbox)
+                    touched, LOGS, sandbox_root=list(sandboxes.values()),
+                    repo_root=_REPO)
                 (LOGS / "canonical_attribution.json").write_text(
                     json.dumps(attrib, indent=2), encoding="utf-8")
                 if attrib["_any_attributable"]:
@@ -416,7 +478,12 @@ def main() -> int:
                       f"{_at_exc} -- the alarm stands unattributed")
         else:
             print("    canonical tree unchanged (7900 tracked files re-hashed)")
-        panel_sandbox.teardown(sandbox)
+        # EVERY sandbox, not just the first. Leaving N-1 behind would put 606 MB
+        # each into TMPDIR per round and, worse, leave a seat's proposals on disk
+        # after they were supposed to have been harvested.
+        for _sb in sandboxes.values():
+            panel_sandbox.teardown(_sb)
+        _SEAT_SANDBOXES.clear()
 
     ok = sum(1 for r in results if r["ok"])
     print(f"\n  {ok}/{len(MODELS)} responded. Logs: {LOGS}")
