@@ -78,16 +78,57 @@ class TestTheOffSwitchesAreRecorded:
         "d9_multi_model_panel.json",
         "d11_seat_contrast_diversity_arm.json",
     ])
-    def test_sk_is_off_in_every_arm_of_the_next_run(self, mod, arm):
-        """`sk_enabled` is part of the mathematical model, and it is false.
+    def test_sk_is_ON_in_every_arm_of_the_next_run(self, mod, arm):
+        """TURNED ON 2026-09-10 on the founder's explicit instruction.
 
-        Recorded so the next simulated run cannot be launched in ignorance of it.
-        Whether it SHOULD be false is the founder's call, not this test's.
+        This test previously pinned it FALSE. The flip is recorded here rather
+        than silently rewritten, because a test that changes its expectation
+        without saying why is indistinguishable from a test that was wrong.
+
+        THE EVIDENCE FOR ENABLING IT, and it is why this is not a risk: over a
+        2475-point grid the corrected gate is STRICTER at 502 points, 20.2828%,
+        Wilson [18.7453%, 21.9125%], and LOOSER at 0, Wilson [0.0000%, 0.1550%].
+        It can only ever reject more. Against 326 archived shadow records the
+        corrected and shipped verdicts agree 326 of 326.
         """
         f = self._fields(mod, arm)
-        assert f.get("sk_enabled") is False, (
-            f"{arm}: sk_enabled is no longer False. If that was deliberate, "
-            f"update this test in the same change and say who decided")
+        assert f.get("sk_enabled") is True, (
+            f"{arm}: sk_enabled is not True. It was turned on by founder "
+            f"instruction on 2026-09-10; if it has been turned off again, say "
+            f"who decided and why, in the config's own _sk_note")
+
+    @pytest.mark.parametrize("arm", [
+        "d9_single_model_with_agents.json",
+        "d9_multi_model_panel.json",
+        "d11_seat_contrast_diversity_arm.json",
+    ])
+    def test_every_arm_is_a_python_target_so_the_gate_is_defined_there(self, mod, arm):
+        """The one case where S_k is HARMFUL is a non-Python target.
+
+        On prose ruff cannot parse the file, so the ranking inverts: a shell
+        injection inside a fence scored 1.0000 ADMISSIBLE while a correct prose
+        fix scored 0.6667. The runner forces the gate off for any non-Python
+        target, so this asserts the arms are where the gate is defined -- which
+        is what makes enabling it safe rather than merely authorised.
+        """
+        f = self._fields(mod, arm)
+        assert f.get("target_kind") == "python_module", (
+            f"{arm}: target_kind is {f.get('target_kind')!r}. With S_k now ON, a "
+            f"non-Python target would rely on the runner's forced-off path "
+            f"instead of the config being correct")
+
+    def test_the_reason_travels_with_the_change(self, mod, arm=None):
+        """A flipped switch with no recorded reason is the defect this file finds."""
+        import json
+        for a in ("d9_single_model_with_agents.json", "d9_multi_model_panel.json",
+                  "d11_seat_contrast_diversity_arm.json"):
+            f = ROOT / "bench" / "exp56_configs" / a
+            if not f.is_file():
+                pytest.skip(f"{a} not present")
+            note = json.loads(f.read_text(encoding="utf-8")).get("_sk_note", "")
+            assert "TURNED ON" in note and "SUPERSEDED, NOT DELETED" in note, (
+                f"{a}: _sk_note does not record the change or retains no history "
+                f"of the earlier decision")
 
     def test_the_runner_really_does_read_sk_enabled(self, mod):
         """Otherwise the finding above is about a field nothing consults."""

@@ -14,29 +14,28 @@ behaviour, and claims are the category this project measures worst. A predicate
 is checkable, and a parking file is a place the item goes instead of into a
 sentence addressed to him.
 
-WHAT BLOCKS, and the list is deliberately SHORT. An item blocks only if
-proceeding without an answer would be unsafe, irreversible, or would waste real
-work:
+HIS CRITERION, VERBATIM, 2026-09-10: *"My criteria is very simple. Does it
+prevent further progress on the task list? If so, then yes, it's a blocker. If
+not, then append to the closing/final report."*
 
-  1. IRREVERSIBLE      deleting a git ref, spending money on a paid seat, or
-                       touching the sealed answer-key store. His 3 categories,
-                       standing, and they require him in person.
-  2. NEEDS_HIS_HANDS   the action is on a machine or an account the assistant
-                       cannot reach, or in his own control plane.
-  3. WOULD_WASTE_WORK  the item forks the work: 2 defensible readings lead to
-                       materially different builds, so guessing risks discarding
-                       whichever branch is built.
-  4. FROZEN_ARTEFACT   changing a pre-registration file, a sealed archive, or a
-                       quoted ruling. Task 3.1 established the cost of a literal
-                       reading here.
+THE FIRST VERSION OF THIS SCRIPT GOT IT WRONG, and the way it was wrong is worth
+keeping. It used 4 rules -- IRREVERSIBLE, NEEDS_HIS_HANDS, FROZEN_ARTEFACT,
+WOULD_WASTE_WORK -- and 3 of those are not about progress at all. It classified
+editing his desktop config as BLOCK when that edit blocked nothing, and it
+reported `sk_enabled` to him as a blocker when no open entry waited on it. It had
+conflated 2 orthogonal questions:
 
-EVERYTHING ELSE IS PARKED. Not dropped, not forgotten -- appended to
-`experimental_notes/PARKED_FOR_THE_FOUNDER.md`, which is the file he reads at the
-end. An item parked is an item he still gets; it is simply not an interruption.
+    DOES IT STOP PROGRESS?          -> blocker      -> raise it now
+    IS IT HIS TO AUTHORISE?         -> permission   -> park it, and do not do it
 
-THE ASYMMETRY IS DELIBERATE. A false BLOCK costs one interruption. A false PARK
-could let an irreversible action proceed unasked. So the predicate answers BLOCK
-when it cannot tell, and says which rule fired.
+An item can be either, both, or neither. Treating the second as if it implied the
+first is what produced the interruptions he was objecting to.
+
+SO THE PREDICATE NOW TESTS THE ACTUAL QUESTION. An item BLOCKS only if some OPEN
+entry on the task list cannot proceed without it -- established by looking for
+the item's subject in the open entries, not by matching a category. Permission is
+a SEPARATE flag: it suppresses the action, never the work, and it travels with
+the parked item so he sees it at the end.
 """
 from __future__ import annotations
 
@@ -50,35 +49,120 @@ import sys
 REPO = pathlib.Path(__file__).resolve().parents[1]
 PARKED = REPO / "experimental_notes" / "PARKED_FOR_THE_FOUNDER.md"
 
-RULES: list[tuple[str, re.Pattern, str]] = [
+#: Actions the assistant must NOT take unilaterally. This is a PERMISSION gate,
+#: not a blocker: it stops the action, never the work, and it is reported at the
+#: end rather than as an interruption -- unless the item ALSO blocks progress.
+NEEDS_PERMISSION: list[tuple[str, re.Pattern, str]] = [
     ("IRREVERSIBLE", re.compile(
         r"delete\s+(a\s+)?(git\s+)?(ref|branch|tag)|git\s+(branch\s+-D|push\s+--force|reflog\s+expire)"
-        r"|\bpaid\s+(seat|dispatch|model|run)\b|spend(ing)?\s+money|costs?\s+money"
+        r"|\bpaid\s+(seat|dispatch|model|run)\b|spend(ing)?\s+money"
         r"|answer[- ]key|sealed\s+(store|archive)|passphrase|vault", re.I),
-     "his 3 standing categories require him in person"),
-    ("NEEDS_HIS_HANDS", re.compile(
+     "one of his 3 standing categories: a git ref, money, or the sealed key store"),
+    ("HIS_MACHINE", re.compile(
         r"password|credential|api\s*key|token\s+rotat|log\s*in\b|sign\s*in\b"
         r"|desktop\s+app\s+config|claude_desktop_config|system\s+settings"
-        r"|his\s+(machine|laptop|phone)|purchase|licence\s+renew|license\s+renew", re.I),
-     "the assistant cannot reach that machine or account"),
-    ("FROZEN_ARTEFACT", re.compile(
-        r"pre[- ]registration|frozen\s+(file|config|arm)|exp56_configs"
-        r"|quoted\s+ruling|verbatim\s+(ruling|quotation)|archival\s+(note|record|log)"
-        r"|bench/logs/", re.I),
-     "changing a frozen artefact falsifies the record it exists to preserve"),
-    ("WOULD_WASTE_WORK", re.compile(
-        r"\b(2|two)\s+(possible\s+)?(answers|readings|options|branches)\s+lead"
-        r"|opposite\s+work|fork(s)?\s+the\s+work|either\s+.{0,40}\s+or\s+.{0,40},\s*and\s+the\s+2", re.I),
-     "guessing risks discarding whichever branch is built"),
+        r"|purchase|licence\s+renew|license\s+renew", re.I),
+     "an account or machine setting that is his to change"),
 ]
 
 
-def classify(text: str) -> tuple[str, str]:
-    """(verdict, why). BLOCK when any rule fires; PARK otherwise."""
-    for name, rx, why in RULES:
+def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool, str]:
+    """Does an OPEN entry on the task list depend on this item?
+
+    Measured against the list rather than guessed from a category. The subject
+    is matched against each OPEN entry's text; a hit means that entry cannot
+    proceed until this is settled, which is exactly his criterion.
+    """
+    tasks = tasks or (REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
+    try:
+        sys.path.insert(0, str(REPO / "scripts"))
+        from task_list_markers import parse_entries, ENTRY, _is_entry   # type: ignore
+    except Exception as exc:
+        return False, f"cannot read the task list ({exc}); parking rather than guessing"
+    lines = tasks.read_text(encoding="utf-8").splitlines()
+    starts = [i for i, l in enumerate(lines) if _is_entry(l)]
+    states = {e.ident: e.state for e in parse_entries(tasks)}
+
+    # IDENTIFIERS AND PATHS ONLY. A capitalised ordinary word is not a subject.
+    # An earlier filter kept any 6+ character token that was not all-lowercase, so
+    # "Repair the experimental notes" matched entry 7.1 on the word "Repair".
+    terms = {t for t in re.findall(r"[A-Za-z_][A-Za-z0-9_]*_[A-Za-z0-9_]+"
+                                   r"|[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9-]+"
+                                   r"|[\w./-]+\.(?:py|json|md|sh|txt)"
+                                   r"|[\w-]+/[\w./-]+", text)
+             if len(t) >= 6}
+    if not terms:
+        return False, "no distinctive term to match against the entries"
+
+    # A TERM THAT APPEARS EVERYWHERE CARRIES NO INFORMATION. `reference_runner_v3.py`
+    # is named by many entries; matching it proves only that the file is central,
+    # not that any entry waits on this particular question about it. So a term
+    # must be SELECTIVE -- it must distinguish a few entries from the rest -- and
+    # the threshold is stated rather than tuned: more than a quarter of the entries
+    # is not a dependency, it is a subject everyone shares.
+    bodies = []
+    for n, i in enumerate(starts):
+        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        bodies.append((ENTRY.match(lines[i]).group(1), "\n".join(lines[i:end])))
+    cap = max(2, len(bodies) // 4)
+    selective = {t for t in terms if sum(1 for _, b in bodies if t in b) <= cap}
+    if not selective:
+        common = sorted(terms)[:2]
+        return False, (f"the only matching terms {common} appear in more than "
+                       f"{cap} entries, so they identify a shared subject rather "
+                       f"than a dependency")
+    terms = selective
+
+    # A STATED PRECONDITION, NOT A MENTION. `reference_runner_v3.py` appears in
+    # many open entries; that does not make every question about it a blocker.
+    # An entry is blocked BY this item only where the entry says so: it carries
+    # state BLOCKED, or its text names the item inside a passage declaring a
+    # dependency. Anything looser reports a mention as an obstruction, which is
+    # how a triage tool becomes the interruption it was built to prevent.
+    DECLARES = re.compile(
+        r"BLOCKED ON|blocked on|NEEDS THE FOUNDER|NEEDS YOUR RULING|awaits? (?:his|the founder)"
+        r"|cannot proceed|precondition|is the founder's(?: call| to)?|reserved to him", re.I)
+    for n, i in enumerate(starts):
+        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        ident = ENTRY.match(lines[i]).group(1)
+        state = states.get(ident)
+        if state not in ("OPEN", "BLOCKED"):
+            continue
+        body = "\n".join(lines[i:end])
+        hit = [t for t in terms if t in body]
+        if not hit:
+            continue
+        # A BARE FILE PATH CANNOT ESTABLISH DEPENDENCE. A file is central to many
+        # entries; naming one says what the work is ABOUT, not what it waits on.
+        # An OPEN entry therefore needs a non-path identifier to match; a BLOCKED
+        # entry does not, because its state already declares the dependency.
+        only_paths = all(("/" in t or t.endswith((".py", ".json", ".md", ".sh", ".txt"))
+                          ) for t in hit)
+        if state == "OPEN" and only_paths:
+            continue
+        if state == "BLOCKED" or DECLARES.search(body):
+            return True, (f"entry {ident} (state {state}) names {sorted(hit)[:2]} "
+                          f"inside a declared dependency, so it cannot proceed")
+    return False, ("no entry declares a dependency on it; it is mentioned but "
+                   "nothing is waiting")
+
+
+def classify(text: str) -> tuple[str, str, str]:
+    """(verdict, why, permission). BLOCK only if progress is prevented.
+
+    The permission flag is returned ALONGSIDE the verdict rather than folded
+    into it, because the 2 are orthogonal and folding them is the defect the
+    first version shipped.
+    """
+    perm = ""
+    for name, rx, why in NEEDS_PERMISSION:
         if rx.search(text):
-            return "BLOCK", f"{name}: {why}"
-    return "PARK", "no blocking rule fired; it goes to the end-of-work list"
+            perm = f"{name}: {why}"
+            break
+    blocked, why = blocks_progress(text)
+    if blocked:
+        return "BLOCK", why, perm
+    return "PARK", why, perm
 
 
 def park(title: str, detail: str, stamp: str | None = None) -> pathlib.Path:
@@ -110,15 +194,21 @@ def main() -> int:
     if not a.title:
         ap.error("--title is required")
 
-    verdict, why = classify(f"{a.title}\n{a.detail}")
+    verdict, why, perm = classify(f"{a.title}\n{a.detail}")
     print(f"  {verdict}: {why}")
+    if perm:
+        print(f"  NEEDS PERMISSION — {perm}")
+        print("  -> do NOT do it unilaterally. That is separate from whether it blocks.")
     if verdict == "BLOCK":
-        print("  -> raise this with the founder NOW; do not park it")
+        print("  -> raise this with the founder NOW; an open entry is waiting on it")
         return 2
     if a.check_only:
         print("  -> would be appended to " + str(PARKED.relative_to(REPO)))
         return 0
-    p = park(a.title, a.detail)
+    detail = a.detail
+    if perm:
+        detail += f"\n\n**Needs your decision — {perm}.** Not blocking; nothing on the list waits on it."
+    p = park(a.title, detail)
     print(f"  -> appended to {p.relative_to(REPO)}")
     return 0
 
