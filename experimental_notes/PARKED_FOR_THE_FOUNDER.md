@@ -117,3 +117,9 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **It is not a blocker.** Task 10.1 works today without it, with the first-run message covering the gap.
 
 *Parked 2026-09-10T22:03:49+01:00.*
+
+## Enable Tailscale SSH on the private network
+
+*Parked 2026-09-10T22:04:26+01:00.*
+
+Analysis complete and parked. Enabling it changes the authentication posture of the founder's private network, so the decision is his. Task 10.1 works today without it. 20 other entries are open and none depends on it.

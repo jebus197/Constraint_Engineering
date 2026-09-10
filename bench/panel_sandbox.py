@@ -208,6 +208,106 @@ def changes(sandbox: Path, repo: Path) -> Dict[str, str]:
     return found
 
 
+#: Tools that can modify a file. A read naming a path is not evidence of a write.
+_WRITING_TOOLS = {"Edit", "Write", "NotebookEdit", "MultiEdit", "str_replace_editor"}
+
+#: Shell verbs that write. `sed -n ... p` prints; `sed -i` edits in place.
+_WRITING_SHELL = (">", ">>", "tee ", "cp ", "mv ", "rm ", "sed -i", "truncate",
+                  "install ", "dd ", "patch ", "git apply", "git checkout")
+
+#: Shell verbs that only read, listed so the intent is visible rather than
+#: inferred from the absence of a writing verb.
+_READING_SHELL = ("sed -n", "cat ", "head ", "tail ", "grep ", "rg ", "wc ",
+                  "ls ", "diff ", "md5", "shasum", "git show", "git log")
+
+
+def _call_can_write(tool_name, preview: str) -> bool:
+    """Could this tool call have modified a file? Conservative: unsure is YES."""
+    name = str(tool_name or "")
+    if name in _WRITING_TOOLS:
+        return True
+    if name != "Bash":
+        return False                       # a non-Bash, non-editing tool reads
+    low = str(preview or "").lower()
+    if any(w in low for w in _WRITING_SHELL):
+        return True
+    if any(r in low for r in _READING_SHELL):
+        return False
+    # An unrecognised shell command is treated as capable of writing. An alarm
+    # that under-reports is worse than one that over-reports HERE, because this
+    # half is the escape check.
+    return True
+
+
+def attribute_canonical_touch(touched, log_dir, sandbox_root=None) -> Dict[str, Dict]:
+    """For each touched canonical path, can any SEAT be shown to have touched it?
+
+    TASK A5. The alarm fired on 14 files in panel round 2, on 11 in round 8 and
+    on 11 again in round 9 -- and every one was the assistant's own concurrent
+    edit. Confinement held in all 3: no seat referenced a canonical path. But the
+    alarm could not say so, so a human had to re-derive it each time by reading
+    the tool logs, and "an alarm that fires on the ordinary case is on its way to
+    being ignored" is this project's own warning about its irreducible-queue
+    alarm.
+
+    THE EVIDENCE ALREADY EXISTED. Each seat's `*.tools.json` records every call
+    it made with an input preview. A seat that wrote to the canonical tree must
+    have named the path. So the question "was this seat's doing" is answerable
+    from what is already on disk, and this answers it.
+
+    WHAT IT CANNOT DO, said plainly rather than implied. An input preview is
+    TRUNCATED, so a path named beyond the cut is invisible here. This therefore
+    supports "no seat is shown to have touched it" and never "no seat did". The
+    return value says which of those it means.
+    """
+    import json as _json
+    log_dir = Path(log_dir)
+    seats = {}
+    for f in sorted(log_dir.glob("*.tools.json")):
+        try:
+            seats[f.name.replace(".tools.json", "")] = _json.loads(f.read_text())
+        except (ValueError, OSError):
+            continue
+
+    sandbox_root = str(sandbox_root) if sandbox_root else None
+    out: Dict[str, Dict] = {}
+    truncated_previews = 0
+    for rel in touched:
+        hits = []
+        for seat, log in seats.items():
+            for call in log.get("calls") or []:
+                prev = str(call.get("input_preview") or "")
+                if prev.endswith("...") or prev.endswith("\u2026"):
+                    truncated_previews += 1
+                if rel not in prev:
+                    continue
+                # A sandbox path CONTAINING the relative path is the ordinary,
+                # correct case: the seat edited its own copy.
+                if sandbox_root and sandbox_root in prev:
+                    continue
+                # A READ IS NOT A WRITE, and counting it as one is how an alarm
+                # earns its reputation for crying wolf. The first version of this
+                # counted any mention, and reported round 8 as attributable on
+                # the strength of a `sed -n '3733,3739p'` -- a seat READING a
+                # note. Only a call that can modify a file is evidence.
+                if not _call_can_write(call.get("name"), prev):
+                    continue
+                hits.append({"seat": seat, "tool": call.get("name"),
+                             "preview": prev[:160]})
+        out[rel] = {
+            "attributable_to_a_seat": bool(hits),
+            "hits": hits,
+            "verdict": ("A SEAT NAMED THIS CANONICAL PATH" if hits else
+                        "no seat is shown to have touched it"),
+        }
+    return {"_per_path": out,
+            "_seats_examined": sorted(seats),
+            "_any_attributable": any(v["attributable_to_a_seat"] for v in out.values()),
+            "_truncated_previews_seen": truncated_previews,
+            "_limit": ("an input preview is truncated, so this supports 'no seat "
+                       "is SHOWN to have touched it' and never 'no seat did'")}
+
+
 def canonical_was_touched(before: Dict[str, str], repo: Path) -> Dict[str, str]:
     """Tracked files whose content changed in the CANONICAL tree. Detection half.
 

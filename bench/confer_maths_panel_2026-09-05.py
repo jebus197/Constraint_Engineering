@@ -389,6 +389,31 @@ def main() -> int:
             print(f"    *** CANONICAL TREE MODIFIED DURING THE PANEL: {touched} ***")
             (LOGS / "canonical_touched.json").write_text(
                 json.dumps(touched, indent=2), encoding="utf-8")
+            # TASK A5: SAY WHOSE DOING IT WAS, or say that it cannot be shown.
+            # This alarm fired on 14 files in round 2, 8 in round 8 and 11 in
+            # round 9, and every one was the operator's own concurrent edit. A
+            # human re-derived that from the tool logs each time. The evidence
+            # was already on disk; now the alarm reads it.
+            try:
+                attrib = panel_sandbox.attribute_canonical_touch(
+                    touched, LOGS, sandbox_root=sandbox)
+                (LOGS / "canonical_attribution.json").write_text(
+                    json.dumps(attrib, indent=2), encoding="utf-8")
+                if attrib["_any_attributable"]:
+                    print("    *** AND AT LEAST ONE IS ATTRIBUTABLE TO A SEAT. "
+                          "This is the containment failure, not a false alarm. ***")
+                    for _rel, _v in attrib["_per_path"].items():
+                        if _v["attributable_to_a_seat"]:
+                            print(f"        {_rel}: {_v['hits'][0]['seat']} via "
+                                  f"{_v['hits'][0]['tool']}")
+                else:
+                    print("    NO SEAT IS SHOWN TO HAVE TOUCHED ANY OF THEM "
+                          "(operator's own edits are the ordinary cause).")
+                    print("    NOTE: an input preview is truncated, so this is "
+                          "'not shown', never 'did not'.")
+            except Exception as _at_exc:                  # noqa: BLE001
+                print(f"    attribution FAILED: {type(_at_exc).__name__}: "
+                      f"{_at_exc} -- the alarm stands unattributed")
         else:
             print("    canonical tree unchanged (7900 tracked files re-hashed)")
         panel_sandbox.teardown(sandbox)
