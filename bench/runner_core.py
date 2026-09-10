@@ -1162,6 +1162,11 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
 # Requiring the closing fence to sit alone on its line distinguishes a real fence
 # from one quoted mid-line inside a string. Non-greedy is retained so that a
 # response containing several FALSIFIER blocks still splits at the right places.
+#: Counts the LABEL, wherever it appears -- the denominator a recovery rate needs.
+#: Deliberately looser than the block patterns: a label with no fence at all is
+#: still a label the model wrote and the parser did not turn into a falsifier.
+_FALSIFIER_LABEL_COUNT_RE = re.compile(r"FALSIFIER:", re.IGNORECASE)
+
 _FALSIFIER_BLOCK_RE = re.compile(
     r"FALSIFIER:\s*```(?:python|py)?[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?=\r?\n|$)",
     re.DOTALL | re.IGNORECASE,
@@ -1359,6 +1364,70 @@ def _bounded_description(text: str, limit: int = _DESCRIPTION_LIMIT) -> str:
         return t
     return (t[:limit]
             + f" [...TRUNCATED at {limit:,} of {len(t):,} characters]")
+
+
+def falsifier_intake_telemetry(response: str) -> dict:
+    """What the intake parser SAW against what it RECOVERED, for one reply.
+
+    TASK 9.3. His ruling: "Study the parser behaviour in the next simulated run
+    and report." The parser could not be studied by a run, because it returned
+    blocks and kept no record of what it passed over -- a recovery rate needs a
+    denominator and there was none.
+
+    `labels_seen` counts `FALSIFIER:` labels in the raw text. `blocks_recovered`
+    counts what `extract_falsifiers` returns. Their difference is the drop, per
+    reply, and it is the quantity every figure in task 2.1 is made of: 26 of 69
+    across a run, 1 of 9 in the round that halted.
+
+    PURE TEXT, NO EXECUTION, AND IT DECIDES NOTHING. No gate reads it and no
+    status turns on it; it only records what was already happening unobserved.
+    """
+    text = response or ""
+    labels = len(_FALSIFIER_LABEL_COUNT_RE.findall(text))
+    # THE FAIR DENOMINATOR, and the raw one alone would overstate the drop.
+    # `FALSIFIER:` occurs in prose too -- a directive quoting the word, a model
+    # writing "FALSIFIER: none". Those are labels nobody could recover a block
+    # from. The 2.1 measurement used labels with a fenced block WITHIN 3 LINES,
+    # and that is the population a recovery rate is honestly over. Both are
+    # reported: the raw count bounds the drop above, this one measures it.
+    _lines = text.splitlines()
+    _fenced = 0
+    for _i, _l in enumerate(_lines):
+        if "falsifier:" not in _l.lower():
+            continue
+        # LOOK AHEAD, BUT STOP AT THE NEXT LABEL. A bare `FALSIFIER: none`
+        # sitting immediately above a fenced one would otherwise borrow that
+        # fence and be counted as recoverable, inflating the fair denominator
+        # and understating recovery. Found by a test that constructed exactly
+        # that adjacency; on real replies the 2 are usually separated by prose,
+        # which is why it survived the archive measurement unnoticed.
+        for _j in range(_i, min(_i + 4, len(_lines))):
+            if _j > _i and "falsifier:" in _lines[_j].lower():
+                break
+            if "```" in _lines[_j]:
+                _fenced += 1
+                break
+    by_key, ordered = extract_falsifiers(response or "")
+    strict = len({m.start() for m in _FALSIFIER_BLOCK_RE.finditer(response or "")})
+    tolerant = len({m.start() for m in
+                    _FALSIFIER_BLOCK_DESCRIBED_RE.finditer(response or "")})
+    recovered = len(ordered)
+    return {
+        "labels_seen": labels,
+        "labels_with_a_fence_within_3_lines": _fenced,
+        "blocks_recovered": recovered,
+        "dropped": max(0, labels - recovered),
+        "recovery_rate_over_raw_labels": (recovered / labels) if labels else None,
+        "recovery_rate_over_fenced_labels": (
+            (recovered / _fenced) if _fenced else None),
+        "by_pattern": {"strict": strict, "tolerant_companion": tolerant},
+        # The tolerant companion was ADDED, never substituted, so a block it
+        # alone recovers is a block the strict pattern lost. That number is the
+        # 2026-09-09 widening's own effect size, per reply.
+        "recovered_only_by_the_companion": max(0, recovered - strict),
+        "keyed": len(by_key),
+        "_decides_nothing": True,
+    }
 
 
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:

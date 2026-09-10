@@ -177,6 +177,7 @@ from dynamic_management import (
     ModelResponse,
 )
 from runner_core import (
+    falsifier_intake_telemetry,
     source_env,
     build_model_specs,
     parse_findings,
@@ -880,6 +881,27 @@ def study_programme_report(registry, cfg=None, findings=None) -> Dict[str, Any]:
                         "wired, so a run cannot distinguish them yet"),
         },
     }
+
+
+#: TASK 9.3. Per-run accumulation of what the intake parser saw against what it
+#: recovered. A module dict rather than a return value, because the 4 parse sites
+#: sit in different call paths and threading a counter through all of them would
+#: touch dispatch code for a statistic that decides nothing.
+_INTAKE_TALLY: Dict[str, int] = {}
+
+
+def _note_intake(response: str) -> None:
+    """Fold 1 reply's parser telemetry into the run tally. Never raises."""
+    try:
+        t = falsifier_intake_telemetry(response or "")
+        if not t["labels_seen"]:
+            return
+        _INTAKE_TALLY["replies_examined"] = _INTAKE_TALLY.get("replies_examined", 0) + 1
+        for k in ("labels_seen", "labels_with_a_fence_within_3_lines",
+                  "blocks_recovered", "recovered_only_by_the_companion"):
+            _INTAKE_TALLY[k] = _INTAKE_TALLY.get(k, 0) + t[k]
+    except Exception:                                     # noqa: BLE001
+        _INTAKE_TALLY["telemetry_errors"] = _INTAKE_TALLY.get("telemetry_errors", 0) + 1
 
 
 _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
@@ -8315,6 +8337,7 @@ def _inround_reask(
         rtext, relapsed = dispatch_to_model(
             mc, reask_prompt, model_cdsfl, wall_clock_limit=wall_limit)
         _record_throughput(mc.label, len(reask_prompt), relapsed)
+        _note_intake(rtext)
         rfindings = parse_findings(mc.label, round_idx, rtext)
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:
         _log(f"  in-round re-ask [{mc.label}]: retry dispatch failed "
@@ -8563,6 +8586,7 @@ def _dispatch_single_model(
         if fallback is not None:
             text, elapsed = fallback
             _record_throughput(mc.label, len(prompt), elapsed)
+            _note_intake(text)
             model_findings = parse_findings(mc.label, round_idx, text)
             logs_dir.mkdir(parents=True, exist_ok=True)
             save_output(
@@ -8606,6 +8630,7 @@ def _dispatch_single_model(
             mc, prompt, model_cdsfl, wall_clock_limit=wall_limit,
             enable_tools=enable_tools)
         _record_throughput(mc.label, len(prompt), elapsed)
+        _note_intake(text)
         model_findings = parse_findings(mc.label, round_idx, text)
         model_findings, text, _reasked = _inround_reask(
             mc, prompt, model_cdsfl, round_idx, text, model_findings,
@@ -8630,6 +8655,7 @@ def _dispatch_single_model(
             # the secondary route, not as a successful response.
             if text and text.strip():
                 _record_throughput(mc.label, len(prompt), elapsed)
+                _note_intake(text)
                 model_findings = parse_findings(mc.label, round_idx, text)
                 logs_dir.mkdir(parents=True, exist_ok=True)
                 save_output(
@@ -8666,6 +8692,7 @@ def _dispatch_single_model(
                 )
                 if text2 and text2.strip():
                     _record_throughput(mc.label, len(prompt), elapsed2)
+                    _note_intake(text2)
                     model_findings = parse_findings(mc.label, round_idx, text2)
                     logs_dir.mkdir(parents=True, exist_ok=True)
                     save_output(
@@ -11995,6 +12022,12 @@ def run_experiment(
     # silently reinstate the exposure that let a model read the key in Exp 48.
     set_panel_cwd(cfg.panel_cwd or None)
     # Carry it to the pool workers, which have their own thread-local.
+    # RESET PER RUN. A module-level tally that is never cleared reports run 2's
+    # figures as run 1 plus run 2 -- the exact defect a bare module global caused
+    # in the target-hash check, where run 2's first round compared against run
+    # 1's last hash and raised a mid-run mutation alarm with nothing mutated.
+    # Reproduced 2026-09-01; not repeated here.
+    _INTAKE_TALLY.clear()
     _PANEL_CWD_FOR_WORKERS["path"] = cfg.panel_cwd or None
 
     # Per-run reset for the target integrity guard (runway 0C.9). It is keyed by
@@ -14848,6 +14881,35 @@ def run_experiment(
         else:
             _log("  immune memory: RECORDING only — R_k(0) used the uniform "
                  f"prior {RK0_PI_BASE}; consumption is off for this experiment")
+
+    # ── TASK 9.3: WHAT THE INTAKE PARSER SAW AGAINST WHAT IT RECOVERED ───
+    # His ruling: "Study the parser behaviour in the next simulated run and
+    # report." It could not be studied, because it returned blocks and kept no
+    # record of what it passed over -- a recovery rate needs a denominator and
+    # there was none. Aggregated per run from the per-reply telemetry.
+    try:
+        _pt = {
+            "_what": "FALSIFIER labels seen against blocks recovered",
+            "_decides_nothing": True,
+            "labels_seen": 0, "labels_with_a_fence_within_3_lines": 0,
+            "blocks_recovered": 0, "recovered_only_by_the_companion": 0,
+            "replies_examined": 0,
+        }
+        _pt.update(_INTAKE_TALLY)
+        result["intake_parser"] = _pt
+        if _pt["labels_with_a_fence_within_3_lines"]:
+            _pt["recovery_rate_over_fenced_labels"] = (
+                _pt["blocks_recovered"] / _pt["labels_with_a_fence_within_3_lines"])
+        if _pt["labels_seen"]:
+            _pt["recovery_rate_over_raw_labels"] = (
+                _pt["blocks_recovered"] / _pt["labels_seen"])
+        _pt["reading"] = (
+            "the FENCED denominator is the honest one: a bare `FALSIFIER:` in "
+            "prose carries no block to recover. Over the archive the 2 differ "
+            "by a factor of 3, so quoting the raw rate alone overstates the drop")
+    except Exception as _pt_exc:                          # noqa: BLE001
+        result["intake_parser"] = {"error": f"{type(_pt_exc).__name__}: {_pt_exc}"}
+        _log(f"  intake parser telemetry FAILED: {_pt_exc}")
 
     # ── TASK 9.1: THE 6 SCHEDULED STUDY ITEMS ────────────────────────────
     # Emitted here, at the end of the run, because that is where a reader of the
