@@ -77,13 +77,22 @@ class TestTheScriptRuns:
 
 class TestP1NoPaidSeatWasEverDispatchedUnderTheRuling:
     def test_zero_paid_replies_in_any_round_under_section_p(self):
-        under_p = [(rnd, d) for rnd, d in _replies() if UNDER_P in rnd]
-        reason = corpus.shortfall(len(under_p), 10,
-                                  "panel seat replies under Section P")
-        if reason:
-            pytest.skip(reason)
-        paid = [(rnd, d["model"]) for rnd, d in under_p
-                if d.get("route") != "claude_cli"]
+        # NEVER GATED. Found 2026-09-11 by the fable seat in panel round 10 and
+        # reproduced before accepting: I had put this behind
+        # `corpus.shortfall(len(under_p), 10)` when making the FILE
+        # corpus-aware, so a checkout holding 1 to 9 replies -- a partial commit,
+        # a run in progress -- would SKIP a founder-reserved money constraint
+        # with a paid seat sitting in the data. The seat's falsifier put a
+        # `route="anthropic_api"` reply among 3 and watched the test skip past it.
+        #
+        # THE DISTINCTION I COLLAPSED. "Too few to CONCLUDE from" is a statistical
+        # statement and belongs to the anti-vacuity sibling below, which still
+        # skips honestly. "No paid seat was dispatched" is a SAFETY statement,
+        # meaningful at any n >= 1 and trivially true at n = 0. A corpus argument
+        # is a reason to doubt a rate, never a reason to stop looking for a
+        # violation that is right there in the records you do hold.
+        paid = [(rnd, d["model"]) for rnd, d in _replies()
+                if UNDER_P in rnd and d.get("route") != "claude_cli"]
         assert paid == [], f"a paid seat was dispatched under the ruling: {paid}"
 
     def test_the_rounds_under_the_ruling_exist_at_all(self):

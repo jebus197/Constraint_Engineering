@@ -53,6 +53,15 @@ def stop_reasons(pattern: str):
 _LOOKS_LIKE_A_FILE = re.compile(r"\.[A-Za-z0-9]{1,6}$")
 
 
+class GitCannotAnswer(RuntimeError):
+    """Raised when the tracked corpus cannot be identified at all.
+
+    A DISTINCT TYPE so the A8 section can refuse WITHOUT taking A19 down with it.
+    The seat's own first cut raised SystemExit and silenced a figure that was
+    perfectly measurable; that regression is what this class exists to prevent.
+    """
+
+
 def untracked_cited_paths(prefix: str = "bench/logs/"):
     """Cited paths under `prefix` that git does not track. Entry A8's figure."""
     cited = set()
@@ -71,8 +80,28 @@ def untracked_cited_paths(prefix: str = "bench/logs/"):
                 continue
     cited = {c.rstrip(".,);:") for c in cited}
     cited = {c for c in cited if _LOOKS_LIKE_A_FILE.search(c)}
-    tracked = set(subprocess.run(["git", "ls-files"], cwd=REPO,
-                                 capture_output=True, text=True).stdout.split())
+    # THE RETURN CODE IS PART OF THE ANSWER. Found 2026-09-11 by the cc2 seat in
+    # panel round 10, premise verified before acceptance: this read `.stdout` and
+    # ignored the exit status, so in a checkout with no `.git` -- the panel
+    # sandbox, a ZIP, a Zenodo archive -- `git ls-files` exits 128 with empty
+    # output, `tracked` becomes the empty set, and EVERY cited path counts as
+    # untracked. The script printed "127/127 = 100.0000%, Wilson [97.0640%,
+    # 100.0000%]": a fabricated figure with a confidence interval on it, in the
+    # direction that INFLATES the finding.
+    #
+    # It refuses rather than guessing, and refuses LOUDLY, because a figure that
+    # is 100% by construction is worse than no figure. The correct pattern was
+    # already in this repository, written the same day:
+    # `bench/archive_corpus.py` tests `out.returncode != 0`.
+    r = subprocess.run(["git", "ls-files"], cwd=REPO,
+                       capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        raise GitCannotAnswer(
+            f"`git ls-files` could not list this checkout (exit {r.returncode}: "
+            f"{(r.stderr or '').strip()[:120]}). Every cited path would count as "
+            f"untracked and the figure would read 100% by construction, not by "
+            f"measurement. Run this in a git checkout.")
+    tracked = set(r.stdout.split())
     untracked = sorted(c for c in cited if c not in tracked)
     return sorted(cited), untracked
 
@@ -119,10 +148,19 @@ def main() -> int:
     print("  growing corpus is guaranteed to drift, not merely unverifiable.")
 
     print("\n--- ENTRY A8: cited bench/logs/ paths that git does not track ---")
-    cited, untracked = untracked_cited_paths()
-    if not cited:
+    try:
+        cited, untracked = untracked_cited_paths()
+    except GitCannotAnswer as exc:
+        # REFUSE THIS FIGURE, KEEP THE OTHERS. A19's figure is measured from the
+        # archive and needs no git at all; taking it down with A8 would be a
+        # second defect fixing the first.
+        print(f"  REFUSING TO REPORT entry A8's figure: {exc}")
+        cited = untracked = None
+    if cited is not None and not cited:
         print("  no bench/logs/ paths are cited anywhere")
-        return 0
+        cited = untracked = None
+    if cited is None:
+        return _entry_a19()
     lo, hi = proportion_confint(len(untracked), len(cited), method="wilson")
     lo_c, hi_c = proportion_confint(len(untracked), len(cited), method="beta")
     print(f"  cited: {len(cited)}   untracked: {len(untracked)}")
@@ -146,6 +184,19 @@ def main() -> int:
     print(f"  over a different population and the 2 must not be quoted against")
     print(f"  each other.")
 
+    return _entry_a19()
+
+
+def _entry_a19() -> int:
+    """Entry A19's figure, EXTRACTED so entry A8 can refuse without it.
+
+    A19 is measured from the archive and needs no git at all. Keeping it
+    inline meant a git failure in A8 silenced a perfectly measurable
+    figure -- which is what the cc2 seat's own first cut did, and it caught
+    that regression itself before handing the fix back.
+    """
+    from statsmodels.stats.proportion import proportion_confint
+
     print("\n--- ENTRY A19: has S_k ever returned NO_SCORE? ---")
     total, counts = no_score_outcomes()
     if total:
@@ -166,6 +217,8 @@ def main() -> int:
     print("  evidence that exists on 1 machine only. The disposition -- track,")
     print("  relocate, or accept and label -- is the founder's; this is the count.")
     return 0
+
+
 
 
 if __name__ == "__main__":

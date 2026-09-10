@@ -4018,9 +4018,7 @@ def _retarget_falsifier(code: str, repo_root: Path, overlay_root: Path) -> Tuple
     """
     real = str(repo_root)
     text = code or ""
-    n = text.count(real)
-    if n:
-        text = text.replace(real, str(overlay_root))
+    n, text = _substitute_root(text, real, str(overlay_root))
 
     # REPLAYING AN ARCHIVED FALSIFIER IN A DIFFERENT CHECKOUT. Added 2026-09-10,
     # task A2.
@@ -4053,9 +4051,80 @@ def _retarget_falsifier(code: str, repo_root: Path, overlay_root: Path) -> Tuple
     for stale in foreign_repo_roots(text, repo_root):
         if stale == str(overlay_root) or stale == real:
             continue
-        n += text.count(stale)
-        text = text.replace(stale, str(overlay_root))
+        added, text = _substitute_root(text, stale, str(overlay_root))
+        n += added
     return text, n
+
+
+def _substitute_root(text: str, stale: str, overlay: str) -> Tuple[int, str]:
+    """Swap `stale` for `overlay`, but ONLY where the result stays inside it.
+
+    A `..`-ESCAPE THAT THE REBASE ITSELF CREATED, found 2026-09-11 by the fable
+    seat in panel round 10, reproduced independently before this was written:
+
+        before:  open('/Users/attacker/Constraint_Engineering/../../../etc/passwd')
+                 scan_falsifier_source -> [('a path outside the declared target', ...)]
+        after :  open('/private/var/folders/xx/overlay/../../../etc/passwd')
+                 scan_falsifier_source -> []            <- REFUSED becomes ALLOWED
+
+    `_USER_PATH` in `falsifier_verify.py:316` polices home- and volume-shaped
+    roots. Overlays are `tempfile.mkdtemp` under `/private/var/folders/...`,
+    which that rule never matched -- so stripping the `/Users/` prefix removed
+    the only thing the static guard keyed on, and the rewritten path normalises
+    to `/private/var/etc/passwd`, outside the overlay. The seat read
+    `/etc/passwd` end to end through it, 9,344 bytes, with no refusal.
+
+    THE OTHER SEAT REASONED THAT THE REDIRECT IS INWARD AND JUDGED IT BELOW
+    THRESHOLD. It executed the attack instead and was right. That disagreement is
+    preserved here because the lesson is the project's own: reasoning about a
+    containment boundary is not evidence about it.
+
+    THE FIX IS STRONGER THAN THE ONE PROPOSED, and deliberately. The seat's patch
+    refused a project path immediately followed by `/..`, which leaves
+    `/Users/x/Constraint_Engineering/bench/../../../etc/passwd` -- the same escape
+    with 1 component in front of the `..` -- still rebased. This normalises the
+    RESULT and substitutes only when it is genuinely under the overlay, so where
+    the `..` sits does not matter.
+
+    FAIL-CLOSED. A rejected substitution leaves the original absolute path in
+    place, so the static guard sees the form it does catch and refuses the
+    falsifier to a human. Nothing is executed on the strength of this function
+    deciding not to act.
+
+    IT ALSO COVERS THE PRE-EXISTING SUBSTITUTION, which had the same hole for
+    LIVE falsifiers -- the seat flagged that as out of scope and did not fix it.
+    Blocking an escape removes no capability: a path with `..` that stays inside
+    the overlay is still rebased, and there is a control for that.
+    """
+    if not stale or stale not in text:
+        return 0, text
+    out, i, n = [], 0, 0
+    while True:
+        j = text.find(stale, i)
+        if j < 0:
+            out.append(text[i:])
+            break
+        out.append(text[i:j])
+        k = j + len(stale)
+        # The rest of the path token: up to the first quote, whitespace or
+        # bracket. Deliberately the same character class the guard's own
+        # `_USER_PATH` uses to end a path.
+        end = k
+        while end < len(text) and text[end] not in "\"' \t\n\r\\)],;:":
+            end += 1
+        remainder = text[k:end]
+        candidate = os.path.normpath(overlay + remainder)
+        inside = (candidate == os.path.normpath(overlay)
+                  or candidate.startswith(os.path.normpath(overlay) + os.sep))
+        if inside:
+            out.append(overlay + remainder)
+            n += 1
+        else:
+            # LEFT ALONE ON PURPOSE. The stale absolute path survives, the
+            # static guard refuses it, and the finding goes to a human.
+            out.append(stale + remainder)
+        i = end
+    return n, "".join(out)
 
 
 def _absolute_target(target_rel: str, repo_root=None) -> str:

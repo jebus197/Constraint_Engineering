@@ -106,6 +106,62 @@ def line_mentions_archive_path(line: str, roots: Iterable[str] = ARCHIVE_ROOTS) 
 
 # ── This project's identity, for recognising its own tree named from elsewhere ──
 
+#: Names too generic to identify anything. A checkout in a directory called
+#: `repo` or `src` must not make every path ending `/repo` this project's tree.
+#: The panel sandbox copies to a directory literally named `repo`, so this is
+#: not hypothetical.
+_NOT_AN_IDENTITY = frozenset({
+    "", ".", "..", "repo", "repository", "src", "code", "project", "projects",
+    "main", "master", "tmp", "temp", "work", "workspace", "build", "dist",
+    "test", "tests", "app", "lib", "home", "user", "data", "output", "sandbox",
+    "checkout", "clone", "git",
+})
+
+#: The tracked file that DECLARES this project's home, and the only one read.
+#: A prose scan would be wrong: `PAPER.md` cites github.com/jebus197/OpenBrain
+#: and github.com/jebus197/Project_Genesis, and both would become identities of
+#: this project. `.zenodo.json` names its own repository and nothing else.
+DECLARED_IDENTITY_FILE = ".zenodo.json"
+_GITHUB_REPO = re.compile(r"github\.com/[\w.-]+/([\w.-]+?)(?:\.git)?/?$")
+
+
+def declared_project_names(repo_root: "os.PathLike[str] | str | None" = None
+                           ) -> set[str]:
+    """This project's name as the REPOSITORY ITSELF declares it.
+
+    WHY A THIRD TIER, and it is the one that matters most. Found 2026-09-11 by
+    the cc2 seat in panel round 10, premise verified before acceptance:
+    `bench/panel_sandbox.py:43` is `_NEVER_COPY = frozenset({".git"})`, so the
+    project's OWN review sandbox has no git metadata at all -- and neither does
+    a ZIP download, a Zenodo archive, or a vendored copy. In every one of those
+    the git remote cannot answer and the identity collapsed to the folder name,
+    which for the sandbox is the literal string "repo". The A2 rebase then
+    recognised 0 of the 35 stale paths it exists to rebase: an addition nothing
+    reaches, in the fix for the previous instance of the same defect.
+
+    A TRACKED FILE IS CARRIED BY EVERY DISTRIBUTION FORM, which is exactly the
+    property the other 2 tiers lack.
+    """
+    from pathlib import Path
+
+    root = Path(repo_root) if repo_root else Path(__file__).resolve().parents[1]
+    f = root / DECLARED_IDENTITY_FILE
+    if not f.is_file():
+        return set()
+    try:
+        import json
+        data = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    out = set()
+    for rel in (data.get("related_identifiers") or []):
+        ident = (rel or {}).get("identifier") or ""
+        m = _GITHUB_REPO.search(str(ident).strip())
+        if m and m.group(1).lower() not in _NOT_AN_IDENTITY:
+            out.add(m.group(1))
+    return out
+
+
 def project_names(repo_root: "os.PathLike[str] | str | None" = None
                   ) -> tuple[set[str], str]:
     """The names a checkout of THIS project answers to, read from the repository.
@@ -137,6 +193,11 @@ def project_names(repo_root: "os.PathLike[str] | str | None" = None
     own = Path(__file__).resolve().parents[1]
     root = Path(repo_root) if repo_root else own
     names, source = set(), "directory"
+
+    declared = declared_project_names(root) or declared_project_names(own)
+    if declared:
+        names |= declared
+        source = "declared"
     try:
         url = subprocess.run(["git", "config", "--get", "remote.origin.url"],
                              cwd=root, capture_output=True, text=True,
@@ -152,16 +213,27 @@ def project_names(repo_root: "os.PathLike[str] | str | None" = None
                 base = ""
         if base.endswith(".git"):
             base = base[:-4]
-        if base:
+        if base and base.lower() not in _NOT_AN_IDENTITY:
             names.add(base)
-            source = "remote"
-    names.add(root.name)
+            if source == "directory":
+                source = "remote"
+    # THE FOLDER NAME IS THE WEAKEST TIER AND IS NOW FILTERED. A checkout in a
+    # directory called `repo` -- which is what the panel sandbox creates -- would
+    # otherwise make every absolute path ending `/repo` this project's tree, and
+    # the rebase would rewrite it. Nothing is lost: a project genuinely named
+    # `repo` is still recognised by the declared or remote tier.
+    if root.name.lower() not in _NOT_AN_IDENTITY:
+        names.add(root.name)
     if root != own:
         extra, extra_source = project_names(own)
         names |= extra
-        if extra_source == "remote":
-            source = "remote"
+        if _SOURCE_RANK[extra_source] > _SOURCE_RANK[source]:
+            source = extra_source
     return names, source
+
+
+#: Strongest first. Used only to report WHICH tier answered, never to choose.
+_SOURCE_RANK = {"directory": 0, "remote": 1, "declared": 2}
 
 
 def foreign_repo_roots(text: str, repo_root: "os.PathLike[str] | str | None" = None

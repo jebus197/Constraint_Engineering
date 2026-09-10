@@ -108,32 +108,23 @@ def is_location_artefact(violations) -> bool:
 
 
 def project_names() -> tuple[set[str], str]:
-    """This project's identity, read from the repository, never from the folder.
+    """DELEGATED to `bench.repo_paths`, which is the one place that decides.
 
-    Returns the candidate names and a 1-word note on where they came from, so a
-    reader can see whether the identity was strong (the remote, which a clone
-    carries) or weak (the directory, which anything can rename).
+    THIS WAS A SECOND IMPLEMENTATION AND IT DEFEATED THE FIX TO THE FIRST.
+    Found 2026-09-11 by the cc2 seat in panel round 10: repairing the canonical
+    predicate left this script's figure unmoved, because it re-derived identity
+    locally. The repository names that shape itself at
+    `bench/execution_based_matcher.py:330` -- "a second implementation of a rule,
+    which is a second rule" -- and this script's own docstring already cited
+    `project_names()` as the authority while quietly not using it.
+
+    THE REMOVAL IS JUSTIFIED BY MEASUREMENT, as the additive standard requires:
+    in a checkout with no `.git` the local copy gave 33 of 640 real rejections
+    and the shared predicate gives 2 of 640, which is the figure the maintainer's
+    tree produces. The copy was wrong; the module is right.
     """
-    import subprocess
-    names, source = set(), "directory"
-    try:
-        url = subprocess.run(["git", "config", "--get", "remote.origin.url"],
-                             cwd=REPO, capture_output=True, text=True,
-                             timeout=30).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        url = ""
-    if url:
-        # A local-path remote resolves; a URL just gets its basename.
-        base = pathlib.Path(url.rstrip("/")).name
-        if base in (".", ""):
-            base = pathlib.Path(url).resolve().name
-        if base.endswith(".git"):
-            base = base[:-4]
-        if base:
-            names.add(base)
-            source = "remote"
-    names.add(REPO.name)
-    return names, source
+    from bench.repo_paths import project_names as _pn
+    return _pn(REPO)
 
 
 _PROJECT_NAMES, _NAME_SOURCE = project_names()
