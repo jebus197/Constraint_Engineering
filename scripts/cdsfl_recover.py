@@ -180,6 +180,14 @@ def first_read_lines(root: Path) -> list[str]:
     # and cdsfl_sv.py, all of which already carry the ruling.
     targets = [
         (
+            root / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md",
+            "MASTER TASK LIST — the canonical standing work list, marker-checked",
+        ),
+        (
+            root / "experimental_notes" / "CDSFL_OUTCOMES_LOG.md",
+            "OUTCOMES COMPANION — what was done, what it cost, what can be undone",
+        ),
+        (
             root / "experimental_notes" / "CDSFL_Agent_Operational_Plan.md",
             "OPERATIONAL TRACKER (canonical) — resume pointer + per-experiment matrix",
         ),
@@ -189,22 +197,55 @@ def first_read_lines(root: Path) -> list[str]:
         ),
         (
             root / "experimental_notes" / "OUTSTANDING_QUEUE_to_BR2.md",
-            "live work queue to Bench Run 2",
+            "work queue to Bench Run 2",
         ),
     ]
+    # NEWEST FIRST, AND SAY HOW STALE THE REST ARE.
+    #
+    # WHY, and it cost the founder a drive home. On 2026-09-09 at 23:00 this
+    # section named the operational tracker FIRST and an assistant read a line
+    # there saying the answer-key sealing still awaited him. He had driven back
+    # from his hotel and done it himself 2 days earlier, at the assistant's own
+    # request. The CORRECT record was in CDSFL_MASTER_TASK_LIST.md, written 8
+    # hours before the restore -- and that file was not in this section at all.
+    #
+    # So the restore read the OLDER document first and treated it as
+    # authoritative, and the freshest one was not offered. Two changes: the task
+    # list and its outcomes companion are now first-class FIRST READ entries,
+    # and everything is ordered by modification time with the age gap stated, so
+    # a reader who meets a disagreement knows which document to believe.
+    #
+    # OUTSTANDING_QUEUE_to_BR2.md is the standing example rather than a
+    # hypothetical: it was described here as the "live work queue" while being
+    # 14 days old, with every one of the founder's messages since arriving after
+    # it was last written. A document written before he spoke cannot record what
+    # he said.
+    existing = [(p, d) for p, d in targets if p.exists()]
+    missing = [(p, d) for p, d in targets if not p.exists()]
+    existing.sort(key=lambda t: t[0].stat().st_mtime, reverse=True)
+
     lines = [
         "  Read these BEFORE anything below. This script reports measured state;",
         "  the tracker names the exact resume point, which no section here does.",
         "",
+        "  ORDERED NEWEST FIRST. Where 2 of these disagree, the fresher one wins",
+        "  unless it says otherwise. A stale document is not a second opinion.",
+        "",
     ]
-    for path, desc in targets:
-        if path.exists():
-            lines.append(f"     {path}")
-            lines.append(f"        {desc}")
-            lines.append(f"        last modified {_mtime_iso(path)}")
-        else:
-            lines.append(f"  !! MISSING: {path}")
-            lines.append(f"        {desc} — this file is REQUIRED reading and is absent")
+    newest = existing[0][0].stat().st_mtime if existing else None
+    for path, desc in existing:
+        age_h = (newest - path.stat().st_mtime) / 3600.0 if newest else 0.0
+        lines.append(f"     {path}")
+        lines.append(f"        {desc}")
+        stale = ""
+        if age_h >= 24:
+            stale = f"   <-- {age_h / 24:.1f} DAYS older than the newest above"
+        elif age_h >= 1:
+            stale = f"   <-- {age_h:.1f} h older than the newest above"
+        lines.append(f"        last modified {_mtime_iso(path)}{stale}")
+    for path, desc in missing:
+        lines.append(f"  !! MISSING: {path}")
+        lines.append(f"        {desc} — this file is REQUIRED reading and is absent")
     return lines
 
 

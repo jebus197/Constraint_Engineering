@@ -466,7 +466,8 @@ Verbatim: *"Zenodo key switching can go at the very bottom of this list. It isn'
 <!-- task: V4 | state: OPEN | status: PROPOSED -->
 
 **V5. Make `rs` prefer the FRESHER source, not the older one.** The restore protocol names the operational tracker FIRST READ. On 2026-09-09 at 23:00 it fed the assistant a stale line saying the answer-key sealing awaited the founder — he had driven home from his hotel and done it himself on 2026-09-07 at 22:03 — and the assistant repeated it back to him. **The correct record was in the master task list, written 8 hours earlier.** The restore reads the older document first and treats it as authoritative.
-<!-- task: V5 | state: OPEN | status: PROPOSED -->
+<!-- task: V5 | state: OPEN | status: TESTED | evidence: bench/tests/test_first_read_prefers_the_fresher_source_2026-09-10.py -->
+**BUILT AND TESTED 2026-09-10, NOT DONE — the panel review section P requires has not run on it.** FIRST READ now offers `CDSFL_MASTER_TASK_LIST.md` and `CDSFL_OUTCOMES_LOG.md`, which were absent from it, orders every entry by modification time newest-first, and labels each with how far behind the newest it is. It states the rule for a disagreement in terms: *the fresher one wins unless it says otherwise; a stale document is not a second opinion.* **The standing example is not hypothetical:** `OUTSTANDING_QUEUE_to_BR2.md` was described there as the "live work queue" while **14 days old**, with every one of the founder's messages since arriving after it was last written. 9 tests, 5 mutations, all caught — the last only after a fixture was rebuilt, because the declared order and the freshness order coincided in the live tree and so could not tell a sorted list from an unsorted one.
 
 ---
 

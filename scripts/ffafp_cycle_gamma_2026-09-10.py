@@ -62,16 +62,44 @@ def gate(counts: list[int]) -> tuple[float, bool, bool, str]:
     return gamma, gamma_side, count_side, "KEEP GOING"
 
 
+USAGE = ("usage: ffafp_cycle_gamma_2026-09-10.py [--record <pass-label> "
+         "<above-threshold-findings>]\n"
+         "  with no arguments: report the series and the two-sided gate verdict")
+
+
 def main() -> int:
+    # AN UNRECOGNISED ARGUMENT MUST NOT READ AS SUCCESS.
+    #
+    # Caught by `test_an_unknown_flag_is_rejected_loudly` on this script's first
+    # suite run. It read `sys.argv[1] == "--record"` and ignored everything else,
+    # so `--this-flag-does-not-exist` printed a report and exited 0. That is the
+    # class recorded in `feedback_help_must_never_cost_money`, where 15 of 17
+    # runners billed a live dispatch on an unrecognised argument. Nothing here
+    # costs money, but a caller who mistypes a flag and reads exit 0 believes a
+    # pass was recorded when none was.
+    argv = sys.argv[1:]
+    if argv and argv[0] not in ("--record", "-h", "--help"):
+        print(f"unrecognised argument: {argv[0]}\n{USAGE}", file=sys.stderr)
+        return 2
+    if argv and argv[0] in ("-h", "--help"):
+        print(USAGE)
+        return 0
+
     d = load()
-    if len(sys.argv) > 1 and sys.argv[1] == "--record":
-        if len(sys.argv) < 4:
-            print("usage: --record <pass-label> <above-threshold-findings>", file=sys.stderr)
+    if argv and argv[0] == "--record":
+        if len(argv) < 3:
+            print(USAGE, file=sys.stderr)
             return 2
-        d["passes"].append({"label": sys.argv[2], "findings": int(sys.argv[3])})
+        try:
+            findings = int(argv[2])
+        except ValueError:
+            print(f"findings must be an integer, got {argv[2]!r}\n{USAGE}",
+                  file=sys.stderr)
+            return 2
+        d["passes"].append({"label": argv[1], "findings": findings})
         SERIES.parent.mkdir(parents=True, exist_ok=True)
         SERIES.write_text(json.dumps(d, indent=1) + "\n")
-        print(f"recorded: {sys.argv[2]} -> {sys.argv[3]} above-threshold finding(s)")
+        print(f"recorded: {argv[1]} -> {findings} above-threshold finding(s)")
 
     counts = [p["findings"] for p in d["passes"]]
     print(f"\ncycle: {d.get('cycle', 'unnamed')}")
