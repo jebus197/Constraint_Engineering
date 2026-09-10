@@ -72,19 +72,33 @@ def test_break_even_is_the_actual_fixed_point_of_compute_rk(rr):
 
 
 def test_closed_form_agrees_with_independent_root_finding(rr):
-    """Two tools, per the 2026-04-21 cross-verification rule: brentq and mpmath."""
+    """Two tools, per the 2026-04-21 cross-verification rule: brentq and mpmath.
+
+    PINS ITS OWN PRECISION (2026-09-10). `mp.findroot` reads mpmath's GLOBAL
+    `mp.dps`, so this test's result depended on whatever any earlier test in the
+    process had left there. On 2026-09-10 3 new test files set it to 30 and this
+    test failed in the full suite -- and only in the full suite -- with "Could
+    not find root within given tolerance", because at 30 digits findroot demands
+    a tolerance this function cannot reach. Those files now restore it, and this
+    test no longer trusts them to: it sets what it needs and puts it back.
+    """
     checked = 0
-    for q, R, nb, nf in _grid():
-        f = lambda s: rr.compute_rk(R, q, s, nb, nf) - R          # noqa: E731
-        if f(0.0) * f(1.0) >= 0:
-            continue
-        numeric = brentq(f, 0.0, 1.0, xtol=1e-14)
-        mp_root = float(mp.findroot(lambda s: rr.compute_rk(R, q, float(s), nb, nf) - R, 0.5))
-        closed = rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R)
-        assert closed is not None, (q, R, nb, nf)
-        assert abs(closed - numeric) < 1e-9, (q, R, nb, nf, closed, numeric)
-        assert abs(closed - mp_root) < 1e-9, (q, R, nb, nf, closed, mp_root)
-        checked += 1
+    _dps_before = mp.mp.dps
+    mp.mp.dps = 15
+    try:
+      for q, R, nb, nf in _grid():
+          f = lambda s: rr.compute_rk(R, q, s, nb, nf) - R          # noqa: E731
+          if f(0.0) * f(1.0) >= 0:
+              continue
+          numeric = brentq(f, 0.0, 1.0, xtol=1e-14)
+          mp_root = float(mp.findroot(lambda s: rr.compute_rk(R, q, float(s), nb, nf) - R, 0.5))
+          closed = rr.sk_break_even(nu_b=nb, nu_f=nf, q=q, R=R)
+          assert closed is not None, (q, R, nb, nf)
+          assert abs(closed - numeric) < 1e-9, (q, R, nb, nf, closed, numeric)
+          assert abs(closed - mp_root) < 1e-9, (q, R, nb, nf, closed, mp_root)
+          checked += 1
+    finally:
+        mp.mp.dps = _dps_before
     assert checked >= 50
 
 

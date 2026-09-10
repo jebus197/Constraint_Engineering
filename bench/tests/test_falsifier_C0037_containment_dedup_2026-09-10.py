@@ -65,6 +65,26 @@ GENERAL = "SS = z * sqrt(LT * sigma_d^2 + d_bar^2 * sigma_LT^2)."
 SPECIAL = "SS = z * sigma_d * sqrt(LT)"
 
 
+
+@pytest.fixture(autouse=True)
+def _restore_mpmath_precision():
+    """Restore mpmath's GLOBAL precision after every test in this file.
+
+    `mp.mp.dps = 30` is a module-level setting that outlives the test that made
+    it. On 2026-09-10 it broke `test_sk_break_even_2026-09-06.py` in the full
+    suite: `mp.findroot` at 30 digits demanded a tolerance it could not reach and
+    raised "Could not find root within given tolerance". The failure appeared
+    only in a full run, never in isolation, which is the signature of exactly
+    this. A test that changes interpreter state for every test after it is a
+    defect whatever it asserts.
+    """
+    import mpmath as _mp
+    _before = _mp.mp.dps
+    try:
+        yield
+    finally:
+        _mp.mp.dps = _before
+
 class TestTheMechanism:
     def test_a_short_contained_line_is_called_a_duplicate(self):
         short = "Never delete a git ref without the founder present."

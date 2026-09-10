@@ -61,6 +61,26 @@ def _blocks():
     return out
 
 
+
+@pytest.fixture(autouse=True)
+def _restore_mpmath_precision():
+    """Restore mpmath's GLOBAL precision after every test in this file.
+
+    `mp.mp.dps = 30` is a module-level setting that outlives the test that made
+    it. On 2026-09-10 it broke `test_sk_break_even_2026-09-06.py` in the full
+    suite: `mp.findroot` at 30 digits demanded a tolerance it could not reach and
+    raised "Could not find root within given tolerance". The failure appeared
+    only in a full run, never in isolation, which is the signature of exactly
+    this. A test that changes interpreter state for every test after it is a
+    defect whatever it asserts.
+    """
+    import mpmath as _mp
+    _before = _mp.mp.dps
+    try:
+        yield
+    finally:
+        _mp.mp.dps = _before
+
 class TestTheHelperKnowsExactlyFourTopics:
     def test_it_returns_none_for_anything_else(self):
         for text in ("never infer missing data",
