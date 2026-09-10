@@ -235,10 +235,44 @@ experiment scale is **not** defensible on the published terms. Under
 **HOW WOLFRAM IS WIRED (settled 2026-08-02 22:15 after a failed restart).**
 Two routes, and the split is forced by a measured constraint, not preference:
 
-  * **`WolframCloud` MCP server** — `npx -y mcp-remote https://agenttools.wolfram.com/mcp`.
-    Claude Desktop REJECTS a bare `{"url": ...}` ("not valid MCP server configurations
-    and were skipped"); the stdio shim is the supported form and is verified working.
-    No credential. Use for ordinary cross-verification.
+  * **`WolframCloud` MCP server — RETIRED 2026-09-10 BY MEASUREMENT. DO NOT USE IT
+    AND DO NOT REPAIR IT.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`.
+    **The local Engine via `wolframscript` in Bash is now the ONLY Wolfram route.**
+
+    **Retired under the additive standard's removal clause, which requires a
+    COMMITTED MEASUREMENT showing the replacement dominates on a named property.**
+    The property is availability. Script:
+    `scripts/wolfram_route_health_2026-09-10.py`, which reads the desktop
+    application's own logs and never writes to them.
+
+    **It did not always fail; it died on a date.** Across 34 log files, 64
+    connection attempts: **before 2026-09-04, 1 failed of 21, 4.7619%**, Wilson
+    [0.8456%, 22.6694%]. **From 2026-09-04, 42 failed of 43, 97.6744%**, Wilson
+    [87.9410%, 99.5883%], with exactly **1** successful attach in that whole
+    period. Fisher exact **p = 2.199086e-14, odds ratio 840**, cross-checked by a
+    chi-square with Yates correction at p = 8.709349e-13 and an mpmath exact
+    hypergeometric tail agreeing with scipy to 2.2e-14.
+
+    **The denominator was wrong on the first attempt and the correction matters.**
+    Counting every line naming the route gave 156 of 1176, 13.27% — a figure with
+    no meaning, because it swept in "Shutting down MCP Server", "Closing" and
+    every routine announcement. Only an attach that announced its tools, or a
+    manager that reported a failure to connect, is an attempt.
+
+    **Entry 0.2's own figure is superseded.** It said "39 connection failures ...
+    against 2 successes in the whole log". There are 21 successful attaches, not
+    2. The entry's conclusion was right and its arithmetic was not, which is why
+    the script is committed beside the number.
+
+    **Retained as history, because it explains the shape and not the choice:**
+    Claude Desktop rejected a bare `{"url": ...}` ("not valid MCP server
+    configurations and were skipped"), so the stdio shim was the supported form.
+    That is why the entry looked as it did. It is no longer a route to use.
+
+    **One config change remains and it is the founder's**, because it edits his
+    desktop application's own settings: removing the `WolframCloud` key from
+    `~/Library/Application Support/Claude/claude_desktop_config.json`, which stops
+    the app retrying a dead endpoint every few minutes.
   * **Local Wolfram Engine via `wolframscript` in Bash, ON DEMAND** — NOT as an MCP
     server. Use when a computation needs more than ~26 s or needs session state.
 
