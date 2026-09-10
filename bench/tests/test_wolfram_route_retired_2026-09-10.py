@@ -100,15 +100,69 @@ class TestTheClassifierCountsATTEMPTS:
 
 
 class TestTheRetirementIsRecorded:
-    def test_the_constraint_box_marks_it_retired(self):
+    def test_the_constraint_box_marks_it_disabled(self):
         box = BOX.read_text(encoding="utf-8")
-        assert "WolframCloud` MCP server — RETIRED" in box, (
+        assert "WolframCloud` MCP server — DISABLED" in box, (
             "the tool constraint box still offers a route measured at 97.67% "
             "failure; an agent reading it would use the dead endpoint")
 
-    def test_the_local_engine_is_named_as_the_route(self):
+    def test_it_does_not_overstate_the_retirement(self):
+        """CORRECTED 2026-09-10 on the founder's ruling, and the correction matters.
+
+        An earlier version of the constraint box said "RETIRED ... DO NOT USE IT
+        AND DO NOT REPAIR IT". He has emailed Wolfram about the MCP licence,
+        which is separate from the desktop Engine licence, and his position is
+        that the service "has its uses. For example you can talk to it in natural
+        language and get useful output back." Disabling a dead endpoint is not a
+        verdict on the service, and the document must not read as one.
+        """
         box = BOX.read_text(encoding="utf-8")
-        assert "ONLY Wolfram route" in box
+        # SCOPED TO THE DIRECTIVE LINE, not the whole document -- and the first
+        # version was not, which is why it failed. The correction paragraph
+        # QUOTES the old wording in order to retract it, so a document-wide
+        # search cannot tell a live command from a cited one. That is the same
+        # instrument error the panel-brief validator needed fixing for on
+        # 2026-09-09 and the note linter needed verbatim markers for on
+        # 2026-09-10: a whole-file search is the wrong tool for a question
+        # about one line.
+        headline = [ln for ln in box.splitlines()
+                    if "`WolframCloud` MCP server" in ln and ln.strip().startswith("*")]
+        assert headline, "the WolframCloud bullet is gone from the constraint box"
+        assert "DO NOT USE" not in headline[0].upper(), (
+            f"the directive line forbids a route the founder is actively trying "
+            f"to restore: {headline[0]}")
+        assert "DISABLED" in headline[0]
+        assert "NAMED LOSS" in box, (
+            "the capability lost -- natural language in, useful output back -- "
+            "must be named, because wolframscript does not offer it")
+
+    def test_the_desktop_config_no_longer_carries_the_dead_entry(self):
+        """The alert-stopping half, done on his explicit instruction."""
+        import json, os
+        cfg = Path(os.path.expanduser(
+            "~/Library/Application Support/Claude/claude_desktop_config.json"))
+        if not cfg.is_file():
+            pytest.skip("no desktop application config on this machine")
+        d = json.loads(cfg.read_text())
+        assert "WolframCloud" not in d.get("mcpServers", {}), (
+            "the app is still configured to retry a dead endpoint every few minutes")
+
+    def test_the_removed_entry_is_recoverable(self):
+        """A removal that cannot be undone is a deletion, and this is not one."""
+        import json
+        rec = ROOT / "experimental_notes" / "evidence" / \
+            "wolfram_mcp_entry_removed_2026-09-10.json"
+        assert rec.is_file(), "the removed entry was not recorded anywhere"
+        d = json.loads(rec.read_text(encoding="utf-8"))
+        assert d["entry"]["WolframCloud"]["command"] == "npx"
+        assert "agenttools.wolfram.com/mcp" in " ".join(
+            d["entry"]["WolframCloud"]["args"]), "the endpoint URL was not preserved"
+        assert Path(d["backup"]).is_file(), "the named backup does not exist"
+
+    def test_the_local_engine_is_named_as_the_working_route(self):
+        box = BOX.read_text(encoding="utf-8")
+        assert "only WORKING Wolfram route today" in box, (
+            "the box must name what an agent should actually use")
 
     def test_the_retirement_cites_its_producing_script(self):
         """`measured-rate-travels-with-its-script`, applied to a REMOVAL.

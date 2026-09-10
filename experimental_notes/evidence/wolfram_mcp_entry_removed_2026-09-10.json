@@ -1,0 +1,20 @@
+{
+  "what": "The WolframCloud MCP server entry, removed from the desktop application config",
+  "removed_from": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.json",
+  "removed_at": "2026-09-10T16:18+01:00",
+  "removed_by": "CC1, on the founder's explicit instruction, he being away from the machine",
+  "backup": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.json.backup_2026-09-10_1616",
+  "why": "It failed 42 of 43 connection attempts from 2026-09-04, against 1 of 21 before that date. Fisher exact p = 2.199086e-14, odds ratio 840. The app retried it every few minutes and logged an error each time. Measured by scripts/wolfram_route_health_2026-09-10.py.",
+  "NOT_A_JUDGEMENT_ON_THE_SERVICE": "The founder has emailed Wolfram about the MCP server licence, which is SEPARATE from the desktop Engine licence. The capability it provided is real and is named as a loss: natural language in, useful output back, which wolframscript does not offer. This entry is removed because it is currently DEAD, not because the route is unwanted. Task W1 carries the follow-up.",
+  "to_restore": "paste the entry below back under mcpServers and restart the desktop app",
+  "entry": {
+    "WolframCloud": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://agenttools.wolfram.com/mcp"
+      ]
+    }
+  }
+}

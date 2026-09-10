@@ -235,9 +235,25 @@ experiment scale is **not** defensible on the published terms. Under
 **HOW WOLFRAM IS WIRED (settled 2026-08-02 22:15 after a failed restart).**
 Two routes, and the split is forced by a measured constraint, not preference:
 
-  * **`WolframCloud` MCP server — RETIRED 2026-09-10 BY MEASUREMENT. DO NOT USE IT
-    AND DO NOT REPAIR IT.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`.
-    **The local Engine via `wolframscript` in Bash is now the ONLY Wolfram route.**
+  * **`WolframCloud` MCP server — DISABLED 2026-09-10 BECAUSE IT IS DEAD, NOT
+    BECAUSE IT IS UNWANTED.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`,
+    and the entry was removed from the desktop application's config on the
+    founder's explicit instruction, he being away from the machine. **The local
+    Engine via `wolframscript` in Bash is the only WORKING Wolfram route today.**
+
+    **The founder's position, and it corrects an earlier overstatement here.** An
+    earlier version of this block said "RETIRED ... DO NOT USE IT AND DO NOT
+    REPAIR IT". That went further than the evidence and further than his ruling.
+    He has emailed Wolfram about the MCP server licence, **which is separate from
+    the desktop Engine licence**, and in his words the service *"has its uses. For
+    example you can talk to it in natural language and get useful output back."*
+    **That capability is a NAMED LOSS**: `wolframscript` takes Wolfram Language,
+    not English. Disabling a dead endpoint is not a verdict on the service.
+
+    **Restoring it is one paste.** The exact invocation, the backup path and the
+    reason are recorded at
+    `experimental_notes/evidence/wolfram_mcp_entry_removed_2026-09-10.json`.
+    Follow-up is task W1.
 
     **Retired under the additive standard's removal clause, which requires a
     COMMITTED MEASUREMENT showing the replacement dominates on a named property.**
@@ -269,10 +285,13 @@ Two routes, and the split is forced by a measured constraint, not preference:
     configurations and were skipped"), so the stdio shim was the supported form.
     That is why the entry looked as it did. It is no longer a route to use.
 
-    **One config change remains and it is the founder's**, because it edits his
-    desktop application's own settings: removing the `WolframCloud` key from
-    `~/Library/Application Support/Claude/claude_desktop_config.json`, which stops
-    the app retrying a dead endpoint every few minutes.
+    **That config change is DONE, 2026-09-10 16:18 BST**, on his explicit
+    instruction: *"Edit the file to stop the alerts ... I'm not at home so I can't
+    do it."* The `WolframCloud` key is gone from
+    `~/Library/Application Support/Claude/claude_desktop_config.json`, the file
+    was validated as JSON before and after, every other key was asserted
+    unchanged, and a timestamped backup sits beside it. The app no longer retries
+    a dead endpoint every few minutes.
   * **Local Wolfram Engine via `wolframscript` in Bash, ON DEMAND** — NOT as an MCP
     server. Use when a computation needs more than ~26 s or needs session state.
 
