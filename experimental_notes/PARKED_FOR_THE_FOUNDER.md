@@ -83,3 +83,21 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **One piece of good news for decision 15.** The finding text could not be read from the registry — the stored description is truncated at 200 characters and stops mid-word at *"That helpe"*, and the run's `descriptions_backfill.json` holds 18 of 67 entries and not this one. **The full text survives intact in the raw reply** `r4_deepseek_20260606T213045Z.json`. So the archived truncation damage is **repairable from the replies rather than lost**, which is better than decision 15 currently assumes. A test asserts both halves so the recovery route cannot quietly disappear.
 
 *Parked 2026-09-10T20:28:03+01:00.*
+
+## C0001: the coherence pruner makes the metric it optimises WORSE, and its exits are dead code
+
+**Raised by CC2 on 2026-06-06 at severity 0.90 — the highest of the 28 — recorded UNCONFIRMED and UNTOOLABLE, never checked. Confirmed 2026-09-10 and PROVED, not merely observed.**
+
+`_prune_for_coherence` deletes SOFT directive text to bring `constraint_density` under a budget. Density is `_count_constraints(policy) / token_estimate`, and **the numerator is counted from the TOML policy dict, which pruning cannot touch**. So removing text shrinks the denominator and **density rises with every prune**.
+
+**Proved unreachable, 2 tools.** SymPy: `d(C/t)/dt = -C/t^2`, negative for positive quantities. z3: with `C` fixed, `t1 <= t0`, and the entry condition `C/t0 > budget`, asking whether `C/t1 <= budget` can hold returns **UNSAT**. **Both early exits in the function are dead code.** A control matters here and it holds: the same z3 query with a *recomputed* count that may fall returns **SAT**, so the unreachability is caused specifically by the fixed numerator, not by the loop's shape.
+
+**Demonstrated on a real composition** (deepseek_v3, software): 7,090 chars and density 0.011851 before, 3,994 chars and density 0.021042 after — **1.7756 times worse** against a budget of 0.01 — with every prunable packet exhausted and the domain directive deleted outright. The graduated design never operates: it always strips everything prunable, then exits worse than it started.
+
+**The harm, stated carefully: 10 of the 50 compositions that HAD a domain directive lose it entirely: 20.0000%**, Wilson [11.2438%, 33.0371%], Clopper-Pearson [10.0302%, 33.7183%], statsmodels and scipy agreeing to 0.0e+00. A first pass of mine counted 50 of 90 compositions with no domain packet afterwards and would have reported 55.5556% — but 40 of those never had one, because no directive file exists for that domain. **Absent is not deleted**, and the overstatement would have been 2.8-fold.
+
+**CC2's downstream point is worth your attention separately:** `calibrate_coherence_thresholds` observes these densities, so it is calibrating against a curve that is inverted by construction — high density correlated with *less* directive text.
+
+**NOT APPLIED, same reason as C0040, C0037 and C0036:** the repair changes which packets survive composition, so it changes the prompt every model receives and invalidates replay of archived runs. `bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py`, 6 tests.
+
+*Parked 2026-09-10T20:31:06+01:00.*
