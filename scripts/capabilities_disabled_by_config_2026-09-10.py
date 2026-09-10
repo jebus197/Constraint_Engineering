@@ -89,6 +89,31 @@ def read_fields(src: str) -> set[str]:
     return names
 
 
+def explanation(data: dict, leaf: str) -> str:
+    """The sibling `_<field>_note` that explains an off-switch, if one exists.
+
+    ADDED 2026-09-10 17:35 BST, AFTER THIS SWEEP REPORTED 9 FINDINGS THAT WERE
+    ALL DOCUMENTED DECISIONS. Every exp56 arm carries a `_sk_note`,
+    `_merge_arbitration_note`, `_immune_memory_note` and `_apply_fixes_back_note`
+    IN THE SAME FILE, each giving a measured reason. The first version read the
+    values and not the notes beside them, and reported deliberate experimental
+    controls as undiscovered off-switches -- including `sk_enabled`, whose note
+    records that the gate "has never rejected anything -- 0 of 3816, Wilson
+    [0.0000, 0.0010]".
+
+    That is `feedback_check_the_record_before_declaring_a_gap` violated by an
+    instrument built to find gaps: the record was not merely in the repository,
+    it was 3 lines away in the file being read.
+    """
+    base = leaf.rstrip("_")
+    for key in (f"_{base}_note", f"_{base.replace('_enabled','')}_note",
+                f"_{base.split('_')[0]}_note"):
+        v = data.get(key)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
+
+
 def walk(obj, prefix=""):
     if isinstance(obj, dict):
         for k, v in obj.items():
@@ -123,7 +148,8 @@ def main() -> int:
             if not off:
                 continue
             rel = str(f.relative_to(REPO))
-            (disabled if leaf in read else unread).append((rel, path, val))
+            why = explanation(data, leaf)
+            (disabled if leaf in read else unread).append((rel, path, val, why))
 
     print(f"config files scanned: {len(files)}")
     print(f"runner modules scanned: {len(srcs)}")
@@ -132,8 +158,11 @@ def main() -> int:
     _SHOW = 40
     print(f"CAPABILITIES SWITCHED OFF IN CONFIG THAT THE RUNNER READS "
           f"({len(disabled)}):")
-    for rel, path, val in disabled[:_SHOW]:
-        print(f"    {rel}\n        {path} = {val!r}")
+    for rel, path, val, why in disabled[:_SHOW]:
+        tag = "DOCUMENTED" if why else "*** UNEXPLAINED ***"
+        print(f"    {rel}\n        {path} = {val!r}   [{tag}]")
+        if why:
+            print(f"          reason on file: {why[:150]}")
     if len(disabled) > _SHOW:
         print(f"    ... {len(disabled) - _SHOW} more not shown")
     if not disabled:
@@ -141,13 +170,23 @@ def main() -> int:
 
     print(f"\nSET TO OFF BUT THE RUNNER NEVER READS THE FIELD ({len(unread)}) — "
           f"a DIFFERENT defect, an unwired addition, not this task's:")
-    for rel, path, val in unread[:_SHOW]:
-        print(f"    {rel}\n        {path} = {val!r}")
+    for rel, path, val, why in unread[:_SHOW]:
+        tag = "DOCUMENTED" if why else "*** UNEXPLAINED ***"
+        print(f"    {rel}\n        {path} = {val!r}   [{tag}]")
     if len(unread) > _SHOW:
         print(f"    ... {len(unread) - _SHOW} more not shown")
     if not unread:
         print("    none")
 
+    allsw = disabled + unread
+    unexplained = [x for x in allsw if not x[3]]
+    print(f"\n  THE FIGURE THAT MATTERS: off-switches with NO recorded reason in "
+          f"their own file: {len(unexplained)} of {len(allsw)}")
+    for rel, path, val, _ in unexplained[:_SHOW]:
+        print(f"      {rel}: {path} = {val!r}")
+    if not unexplained:
+        print("      none — every off-switch found carries a sibling _<field>_note "
+              "giving a measured reason")
     n = len(disabled) + len(unread)
     if n:
         from statsmodels.stats.proportion import proportion_confint

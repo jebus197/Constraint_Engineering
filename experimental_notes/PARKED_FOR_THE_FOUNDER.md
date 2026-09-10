@@ -16,7 +16,7 @@ A new script defining scan() returning a tuple caused supersession_check.py:149 
 
 *Parked 2026-09-10T17:15:14+01:00.*
 
-merge_arbitration_enabled, immune_memory_enabled and _ouroboros.max_papers_per_round, each off in all 3 arms, read by none of 210 runner modules. The additive standard's unwired half, in data rather than code. Not urgent: 0 of the 3 affects a live run, precisely because nothing reads them.
+**NARROWED 2026-09-10 17:40 after the sweep was corrected to read the `_<field>_note` beside each switch.** `merge_arbitration_enabled` and `immune_memory_enabled` both carry documented reasons and are NOT findings. What remains unexplained is `_ouroboros.max_papers_per_round = 0` in all 3 arms, read by none of 210 runner modules, and `hardened_gate_enabled = False` in all 3, which the runner DOES read and which has no note at all. The additive standard's unwired half, in data rather than code. Not urgent: 0 of the 3 affects a live run, precisely because nothing reads them.
 
 ## A13/A14: the panel sandbox lost most of its bench tree mid-review and no seat could account for it
 
