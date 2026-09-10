@@ -92,8 +92,13 @@ def main() -> int:
     total = sum(len(v) for v in orphan.values())
     print(f"\n--- v2 LINES ABSENT FROM THE WHOLE NORMALISED v3 ---")
     print(f"   {total} lines across {len(orphan)} definitions")
-    for n, ls in sorted(orphan.items(), key=lambda x: -len(x[1]))[:8]:
+    shown = sorted(orphan.items(), key=lambda x: -len(x[1]))[:8]
+    for n, ls in shown:
         print(f"     {n}: {len(ls)}")
+    if len(orphan) > len(shown):
+        print(f"     ... {len(orphan) - len(shown)} further definition(s) not "
+              f"listed, carrying {sum(len(v) for k, v in orphan.items() if k not in dict(shown))} "
+              f"more line(s). A capped listing must say what it withheld.")
 
     print("\n--- WHAT THIS DOES AND DOES NOT SETTLE ---")
     print("   SETTLES: no capability is lost by name. v3 defines all of v2's.")

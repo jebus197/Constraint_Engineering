@@ -47,7 +47,7 @@ The residual is stated rather than assumed away. Losing 3 of 6 is still inconsis
 
 ## The confinement that should have prevented it has never worked
 
-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:11819` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:11921` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
 
 Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
 

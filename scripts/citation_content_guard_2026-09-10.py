@@ -24,6 +24,7 @@ count would invent findings.
 """
 from __future__ import annotations
 
+import argparse  # noqa: F401  (imported in main; kept for discoverability)
 import ast
 import pathlib
 import re
@@ -78,7 +79,40 @@ def check(target: str):
     return good, bad, unchecked, past_end, n_lines
 
 
+def repair(target: str) -> int:
+    """Re-point every stale anchored citation at its symbol's definition line.
+
+    ADDED THE SAME EVENING THE GUARD WAS, and the reason is the guard's own
+    output. The 6 citations were repaired at 21:20; adding a report block to the
+    runner at 21:35 moved every one of them by exactly +102 and the guard went
+    red inside the hour. Repairing by hand each time is a treadmill, and a
+    treadmill is how the figure got wrong in the first place. The guard already
+    computes the correct line, so it can write it.
+    """
+    _good, bad, _u, _p, _n = check(target)
+    for path, line, anchor, lo, _hi in bad:
+        txt = path.read_text(encoding="utf-8")
+        txt = txt.replace(f"{target}:{line}", f"{target}:{lo}")
+        path.write_text(txt, encoding="utf-8")
+        print(f"  {path.relative_to(REPO)}: {line} -> {lo}  (`{anchor}`)")
+    return len(bad)
+
+
 def main() -> int:
+    # A REAL PARSER, NOT `"--fix" in sys.argv`. The first version read argv
+    # directly, so `--this-flag-does-not-exist` was accepted and exited 0 --
+    # an unrecognised argument that reads as success, which is the defect class
+    # this project spent 118 days on. Caught by
+    # test_operational_scripts.py::test_an_unknown_flag_is_rejected_loudly.
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--fix", action="store_true",
+                    help="re-point stale anchored citations at their symbol")
+    args = ap.parse_args()
+    if args.fix:
+        total = sum(repair(t) for t in CITED)
+        print(f"repaired {total} citation(s)")
+        return 0
     rc = 0
     for target in CITED:
         good, bad, unchecked, past_end, n_lines = check(target)
