@@ -39,3 +39,17 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **Neither is a blocker under his own criterion,** which is whether an item prevents further progress on the task list. 36 other entries remained open when these were triaged and work continued straight past them. Recorded here rather than raised, exactly as he asked: *"If not, then append to the closing/final report."*
 
 *Parked 2026-09-10T19:42:41+01:00.*
+
+## C0040: every model receives 9.0026% of the universal directive, and it is a flag dump
+
+**Raised by ChatGPT on 2026-06-06 at severity 0.88, recorded UNCONFIRMED and UNTOOLABLE, never checked. Confirmed 2026-09-10 and it is larger than filed.**
+
+`_load_universal_directive` serves a reduced rendering whenever the full text exceeds a model's `max_directive_chars`. The full directive is **27,803 characters** and the largest cap in the roster is **12,000**, so the reduced form goes to **5 of 5 models** — Wilson [56.5518%, 100.0000%], Clopper-Pearson [47.8176%, 100.0000%]. The docstring promises "Full text for large-context models"; **no such model exists**. The reduced form is **2,503 characters of TOML key-value lines** — `policy.constraints.falsification_required=true` — and **0 of the full directive's 16 section headings survive it**.
+
+**The severity is bounded by a second path, and that must travel with the finding.** `reference_runner_v3.py:8339` appends `cdsfl_operational.md`, **44,157 characters**, to every model, explicitly exempt from the phenotype caps. The prompt a seat actually receives is **46,660 characters and over 90% prose**. Models are not left holding flags.
+
+**What is lost by BOTH paths.** The operational directive covers **6 of the 16 sections (37.5000%**, Wilson [18.4812%, 61.3590%], Clopper-Pearson [15.1984%, 64.5654%]). The other 10 include **"Runnable Falsifiers for Critical Findings"** and **"Falsifier Integrity — Do Not Reach for the Answer"** — the section instructing models not to cheat on the falsifiers this project's verdicts rest on. **The coverage heuristic is crude** (first 3 words of 4 or more characters per heading, all required to appear in the operational text), so **10 of 16 is an UPPER BOUND on the loss, not a measurement of it**, and the test asserts the bound rather than the estimate.
+
+**WHY NO FIX WAS APPLIED.** Changing which directive text a model receives changes every dispatch and invalidates replay of every archived run. That is the same class as promoting the corrected S\* threshold, which this project already ruled needs your say-so. The disposition is yours: raise the caps, rewrite the reduced rendering as prose rather than flags, or accept the loss and record it. `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py`, 8 tests.
+
+*Parked 2026-09-10T20:08:05+01:00.*
