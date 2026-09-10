@@ -118,6 +118,82 @@ FIGURE = re.compile(
     r"<!--\s*figure:\s*(?P<label>[^|]+?)\s*\|\s*(?P<script>[^|]+?)\s*\|\s*"
     r"(?P<value>[^>]+?)\s*-->")
 
+#: Anything that OPENS like a figure declaration, parseable or not. Compared
+#: against FIGURE's matches so a MALFORMED declaration refuses instead of
+#: silently escaping the check (panel round 7, 2026-09-10, demonstrated by
+#: execution): `<!-- figure: g | s.py -->` with its value field missing matched
+#: nothing, was skipped, and the brief PASSED with zero checks run. Opt-in
+#: means an ABSENT declaration passes -- not a broken one.
+FIGURE_OPENER = re.compile(r"<!--\s*figure:")
+
+#: A character that CONTINUES a word or a number on either side of a match.
+_TIGHT = re.compile(r"[0-9A-Za-z_]")
+
+#: Characters that bind a number into a LARGER number when they sit between
+#: digits: the thousands comma, the time colon, the ratio slash. `1,234` must
+#: not satisfy a declared `234`; `entries, 234` must still satisfy it, so the
+#: rule is conditioned on a digit sitting on the far side, not on the
+#: separator alone.
+_GROUPERS = ",:/"
+
+
+def _figure_token_found(want: str, haystack: str) -> bool:
+    """True iff `want` occurs in `haystack` as a whole figure.
+
+    WHY THIS REPLACED A CHARACTER CLASS (2026-09-10, panel round 7, found by
+    execution and reproduced before acting). The round-6 repair expressed
+    "whole token" as `(?<![0-9A-Za-z.\\-])` ... `(?![0-9A-Za-z.\\-])`, which is
+    wrong in BOTH directions, and both were measured:
+
+      * IT STILL PASSED WRONG NUMBERS. `,` is not in that class, so a declared
+        `234` reproduced against a script printing `entries = 1,234` -- the
+        round-6 defect exactly, one separator over, and off by a factor of 5.
+        A printed `elapsed 12:345` satisfied a declared `345` the same way.
+      * IT REFUSED RIGHT NUMBERS. `.` is in that class unconditionally, so a
+        script printing `gamma is 0.294998.` -- the figure at the end of a
+        sentence -- could not be declared at all. A guard that refuses a
+        correct brief is bypassed, which costs more than the defect it caught.
+
+    The distinction a fixed character class cannot draw is CONTEXT-SENSITIVE:
+    a `.` or a `,` continues a number only when a digit sits on the far side
+    of it. So each occurrence is judged by looking one character PAST the
+    delimiter, rather than by membership in a set.
+
+    Nothing is removed: every input the round-6 rule refused is still refused
+    (see bench/tests/test_declared_figure_token_boundary_2026-09-10.py, which
+    re-runs the round-6 table against this predicate directly).
+    """
+    if not want:
+        return False
+    n = len(haystack)
+    for m in re.finditer(re.escape(want), haystack):
+        i, j = m.start(), m.end()
+        before = haystack[i - 1] if i else ""
+        after = haystack[j] if j < n else ""
+        # --- left boundary -------------------------------------------------
+        if before:
+            if _TIGHT.match(before):
+                continue                  # inside a word or a number
+            if before == "-":
+                continue                  # a sign: 0.25 must not ride on -0.25
+            if before == "." and not want[:1].isalpha():
+                continue                  # inside a decimal: 294998 in 0.294998
+            if before in _GROUPERS and i >= 2 and haystack[i - 2].isdigit():
+                continue                  # inside a grouped number: 234 in 1,234
+        # --- right boundary ------------------------------------------------
+        if after:
+            nxt = haystack[j + 1] if j + 1 < n else ""
+            if _TIGHT.match(after):
+                continue                  # 0.29 must not ride on 0.294998
+            if after == "-":
+                continue                  # 2026 must not ride on 2026-09-10
+            if after == "." and nxt.isdigit():
+                continue                  # the decimal continues
+            if after in _GROUPERS and nxt.isdigit():
+                continue                  # 1 must not ride on 1,234
+        return True
+    return False
+
 
 def check_declared_figures(text: str, repo: Path = REPO,
                            timeout: int = 600) -> list[str]:
@@ -130,11 +206,32 @@ def check_declared_figures(text: str, repo: Path = REPO,
     round.
     """
     problems: list[str] = []
-    for m in FIGURE.finditer(text):
+    matches = list(FIGURE.finditer(text))
+    opened = len(FIGURE_OPENER.findall(text))
+    if opened != len(matches):
+        problems.append(
+            f"{opened - len(matches)} figure declaration(s) open with "
+            f"'<!-- figure:' but do not parse as "
+            f"'<!-- figure: <label> | <script> | <value> -->'. A declaration "
+            f"that announces itself and then escapes checking is worse than "
+            f"none: fix the comment or remove it")
+    for m in matches:
         label = m.group("label")
         rel = m.group("script")
         want = m.group("value")
-        script = repo / rel
+        # THE SCRIPT MUST LIVE INSIDE THE REPOSITORY (panel round 7,
+        # 2026-09-10, demonstrated by execution). `repo / rel` with rel
+        # starting `../` -- or absolute, which pathlib joins by REPLACING the
+        # left side -- executed an arbitrary script OUTSIDE the tree and
+        # accepted its output as evidence. A figure is a committed measurement
+        # only if it re-executes from the repository; refuse BEFORE running.
+        script = (repo / rel).resolve()
+        if not script.is_relative_to(Path(repo).resolve()):
+            problems.append(
+                f"declared figure {label!r}: the script path {rel!r} escapes "
+                f"the repository, so the figure is not a committed measurement "
+                f"and was not executed")
+            continue
         if not script.is_file():
             problems.append(
                 f"declared figure {label!r}: the script {rel} does not exist, so "
@@ -177,11 +274,33 @@ def check_declared_figures(text: str, repo: Path = REPO,
         # declared `0.29` against a printed `0.294998`, and a declared `1` rode on
         # the words "pass 1:". Measured across 7 cases the substring form scored
         # 4 of 7, Wilson [25.05%, 84.18%] -- a guard built to catch a wrong number
-        # that passes wrong numbers. A token is delimited by anything that is not
-        # a digit, a letter, a dot or a minus sign, so 0.29 no longer matches
-        # inside 0.294998 while 0.294998 still matches itself.
-        if not re.search(r"(?<![0-9A-Za-z.\-])" + re.escape(want)
-                         + r"(?![0-9A-Za-z.\-])", r.stdout + r.stderr):
+        # that passes wrong numbers.
+        #
+        # THE FIRST REPAIR WAS A FIXED CHARACTER CLASS AND IT WAS WRONG BOTH WAYS
+        # (corrected 2026-09-10, panel round 7, by execution). It read "a token is
+        # delimited by anything that is not a digit, a letter, a dot or a minus
+        # sign", which let a declared `234` reproduce against a printed `1,234`
+        # -- the round-6 defect one separator over, wrong by a factor of 5 -- and
+        # refused a correct `0.294998` against a printed `gamma is 0.294998.`
+        # because the sentence ended. The boundary is context-sensitive and is now
+        # decided per occurrence in `_figure_token_found` above.
+        #
+        # THE "8 of 8" SCORE FOR THE ROUND-6 REPAIR OVERSTATES ITS SUPPORT. Of the
+        # 8 cases in bench/tests/test_panel_brief_format_2026-09-09.py, 4 (`0.2`,
+        # `0.4`, `1`, `9`) are refused by the 3-significant-character rule below
+        # and never reach the token rule, and 2 (`0.451`, `0.415413`) are absent
+        # from the output and would be refused by a plain substring test. Exactly
+        # 1 case, `0.29`, exercises the boundary: 1 of 1, Wilson [20.66%, 100.00%].
+        # The cases that were missing are in
+        # bench/tests/test_declared_figure_token_boundary_2026-09-10.py.
+        # THE TWO STREAMS ARE JOINED WITH A NEWLINE, not concatenated (2026-09-10,
+        # panel round 7, demonstrated). `r.stdout + r.stderr` splices the last
+        # character of stdout onto the first of stderr, synthesising a token
+        # neither stream printed: a script writing `rate = 0.2` to stdout with no
+        # trailing newline and `9 done` to stderr satisfied a declared
+        # `rate = 0.29`. A figure must be found in output that was actually
+        # emitted, not in the seam between two streams.
+        if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
             problems.append(
                 f"declared figure {label!r}: the brief says {want!r} and {rel} "
                 f"does not print it. A number typed into a brief is a claim "

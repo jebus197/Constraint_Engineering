@@ -81,7 +81,11 @@ class TestTheListComesFromTheHook:
 
 class TestTheCountIsExactAndCurrent:
     def test_the_entry_figure_matches_the_hook_today(self, mod):
-        """Entry 1.1 now says 6 files and 169 tests. Both are checked here.
+        """Entry 1.1 now says 6 files and 174 tests. Both are checked here.
+
+        (The count in this docstring was left at 169 by the 14:20 BST
+        correction that updated the assertion below -- a stale figure
+        one line above a fresh one, caught in panel round 7.)
 
         If this fails because the gate grew again, UPDATE THE ENTRY AND THIS TEST
         together — that is the whole point. Do not delete it.

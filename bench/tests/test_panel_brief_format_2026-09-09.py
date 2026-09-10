@@ -250,7 +250,17 @@ def test_the_round_4_brief_itself_now_passes():
 # Two changes, both from the seats. Whole-token matching (cc2), and a minimum of
 # 3 significant characters (fable's residual: a bare `1` or `9` is a genuine
 # token somewhere in almost any output, so finding it proves nothing).
-# Now 8 of 8.
+# Now 8 of 8 -- BUT READ THE DENOMINATOR (annotated 2026-09-10, panel round 7).
+# 8 of 8 here is not comparable with 4 of 7 above: they are different case sets,
+# and the 8th case was added by the repair being scored. Worse, of these 8 only
+# `0.29` reaches the token rule at all -- `0.2`, `0.4`, `1` and `9` are refused
+# by the 3-significant-character rule first, and `0.451` and `0.415413` are
+# simply absent from the output and would be refused by the substring form too.
+# The token rule's real support in this table is 1 of 1, Wilson [20.66%,
+# 100.00%]. Round 7 then found the rule still passing a declared `234` against a
+# printed `1,234`, and refusing a correct `0.294998` against a printed
+# `gamma is 0.294998.`. Nothing below is deleted; the missing cases are added in
+# bench/tests/test_declared_figure_token_boundary_2026-09-10.py.
 # ---------------------------------------------------------------------------
 
 _CYCLE = "scripts/ffafp_cycle_gamma_2026-09-10.py"
