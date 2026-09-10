@@ -70,7 +70,22 @@ CONTRADICTORY = {("DONE", "PROPOSED"), ("DONE", "BUILT"), ("DONE", "TESTED")}
 #: silently omits is worse than one that fails, because it reports success.
 #: Now: identifier, then a period, or `**`, or whitespace.
 ENTRY = re.compile(r"^\*\*((?:[A-Z]{1,2})?\d+(?:\.\d+)?[a-z]?)(?:\.\*\*|\*\*|\.|)\s")
-MARKER = re.compile(r"^<!--\s*task:\s*(\S+)\s*\|\s*state:\s*(\w+)\s*\|\s*status:\s*(\w+)\s*-->")
+#: The marker, with an OPTIONAL trailing `evidence:` field.
+#:
+#: WHY EVIDENCE WAS ADDED (2026-09-10). The founder asked whether this engine
+#: ensures the work can be completed mechanically. It did not. `CONTRADICTORY`
+#: below refuses an entry only when its own 2 labels disagree with each other;
+#: nothing ever compared a DONE marker against the repository. So the engine
+#: recorded what the assistant CLAIMED. Measured the same night by 18 adversarial
+#: agents re-running the tests rather than reading the claims: **11 of 19 DONE
+#: entries were overstated, 57.89%, Wilson [36.3%, 76.9%]**, 2 reviewers agreeing
+#: on every one, and 1 of the 11 was a live regression shipped to HEAD.
+#:
+#: The field is optional in the REGEX and required by the suite guard, so adding
+#: it cannot break an entry that predates it while a DONE entry without it fails.
+MARKER = re.compile(
+    r"^<!--\s*task:\s*(\S+)\s*\|\s*state:\s*(\w+)\s*\|\s*status:\s*(\w+)"
+    r"(?:\s*\|\s*evidence:\s*([^>]*?))?\s*-->")
 
 #: Lines that LOOK like entries but are prose opening with a number in bold.
 #: Listed explicitly rather than filtered by a heuristic, so that adding a real
@@ -85,6 +100,7 @@ class Entry:
     text: str
     state: str | None
     status: str | None
+    evidence: tuple = ()
 
 
 def _is_entry(line: str) -> bool:
@@ -102,11 +118,14 @@ def parse_entries(path: Path = LIST) -> list[Entry]:
             continue
         ident = ENTRY.match(line).group(1)
         state = status = None
+        evidence: tuple = ()
         if i + 1 < len(lines):
             m = MARKER.match(lines[i + 1])
             if m:
                 state, status = m.group(2), m.group(3)
-        out.append(Entry(ident, i + 1, line, state, status))
+                raw = (m.group(4) or "").strip()
+                evidence = tuple(x.strip() for x in raw.split(",") if x.strip())
+        out.append(Entry(ident, i + 1, line, state, status, evidence))
     return out
 
 
