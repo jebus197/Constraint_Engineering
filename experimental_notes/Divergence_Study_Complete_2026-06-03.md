@@ -56,3 +56,7 @@ High confidence; no remaining conflation I can identify. The two-divergence fram
 Attack these specifically: (1) Is "truth-by-discussion" really the *single* root cause, or am I collapsing distinct failures? (2) Does the R_k "pattern already exists" claim actually transfer to per-finding claims, or is per-finding verification fundamentally harder (un-toolable claims)? (3) Is the BOINC-quorum analogy sound, or does multi-model *reasoning* (unlike raw compute) genuinely need a consensus step that tools can't replace? (4) Is the decompose→tool-verify→recombine architecture viable for a problem like Riemann, or does intelligence-bearing decomposition have failure modes BOINC never faced (e.g. sub-problems that aren't independent, recombination that isn't mechanical)?
 
 Written under CDSFL note standard v1.2 (14 May 2026).
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

@@ -177,3 +177,7 @@ substantive batch produced a TTS `.txt` mirror at
 ## Closing Note
 
 The eleven new entries bring `EXPERIMENTAL_RESULTS.md` into alignment with the April 2026 state of the project. Each entry includes dates, models, artefacts, and, where applicable, raw data and analysis references. Prior entries remain unchanged. The Planned Experiments section is unchanged pending the outcome of the 2×2 factorial in Experiments 41–54.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

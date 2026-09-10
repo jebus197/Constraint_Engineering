@@ -94,3 +94,7 @@ The problem is not internal consistency. The problem is that the appendix models
 - Founder confirmed Gap 4 connects to diversity (different models degrade at different rates). CC clarified: the appendix already models inter-model diversity through per-model parameters. The gap is temporal degradation — those parameters aren't constants, they're functions of context size. Diversity determines the RATE of degradation, not the existence of degradation.
 - Founder requested: discuss findings before formalising into appendix. No appendix changes without explicit approval.
 - Founder flagged: don't repeat the narrow-test mistake. Test broadly and deeply. Decompose compound claims before testing.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

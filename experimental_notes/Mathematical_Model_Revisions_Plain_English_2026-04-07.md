@@ -82,3 +82,7 @@ These are not five independent problems. They form one coupled system.
 **Gap 5 means the system cannot terminate.** The convergence gate is state-based and 3 of its 5 conditions are permanently satisfied. The two remaining conditions (contested + novel) are kept alive by the feedback loop. The appendix's value-based criterion might have terminated earlier and correctly, but it was never implemented.
 
 **The result** is what Exp 36 demonstrated: 23 rounds, 224 minutes, 452 raw findings, 153 canonical entries, ~9 actual bugs. A 17:1 dedup ratio. The mathematical model could not see the problem because each component metric was measuring its own piece correctly. The failure is in the interactions between components, and the appendix does not model interactions.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

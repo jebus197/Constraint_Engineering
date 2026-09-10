@@ -391,3 +391,7 @@ Activating v2 shadows immediately addresses 8 findings:
 - C3 findings (13 total, 5 SymPy-verified) overlap substantially with C1/C4. The 5 proven findings (dead else block, math hijack, NK continue bypass, voting asymmetry, state mutation) are all captured as MF-01, MF-07, MF-08, MF-14, MF-20. Any C3-unique findings not listed here should be cross-checked against C3 logs during fix implementation.
 - C4 retracted 12 findings. All retractions reviewed. The NK continue bypass retraction (C4 argued "feature") was overruled by C1 evidence and code verification — the bug is real (MF-14). All other retractions were correct.
 - Findings are deduplicated. Where multiple conditions found the same bug, the finding with the deepest analysis is cited as primary source and all sources listed.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

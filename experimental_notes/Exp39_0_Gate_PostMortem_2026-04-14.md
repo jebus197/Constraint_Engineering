@@ -184,3 +184,7 @@ All in `bench/logs/exp39_0_gate_20260413T193320Z/`:
 - `analysis_immune_convergence.md` — immune pipeline and convergence gate analysis
 - `analysis_cross_verification.md` — data integrity and anomaly findings
 - `exp39_0_gate_report.json` — machine-readable experiment report
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp39_0_gate_20260413T051358Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

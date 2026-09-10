@@ -626,3 +626,7 @@ A → B → C → D. Phases A and B can partially overlap (reference runner can 
 | z=3.63 (R8 burst) | "CONFIRMED" | **DISPUTED** → z=5.24 (R1-R7 baseline) | Mathematical model audit, 8 April 2026 |
 | Minimum Exp 36 fixes | "3 fixes" | **5 fixes** (registry windowing + ρ as C6 are essential) | Audit coupled cascade analysis |
 | Forward path | "6-item task sequence" | **4-phase plan** (A: resume, B: reference runner, C: BR2, D: docs) | Revised 8 April 2026, 07:00 BST |
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

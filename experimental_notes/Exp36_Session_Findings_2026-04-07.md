@@ -144,3 +144,7 @@ Recalibrate DC v1 regex or promote LLM classifier to primary. Increase LLM class
 | `~/Desktop/CDSFL_tts/Exp36_Burst_Reasoning_Analysis_2026-04-07.txt` | Burst reasoning TTS |
 | `bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json` | Structured report (526KB) |
 | `bench/logs/exp36_console.log` | Full console output |
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

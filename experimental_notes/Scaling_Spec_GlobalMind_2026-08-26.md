@@ -135,3 +135,7 @@ External: BOINC's platform paper and its job-replication and homogeneous-redunda
 - [Collusion-Resistant Sabotage-Tolerance Mechanisms for Volunteer Computing Systems](https://www.researchgate.net/publication/221648409_Collusion-Resistant_Sabotage-Tolerance_Mechanisms_for_Volunteer_Computing_Systems)
 
 Written under CDSFL note standard v1.6 (24 August 2026).
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

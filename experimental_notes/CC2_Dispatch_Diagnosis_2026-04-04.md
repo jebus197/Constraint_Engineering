@@ -80,3 +80,7 @@ Cell-level decomposition trades payload size for cross-cell visibility. Findings
 **Generalises:** Any system where output quality feeds back as input size will hit this — better downstream processing → more unique upstream context → delivery bottleneck. The specific manifestation (CLI timeout) is CC2-specific, but the feedback loop pattern is universal.
 
 **Breaks down when:** Context window is effectively unlimited (Gemini) or dispatch uses streaming HTTP (no hard timeout ceiling).
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

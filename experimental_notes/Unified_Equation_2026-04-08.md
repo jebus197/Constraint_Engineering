@@ -121,3 +121,7 @@ Under simplifying assumptions (K=1, d=1, all p_ik = p, π=0.5):
 > R_n = (1−p)^n / (1 + (1−p)^n)
 
 This is the standard Bayesian posterior for repeated Bernoulli non-detection — the simplified model kept for the white paper. The unified equation generalises it to multi-class, diversity-aware, consequence-weighted self-assessment.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** **No artefact in `bench/logs` corresponds to this note**, and no committed script reproduces its figures. They are therefore **not reproducible from this repository** and must not be quoted as measurements. This is recorded rather than repaired: inventing a source would be worse than naming its absence. The note is kept intact as the record of what was written at the time.

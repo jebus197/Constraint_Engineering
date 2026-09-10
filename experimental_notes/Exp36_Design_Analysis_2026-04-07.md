@@ -216,3 +216,7 @@ There is no single component explicitly named "semantic layer." The semantic cap
 5. **Formalisation agent (shadow):** Semantic extraction of preconditions from findings
 
 Full activation of these components would create a de facto semantic processing pipeline: findings are semantically classified (LLM classifier) → semantically deduplicated (NK v2) → semantically verified against actual code (B-Cell v2 + CT v2) → semantically synthesised (Helper T v2 two-level aggregation). The "semantic layer" is the emergent capability of these components working together rather than a single named module.
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

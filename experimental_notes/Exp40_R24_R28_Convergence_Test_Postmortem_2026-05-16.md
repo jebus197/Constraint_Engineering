@@ -191,3 +191,7 @@ freeze cost no rounds and no wall-clock of consequence.
   Plain English (2026-05-16); TTS mirror in the CDSFL TTS folder.
 
 Written under CDSFL note standard v1.2 (14 May 2026).
+
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp40_gate_20260514T020550Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.

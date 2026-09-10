@@ -293,3 +293,6 @@ Using the classification buckets: **already-in-v2** (done, no action), **fold-in
 - `bench/dm/_feedback.py` — Exp 40 test article, §17 feedback channel.
 - `bench/reference_runner.py` — Exp 39 baseline (confirmed to contain none of the Stage 6 channel wrapper, `ChannelViolationError`, or γ-alt convergence identifiers).
 
+---
+
+**FIGURE PROVENANCE, added 2026-09-10T20:55:12+01:00 under task 7.1.** The figures in this note were computed from `bench/logs/exp40_gate_20260514T020550Z/runner_state.json`, which survives in this repository. The note named its method in prose and no artefact, so a reader had nothing to run; the archive had been there the whole time. **These figures are NOT individually re-verified here** — only the provenance is recorded. Where a note's figures HAVE been recomputed, the script is named in the note itself.
