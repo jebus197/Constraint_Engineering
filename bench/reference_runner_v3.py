@@ -780,6 +780,108 @@ def target_attribution(target_path) -> Dict[str, Any]:
     return rec
 
 
+#: TASK 9.1 -- THE 6 STUDY-PROGRAMME ITEMS, REPORTED RATHER THAN REMEMBERED.
+#:
+#: His 2026-09-06 rulings scheduled 6 items to be reported on by a run. Measured
+#: 2026-09-10 against the most recent archived report: 1 of the 6 has any field
+#: at all (`post_convergence_sweep`), and 5 have none. So "reported on: 0 of 6"
+#: was never a fact about the run -- it was a fact about the REPORT, which had
+#: nowhere to put the answers.
+#:
+#: THIS EMITS STATE. IT DECIDES NOTHING. No gate reads it, no status turns on it,
+#: and an item that cannot be answered says so and says why, because an
+#: unanswerable question reported as a blank is indistinguishable from one nobody
+#: asked.
+def study_programme_report(registry, cfg=None, findings=None) -> Dict[str, Any]:
+    """The 6 scheduled study items, each answered or explicitly not."""
+    entries = []
+    try:
+        d = registry.to_dict() if hasattr(registry, "to_dict") else (registry or {})
+        ent = d.get("entries", d) if isinstance(d, dict) else d
+        entries = [v for v in (ent.values() if isinstance(ent, dict) else ent or [])
+                   if isinstance(v, dict)]
+    except Exception:                                    # noqa: BLE001
+        entries = []
+
+    sev = [float(e["severity"]) for e in entries
+           if isinstance(e.get("severity"), (int, float))]
+    crit = [e for e in entries
+            if isinstance(e.get("severity"), (int, float))
+            and e["severity"] >= CRITICAL_SEVERITY_THRESHOLD]
+
+    err_causes: Dict[str, int] = {}
+    for e in entries:
+        if e.get("falsifier_verdict") == "ERROR":
+            cause = "error_routed" if e.get("error_routed") else "unrouted"
+            err_causes[cause] = err_causes.get(cause, 0) + 1
+
+    models = {e.get("source_model") for e in entries if e.get("source_model")}
+
+    return {
+        "_what": "the 6 items his 2026-09-06 rulings scheduled for a run to report",
+        "_decides_nothing": True,
+
+        "critical_severity_ceiling": {
+            "question": "is any finding pinned at or clamped to the ceiling?",
+            "threshold": CRITICAL_SEVERITY_THRESHOLD,
+            "max_severity_observed": max(sev) if sev else None,
+            "at_or_above_1_0": sum(1 for s in sev if s >= 1.0),
+            "critical_count": len(crit),
+            "n": len(sev),
+        },
+
+        "why_the_sweep_cannot_clear_a_critical": {
+            "question": "which statuses does the post-convergence sweep treat as terminal?",
+            "answer": ("the sweep only re-examines NON-terminal entries; a "
+                       "critical already CONFIRMED or CLOSED is terminal to it, "
+                       "so the sweep cannot clear one -- it was never able to"),
+            "terminal_statuses": sorted({"MERGED", "CLOSED", "REFUTED",
+                                         "DUPLICATE", "CONFIRMED"}),
+        },
+
+        "falsifier_error_causes": {
+            "question": "when a falsifier ERRORs, why?",
+            "by_cause": err_causes,
+            "total_error_verdicts": sum(err_causes.values()),
+            "note": ("cause is recorded only as routed or not; a finer taxonomy "
+                     "needs the runner to keep the interpreter's own message, "
+                     "which it currently discards"),
+        },
+
+        "cross_architecture_correlation": {
+            "question": "what is rho across genuinely distinct architectures?",
+            "answerable": len(models) > 1,
+            "distinct_source_models": sorted(m for m in models if m),
+            "why_not": (None if len(models) > 1 else
+                        "every seat resolved to one model wearing several "
+                        "labels, so there are no distinct architectures to "
+                        "correlate. This is a PRECONDITION, not a measurement "
+                        "-- task 9.4"),
+        },
+
+        "corrected_s_star": {
+            "question": "what does the corrected break-even say at this run's operating point?",
+            "recorded_per_entry": sum(
+                1 for e in entries
+                if isinstance(e.get("sk_result"), dict)
+                and "threshold_shadow" in e["sk_result"]),
+            "note": ("the corrected value is recorded per entry in "
+                     "sk_result.threshold_shadow and remains SHADOW; promoting "
+                     "it needs a founder ruling because it changes which fixes "
+                     "are admitted"),
+        },
+
+        "both_reach_conditions": {
+            "question": "where does reach belong -- nu, sigma, or both?",
+            "answerable": False,
+            "why_not": ("unresolved panel split, preserved rather than smoothed: "
+                        "fable holds that reach enters BOTH homes with opposite "
+                        "signs, cc2 that it belongs to sigma alone. Neither is "
+                        "wired, so a run cannot distinguish them yet"),
+        },
+    }
+
+
 _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
 
 
@@ -14746,6 +14848,20 @@ def run_experiment(
         else:
             _log("  immune memory: RECORDING only — R_k(0) used the uniform "
                  f"prior {RK0_PI_BASE}; consumption is off for this experiment")
+
+    # ── TASK 9.1: THE 6 SCHEDULED STUDY ITEMS ────────────────────────────
+    # Emitted here, at the end of the run, because that is where a reader of the
+    # report looks for what the run has to say. Wrapped because an instrument
+    # that can break a run is worse than one that is absent, and reported LOUDLY
+    # on failure so a missing block cannot read as "nothing to report".
+    try:
+        result["study_programme"] = study_programme_report(registry, cfg)
+    except Exception as _sp_exc:                          # noqa: BLE001
+        result["study_programme"] = {
+            "error": f"{type(_sp_exc).__name__}: {_sp_exc}",
+            "_what": "the 6 scheduled study items; the reporter itself failed",
+        }
+        _log(f"  study programme report FAILED: {type(_sp_exc).__name__}: {_sp_exc}")
 
     # ── VERIFICATION CHAIN — cryptographic signing of the run record ──────
     # REINSTATED 2026-07-29 (founder directive). Signing lapsed silently when
