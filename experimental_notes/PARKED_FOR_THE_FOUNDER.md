@@ -23,3 +23,9 @@ A new script defining scan() returning a tuple caused supersession_check.py:149 
 *Parked 2026-09-10T17:15:14+01:00.*
 
 8 files against the canonical 167, reported by cc2 in round 4. Both seats share one sandbox, so a destructive action by the seat that finishes first lands under the seat still working. The falsifier is cheap: build a sandbox, count, run the suite inside it, count again.
+
+## Running exp50 and exp51 dispatches 5 models including 3 paid seats
+
+*Parked 2026-09-10T18:43:50+01:00.*
+
+The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_redesigned_2026-09-10.json and bench/exp51_configs/51_biology_exam_live_redesigned_2026-09-10.json. Running them is money. Nothing on the task list waits on the result, so it is not blocking.
