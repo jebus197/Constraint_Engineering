@@ -312,6 +312,46 @@ def check_declared_figures(text: str, repo: Path = REPO,
     return problems
 
 
+#: Paths a brief names, worth checking for currency. Anything else it mentions
+#: (a log directory, an archive) is not code that could have moved under it.
+_NAMED_PATH_RE = re.compile(
+    r"`?((?:scripts|bench|resources|experimental_notes|hooks)/[\w./-]+\.(?:py|sh|md|json))`?")
+
+
+def check_currency(brief_path, repo: Path = REPO) -> list[str]:
+    """Is the brief OLDER than an artefact it tells the panel about?
+
+    TASK A4. The round-2 brief asserted that a question had not been asked. That
+    was true when it was written at 20:37 and FALSE by the 21:12 dispatch,
+    because a test answering it landed in the 35 minutes between. Both seats
+    spent effort on a bolted door. The validator checked the brief's 7 required
+    sections and nothing about whether the brief had been overtaken.
+
+    It happened again on 2026-09-10: cc2's round-9 reply opens a disagreement
+    with "Section 3.4 is already closed and the brief does not say so."
+
+    WHAT THIS CAN AND CANNOT SEE. It compares modification times. A file the
+    brief names that changed AFTER the brief was written is a file the brief may
+    describe wrongly -- that is a WARNING, not proof, because an unrelated edit
+    to the same file is common. It cannot see a change to something the brief
+    describes without naming, and it says so rather than implying coverage.
+    """
+    brief_path = Path(brief_path)
+    if not brief_path.is_file():
+        return []
+    brief_mtime = brief_path.stat().st_mtime
+    text = brief_path.read_text(encoding="utf-8", errors="replace")
+    stale = []
+    for rel in sorted(set(_NAMED_PATH_RE.findall(text))):
+        f = repo / rel
+        if not f.is_file():
+            continue
+        if f.stat().st_mtime > brief_mtime:
+            drift = (f.stat().st_mtime - brief_mtime) / 60.0
+            stale.append(f"{rel} changed {drift:.1f} min AFTER the brief was written")
+    return stale
+
+
 def validate(text: str) -> list[str]:
     """Return a list of failures. Empty means the brief is dispatchable."""
     low = text.lower()
@@ -358,6 +398,21 @@ def main() -> int:
     if not a.brief.is_file():
         print(f"panel-brief: {a.brief} does not exist", file=sys.stderr)
         return 2
+    # TASK A4: CURRENCY, checked at dispatch and reported as a WARNING.
+    # It does not refuse: an unrelated edit to a named file is common and a
+    # validator that blocks on it teaches people to skip the validator. It says
+    # what moved and by how long, and the dispatcher decides.
+    _stale = check_currency(a.brief)
+    if _stale and not a.quiet:
+        print("panel-brief: CURRENCY WARNING — the brief may have been overtaken:",
+              file=sys.stderr)
+        for _s in _stale:
+            print(f"  {_s}", file=sys.stderr)
+        print("  A brief that describes a file as it was is how 2 seats spent a "
+              "round on a\n  bolted door (round 2, 2026-09-09). Re-read those "
+              "sections before dispatch.", file=sys.stderr)
+        print("  It compares MODIFICATION TIMES only: it cannot see a change to "
+              "something the\n  brief describes without naming.", file=sys.stderr)
     text = a.brief.read_text(encoding="utf-8", errors="replace")
     problems = validate(text)
     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
