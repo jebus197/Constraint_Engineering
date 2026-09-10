@@ -126,50 +126,86 @@ if [ -n "$STAGED_NOTES" ]; then
     # A guard that fires on the ordinary case teaches people to reach for
     # --no-verify by reflex, and the 2 earlier scopings would have taught that
     # on their first outing.
+    # PER FILE, NOT ON TOTALS — and the difference is a demonstrated bypass.
+    #
+    # The first ratchet summed every staged note and compared totals. A reviewer
+    # reproduced the hole on 2026-09-10: one commit that cleaned 3 spelled
+    # numbers out of an archival note AND added a brand-new note containing
+    # "twenty-nine" nets -2, so the total fell and the commit landed, exit 0.
+    # The guard SAW the new violation and printed it by name, then let it
+    # through. Both this hook's own comment that "a NEW note is held to the whole
+    # standard" and its test's docstring that "the ratchet must not become an
+    # amnesty for new work" were false in that path, because the only test for it
+    # committed a single file and never reached the mixed case.
+    #
+    # A ratchet on a SUM is not a ratchet. Each file is now judged on its own,
+    # and any single file that gets worse refuses the commit.
+    WORSENED=""
+    WORSENED_COUNT=0
     BEFORE_TOTAL=0
     AFTER_TOTAL=0
+    LINT_BROKE=""
     STAGED_COPY=$(mktemp -d -t cdsfl_note_lint)
     trap 'rm -rf "$STAGED_COPY"' EXIT
+
+    # THE LINTER'S OWN EXIT CODE, CAPTURED WHERE IT RUNS.
+    #
+    # `LINT_CODE=$?` used to sit after an if/else, so it read the status of the
+    # if/else — which always succeeds — and the "linter could not run" refusal
+    # was unreachable dead code. Demonstrated:
+    #   sh -c 'A=5;B=3; if [ "$A" -gt "$B" ]; then F=$((A-B)); else F=0; fi; \
+    #          LINT_CODE=$?; echo $LINT_CODE'  ->  0
+    # A linter that errors prints "0 finding(s)" on its way out, so the count
+    # read 0 and the commit passed. That is failing OPEN in a guard whose own
+    # header says it fails closed.
+    _lint_count() {   # $1 = file; echoes the count, returns the linter's status
+        _out=$(python3 scripts/note_vagueness_lint.py "$1" 2>&1); _rc=$?
+        printf '%s\n' "$_out" | grep -oE '^[[:space:]]*[0-9]+ finding' \
+            | tail -1 | grep -oE '[0-9]+'
+        return $_rc
+    }
+
     for f in $STAGED_NOTES; do
         base=$(basename "$f")
         git show ":$f" > "$STAGED_COPY/after_$base" 2>/dev/null || continue
-        A=$(python3 scripts/note_vagueness_lint.py "$STAGED_COPY/after_$base" 2>&1 \
-            | grep -oE '^[[:space:]]*[0-9]+ finding' | tail -1 | grep -oE '[0-9]+')
+
+        A=$(_lint_count "$STAGED_COPY/after_$base") || LINT_BROKE="$LINT_BROKE $f(staged)"
         if git show "HEAD:$f" > "$STAGED_COPY/before_$base" 2>/dev/null; then
-            B=$(python3 scripts/note_vagueness_lint.py "$STAGED_COPY/before_$base" 2>&1 \
-                | grep -oE '^[[:space:]]*[0-9]+ finding' | tail -1 | grep -oE '[0-9]+')
+            B=$(_lint_count "$STAGED_COPY/before_$base") || LINT_BROKE="$LINT_BROKE $f(HEAD)"
         else
-            B=0   # a NEW note is held to the whole standard, as it should be
+            B=0   # a NEW note has no baseline and is held to the whole standard
         fi
+
         AFTER_TOTAL=$((AFTER_TOTAL + ${A:-0}))
         BEFORE_TOTAL=$((BEFORE_TOTAL + ${B:-0}))
+
         if [ "${A:-0}" -gt "${B:-0}" ]; then
+            WORSENED_COUNT=$((WORSENED_COUNT + 1))
+            WORSENED="$WORSENED
+  $f: ${B:-0} -> ${A:-0} finding(s)"
             echo "" >&2
             echo "pre-commit: $f went from ${B:-0} to ${A:-0} note finding(s)." >&2
             python3 scripts/note_vagueness_lint.py "$STAGED_COPY/after_$base" 2>&1 \
                 | tail -20 >&2
         fi
     done
-    LINT_OUT="  ratchet: ${BEFORE_TOTAL} finding(s) at HEAD, ${AFTER_TOTAL} as staged."
-    LINT_CODE=0
-    if [ "$AFTER_TOTAL" -gt "$BEFORE_TOTAL" ]; then
-        FINDINGS=$((AFTER_TOTAL - BEFORE_TOTAL))
-    else
-        FINDINGS=0
-    fi
-    LINT_CODE=$?
-    if [ "$LINT_CODE" -ne 0 ]; then
+
+    # FAIL CLOSED WHEN THE CHECKER ITSELF BROKE. Checked before the verdict,
+    # because a count read off a failed run is not a count.
+    if [ -n "$LINT_BROKE" ]; then
         echo "" >&2
-        echo "pre-commit: the note linter could not run (exit $LINT_CODE). Refusing." >&2
-        printf '%s\n' "$LINT_OUT" | tail -15 >&2
+        echo "pre-commit: REFUSED. The note linter exited non-zero on:$LINT_BROKE" >&2
+        echo "pre-commit: a count read off a failed run is not a count." >&2
+        echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
         exit 1
     fi
-    if [ "${FINDINGS:-0}" -ne 0 ]; then
+
+    if [ "$WORSENED_COUNT" -ne 0 ]; then
         echo "" >&2
-        echo "pre-commit: REFUSED. The staged notes ADD $FINDINGS note finding(s)." >&2
+        echo "pre-commit: REFUSED. $WORSENED_COUNT staged note(s) got WORSE:$WORSENED" >&2
         echo "" >&2
-        printf '%s\n' "$LINT_OUT" | tail -30 >&2
-        echo "" >&2
+        echo "pre-commit: judged per file, not on the total. A commit that cleans" >&2
+        echo "            one note may not smuggle a new violation into another." >&2
         echo "pre-commit: founder ruling 2026-09-04 makes these blocking, not advisory." >&2
         echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
         exit 1

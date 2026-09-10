@@ -245,3 +245,92 @@ def test_no_verify_remains_the_documented_escape(tmp_path):
     r = subprocess.run(["git", "commit", "--no-verify", "-m", "deliberate"],
                        cwd=work, env=env, capture_output=True, text=True, timeout=180)
     assert r.returncode == 0, r.stderr
+
+
+# ── THE TWO BYPASSES A REVIEWER DEMONSTRATED, 2026-09-10 ────────────────────
+#
+# The guard shipped on 2026-09-09 and an adversarial review found 2 ways past
+# it the same night. Both are reproduced here as tests, because both were
+# invisible to the 12 that existed: one committed a single file and so never
+# reached the mixed case, and none broke the linter.
+
+def test_a_mixed_commit_cannot_smuggle_a_new_violation(tmp_path):
+    """BYPASS 1, REPRODUCED. A ratchet on a SUM is not a ratchet.
+
+    The first version summed every staged note and compared totals. A commit
+    that cleaned 3 spelled numbers out of an archival note AND added a new note
+    containing "twenty-nine" nets -2, so the total fell and the commit landed
+    with exit 0. The guard printed the new violation by name on its way past.
+    Judged per file, the new note goes 0 -> 1 and the commit is refused."""
+    work, env = _repo(tmp_path)
+    legacy = ("# An archival note\n\nThere were twenty-nine of them, and "
+              "forty seven others, and fifty five more.\n")
+    (work / "experimental_notes" / "old.md").write_text(legacy, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "legacy"],
+                   cwd=work, check=True, env=env, capture_output=True)
+    before = subprocess.run(["git", "rev-parse", "HEAD"], cwd=work, env=env,
+                            capture_output=True, text=True).stdout.strip()
+
+    # Clean the old note AND add a new one carrying a fresh violation.
+    (work / "experimental_notes" / "old.md").write_text(
+        legacy.replace("twenty-nine", "29").replace("forty seven", "47")
+              .replace("fifty five", "55"), encoding="utf-8")
+    (work / "experimental_notes" / "brand_new.md").write_text(
+        "# New\n\nThe run recorded twenty-nine findings.\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "mixed"], cwd=work, env=env,
+                       capture_output=True, text=True, timeout=180)
+
+    assert r.returncode != 0, (
+        f"a net-downward commit smuggled a new violation through:\n"
+        f"{r.stdout}\n{r.stderr}")
+    assert "brand_new.md" in r.stderr, r.stderr
+    after = subprocess.run(["git", "rev-parse", "HEAD"], cwd=work, env=env,
+                           capture_output=True, text=True).stdout.strip()
+    assert before == after, "HEAD moved despite the refusal"
+
+
+def test_the_cleaning_half_of_that_commit_still_passes_on_its_own(tmp_path):
+    """DISCRIMINATION for bypass 1. Correcting an archival note must still be
+    possible — the narrowing must not become a bar."""
+    work, env = _repo(tmp_path)
+    legacy = "# An archival note\n\nThere were twenty-nine of them.\n"
+    (work / "experimental_notes" / "old.md").write_text(legacy, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "legacy"],
+                   cwd=work, check=True, env=env, capture_output=True)
+    (work / "experimental_notes" / "old.md").write_text(
+        legacy.replace("twenty-nine", "29"), encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", "clean"], cwd=work, env=env,
+                       capture_output=True, text=True, timeout=180)
+    assert r.returncode == 0, r.stderr
+
+
+def test_a_linter_that_errors_refuses_rather_than_scoring_zero(tmp_path):
+    """BYPASS 2, REPRODUCED. The guard failed OPEN when its checker broke.
+
+    `LINT_CODE=$?` sat after an if/else, so it read the if/else's status — always
+    0 — and the "linter could not run" refusal was unreachable. A linter that
+    errors still prints "0 finding(s)" on its way out, so the count read 0 and
+    the commit passed. That is failing open inside a guard whose own header
+    says it fails closed."""
+    work, env = _repo(tmp_path)
+    # A linter that always errors, while still printing a plausible count.
+    (work / "scripts" / "note_vagueness_lint.py").write_text(
+        "import sys\nprint('  0 finding(s). Reported, not enforced')\n"
+        "sys.exit(3)\n", encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=work, check=True, env=env,
+                   capture_output=True)
+    subprocess.run(["git", "commit", "-q", "--no-verify", "-m", "break linter"],
+                   cwd=work, check=True, env=env, capture_output=True)
+
+    r = _commit(work, env, "any.md", CLEAN)
+    assert r.returncode != 0, (
+        f"a broken linter scored 0 findings and the commit passed:\n{r.stderr}")
+    assert "exited non-zero" in r.stderr, r.stderr
