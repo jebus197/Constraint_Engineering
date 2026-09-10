@@ -265,9 +265,26 @@ Two routes, and the split is forced by a measured constraint, not preference:
     connection attempts: **before 2026-09-04, 1 failed of 21, 4.7619%**, Wilson
     [0.8456%, 22.6694%]. **From 2026-09-04, 42 failed of 43, 97.6744%**, Wilson
     [87.9410%, 99.5883%], with exactly **1** successful attach in that whole
-    period. Fisher exact **p = 2.199086e-14, odds ratio 840**, cross-checked by a
-    chi-square with Yates correction at p = 8.709349e-13 and an mpmath exact
-    hypergeometric tail agreeing with scipy to 2.2e-14.
+    period. Fisher exact **p = 2.199086e-14, odds ratio 840** for failure after
+    the cut relative to before, cross-checked by a chi-square with Yates
+    correction at p = 8.709349e-13 and an mpmath exact hypergeometric tail
+    agreeing with scipy to 2.2e-14.
+
+    **THE CUT IS FITTED, NOT CHOSEN, and these figures are now PRODUCED rather
+    than typed.** Until 2026-09-10 this block cited the script above for the
+    change-point figures and the script emitted only the POOLED 67.1875% -- so
+    the numbers carrying the word "dead", and therefore carrying the removal,
+    were the ones with no producing code. `change_point()` now tries every
+    candidate date and reports the split minimising the Fisher exact p. It lands
+    on 2026-09-04 and reproduces every figure above, so it CONFIRMS this block
+    rather than supplying it, and would have contradicted it just as readily. A
+    first version cut at the FIRST failure instead and got 2026-08-25, 0 of 10
+    against 43 of 54 -- that failure is a 1-off, with a success 19 seconds later
+    and 20 more after it. Cutting at an isolated blip is how a change-point
+    analysis launders a hand-picked date as a derived one.
+
+    **Do not quote the pooled 67.1875% on its own.** It averages a working period
+    with a dead one, and it is the weaker of the 2 statements.
 
     **The denominator was wrong on the first attempt and the correction matters.**
     Counting every line naming the route gave 156 of 1176, 13.27% — a figure with

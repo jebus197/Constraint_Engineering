@@ -29,3 +29,13 @@ A new script defining scan() returning a tuple caused supersession_check.py:149 
 *Parked 2026-09-10T18:43:50+01:00.*
 
 The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_redesigned_2026-09-10.json and bench/exp51_configs/51_biology_exam_live_redesigned_2026-09-10.json. Running them is money. Nothing on the task list waits on the result, so it is not blocking.
+
+## The 2 Wolfram items, neither of which blocks the task list
+
+**0.1, the desktop Engine licence — DATE-GATED, not blocked.** His ruling stands: leave it to auto-renew, and it cannot be renewed before it expires. The status is OBSERVE ON THE DAY and the day is **2026-09-11**. Nothing can be done on 2026-09-10, and nothing else on the list waits on it. It stays OPEN because the observation is genuinely still owed, not because work stalled.
+
+**W1, the MCP server licence — BLOCKED ON AN EXTERNAL PARTY.** He emailed Wolfram and awaits a reply. That reply is not in this project's gift and no amount of work here produces it. The entry is correctly marked BLOCKED.
+
+**Neither is a blocker under his own criterion,** which is whether an item prevents further progress on the task list. 36 other entries remained open when these were triaged and work continued straight past them. Recorded here rather than raised, exactly as he asked: *"If not, then append to the closing/final report."*
+
+*Parked 2026-09-10T19:42:41+01:00.*

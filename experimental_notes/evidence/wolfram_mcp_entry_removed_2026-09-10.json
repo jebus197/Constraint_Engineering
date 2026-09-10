@@ -1,12 +1,12 @@
 {
-  "what": "The WolframCloud MCP server entry, removed from the desktop application config",
-  "removed_from": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.json",
-  "removed_at": "2026-09-10T16:18+01:00",
-  "removed_by": "CC1, on the founder's explicit instruction, he being away from the machine",
-  "backup": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.json.backup_2026-09-10_1616",
-  "why": "It failed 42 of 43 connection attempts from 2026-09-04, against 1 of 21 before that date. Fisher exact p = 2.199086e-14, odds ratio 840. The app retried it every few minutes and logged an error each time. Measured by scripts/wolfram_route_health_2026-09-10.py.",
-  "NOT_A_JUDGEMENT_ON_THE_SERVICE": "The founder has emailed Wolfram about the MCP server licence, which is SEPARATE from the desktop Engine licence. The capability it provided is real and is named as a loss: natural language in, useful output back, which wolframscript does not offer. This entry is removed because it is currently DEAD, not because the route is unwanted. Task W1 carries the follow-up.",
-  "to_restore": "paste the entry below back under mcpServers and restart the desktop app",
+  "what": "The WolframCloud MCP server entry, removed from the desktop application config.",
+  "why": "It retried a failing endpoint every few minutes and raised an alert each time. The founder instructed the edit on 2026-09-10: 'Edit the file to stop the alerts then continue with the remaining work. I'm not at home so I can't do it.'",
+  "not_a_deletion": "The entry is preserved verbatim below and the whole config is backed up at the path named in `backup`. Restoring is one paste. This matters because task W1 is the founder asking Wolfram whether the MCP licence can be renewed, and he said of the route: 'It has its uses.'",
+  "measured": "scripts/wolfram_route_health_2026-09-10.py: 43 failures of 64 connection attempts, 67.1875%, Wilson 95% [54.9991%, 77.4294%] agreeing between statsmodels and mpmath to 1e-9, Clopper-Pearson [54.3123%, 78.4128%].",
+  "not_dead": "WITHDRAWN AS WRITTEN, 15 minutes after writing it. The first version of this field said '21 of 64 attempts SUCCEEDED and the most recent success was 2026-09-09, so the route is unreliable, not dead'. Every number in that sentence is true and the sentence is still misleading, because it pools across a change point. Before 2026-09-04, 1 of 21 attempts failed (4.7619%). From 2026-09-04, 42 of 43 failed (97.6744%), Fisher exact p = 2.199086e-14, odds ratio 840. The 2026-09-09 success is the single surviving attach in that whole period. The route DID die, and it died on a date. The pooled 67.1875% is the weaker statement of the two and should not be quoted on its own.",
+  "removed_at": "2026-09-10T19:44:12+01:00",
+  "config": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.json",
+  "backup": "/Users/georgejackson/Library/Application Support/Claude/claude_desktop_config.backup_20260910T194412.json",
   "entry": {
     "WolframCloud": {
       "command": "npx",
@@ -16,5 +16,14 @@
         "https://agenttools.wolfram.com/mcp"
       ]
     }
-  }
+  },
+  "restore": "Paste the `entry` object back into `mcpServers` in the config named above, or copy the backup over it, then restart the application.",
+  "change_point": {
+    "before_2026-09-04": "1 of 21 attempts failed, 4.7619%, Wilson [0.8456%, 22.6694%]",
+    "from_2026-09-04": "42 of 43 attempts failed, 97.6744%, Wilson [87.9410%, 99.5883%]",
+    "fisher_exact_p": "2.199086e-14",
+    "odds_ratio": 840,
+    "cross_checks": "chi-square with Yates correction p = 8.709349e-13; mpmath exact hypergeometric tail agreeing with scipy to 2.2e-14"
+  },
+  "disabled_not_retired": "The entry is DISABLED, not retired. He has emailed Wolfram about the MCP licence, which is separate from the desktop Engine licence, and said of the service: 'It has its uses. For example you can talk to it in natural language and get useful output back.' That capability is a named loss: wolframscript takes Wolfram Language, not English. Follow-up is task W1."
 }
