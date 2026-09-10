@@ -36,6 +36,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 #: constant is monkeypatchable; an inline `Path.home()` call is not.
 DESKTOP_MIRROR = Path.home() / "Desktop" / "CDSFL_Agent_Operational_Plan.md"
 
+#: EVERY Desktop copy the founder actually reads, not just the tracker's.
+#: ADDED 2026-09-10 14:45 BST. FIRST READ named 1 of the 3, so the restore was
+#: structurally blind to the other 2 -- and on this morning's measurement the 2
+#: it could not see were the STALE ones: the task list 29,044 bytes short and
+#: 3.45 h behind, the outcomes log 5,016 bytes short and 3.40 h behind. That is
+#: the same failure that on 2026-09-09 told the founder an answer-key sealing
+#: awaited him after he had driven home and done it himself. Task V5 fixed the
+#: ordering and closed 1 door of 3; this closes the other 2.
+DESKTOP_MIRRORS = {
+    "CDSFL_MASTER_TASK_LIST.md":
+        "Desktop copy of the MASTER TASK LIST — the founder reads THIS one",
+    "CDSFL_OUTCOMES_LOG.md":
+        "Desktop copy of the OUTCOMES COMPANION — the founder reads THIS one",
+    "CDSFL_Agent_Operational_Plan.md":
+        "Desktop copy of the OPERATIONAL TRACKER",
+}
+
 from cdsfl_utils import (
     git_state,
     latest_experiment,
@@ -201,10 +218,24 @@ def first_read_lines(root: Path) -> list[str]:
             root / "experimental_notes" / "CDSFL_Agent_Operational_Plan.md",
             "OPERATIONAL TRACKER (canonical) — resume pointer + per-experiment matrix",
         ),
-        (
-            DESKTOP_MIRROR,
-            "Desktop mirror of the above (byte-identical; convenient, not the authority)",
-        ),
+    ]
+    # Each Desktop copy is offered with a note saying whether it MATCHES its
+    # canonical original. A mirror that silently diverged is worse than no
+    # mirror, because it is read with the authority of the thing it copies.
+    for name, label in DESKTOP_MIRRORS.items():
+        mirror = Path.home() / "Desktop" / name
+        canonical = root / "experimental_notes" / name
+        note = label
+        if mirror.is_file() and canonical.is_file():
+            if mirror.read_bytes() != canonical.read_bytes():
+                short = canonical.stat().st_size - mirror.stat().st_size
+                note = (f"{label} — *** DIVERGED from the repository copy by "
+                        f"{short:,} bytes. The repository copy above is the one "
+                        f"to trust. ***")
+            else:
+                note = f"{label} (byte-identical to the repository copy)"
+        targets.append((mirror, note))
+    targets += [
         (
             root / "experimental_notes" / "OUTSTANDING_QUEUE_to_BR2.md",
             "work queue to Bench Run 2",

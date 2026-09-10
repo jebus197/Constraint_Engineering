@@ -11,14 +11,19 @@
 # discipline failed within the hour. This is the mechanism.
 #
 # WHY ONLY A HANDFUL OF FILES. Measured on this machine over 3 runs:
-# 155 tests in 1.97 s to 2.39 s, against 669.92 s for the full suite.
+# 174 tests in 1.87 s to 2.28 s, against 669.92 s for the full suite.
+# RE-MEASURED 2026-09-10 14:50 BST by scripts/precommit_gate_cost_2026-09-10.py,
+# which reads this GUARDS list rather than carrying its own copy. The figure has
+# now been wrong 4 times by being typed and carried forward; it is measured.
 # (Was 56 tests in 1.00 to 2.02 s with 4 guards; 2 more were added
 # 2026-09-10 on cc2's finding F5 and the figure is re-measured, not
 # carried forward — a stale cost figure in a guard about stale claims
 # would be its own joke.) A per-commit gate costing 11 minutes
 # would be bypassed within a day, and a guard that gets bypassed is not a guard.
-# These 4 files are precisely the ones that caught the 2026-09-09 breakage after
-# the fact, so they are the ones that would have caught it before.
+# The first 4 of these 6 files are precisely the ones that caught the
+# 2026-09-09 breakage after the fact, so they are the ones that would have caught
+# it before. The header said "these 4 files" until 2026-09-10 while the list held
+# 6, which is the same stale-count defect the guard exists to catch.
 #
 # WHY IT FAILS CLOSED WHEN IT CANNOT RUN. This project's own record names "a guard
 # that cannot fail is not a guard" and lists 3 instances in a single night. A hook
@@ -228,6 +233,25 @@ if [ -n "$STAGED_NOTES" ]; then
         exit 1
     fi
     echo "pre-commit: note lint ratchet held ($BEFORE_TOTAL at HEAD, $AFTER_TOTAL as staged)."
+fi
+
+# STAGE 6 -- REFRESH THE FOUNDER'S DESKTOP COPIES. NON-BLOCKING BY DESIGN.
+#
+# He reads 3 files from his Desktop and treats them as current. On 2026-09-10 two
+# of the three had silently diverged -- the master task list 29,044 bytes short
+# and 3.45 h behind, the outcomes log 5,016 bytes short -- and he asked that
+# morning whether the companion file "on my desktop (which I presume you have
+# been updating)" was current. It was not. The same class of staleness had
+# already cost him a drive home from his hotel on 2026-09-09.
+#
+# THIS STAGE NEVER REFUSES A COMMIT. A convenience copy on one machine must not
+# be able to block work, and a guard that fires on the ordinary case teaches
+# people to reach for --no-verify. It refreshes and reports; if the Desktop is
+# absent, as it is on any other machine, it says so and exits 0.
+if [ -f scripts/sync_desktop_mirrors.py ]; then
+    if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then
+        echo "pre-commit: the Desktop mirror refresh failed; commit continues." >&2
+    fi
 fi
 
 exit 0
