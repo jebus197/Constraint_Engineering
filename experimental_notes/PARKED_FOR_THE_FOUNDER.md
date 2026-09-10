@@ -67,3 +67,19 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **THE PROPOSED FIX IS 1 LINE, AND IT IS YOURS TO TAKE.** When containment fires, keep the line with **more tokens** rather than the earlier one. That never loses information and changes only which of a matched pair survives, not which pairs are matched. It is not applied because it changes the directive text every model receives and so invalidates replay of archived runs — the same class as C0040 and as the S\* threshold promotion. `bench/tests/test_falsifier_C0037_containment_dedup_2026-09-10.py`, 7 tests.
 
 *Parked 2026-09-10T20:11:38+01:00.*
+
+## C0036 and C0054: the conflict detector is blind to 95.6120% of the directives
+
+**Raised twice by DeepSeek in one exp42 run, severity 0.80 and 0.70, both recorded UNCONFIRMED and UNTOOLABLE, never checked. Confirmed 2026-09-10.**
+
+`resolve_layer_conflicts` decides which contradictory directives survive composition, and it asks `_directive_topic_and_stance` what each directive is about. That helper recognises exactly **4 topics** — verbosity, examples, rationale, table — and returns nothing for everything else. DeepSeek's own examples, *"never infer missing data"* against *"fill missing values with defaults"* and *"use metric A"* against *"use metric B"*, all return `(None, None)`, so both sides of each contradiction are retained.
+
+**Measured over the 866 directive blocks in `bench/directives`: 828 get no topic at all — 95.6120%**, Wilson [94.0346%, 96.7866%], Clopper-Pearson [94.0266%, 96.8764%], statsmodels and mpmath agreeing to 0.0e+00. Only 38 blocks are classified: table 30, rationale 7, verbosity 1. **The `examples` branch fires on 0 of 866** — a live branch nothing reaches, which is the additive standard's unwired half sitting inside a classifier.
+
+**It is reached on every composition:** `composer.py:1415` calls the resolver, and `compose()` is the live runner's system-prompt mechanism.
+
+**NOT APPLIED, and the reason is the same as C0040 and C0037:** widening topic detection changes which directives survive, so it changes the prompt every model receives and invalidates replay of archived runs. The disposition is yours. `bench/tests/test_falsifier_C0036_C0054_conflict_topics_2026-09-10.py`, 7 tests.
+
+**One piece of good news for decision 15.** The finding text could not be read from the registry — the stored description is truncated at 200 characters and stops mid-word at *"That helpe"*, and the run's `descriptions_backfill.json` holds 18 of 67 entries and not this one. **The full text survives intact in the raw reply** `r4_deepseek_20260606T213045Z.json`. So the archived truncation damage is **repairable from the replies rather than lost**, which is better than decision 15 currently assumes. A test asserts both halves so the recovery route cannot quietly disappear.
+
+*Parked 2026-09-10T20:28:03+01:00.*
