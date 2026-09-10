@@ -128,6 +128,8 @@ Underneath sat a second defect. **3 hand-written mirror tables existed and all 3
 
 The failure message also reported line counts alone, so the first real drift read *"has 814 lines, has 814"* — 2 equal numbers offered as evidence of difference. It now reports bytes, the first differing line, and the command that fixes it.
 
+**AND THE CLOSURE CLAIM WAS REFUTED THE SAME EVENING — THERE WAS A FIFTH MIRROR.** Panel round 8, fable, severity 0.7. `Exp40_to_54_Consolidated_Plan_2026-04-21.md` → `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` is declared 3 times in the notes, the Desktop copy **exists and is diverged right now by 2,606 bytes**, and `Document_Estate_Audit_2026-08-06.md:421` records it as CORE/KEEP_AND_CONVERT with a live instruction to brief panels from it. It was in no table — and **it escaped both directions of the new test**. The declaration regex required the Desktop path within 20 non-backtick characters of the word "mirror", and that declaration puts a backticked repository path there first, so the reverse sweep written to catch exactly this reported nothing. The failure class this pass claims to close, recurring while the closure was being written. The table now holds 5 pairs and the widened regex was enumerated over every note before shipping: exactly 5 real mirrors, 0 false positives.
+
 **Mutation-verified in both halves.** Moving the refresh back below the guards takes 3 tests red, including one that RUNS the hook against a drifted Desktop; dropping the renamed mirror from the table takes 3 different tests red. Sources restored byte-identical, 15 pass.
 
 ---

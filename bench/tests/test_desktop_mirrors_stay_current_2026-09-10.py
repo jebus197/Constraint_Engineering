@@ -46,8 +46,15 @@ def sync():
 
 
 class TestTheSyncWorks:
-    def test_it_names_the_four_files_the_founder_reads(self, sync):
-        """4, not 3. The 4th was invisible to a names-only table.
+    def test_it_names_the_five_files_the_founder_reads(self, sync):
+        """5, not 4 -- and 4, not 3, before panel round 8 found the 5th.
+
+        The 5th is `Exp40_to_54_Consolidated_Plan_2026-04-21.md`, mirrored (and
+        RENAMED) to `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md`, declared
+        verbatim by tracker item C3, present on the Desktop and DIVERGED on
+        2026-09-10, and caught by neither direction of this test's first
+        version: the declaration regex required the Desktop path within 20
+        non-backtick characters of "mirror", and C3 puts the repo path there.
 
         `RUNWAY_to_BR2_2026-08-18.md` declares its mirror, at its own line 229,
         as `~/Desktop/CDSFL_RUNWAY.md` -- a different name from the repository
@@ -64,6 +71,8 @@ class TestTheSyncWorks:
              "CDSFL_Agent_Operational_Plan.md"),
             ("experimental_notes/RUNWAY_to_BR2_2026-08-18.md",
              "CDSFL_RUNWAY.md"),
+            ("experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md",
+             "CDSFL_Consolidated_Plan_2026-04-21.md"),
         }
 
     def test_a_renamed_mirror_is_expressible_at_all(self, sync):
@@ -127,8 +136,17 @@ class TestTheSyncWorks:
         that failure returning.
         """
         notes = ROOT / "experimental_notes"
+        # WIDENED BY PANEL ROUND 8 (2026-09-10). The first version required
+        # the Desktop path within 20 NON-BACKTICK characters of "mirror", so a
+        # declaration of the form "Mirrored `repo/path.md` -> `~/Desktop/X.md`"
+        # -- tracker item C3's exact phrasing -- could not match: the repo path
+        # occupies that span first and contains backticks. The live 5th mirror
+        # escaped exactly this way. The widened pattern allows anything on the
+        # same line within 120 chars, and was ENUMERATED over the notes before
+        # shipping: it yields exactly the 5 known mirrors and nothing else, so
+        # the widening adds no false positives today.
         pat = re.compile(
-            r"[Mm]irror(?:ed at|:)?[^\n`]{0,20}`~/Desktop/([A-Za-z0-9_.-]+\.md)`")
+            r"[Mm]irror[^\n]{0,120}?`~/Desktop/([A-Za-z0-9_.-]+\.md)`")
         declared = set()
         for f in notes.rglob("*.md"):
             for m in pat.finditer(f.read_text(encoding="utf-8", errors="replace")):
@@ -280,9 +298,57 @@ class TestTheOrderingActuallyHolds:
         env = {**os.environ, "HOME": str(home)}
         r = subprocess.run(["sh", str(HOOK)], cwd=ROOT, env=env,
                            capture_output=True, text=True, timeout=900)
+        out = r.stdout + r.stderr
+
+        # ---------------------------------------------------------------
+        # THE ASSERTION BELOW WAS `r.returncode == 0` AND NOTHING ELSE, AND
+        # IT COULD NOT TELL WHICH REFUSAL IT HAD SEEN (round 8, 2026-09-10).
+        #
+        # `hooks/pre-commit:40` refuses with "cannot find the repository
+        # root" BEFORE stage 0 exists, for reasons that have nothing to do
+        # with mirror ordering. Run inside a copied tree with no `.git` --
+        # which is exactly the panel sandbox -- the hook exits 1 there, and
+        # this test reported the ordering fix as BROKEN:
+        #
+        #     AssertionError: a drifted Desktop mirror still refuses the
+        #     commit:  pre-commit: cannot find the repository root. Refusing.
+        #
+        # That is a FALSE RED on tonight's headline claim, produced by the
+        # guard that exists to confirm it. This file's own comment 12 lines
+        # above says "a test that turns unrelated guards red proves nothing
+        # about the ordering it claims to test" -- and the earliest guard of
+        # all was the one it did not account for.
+        #
+        # TWO REPAIRS, both additive:
+        #   1. When the hook's OWN documented precondition is unmet, SKIP
+        #      with the reason named. A skip that says why is a result; a red
+        #      that misattributes its cause is worse than no test. The skip
+        #      is gated on the literal refusal string AND on `.git` being
+        #      genuinely absent, so it cannot fire on a real checkout and
+        #      cannot become a way to hide a real refusal.
+        #   2. When the hook refuses for ANY OTHER reason, say WHICH stage
+        #      refused. `returncode == 0` alone names nothing, so every
+        #      failure of this test read as "the ordering is broken"
+        #      regardless of what actually happened.
+        _PRECONDITION = "cannot find the repository root"
+        if _PRECONDITION in out and not (ROOT / ".git").exists():
+            pytest.skip(
+                "the pre-commit hook refuses at hooks/pre-commit:40 before any "
+                "mirror stage runs, because this tree has no .git directory. "
+                "That is the hook's own precondition, not the mirror ordering. "
+                "This test can only speak about the ordering where the hook "
+                "can reach stage 0 -- run it in a real checkout.")
+
         assert r.returncode == 0, (
-            "a drifted Desktop mirror still refuses the commit:\n"
-            + (r.stdout + r.stderr)[-1500:])
+            "the hook refused the commit. Stage 0 (the Desktop mirror "
+            "refresh) "
+            + ("DID run, so the refusal came from a later stage and the "
+               "ordering fix is not what failed"
+               if "sync_desktop_mirrors" in out or "Desktop mirror" in out
+               else "did NOT run, so the refusal came from BEFORE the mirror "
+                    "refresh -- read the first refusal line below rather than "
+                    "concluding the ordering is broken")
+            + ":\n" + out[-1500:])
         for _, desktop_name in sync.MIRRORS:
             assert (desk / desktop_name).read_text(encoding="utf-8") \
                 != "deliberately stale\n", (

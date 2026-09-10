@@ -78,6 +78,37 @@ def attempts() -> tuple[list[str], list[str], list[str]]:
     return fails, oks, stamps
 
 
+def _min_p_over_cuts(dates_of: list[str], labels: list[bool],
+                     cuts: list[str], want_detail: bool = False):
+    """min_j Fisher-exact p over the candidate cuts -- ONE implementation.
+
+    THE OBSERVED STATISTIC AND THE PERMUTED STATISTIC MUST BE THE SAME
+    FUNCTION, or the permutation test calibrates a different quantity from
+    the one it is correcting and its p-value means nothing. Writing the
+    search twice is how that goes wrong silently, so it is written once and
+    called twice.
+
+    Returns the minimising p (float) or, with `want_detail`, the full record.
+    Returns None when no cut splits the data.
+    """
+    from scipy.stats import fisher_exact
+    best = None
+    for cut in cuts:
+        before = [l for d, l in zip(dates_of, labels) if d < cut]
+        after = [l for d, l in zip(dates_of, labels) if d >= cut]
+        if not before or not after:
+            continue
+        odds, pval = fisher_exact([[sum(before), len(before) - sum(before)],
+                                   [sum(after), len(after) - sum(after)]])
+        if best is None or pval < best["p"]:
+            best = {"cut": cut, "p": pval, "odds": odds,
+                    "before_fail": sum(before), "before_n": len(before),
+                    "after_fail": sum(after), "after_n": len(after)}
+    if best is None:
+        return None
+    return best if want_detail else best["p"]
+
+
 #: The date the route's behaviour changes. NOT chosen by eye: it is the date of
 #: the FIRST failure, which is the only cut point the data itself nominates.
 #: Reported with the test that justifies it, so a reader can see whether the
@@ -116,7 +147,7 @@ def dated_attempts() -> list[tuple[str, bool]]:
     return out
 
 
-def change_point() -> dict | None:
+def change_point(permutations: int = 2000, seed: int = 20260910) -> dict | None:
     """The cut is FITTED, not chosen. Every date is tried; the best split wins.
 
     THE FIRST VERSION CUT AT THE FIRST FAILURE and got 2026-08-25, with 0 of 10
@@ -132,28 +163,95 @@ def change_point() -> dict | None:
     function CONFIRMS the box's figures rather than supplying them, and would
     have contradicted them just as readily.
     """
-    from scipy.stats import fisher_exact
     rows = dated_attempts()
     if not rows or not any(f for _t, f in rows):
         return None
-    dates = sorted({t[:10] for t, _f in rows})
-    best = None
-    for cut in dates[1:]:                       # a cut before everything is no cut
-        before = [f for t, f in rows if t[:10] < cut]
-        after = [f for t, f in rows if t[:10] >= cut]
-        if not before or not after:
-            continue
-        odds, pval = fisher_exact([[sum(before), len(before) - sum(before)],
-                                   [sum(after), len(after) - sum(after)]])
-        if best is None or pval < best["p"]:
-            best = {"cut": cut, "p": pval, "odds": odds,
-                    "before_fail": sum(before), "before_n": len(before),
-                    "after_fail": sum(after), "after_n": len(after)}
+    dates_of = [t[:10] for t, _f in rows]
+    labels = [f for _t, f in rows]
+    cuts = sorted(set(dates_of))[1:]            # a cut before everything is no cut
+
+    best = _min_p_over_cuts(dates_of, labels, cuts, want_detail=True)
     if best is None:
         return None
+
+    # -------------------------------------------------------------------
+    # THE MULTIPLE-COMPARISONS CORRECTION (added 2026-09-10, round 8).
+    #
+    # THE OBJECTION, WHICH IS CORRECT. The search above is not one test. It
+    # evaluates a Fisher exact test at EVERY candidate cut and reports the
+    # SMALLEST p it found. min_j p_j is not distributed as a p-value: it is
+    # the minimum of m dependent order statistics and is stochastically
+    # smaller than U(0,1) under the null. Reporting it as though a single
+    # test had been run overstates the evidence by roughly a factor of m.
+    # The prose around this figure said "Fisher exact p = 2.199086e-14" with
+    # no mention that 17 tests produced it.
+    #
+    # THE CORRECTION, DERIVED RATHER THAN ASSERTED.
+    #   Let p_1..p_m be the Fisher p-values at the m candidate cuts, and let
+    #   p_min = min_j p_j. Fisher exact is a valid test, so under the null of
+    #   no change point (failure labels exchangeable across attempts):
+    #       P(p_j <= a) <= a                 for every j
+    #   Therefore by the union bound (Boole), WITHOUT any independence
+    #   assumption between cuts:
+    #       P(p_min <= a) = P( U_j {p_j <= a} ) <= SUM_j P(p_j <= a) <= m*a
+    #   So p_adj := min(1, m * p_min) satisfies P(p_adj <= a) <= a and IS a
+    #   valid p-value for the SELECTED cut.
+    #
+    #   Independence is exactly what is absent here -- consecutive cuts share
+    #   nearly all their data -- which is why Bonferroni is used and Sidak is
+    #   not. Sidak's 1-(1-p)^m is valid only under independence and would be
+    #   ANTI-conservative on these nested, overlapping splits.
+    #
+    # THE SHARPER CHECK. Bonferroni is conservative precisely because the m
+    # tests are heavily dependent. The exact null distribution of the
+    # SELECTED statistic comes from permutation: hold the timestamps fixed,
+    # shuffle the failure labels, recompute min_j p_j, and ask how often the
+    # permuted minimum is at least as extreme as the observed one. That tests
+    # the maximally-selected statistic itself and assumes no dependence
+    # structure at all. Its RESOLUTION is bounded by B: with 0 hits in B
+    # draws the tightest honest statement is p <= 1/(B+1). Both numbers are
+    # reported; neither replaces the other.
+    m = len(cuts)
+    best["n_candidate_cuts"] = m
+    best["p_uncorrected"] = best["p"]
+    best["p_bonferroni"] = min(1.0, m * best["p"])
+    if permutations and permutations > 0:
+        import random as _random
+        rng = _random.Random(seed)
+        obs = best["p"]
+        hits = 0
+        shuffled = list(labels)
+        for _ in range(permutations):
+            rng.shuffle(shuffled)
+            pm = _min_p_over_cuts(dates_of, shuffled, cuts)
+            # `<=`, NOT `<`. The observed arrangement is itself one of the
+            # permutations, so excluding ties makes the test
+            # ANTI-conservative. The (1 + hits) / (1 + B) form below applies
+            # the same correction to the count.
+            if pm is not None and pm <= obs:
+                hits += 1
+        best["permutations"] = permutations
+        best["permutation_hits"] = hits
+        best["p_permutation"] = (1 + hits) / (1 + permutations)
+        # A PERMUTATION p OF 0 DOES NOT EXIST. With 0 hits the value is
+        # 1/(B+1) and it is a BOUND, not a point estimate. Said in a field so
+        # a reader cannot quote the number without the qualifier.
+        best["p_permutation_is_bound"] = (hits == 0)
+
     # The naive cut is reported alongside so the difference is visible rather
     # than silently corrected.
     best["naive_cut_at_first_failure"] = sorted(t for t, f in rows if f)[0][:10]
+    # THE MOST RECENT ATTEMPT, WHATEVER IT WAS. A retirement decision is a
+    # decision about the route's CURRENT state; the pooled and split rates are
+    # both backward-looking averages. If the last attempt in the log
+    # SUCCEEDED, a reader of a retirement recommendation is entitled to see
+    # that beside the recommendation, not three screens away under "last
+    # mention" where it reads as a mention rather than as an attach.
+    _last_t, _last_f = max(rows)
+    best["last_attempt"] = _last_t
+    best["last_attempt_failed"] = _last_f
+    best["successes_after_cut"] = sorted(
+        t for t, f in rows if t[:10] >= best["cut"] and not f)
     return best
 
 
@@ -212,7 +310,32 @@ def main() -> int:
         # which is the same number the other way up -- the odds of failure AFTER
         # the cut relative to before, which is the direction a reader means. Both
         # are printed so neither looks like a different measurement.
-        print(f"  Fisher exact p = {cp['p']:.6e}")
+        # THE HEADLINE IS NOW THE CORRECTED NUMBER, not the minimum.
+        # `p_uncorrected` is printed first and LABELLED as the minimum over m
+        # tests, so it cannot be lifted out of this block and quoted as
+        # "the Fisher p" -- which is exactly what happened to it in
+        # `.claude/CLAUDE.md`.
+        print(f"  candidate cuts searched : {cp['n_candidate_cuts']}  "
+              f"(this is a MAXIMALLY-SELECTED statistic, not a single test)")
+        print(f"  min Fisher exact p over those cuts = {cp['p_uncorrected']:.6e}  "
+              f"<- NOT a p-value; do not quote alone")
+        print(f"  Bonferroni-corrected p  = {cp['p_bonferroni']:.6e}  "
+              f"(= {cp['n_candidate_cuts']} x min p; valid under ARBITRARY "
+              f"dependence between cuts, by the union bound)")
+        if "p_permutation" in cp:
+            _bound = "<= " if cp["p_permutation_is_bound"] else "= "
+            print(f"  permutation p (B={cp['permutations']}, exact null of the "
+                  f"SELECTED statistic) {_bound}{cp['p_permutation']:.4e}  "
+                  f"[{cp['permutation_hits']} of {cp['permutations']} shuffles "
+                  f"reached the observed minimum]")
+            if cp["p_permutation_is_bound"]:
+                print(f"  the permutation figure is a RESOLUTION BOUND at "
+                      f"1/(B+1), not a point estimate: no shuffle got close, "
+                      f"so B is the only thing limiting it.")
+        print(f"  the correction does not change the CONCLUSION here -- both "
+              f"corrected figures stay far below any threshold -- but the "
+              f"uncorrected number was overstated by a factor of "
+              f"{cp['n_candidate_cuts']}.")
         print(f"  odds ratio     : {1 / cp['odds']:.6g} for failure AFTER the cut "
               f"relative to before")
         print(f"                   ({cp['odds']:.6g} in scipy's own "
@@ -231,6 +354,23 @@ def main() -> int:
         print("  THE POOLED RATE ABOVE IS THE WEAKER STATEMENT and must not be "
               "quoted alone:")
         print("  it averages a working period with a dead one.")
+        # THE EVIDENCE THAT CUTS AGAINST THE RECOMMENDATION, PRINTED WHERE THE
+        # RECOMMENDATION IS. Entry 0.2 quotes the most recent FAILURE and
+        # concludes "retire". The most recent ATTEMPT is a different event and
+        # may be a success; if it is, the reader must be told here.
+        _lastword = "FAILED" if cp["last_attempt_failed"] else "SUCCEEDED"
+        print(f"  most recent ATTEMPT of any kind: {cp['last_attempt']} -- it "
+              f"{_lastword}.")
+        if not cp["last_attempt_failed"]:
+            print("  *** THE ROUTE'S LAST OBSERVED ATTACH SUCCEEDED. The "
+                  "post-cut rate is 'almost always fails', NOT 'never works'. "
+                  "A retirement argued from 'dead' is arguing something the "
+                  "data does not show; the defensible claim is availability "
+                  "too low to depend on. ***")
+        if cp["successes_after_cut"]:
+            print(f"  successful attaches ON OR AFTER the cut "
+                  f"({len(cp['successes_after_cut'])}): "
+                  f"{', '.join(cp['successes_after_cut'])}")
 
     if stamps:
         print(f"\nfirst mention : {min(stamps)}")

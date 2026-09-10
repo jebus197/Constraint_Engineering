@@ -87,8 +87,19 @@ class TestItReachesNoDecision:
         a field a reader takes as measured. The record must distinguish them.
         """
         src = RUNNER.read_text(encoding="utf-8")
-        assert '"fit": "measured" if _measured else "ASSUMED_DEFAULT"' in src, (
+        # THREE STATES SINCE ROUND 8 (2026-09-10), and this assert must match
+        # the code it guards or it guards nothing: a zero-token target takes
+        # the module's EMPTY-INPUT return of gamma 1.0, not the 0.5
+        # assumed-default, so "ASSUMED_DEFAULT" would have promised a value
+        # the field does not hold. The prior exact-string assert pinned the
+        # two-state form and went red the moment the fix landed -- caught by
+        # the second round-8 seat running this file after the first seat's
+        # fix; the fix and its guard must move together.
+        assert '"fit": ("measured" if _measured' in src, (
             "the stored record no longer distinguishes a fit from a default")
+        assert '"NO_TOKENS"' in src and '"ASSUMED_DEFAULT"' in src, (
+            "the record no longer separates the zero-token empty-input value "
+            "from the below-window assumed default; one of them is lying")
         assert "NOT MEASURED" in src, (
             "the reading shipped beside an assumed value no longer says it is "
             "assumed")

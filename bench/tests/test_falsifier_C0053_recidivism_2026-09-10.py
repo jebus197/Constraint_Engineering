@@ -119,19 +119,114 @@ class TestTheFalsifierCanActuallyFail:
 
     The fix is `_recidivism_text`, which folds the contrast statement back in.
     Reverting it means comparing `alternative_text` alone -- exactly the
-    pre-fix behaviour C0053 describes. The comparison must then score 1.0.
-    """
+    pre-fix behaviour C0053 describes.
 
-    def test_reverting_the_fix_reproduces_the_defect_exactly(self):
-        prior = _record(BODY, None)
-        fixed = _record(BODY, CONTRAST_LINE)
-        # The pre-fix expression, written out rather than monkeypatched, so what
-        # is being reverted is visible in the test itself.
+    THE CONTROL THAT WAS HERE UNTIL 2026-09-10 DID NOT REVERT ANYTHING.
+    It read:
+
         pre_fix_prior = prior.alternative_text
         pre_fix_fixed = fixed.alternative_text
-        assert score_isomorphism(pre_fix_prior, pre_fix_fixed) == pytest.approx(1.0), (
-            "the pre-fix comparison no longer scores 1.0, so this control does "
-            "not reproduce the defect and the tests above are unproven")
+        assert score_isomorphism(pre_fix_prior, pre_fix_fixed) == 1.0
+
+    Both records are built by `_record(BODY, ...)`, so both `.alternative_text`
+    attributes are the SAME `str` object -- `prior.alternative_text is
+    fixed.alternative_text` evaluates True. The assertion was therefore
+    `score_isomorphism(s, s) == 1.0`, a property of `score_isomorphism` and of
+    nothing else. Measured: it still passes with `_divergence._recidivism_text`
+    monkeypatched to `lambda r: "TOTAL GARBAGE"`. A control that survives the
+    destruction of the function it claims to revert is the exact vacuity this
+    file's docstring was written to forbid, and it also short-circuits the
+    mechanism: `parse_contrast_statement` never runs, so the STRIPPING step
+    that C0053 turns on is never exercised by the control at all.
+
+    WHAT REPLACES IT. The module-level name `_recidivism_text` is rebound to
+    the pre-fix expression, and the defect is then demonstrated THROUGH
+    `check_sibling_admissibility`, which is the gate C0053 is a complaint
+    about. `_divergence.py:638-640` looks the name up on the module at call
+    time, so the rebinding reaches the real call site rather than a copy of
+    it. The revert is undone in a `finally`, because a control that leaks its
+    revert into the rest of the session is worse than no control.
+    """
+
+    def test_reverting_the_fix_rejects_the_repair_through_the_real_gate(self):
+        """THE CONTROL. Fails iff reverting the fix does NOT bring C0053 back."""
+        import bench.dm._divergence as _div
+        original = _div._recidivism_text
+        try:
+            # THE PRE-FIX EXPRESSION, bound where the gate will find it.
+            _div._recidivism_text = lambda record: record.alternative_text
+            fixed = _record(BODY, CONTRAST_LINE)
+            check_sibling_admissibility(
+                [fixed], config=DivergenceConfig(),
+                prior_round_alternatives=[_record(BODY, None)])
+            recidivist = [r for r in fixed.rejection_reasons
+                          if "recidivism_near_copy" in r]
+        finally:
+            _div._recidivism_text = original
+        assert recidivist, (
+            "with the fix reverted the gate STILL admitted the repaired "
+            "alternative, so `_recidivism_text` is not what prevents the "
+            "rejection and TestTheDefectIsFixed proves nothing about it")
+
+    def test_the_revert_was_undone(self):
+        """A control that leaks its own revert poisons every later test."""
+        import bench.dm._divergence as _div
+        assert _div._recidivism_text is _recidivism_text, (
+            "the monkeypatch above escaped its `finally`")
+
+    def test_the_control_would_notice_a_destroyed_fix(self):
+        """THE META-CONTROL, and the reason the old one was replaced.
+
+        The control above must be sensitive to what `_recidivism_text` DOES,
+        not merely to the arguments the test hands it. Destroying the function
+        must change the control's outcome. The superseded control did not have
+        this property -- it returned 1.0 either way -- which is how a
+        tautology passed for a revert.
+        """
+        import bench.dm._divergence as _div
+        original = _div._recidivism_text
+        try:
+            _div._recidivism_text = lambda record: "TOTAL GARBAGE"
+            fixed = _record(BODY, CONTRAST_LINE)
+            check_sibling_admissibility(
+                [fixed], config=DivergenceConfig(),
+                prior_round_alternatives=[_record(BODY, None)])
+            under_garbage = [r for r in fixed.rejection_reasons
+                             if "recidivism_near_copy" in r]
+        finally:
+            _div._recidivism_text = original
+        # Two constant strings are trivially isomorphic, so a destroyed
+        # `_recidivism_text` rejects EVERYTHING as a near-copy. The point is
+        # only that the outcome tracks the function: the superseded control
+        # was invariant to this substitution.
+        assert under_garbage, (
+            "the gate's verdict did not respond to replacing "
+            "`_recidivism_text` at all, so nothing downstream of it is under "
+            "test and the revert control is decorative")
+
+    def test_the_superseded_control_was_a_tautology(self):
+        """The defect being fixed, stated as a test so it cannot come back.
+
+        Kept because "we replaced a vacuous control" is a claim, and a claim
+        in this project arrives with the thing that checks it.
+        """
+        prior = _record(BODY, None)
+        fixed = _record(BODY, CONTRAST_LINE)
+        assert prior.alternative_text is fixed.alternative_text, (
+            "the two records no longer share one string object; if that "
+            "changes, re-read the superseded control before trusting this "
+            "file's account of why it was replaced")
+        import bench.dm._divergence as _div
+        original = _div._recidivism_text
+        try:
+            _div._recidivism_text = lambda record: "TOTAL GARBAGE"
+            still_one = score_isomorphism(prior.alternative_text,
+                                          fixed.alternative_text)
+        finally:
+            _div._recidivism_text = original
+        assert still_one == pytest.approx(1.0), (
+            "the superseded control no longer passes under a destroyed fix, "
+            "so it was not the tautology this file says it was")
 
     def test_the_two_differ_which_is_what_the_fix_changed(self):
         prior = _record(BODY, None)

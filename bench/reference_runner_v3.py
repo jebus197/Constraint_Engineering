@@ -13256,6 +13256,35 @@ def run_experiment(
                         _win = max(4, (4 * _n_tokens) // (_IC_MIN_WINDOWS * 2))
                         _cx = compute_gamma_input(_tgt_text, window_size=_win)
                     _measured = _cx.n_windows >= _IC_MIN_WINDOWS
+                    # THE FLAG IS RIGHT; TWO FIELDS BEHIND IT WERE NOT
+                    # (round 8, 2026-09-10). `n_windows >= MIN_WINDOWS` is the
+                    # correct key -- a saturated text legitimately returns
+                    # r_squared 0.0 with gamma 1.0, so keying on r_squared was
+                    # rightly rejected, and with 3+ windows `_fit_heaps` cannot
+                    # reach its (0,0,0) sentinel because cumulative token
+                    # counts strictly increase and so cannot degenerate the
+                    # regression. But the flag guards a SECOND case it does not
+                    # describe.
+                    #
+                    # WHEN THE TARGET TOKENISES TO NOTHING, `compute_gamma_input`
+                    # returns early at input_complexity.py:211 with
+                    # n_windows 0, beta 0.0 and gamma **1.0** -- NOT the 0.5
+                    # assumed-default branch at :232. `_measured` is correctly
+                    # False, but the block then wrote `gamma_input: 1.0`
+                    # alongside a `reading` asserting "gamma is the module's
+                    # assumed default of 0.5". The number and the prose beside
+                    # it disagreed, and 1.0 is the EXTREME "maximally simple"
+                    # end of the scale, recorded for a target never measured.
+                    #
+                    # REACHABLE, not theoretical. `tokenize` keeps only
+                    # `[a-zA-Z_][a-zA-Z0-9_]*` runs longer than 2 characters
+                    # that are not stopwords, so a CJK, RTL, minified or
+                    # short-identifier target yields 0 tokens. Measured:
+                    #   compute_gamma_input("四七八九 五六 一二三"*500)
+                    #     -> n_windows=0 gamma=1.0 beta=0.0 r_squared=0.0
+                    # The exam has run on prose targets; nothing prevents a
+                    # non-Latin one.
+                    _no_tokens = _cx.n_windows == 0
                     result["target_complexity"] = {
                         "gamma_input": round(_cx.gamma, 6),
                         "beta": round(_cx.beta, 6),
@@ -13265,25 +13294,56 @@ def run_experiment(
                         "target_chars": len(_tgt_text),
                         "target_tokens": _n_tokens,
                         # THE FIELD THAT STOPS AN ASSUMPTION READING AS A RESULT.
-                        "fit": "measured" if _measured else "ASSUMED_DEFAULT",
+                        # THREE STATES, NOT TWO. "ASSUMED_DEFAULT" promises
+                        # the module's stated 0.5; NO_TOKENS does not deliver
+                        # it, so it gets its own name rather than borrowing
+                        # one that misdescribes it.
+                        "fit": ("measured" if _measured
+                                else ("NO_TOKENS" if _no_tokens
+                                      else "ASSUMED_DEFAULT")),
                         "measured_at_round": round_idx,
                         # SAID IN WORDS, because a bare number invites the reader
                         # to guess the direction and the direction is
                         # counter-intuitive: HIGH gamma is SIMPLE.
+                        # THE PROSE NOW QUOTES THE NUMBER IT SITS BESIDE
+                        # rather than a number it assumes is there. The
+                        # previous text said "0.5" unconditionally; in the
+                        # NO_TOKENS case the field held 1.0.
                         "reading": (
                             ("high gamma is simple and repetitive, low gamma "
                              "is complex and novel")
                             if _measured else
-                            ("NOT MEASURED: the target yielded "
-                             f"{_cx.n_windows} window(s), fewer than the "
-                             f"{_IC_MIN_WINDOWS} needed for a Heaps fit, so "
-                             "gamma is the module's assumed default of 0.5 and "
-                             "carries no information about this target")),
+                            ("NOT MEASURED: the target yielded 0 tokens under "
+                             "`input_complexity.tokenize`, which keeps only "
+                             "identifier-like runs over 2 characters, so no "
+                             "window was formed at all. The reported "
+                             f"gamma_input of {round(_cx.gamma, 6)} is the "
+                             "module's empty-input return value, NOT a "
+                             "measurement, and must not be read as 'maximally "
+                             "simple'"
+                             if _no_tokens else
+                             ("NOT MEASURED: the target yielded "
+                              f"{_cx.n_windows} window(s), fewer than the "
+                              f"{_IC_MIN_WINDOWS} needed for a Heaps fit, so "
+                              f"gamma is the module's assumed default of "
+                              f"{round(_cx.gamma, 6)} and carries no "
+                              "information about this target"))),
                         "informative_only": True,
                         "why": ("founder ruling 2026-09-09: a reported "
                                 "statistic, not an input to any gate"),
                     }
-                except (OSError, ValueError) as _cx_err:
+                except Exception as _cx_err:  # noqa: BLE001
+                    # BROADENED past (OSError, ValueError, ArithmeticError) by
+                    # the second round-8 seat (2026-09-10). Any class this
+                    # clause does not name falls through to the OUTER
+                    # integrity handler below, which logs and returns BEFORE
+                    # `target_hashes` is recorded for the round -- so a
+                    # surprise failure (MemoryError on a huge target,
+                    # RecursionError, TypeError) in an INFORMATIVE statistic
+                    # would silently blind the DETECTIVE control it sits
+                    # above. 35 of 39 archived runs already carry no target
+                    # hash; this path must not create more. An informative
+                    # block may fail loudly here, never widely there.
                     # LOUD, NOT SILENT. A statistic that quietly vanishes is
                     # indistinguishable from one that was never wired, which is
                     # the state this block exists to end.

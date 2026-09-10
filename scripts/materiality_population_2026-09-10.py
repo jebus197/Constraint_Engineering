@@ -98,6 +98,55 @@ def candidates(state: dict) -> dict[str, int]:
         out["itc_hil_flags, entries"] = len(flags)
         out["itc_hil_flags, distinct models"] = len(
             {f.get("model") for f in flags if isinstance(f, dict)})
+
+    # ROUND 8 EXTENSION (panel, 2026-09-10). The space above enumerates only
+    # SINGLE-FIELD EQUALITY, presence, bands and series -- it cannot express
+    # NEGATION ("status != CLOSED") or CONJUNCTION ("escalated AND
+    # unresolved"). That gap is not academic: the claim's own label, "HIL
+    # residual", most naturally denotes a conjunction -- a finding ROUTED to
+    # human review AND still UNRESOLVED -- which no definition above can
+    # state. A null result from a search that cannot state the claim's most
+    # natural meaning is weaker than it reads. So: every negation of a
+    # small-cardinality field, and every conjunction of a HIL-ish base
+    # condition with a small-field condition (affirmed and negated), is
+    # counted too. Bounded by construction: fields with <= 12 distinct short
+    # values only, bases drawn from fields naming escalation/HIL plus the
+    # UNTOOLABLE verdict.
+    def _dump(r, f):
+        return json.dumps(r.get(f), sort_keys=True, default=str)
+
+    small = {}
+    for f in fields:
+        vals = collections.Counter(_dump(r, f) for r in rows)
+        if len(vals) <= 12 and all(len(v) <= 40 for v in vals):
+            small[f] = list(vals)
+
+    for f, vals in small.items():
+        for v in vals:
+            out[f"{f} != {v}"] = sum(1 for r in rows if _dump(r, f) != v)
+
+    bases = []
+    for f in sorted(small):
+        if "escalat" in f.lower() or "hil" in f.lower():
+            for v in small[f]:
+                if v == "true":
+                    bases.append((f"{f} == true",
+                                  lambda r, f=f: _dump(r, f) == "true"))
+        if "verdict" in f.lower():
+            for v in small[f]:
+                if "UNTOOLABLE" in v:
+                    bases.append((f"{f} == {v}",
+                                  lambda r, f=f, v=v: _dump(r, f) == v))
+    for blabel, bpred in bases:
+        for f, vals in small.items():
+            if blabel.startswith(f + " "):
+                continue          # a condition conjoined with itself is noise
+            for v in vals:
+                hit = [r for r in rows if bpred(r)]
+                out[f"{blabel} AND {f} == {v}"] = sum(
+                    1 for r in hit if _dump(r, f) == v)
+                out[f"{blabel} AND {f} != {v}"] = sum(
+                    1 for r in hit if _dump(r, f) != v)
     return out
 
 

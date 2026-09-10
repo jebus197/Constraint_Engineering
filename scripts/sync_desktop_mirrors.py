@@ -65,6 +65,20 @@ MIRRORS = (
     ("experimental_notes/CDSFL_OUTCOMES_LOG.md", "CDSFL_OUTCOMES_LOG.md"),
     ("experimental_notes/CDSFL_Agent_Operational_Plan.md", "CDSFL_Agent_Operational_Plan.md"),
     ("experimental_notes/RUNWAY_to_BR2_2026-08-18.md", "CDSFL_RUNWAY.md"),
+    # THE 5TH MIRROR, FOUND BY PANEL ROUND 8 (2026-09-10). Declared 3 times in
+    # the notes -- operational tracker item C3 says, verbatim, "Mirrored
+    # `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` ->
+    # `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md`" -- and the Desktop copy
+    # EXISTS and IS DIVERGED today (md5 8ad4019e vs b515c9dd; the repo copy
+    # carries the 2026-08-05 _suppression.py correction the Desktop never
+    # received, per Document_Estate_Audit_2026-08-06.md:421, which also records
+    # the document as CORE / KEEP_AND_CONVERT, i.e. still a live instruction).
+    # It escaped the 2026-09-10 sweep because the reverse-direction regex
+    # required the `~/Desktop/` path within 20 non-backtick characters of the
+    # word "mirror", and the C3 phrasing puts the REPO path there first. It is
+    # a RENAMED mirror, so the old names-only table could never have held it.
+    ("experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md",
+     "CDSFL_Consolidated_Plan_2026-04-21.md"),
 )
 
 #: Retained so any existing reader keeps working, and DERIVED so it can never
