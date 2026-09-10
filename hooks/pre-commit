@@ -10,8 +10,12 @@
 # in these words: "No mechanism is missing; the remedy is ordering." Ordering by
 # discipline failed within the hour. This is the mechanism.
 #
-# WHY ONLY 4 FILES. Measured on this machine over 3 runs: 56 tests in 1.00 s to
-# 2.02 s, against 669.92 s for the full suite. A per-commit gate costing 11 minutes
+# WHY ONLY A HANDFUL OF FILES. Measured on this machine over 3 runs:
+# 155 tests in 1.97 s to 2.39 s, against 669.92 s for the full suite.
+# (Was 56 tests in 1.00 to 2.02 s with 4 guards; 2 more were added
+# 2026-09-10 on cc2's finding F5 and the figure is re-measured, not
+# carried forward — a stale cost figure in a guard about stale claims
+# would be its own joke.) A per-commit gate costing 11 minutes
 # would be bypassed within a day, and a guard that gets bypassed is not a guard.
 # These 4 files are precisely the ones that caught the 2026-09-09 breakage after
 # the fact, so they are the ones that would have caught it before.
@@ -33,10 +37,23 @@ REPO=$(git rev-parse --show-toplevel 2>/dev/null) || {
 }
 cd "$REPO" || exit 1
 
+# THE 6th AND 7th GUARDS, added 2026-09-10 on cc2's finding F5 — "the cheapest
+# fix, largest effect". A commit is the exact moment a DONE marker is written,
+# and the guard that checks DONE markers was collected only by the full suite,
+# 13 minutes away. The hook's own header records the ruling this repeated:
+# "The failure was never the absence of a rule or a checker; it was never
+# running the checker."
+#
+# COST, MEASURED by cc2 under sh over 3 runs each: 4 guards 0.99/0.89/0.87 s,
+# 6 guards 1.50/1.39/1.56 s. About +0.5 s against this hook's own stated budget
+# of 1.00 to 2.02 s. The marker engine's own test comes too, which closes the
+# deleted-marker case at commit time as well.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_recovery_memory_doc_repairs.py
 bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
-bench/tests/test_line_citations_resolve_2026-09-01.py"
+bench/tests/test_line_citations_resolve_2026-09-01.py
+bench/tests/test_done_markers_carry_evidence_2026-09-10.py
+bench/tests/test_task_list_markers_2026-09-09.py"
 
 MISSING=""
 for f in $GUARDS; do
