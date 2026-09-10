@@ -1,0 +1,70 @@
+# PANEL BRIEF — round 4: the restore-order fix, the seat-guard repair, and 9 figures that were wrong
+
+## SECTION 1 — The question
+
+**Three repairs landed after round 3 finished, so none of them has been reviewed. Do they hold, and is the process that produced them itself sound?**
+
+Round 3 reviewed the DONE-evidence guard and the note-lint commit guard. Both seats returned PARTIAL with 6 findings between them; the worst was a guard that read its own source file and so satisfied itself from its own literal. Those 6 were repaired at commit `8f88650`. Then 3 further pieces of work landed, at `fc479bb`, `03254e8` and `efbaf8a`, and section P of `experimental_notes/CDSFL_MASTER_TASK_LIST.md` forbids any of them moving to DONE until a panel review has met every clause. This is that review.
+
+**Repair 1 — the restore reads the older document first, and it cost the founder a drive home.** `scripts/cdsfl_recover.py` names an operational tracker as FIRST READ. On 2026-09-09 at 23:00 it fed the assistant a stale line saying the answer-key sealing still awaited the founder. He had already driven home from his hotel and done it himself on 2026-09-07 at 22:03, and the assistant repeated the stale line back to him. The correct record sat in the master task list, written 8 hours earlier. FIRST READ now offers `CDSFL_MASTER_TASK_LIST.md` and `CDSFL_OUTCOMES_LOG.md`, orders every entry by modification time newest-first, and labels how far behind the newest each one is. Its stated rule: the fresher one wins unless it says otherwise, and a stale document is not a second opinion.
+
+**Repair 2 — an assessment declined a question that was answerable.** Task 6.7 recorded a seat's guard proposal as undecidable. `ImmuneMemory` has no `has_evidence` attribute, so the guard raises on its first call, and the premise is executable rather than a matter of opinion. Both verdicts are now executed rather than asserted.
+
+**Repair 3 — 4 agents re-measured the figures in 4 entries and 9 of the figures were wrong.** Task 2.1 said 5,282 captured when its own next sentence said 5,295; missed was 1,068 not 1,081; the rate 16.78% not 16.99%; the description-bearing subset 1,052 not 1,066. Entry M1 said 15 of 29, 51.7%, where the denominator 29 came from the very narrow pattern that entry exists to complain about — the true count at both revisions is 48, so 15 of 48, 31.25%. Entry 6.5 described a repaired state in the broken state's present tense. **And `scripts/watchdog_vs_retry_budget_2026-09-09.py` had not run since the day it was written**: the 6.2 repair replaced the expression its regex matched, in the same commit that added the script, so it exited 1 and produced nothing while the entry went on citing figures it was supposed to be producing.
+
+Artefacts under review, by path:
+
+- `scripts/cdsfl_recover.py` — FIRST READ ordering and the staleness labels
+- `bench/tests/test_first_read_prefers_the_fresher_source_2026-09-10.py` — 9 tests, 5 mutations
+- `scripts/watchdog_vs_retry_budget_2026-09-09.py` — now accepts both expression forms
+- `bench/tests/test_drift_seat_guard_assessment_2026-09-10.py` — the 6.7 repair
+- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — entries 2.1, 6.2, 6.5, M1, V5, 6.7
+- `scripts/ffafp_cycle_gamma_2026-09-10.py` — the stop criterion this whole programme runs under
+- `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` and `hooks/pre-commit` — round 3's repairs, for regression
+
+## SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery. A reply that reasons about these files without having executed them has not answered.**
+
+Instruments that bear on this, and what each is expected to say:
+
+- **`scripts/ffafp_cycle_gamma_2026-09-10.py`** — execute it. It applies this project's own two-sided gate: `gamma` at or above 0.30 AND 3 consecutive zero-discovery passes. The series is `[11, 4, 2, 3, 6, 2, 3, 2, 9]` and `gamma` is 0.451, so the `gamma` side passes and the count side does not. **Pass 9 found more than passes 6, 7 and 8 combined.** Ask whether a Duane slope computed over a series that rises at its tail is being read correctly, or whether the rise means the discovery process changed rather than that it is converging. If the gate is being read wrongly, that is the most important finding available in this brief.
+- **`_estimate_gamma` in `bench/reference_runner_v3.py`** — the cycle script imports it rather than re-implementing it. Verify that. A stop criterion that re-implements its own gate can drift from the gate the runs use.
+- **Wilson intervals** — every proportion in the corrected entries carries one, cross-checked by 2 tools. Re-derive at least 1 of them independently and say whether it agrees. 15 of 48 is quoted as 31.25%, Wilson [19.9%, 45.3%].
+- **`severity` and `S_k`** — the additive standard holds that an addition nothing reaches is not additive. Each repair above is an addition. Ask, for each, whether anything reaches it: is the test collected, and does it go red when the property is violated?
+- **`rho` and `nu`** — probably not implicated. Say so if you agree; if you can show a path by which restore ORDER affects novelty or overlap accounting, that is a finding the assistant missed.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that you have EXECUTED is a hypothesis, not a fix.
+
+**Report the exact command you ran and the exact output.** Where you propose a change, give file, line, old text, new text. Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation APPLIED and that it lands on a line the fixture actually executes, run the test, report whether it went red. A mutation that applies to the file but not to the executed path reads as SURVIVED and is not one — that has happened twice in this programme.
+
+**The specific traps in this batch, each of which has already caught the assistant once:**
+
+1. The freshness test's declared order and its true modification-time order COINCIDED in the live tree, so the suite could not tell a sorted list from an unsorted one until a fixture was rebuilt. Check whether that hole is really closed or merely moved.
+2. The watchdog script now accepts 2 expression forms. A script that accepts anything cannot fail. Check that it still refuses a third, absent form.
+3. 6.5's docstring claimed every test in the file runs the script and none reads its source, while 1 test checks a file mode and another reads a shell script as text. Check the corrected wording against what the file does.
+
+**Work in the sandbox copy you are given. Do not modify the canonical tree.**
+
+## SECTION 4 — What would refute you
+
+State, before concluding, what evidence would overturn your own answer.
+
+Specifically: if you judge these repairs sound, name the class of defect they would still let through. If you judge them unsound, name the cheapest addition that closes your objection and say whether it is worth its cost. If you believe the cycle should stop rather than continue, say what the gate would have to show for you to change your mind.
+
+## SECTION 5 — Output shape
+
+- `verdict` — CONFIRMED / REFUTED / PARTIAL on whether the 3 repairs hold
+- `reasoning` — grounded in tool output you actually saw
+- `findings` — each with file, line, severity, what is wrong, the fix, and the executed falsifier with its command and output
+- `falsifier` and `falsifier_result` — the code you ran and what it returned
+- `gate_reading` — your independent reading of the two-sided gate on the series above: CONVERGED or KEEP GOING, and why
+- `refutation_condition` — Section 4's answer
+- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's framing. Disagreement is preserved as information; do not converge toward the brief.
+- `passes_run` — how many
+
+## SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, break a live run, or feed the founder a stale fact as a current one. Diminishing returns is this project's own criterion and it applies to you too. Do not generate findings for their own sake and do not police style.

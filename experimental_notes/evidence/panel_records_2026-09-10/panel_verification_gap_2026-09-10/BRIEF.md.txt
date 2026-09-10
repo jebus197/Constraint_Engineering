@@ -1,0 +1,57 @@
+# PANEL BRIEF — the verification gap, its repair, and whether the repair is itself believable
+
+## SECTION 1 — The question
+
+**Does the new DONE-evidence guard actually close the hole that let 11 of 19 completion claims be overstated, or does it only move the hole?**
+
+Context you need, and it is unflattering to the assistant that wrote it. On 2026-09-09 an assistant marked 19 entries DONE on `experimental_notes/CDSFL_MASTER_TASK_LIST.md`. On 2026-09-10, 18 adversarial agents re-checked all 19 by running the tests rather than reading the claims, with a second reviewer on every disputed one. **11 of 19 were overstated — 57.89%, Wilson [36.3%, 76.9%]** — 2 reviewers agreeing on every one. **One was not an overstatement but a live regression at HEAD**: task 6.3 sent every production run into a single shared directory, and its 8 tests were green throughout because every one built a fake config from `types.SimpleNamespace` instead of the real `ExperimentConfig`.
+
+The founder's question was whether the task-list marker engine ensures the work can be completed mechanically and survives compaction. The compaction half worked. The completion half did not exist: `scripts/task_list_markers.py`'s `CONTRADICTORY` set refuses an entry only when its own 2 labels disagree, and nothing compared DONE against the repository.
+
+Artefacts under review:
+
+- `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` — the new guard
+- `scripts/task_list_markers.py` — the `MARKER` regex, now carrying an optional `evidence:` field, and `parse_entries`
+- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — all 19 DONE markers now name evidence
+- `hooks/pre-commit` — the note-lint guard, repaired for 2 demonstrated bypasses
+- `bench/tests/test_note_lint_guard_2026-09-09.py` — both bypasses reproduced as tests
+- `bench/reference_runner_v3.py` — `_find_or_create_logs_dir` and `_is_the_logs_dir_default`, the 6.3 repair
+
+## SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** A reply that reasons about these files without having executed them has not answered.
+
+Instruments that bear on this, and what each is expected to say:
+
+- **`task_list_markers.parse_entries`** — drive it. The `evidence:` field is OPTIONAL in the regex and REQUIRED by the guard. Show that an OPEN entry without it still parses and a DONE entry without it fails. If you can construct a marker that parses but should not, that is a finding.
+- **The guard's 4 checks** — evidence named, file exists, file holds an asserting test, file inside the collected directory. **Try to defeat each.** A file that imports its assertions from elsewhere; a test function whose only assert is `assert True`; a path that starts with `bench/tests/` but resolves elsewhere via `..`; a marker whose evidence field contains a comment terminator.
+- **`nu`, `sigma` and `S_k`** — the additive standard says an addition nothing reaches is not additive. This guard is itself an addition. Ask whether it is reached: does the suite collect it, and does it fail when the property is violated? The assistant ran 4 mutations and reports all caught; re-run them or invent better.
+- **`gamma` and the two-sided gate** — not obviously implicated, and say so if you agree. If you can show a path by which a DONE marker's evidence affects convergence machinery, that is a finding the assistant missed.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis.
+
+**Report the exact command you ran and the exact output.** Where you propose a change, give file, line, old text, new text. Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation applied AND that it lands on a line your fixture executes, run the test, report whether it went red. A mutation that applies to the file but not to the executed path reads as SURVIVED and is not one — that happened twice on 2026-09-09.
+
+**Work in a sandbox copy. Do not modify the canonical tree.**
+
+## SECTION 4 — What would refute you
+
+State, before concluding, what evidence would overturn your own answer.
+
+Specifically: if you judge the guard sufficient, name the class of overstatement it would still miss. If you judge it insufficient, name the cheapest addition that would close your objection, and say whether it is worth its cost.
+
+## SECTION 5 — Output shape
+
+- `verdict` — CONFIRMED / REFUTED / PARTIAL on whether the guard closes the hole
+- `reasoning` — grounded in tool output you actually saw
+- `findings` — each with file, line, severity, what is wrong, the fix, and the executed falsifier with its command and output
+- `falsifier` and `falsifier_result` — the code you ran and what it returned
+- `refutation_condition` — Section 4's answer
+- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's framing. Disagreement is preserved as information; do not converge toward the brief.
+- `passes_run` — how many
+
+## SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, or could break a live run. Do not generate findings for their own sake and do not police style.

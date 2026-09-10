@@ -1,0 +1,167 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 9341,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/task_list_markers.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/scripts/task_list_markers.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp -R /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo /tmp/cdsfl_sbx_seat && echo COPIED && cat /tmp/cdsfl_sbx_seat/pytest.ini\", \"description\": \"Copy repo to sandbox and show pytest.ini\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"task_list_markers\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"state: DONE\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"output_mode\": \"content\", \"head_limit\": 25}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '180,195p;275,285p' /tmp/cdsfl_sbx_seat/experimental_notes/CDSFL_MASTER_TASK_LIST.md; echo ----; grep -n 'testpaths\\\\|python_files\\\\|norecursedirs\\\\|addopts' /tmp/cdsfl_sbx_seat/pytest.ini\", \"description\": \"Inspect task-list context around orphan markers and pytest collection config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python -m pytest \\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\" -q 2>&1 | tail -5\", \"description\": \"Run the DONE-evidence guard test file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python scripts/task_list_markers.py --check && python scripts/task_list_markers.py --summary\", \"description\": \"Run marker coherence check and summary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which python3 && python3 -V && cd /tmp/cdsfl_sbx_seat && python3 -m pytest \\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\" -q 2>&1 | tail -5\", \"description\": \"Run DONE-evidence guard with python3\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python3 scripts/task_list_markers.py --check; python3 scripts/task_list_markers.py --summary\", \"description\": \"Run marker coherence check and summary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && cat > /tmp/drive_parser.py <<'EOF'\\nimport sys, tempfile, pathlib\\nsys.path.insert(0, \\\"scripts\\\")\\nimport task_list_markers as M\\n\\nCASES = {\\n \\\"open_no_evidence\\\":   \\\"**9.1 A task**\\\\n<!-- task: 9.1 | state: OPEN | status: PROPOSED -->\\\\n\\\",\\n \\\"done_no_evidence\\\":   \\\"**9.2 A task**\\\\n<!-- task: 9.2 | state: DONE | status: COMMITTED -->\\\\n\\\",\\n \\\"done_em"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && mkdir -p sbx_attack\\n# (a) traversal: real-looking test OUTSIDE the tree pytest collects, reached via ..\\ncat > scripts/pseudo_evidence_2026.py <<'EOF'\\ndef test_traversal_marker_guard():\\n    assert 1 + 1 == 2\\nEOF\\n# (b) inside bench/tests/ but a filename pytest will not collect\\ncat > bench/tests/evidence_helper_2026.py <<'EOF'\\ndef test_never_collected():"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/tmp/cdsfl_sbx_seat/hooks/pre-commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python3 -m pytest --collect-only -q 2>/dev/null | grep -E 'pseudo_evidence|evidence_helper|test_vacuous|test_raises_substring' ; echo \\\"exit=$?\\\" ; python3 -m pytest --collect-only -q 2>/dev/null | tail -2\", \"description\": \"Full-tree collect-only: are the hostile evidence files ever collected by a plain pytest run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && grep -n \\\"ExperimentConfig\\\\|SimpleNamespace\\\" bench/tests/test_logs_dir_honours_the_caller_2026-09-09.py | head -20; echo ---- ; grep -n \\\"_find_or_create_logs_dir\\\\|_is_the_logs_dir_default\\\" bench/reference_runner_v3.py | head\", \"description\": \"Check whether 6.3 tests now use the real ExperimentConfig\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest --collect-only -q 2>&1 | grep -B2 -A8 'ERROR\\\\|error' | head -40\", \"description\": \"Check whether collection errors pre-exist in the canonical tree\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/tmp/cdsfl_sbx_seat/bench/reference_runner_v3.py\", \"offset\": 11640, \"limit\": 100}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest --collect-only -q 2>&1 | grep -A6 '^ERROR\\\\|errors during collection\\\\|^==.*error' | head -30\", \"description\": \"Show the 3 collection errors in the canonical tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python3 -m pytest bench/tests/test_logs_dir_honours_the_caller_2026-09-09.py bench/tests/test_note_lint_guard_2026-09-09.py bench/tests/test_task_list_markers_2026-09-09.py -q 2>&1 | tail -4\", \"description\": \"Run 6.3, note-lint, and marker tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python3 -m pytest bench/tests/test_logs_dir_honours_the_caller_2026-09-09.py bench/tests/test_note_lint_guard_2026-09-09.py bench/tests/test_task_list_markers_2026-09-09.py -q 2>&1 | grep -E '^[0-9]+ (passed|failed)|failed|passed' | tail -2\", \"description\": \"Get pass/fail summary for the 3 companion test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\nL=experimental_notes/CDSFL_MASTER_TASK_LIST.md\\nG=\\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\"\\ncp $L /tmp/list.bak\\nrun_guard() { python3 -m pytest \\\"$G\\\" -q 2>/dev/null | tail -1; }\\n\\necho \\\"== M1: strip evidence from task 1.1\\\"\\nsed -i '' 's|<!-- task: 1.1 | state: DONE | status: ENABLED | evidence: bench/tests/test_precommit_guard_2026-09"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CDSFL_MASTER_TASK_LIST|task_list_markers\", \"path\": \"/tmp/cdsfl_sbx_seat/bench\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"check\\\\(|state ==|lower|DONE\", \"path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_task_list_markers_2026-09-09.py\", \"output_mode\": \"content\", \"head_limit\": 20}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && grep -n \\\"LIST\\\\|parse_entries\\\\|real\\\" bench/tests/test_task_list_markers_2026-09-09.py | grep -vi tmp | head; echo ----; grep -rn \\\"task_list_markers\\\\|--check\\\" hooks/task_list_pulse.py | head -5\", \"description\": \"Check whether any suite test runs check() against the real task list\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\nL=experimental_notes/CDSFL_MASTER_TASK_LIST.md\\nG=\\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\"\\necho \\\"== DEMOTION ESCAPE DEMO: state DONE -> Done (invalid) on task 1.1\\\"\\npython3 -c \\\"\\nimport pathlib\\np = pathlib.Path('$L'); s = p.read_text()\\nold = 'task: 1.1 | state: DONE'\\nassert old in s\\np.write_text(s.replace(old, 'task: 1.1 | state: D"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\nL=experimental_notes/CDSFL_MASTER_TASK_LIST.md\\npython3 -c \\\"\\nimport pathlib\\np = pathlib.Path('$L'); s = p.read_text()\\np.write_text(s.replace('task: 1.1 | state: DONE', 'task: 1.1 | state: Done', 1))\\\"\\npython3 -m pytest bench/tests/test_task_list_markers_2026-09-09.py -q 2>/dev/null | grep -E 'FAILED|failed'\\ncp /tmp/list.bak $L\\nsed -n '57,66p' bench/tests"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && grep -n -A20 \\\"def test_the_hook_emits_the_task_line_and_exits_zero\\\" bench/tests/test_task_list_markers_2026-09-09.py\", \"description\": \"Read the pulse-hook test that caught the demotion\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\", \"old_string\": \"        with_assert = [\\n            n for n in funcs\\n            if any(isinstance(k, ast.Assert) for k in ast.walk(n))\\n            or \\\"raises\\\" in (ast.get_source_segment(src, n) or \\\"\\\")\\n        ]\", \"new_string\": \"        def _really_asserts(fn):\\n            "
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\", \"old_string\": \"    \\\"\\\"\\\"A test the suite never runs is not evidence either.\\\"\\\"\\\"\\n    for f in entry.evidence:\\n        assert f.startswith(\\\"bench/tests/\\\"), (\\n            f\\\"task {entry.ident} names {f}, which is outside the collected \\\"\\n            f\\\"directory, so nothing r"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\", \"offset\": 80, \"limit\": 25}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\", \"old_string\": \"        with_assert = [\\n            n for n in funcs\\n            if any(isinstance(k, ast.Assert) for k in ast.walk(n))\\n            or \\\"raises\\\" in (ast.get_source_segment(src, n) or \\\"\\\")\\n        ]\", \"new_string\": \"        def _really_asserts(fn):\\n            "
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/tmp/cdsfl_sbx_seat/bench/tests/test_done_markers_carry_evidence_2026-09-10.py\", \"old_string\": \"    \\\"\\\"\\\"A test the suite never runs is not evidence either.\\\"\\\"\\\"\\n    for f in entry.evidence:\\n        assert f.startswith(\\\"bench/tests/\\\"), (\\n            f\\\"task {entry.ident} names {f}, which is outside the collected \\\"\\n            f\\\"directory, so nothing r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat && python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\")\\ns = p.read_text()\\n\\nold3 = '''        with_assert = [\\n            n for n in funcs\\n            if any(isinstance(k, ast.Assert) for k in ast.walk(n))\\n            or \\\"raises\\\" in (ast.get_source_segment(src, n) or \\\"\\\")\\n        ]'''\\nnew"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\ncp /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md experimental_notes/CDSFL_MASTER_TASK_LIST.md\\nrm -f scripts/pseudo_evidence_2026.py bench/tests/evidence_helper_2026.py bench/tests/test_vacuous_2026.py bench/tests/test_raises_substring_2026.py\\necho \\\"== hardened guard on canonica"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\nfor i in 1 2 3; do python3 -m pytest \\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\" -q -p no:cacheprovider 2>/dev/null | tail -1; done\\necho \\\"== diff canonical vs sandbox list:\\\"; diff <(cat /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md) experimental_notes/CDSFL_M"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/cdsfl_sbx_seat\\nmd5 experimental_notes/CDSFL_MASTER_TASK_LIST.md\\npython3 -m pytest \\\"bench/tests/test_done_markers_carry_evidence_2026-09-10.py\\\" -q -p no:cacheprovider 2>/dev/null | tail -1\\nmd5 experimental_notes/CDSFL_MASTER_TASK_LIST.md\\ngrep -rn \\\"task_list\\\\|MASTER_TASK\\\\|evidence:\\\" bench/tests/conftest.py 2>/dev/null | head -5\\nls -la experimental_notes/CDSFL_MASTER_T"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"C=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ncaanmyi/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\\nstat -f \\\"%m %Sm\\\" \\\"$C\\\"; md5 \\\"$C\\\"; grep -c 'evidence: bench/tests/test_operational_scripts.py' \\\"$C\\\"; grep -n 'evidence:' \\\"$C\\\" | head -3; date\", \"description\": \"Check canonical task list current content and modification time\"}"
+    }
+  ],
+  "n_tool_calls": 39,
+  "elapsed_s": 642.6,
+  "response": "Canonical mtime 01:26:57 \u2014 modified mid-session; now back to real per-task evidence (single legitimate `test_operational_scripts.py` reference at task 8.1). My controlled final measurements were all taken against this hash-pinned real list, so nothing is invalidated \u2014 and the transient state is itself evidence I'll report. All passes complete; a further sweep (\u03b3/convergence path, 6.3 repair, note-lint repairs) produced nothing new above threshold. Final report:\n\n---\n\n## verdict: **PARTIAL**\n\nThe guard genuinely closes the \"named nothing / named a missing file / named an assertion-free file\" holes and is itself wired and red-on-violation. But **2 of its 4 checks were mechanically defeated as shipped**, and a live event during this very review demonstrated the largest residual hole (blanket irrelevant evidence) in production conditions.\n\n## reasoning (all from executed tool output)\n\n- **Baseline:** `python3 -m pytest bench/tests/test_done_markers_carry_evidence_2026-09-10.py -q` \u2192 `79 passed in 0.30s`. `scripts/task_list_markers.py --check` \u2192 `task list coherent: 77 entries, 0 problems`. All 19 DONE entries name evidence.\n- **Parser driven with 9 adversarial constructions** (OPEN-no-evidence parses clean; DONE-no-evidence parses with `evidence=()` and \u2014 important \u2014 `check()` exit **0**, so only the pytest guard catches it; evidence containing `>` breaks the marker and is flagged \"has no marker\"; indented/blank-separated markers flagged; traversal path parses clean).\n- **4 hostile DONE entries planted** in the sandbox list: **guard passed all 4** (`95 passed in 0.32s`), and full-tree `--collect-only` proved the X1/X2 evidence files are **never collected as tests** by the suite.\n- **\u03bd/\u03c3 (is the addition reached and does it fail on violation):** 4 mutations \u2014 strip evidence, nonexistent file, outside-dir file, no-test-function file \u2014 each verified applied by `assert old in s`, each turned the guard red (`1\u20132 failed`), restore \u2192 green. The guard is additive on its own terms.\n- **\u03b3 / two-sided gate:** `grep -r task_list_markers|CDSFL_MASTER_TASK_LIST bench/` \u2014 matches only in `bench/tests/` and archived panel logs; nothing in `bench/dm/` or the runner reads the list. **I agree with the brief: convergence machinery is not implicated.**\n- **6.3 repair:** `_is_the_logs_dir_default` compares **resolved** paths (its docstring records that the raw-string first version didn't work); `test_logs_dir_honours_the_caller_2026-09-09.py` now contains `test_the_real_ExperimentConfig_default_is_not_read_as_a_choice` importing the **real** `ExperimentConfig` \u2014 the shape the 8 SimpleNamespace tests never reached. That file + note-lint guard + marker tests: `46 passed in 11.74s`.\n- **Demotion probe (withdrawn finding):** changing `state: DONE` \u2192 `Done` silently removes the entry from the guard's universe (guard: `91 passed`), but `test_the_hook_emits_the_task_line_and_exits_zero` went red \u2014 because `summarise()`'s count-sum assert crashes the pulse hook. Caught, but by an **accidental chain**; my fix makes it intentional.\n- **Live concurrent-writer event:** mid-session, the canonical list's 19 evidence fields were all rewritten to `bench/tests/test_operational_scripts.py` and then restored (canonical mtime 01:26:57, caught via `diff` of my own copy; my session-start grep shows real evidence; current canonical has exactly 1 legitimate reference). [SPECULATIVE on attribution \u2014 plausibly another seat.] Materially: **that blanket rewrite passes the guard, original and hardened** \u2014 one real, collected, asserting file named as evidence for 19 unrelated tasks. The guard's relevance hole was demonstrated live, not hypothetically. My final measurements were re-taken on the verified restored list (`80 passed` \u00d75, hash-pinned `72cc0348\u2026`).\n- Pre-existing note: a bare root `pytest` is interrupted by 3 collection errors in quarantine/archive dirs (`bench/logs/build_experiment_2026-08-22/QUARANTINE\u2026`, `experimental_notes/unextracted_sandbox_2026-08-30/\u2026`) \u2014 the guard is only ever exercised by `bench/tests`-scoped runs.\n\n## findings\n\n**F1 \u2014 HIGH \u2014 `bench/tests/test_done_markers_carry_evidence_2026-09-10.py:99`** (check 4, path traversal). `f.startswith(\"bench/tests/\")` accepts `bench/tests/../../scripts/pseudo_evidence_2026.py`, which resolves to `scripts/` and is never collected. **Falsifier executed:** planted entry X1 \u2192 guard `95 passed`; full-tree `--collect-only` shows the file only as a parametrize ID in another test, never as a test. **Fix (executed):** resolve the path and require `(REPO/\"bench\"/\"tests\").resolve() in p.parents` \u2014 old/new text as applied in my sandbox patch below. After fix: `FAILED \u2026[X1]`.\n\n**F2 \u2014 HIGH \u2014 same line** (check 4, non-collectible filename). `bench/tests/evidence_helper_2026.py` is inside the directory but matches neither `test_*.py` nor `*_test.py`, so pytest never collects it; guard passed it. **Fix (executed):** additionally require `p.name.startswith(\"test_\") and p.suffix == \".py\"`. After fix: `FAILED \u2026[X2]`.\n\n**F3 \u2014 MEDIUM \u2014 same file:88** (check 3, `\"raises\" in source`). A test whose only content is a docstring `\"\"\"this function never raises anything\"\"\"` and `pass` \u2014 **zero assertions** \u2014 passes, via the exact grep-not-parse mistake the test's own docstring warns against. **Falsifier executed:** X4 passed the shipped guard. **Fix (executed):** detect `raises`/`assertRaises`/`fail` as AST calls. After fix: `FAILED \u2026[X4]`.\n\n**F4 \u2014 LOW/MEDIUM \u2014 same file:87** (check 3, constant assert). `def test_vacuous(): assert True` passes. Adjacent to the stated mutation-testing limit, but constant-assert detection is one AST condition. **Fix (executed):** exclude `ast.Assert` whose test is a truthy `ast.Constant`. After fix: `FAILED \u2026[X3]`.\n\n**F5 \u2014 MEDIUM \u2014 `hooks/pre-commit:36-39`.** The enforcement point that failed on 2026-09-09 was commit time, and the pre-commit GUARDS list contains neither this guard nor `--check`. The guard runs in 0.25\u20130.44 s (measured), well inside the hook's own 1\u20132 s budget rationale. **Fix:** append `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` to `GUARDS`. (Not executable here without a sandbox git commit cycle; the runtime cost figure is measured.)\n\n**F6 \u2014 LOW \u2014 suite-level.** No test runs `check()` against the real list; incoherence is caught only via `summarise()`'s internal assert crashing the pulse hook (demonstrated). **Fix (executed):** added `test_the_real_list_is_coherent_by_the_markers_own_check` \u2014 under it, the `Done` demotion fails **directly**: `FAILED \u2026::test_the_real_list_is_coherent_by_the_markers_own_check`.\n\n## falsifier / falsifier_result\n\nComposite, all executed in `/tmp/cdsfl_sbx_seat` (sandbox copy; canonical untouched by me):\n1. Plant X1\u2013X4 + run guard \u2192 `95 passed` (**defeats confirmed**); full-tree `--collect-only | grep` \u2192 X1/X2 never collected.\n2. Apply patch (checks 3+4 hardened, coherence test added) \u2192 `4 failed, 92 passed`, failures exactly `[X1],[X2]` on collects-check and `[X3],[X4]` on asserts-check.\n3. Restore canonical list \u2192 `80 passed` (\u00d75, incl. `-p no:cacheprovider`); mutation M1 re-run \u2192 `2 failed` (still red); `Done` demotion \u2192 red on the new coherence test; final clean \u2192 `80 passed in 0.41s`.\n\n## refutation_condition\n\nMy PARTIAL verdict is refuted if: (a) someone shows a suite/CI entry point that collects `bench/tests/../../\u2026` or non-`test_*` filenames (then F1/F2 are not misses \u2014 I checked `pytest.ini`: no `python_files`/`testpaths` override, so I claim none exists); or (b) the project's threat model is explicitly honest-mistake-only, in which case F3/F4 fall under the already-stated mutation-testing limit and the verdict moves toward CONFIRMED. **Class the guard still misses even with my patch:** *irrelevant-but-real evidence* \u2014 a collected, asserting test that doesn't test the claimed task (demonstrated live by the blanket `test_operational_scripts.py` rewrite), and green-while-broken tests (6.3's own history). Cheapest closure of my objection: F5's one-line pre-commit addition (+0.3 s per commit \u2014 clearly worth it). Relevance itself is only closable by per-item mutation testing, which the guard correctly names as out of scope.\n\n## strongest_disagreement\n\nThe brief frames the question as whether the guard \"closes the hole.\" The 6.3 case in the brief's own evidence shows the dominant failure mode was **green-but-wrong tests**, not absent ones \u2014 8 passing tests on a fake config while production broke. Every check this guard performs is static; a static guard can only ever verify that evidence *exists*, never that it *discriminates*. So the honest statement is not \"hole closed\" or \"hole moved\" but: the cheap 80% (fabricated/absent evidence) is now closed \u2014 pending my patch for the demonstrated bypasses \u2014 and the expensive 20% (non-discriminating evidence) is exactly where 6.3 lived and remains open by design. The guard's docstring says this; the brief's framing under-weights it. Secondary: a shared mutable staging tree for six concurrent seats produced a mid-review rewrite of the artefact under review \u2014 that is a panel-infrastructure defect (torn reads of the exam substrate) worth its own repair.\n\n## passes_run\n\n**3** (survey+attack; mutation+enforcement; fix+anomaly-resolution), plus a terminal sweep that produced no new above-threshold findings \u2014 \u0394(4) = 0, converged, not budget-exhausted."
+}

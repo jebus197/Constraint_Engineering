@@ -1,0 +1,63 @@
+# PANEL BRIEF — round 6: how to fix it. You diagnosed it; now produce the repair and test it.
+
+<!-- figure: gamma at 13 passes | scripts/ffafp_cycle_gamma_2026-09-10.py | 0.294998 -->
+
+**Founder instruction, verbatim:** *"Ask them too how you should fix these problems when they are done."*
+
+**Read this first.** Several figures below have NO committed producing script. They are marked UNBACKED where that is true, because in round 5 fable caught the assistant quoting `rho = 0.4001` in a brief arguing about evidence discipline while having no script for it. That is the defect, admitted rather than repeated. Do not treat an UNBACKED figure as established; re-derive or reject it.
+
+## SECTION 1 — What you found, and where you disagree
+
+You reviewed `experimental_notes/CDSFL_MASTER_TASK_LIST.md` (84 entries, 508 lines) and its companion `experimental_notes/CDSFL_OUTCOMES_LOG.md`. You disagreed, and the disagreement is the subject of this round. It is preserved, not smoothed.
+
+**cc2 said CONFIRMED, and sharpened it.** The list is 2 documents in 1 file, and 1 of them is an inbox for the process meant to empty it. Splitting the 84 entries by provenance: the founder's numbered itinerary (sections 0 to 10, plus L and M) is 40 entries with 19 DONE, 47.50%, Wilson [32.94%, 62.50%]; the review-generated backlog (P, R, Z, A, V) is 44 entries with 3 DONE, 6.82%, Wilson [2.35%, 18.23%]. Fisher exact p = 3.555346e-05, odds ratio 12.3651; chi-square with Yates p = 6.694047e-05; an mpmath exact hypergeometric upper tail gives 2.001149e-05. **REPRODUCED by the assistant against `scripts/task_list_markers.py`, but with NO COMMITTED SCRIPT — UNBACKED.**
+
+**fable said PARTIAL, and called that the smaller half.** Its classification of the documented failed claims found **never-true-at-write-time failures outnumbering staleness failures roughly 2 to 1**. Its conclusion: a queue/archive/ledger split fixes accretion and staleness carry-forward and does nothing about a figure that was wrong the moment it was typed. It named the dominant defect generator as **unbacked figures**, and the remedy as the figure-declaration mechanism in `scripts/panel_brief_validate.py` (`check_declared_figures`), not document architecture.
+
+**fable also refuted a claim in the round-5 brief.** It ran the 22 evidence files inside the panel sandbox and got **8 failed, 639 passed, 1 skipped**, because the sandbox has no `.git`. So "22 of 22 pass" is an environment-relative claim reported as an absolute one; **20 of 22**, Wilson [72.19%, 97.47%], with 2 asserting properties of a configured repository rather than of the artefact. That is the fresh-clone class already on the list as entry A2.
+
+**A correction the assistant owes both of you.** It told the founder the list "provably does not converge" at p = 0.000910, from 22 closures of 71 movements. That counted the initial population build-out — 35 to 59 entries on the day the list was written — as discovered work. Excluding it: 25 appended after the list was populated against 22 closed, arrival over closure 1.1364, binomial test p = 0.3854, **not significant**. The divergence claim is WITHDRAWN. cc2's 1.09 was the better denominator.
+
+## SECTION 2 — Use the harness
+
+**Produce your answer by RUNNING things. A remedy you have not executed is a suggestion.**
+
+- **`scripts/task_list_markers.py`** — drive `parse_entries`, `check` and `unsupported_done_entries`. Any remedy that changes the document's shape must keep these working, or say what replaces them.
+- **`scripts/panel_brief_validate.py`** — `check_declared_figures` is the mechanism fable proposes generalising. Execute it. Establish what it can and cannot catch. It re-executes a declared figure's script and compares an exact string; ask what happens to a figure that is a rate rather than a literal, to one whose script takes 45 seconds, and to the 379 archived notes that declare nothing.
+- **`scripts/ffafp_cycle_gamma_2026-09-10.py`** — the two-sided gate, gamma at or above 0.30 AND 3 consecutive zero-discovery passes. Both sides currently FAIL. If your remedy changes what counts as a finding, say what it does to this gate.
+- **Wilson intervals, Fisher exact, and a second independent implementation** for every proportion you report. Two tools, minimum.
+
+## SECTION 3 — Produce a fix, and test it
+
+**This round's deliverable IS the fix.** Round 5 was the diagnosis. Give a repair for each problem below that someone could apply tomorrow, and execute enough of it to show it works.
+
+1. **The register collision.** One entry carries an immutable original statement, a mutable current status, and an append-only correction log, with no rule for which wins. 15 of 84 entries carry 2 or more in-place corrections; entry 1.1 carries 8 and cites 5 distinct dates in one paragraph. UNBACKED. What is the concrete new shape, and what migrates where?
+2. **Unbacked figures.** fable's dominant generator. What is the rule, what enforces it, and what does it cost on a document with hundreds of existing figures? Does it apply retrospectively or only to new claims?
+3. **The review exhaust.** 44 entries generated by the assistant's own review process, closing at one twelfth the rate of the founder's itinerary. Should they be in this list at all? If not, where, and what stops them being lost?
+4. **35 uncommitted files, over 7 hours.** Claimed to cause 12 of 19 overstatement verdicts because entries say COMMITTED while naming untracked files. UNBACKED. What is the rule that prevents it recurring?
+5. **DONE means 2 different things.** The evidence executes for every entry, while 116 of 266 of the surrounding claims do not hold. Should DONE bind the code, the prose, or both, and what checks whichever you choose?
+
+**Where you propose a checker, WRITE IT and RUN IT.** Report the exact command and output. Where you claim an existing test is weak, mutate the source, assert the mutation applied AND that it lands on a line the fixture executes, run the test, report whether it went red.
+
+**Work in the sandbox copy. Do not modify the canonical tree.** Note that the sandbox has no `.git` — fable established that in round 5 — so plan around it and say which of your figures that limits.
+
+## SECTION 4 — What would refute you
+
+State, before concluding, what evidence would overturn your own remedy.
+
+Specifically: name the failure mode your fix does NOT address. If you are cc2, say what document architecture cannot fix. If you are fable, say what figure discipline cannot fix. And say what it would take to change your mind about the other seat's position, because on the evidence so far both of you are partly right and the founder needs to know which half to build first.
+
+## SECTION 5 — Output shape
+
+- `verdict` — your position on which remedy should be built FIRST, and why
+- `fix` — the repair, concretely, per numbered problem above
+- `falsifier` and `falsifier_result` — what you executed and what it returned
+- `migration` — what happens to the 84 existing entries under your remedy, and who does it
+- `cost` — what your fix costs in time and in what it makes harder
+- `refutation_condition` — Section 4's answer
+- `strongest_disagreement` — with THIS brief and with the other seat. Do not converge.
+- `passes_run` — how many
+
+## SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, break a live run, or feed the founder a stale fact as a current one. Diminishing returns is this project's own criterion and it applies to you.

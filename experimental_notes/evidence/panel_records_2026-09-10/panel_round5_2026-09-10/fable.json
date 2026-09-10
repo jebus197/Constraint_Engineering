@@ -1,0 +1,163 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 11611,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/CDSFL_MASTER_TASK_LIST.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -50; echo ---; ls bench | head; echo ---; ls bench/tests | wc -l; ls bench/*.py 2>/dev/null | wc -l\", \"description\": \"List scripts and bench contents\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l experimental_notes/CDSFL_MASTER_TASK_LIST.md experimental_notes/CDSFL_OUTCOMES_LOG.md scripts/task_list_markers.py scripts/ffafp_cycle_gamma_2026-09-10.py 2>&1\", \"description\": \"Line counts of key files\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/scripts/task_list_markers.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"offset\": 259, \"limit\": 250}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/task_list_markers.py --check; echo \\\"EXIT=$?\\\"; python3 scripts/task_list_markers.py --summary\", \"description\": \"Run task list marker check and summary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/ffafp_cycle_gamma_2026-09-10.py; echo \\\"EXIT=$?\\\"\", \"description\": \"Execute the cycle gamma script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . status --porcelain | head -50; echo \\\"---COUNT---\\\"; git -C . status --porcelain | wc -l; echo \\\"---LOG---\\\"; git log --oneline -5\", \"description\": \"Git status and recent commits\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/scripts/ffafp_cycle_gamma_2026-09-10.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport numpy as np\\nfrom math import sqrt, log\\n# Independent Duane slope: fit log(cumulative) vs log(pass index), gamma = 1 - beta\\nseries = [11, 4, 2, 3, 6, 2, 3, 2, 9, 10, 4, 2, 1]\\ncum = np.cumsum(series)\\nx = np.log(np.arange(1, len(series)+1))\\ny = np.log(cum)\\nbeta = np.polyfit(x, y, 1)[0]\\nprint(\\\"beta =\\\", beta, \\\"gamma = 1-beta =\\\", 1-beta)\\n\\n# scipy cros"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -t experimental_notes/ | head -30; echo ---; ls experimental_notes/data/ 2>/dev/null | head -20\", \"description\": \"List recent experimental notes and data dir\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"116|266 checked|43\\\\.61\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/experimental_notes\", \"output_mode\": \"files_with_matches\", \"head_limit\": 15}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"48 agents\\\\|2,182\\\\|2182 tool\\\" experimental_notes/ scripts/ 2>/dev/null | head; echo ---; ls -t experimental_notes/*.md | head -5; head -60 experimental_notes/Closing_Report_2026-09-10.md\", \"description\": \"Find audit record files and read closing report head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l experimental_notes/Closing_Report_2026-09-10.md; sed -n '60,200p' experimental_notes/Closing_Report_2026-09-10.md\", \"description\": \"Read remainder of closing report\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -t experimental_notes/evidence/ 2>/dev/null | head -20; echo ---; find . -name \\\"*audit*\\\" -newer experimental_notes/CDSFL_OUTCOMES_LOG.md -not -path \\\"./.git/*\\\" 2>/dev/null | head; echo ---; ls logs 2>/dev/null | head\", \"description\": \"Look for audit evidence artefacts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"266\\\" experimental_notes/data experimental_notes/evidence 2>/dev/null | head; echo ---; find . -path ./node_modules -prune -o -name \\\"*.json\\\" -mmin -2000 -print 2>/dev/null | grep -v \\\".git\\\" | head -20; echo ---; grep -rn \\\"claims\\\" experimental_notes/Closing_Report_2026-09-10.md | head -5\", \"description\": \"Hunt for per-claim audit artefact\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_precommit_gate_cost_2026-09-10.py bench/tests/test_task_list_markers_2026-09-09.py bench/tests/test_done_markers_carry_evidence_2026-09-10.py -q -p no:cacheprovider 2>&1 | tail -15\", \"description\": \"Run pinned-count test plus marker engine tests\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re, sys\\nsys.path.insert(0, \\\"scripts\\\")\\nfrom task_list_markers import parse_entries, LIST\\ntext = LIST.read_text()\\nlines = text.splitlines()\\nentries = parse_entries()\\n# Map entry -> body (lines until next entry)\\nstarts = [e.line_no - 1 for e in entries] + [len(lines)]\\ncorr = re.compile(r\\\"CORRECT(?:ED|ION)\\\", re.I)\\ncounts = {}\\nfor idx, e in enumerate"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_precommit_gate_cost_2026-09-10.py bench/tests/test_task_list_markers_2026-09-09.py bench/tests/test_done_markers_carry_evidence_2026-09-10.py -q -p no:cacheprovider 2>&1 | grep -E \\\"^(FAILED|ERROR)|passed|failed\\\" | head -10\", \"description\": \"Re-run marker/gate tests, capture summary\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_precommit_gate_cost_2026-09-10.py::TestTheCountIsExactAndCurrent::test_the_entry_figure_matches_the_hook_today -q -p no:cacheprovider 2>&1 | grep -B2 -A8 \\\"assert\\\" | head -25\", \"description\": \"Show the red test's assertion detail\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re, sys\\nsys.path.insert(0, \\\"scripts\\\")\\nfrom task_list_markers import parse_entries, LIST\\nentries = parse_entries()\\nSTATUSES = (\\\"PROPOSED\\\",\\\"BUILT\\\",\\\"TESTED\\\",\\\"COMMITTED\\\",\\\"ENABLED\\\")\\ndis = []\\nfor e in entries:\\n    if e.status is None: continue\\n    up = e.text.upper()\\n    stated = None\\n    if \\\"COMMITTED AND ENABLED\\\" in up:\\n        stated = \\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/tests/test_precommit_gate_cost_2026-09-10.py; stat -f \\\"%l links, inode %i\\\" bench/tests/test_precommit_gate_cost_2026-09-10.py; stat -f \\\"%l links, inode %i\\\" /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_precommit_gate_cost_2026-09-10.py 2>/dev/null; cat pytest.ini | head -20; ls bench/*.py | wc -l\", \"description\": \"Check whether sandbo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, \\\"scripts\\\")\\nfrom task_list_markers import parse_entries\\nfiles = sorted({ev for e in parse_entries() if e.state == \\\"DONE\\\" for ev in e.evidence})\\nprint(len(files), \\\"distinct evidence files across DONE entries\\\")\\nimport pathlib\\nmissing = [f for f in files if not pathlib.Path(f).is_file()]\\nprint(\\\"missing:\\\", missing)\\nopen(\\\"/tm"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest $(cat /tmp/evfiles.txt | tr '\\\\n' ' ') -q -p no:cacheprovider 2>&1 | grep -E \\\"^(FAILED|ERROR)|passed|failed|error\\\" | head -10\", \"description\": \"Run all 22 DONE-evidence test files\", \"timeout\": 480000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_078524t1/repo/scripts/task_list_split_2026-09-10.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Split the master task list into the 3 documents it is trying to be.\\n\\nDIAGNOSIS (panel round 5). The list serves as a work QUEUE (mutable), an\\nevidence ARCHIVE (immutable), and a correction LOG (append-only) at once.\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/cdsfl_seat_fix && cat > /tmp/cdsfl_seat_fix/task_list_split.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Split the master task list into the 3 documents it is trying to be.\\n\\nQUEUE  (CDSFL_TASKS.md)  per entry: heading line + marker line ONLY. Mutable.\\nLEDGER (CDSFL_LEDGER.md) every entry body, keyed by id. APPEND-ONLY:\\n                         a correction is a NEW da"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport sys\\nsys.path.insert(0, \\\"/tmp/cdsfl_seat_fix\\\")\\nsys.path.insert(0, sys.argv[1] + \\\"/scripts\\\")\\nfrom task_list_split import split, check_queue, check_ledger_append_only, LIST\\nfrom task_list_markers import parse_entries, MARKER, _is_entry\\n\\nq, l = split()\\nentries = parse_entries()\\n\\n# FALSIFIER 1: entry count and marker preservation\\nq_entries ="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport sys, re\\nsys.path.insert(0, \\\"/tmp/cdsfl_seat_fix\\\")\\nsys.path.insert(0, sys.argv[1] + \\\"/scripts\\\")\\nfrom task_list_split import split, check_queue, check_ledger_append_only, LIST\\nfrom task_list_markers import parse_entries, MARKER, _is_entry\\n\\nq, l = split()\\nentries = parse_entries()\\nsrc_lines = LIST.read_text().splitlines()\\n\\n# Which source m"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport sys\\nsys.path.insert(0, \\\"/tmp/cdsfl_seat_fix\\\"); sys.path.insert(0, sys.argv[1] + \\\"/scripts\\\")\\nfrom task_list_split import split, check_ledger_append_only\\nq, l = split()\\ncur = \\\"\\\\n\\\".join(l)\\ntoken = \\\"CORRECTED 2026-09-10\\\"\\nassert token in cur, \\\"mutation target absent -- pick another\\\"\\nmutated = cur.replace(token, \\\"CORREKTED 2026-09-10\\\", "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport sys, re\\nsys.path.insert(0, \\\"/tmp/cdsfl_seat_fix\\\"); sys.path.insert(0, sys.argv[1] + \\\"/scripts\\\")\\nfrom task_list_split import split\\nfrom task_list_markers import _is_entry\\nq, l = split()\\nfor ident in (\\\"1.1\\\", \\\"2.1\\\", \\\"6.2\\\"):\\n    qi = next(i for i, x in enumerate(q) if _is_entry(x) and x.startswith(f\\\"**{ident}\\\"))\\n    li = l.index(f\\\"\\\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-078524t1-repo/07a4878c-f51d-47a8-955e-f7b5b32ca5fa/tasks/bbqvygcc1.output 2>/dev/null | tail -8\", \"description\": \"Check evidence-suite background run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"spearman\\\\|0.4001\\\\|15 of 84\\\\|rho.*0.40\\\" scripts/ experimental_notes/ bench/ 2>/dev/null | head; echo ---; python3 - <<'EOF'\\nimport re, sys\\nsys.path.insert(0, \\\"scripts\\\")\\nfrom task_list_markers import parse_entries, LIST\\nlines = LIST.read_text().splitlines()\\nentries = parse_entries()\\nstarts = [e.line_no - 1 for e in entries] + [len(lines)]\\nfor name, pat in [\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-078524t1-repo/07a4878c-f51d-47a8-955e-f7b5b32ca5fa/tasks/bbqvygcc1.output\", \"description\": \"Read evidence-suite result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_task_list_entry_count_2026-09-10.py::TestTheScriptRuns::test_it_exits_zero_and_produces_the_figure_m1_quotes bench/tests/test_precommit_guard_2026-09-09.py::test_the_live_repository_is_actually_wired -q -p no:cacheprovider 2>&1 | grep -E \\\"Error|error|assert|fatal\\\" | head -12\", \"description\": \"Inspect the 8 failures' causes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"GUARDS\\\\|test_\\\" hooks/pre-commit | head -12; echo ---; head -40 experimental_notes/CDSFL_OUTCOMES_LOG.md\", \"description\": \"Check hook guard list and outcomes log head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom math import sqrt\\ndef wilson(k,n,z=1.959963984540054):\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d; h=z*sqrt(p*(1-p)/n+z*z/(4*n*n))/d\\n    return f\\\"{k}/{n} = {100*k/n:.2f}% Wilson [{100*(c-h):.2f}%, {100*(c+h):.2f}%]\\\"\\nfor k,n in [(9,84),(5,84),(2,86),(8,647),(20,22),(18,84),(4,84)]:\\n    print(wilson(k,n))\\nEOF\", \"description\": \"Wilson intervals for my own repo"
+    }
+  ],
+  "n_tool_calls": 38,
+  "elapsed_s": 465.2,
+  "response": "---\n\n# SEAT REPORT \u2014 round 5\n\n## `verdict` \u2014 PARTIAL\n\nThe hypothesis (wrong *kind* of document, not too big) is **half right, and it is the smaller half**. Confirmed: the three-documents-in-one diagnosis is real and measurable \u2014 I reproduced the correction accretion (1.1: exactly 8 correction markers, 5 distinct dates \u2014 both verified with my own instrument), the nested corrections-inside-corrections, and 5 heading-vs-marker status disagreements that `check()` structurally cannot see. Refuted as *sufficient*: when I classified the documented failed claims (below), **never-true-at-write-time failures outnumber staleness failures roughly 2:1**. A queue/archive/ledger split fixes accretion and staleness carry-forward; it does nothing about a figure that was wrong the moment it was typed. The dominant defect generator is **unbacked figures**, and the remedy for that is the V6 mechanism (figure declared \u2192 producing script re-executed at check time), not document architecture. \"Too big\" remains unsupported \u2014 and the rho=0.4001 evidence offered against it is itself unbacked (below).\n\n## `done_and_verified`\n\nCommand: `python3 -m pytest $(22 evidence files) -q` \u2192 **8 failed, 639 passed, 1 skipped, in 121.32 s**.\n\n**The brief's \"22 of 22 named test files PASS\" is FALSE in the environment the panel was told to work in.** All 8 failures trace to the sandbox having **no `.git`** (verified: `git status` \u2192 \"not a git repository\"): 7 in `test_task_list_entry_count_2026-09-10.py` (M1/V4 evidence \u2014 its script walks git revisions, finds 0, and fails loudly, which is the correct failure mode) and 1 in `test_precommit_guard_2026-09-09.py::test_the_live_repository_is_actually_wired` (`core.hooksPath` is `''` here). So: **20 of 22 evidence files pass here, Wilson [72.19%, 97.47%]**; the other 2 assert properties of a *configured repository*, not of the artefact \u2014 the exact A2 (fresh-clone) class, live in the panel's own sandbox. \"22/22\" is plausibly true on the canonical machine and is an environment-relative claim being reported as an absolute one.\n\nGenuinely complete by execution here: **L2, M1, M2, 2.1, 3.1a, 3.2, 4.1, 4.2, 5.1, 6.1\u20136.5, 6.7, 7.2, 7.3, 8.1, V1, V3, V5** (their evidence files are within the 639 green). **1.1 and the M1/V4 history-scan evidence: unverifiable without git** \u2014 not failed, unprovable here. The pinned-count test is red exactly as briefed: `assert 174 == 169` reproduced verbatim.\n\n## `remains`\n\nDeduplicated, my order: (1) **Commit the uncommitted work** \u2014 1 root cause claimed to produce 12 of 19 overstatement verdicts; unverifiable in this gitless sandbox, but if true it is the cheapest single repair on the board. (2) **P2/5.2** \u2014 the brief format that gates every DONE under section P. (3) **V2 residue + the 2 evidence files that only pass on a wired repo** (mark them environment-dependent or make them skip-with-reason in clones \u2014 additive, not weakening: the assertion moves to a fixture that wires a repo). (4) **2.2/2.3/A7** falsifier supply. (5) **R2, R4\u2013R11 write-backs** (mechanical, small). (6) **A13/A14** sandbox attribution \u2014 my session saw no degradation (`bench/*.py` = 167 throughout) but ran single-seat. (7) 3.3, 9.1\u20139.4, 8.2/8.3, 10.x, Z1.\n\n## `new_issues` (on no list)\n\n1. **The 116/266 audit has no per-claim artefact.** I searched the tree: no JSON, no script, no enumerable list of which 266 claims were checked or which 116 failed. The single most-quoted figure of this round **violates `measured-rate-travels-with-its-script`** \u2014 the audit indicting the list for unbacked claims produced an unbacked headline. Consequence: the classification the brief asks for is not performable against the actual population by anyone, ever, until the audit's raw output is committed.\n2. **Two orphan duplicate markers** \u2014 a second `<!-- task: 2.1 | state: DONE | status: ENABLED -->` and `<!-- task: 5.1 ... -->` sit mid-body, never bound by `parse_entries` (86 marker lines, 84 bound; 2/86, Wilson [0.64%, 8.09%]). Dead text today; a future parser change could bind the wrong one.\n3. **The brief's \"15 of 84 entries carry \u22652 correction markers\" does not reproduce.** Three defensible instruments give **9, 18, and 4** of 84 (`CORRECT*`: 9/84, Wilson [5.74%, 19.12%]; +WRONG/REFUTED/SUPERSEDED/WITHDRAWN: 18/84 [14.01%, 31.35%]; dated-CORRECTED: 4/84 [1.87%, 11.61%]) \u2014 none reads 15, and no producing script is committed. The interval quoted ([11.13%, 27.39%]) is arithmetically correct *for* 15/84; the count itself is instrument-dependent and unbacked.\n4. **Copied `__pycache__` bakes canonical paths into sandbox tracebacks** (distinct inodes confirm files are real copies) \u2014 cosmetic, but it makes sandbox output cite files a reader cannot have.\n\n## `claim_classification`\n\n**The 116 cannot be classified \u2014 the population was never persisted (new issue 1). That is the answer, not an excuse.** Method actually used: I enumerated every failed claim *documented in the list's own correction paragraphs and the rewritten closing report* \u2014 30 claims, each with cause stated or re-derivable. Split:\n\n- **Stale-but-once-true (~8, 27%):** 1.1's \"4 files/56 tests\" (hook grew), 6.5's pre-fix state in present tense, 6.2's pre-fix truncation rate, closing report's pass-count/gamma-margin/resurgence claims (each true at an earlier pass count, carried forward).\n- **Never-true (~16, 53%):** M1's \"29 came from a regex\" (invention), 1.1's \"28 tests in 1.26 s\" and \"11 functions\" (never reproduced at any revision), 2.1's 5,282/1,066/97.32% miscounts, 8.1's shallow-glob claim, 6.4's \"closed 6\" (closed 5), 4.2's false COMMITTED, \"both seats mutated 6.7\" (fabricated rigour), \"10 of 10 red\" (10 of 15), typed timestamp \"05:05\".\n- **Other (~6, 20%):** correct number under wrong attribution (6.2's 20.0% on the wrong state), unreproducible denominators (2.1's 6,363), judgement calls (6.7).\n\nSample caveat: documented corrections over-represent claims someone bothered to correct. But the direction is decisive for the remedy: **the modal failure is manufactured at write time, not by the world moving** \u2014 so staleness-binding alone under-treats the disease.\n\n## `list_diagnosis` \u2014 the answer to his second question\n\nThe list is not too big \u2014 84 entries is a modest queue, and the size-predicts-failure test failed at p=0.065 (though see refutation below). The struggle has **two** causes, and the brief names only one. First, yes: three documents with incompatible update rules in one file \u2014 a mutable queue, an immutable archive, and a correction log all edited in place, so every correction is performed inside prose that is also evidence, producing self-quoting corrections and 5 headings that contradict their own markers. Second, and larger: **the list's prose asserts measurements faster than instruments are built to back them**. 4 of 5 V4 figure-sets needed scripts written *after the fact*; the audit's own headline repeats the pattern. A document whose sentences are claims-without-producers will rot in place *whatever* its architecture. Why the *struggle*: every session must re-litigate which sentences are still true, because truth lives in prose instead of in re-executable declarations \u2014 the cost is re-verification, not reading length.\n\n## `fix` and `falsifier_result`\n\n`/tmp/cdsfl_seat_fix/task_list_split.py` (write to repo `scripts/` was permission-refused; the fix runs against the repo read-only). Mechanical split: **QUEUE** (heading + marker only, mutable) / **LEDGER** (all bodies keyed by id, append-only; a correction is a *new dated paragraph*) \u2014 figures remain with producing scripts per V6. Checker: queue purity (no prose, no CORRECTED text) + ledger append-only (byte-prefix rule, same as the cycle-series tamper check). Conservation asserted: every source line lands in exactly one output.\n\nExecuted: split of the real list \u2192 queue **170 lines / 84 entries** (from 508), ledger 426 lines; all 84 bound markers byte-identical (this falsifier initially FAILED and thereby found the 2 orphan markers). **F1 PASS** (84 entries, markers preserved). **F2 PASS** (planted correction prose in queue \u2192 RED). **F3 PASS** \u2014 with the mutation *verified applied* first: my first in-place-edit mutation was a no-op (target string absent) and the assertion caught it, the exact SURVIVED-that-isn't trap Section 3 warns of; corrected mutation \u2192 RED; truncation \u2192 RED; genuine append \u2192 CLEAN. Demonstrated on 3 real entries: 1.1 \u2192 queue 2 lines/287 ch vs ledger 4,840 ch (8 corrections); 2.1 \u2192 202 ch vs 3,489 ch (4); 6.2 \u2192 413 ch vs 4,131 ch (2). Cost: ~1 hour to adopt + rewiring the pulse hook's path; the checker is 30 lines. **Necessary but insufficient** \u2014 pair it with extending V6's `figure:` declaration from panel briefs to list entries, or never-true figures keep landing.\n\n## `refutation_condition`\n\nMy PARTIAL verdict dies if the committed per-claim audit output, once it exists, shows the 116 dominated by staleness (world-moved) rather than never-true \u2014 my 53% never-true rests on a 30-claim documented-corrections sample with known selection bias. My \"15/84 does not reproduce\" dies if a producing script exists uncommitted on the canonical machine whose definition yields 15 \u2014 the test is one `git add` away. My environment findings die if the panel sandbox was *supposed* to carry `.git` and its absence is this round's copy defect rather than design \u2014 someone with the canonical tree can settle that in one command. On \"too big\": the settling measurement is not rho on entry size but **time-to-verify per entry** \u2014 if re-verification cost per session grows superlinearly with entry count, \"too big\" wins whatever rho says; that data is one instrumented session away.\n\n## `strongest_disagreement`\n\n**The brief validated 2 of its own figures and typed the other ~10.** `panel_brief_validate.py` re-executed gamma and the series (both reproduce \u2014 I confirmed with an independent numpy/scipy fit: gamma = 0.2949975). But \"15 of 84\" (does not reproduce under 3 instruments), \"rho 0.4001 / tau 0.3071\" (no committed data, no script \u2014 unverifiable), and \"116 of 266\" (no per-claim artefact) were asserted prose \u2014 in a brief whose predecessor was caught typing 0.451 for 0.415413, in a round whose subject is unbacked figures. The V6 lesson was applied to the declared figures and not to the argument's load-bearing ones. Second: the brief presents rho=0.4001, p=0.065 as \"evidence AGAINST too big\". A positive rho of 0.40 at p=0.065 on n\u224822 is an *underpowered suggestion of a positive association*, not evidence of absence \u2014 failing to reject the null is not support for it, and the brief of all documents should not lean on that inference. Third: the gamma gate is the wrong instrument here regardless of its value \u2014 the series mixes solo passes, 18-agent fan-outs, and panel rounds, so pass-count is not a stationary exposure axis and the Duane slope's x-axis is meaningless across regime changes; side (b), 3 zero-finding passes, is the only defensible side of the gate for this process, and it correctly reads KEEP GOING.\n\n## `passes_run`\n\n**4.** Pass 1: brief-figure validation + harness execution (gamma, markers, Wilson \u00d73, Fisher \u2014 all reproduce; sandbox gitlessness found). Pass 2: deeper measurement (5 heading/marker disagreements; 15/84 non-reproduction; 2 orphan markers; 174-vs-169 red test reproduced; missing per-claim artefact). Pass 3: evidence-suite execution (8 sandbox failures; fix built, 3 falsifiers run, 1 mutation caught not applying). Pass 4: consistency sweep (hook GUARDS list = 6 files, consistent with corrected 1.1; outcomes log coherent) \u2014 **0 new above-threshold findings \u2192 stop**, per \u00a76."
+}
