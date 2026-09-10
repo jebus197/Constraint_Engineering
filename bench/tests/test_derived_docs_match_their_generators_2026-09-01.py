@@ -41,9 +41,42 @@ def _run(script: str) -> str:
     out = subprocess.run([sys.executable, str(REPO / script)],
                          cwd=str(REPO), capture_output=True, text=True,
                          timeout=240)
-    assert out.returncode == 0, (
-        f"{script} does not run, so the document it backs cannot be checked:\n"
-        f"{out.stderr[-800:]}")
+    if out.returncode != 0:
+        # A GENERATOR THAT NEEDS AN UNTRACKED ARTEFACT CANNOT RUN IN A CLONE,
+        # and that is a fact about the corpus, not a defect in the document.
+        # Task A2, 2026-09-10: `scripts/build_experiment_report.py` reads
+        # `bench/logs/build_experiment_2026-08-22/CY_LIVE.log`, which
+        # `.gitignore:41` excludes, so this test failed for every reader with
+        # "the document it backs cannot be checked" -- which was true, and was
+        # reported as though the document were wrong.
+        #
+        # NARROW BY CONSTRUCTION: only a FileNotFoundError naming a path under
+        # an archive root is forgiven, and only when that path is genuinely
+        # absent here. Any other failure -- a syntax error, a wrong figure, a
+        # missing TRACKED file -- still fails, because those are the defects
+        # this test exists for.
+        m = re.search(r"FileNotFoundError: \[Errno 2\][^:]*: '([^']+)'", out.stderr)
+        # ASK THE PREDICATE A REPO-RELATIVE PATH. The traceback gives an
+        # ABSOLUTE one, and `is_archived_run_output` matches declared roots like
+        # `bench/logs`, which an absolute path does not begin with -- so the
+        # first version of this branch never fired and the skip was unreachable.
+        # Caught 2026-09-10 by running it in the clone rather than reading it,
+        # which is the whole point of this task.
+        rel = None
+        if m:
+            try:
+                rel = str(Path(m.group(1)).resolve().relative_to(REPO.resolve()))
+            except ValueError:
+                rel = m.group(1)
+        if rel and is_archived_run_output(rel) and not Path(m.group(1)).exists():
+            pytest.skip(
+                f"{script} reads {m.group(1)}, which this checkout does not "
+                f"hold. Most of bench/logs/ is excluded by .gitignore:41 by "
+                f"design, so the document it backs cannot be re-derived here "
+                f"and is NOT reported as verified.")
+        raise AssertionError(
+            f"{script} does not run, so the document it backs cannot be checked:\n"
+            f"{out.stderr[-800:]}")
     return out.stdout
 
 

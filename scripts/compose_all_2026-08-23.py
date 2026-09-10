@@ -11,14 +11,50 @@ at :3362) and its one-hunk widening, and the gate ACCEPTED it on 2026-08-23 afte
 fence defect was repaired.
 """
 from __future__ import annotations
-import json, pathlib, shutil, subprocess, sys, tempfile, uuid
+import json, os, pathlib, shutil, subprocess, sys, tempfile, uuid
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 from bench import build_acceptance as BA  # noqa: E402
 
 L = REPO / "bench/logs/build_experiment_2026-08-22"
-IDX = json.loads((L / "RESPONSE_MODEL_INDEX.json").read_text())
+
+
+def _idx() -> dict:
+    """The response-file -> model index, read WHEN NEEDED rather than on import.
+
+    FOUND 2026-09-10 BY RUNNING THE SUITE IN A FRESH CLONE, task A2. This was
+    `IDX = json.loads((L / "RESPONSE_MODEL_INDEX.json").read_text())` at module
+    level, and `bench/logs/` is excluded by `.gitignore:41` BY DESIGN. So the
+    import blew up with FileNotFoundError in any clone -- and it took
+    `scripts/apply_v3.py` down with it, because apply_v3 imports this module
+    solely to read ACCEPTED and ORDERS, 2 dictionaries that are literals right
+    here and need no file at all. 2 of the 22 fresh-clone failures were that 1
+    line, and neither script had any use for the index at import time.
+
+    THE INDEX IS ONLY EVER USED FOR DISPLAY -- `.get(f.name, "?")` in 2 places --
+    so its absence must degrade the label, not the run. It says so ONCE rather
+    than silently: a run whose provenance labels all read "?" should be legible
+    as a missing index, not as unknown models.
+    """
+    global _IDX_CACHE
+    if _IDX_CACHE is None:
+        f = L / "RESPONSE_MODEL_INDEX.json"
+        if f.is_file():
+            _IDX_CACHE = json.loads(f.read_text())
+        else:
+            # `relative_to` RAISES when the path is not under REPO, and this is
+            # the branch that exists to avoid raising. Found by P-passing this
+            # very fix on 2026-09-10: pointing `L` outside the repo to simulate
+            # the fresh clone turned a graceful degradation into a ValueError.
+            # `os.path.relpath` never raises and falls back to a `../` form.
+            print(f"  [note] {os.path.relpath(f, REPO)} is absent (bench/logs/ is "
+                  f"gitignored); model labels below will read '?'", file=sys.stderr)
+            _IDX_CACHE = {}
+    return _IDX_CACHE
+
+
+_IDX_CACHE: dict | None = None
 # task -> the response file whose patch the gate ACCEPTED
 ACCEPTED = {
     "T01": "T01_REBASED_response.md",   # fable; guard re-scoped per the item-5 amendment
@@ -75,14 +111,14 @@ def try_order(name, order, parent):
             if not ok:
                 for rel, orig in snap.items():           # ROLLBACK, defect 5
                     (wt / rel).write_text(orig, encoding="utf-8")
-                res["conflicts"].append({"task": tid, "model": IDX.get(f.name,"?"), "why": why})
+                res["conflicts"].append({"task": tid, "model": _idx().get(f.name,"?"), "why": why})
                 print(f"    {tid}  CONFLICT — {why}")
                 continue
             if tpath:
                 tf = wt / tpath; tf.parent.mkdir(parents=True, exist_ok=True)
                 tf.write_text(tsrc, encoding="utf-8"); res["tests"].append(tpath)
             res["applied"].append(tid)
-            print(f"    {tid}  applied ({IDX.get(f.name,'?')})")
+            print(f"    {tid}  applied ({_idx().get(f.name,'?')})")
         if res["tests"]:
             _, o = _run(["python3","-m","pytest",*res["tests"],"-q","--netguard-strict"], wt, 900)
             res["accepted_tests"] = BA._summarise_pytest(o)

@@ -392,9 +392,21 @@ class TestNonDistortionOnCompletedRuns:
         # fix-admission pipeline into the finding stream for no gain), and it
         # returns prompt text — it decides nothing. The R_k assertion below is
         # what actually holds the line, and it covers this reader unchanged.
+        # `study_programme_report` (task 9.1, 2026-09-10) reads `sk_result` to
+        # COUNT how many entries carry a `threshold_shadow` block -- 1 integer
+        # for the "corrected_s_star" item of the 6 the founder scheduled on
+        # 2026-09-06. Admitted on the same terms and narrowed the same way: the
+        # only subscript it takes is `"threshold_shadow" in e["sk_result"]`, it
+        # reads no R_k value (the assertion below covers it unchanged), it
+        # returns a report dict carrying `"_decides_nothing": True`, and no
+        # branch in the runner consults its output. Found by running the suite
+        # in a fresh clone on 2026-09-10, task A2 -- this guard had been red in
+        # BOTH trees since 9.1 landed, so the whole file was failing and the
+        # other 40 checks in it were not being read.
         assert readers <= {"_evaluate_sk_for_findings",
                            "build_irreducible_queue_alarm",
-                           "_rejection_lines"}, (
+                           "_rejection_lines",
+                           "study_programme_report"}, (
             f"sk_result is consumed outside its writer: {sorted(readers)} — "
             f"R_k(0) may now reach a verdict")
 

@@ -625,6 +625,31 @@ _DIRECTIVE_OMISSION: Dict[str, Any] = {"factors": ()}
 # for. This mirror carries the value to the worker instead of weakening the store.
 _PANEL_CWD_FOR_WORKERS: Dict[str, Any] = {"path": None}
 
+
+def apply_panel_cwd(path: Optional[str]) -> None:
+    """Set the panel working directory for the main thread AND the pool workers.
+
+    THE 2 HALVES MUST MOVE TOGETHER. `set_panel_cwd` writes a THREAD-LOCAL, which
+    is deliberate -- letting a main-thread set reach workers would allow one
+    dispatch's cleanup to unsandbox another, and that was tried and withdrawn on
+    2026-09-07. Workers therefore read `_PANEL_CWD_FOR_WORKERS` and set their own
+    thread-local from it. Configuring 1 without the other is the INERT
+    configuration measured on 2026-09-08: the main thread confined, every seat
+    not.
+
+    EXTRACTED 2026-09-10, task A2, because the guard for this was asserting on
+    SOURCE TEXT -- it searched a 400-character window after `set_panel_cwd(` for
+    the mirror assignment. The 2 statements were 8 lines apart with a 7-line
+    comment between them, the comment grew, the window stopped reaching, and the
+    test went red in both the maintainer's tree and a fresh clone while the
+    wiring was perfectly correct. `execute-do-not-grep`: a test that reads source
+    proves only that the source describes itself. This function exists so the
+    guard can CALL the mechanism and observe both halves, which costs nothing and
+    dispatches nothing.
+    """
+    set_panel_cwd(path)
+    _PANEL_CWD_FOR_WORKERS["path"] = path
+
 # Module mirror of `RunnerConfig.discrimination_control_ask`, same pattern and
 # same reason as _DIRECTIVE_OMISSION above.
 #
@@ -3992,10 +4017,45 @@ def _retarget_falsifier(code: str, repo_root: Path, overlay_root: Path) -> Tuple
     that missed produces INDETERMINATE_NOT_INTERCEPTED, not a verdict.
     """
     real = str(repo_root)
-    n = (code or "").count(real)
-    if not n:
-        return code or "", 0
-    return (code or "").replace(real, str(overlay_root)), n
+    text = code or ""
+    n = text.count(real)
+    if n:
+        text = text.replace(real, str(overlay_root))
+
+    # REPLAYING AN ARCHIVED FALSIFIER IN A DIFFERENT CHECKOUT. Added 2026-09-10,
+    # task A2.
+    #
+    # THE DEFECT. The substitution above matches only THIS checkout's root, so a
+    # falsifier archived on another machine -- which is every archived falsifier,
+    # for every reader -- keeps a path that is neither this tree nor reachable.
+    # `falsifier_verify` then refuses it as `a path outside the declared target`,
+    # prints INTEGRITY VIOLATION, and routes the finding to a human. Measured in
+    # a fresh clone on 2026-09-10: 35 of 640 archived falsifiers refused
+    # (5.4688%, Wilson [3.9582%, 7.5107%]) and 5 of the 15 exp44 execution rows
+    # lost, so `execution_based_matcher`'s headline 12 of 15 came out 7 of 15 and
+    # could not be reproduced by anyone who followed the documented steps.
+    #
+    # THE RULE IS NARROW AND IS NOT THE CONTAINMENT GUARD. `foreign_repo_roots`
+    # recognises ONLY an absolute path ending at a directory named like this
+    # project, identified from the git remote rather than from the folder name.
+    # A home directory, a sibling project, /etc/passwd: none of them match. The
+    # containment guard is untouched, so a LIVE falsifier naming a path outside
+    # the current tree is refused exactly as before.
+    #
+    # IT IS A LITERAL SWAP BETWEEN 2 ABSOLUTE DIRECTORY PATHS, like the one
+    # above, so it cannot change the falsifier's syntax or logic -- and, like the
+    # one above, it is never trusted on its own: the tripwire probe measures
+    # whether the substitution was load-bearing.
+    try:
+        from bench.repo_paths import foreign_repo_roots
+    except ImportError:                                   # pragma: no cover
+        from repo_paths import foreign_repo_roots         # type: ignore
+    for stale in foreign_repo_roots(text, repo_root):
+        if stale == str(overlay_root) or stale == real:
+            continue
+        n += text.count(stale)
+        text = text.replace(stale, str(overlay_root))
+    return text, n
 
 
 def _absolute_target(target_rel: str, repo_root=None) -> str:
@@ -11154,10 +11214,30 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 4142 of 4142 gate records in `bench/logs`, Wilson
-    [99.91%, 100.00%] -- 3507 of them encoded as the float `0.0` and 635 as the
+    is zero in 3507 of 3507 gate records in `bench/logs`, Wilson
+    [99.89%, 100.00%], Clopper-Pearson [99.89%, 100.00%] -- the figure over the
+    GIT-TRACKED archive, which is the only one a reader who clones this
+    repository can recompute.
+
+    THE CORPUS IS PART OF THE CLAIM, and until 2026-09-10 it was not stated.
+    This sentence read "4142 of 4142, Wilson [99.91%, 100.00%]", measured over
+    the maintainer's on-disk `bench/logs`. That corpus holds 6,770 JSON files
+    against 6,160 tracked -- 610 files `.gitignore:41` excludes by design -- so
+    the figure could not be reproduced from a clone, and
+    `test_stated_gate_count_matches_measurement_2026-09-07.py` failed in one.
+    Found 2026-09-10 by task A2, running the whole suite in a fresh clone.
+
+    THE 2 FIGURES DIFFER BY EXACTLY THE ENCODING SPLIT, and that is not a
+    coincidence: 3507 records encode `s_star` as the float `0.0` and 635 as the
     STRING "0", the latter confined to the 4 `sim45_*` families, which stringify
-    every numeric field ("sk": "0.9345", "s_star": "0", "R_old": "0.5").
+    every numeric field ("sk": "0.9345", "s_star": "0", "R_old": "0.5") -- and
+    those families are precisely the untracked ones (measured: 361 of the 610
+    untracked JSON files are `sim45_*`). So a reader has NONE of the
+    string-encoded records and cannot see the encoding split at all. On the
+    maintainer's disk the coercing count is 4142 of 4142, Wilson
+    [99.91%, 100.00%]. Both are real; only the first is reproducible.
+    Recompute either with:
+      python3 scripts/measure_sk_threshold_gate_fire_rate.py [--tracked-only]
 
     RE-MEASURED 2026-09-08 after `sim45_memory_20260908T033012Z` added 326 gate
     records: 3816 -> 4142 total, 3181 -> 3507 strict floats, and the string count
@@ -12020,15 +12100,13 @@ def run_experiment(
     # panel legitimately needs this repo. set_panel_cwd refuses a missing
     # directory rather than falling back to the repo — failing open here would
     # silently reinstate the exposure that let a model read the key in Exp 48.
-    set_panel_cwd(cfg.panel_cwd or None)
-    # Carry it to the pool workers, which have their own thread-local.
+    apply_panel_cwd(cfg.panel_cwd or None)
     # RESET PER RUN. A module-level tally that is never cleared reports run 2's
     # figures as run 1 plus run 2 -- the exact defect a bare module global caused
     # in the target-hash check, where run 2's first round compared against run
     # 1's last hash and raised a mid-run mutation alarm with nothing mutated.
     # Reproduced 2026-09-01; not repeated here.
     _INTAKE_TALLY.clear()
-    _PANEL_CWD_FOR_WORKERS["path"] = cfg.panel_cwd or None
 
     # Per-run reset for the target integrity guard (runway 0C.9). It is keyed by
     # target path, but a legitimate edit BETWEEN two runs on the same target

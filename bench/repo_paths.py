@@ -102,3 +102,129 @@ def line_mentions_archive_path(line: str, roots: Iterable[str] = ARCHIVE_ROOTS) 
         if ("/" in token or "\\" in token) and is_archived_run_output(token, roots):
             return True
     return False
+
+
+# ── This project's identity, for recognising its own tree named from elsewhere ──
+
+def project_names(repo_root: "os.PathLike[str] | str | None" = None
+                  ) -> tuple[set[str], str]:
+    """The names a checkout of THIS project answers to, read from the repository.
+
+    WHY NOT `Path(repo_root).name`. Because a clone sits wherever the reader put
+    it. Measured 2026-09-10, task A2: a fresh clone at `/tmp/ce_fresh` is the
+    same repository under a different folder name, and an instrument that used
+    the folder name reported 0 of the 35 cases it was written to find. That is
+    the basename-versus-path defect, which has now recurred 6 times in this
+    project, appearing this time inside the fix for its 5th instance.
+
+    The git remote is read first because a clone CARRIES it, in `.git/config`,
+    however the directory is named. The folder name is kept as a fallback and
+    the caller is told which answered, so a weak identity is visible rather than
+    silently assumed.
+
+    Returns (names, source) where source is "remote" or "directory".
+    """
+    import subprocess
+    from pathlib import Path
+
+    #: THIS module's own repository, ALWAYS consulted. The caller may pass an
+    #: overlay, a mirror, or a directory that does not exist -- `_retarget_falsifier`
+    #: legitimately passes a sandbox root -- and asking git inside one of those
+    #: yields nothing, so the project's identity would silently reduce to a
+    #: folder name. Found 2026-09-10 by a control that passed `/tmp/here` and
+    #: watched the rebase stop recognising its own project. The running code's
+    #: repository is the one identity that is always available.
+    own = Path(__file__).resolve().parents[1]
+    root = Path(repo_root) if repo_root else own
+    names, source = set(), "directory"
+    try:
+        url = subprocess.run(["git", "config", "--get", "remote.origin.url"],
+                             cwd=root, capture_output=True, text=True,
+                             timeout=30).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        url = ""
+    if url:
+        base = Path(url.rstrip("/")).name
+        if base in (".", ""):                       # a local-path remote
+            try:
+                base = Path(url).resolve().name
+            except OSError:
+                base = ""
+        if base.endswith(".git"):
+            base = base[:-4]
+        if base:
+            names.add(base)
+            source = "remote"
+    names.add(root.name)
+    if root != own:
+        extra, extra_source = project_names(own)
+        names |= extra
+        if extra_source == "remote":
+            source = "remote"
+    return names, source
+
+
+def foreign_repo_roots(text: str, repo_root: "os.PathLike[str] | str | None" = None
+                       ) -> list[str]:
+    """Absolute paths in `text` that name a checkout of THIS project elsewhere.
+
+    Longest first, so a caller substituting them cannot leave a shorter prefix
+    behind inside a path it has already rewritten.
+
+    WHAT THIS IS FOR. An archived falsifier carries the absolute path of the
+    checkout it was WRITTEN in. Replayed anywhere else -- a clone, a worktree,
+    another machine -- that path is neither this tree nor reachable, so the
+    containment guard refuses it and the finding is thrown to a human for no
+    reason but where the directory sits. Measured 2026-09-10: 35 of 640 archived
+    falsifiers (5.4688%, Wilson [3.9582%, 7.5107%]) in a fresh clone, and 5 of
+    the 15 exp44 execution rows, which is why the headline "12 of 15" could not
+    be reproduced by a reader.
+
+    WHAT IT IS NOT FOR, stated so it cannot quietly widen. It recognises ONLY a
+    path that ends at a directory named like this project. It does not recognise
+    a home directory, a sibling project, or any other absolute path, and it is
+    not consulted by the containment guard: a LIVE falsifier naming a path
+    outside the current tree is still refused, because containment is about the
+    filesystem and not about intent.
+    """
+    names, _ = project_names(repo_root)
+    found = set()
+    for name in names:
+        if not name:
+            continue
+        for m in re.finditer(r"(/(?:[^\s'\"`:,;)\]]+/)?" + re.escape(name) + r")(?![\w.-])",
+                             text or ""):
+            found.add(m.group(1))
+    return sorted(found, key=len, reverse=True)
+
+
+def is_onboarded_checkout(repo_root: "os.PathLike[str] | str | None" = None) -> bool:
+    """Has `scripts/cdsfl_onboard.py` been run in THIS checkout?
+
+    WHAT IT DECIDES. Some guards compare the repository against machine-level
+    state that a checkout does not own -- the Desktop mirrors, the git hook
+    wiring. Exactly 1 checkout on a machine owns those, and a second one
+    (a clone made to test reproducibility, a worktree, a sandbox copy) must not
+    be judged against them: the mirror it would be compared with is a mirror of
+    a DIFFERENT tree, so the comparison reports drift that does not exist.
+
+    Measured 2026-09-10, task A2: a fresh clone at /tmp/ce_fresh failed
+    `test_declared_desktop_mirror_matches_its_canonical_copy` because the
+    Desktop held the canonical repository's task list, 200,861 bytes against the
+    clone's 198,574. Nothing was wrong with either file.
+
+    `cdsfl.onboarded` is written with `git config --local` by
+    `wire_git_hooks`, so it lives in `.git/config`, is never cloned, and is not
+    removed by unsetting `core.hooksPath` -- which keeps "the guard was turned
+    off" distinguishable from "this checkout was never set up".
+    """
+    import subprocess
+    from pathlib import Path
+
+    root = Path(repo_root) if repo_root else Path(__file__).resolve().parents[1]
+    try:
+        out = subprocess.run(["git", "config", "--local", "--get", "cdsfl.onboarded"],
+                             cwd=root, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return bool(out.stdout.strip())

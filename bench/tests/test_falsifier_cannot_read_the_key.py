@@ -147,6 +147,23 @@ def test_a_legitimate_falsifier_from_the_same_run_still_executes():
     assert verdict in NORMAL_VERDICTS
 
 
+def _artefact_classifier():
+    """Load the committed classifier by path -- the script's name is hyphenated.
+
+    It lives in `scripts/` rather than here because the figures it produces are
+    quoted on the task list, and `measured-rate-travels-with-its-script` requires
+    the producing code to be committed beside them and runnable on its own.
+    """
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "archived_falsifier_rejections_2026-09-10.py"
+    assert path.is_file(), f"the committed classifier is missing: {path}"
+    spec = importlib.util.spec_from_file_location("archived_rejections", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.is_location_artefact
+
+
 def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
     """False-positive rate over every falsifier this project has ever run.
 
@@ -175,13 +192,62 @@ def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
         "measures against has gone missing"
     )
 
-    rejected = {sources[code] for code in sources if scan_falsifier_source(code)}
+    # THE COUNT WAS A FACT ABOUT THE MAINTAINER'S DIRECTORY LAYOUT, task A2,
+    # 2026-09-10. Archived falsifiers carry the ABSOLUTE path of the checkout
+    # they were written in. On the maintainer's machine that path IS the
+    # repository root, so `a path outside the declared target` never fires; in
+    # any other checkout it does, and this assertion failed with 35 extra
+    # entries in a fresh clone. Measured with
+    # scripts/archived_falsifier_rejections_2026-09-10.py, run in both trees:
+    # 2 of 640 rejected for key material either way (0.3125%, Wilson
+    # [0.0857%, 1.1322%]), plus 35 of 640 in the clone whose ONLY violation is
+    # naming this project's own tree from elsewhere (5.4688%, Wilson
+    # [3.9582%, 7.5107%]).
+    #
+    # THE GUARD IS NOT CHANGED AND IS NOT WRONG. In a live run a falsifier that
+    # names a path outside the current tree must still be refused. What is fixed
+    # is this test, which pinned a number that could only hold in 1 directory.
+    is_location_artefact = _artefact_classifier()
+
+    rejected, artefacts = set(), set()
+    for code, where in sources.items():
+        v = scan_falsifier_source(code)
+        if not v:
+            continue
+        (artefacts if is_location_artefact(v) else rejected).add(where)
     expected = {("exp48_chemistry_exam_live_20260729T044134Z", "C0012"),
                 ("exp48_chemistry_exam_live_20260729T044134Z", "C0015")}
     assert rejected == expected, (
-        f"gate rejected {sorted(rejected)}; expected exactly {sorted(expected)}. "
-        "New entries are honest falsifiers being blocked."
+        f"gate rejected {sorted(rejected)} for reasons that are NOT a stale "
+        f"absolute path to this project's own tree; expected exactly "
+        f"{sorted(expected)}. New entries are honest falsifiers being blocked. "
+        f"({len(artefacts)} further rejections were classified as location "
+        f"artefacts and are listed by the script named above.)"
     )
+
+
+def test_the_artefact_classifier_cannot_excuse_a_real_escape():
+    """ANTI-VACUITY, and the only reason the widening above is safe.
+
+    A classifier that forgives rejections must be shown to forgive ONLY the ones
+    it claims to. These 3 cases are what it must never wave through: a violation
+    with any non-path reason, a path in someone else's tree, and the answer-key
+    store itself.
+    """
+    is_location_artefact = _artefact_classifier()
+
+    here = str(REPO_ROOT)
+    assert is_location_artefact([("a path outside the declared target", here)]), (
+        "the honest case must still be recognised, or this control proves nothing")
+    for bad in (
+        [("answer-key vocabulary", "PLANTED_CLAIMS")],
+        [("a path outside the declared target", "/Users/someone/.ssh/id_rsa")],
+        [("a path outside the declared target", "/etc/passwd")],
+        [("a path outside the declared target", here),
+         ("an answer-key file path", "ft-001_KEY.json")],
+    ):
+        assert not is_location_artefact(bad), bad
+    assert not is_location_artefact([]), "no violation is not an artefact"
 
 
 # ── both execution paths, not just the one named in the brief ────────────────

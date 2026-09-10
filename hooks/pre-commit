@@ -101,6 +101,60 @@ bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
 # copies repo -> Desktop. If the refresh itself fails or is absent, the guard
 # still runs afterwards and still refuses. The check keeps its authority; it
 # simply stops being the thing that prevents its own remedy.
+# ─── ORDER WITHIN STAGE 0: EVERY REPAIR THAT EDITS A FILE RUNS BEFORE THE
+# ─── MIRROR REFRESH, BECAUSE THE MIRROR REFRESH COPIES THOSE FILES.
+#
+# FOUND 2026-09-10 BY THE HOOK REFUSING THIS VERY COMMIT. The citation repair
+# was added BELOW the mirror refresh. It edits the founder's master task list,
+# which IS a mirrored file, so the mirror was copied and then the canonical copy
+# changed underneath it -- and the mirror-drift guard, a few lines later,
+# refused. That is the IDENTICAL fault the mirror refresh was moved to stage 0
+# to cure earlier the same day: a repair sitting below the check that needs it.
+# Adding a second repair recreated it 1 stage lower down.
+#
+# THE RULE, so the next addition does not repeat it a third time: a stage-0
+# repair that WRITES a file goes ABOVE the mirror refresh; the mirror refresh is
+# always LAST, because it is the one that copies. Held by
+# bench/tests/test_precommit_stage0_order_2026-09-10.py.
+
+# THE SAME REPAIR-BEFORE-CHECK ORDERING, FOR LINE CITATIONS. Added 2026-09-10,
+# task A2.
+#
+# WHAT WAS WRONG. Notes cite the runner as `reference_runner_v3.py:11055`, and
+# `scripts/citation_content_guard_2026-09-10.py` checks that such a citation
+# lands INSIDE the symbol it names. Editing the runner moves every symbol below
+# the edit, so the citations go stale by exactly the number of lines added --
+# measured 2026-09-10: 6 of 6 anchored citations were outside their symbol, off
+# by +27, +47 and +22, and the guard was red in a fresh clone AND in the
+# maintainer's tree. It had been red since some earlier runner edit that nobody
+# connected to it.
+#
+# The guard already shipped the cure: `--fix` rewrites the line number to the
+# symbol's first line. NOTHING RAN IT. That is the additive standard's symmetric
+# half -- an addition nothing reaches -- sitting inside the repair for another
+# instance of the same shape 20 lines above.
+#
+# LIKE THE MIRROR REFRESH, THIS NEVER REFUSES. It repairs and reports. The guard
+# still runs afterwards in the suite and still fails on anything the repair could
+# not fix -- a citation naming a symbol that no longer exists, for instance,
+# which is a real defect and not a stale offset.
+# THE RUN LEDGER IS DERIVED AND CITES THE RUNNER BY LINE NUMBER, so any runner
+# edit makes it stale and its drift guard red. Same ordering, same reasoning as
+# the 2 stages around it. `--refresh` DECLINES on a checkout holding fewer
+# artefacts than the ledger declares, so a clone cannot shrink it.
+if [ -f scripts/experiment_run_ledger.py ]; then
+    python3 scripts/experiment_run_ledger.py --refresh 2>&1 \
+        | grep -E "refreshed|NOT refreshed" | sed 's/^/pre-commit: /' || true
+fi
+
+if [ -f scripts/citation_content_guard_2026-09-10.py ]; then
+    if ! python3 scripts/citation_content_guard_2026-09-10.py --fix 2>&1 \
+            | grep -E "repaired|->" | sed 's/^/pre-commit: /'; then
+        :   # nothing to repair is the ordinary case and prints nothing
+    fi
+fi
+
+
 if [ -f scripts/sync_desktop_mirrors.py ]; then
     if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then
         echo "pre-commit: the Desktop mirror refresh failed; commit continues." >&2

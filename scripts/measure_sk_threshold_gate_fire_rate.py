@@ -48,6 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -108,14 +109,48 @@ def _walk_sk_results(obj):
             yield from _walk_sk_results(v)
 
 
-def route_1_structured(logs_dir: Path):
-    """Count passes_threshold True/False across every archived JSON report."""
+def tracked_under(logs_dir: Path) -> set[Path] | None:
+    """The git-TRACKED files under `logs_dir`, or None if git cannot answer.
+
+    WHY THIS EXISTS, task A2, 2026-09-10. `bench/logs/` is excluded by
+    `.gitignore:41` with a small allow-list of report shapes, so the maintainer's
+    working tree and a fresh `git clone` hold DIFFERENT corpora: 6,770 JSON files
+    on disk here against 6,160 tracked, a gap of 610. Every figure measured over
+    the on-disk corpus is therefore a figure no reader can reproduce, and one of
+    them -- 4,142 archived gate records -- was pinned in a docstring and guarded
+    by a test that consequently could not pass in any clone. It measured 3,507.
+
+    THE ANSWER IS NOT TO DROP THE UNTRACKED EVIDENCE. That would be a removal
+    with nothing measured to justify it, and 610 files of real archive is real.
+    Both corpora are reported instead, and the REPRODUCIBLE one is what prose
+    pins, because a number a reader cannot recompute is a claim about evidence
+    rather than evidence.
+    """
+    try:
+        out = subprocess.run(["git", "ls-files", "-z", "--", "."],
+                             cwd=logs_dir, capture_output=True, text=True,
+                             timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return {(logs_dir / rel).resolve() for rel in out.stdout.split("\0") if rel}
+
+
+def route_1_structured(logs_dir: Path, only: set[Path] | None = None):
+    """Count passes_threshold True/False across archived JSON reports.
+
+    `only`, when given, restricts the scan to that set of resolved paths -- the
+    git-tracked subcorpus, so the figure is one a reader can reproduce.
+    """
     true_n = false_n = 0
     files_with_field = 0
     files_scanned = 0
     per_run = Counter()
 
     for path in sorted(logs_dir.rglob("*.json")):
+        if only is not None and path.resolve() not in only:
+            continue
         files_scanned += 1
         try:
             data = json.loads(path.read_text())
@@ -172,14 +207,23 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--logs-dir", type=Path, default=DEFAULT_LOGS)
     ap.add_argument("--json", action="store_true", help="emit machine-readable output")
+    ap.add_argument("--tracked-only", action="store_true",
+                    help="measure only git-tracked archive files, so the figure "
+                         "is reproducible from a fresh clone")
     args = ap.parse_args(argv)
 
     if not args.logs_dir.is_dir():
         print(f"no such logs dir: {args.logs_dir}", file=sys.stderr)
         return 2
 
-    r1 = route_1_structured(args.logs_dir)
+    tracked = tracked_under(args.logs_dir)
+    r1 = route_1_structured(args.logs_dir, only=tracked if args.tracked_only else None)
     r2 = route_2_logs(args.logs_dir)
+
+    # BOTH CORPORA, ALWAYS, so the 2 can never be confused for each other.
+    r1_tracked = (r1 if args.tracked_only
+                  else route_1_structured(args.logs_dir, only=tracked)) \
+        if tracked is not None else None
 
     k = r1["passes_false"]
     n = r1["total"]
@@ -195,6 +239,11 @@ def main(argv=None) -> int:
             "wilson_95_ci": [lo, hi],
         },
         "routes_agree": (k == 0) == (r2["threshold_rejections"] == 0),
+        "corpus": "git-tracked only" if args.tracked_only else "everything on disk",
+        "tracked_subcorpus": ({"checks": r1_tracked["total"],
+                               "rejections": r1_tracked["passes_false"],
+                               "files_scanned": r1_tracked["files_scanned"]}
+                              if r1_tracked is not None else None),
     }
 
     if args.json:
@@ -203,6 +252,13 @@ def main(argv=None) -> int:
 
     print("S_k threshold gate — has it ever rejected a fix?")
     print("=" * 66)
+    print(f"CORPUS: {result['corpus']}")
+    if r1_tracked is not None and not args.tracked_only:
+        print(f"  git-tracked subcorpus, the figure a fresh clone reproduces: "
+              f"{r1_tracked['passes_false']} of {r1_tracked['total']}")
+        print(f"  on-disk corpus includes {r1['files_scanned'] - r1_tracked['files_scanned']} "
+              f"JSON file(s) no clone has; prose must pin the tracked figure")
+    print()
     print("ROUTE 1, structured records (passes_threshold field)")
     print(f"  JSON files scanned          : {r1['files_scanned']}")
     print(f"  files carrying the field    : {r1['files_with_field']}")

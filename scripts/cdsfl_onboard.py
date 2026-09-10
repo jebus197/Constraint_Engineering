@@ -36,6 +36,7 @@ import platform
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -871,7 +872,35 @@ def wire_git_hooks(root: Path) -> bool:
         print("  [SET] hooks/pre-commit made executable (git ignores it otherwise)")
     else:
         print("  [OK] hooks/pre-commit present and executable")
+    _stamp_onboarded(root)
     return True
+
+
+def _stamp_onboarded(root: Path) -> None:
+    """Record IN THIS CLONE'S LOCAL CONFIG that onboarding has run.
+
+    WHY A SECOND MARKER WHEN `core.hooksPath` IS ALREADY ONE. It is not one, and
+    the difference decides whether a red test means "not set up yet" or "the guard
+    was removed". `core.hooksPath` unset is ambiguous between those, and they have
+    opposite remedies: run onboarding, or find out who turned the guard off.
+
+    THE DISCRIMINATOR THIS REPLACES WAS UNREACHABLE, measured 2026-09-10 in a
+    fresh clone at /tmp/ce_fresh. `test_the_live_repository_is_actually_wired`
+    decided "this looks like a fresh clone" from `git config --get user.email`
+    being empty -- but `--get` falls back to GLOBAL config, and `git clone`
+    inherits the machine's global identity. In the fresh clone the command
+    returned `jebus.2504@gmail.com`, so the skip branch could not fire on any
+    machine with a git identity, which is every machine that can clone and
+    commit. The addition was there and nothing reached it.
+
+    `cdsfl.onboarded` is written with `--local`, so it lives in `.git/config`,
+    is never cloned, and survives someone unsetting `core.hooksPath` -- which is
+    precisely the case that must stay RED rather than becoming a skip.
+    """
+    stamp = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+    subprocess.run(["git", "config", "--local", "cdsfl.onboarded", stamp],
+                   cwd=root, check=False, capture_output=True)
+    print(f"  [SET] cdsfl.onboarded = {stamp}")
 
 
 def main() -> int:

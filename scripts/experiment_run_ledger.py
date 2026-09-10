@@ -258,6 +258,15 @@ def render(data: dict) -> str:
     A("`--check` fails if the committed copy no longer matches the artefacts.")
     A("")
     A("Written under CDSFL note standard v1.6 (24 August 2026).")
+    # THE CORPUS THIS LEDGER WAS BUILT FROM, declared so a reader with a smaller
+    # one can tell the difference between a stale ledger and a partial checkout.
+    # Added 2026-09-10, task A2: `bench/logs/**` is excluded by `.gitignore:41`
+    # apart from a report allow-list, so a clone holds fewer completion signals
+    # than the machine that generated this, and the byte comparison called that
+    # drift. Measured: 31 signals here against 29 in a fresh clone.
+    A("")
+    A(f"<!-- ledger-corpus: run_dirs={len(data['runs'])} "
+      f"signals={sum(1 for r in data['runs'] if r['signal_status'])} -->")
     return "\n".join(L) + "\n"
 
 
@@ -266,6 +275,10 @@ def main() -> int:
     ap.add_argument("--check", action="store_true",
                     help="compare the committed ledger against the artefacts; exit 1 on drift")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument("--refresh", action="store_true",
+                    help="rewrite the ledger IN PLACE, but only when this "
+                         "checkout's corpus is at least as large as the one the "
+                         "committed ledger declares; for the pre-commit hook")
     args = ap.parse_args()
 
     data = collect()
@@ -274,6 +287,35 @@ def main() -> int:
                           "disagreements": len(disagreements(data))}, indent=2))
         return 0
     fresh = render(data)
+
+    if args.refresh:
+        # REPAIR BEFORE CHECK, the ordering the mirror refresh established on
+        # 2026-09-10. The ledger cites the runner by line number, so ANY runner
+        # edit makes it stale and `--check` red -- a derived document that only
+        # a person remembering to regenerate it can keep true.
+        #
+        # IT REFUSES TO SHRINK THE LEDGER. On a checkout holding fewer artefacts
+        # than the ledger declares -- any clone, because `.gitignore:41` excludes
+        # most of bench/logs -- rewriting would DELETE rows that exist, and a
+        # commit from that machine would carry the loss upstream. That is the
+        # removal half of the additive standard, and nothing here measures a
+        # replacement that dominates. So it declines and says why.
+        if LEDGER.is_file():
+            declared = corpus_marker(LEDGER.read_text(encoding="utf-8"))
+            here = (len(data["runs"]),
+                    sum(1 for r in data["runs"] if r["signal_status"]))
+            if declared and (here[0] < declared[0] or here[1] < declared[1]):
+                print(f"  ledger NOT refreshed: this checkout has "
+                      f"{here[0]}/{here[1]} run dirs/signals against the "
+                      f"{declared[0]}/{declared[1]} the ledger declares. "
+                      f"Rewriting would drop rows that exist elsewhere.")
+                return 0
+            if LEDGER.read_text(encoding="utf-8") == fresh:
+                return 0
+        LEDGER.write_text(fresh, encoding="utf-8")
+        print(f"  refreshed {_rel(LEDGER)}")
+        return 0
+
     if not args.check:
         print(fresh, end="")
         return 0
@@ -299,13 +341,42 @@ def main() -> int:
     def _portable(s: str) -> str:
         return re.sub(r"\*\*\d+ aborted invocations\*\*[^\n]*\n?", "", s)
 
-    if _portable(LEDGER.read_text(encoding="utf-8")) == _portable(fresh):
+    committed = LEDGER.read_text(encoding="utf-8")
+    if _portable(committed) == _portable(fresh):
         print(f"  ledger matches the artefacts ({len(data['runs'])} run directories)")
         return 0
+
+    # A SMALLER LOCAL CORPUS IS NOT DRIFT. This check exists to catch a hand edit
+    # of a generated file or a genuine change in the artefacts. A checkout that
+    # simply holds fewer artefacts than the generating machine is neither, and
+    # calling it drift made the suite fail for every reader who followed the
+    # documented steps. A LARGER or EQUAL corpus still compares strictly, so a
+    # stale ledger on the maintainer's machine -- today's actual case -- still
+    # fails, which is the case this guard was built for.
+    declared = corpus_marker(committed)
+    here = (len(data["runs"]),
+            sum(1 for r in data["runs"] if r["signal_status"]))
+    if declared and (here[0] < declared[0] or here[1] < declared[1]):
+        print(f"  this checkout holds FEWER artefacts than the ledger was built "
+              f"from: {here[0]} run directories and {here[1]} completion signals "
+              f"here, against {declared[0]} and {declared[1]} declared.")
+        print("  `.gitignore:41` excludes most of bench/logs/ by design, so a "
+              "clone legitimately sees less. That is not ledger drift and is "
+              "not reported as such.")
+        return 0
+
     print(f"  LEDGER DRIFT: {_rel(LEDGER)} no longer matches bench/logs/.")
+    if declared:
+        print(f"  corpus: {here[0]}/{here[1]} here, {declared[0]}/{declared[1]} declared.")
     print("  Regenerate: python3 scripts/experiment_run_ledger.py > "
           f"{_rel(LEDGER)}")
     return 1
+
+
+def corpus_marker(text: str) -> tuple[int, int] | None:
+    """The `<!-- ledger-corpus: ... -->` counts, or None if the ledger predates it."""
+    m = re.search(r"<!--\s*ledger-corpus:\s*run_dirs=(\d+)\s+signals=(\d+)", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
 
 
 if __name__ == "__main__":

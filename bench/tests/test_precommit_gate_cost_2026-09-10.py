@@ -18,6 +18,7 @@ reason connected to the gate. The COUNT is exact and is asserted.
 from __future__ import annotations
 
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -79,30 +80,66 @@ class TestTheListComesFromTheHook:
             mod.gate_files()
 
 
+#: The task-list entry that declares the gate's cost, and the marker it carries.
+TASK_LIST = ROOT / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
+_GATE_COST_RE = re.compile(
+    r"<!--\s*gate-cost:\s*files=(\d+)\s+collected=(\d+)")
+
+
+def _declared_gate_cost() -> tuple[int, int]:
+    """Read entry 1.1's declared figures out of the task list.
+
+    Read rather than restated, so the number lives in exactly 1 place. A missing
+    marker is an error, not a default: silently substituting a fallback would
+    turn this guard into one that cannot fail.
+    """
+    m = _GATE_COST_RE.search(TASK_LIST.read_text(encoding="utf-8"))
+    assert m, (
+        "entry 1.1 no longer carries its `<!-- gate-cost: files=N collected=M -->` "
+        "declaration, so the gate's cost is claimed in prose only and nothing "
+        "checks it. Restore the marker -- do not delete this test.")
+    return int(m.group(1)), int(m.group(2))
+
+
 class TestTheCountIsExactAndCurrent:
     def test_the_entry_figure_matches_the_hook_today(self, mod):
-        """Entry 1.1 now says 6 files and 174 tests. Both are checked here.
+        """The entry's declared gate cost must equal what the hook collects today.
 
-        (The count in this docstring was left at 169 by the 14:20 BST
-        correction that updated the assertion below -- a stale figure
-        one line above a fresh one, caught in panel round 7.)
+        SIXTH CORRECTION 2026-09-10, and this one changes the SHAPE rather than
+        the number. The figure had been written twice -- once in entry 1.1's
+        prose and once as a literal in this assertion -- so every correction was
+        2 edits and 5 of the previous 6 were made by someone who had noticed only
+        1 of them. Two representations of one truth with no comparator is the
+        shape `execute-do-not-grep` names, and it was sitting inside the test
+        whose whole job is to be the comparator.
 
-        If this fails because the gate grew again, UPDATE THE ENTRY AND THIS TEST
-        together — that is the whole point. Do not delete it.
+        The entry now carries a machine-readable declaration and this test READS
+        it. There is 1 place to update, and the test compares that place to the
+        measurement. The treadmill is deliberately kept: the gate's cost is a
+        function of the task list, because `test_done_markers_carry_evidence`
+        parametrises 1 test per DONE entry, so closing an entry moves it and this
+        test goes red until the entry is refreshed. That is the mechanism that
+        has kept the figure true since 14:20 on 2026-09-10; a figure nobody is
+        forced to refresh is how the first 3 corrections became possible.
+
+        Refresh with: python3 scripts/precommit_gate_cost_2026-09-10.py
         """
+        declared_files, declared_tests = _declared_gate_cost()
         files = mod.gate_files()
-        assert len(files) == 7, (
-            f"the hook now runs {len(files)} guard files; entry 1.1 says 7 and "
-            f"must be corrected in the same change as this test")
-        assert mod.collected(files) == 277, (
-            "the collected count has moved; entry 1.1 quotes 277. UPDATED 2026-09-10 20:25 BST\n"
-            "from 178: the gate's cost is a FUNCTION OF THE TASK LIST, because\n"
-            "test_done_markers_carry_evidence parametrises one test per DONE entry.\n"
-            "Closing an entry moves this number. That is the diagnosis the first 4\n"
-            "corrections lacked, and the reason this test is kept rather than loosened.\n"
-            "Refresh with: python3 scripts/precommit_gate_cost_2026-09-10.py\n"
-            "from 169: adding 5 tests to test_done_markers_carry_evidence_2026-09-10.py (task V7)\n"
-            "moved it, and this test went red exactly as its docstring says it should.")
+        assert len(files) == declared_files, (
+            f"the hook now runs {len(files)} guard files; the task list declares "
+            f"{declared_files}. Update the declaration in entry 1.1.")
+        assert mod.collected(files) == declared_tests, (
+            f"the collected count has moved to {mod.collected(files)}; the task "
+            f"list declares {declared_tests}. This is EXPECTED whenever an entry "
+            f"is closed -- refresh the declaration in entry 1.1 with:\n"
+            f"  python3 scripts/precommit_gate_cost_2026-09-10.py")
+
+    def test_the_declaration_is_actually_present_and_parseable(self):
+        """ANTI-VACUITY. If the marker vanished, the test above would have
+        nothing to compare against and could not fail for the right reason."""
+        files, tests = _declared_gate_cost()
+        assert files >= 4 and tests >= 50, (files, tests)
 
 
 class TestItRuns:

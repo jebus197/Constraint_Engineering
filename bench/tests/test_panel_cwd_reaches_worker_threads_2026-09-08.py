@@ -123,18 +123,59 @@ def test_the_main_thread_set_still_does_not_propagate(tmp_path):
     )
 
 
-def test_run_experiment_populates_the_mirror():
-    """A ratchet, and its boundary is stated.
+def test_run_experiment_populates_the_mirror(tmp_path):
+    """Both halves of the panel-cwd wiring, proven BY CALLING IT.
 
-    Executing `run_experiment` itself would dispatch a live panel and cost money, so
-    this asserts on the source: the mirror must be populated beside the existing
-    main-thread call. The MECHANISM is proven by execution in the first test; this
-    only catches the wiring being removed.
+    REWRITTEN 2026-09-10, task A2. This asserted on SOURCE TEXT: it found
+    `set_panel_cwd(` in the runner and searched the next 400 characters for the
+    worker-mirror assignment. The 2 statements sat 8 lines apart with a comment
+    between them; the comment grew, the window stopped reaching the assignment,
+    and the test failed in the maintainer's tree AND in a fresh clone while the
+    wiring was entirely correct. `execute-do-not-grep`: a source-text test proves
+    only that the source describes itself consistently, and here it did not even
+    manage that.
+
+    `run_experiment` now calls `apply_panel_cwd`, which sets both halves, so the
+    mechanism can be EXECUTED with no dispatch and no cost. The ratchet is
+    stronger than before, not weaker: it now fails if either half stops being
+    set, whatever the source happens to look like.
     """
+    R.apply_panel_cwd(None)                        # a known starting state
+    assert R.get_panel_cwd() is None
+    assert R._PANEL_CWD_FOR_WORKERS["path"] is None
+
+    R.apply_panel_cwd(str(tmp_path))
+    assert R.get_panel_cwd() == str(tmp_path), (
+        "the main-thread thread-local was not set")
+    assert R._PANEL_CWD_FOR_WORKERS["path"] == str(tmp_path), (
+        "the main thread is confined and the pool workers are not, which is the "
+        "inert configuration measured on 2026-09-08")
+
+    # AND THE WORKERS ACTUALLY READ IT. The mirror existing is not the claim;
+    # the claim is that a pool worker ends up confined.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        seen = list(pool.map(lambda _: R._PANEL_CWD_FOR_WORKERS.get("path"), range(2)))
+    assert seen == [str(tmp_path), str(tmp_path)], seen
+
+    R.apply_panel_cwd(None)                        # leave no state behind
+
+
+def test_run_experiment_still_calls_the_wiring():
+    """The execution test above proves the MECHANISM; this proves it is REACHED.
+
+    An addition nothing reaches is not additive. `apply_panel_cwd` could be
+    perfect and never called, and every assertion above would still pass.
+    """
+    import ast
+
     src = (REPO / "bench" / "reference_runner_v3.py").read_text()
-    i = src.index("set_panel_cwd(cfg.panel_cwd or None)")
-    window = src[i:i + 400]
-    assert '_PANEL_CWD_FOR_WORKERS["path"] = cfg.panel_cwd or None' in window, (
-        "run_experiment sets the panel cwd on the main thread without carrying it to "
-        "the pool workers, which is the inert configuration measured on 2026-09-08"
-    )
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "run_experiment":
+            called = {n.func.id for n in ast.walk(node)
+                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+            assert "apply_panel_cwd" in called, (
+                "run_experiment no longer calls apply_panel_cwd, so no run "
+                "confines its panel at all")
+            return
+    raise AssertionError("run_experiment is gone from the runner")

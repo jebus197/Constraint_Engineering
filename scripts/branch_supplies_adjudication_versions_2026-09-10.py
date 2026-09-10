@@ -81,7 +81,10 @@ def main() -> int:
     print(f"\n--- what {BRANCH} uniquely supplies to the version search ---")
     if not subprocess.run(["git", "rev-parse", "--verify", BRANCH],
                           cwd=REPO, capture_output=True).returncode == 0:
-        print(f"  no {BRANCH} in this clone")
+        print(f"  no {BRANCH} in this clone -- it is a LOCAL branch that was never")
+        print("  pushed, so `git clone` cannot carry it and this half of the")
+        print("  measurement is UNAVAILABLE here rather than measured at 0.")
+        _print_attribution_caveat()
         return 0
     targets = in_repo_targets()
     refs = [r for r in subprocess.run(
@@ -118,12 +121,26 @@ def main() -> int:
     print(f"  Clopper-Pearson 95% : [{slo:.4%}, ...]  (scipy; agrees to "
           f"{abs(slo - lo_c):.1e})")
 
+    _print_attribution_caveat()
+    return 0
+
+
+def _print_attribution_caveat() -> None:
+    """The methodological caveat, printed on BOTH paths through main().
+
+    FOUND 2026-09-10 BY RUNNING THE SUITE IN A FRESH CLONE, task A2. This
+    paragraph sat after the measurement, and the branch-absent path returned
+    before reaching it -- so in any clone (where the branch cannot exist, being
+    local and never pushed) the reader got the numbers with none of the warning
+    about what they do and do not mean. The caveat is a statement about METHOD,
+    not about this clone's refs, so it is true whether or not the branch is here
+    and it now prints either way.
+    """
     print("\n  ATTRIBUTION MATTERS AND IS NOT ASSUMED. Not every off-main version")
     print("  belongs to this branch: at the time of measurement 1 came from local")
     print("  main running ahead of origin/main, and 1 from the pre-rewrite backup")
     print("  refs. Crediting the branch with all of them would have overstated its")
     print("  contribution by 40%.")
-    return 0
 
 
 if __name__ == "__main__":

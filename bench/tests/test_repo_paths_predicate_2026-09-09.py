@@ -75,11 +75,41 @@ def test_logs_quarantine_is_matched_by_being_named_not_by_prefix():
 
 
 def test_the_declared_roots_exist_or_are_deliberate():
-    """A root naming a directory that never existed is an unwired addition."""
-    missing = [r for r in ARCHIVE_ROOTS if not (REPO / r).exists()]
-    assert not missing, (
-        f"{missing} are declared archive roots but are not on disk; either the "
-        f"directory was removed or the root was a guess")
+    """A root naming a directory that never existed is an unwired addition.
+
+    CORRECTED 2026-09-10, task A2. The test read "exists or is deliberate" and
+    then checked only the first half, so it failed in a fresh clone on
+    `bench/results`, which `.gitignore:7` excludes ENTIRELY -- 0 tracked files,
+    verified with `git ls-files bench/results`. A directory excluded by design
+    cannot be on disk in a clone, and calling that a guessed root inverts the
+    finding: the root is deliberate precisely BECAUSE the ignore file names it.
+
+    Both halves are now checked, and the anti-guess intent is preserved intact:
+    a root that neither exists on disk NOR appears in `.gitignore` is still a
+    name nothing backs, and still fails. The negative control below proves the
+    check can still fire.
+    """
+    ignore = (REPO / ".gitignore").read_text() if (REPO / ".gitignore").is_file() else ""
+    unbacked = [r for r in ARCHIVE_ROOTS
+                if not (REPO / r).exists() and r not in ignore]
+    assert not unbacked, (
+        f"{unbacked} are declared archive roots, are not on disk, and are not "
+        f"named in .gitignore either; the root was a guess")
+
+
+def test_the_root_check_can_still_fail():
+    """ANTI-VACUITY. Widening a check is how a check stops checking.
+
+    The rule above passes a root that is absent-but-ignored. This proves it does
+    NOT pass a root that is absent and unnamed, which is the case it exists for.
+    """
+    ignore = (REPO / ".gitignore").read_text()
+    invented = "bench/a_root_that_was_never_created"
+    assert not (REPO / invented).exists()
+    assert invented not in ignore
+    unbacked = [r for r in (*ARCHIVE_ROOTS, invented)
+                if not (REPO / r).exists() and r not in ignore]
+    assert unbacked == [invented], unbacked
 
 
 # --- the text-scanning companion --------------------------------------------

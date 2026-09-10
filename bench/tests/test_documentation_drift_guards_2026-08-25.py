@@ -137,6 +137,8 @@ def test_foot_line_convention_names_the_current_standard():
 _sys.path.insert(0, str(REPO / "scripts"))
 import sync_desktop_mirrors as _mirrors  # noqa: E402
 
+from bench.repo_paths import is_onboarded_checkout  # noqa: E402
+
 DECLARED_MIRRORS = [(repo_rel, HOME / "Desktop" / desktop_name)
                     for repo_rel, desktop_name in _mirrors.MIRRORS]
 
@@ -151,6 +153,18 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
     assert canonical.is_file(), f"canonical copy missing: {repo_rel}"
     if not desktop.is_file():
         pytest.skip(f"Desktop mirror absent on this machine: {desktop.name}")
+    # THE MIRROR BELONGS TO ONE CHECKOUT, task A2, 2026-09-10. A second checkout
+    # on the same machine -- a clone made to test reproducibility, a worktree, a
+    # panel sandbox -- would be compared against a mirror of a DIFFERENT tree and
+    # report drift that does not exist. Measured: the fresh clone at
+    # /tmp/ce_fresh failed on 200,861 bytes against 198,574 with nothing wrong
+    # with either file. Ownership is the onboarding stamp, which is per-clone
+    # local config and is never cloned.
+    if not is_onboarded_checkout(REPO):
+        pytest.skip(
+            f"this checkout has not been onboarded, so it does not own "
+            f"{desktop.name} on this machine and cannot be judged against it. "
+            f"Run: python3 scripts/cdsfl_onboard.py")
     a = canonical.read_text(encoding="utf-8", errors="replace")
     try:
         b = desktop.read_text(encoding="utf-8", errors="replace")

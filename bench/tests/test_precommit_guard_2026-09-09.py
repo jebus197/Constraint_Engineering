@@ -227,17 +227,36 @@ def test_the_live_repository_is_actually_wired():
     until onboarding runs, but uselessly, because it made an unavoidable condition
     look like a defect. A fresh clone is now detected and skipped WITH THE REASON
     STATED, which is the true fact rather than a silenced one.
+
+    CORRECTED AGAIN 2026-09-10, task A2. THAT SKIP COULD NEVER FIRE. It asked
+    whether `git config --get user.email` was empty, and `--get` searches local,
+    then global, then system. `git clone` inherits the machine's global identity,
+    so in the fresh clone at /tmp/ce_fresh the command returned
+    `jebus.2504@gmail.com` and the branch was unreachable on any machine with a
+    git identity -- which is every machine that can clone and commit. The fix for
+    a fresh-clone failure was itself an addition nothing reached, the exact shape
+    the additive standard's symmetric half names.
+
+    THE DISCRIMINATOR IS NOW A MARKER ONBOARDING WRITES, `cdsfl.onboarded` in
+    `--local` config, because the 2 states have opposite remedies. Never
+    onboarded is "run 1 command"; onboarded and then unwired is "the guard was
+    turned off", and that must stay RED. `--local` config is not carried by a
+    clone and is not removed by unsetting `core.hooksPath`, so it separates them.
     """
     got = _git("config", "--get", "core.hooksPath", cwd=REPO, check=False).stdout.strip()
     if not got:
-        email = _git("config", "--get", "user.email", cwd=REPO, check=False).stdout.strip()
-        if not email:
+        stamp = _git("config", "--local", "--get", "cdsfl.onboarded",
+                     cwd=REPO, check=False).stdout.strip()
+        if not stamp:
             pytest.skip(
-                "this looks like a fresh clone: neither core.hooksPath nor user.email "
-                "is set locally. A fresh clone IS unguarded until "
-                "scripts/cdsfl_onboard.py runs wire_git_hooks(); that is expected, "
-                "not a defect.")
-    assert got == "hooks", f"core.hooksPath is {got!r}, so commits here are unguarded"
+                "this clone has never been onboarded: core.hooksPath is unset and "
+                "cdsfl.onboarded carries no stamp. A fresh clone IS unguarded until "
+                "onboarding runs; that is expected, not a defect. Fix it with: "
+                "python3 scripts/cdsfl_onboard.py")
+    assert got == "hooks", (
+        f"core.hooksPath is {got!r}, so commits here are unguarded -- and this "
+        f"clone HAS been onboarded, so the guard was removed after setup rather "
+        f"than never installed")
 
 
 # --- The versioned hooks must not rot away from the ones that actually run. ---
