@@ -1344,9 +1344,26 @@ def compose(
     transform = PHENOTYPE_TRANSFORMS.get(model, PhenotypeTransform())
 
     # Apply phenotype transform to domain packet text (NOT to universal — HARD).
-    for packet in packets:
-        if packet.layer == "domain":
-            packet.text = _apply_phenotype_transform(packet.text, transform)
+    #
+    # REPLACED, NOT MUTATED (2026-09-10, task 2.2, falsifier for exp42 C0002).
+    # CC2 raised this at severity 0.7 on 2026-06-06 and it was recorded
+    # UNCONFIRMED with an empty falsifier and the verdict UNTOOLABLE. It is
+    # entirely toolable: this function's own docstring promises "Pure: no side
+    # effects, no state mutation" and these 2 lines wrote through to objects the
+    # CALLER owns.
+    #
+    # NO LIVE CALLER WAS HARMED, and that is stated rather than implied.
+    # `_load_domain_directive` builds a fresh packet per call and
+    # `build_interaction_pattern` constructs a new DirectivePacket from the
+    # preset tuple rather than handing back the preset, so nothing shared was
+    # being corrupted. The defect was a false docstring and a latent trap for the
+    # first caller to reuse a packet -- at which point the transform would
+    # compound on each pass.
+    packets = [
+        replace(p, text=_apply_phenotype_transform(p.text, transform))
+        if p.layer == "domain" else p
+        for p in packets
+    ]
 
     # --- Layer 4: Situation (per-dispatch) ---
     if situation is None and review_target:
@@ -1359,8 +1376,11 @@ def compose(
             interaction_surface=interaction_surface,
         )
     if situation:
-        situation.text = _apply_phenotype_transform(situation.text, transform)
-        packets.append(situation)
+        # The caller's object is left exactly as it was handed in; the transform
+        # goes onto a copy. See the note on the domain packets above.
+        packets.append(
+            replace(situation,
+                    text=_apply_phenotype_transform(situation.text, transform)))
 
     # --- Build merged TOML policy ---
     from .registry import load_effective_policy, DOMAIN_MAP
