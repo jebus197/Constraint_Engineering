@@ -101,3 +101,19 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **NOT APPLIED, same reason as C0040, C0037 and C0036:** the repair changes which packets survive composition, so it changes the prompt every model receives and invalidates replay of archived runs. `bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py`, 6 tests.
 
 *Parked 2026-09-10T20:31:06+01:00.*
+
+## 10.2: should the private network's own shell service be turned on? Analysis done, decision yours
+
+**Measured 2026-09-10.** Tailscale SSH is **OFF** — `SSH_HostKeys` is absent on this Mac and on the one peer. Ordinary `sshd` is running and port 22 answers on the tailnet address `100.124.143.121`. Your tailnet account carries the `ssh` capability and both `is-admin` and `is-owner`, so **enabling it is available to you and needs no new subscription**.
+
+**THE CONCRETE ARGUMENT FOR, and it is not hypothetical — it appeared tonight.** Building the hotel restart script (task 10.1) surfaced a real failure: with `BatchMode=yes`, the **first** connection from a new machine fails outright on host-key verification instead of asking *"continue connecting?"*. On the hotel machine, first run, the script would simply have failed. I worked around it by detecting the case and printing the one command that fixes it — but **Tailscale SSH removes the failure entirely**, because there are no host keys and no `ssh-add` to remember. That is exactly the *"would remove key handling"* the entry names, and its value is now measured rather than asserted.
+
+**THE ARGUMENT AGAINST.** It moves SSH authorisation from *possession of a private key* to *tailnet identity plus an ACL rule*. Those are different threat models: a compromised tailnet account would then carry shell access, where today it would still need the key. It also puts the rule in Tailscale's admin console, so the policy lives off this machine and outside this repository's history.
+
+**IT IS NOT EXCLUSIVE.** Turning it on does not remove ordinary `sshd`; both can serve, and you could enable it, confirm the hotel script works keyless, and leave the key route as the fallback.
+
+**WHY I HAVE NOT DONE IT.** It changes the authentication posture of your private network. That is yours to decide, not a wiring change to make on your behalf while you are away.
+
+**It is not a blocker.** Task 10.1 works today without it, with the first-run message covering the gap.
+
+*Parked 2026-09-10T22:03:49+01:00.*
