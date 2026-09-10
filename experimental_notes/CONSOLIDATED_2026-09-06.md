@@ -97,7 +97,7 @@ Decision 4, keeping reviewer write access and measuring disclosure instead, need
 Decision 16, supplying 17 fixes, repairing 11 equipment cases and recording 4 containments. Not started. This is the largest remaining piece.
 Decision 25, recording the archive decryption instructions. Not started, and it touches key handling, so it sits naturally with the sealing work.
 Decision 27, authoring the 5 prose targets. Not started.
-Decision 32, the materiality review against true claims. Not started.
+Decision 32, the materiality review against true claims. Not started, and as of 2026-09-10 its stated population is withdrawn. Task R5a measured all 3 archives and no definition reproduces 11, 6 and 2. The review is still worth doing; its population must be derived first. See `scripts/materiality_population_2026-09-10.py`.
 Decision 15, the description truncation. The code is already fixed. What remains is archived damage, 13.19 percent of stored descriptions truncated at 200 characters, and a repair tool exists. That needs your word because it rewrites archived records.
 
 

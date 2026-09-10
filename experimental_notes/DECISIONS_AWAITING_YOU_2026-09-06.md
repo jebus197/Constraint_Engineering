@@ -128,6 +128,21 @@ ONE OF THESE BLOCKS EVERYTHING ELSE. It is number 1. Experiment 53 is paused mid
 32. Materiality review of findings against TRUE claims.
    11 Exp 49, 6 Exp 48, 2 Exp 47 HIL residuals.
    My recommendation: CC1 drafts, you confirm in one pass.
+   ANNOTATION 2026-09-10, task R5a. THE POPULATION ABOVE IS WITHDRAWN. It is
+   left in place because this file records what was ASKED, and what it records
+   is a population put in front of you that no run produced. Measured by
+   `scripts/materiality_population_2026-09-10.py` over the 3 archives: 690
+   candidate definitions searched, 187 for exp49, 204 for exp48, 299 for exp47,
+   and NOT ONE reproduces 11 / 6 / 2 as a single measure. The label fails too.
+   No HIL-labelled measure yields exp49's 11 or exp48's 6; exp47's 2 does match
+   the number of distinct MODELS flagged for review, which is a model count, not
+   a population of findings. Measured escalated counts run the other way
+   entirely: exp47 6, exp48 1, exp49 0, so the claim is ordered AGAINST the
+   archives rather than mis-scaled from them. The excuse offered for it does not
+   reach: exp47 takes a CODE target, `bench/dm/_divergence.py`, whose
+   adjudication needs no answer key and is readable today, and it says 6, 3 and
+   3 -- never 2. The review itself is still worth doing. Its population must be
+   derived before it starts.
 
 33. The superseded Popper and Framework TTS drafts.
    My recommendation: Archive, never delete.

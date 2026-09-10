@@ -125,7 +125,20 @@ if [ "$CODE" -ne 0 ]; then
     echo "" >&2
     echo "pre-commit: REFUSED. The cheap guards are red." >&2
     echo "" >&2
-    printf '%s\n' "$OUT" | tail -25 >&2
+    # THE FAILURE, NOT THE LAST 25 LINES. This printed `tail -25`, and on this
+    # machine pytest's last 25 lines are TMPDIR cleanup warnings from unrelated
+    # tests -- 25 lines of `rm_rf` noise and 0 lines naming what broke. Twice in
+    # one session the real cause had to be found by re-running the guards by
+    # hand, which is the hook costing time instead of saving it. The FAILED and
+    # ERROR lines and the assertion text come first; the tail is kept as a
+    # fallback for a failure that produces neither.
+    _F=$(printf '%s\n' "$OUT" | grep -E '^(FAILED|ERROR)|^E  ' | head -20)
+    if [ -n "$_F" ]; then
+        printf '%s\n' "$_F" >&2
+        printf '%s\n' "$OUT" | grep -E '^[0-9]+ (passed|failed)|failed,' | tail -1 >&2
+    else
+        printf '%s\n' "$OUT" | tail -25 >&2
+    fi
     echo "" >&2
     echo "pre-commit: the usual cause is a memory file written without running sv," >&2
     echo "            which DERIVES the file ledger. Try:" >&2
