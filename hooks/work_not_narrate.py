@@ -52,6 +52,22 @@ import re
 import subprocess
 import sys
 
+#: HOW MANY TIMES ONE TURN MAY BE REFUSED. `stop_hook_active` is a BOOLEAN the
+#: harness sets after the first refusal, so treating it as "give up" caps this
+#: hook at exactly 1 refusal per turn -- which converts "one task then report"
+#: into "two tasks then report" and no further. The founder watched exactly that
+#: and asked "You still stopped?". He was right: the bound was the defect.
+#:
+#: Refusals are therefore counted here, keyed by the turn's own user message, and
+#: the budget is spent before the hook yields. It is a BUDGET rather than an
+#: absence of one, because a hook that can never yield would trap a session that
+#: has genuinely finished and the founder is not always at the keyboard to break
+#: it. Any failure to read or write the counter ALLOWS the stop, because a guard
+#: that refuses on its own malfunction is the shape this project keeps having to
+#: withdraw.
+MAX_REFUSALS_PER_TURN = 8
+STATE = pathlib.Path.home() / ".claude" / "hooks" / ".work_not_narrate_state.json"
+
 #: A turn doing real work makes more than this many tool calls.
 MIN_TOOL_CALLS = 6
 #: Prose beyond this, with no work, is a report rather than an answer.
@@ -60,6 +76,47 @@ MIN_PROSE = 1200
 REPO = pathlib.Path.home() / "Developer_Projects" / "Constraint_Engineering"
 TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 MARKERS = REPO / "scripts"
+
+
+def _turn_key(transcript: pathlib.Path) -> str:
+    """The timestamp of the turn's own user message. A new message, a new budget."""
+    try:
+        lines = transcript.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return ""
+    for line in reversed(lines):
+        if '"type":"user"' not in line and '"type": "user"' not in line:
+            continue
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("type") != "user" or d.get("isCompactSummary"):
+            continue
+        c = d.get("message", {}).get("content")
+        if isinstance(c, list) and any(
+                isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
+            continue
+        return str(d.get("timestamp") or "")
+    return ""
+
+
+def spend_refusal(key: str) -> int:
+    """Record one refusal for this turn and return the running count."""
+    if not key:
+        return MAX_REFUSALS_PER_TURN + 1        # unknown turn -> allow the stop
+    try:
+        state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.is_file() else {}
+    except Exception:
+        state = {}
+    if state.get("turn") != key:
+        state = {"turn": key, "refusals": 0}
+    state["refusals"] = int(state.get("refusals", 0)) + 1
+    try:
+        STATE.write_text(json.dumps(state), encoding="utf-8")
+    except Exception:
+        return MAX_REFUSALS_PER_TURN + 1        # cannot count -> allow the stop
+    return state["refusals"]
 
 
 def open_items() -> tuple[int, str]:
@@ -202,8 +259,8 @@ def main() -> int:
         payload = json.load(sys.stdin)
     except Exception:
         return 0                      # never break the session on a bad payload
-    if payload.get("stop_hook_active"):
-        return 0                      # already blocked once this turn; never loop
+    # `stop_hook_active` is NOT read as "give up". It says only that a refusal has
+    # already happened this turn; the budget below decides whether another is due.
     t = payload.get("transcript_path") or ""
     calls, prose, commit, had_d = turn_signals(pathlib.Path(os.path.expanduser(t)))
     n_open, nxt = open_items()
@@ -220,8 +277,15 @@ def main() -> int:
         raised = False
     block, why = verdict(calls, prose, commit, had_d, n_open, nxt, raised)
     if block:
-        print(why, file=sys.stderr)
-        return 2                      # 2 blocks the stop and feeds stderr back
+        used = spend_refusal(_turn_key(pathlib.Path(os.path.expanduser(t))))
+        if used > MAX_REFUSALS_PER_TURN:
+            print(f"work_not_narrate: {used - 1} refusals already this turn, which "
+                  f"is the budget. Allowing the stop so a finished session cannot "
+                  f"be trapped.", file=sys.stderr)
+            return 0
+        print(f"{why}\n\n(continuation {used} of {MAX_REFUSALS_PER_TURN} this turn)",
+              file=sys.stderr)
+        return 2
     return 0
 
 

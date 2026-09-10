@@ -139,3 +139,62 @@ class TestItIsVersionedAndWired:
         # on a file whose corruption would break every session.
         n = sum(len(m.get("hooks", [])) for m in d["hooks"]["UserPromptSubmit"])
         assert n == 5, f"wiring the Stop hook changed the 5 prompt hooks to {n}"
+
+
+# ---------------------------------------------------------------------------
+# THE REFUSAL BUDGET — added 2026-09-10 19:15 BST after the founder asked
+# "You still stopped?"
+#
+# He was right and the bound was the defect. `stop_hook_active` is a BOOLEAN the
+# harness sets after the first refusal, so honouring it as "give up" capped this
+# hook at exactly 1 refusal per turn: it converted "one task then report" into
+# "two tasks then report" and no further. Observed twice in a row -- the hook
+# refused, L1 was done, the turn ended; the hook refused, R2 was done, the turn
+# ended.
+#
+# Refusals are now counted per turn and the budget is 8. It is a BUDGET rather
+# than an absence of one because a hook that can never yield would trap a session
+# that has genuinely finished, and he is not always at the keyboard.
+# ---------------------------------------------------------------------------
+
+class TestTheRefusalBudget:
+    def test_it_refuses_more_than_once_per_turn(self, mod, tmp_path, monkeypatch):
+        """The whole point. One refusal per turn was the defect."""
+        monkeypatch.setattr(mod, "STATE", tmp_path / "state.json")
+        counts = [mod.spend_refusal("turn-A") for _ in range(3)]
+        assert counts == [1, 2, 3], counts
+
+    def test_it_yields_once_the_budget_is_spent(self, mod, tmp_path, monkeypatch):
+        """A hook that can never yield traps a session that has finished."""
+        monkeypatch.setattr(mod, "STATE", tmp_path / "state.json")
+        for _ in range(mod.MAX_REFUSALS_PER_TURN):
+            mod.spend_refusal("turn-B")
+        assert mod.spend_refusal("turn-B") > mod.MAX_REFUSALS_PER_TURN
+
+    def test_a_new_turn_resets_the_budget(self, mod, tmp_path, monkeypatch):
+        monkeypatch.setattr(mod, "STATE", tmp_path / "state.json")
+        for _ in range(5):
+            mod.spend_refusal("turn-C")
+        assert mod.spend_refusal("turn-D") == 1, (
+            "a new user message must restore the full budget")
+
+    def test_an_unknown_turn_allows_the_stop(self, mod, tmp_path, monkeypatch):
+        """Fail OPEN on the continuation question, deliberately.
+
+        A guard that refuses on its own malfunction is the shape this project
+        keeps having to withdraw. The cost of a wrong yield is one extra prompt
+        from him; the cost of a wrong refusal is a session he cannot end.
+        """
+        monkeypatch.setattr(mod, "STATE", tmp_path / "state.json")
+        assert mod.spend_refusal("") > mod.MAX_REFUSALS_PER_TURN
+
+    def test_an_unwritable_state_file_allows_the_stop(self, mod, tmp_path, monkeypatch):
+        monkeypatch.setattr(mod, "STATE", tmp_path / "no" / "such" / "dir" / "s.json")
+        assert mod.spend_refusal("turn-E") > mod.MAX_REFUSALS_PER_TURN
+
+    def test_stop_hook_active_no_longer_surrenders(self, mod):
+        """It reports that a refusal happened; it does not decide the outcome."""
+        src = (ROOT / "hooks" / "work_not_narrate.py").read_text(encoding="utf-8")
+        assert "is NOT read as \"give up\"" in src, (
+            "the hook still treats stop_hook_active as a reason to give up, which "
+            "caps it at 1 refusal per turn")
