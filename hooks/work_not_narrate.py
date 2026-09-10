@@ -128,42 +128,66 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
 
 
 def verdict(calls: int, prose: int, commit: bool, had_d: bool,
-            n_open: int, nxt: str) -> tuple[bool, str]:
+            n_open: int, nxt: str, blocker_raised: bool = False) -> tuple[bool, str]:
+    """Should this stop be refused?
+
+    THE FIRST VERSION ONLY CAUGHT NARRATION and that was too weak. It allowed a
+    stop whenever the turn had made 6 or more tool calls or landed a commit --
+    which is EXACTLY the pattern the founder was objecting to. He watched me
+    work, commit, report and stop, once per turn, for hours, and asked: "So where
+    is the continuation fix you built, or said you would build?" Fed this
+    session's own transcript, the hook returned "allow the stop" every time.
+
+    HIS REQUIREMENT IS SIMPLER AND STRONGER: keep going until the list is done or
+    something blocks. "The only way to test if any of this works is just to try
+    and see how far you get this time!" So a stop is refused whenever OPEN work
+    remains, and the exemptions are the only 3 that can be justified:
+
+        `d`               his explicit instruction to discuss, never overridden
+        nothing open      there is no work to continue to
+        a blocker raised  an entry cannot proceed without him
+
+    IT IS BOUNDED, NOT A TRAP. `stop_hook_active` means the stop has already been
+    refused once this turn, so it exits 0 immediately. The effect is to convert
+    "one task then report" into "at least twice as much per turn", repeatedly --
+    not an infinite loop. The founder can end any turn by typing.
+    """
     if had_d:
         return False, "the founder issued `d`: discuss, do not proceed. Honoured."
     if n_open == 0:
         return False, "no open items on the work list"
-    if commit:
-        return False, "this turn made a commit"
-    if calls >= MIN_TOOL_CALLS:
-        return False, f"this turn made {calls} tool calls, which is work"
-    if prose <= MIN_PROSE:
-        return False, f"only {prose} characters of prose; not a report"
+    if blocker_raised:
+        return False, "a blocker was raised this turn; stopping for him is correct"
+
+    narrated = calls < MIN_TOOL_CALLS and prose > MIN_PROSE
+    head = ("This turn NARRATED: %d tool call(s) against %s characters of prose."
+            % (calls, f"{prose:,}")) if narrated else (
+            "This turn did work (%d tool calls%s)." % (calls, ", committed" if commit else ""))
     return True, (
-        f"This turn wrote {prose:,} characters and made {calls} tool call(s), "
-        f"closed no task and made no commit, while {n_open} items are open.\n"
-        f"That is narration. The next unstarted entry is {nxt}.\n"
-        f"Work it, or classify the obstacle with "
-        f"`python3 scripts/blocker_triage.py --title '...'` — if it PARKS, it is "
-        f"not worth interrupting him for; if it BLOCKS, say so in one line and stop."
+        f"{head}\n"
+        f"{n_open} items are still OPEN and nothing is blocking. Do not stop here.\n"
+        f"The next unstarted entry is {nxt}. Work it.\n"
+        f"If something genuinely prevents progress, classify it first:\n"
+        f"    python3 scripts/blocker_triage.py --title '<the obstacle>'\n"
+        f"A PARK verdict is not a reason to stop -- park it and carry on. Only a "
+        f"BLOCK verdict is."
     )
 
 
 def self_test() -> int:
     cases = [
-        # calls prose commit  d   open  expect_block  why
-        (0, 5000, False, False, 40, True,  "pure narration with work outstanding"),
-        (0, 5000, False, True,  40, False, "`d` is his command and overrides"),
-        (30, 5000, False, False, 40, False, "30 tool calls is work"),
-        (0, 5000, True,  False, 40, False, "a commit landed"),
-        (0, 200,  False, False, 40, False, "a short answer is not a report"),
-        (0, 5000, False, False, 0,  False, "nothing left to do"),
-        (5, 3000, False, False, 40, True,  "5 calls is below the floor"),
-        (6, 3000, False, False, 40, False, "6 calls is at the floor"),
+        # calls prose commit  d  open blocker expect  why
+        (0, 5000, False, False, 40, False, True,  "narration with work outstanding"),
+        (30, 200, True,  False, 40, False, True,  "WORKED AND COMMITTED, but work remains"),
+        (30, 5000, False, False, 40, False, True, "a big working turn still must continue"),
+        (0, 5000, False, True,  40, False, False, "`d` is his command and overrides"),
+        (30, 200, True,  False, 0,  False, False, "nothing left to do"),
+        (5, 3000, False, False, 40, True,  False, "a blocker was raised; stopping is right"),
+        (0, 100, False, False, 40, False, True,   "a one-line reply is still a stop"),
     ]
     bad = 0
-    for calls, prose, commit, had_d, n_open, expect, why in cases:
-        got, msg = verdict(calls, prose, commit, had_d, n_open, "X")
+    for calls, prose, commit, had_d, n_open, blk, expect, why in cases:
+        got, msg = verdict(calls, prose, commit, had_d, n_open, "X", blk)
         ok = got == expect
         bad += not ok
         print(f"  {'ok  ' if ok else 'FAIL'} block={got!s:5s} want={expect!s:5s}  {why}")
@@ -183,7 +207,18 @@ def main() -> int:
     t = payload.get("transcript_path") or ""
     calls, prose, commit, had_d = turn_signals(pathlib.Path(os.path.expanduser(t)))
     n_open, nxt = open_items()
-    block, why = verdict(calls, prose, commit, had_d, n_open, nxt)
+    # A BLOCKER RAISED THIS TURN IS A LEGITIMATE REASON TO STOP, and it is
+    # detected from the transcript rather than trusted: the triage script must
+    # actually have been run and returned BLOCK.
+    raised = False
+    try:
+        text = pathlib.Path(os.path.expanduser(t)).read_text(
+            encoding="utf-8", errors="replace")
+        raised = "blocker_triage" in text.rsplit('"type":"user"', 1)[-1] and \
+                 "BLOCK:" in text.rsplit('"type":"user"', 1)[-1]
+    except Exception:
+        raised = False
+    block, why = verdict(calls, prose, commit, had_d, n_open, nxt, raised)
     if block:
         print(why, file=sys.stderr)
         return 2                      # 2 blocks the stop and feeds stderr back

@@ -42,11 +42,24 @@ class TestItCanActuallyFail:
         r = subprocess.run([sys.executable, str(HOOK), "--self-test"],
                            capture_output=True, text=True, timeout=60)
         assert r.returncode == 0, r.stdout + r.stderr
-        assert "8 of 8 correct" in r.stdout
+        assert "7 of 7 correct" in r.stdout
 
     def test_it_blocks_pure_narration(self, mod):
         block, why = mod.verdict(0, 5000, False, False, 40, "L1")
-        assert block and "narration" in why and "L1" in why
+        assert block and "NARRATED" in why and "L1" in why
+
+    def test_it_blocks_a_stop_after_a_SUCCESSFUL_working_turn(self, mod):
+        """THE CASE THE FIRST VERSION MISSED, and it is the whole complaint.
+
+        The founder watched me work, commit, report and stop, once per turn, for
+        hours. Fed this session's own transcript the first predicate returned
+        "allow the stop" every time, because it exempted any turn making 6+ tool
+        calls or landing a commit -- which is exactly the pattern he objected to.
+        A stop is now refused whenever OPEN work remains.
+        """
+        block, why = mod.verdict(30, 200, True, False, 40, "L1")
+        assert block, "a turn that worked and committed must still continue"
+        assert "still OPEN" in why and "L1" in why
 
     def test_it_returns_exit_code_2_which_is_what_blocks(self, mod, tmp_path):
         """Exit 0 would make it another guard that cannot fail."""
@@ -64,15 +77,20 @@ class TestItHonoursHisCommand:
 
 
 class TestItCannotFireOnTheOrdinaryCase:
-    @pytest.mark.parametrize("calls,prose,commit,n_open,why", [
-        (30, 5000, False, 40, "a working turn"),
-        (0, 5000, True, 40, "a turn that committed"),
-        (0, 200, False, 40, "a short direct answer"),
-        (0, 5000, False, 0, "nothing left to do"),
+    @pytest.mark.parametrize("calls,prose,commit,n_open,blocker,why", [
+        (30, 5000, False, 0, False, "nothing left to do"),
+        (30, 200, True, 0, False, "list empty after a working turn"),
+        (5, 3000, False, 40, True, "a blocker was raised, so stopping is correct"),
     ])
-    def test_it_stays_silent(self, mod, calls, prose, commit, n_open, why):
-        block, _ = mod.verdict(calls, prose, commit, False, n_open, "X")
+    def test_it_stays_silent_when_it_should(self, mod, calls, prose, commit,
+                                            n_open, blocker, why):
+        block, _ = mod.verdict(calls, prose, commit, False, n_open, "X", blocker)
         assert not block, why
+
+    def test_a_park_verdict_is_not_a_reason_to_stop(self, mod):
+        """The triage tool parks most things; parking must not end the turn."""
+        _, why = mod.verdict(10, 500, False, False, 40, "L1", False)
+        assert "A PARK verdict is not a reason to stop" in why
 
 
 class TestItCannotTrapTheSession:
