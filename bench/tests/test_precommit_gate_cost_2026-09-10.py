@@ -91,11 +91,11 @@ class TestTheCountIsExactAndCurrent:
         together — that is the whole point. Do not delete it.
         """
         files = mod.gate_files()
-        assert len(files) == 6, (
-            f"the hook now runs {len(files)} guard files; entry 1.1 says 6 and "
+        assert len(files) == 7, (
+            f"the hook now runs {len(files)} guard files; entry 1.1 says 7 and "
             f"must be corrected in the same change as this test")
-        assert mod.collected(files) == 174, (
-            "the collected count has moved; entry 1.1 quotes 174. UPDATED 2026-09-10 14:20 BST\n"
+        assert mod.collected(files) == 178, (
+            "the collected count has moved; entry 1.1 quotes 178. UPDATED 2026-09-10 14:20 BST\n"
             "from 169: adding 5 tests to test_done_markers_carry_evidence_2026-09-10.py (task V7)\n"
             "moved it, and this test went red exactly as its docstring says it should.")
 

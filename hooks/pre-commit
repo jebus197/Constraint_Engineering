@@ -11,7 +11,7 @@
 # discipline failed within the hour. This is the mechanism.
 #
 # WHY ONLY A HANDFUL OF FILES. Measured on this machine over 3 runs:
-# 174 tests in 1.87 s to 2.28 s, against 669.92 s for the full suite.
+# 178 tests in 6.53 s to 7.10 s, against 669.92 s for the full suite.
 # RE-MEASURED 2026-09-10 14:50 BST by scripts/precommit_gate_cost_2026-09-10.py,
 # which reads this GUARDS list rather than carrying its own copy. The figure has
 # now been wrong 4 times by being typed and carried forward; it is measured.
@@ -20,10 +20,10 @@
 # carried forward — a stale cost figure in a guard about stale claims
 # would be its own joke.) A per-commit gate costing 11 minutes
 # would be bypassed within a day, and a guard that gets bypassed is not a guard.
-# The first 4 of these 6 files are precisely the ones that caught the
+# The first 4 of these 7 files are precisely the ones that caught the
 # 2026-09-09 breakage after the fact, so they are the ones that would have caught
 # it before. The header said "these 4 files" until 2026-09-10 while the list held
-# 6, which is the same stale-count defect the guard exists to catch.
+# 7, which is the same stale-count defect the guard exists to catch.
 #
 # WHY IT FAILS CLOSED WHEN IT CANNOT RUN. This project's own record names "a guard
 # that cannot fail is not a guard" and lists 3 instances in a single night. A hook
@@ -53,12 +53,21 @@ cd "$REPO" || exit 1
 # 6 guards 1.50/1.39/1.56 s. About +0.5 s against this hook's own stated budget
 # of 1.00 to 2.02 s. The marker engine's own test comes too, which closes the
 # deleted-marker case at commit time as well.
+# THE 8th GUARD, added 2026-09-10 15:20 BST. `wilson_interval_consistency.py`
+# caught 2 of this session's own errors within one hour -- a brief stating the
+# 8-case interval against the 7-case count, and a panel seat rounding a lower
+# bound UP, which narrows an interval into a stronger claim than the data
+# supports. Both were caught only by the FULL suite, 14 minutes away, and an
+# audit that morning had named exactly this gap: the hook does not run the test
+# that is red, so a code-only commit lands a red suite silently. It did, at
+# 9dfbc2e. Cost re-measured after adding it, not carried forward.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_recovery_memory_doc_repairs.py
 bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
 bench/tests/test_line_citations_resolve_2026-09-01.py
 bench/tests/test_done_markers_carry_evidence_2026-09-10.py
-bench/tests/test_task_list_markers_2026-09-09.py"
+bench/tests/test_task_list_markers_2026-09-09.py
+bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
 
 MISSING=""
 for f in $GUARDS; do

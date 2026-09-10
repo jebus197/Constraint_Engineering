@@ -290,7 +290,11 @@ def check_declared_figures(text: str, repo: Path = REPO,
         # `0.4`, `1`, `9`) are refused by the 3-significant-character rule below
         # and never reach the token rule, and 2 (`0.451`, `0.415413`) are absent
         # from the output and would be refused by a plain substring test. Exactly
-        # 1 case, `0.29`, exercises the boundary: 1 of 1, Wilson [20.66%, 100.00%].
+        # 1 case, `0.29`, exercises the boundary: 1 of 1, Wilson [20.65%, 100.00%].
+        # (The lower bound is rounded DOWN. cc2 wrote 20.66%, rounding 20.6549% UP,
+        # which NARROWS an interval into a stronger claim than the data supports --
+        # caught by scripts/wilson_interval_consistency.py, in the very comment
+        # correctly warning that '8 of 8' overstates its own support.)
         # The cases that were missing are in
         # bench/tests/test_declared_figure_token_boundary_2026-09-10.py.
         # THE TWO STREAMS ARE JOINED WITH A NEWLINE, not concatenated (2026-09-10,
