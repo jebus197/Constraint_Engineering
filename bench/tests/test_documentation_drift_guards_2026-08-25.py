@@ -123,12 +123,22 @@ def test_foot_line_convention_names_the_current_standard():
 # ---------------------------------------------------------------------------
 # Documents that declare a Desktop mirror in their own text. The repo copy is
 # canonical by founder ruling of 2026-08-06; the Desktop copy is a convenience.
-DECLARED_MIRRORS = [
-    ("experimental_notes/CDSFL_Agent_Operational_Plan.md",
-     HOME / "Desktop/CDSFL_Agent_Operational_Plan.md"),
-    ("experimental_notes/RUNWAY_to_BR2_2026-08-18.md",
-     HOME / "Desktop/CDSFL_RUNWAY.md"),
-]
+#
+# THE TABLE IS IMPORTED, NOT TYPED (2026-09-10). This was a hand-written list of
+# 2 pairs while `scripts/sync_desktop_mirrors.py` held a separate hand-written
+# list of 3 names. 4 mirrors exist. The intersection of the 2 lists was 1, so the
+# RUNWAY was guarded here and refreshed by nothing, and the master task list and
+# outcomes log were refreshed there and guarded by nothing. A guard and its
+# repair that disagree about what they cover leave a gap the size of the
+# difference. The panel named this hand list on 2026-09-01 and it stood 9 days.
+#
+# Importing it also means a new mirror is guarded the moment it is declared,
+# rather than when someone remembers this file exists.
+_sys.path.insert(0, str(REPO / "scripts"))
+import sync_desktop_mirrors as _mirrors  # noqa: E402
+
+DECLARED_MIRRORS = [(repo_rel, HOME / "Desktop" / desktop_name)
+                    for repo_rel, desktop_name in _mirrors.MIRRORS]
 
 
 @pytest.mark.parametrize("repo_rel,desktop", DECLARED_MIRRORS,
@@ -174,11 +184,22 @@ def test_declared_desktop_mirror_matches_its_canonical_copy(repo_rel, desktop):
         pytest.skip(f"{desktop.name}: content unreadable, but sizes MATCH at "
                     f"{repo_size} bytes — consistent with parity, weaker than proof.")
     if a != b:
-        la, lb = len(a.splitlines()), len(b.splitlines())
+        # THE MESSAGE NAMES THE ACTUAL DIFFERENCE. It reported LINE COUNTS only,
+        # so the first real failure on 2026-09-10 read "has 814 lines, has 814"
+        # -- a drift report whose 2 numbers were equal, which reads as a bug in
+        # the guard rather than a fact about the files. Bytes and the first
+        # differing line are reported, and lines only when they differ.
+        la, lb = a.splitlines(), b.splitlines()
+        first = next((i for i, (x, y) in enumerate(zip(la, lb), 1) if x != y),
+                     min(len(la), len(lb)) + 1)
+        where = (f"{len(la)} lines vs {len(lb)}"
+                 if len(la) != len(lb) else f"both {len(la)} lines")
         pytest.fail(
-            f"mirror drift: {repo_rel} has {la} lines, {desktop.name} has {lb}. "
-            f"The repo copy is canonical (founder ruling 2026-08-06); re-sync the "
-            f"Desktop copy from it, never the reverse."
+            f"mirror drift: {repo_rel} is {len(a.encode('utf-8'))} bytes, "
+            f"{desktop.name} is {len(b.encode('utf-8'))} ({where}); they first "
+            f"differ at line {first}. The repo copy is canonical (founder ruling "
+            f"2026-08-06); re-sync the Desktop copy from it, never the reverse. "
+            f"Run: python3 scripts/sync_desktop_mirrors.py"
         )
 
 

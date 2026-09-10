@@ -95,6 +95,7 @@ ONE OF THESE BLOCKS EVERYTHING ELSE. It is number 1. Experiment 53 is paused mid
 23. Severity is a model vote, not a tool (FW.7).
    A model-assigned float currently gates convergence, which the no-voting rule forbids.
    My recommendation: Replace with the consequence-class rubric. This is the same decision as the rubric one above.
+   **ANSWERED 2026-09-06 22:15 AND THE RECOMMENDATION WAS REJECTED.** He rejected both removal and the rubric swap and ordered worked proofs instead. The recommendation above was wrong on measurement: the rubric agrees with the model float no better than chance, kappa = -0.0227, Fisher p = 0.78. Built at `bench/dm/_rk_proof.py`; see task R4. This file records what was ASKED and is annotated rather than rewritten.
 
 24. Exp 54 Cell A entry-method decision.
    My recommendation: Defer until Exp 53 completes.

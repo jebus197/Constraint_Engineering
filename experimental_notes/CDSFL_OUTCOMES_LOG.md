@@ -121,6 +121,15 @@ The round-4 brief stated `gamma` was **0.451**; it is **0.415413**. `GAMMA_BANDS
 ### Pass 10 — 1.1's cost figure had been corrected twice, each correction inside the last
 The entry read *"56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)"* — a sentence quoting itself as the thing it refutes. Measured with `scripts/precommit_gate_cost_2026-09-10.py`, which reads the file list out of `hooks/pre-commit` rather than typing it: the hook names **6** files, not 4, and they collect **169** tests, not 56. The script's own first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it.
 
+### Pass 11 — the commit hook could refuse every remaining commit, and carried its own unreachable cure
+The section-R commit was refused. The red guard was the Desktop-mirror drift check; the stage that REPAIRS mirror drift was stage 6 of the same hook, 6 stages below the exit. **The repair sat downstream of the check that needed it**, so from the moment the RUNWAY joined the guarded set, every commit touching a mirrored file was refused permanently — and `CDSFL_MASTER_TASK_LIST.md` is a mirrored file. Fixed by ordering: the refresh is now stage 0. It cannot mask a defect, because the repo copy is canonical and the refresh only ever copies repo to Desktop; the guard still runs afterwards and still refuses.
+
+Underneath sat a second defect. **3 hand-written mirror tables existed and all 3 disagreed** — 3 names in `scripts/sync_desktop_mirrors.py`, 2 pairs in the drift guard, 3 names again in `scripts/cdsfl_recover.py`. The union is 4 and the intersection is 1. All 3 keyed on a bare filename, so none could express `RUNWAY_to_BR2_2026-08-18.md`, which declares its mirror at its own line 229 as `~/Desktop/CDSFL_RUNWAY.md` — a different name. The RUNWAY was guarded by a test and refreshed by nothing; the task list and outcomes log were refreshed and guarded by nothing; the restore could not see the RUNWAY mirror at all and would have called a stale one ordinary. One table of pairs now, imported by all 3. The panel had already named the hand list on 2026-09-01 in `bench/logs/panel_fixes_20260901T123808Z/fable.json`; the finding stood 9 days.
+
+The failure message also reported line counts alone, so the first real drift read *"has 814 lines, has 814"* — 2 equal numbers offered as evidence of difference. It now reports bytes, the first differing line, and the command that fixes it.
+
+**Mutation-verified in both halves.** Moving the refresh back below the guards takes 3 tests red, including one that RUNS the hook against a drifted Desktop; dropping the renamed mirror from the table takes 3 different tests red. Sources restored byte-identical, 15 pass.
+
 ---
 
 ## STANDING NUMBERS
@@ -128,8 +137,8 @@ The entry read *"56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: 
 | Measure | Value |
 |---|---|
 | Full suite | measured at each commit with `python3 -m pytest bench/tests/ -q --netguard-strict`; see the closing report for the current figure |
-| Task list | 80 entries, 22 done, 54 open, 2 blocked, 2 withdrawn |
-| Commits since 2026-09-10 00:00 | 9 |
+| Task list | 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn |
+| Commits since 2026-09-10 00:00 | 28 |
 | Files deleted today | 0 |
 | Paid model dispatches today | **0** — panel rounds 3 and 4 both ran `PANEL_ONLY=cc2,fable`, Max subscription only |
 | FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |

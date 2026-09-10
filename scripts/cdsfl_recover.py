@@ -44,13 +44,40 @@ DESKTOP_MIRROR = Path.home() / "Desktop" / "CDSFL_Agent_Operational_Plan.md"
 #: the same failure that on 2026-09-09 told the founder an answer-key sealing
 #: awaited him after he had driven home and done it himself. Task V5 fixed the
 #: ordering and closed 1 door of 3; this closes the other 2.
-DESKTOP_MIRRORS = {
+#: THE SET IS IMPORTED; ONLY THE WORDING IS LOCAL (2026-09-10, second repair).
+#: This was the THIRD hand-written mirror table in the project, after the one in
+#: `scripts/sync_desktop_mirrors.py` and the one in
+#: `bench/tests/test_documentation_drift_guards_2026-08-25.py`. All 3 disagreed,
+#: and all 3 shared the same structural flaw: they keyed on a bare filename and
+#: so assumed the Desktop copy has the same name as the repository copy. 1 of the
+#: 4 real mirrors does not -- `RUNWAY_to_BR2_2026-08-18.md` is mirrored as
+#: `~/Desktop/CDSFL_RUNWAY.md`, which it declares at its own line 229. A table
+#: that cannot express the case simply omitted it, so THIS SCRIPT COULD NOT SEE
+#: THE RUNWAY MIRROR AT ALL and would have reported a stale one as ordinary --
+#: the exact failure the comment below records itself fixing for 2 other files.
+#:
+#: The pairs now come from `sync_desktop_mirrors.MIRRORS`, the single declaration.
+#: Only the human-readable label stays here, because a label is editorial. A
+#: mirror added there without a label here still appears, with a plain one: an
+#: unlabelled mirror is a wording defect, never an invisible file.
+_LABELS = {
     "CDSFL_MASTER_TASK_LIST.md":
         "Desktop copy of the MASTER TASK LIST — the founder reads THIS one",
     "CDSFL_OUTCOMES_LOG.md":
         "Desktop copy of the OUTCOMES COMPANION — the founder reads THIS one",
     "CDSFL_Agent_Operational_Plan.md":
         "Desktop copy of the OPERATIONAL TRACKER",
+    "CDSFL_RUNWAY.md":
+        "Desktop copy of the RUNWAY to Bench Run 2",
+}
+
+import sync_desktop_mirrors as _mirrors  # noqa: E402
+
+#: Desktop filename -> (repository-relative canonical path, label).
+DESKTOP_MIRRORS = {
+    desktop_name: (repo_rel,
+                   _LABELS.get(desktop_name, f"Desktop copy of {repo_rel}"))
+    for repo_rel, desktop_name in _mirrors.MIRRORS
 }
 
 from cdsfl_utils import (
@@ -222,9 +249,9 @@ def first_read_lines(root: Path) -> list[str]:
     # Each Desktop copy is offered with a note saying whether it MATCHES its
     # canonical original. A mirror that silently diverged is worse than no
     # mirror, because it is read with the authority of the thing it copies.
-    for name, label in DESKTOP_MIRRORS.items():
+    for name, (repo_rel, label) in DESKTOP_MIRRORS.items():
         mirror = Path.home() / "Desktop" / name
-        canonical = root / "experimental_notes" / name
+        canonical = root / repo_rel
         note = label
         if mirror.is_file() and canonical.is_file():
             if mirror.read_bytes() != canonical.read_bytes():

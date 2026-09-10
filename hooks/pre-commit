@@ -69,6 +69,40 @@ bench/tests/test_done_markers_carry_evidence_2026-09-10.py
 bench/tests/test_task_list_markers_2026-09-09.py
 bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
 
+# STAGE 0 -- REFRESH THE FOUNDER'S DESKTOP COPIES. NON-BLOCKING BY DESIGN.
+#
+# He reads 4 files from his Desktop and treats them as current. On 2026-09-10 two
+# of them had silently diverged -- the master task list 29,044 bytes short
+# and 3.45 h behind, the outcomes log 5,016 bytes short -- and he asked that
+# morning whether the companion file "on my desktop (which I presume you have
+# been updating)" was current. It was not. The same class of staleness had
+# already cost him a drive home from his hotel on 2026-09-09.
+#
+# THIS STAGE NEVER REFUSES A COMMIT. A convenience copy on one machine must not
+# be able to block work, and a guard that fires on the ordinary case teaches
+# people to reach for --no-verify. It refreshes and reports; if the Desktop is
+# absent, as it is on any other machine, it says so and exits 0.
+#
+# WHY IT RUNS FIRST, AND IT DID NOT UNTIL 2026-09-10.
+# This was the LAST stage, after the guards. One of the guards is the mirror
+# drift check. So a commit that edited a mirrored file made that guard red, the
+# hook exited 1, and the stage that would have repaired the drift was never
+# reached -- the repair sat downstream of the check that needed it. The founder's
+# master task list is a mirrored file, so from the moment the RUNWAY joined the
+# guarded set every further commit on the task list was refused, permanently,
+# with the fix present in the same script and unreachable.
+#
+# ORDER IS THE WHOLE FIX: repair first, then check. It cannot mask a real defect,
+# because the repo copy is canonical by founder ruling and the refresh only ever
+# copies repo -> Desktop. If the refresh itself fails or is absent, the guard
+# still runs afterwards and still refuses. The check keeps its authority; it
+# simply stops being the thing that prevents its own remedy.
+if [ -f scripts/sync_desktop_mirrors.py ]; then
+    if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then
+        echo "pre-commit: the Desktop mirror refresh failed; commit continues." >&2
+    fi
+fi
+
 MISSING=""
 for f in $GUARDS; do
     [ -f "$f" ] || MISSING="$MISSING $f"
@@ -242,25 +276,6 @@ if [ -n "$STAGED_NOTES" ]; then
         exit 1
     fi
     echo "pre-commit: note lint ratchet held ($BEFORE_TOTAL at HEAD, $AFTER_TOTAL as staged)."
-fi
-
-# STAGE 6 -- REFRESH THE FOUNDER'S DESKTOP COPIES. NON-BLOCKING BY DESIGN.
-#
-# He reads 3 files from his Desktop and treats them as current. On 2026-09-10 two
-# of the three had silently diverged -- the master task list 29,044 bytes short
-# and 3.45 h behind, the outcomes log 5,016 bytes short -- and he asked that
-# morning whether the companion file "on my desktop (which I presume you have
-# been updating)" was current. It was not. The same class of staleness had
-# already cost him a drive home from his hotel on 2026-09-09.
-#
-# THIS STAGE NEVER REFUSES A COMMIT. A convenience copy on one machine must not
-# be able to block work, and a guard that fires on the ordinary case teaches
-# people to reach for --no-verify. It refreshes and reports; if the Desktop is
-# absent, as it is on any other machine, it says so and exits 0.
-if [ -f scripts/sync_desktop_mirrors.py ]; then
-    if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then
-        echo "pre-commit: the Desktop mirror refresh failed; commit continues." >&2
-    fi
 fi
 
 exit 0

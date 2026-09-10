@@ -18,7 +18,15 @@ WHAT THIS DOES NOT FIX, stated because the split reads like a closure and is
 not one. Measured 2026-08-27: all 27 answer-bearing files have been on the
 PUBLIC GitHub repository since 2026-03-18 -- 162 days. Splitting them stops the
 exposure growing; it does not reverse it. Whether BR2 is still a valid blind
-experiment on these tasks is a founder decision and it is open.
+experiment on these tasks WAS a founder decision and it is ANSWERED.
+
+He replied on 2026-08-27 at 00:53 -- 6 minutes and 46 seconds after the docstring
+asking the question was written -- verbatim: "The answer kets for BR2 being public
+is a non-issue, since clearly it has never been ran." A blind experiment that
+has never run cannot have been unblinded by exposure; the keys were published
+before any measurement existed to contaminate. Splitting them still matters,
+because it stops the exposure growing before BR2 does run. Written back
+2026-09-10 as task R8.
 """
 import json
 import pathlib

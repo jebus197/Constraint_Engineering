@@ -1057,7 +1057,7 @@ Future work, `runway:687-693` and :810-813:
 99. FW.2 — structural keying of claims rather than location-only keying. `runway:690`. NOT BUILT. BLOCKED on enforced structured output.
 100. FW.3 — fingerprinting (MinHash/SimHash/LSH) scoped to the ouroboros literature cell. `runway:691`. NOT BUILT.
 101. FW.4 — the discussion-board layer. `runway:692`. DEFERRED BY DECISION (founder, 2026-08-20), explicitly still wanted.
-102. FW.7 — severity is a vote, not a tool. `runway:813`. Structural; "not actionable without a design decision on what would replace it". NEEDS FOUNDER.
+102. FW.7 — severity is a vote, not a tool. `runway:813`. **NO LONGER NEEDS THE FOUNDER: RULED 2026-09-06 22:15 and BUILT 2026-09-07.** He rejected removal and the rubric swap and ordered worked proofs. The rubric agrees with the number no better than chance, kappa = -0.0227, Fisher p = 0.78. `bench/dm/_rk_proof.py`, pinned by `test_severity_proof_2026-09-07.py`. This record predates the ruling and is annotated rather than rewritten.
 
 Stage 0C, the open rows at `runway:720-790`:
 103. 0C.9 — confinement of REAL runs. `runway:723`. Priority HIGH. Half done: closed for simulated runs by sandboxing, open for real runs. The row states plainly "35 IS THEREFORE ONLY HALF DONE" and that the remaining half "is a behavioural change to live experiments and is held for panel review".

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Refresh the founder's Desktop copies from the canonical repository files.
 
-WHY THIS EXISTS. The founder reads 3 files from his Desktop and treats them as
+WHY THIS EXISTS. The founder reads 4 files from his Desktop and treats them as
 current. On 2026-09-10 at 10:30 BST, 2 of the 3 had silently diverged: the master
 task list was 29,044 bytes short and 3.45 h behind, the outcomes log 5,016 bytes
 short and 3.40 h behind. He asked, that morning, whether the companion file "on
@@ -30,14 +30,46 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 DESKTOP = Path.home() / "Desktop"
 
-#: canonical filename -> the same name on the Desktop. Kept as a list of names
-#: rather than pairs because the mirror must never be renamed: the founder finds
-#: these by their name.
-MIRRORED = (
-    "CDSFL_MASTER_TASK_LIST.md",
-    "CDSFL_OUTCOMES_LOG.md",
-    "CDSFL_Agent_Operational_Plan.md",
+#: (repository path, Desktop filename) for every mirror the founder reads.
+#:
+#: PAIRS, NOT NAMES, AND THE SINGLE DECLARATION FOR THE WHOLE PROJECT.
+#: This was a tuple of bare NAMES until 2026-09-10, on the stated reasoning that
+#: "the mirror must never be renamed: the founder finds these by their name".
+#: That reasoning was false at the time it was written. `RUNWAY_to_BR2_2026-08-18.md`
+#: declares its own mirror, at its line 229, as `~/Desktop/CDSFL_RUNWAY.md` -- a
+#: DIFFERENT name. A names-only structure cannot express a renamed mirror, so the
+#: renamed one was simply left out, and a SECOND hand-written table grew up inside
+#: `bench/tests/test_documentation_drift_guards_2026-08-25.py` to hold the 2 the
+#: guard checked. The 2 tables then disagreed: 4 real mirrors, 3 refreshed here,
+#: 2 guarded there, 1 in both. The RUNWAY was GUARDED BY A TEST AND REFRESHED BY
+#: NOTHING, and the task list and outcomes log were refreshed by this script and
+#: guarded by nothing.
+#:
+#: HOW THAT SURFACED. On 2026-09-10 the section-R commit edited the RUNWAY, the
+#: drift guard went red, and the commit hook exited 1 -- 6 stages BEFORE the stage
+#: that refreshes mirrors. The repair sat downstream of the check that needed it,
+#: so every future commit touching a mirrored file was refused, permanently, and
+#: the master task list is one of the mirrored files.
+#:
+#: The panel had already named the hand list. `bench/logs/panel_fixes_20260901T123808Z/fable.json`
+#: records, on 2026-09-01: "DECLARED_MIRRORS in the drift-guard test is a hand
+#: list, while the docs' own text is the truth source". That finding was filed and
+#: not acted on for 9 days.
+#:
+#: EVERY PAIR BELOW IS CONFIRMED BY A DECLARATION IN THE PROJECT'S OWN PROSE, and
+#: `test_desktop_mirrors_stay_current_2026-09-10.py` checks that in both
+#: directions: no pair here that the documents do not declare, and no document
+#: declaring a mirror of itself that is missing from here.
+MIRRORS = (
+    ("experimental_notes/CDSFL_MASTER_TASK_LIST.md", "CDSFL_MASTER_TASK_LIST.md"),
+    ("experimental_notes/CDSFL_OUTCOMES_LOG.md", "CDSFL_OUTCOMES_LOG.md"),
+    ("experimental_notes/CDSFL_Agent_Operational_Plan.md", "CDSFL_Agent_Operational_Plan.md"),
+    ("experimental_notes/RUNWAY_to_BR2_2026-08-18.md", "CDSFL_RUNWAY.md"),
 )
+
+#: Retained so any existing reader keeps working, and DERIVED so it can never
+#: again disagree with the table it summarises.
+MIRRORED = tuple(desktop_name for _, desktop_name in MIRRORS)
 
 
 def _sha(p: Path) -> str:
@@ -45,18 +77,20 @@ def _sha(p: Path) -> str:
 
 
 def drift() -> list[tuple[str, str, int]]:
-    """(name, reason, byte difference) for every mirror that is not current."""
+    """(Desktop name, reason, byte difference) for every mirror not current."""
     out = []
-    for name in MIRRORED:
-        src, dst = REPO / "experimental_notes" / name, DESKTOP / name
+    for repo_rel, desktop_name in MIRRORS:
+        src, dst = REPO / repo_rel, DESKTOP / desktop_name
         if not src.is_file():
-            out.append((name, "the canonical file does not exist", 0))
+            out.append((desktop_name, "the canonical file does not exist", 0))
             continue
         if not dst.is_file():
-            out.append((name, "no Desktop copy exists at all", src.stat().st_size))
+            out.append((desktop_name, "no Desktop copy exists at all",
+                        src.stat().st_size))
             continue
         if _sha(src) != _sha(dst):
-            out.append((name, "diverged", src.stat().st_size - dst.stat().st_size))
+            out.append((desktop_name, "diverged",
+                        src.stat().st_size - dst.stat().st_size))
     return out
 
 
@@ -77,8 +111,9 @@ def main() -> int:
     if not DESKTOP.is_dir():
         print("  no Desktop directory on this machine; nothing to mirror")
         return 0
+    by_desktop_name = {d: r for r, d in MIRRORS}
     for name, why, _ in bad:
-        src, dst = REPO / "experimental_notes" / name, DESKTOP / name
+        src, dst = REPO / by_desktop_name[name], DESKTOP / name
         if not src.is_file():
             print(f"  SKIPPED {name}: {why}")
             continue
