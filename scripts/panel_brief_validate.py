@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -98,6 +99,96 @@ def _section(text: str, heading_pattern: str) -> str | None:
         body.append(line)
     return "\n".join(body)
 
+#: A brief may DECLARE the figures it quotes, so they can be re-executed rather
+#: than trusted. One per line, anywhere in the brief:
+#:
+#:     <!-- figure: <label> | <script path, repo-relative> | <exact string> -->
+#:
+#: The validator runs the script and requires the exact string in its output.
+#:
+#: WHY THIS EXISTS. On 2026-09-10 the round-4 brief stated "gamma is 0.451" when
+#: the value was 0.415413. `GAMMA_BANDS` puts the boundary at 0.45, so the brief
+#: upgraded the convergence evidence by 1 band -- in a brief whose subject was 9
+#: figures that were wrong. BOTH SEATS caught it independently and each raised it
+#: as their strongest disagreement with the brief. The 7 checks above have no way
+#: to see a wrong number: they ask whether the brief SAYS the required things.
+#: `measured-rate-travels-with-its-script` covered notes, commit messages and code
+#: comments, and had never covered the one artefact that instructs the panel.
+FIGURE = re.compile(
+    r"<!--\s*figure:\s*(?P<label>[^|]+?)\s*\|\s*(?P<script>[^|]+?)\s*\|\s*"
+    r"(?P<value>[^>]+?)\s*-->")
+
+
+def check_declared_figures(text: str, repo: Path = REPO,
+                           timeout: int = 600) -> list[str]:
+    """Re-execute every declared figure. Empty list means all reproduced.
+
+    A brief that declares NOTHING passes -- the mechanism is opt-in, because
+    retrofitting it to 49 archived briefs would refuse them all for a reason
+    unrelated to why they are being validated. A brief that declares a figure and
+    gets it wrong is refused, which is the case that cost this project a panel
+    round.
+    """
+    problems: list[str] = []
+    for m in FIGURE.finditer(text):
+        label = m.group("label")
+        rel = m.group("script")
+        want = m.group("value")
+        script = repo / rel
+        if not script.is_file():
+            problems.append(
+                f"declared figure {label!r}: the script {rel} does not exist, so "
+                f"the figure cannot be re-executed")
+            continue
+        try:
+            r = subprocess.run([sys.executable, str(script)], cwd=repo,
+                               capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            problems.append(f"declared figure {label!r}: {rel} did not finish in "
+                            f"{timeout}s")
+            continue
+        if r.returncode != 0:
+            problems.append(
+                f"declared figure {label!r}: {rel} exited {r.returncode} and "
+                f"produced no figure. A cited script that does not run is the "
+                f"6.2 defect")
+            continue
+        # ORDER IS LOAD-BEARING (2026-09-10). This check sat FIRST and took 2
+        # existing tests red: a declared `1` against a MISSING script reported
+        # "fewer than 3 significant characters" instead of "the script does not
+        # exist". A guard must report the most fundamental failure it found, or
+        # it sends the reader to fix the wrong thing. Infrastructure first,
+        # then the figure.
+        # A DECLARED FIGURE MUST BE DISTINCTIVE (2026-09-10, fable's residual in
+        # panel round 6, confirmed by execution). Whole-token matching still
+        # accepted a declared `1`, because `1` is a genuine token in "pass 1:".
+        # fable named the remedy: require at least 3 significant characters, so a
+        # figure is specific enough that appearing in the output means something.
+        # A count like `84` must therefore be declared with its context -- the
+        # script should print `entries = 84`, and the brief declare `entries = 84`.
+        if len(re.sub(r"[^0-9A-Za-z]", "", want)) < 3:
+            problems.append(
+                f"declared figure {label!r}: {want!r} carries fewer than 3 "
+                f"significant characters, so finding it in the output proves "
+                f"nothing. Declare it with its label, e.g. 'gamma = 0.3'")
+            continue
+        # WHOLE-TOKEN, NOT SUBSTRING (2026-09-10, panel round 6; both seats found it
+        # independently and CC1 reproduced it). `want not in output` accepted a
+        # declared `0.29` against a printed `0.294998`, and a declared `1` rode on
+        # the words "pass 1:". Measured across 7 cases the substring form scored
+        # 4 of 7, Wilson [25.05%, 84.18%] -- a guard built to catch a wrong number
+        # that passes wrong numbers. A token is delimited by anything that is not
+        # a digit, a letter, a dot or a minus sign, so 0.29 no longer matches
+        # inside 0.294998 while 0.294998 still matches itself.
+        if not re.search(r"(?<![0-9A-Za-z.\-])" + re.escape(want)
+                         + r"(?![0-9A-Za-z.\-])", r.stdout + r.stderr):
+            problems.append(
+                f"declared figure {label!r}: the brief says {want!r} and {rel} "
+                f"does not print it. A number typed into a brief is a claim "
+                f"about evidence, not evidence")
+    return problems
+
+
 def validate(text: str) -> list[str]:
     """Return a list of failures. Empty means the brief is dispatchable."""
     low = text.lower()
@@ -144,7 +235,10 @@ def main() -> int:
     if not a.brief.is_file():
         print(f"panel-brief: {a.brief} does not exist", file=sys.stderr)
         return 2
-    problems = validate(a.brief.read_text(encoding="utf-8", errors="replace"))
+    text = a.brief.read_text(encoding="utf-8", errors="replace")
+    problems = validate(text)
+    # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
+    problems += check_declared_figures(text)
     if problems:
         print(f"panel-brief: REFUSED — {a.brief} fails {len(problems)} required check(s):",
               file=sys.stderr)

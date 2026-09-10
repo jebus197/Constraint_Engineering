@@ -26,6 +26,16 @@ from typing import Any, Callable, Optional
 # Ensure scripts/ is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+#: The Desktop mirror of the operational tracker. HOISTED 2026-09-10 after
+#: panel round 4 (fable, F2). It was `Path.home() / "Desktop" / ...` written
+#: inline inside first_read_lines(), so every `tmp_path` fixture in the freshness
+#: suite silently included the LIVE machine's Desktop file. No false-PASS path
+#: was demonstrated -- the ordering fixture defeats a removed sort regardless --
+#: but a mirror with a future mtime would flake the staleness assertions, and a
+#: lookup by basename can bind to the mirror rather than the repo copy. A module
+#: constant is monkeypatchable; an inline `Path.home()` call is not.
+DESKTOP_MIRROR = Path.home() / "Desktop" / "CDSFL_Agent_Operational_Plan.md"
+
 from cdsfl_utils import (
     git_state,
     latest_experiment,
@@ -192,7 +202,7 @@ def first_read_lines(root: Path) -> list[str]:
             "OPERATIONAL TRACKER (canonical) — resume pointer + per-experiment matrix",
         ),
         (
-            Path.home() / "Desktop" / "CDSFL_Agent_Operational_Plan.md",
+            DESKTOP_MIRROR,
             "Desktop mirror of the above (byte-identical; convenient, not the authority)",
         ),
         (

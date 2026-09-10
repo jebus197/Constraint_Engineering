@@ -205,6 +205,56 @@ def sentences(text: str):
             yield para_no, seg
 
 
+#: A region reproducing someone else's words UNALTERED. Between these markers
+#: the linter reports but does not COUNT, because the only way to satisfy it
+#: would be to edit the record.
+#:
+#:     <!-- verbatim-begin: <who or what> -->
+#:     ... their words, exactly as produced ...
+#:     <!-- verbatim-end -->
+#:
+#: WHY THIS EXISTS. The founder's standing rule is that the linter is never
+#: applied to his words and never gates his input. `mask_quoted` already carries
+#: that for inline double quotes. It cannot carry a 20,000-character panel
+#: transcript, and the Personalisation directive requires those to be preserved
+#: in full and unfiltered -- *"Never summarise in place of the full output"*.
+#:
+#: Demonstrated 2026-09-10: `Panel_Round4_FULL_RECORD_2026-09-10.md` reproduces 2
+#: seats verbatim and carries 4 findings, every one inside quoted model output --
+#: including a seat writing "nine figures", which violates `no-word-numbers`.
+#: The commit hook's per-file ratchet refuses any NEW note whose count rises
+#: above 0, so the record could not be committed without editing what the models
+#: actually said. Editing it would falsify the record, which is worse than any
+#: vagueness in it.
+#:
+#: THE EXEMPTION IS NOT SILENT AND IT IS NOT WHOLE-FILE. Findings inside a
+#: verbatim region are still printed, under their own heading, with their own
+#: count. Prose OUTSIDE the markers is linted normally, so a note cannot buy
+#: amnesty for its own writing by quoting someone.
+VERBATIM_BEGIN = re.compile(r"<!--\s*verbatim-begin:.*?-->")
+VERBATIM_END = re.compile(r"<!--\s*verbatim-end\s*-->")
+
+
+def verbatim_paragraphs(text: str) -> set[int]:
+    """Paragraph numbers that fall inside a verbatim region.
+
+    Paragraph numbering matches `sentences()`, which counts blank-line-separated
+    blocks from 1, so the 2 agree by construction rather than by coincidence.
+    """
+    inside = False
+    marked: set[int] = set()
+    for i, para in enumerate(re.split(r"\n\s*\n", text), 1):
+        opened = bool(VERBATIM_BEGIN.search(para))
+        closed = bool(VERBATIM_END.search(para))
+        if inside or opened:
+            marked.add(i)
+        if opened:
+            inside = True
+        if closed:
+            inside = False
+    return marked
+
+
 def lint(path: pathlib.Path) -> list:
     out = []
     for para_no, s in sentences(path.read_text()):
@@ -269,6 +319,7 @@ def main() -> int:
         if not p.is_file():
             print(f"  missing: {p}"); missing += 1; continue
         hits = lint(p)
+        exempt_paras = verbatim_paragraphs(p.read_text(encoding="utf-8"))
         # `is not None`, not a bare truth test. future_stamp returns Optional
         # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a
         # glance from the (bool, message) pattern that this project's own guard
@@ -279,11 +330,21 @@ def main() -> int:
         if fs is not None:
             hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
                      fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
-        total += len(hits)
-        print(f"\n  {p.name}: {len(hits)} finding(s)")
-        for para_no, kind, token, s in hits:
+        counted = [h for h in hits if h[0] not in exempt_paras]
+        exempted = [h for h in hits if h[0] in exempt_paras]
+        total += len(counted)
+        print(f"\n  {p.name}: {len(counted)} finding(s)")
+        for para_no, kind, token, s in counted:
             print(f"    para {para_no}  {kind}  ({token!r})")
             print(f"      {s[:150]}{'...' if len(s) > 150 else ''}")
+        if exempted:
+            # PRINTED, NEVER HIDDEN. An exemption a reader cannot see is
+            # indistinguishable from a checker that missed something.
+            print(f"    ---- {len(exempted)} finding(s) inside a verbatim region, "
+                  f"reported and NOT counted ----")
+            for para_no, kind, token, s in exempted:
+                print(f"    para {para_no}  {kind}  ({token!r})   [verbatim]")
+                print(f"      {s[:150]}{'...' if len(s) > 150 else ''}")
     print(f"\n  {total} finding(s). Reported, not enforced — read before delivering.")
     if missing:
         # Findings stay advisory; a file that was never READ does not. Exiting 0

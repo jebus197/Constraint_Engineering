@@ -187,3 +187,70 @@ def test_what_this_guard_does_not_prove_is_written_down():
         "the stated limit has left the module docstring")
     assert "does not bind the named test to the task" in doc, (
         "the wider limit cc2 identified has left the module docstring")
+
+
+# ---------------------------------------------------------------------------
+# THE GAP THIS GUARD SHIPPED WITH — closed 2026-09-10 05:30 BST.
+#
+# Everything above checks that a DONE entry's evidence EXISTS, holds a real
+# asserting test, and sits where the suite collects it. **None of it checks that
+# the test passes.**
+#
+# Proven, not hypothesised. Task V3 was marked DONE at 04:00 naming
+# `bench/tests/test_note_lint_guard_2026-09-09.py`. That file was 10 of 10 RED at
+# the time, because task V1 had added a 6th guard to `hooks/pre-commit` while
+# V3's fixture still built its test repository with 4, and the hook correctly
+# refused every commit with "guard file(s) missing". This guard stayed green
+# throughout. A completion claim stood on a wholly failing test for over an hour,
+# and only a full-suite run surfaced it.
+#
+# `unsupported_done_entries` maps a session's failures back to the entries that
+# claim them, and `bench/tests/conftest.py` prints them in the terminal summary.
+# It adds NO test runs — it reads outcomes the session already produced.
+# ---------------------------------------------------------------------------
+
+def test_a_failing_evidence_file_names_its_claiming_entries():
+    """Both entries that name the same file must be reported, not just one."""
+    unsupported_done_entries = M.unsupported_done_entries
+    hits = unsupported_done_entries(
+        ["bench/tests/test_note_lint_guard_2026-09-09.py::test_a_clean_note_commits"])
+    assert "V3" in hits, (
+        "V3 is DONE and names that file; a failure in it must invalidate the claim")
+    assert "7.2" in hits, (
+        "7.2 names the same file and must also be reported — a file can back "
+        "more than 1 completion claim and reporting only the first hides the rest")
+
+
+def test_an_unrelated_failure_names_nothing():
+    """DISCRIMINATION. A reporter that fires on everything says nothing."""
+    unsupported_done_entries = M.unsupported_done_entries
+    assert unsupported_done_entries(
+        ["bench/tests/test_nothing_claims_this_file.py::test_x"]) == {}
+
+
+def test_no_failures_means_no_report():
+    unsupported_done_entries = M.unsupported_done_entries
+    assert unsupported_done_entries([]) == {}
+
+
+def test_an_open_entry_is_not_reported_even_if_its_evidence_fails():
+    """Only DONE is a completion claim. OPEN entries may name failing work."""
+    unsupported_done_entries = M.unsupported_done_entries
+    open_with_evidence = [e for e in M.parse_entries(LIST)
+                          if e.state == "OPEN" and e.evidence]
+    if not open_with_evidence:
+        pytest.skip("no OPEN entry currently names evidence")
+    e = open_with_evidence[0]
+    hits = unsupported_done_entries([f"{e.evidence[0]}::test_x"])
+    assert e.ident not in hits, (
+        f"{e.ident} is OPEN, not DONE — a failing test under an OPEN entry is "
+        f"work in progress, not a false completion claim")
+
+
+def test_the_conftest_actually_calls_it():
+    """An addition nothing reaches is not additive."""
+    conftest = (REPO / "bench" / "tests" / "conftest.py").read_text(encoding="utf-8")
+    assert "unsupported_done_entries" in conftest, (
+        "the mapper is not imported by the suite, so no run would ever report it")
+    assert "_report_unsupported_done_entries(terminalreporter)" in conftest, (
+        "the reporter is defined but never called from the terminal summary")

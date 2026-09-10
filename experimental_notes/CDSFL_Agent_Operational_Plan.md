@@ -61,6 +61,16 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ---
 
+**★ RESUME POINTER (2026-09-10 04:55 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `efbaf8a`, main, working tree DIRTY with the pass 10 and pass 11 work, level with `origin/main` as of the last push. `rs` ran at 03:43 with `--record-restore`, **exit code 0**, after a compaction at 02:25 that the compaction hook announced on every turn until it cleared.
+
+**WHERE THE WORK IS.** The founder's standing instruction is *"f everything (FFAFP in cyclic mode until diminishing returns, as per our maths model), sy everything, panel review everything, without exception, until all unsupervised work is fully complete"*. That cycle is at **pass 11**: series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10, 4]`, gamma 0.329575, gamma side PASS, count side FAIL, **verdict KEEP GOING**, and the new resurgence diagnostic is firing (last 3 passes 23 against 7 in the 3 before). Recorded and reproducible with `python3 scripts/ffafp_cycle_gamma_2026-09-10.py`.
+
+**PANEL REVIEW STATE (section P of the master task list is binding on every DONE).** Round 3 ran 2026-09-10 01:31 on V1 and V3; round 4 ran 03:30 to 03:40 on V5, task 6.7 and the 9 corrected figures. Both rounds used seats `cc2` and `fable` only, **0 paid dispatches**, enforced with `PANEL_ONLY=cc2,fable`. Round 4 returned PARTIAL from both seats with 7 findings between them, all applied. V1, V3, V5 and 6.7 have now discharged section P and are DONE. Full unfiltered record: `experimental_notes/Panel_Round4_FULL_RECORD_2026-09-10.md`.
+
+**THE THING TO READ FIRST IF SHORT OF TIME.** Both seats independently found that entry 2.1's *correcting* sentence quoted the denominator it had just retired, and both found that the brief itself stated gamma as 0.451 when it is 0.415413 — a figure that crosses a `GAMMA_BANDS` boundary. Both are fixed, and the second is fixed mechanically: `scripts/panel_brief_validate.py` now re-executes any figure a brief declares, and the dispatcher calls it before any seat is reached.
+
+**DO NOT DO THIS.** Do not run every script in `scripts/` as a survey. It mixes measurements with actions and it overwrote a deliberately preserved archive (`experimental_notes/data/adjudication_by_repair.json`, the pre-fix adjudicator record). The guard built for exactly that caught it within minutes and the file was restored. See tasks A15 and A16.
+
 **★ RESUME POINTER (2026-09-09 23:01 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `2fd2ea6`, main, working tree CLEAN, **level with `origin/main` — everything pushed.** `rs` ran at 22:59 with `--full` (exit code 0) and again at 23:00 with `--record-restore` (exit code 0); the marker was written by a genuine restore.
 
 **THE 18:17 POINTER BELOW SAYS THE PUSH IS BLOCKED. IT IS NOT, AND IT WAS NOT.** That claim was carried across a compaction without being re-tested and was withdrawn on 2026-09-09 when `git push` succeeded on the first attempt. 6 commits have been pushed since. It is left below unaltered as the record of what was believed.

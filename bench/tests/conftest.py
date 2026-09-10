@@ -576,7 +576,46 @@ def _netguard(request):
         )
 
 
+def _report_unsupported_done_entries(terminalreporter):
+    """Name the DONE entries whose evidence failed this session.
+
+    THE GAP THIS CLOSES. The DONE-evidence guard checks that each entry's named
+    test file exists, contains a real asserting test, and is collected. It never
+    checks that the test PASSES. On 2026-09-10 task V3 was DONE naming
+    `test_note_lint_guard_2026-09-09.py`, that file went 10 of 10 red because task
+    V1 had added a 6th guard to `hooks/pre-commit` while V3's fixture still built
+    its repository with 4, and the guard stayed green. A completion claim stood on
+    a wholly failing test for over an hour.
+
+    This adds NO test runs. It reads outcomes the session already produced and
+    maps them back to the entries that claim them, so a red suite says which
+    completion claims it invalidates rather than only how many tests broke.
+    """
+    failed = [r.nodeid for r in
+              terminalreporter.stats.get("failed", []) + terminalreporter.stats.get("error", [])]
+    if not failed:
+        return
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
+        from task_list_markers import unsupported_done_entries
+        hits = unsupported_done_entries(failed)
+    except Exception as exc:  # pragma: no cover - never mask the real failures
+        terminalreporter.write_line(
+            f"  (could not map failures to task-list entries: {exc})")
+        return
+    if not hits:
+        return
+    terminalreporter.write_sep("=", "DONE ENTRIES WHOSE EVIDENCE FAILED")
+    for ident, files in sorted(hits.items()):
+        terminalreporter.write_line(
+            f"  task {ident} is marked DONE and names: {', '.join(files)}")
+    terminalreporter.write_line(
+        "  A DONE marker naming a failing test is a completion claim with no "
+        "support.\n  Repair the test or move the entry off DONE — do not leave both.")
+
+
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    _report_unsupported_done_entries(terminalreporter)
     if _LIVE:
         terminalreporter.write_sep(
             "=", f"netguard DISABLED ({OPT_IN_ENV}=1) — live calls were permitted",

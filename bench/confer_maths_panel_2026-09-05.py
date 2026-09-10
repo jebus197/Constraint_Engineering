@@ -303,11 +303,17 @@ def _validate_brief_or_refuse() -> None:
     sys.path.insert(0, str(_REPO / "scripts"))
     try:
         from panel_brief_validate import validate as _validate
+        from panel_brief_validate import check_declared_figures as _figures
     except Exception as exc:
         print(f"panel: brief validator unavailable ({exc}); refusing rather than "
               f"dispatching unchecked", file=sys.stderr)
         raise SystemExit(2)
     problems = _validate(PROMPT)
+    # DECLARED FIGURES ARE RE-EXECUTED BEFORE DISPATCH (2026-09-10). The
+    # round-4 brief said gamma was 0.451 when it was 0.415413, crossing a
+    # GAMMA_BANDS boundary, and both seats spent part of their round on it.
+    # The 7 shape checks cannot see a wrong number; this can.
+    problems += _figures(PROMPT)
     if not problems:
         return
     if os.environ.get("PANEL_BRIEF_UNCHECKED"):

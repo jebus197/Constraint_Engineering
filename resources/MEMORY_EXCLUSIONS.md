@@ -8,14 +8,14 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-09-09 18:36 BST)
+## Accounting (counted 2026-09-10 03:36 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **141 files**, of which one is `MEMORY.md` itself
-(the index), leaving **140 individual memory files**. They partition as:
+The directory holds **142 files**, of which one is `MEMORY.md` itself
+(the index), leaving **141 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|

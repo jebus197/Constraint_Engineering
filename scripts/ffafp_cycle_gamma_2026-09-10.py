@@ -18,8 +18,32 @@ gamma = 0. A flat cumulative curve gives beta = 0 and gamma = 1. The two-sided
 gate, which the standing directive in `.claude/CLAUDE.md` says must NOT be
 demoted, converges only when BOTH hold:
 
-    (a) gamma >= 0.30                      the decay curve has flattened
+    (a) gamma >= 0.30      the CUMULATIVE curve is sublinear -- NOT a claim
+                           about the tail; see the resurgence note below
     (b) K = 3 consecutive rounds at zero    the threshold-free insurance endpoint
+
+WHAT SIDE (a) DOES NOT SAY, corrected 2026-09-10 after panel round 4 (CC2, F3).
+The gloss above used to read "the decay curve has flattened", and that overstates
+the statistic. gamma is fitted to the CUMULATIVE series, so a large leading round
+mechanically produces a sublinear log-log fit no matter what the tail does.
+Measured with the real `_estimate_gamma`, and cross-checked against an
+independent numpy polyfit and a scipy linregress agreeing to 1e-9:
+
+    [11, 1, 2, 3, 4, 5, 6, 7, 8]   gamma = 0.324155   side (a) PASS
+
+That series RISES for 8 consecutive passes. On the live series gamma is 0.415413,
+and had pass 9 returned 0 instead of 9 it would have been 0.460561 -- the
+resurgence moved gamma by 0.045 and could not have pushed it below 0.30 from
+where it started.
+
+GAMMA IS NOT BROKEN AND IS NOT DEMOTED. It correctly returns 0.000000 for
+constant discovery ([2]*9), for linear growth (1..9) and for doubling
+(1,2,4,...,256), all of which fail side (a). It is CONFOUNDED here by a large
+leading round: pass 1 contributed 11 of the 42 cumulative findings. The standing
+directive is that when something looks wrong the cause is mechanical, and this is
+the mechanism. The repair is additive -- a resurgence diagnostic is printed
+alongside gamma so a reader is never handed a passing gamma next to a rising tail
+with no cue that the two disagree. Nothing is removed and no threshold moves.
 
 Verified 2026-09-10 against an independent scipy least-squares fit of the same
 log-log regression: exact agreement to 1e-9 across 5 series, with mpmath and
@@ -116,10 +140,30 @@ def main() -> int:
     print(f"  (b) {K_ZERO} zero-finding passes: {'PASS' if cside else 'FAIL'}"
           f"   (last {K_ZERO}: {counts[-K_ZERO:]})")
     print(f"  TWO-SIDED GATE         : {verdict}")
+    # RESURGENCE DIAGNOSTIC (added 2026-09-10, panel round 4, CC2 F3). Additive:
+    # it changes no threshold and no verdict, it removes nothing, and it exists
+    # because a passing gamma printed beside a rising tail reads as corroboration
+    # when it is not -- the same shape as the stale document the V5 repair exists
+    # to prevent, one instrument over.
+    if len(counts) >= 2 * K_ZERO:
+        tail, prev = sum(counts[-K_ZERO:]), sum(counts[-2 * K_ZERO:-K_ZERO])
+        if tail > prev:
+            lead = counts[0]
+            total = sum(counts)
+            print(f"\n  !! RESURGENCE: the last {K_ZERO} passes found {tail} against "
+                  f"{prev} in the {K_ZERO} before.")
+            print(f"     gamma is fitted to the CUMULATIVE series and is dominated by "
+                  f"pass 1 ({lead} of {total}).")
+            print(f"     It does not fall on a rising tail: [11, 1, 2, 3, 4, 5, 6, 7, 8] "
+                  f"scores {_estimate_gamma([11, 1, 2, 3, 4, 5, 6, 7, 8]):.6f} and PASSES "
+                  f"side (a).")
+            print(f"     Read side (a) as UNINFORMATIVE here. Side (b) is carrying this "
+                  f"gate.")
+
     if verdict == "KEEP GOING":
         print("\n  The gate is two-sided by founder ruling 2026-06-10 and neither side")
         print("  alone converges. A high gamma with findings still arriving means the")
-        print("  curve has flattened but discovery has not stopped.")
+        print("  cumulative curve is sublinear but discovery has not stopped.")
     return 0
 
 

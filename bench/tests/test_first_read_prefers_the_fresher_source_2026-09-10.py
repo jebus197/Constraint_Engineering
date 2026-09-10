@@ -146,3 +146,44 @@ def test_a_missing_required_file_is_still_named_loudly(tmp_path):
     (tmp_path / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md").write_text("x")
     out = "\n".join(R.first_read_lines(tmp_path))
     assert "MISSING" in out and "REQUIRED reading and is absent" in out
+
+
+# ---------------------------------------------------------------------------
+# HERMETICITY — added 2026-09-10 after panel round 4 (fable, F2).
+#
+# The finding: `first_read_lines` built the Desktop mirror's path inline with
+# `Path.home() / "Desktop" / ...`, so every `tmp_path` fixture above silently
+# included the LIVE machine's Desktop file. fable found it exists on this machine
+# with mtime 2026-09-09 23:39. No false-PASS path was demonstrated -- the
+# declaration-order fixture defeats a removed sort regardless -- but a mirror
+# with a future mtime would flake the "N DAYS older" assertions, and a lookup by
+# basename can bind to the mirror instead of the repo copy.
+#
+# The repair hoisted it to `DESKTOP_MIRROR`. These tests are what REACHES that
+# constant: an addition nothing reaches is not additive.
+# ---------------------------------------------------------------------------
+
+def test_the_desktop_mirror_is_a_module_constant(monkeypatch, tmp_path):
+    """It must be substitutable, which an inline `Path.home()` call is not."""
+    assert hasattr(R, "DESKTOP_MIRROR"), (
+        "the Desktop mirror path is inline again; a fixture cannot displace it")
+    fake = tmp_path / "not_the_real_desktop.md"
+    fake.write_text("fixture mirror", encoding="utf-8")
+    monkeypatch.setattr(R, "DESKTOP_MIRROR", fake)
+    notes = tmp_path / "experimental_notes"
+    notes.mkdir()
+    for name in ("CDSFL_MASTER_TASK_LIST.md", "CDSFL_OUTCOMES_LOG.md",
+                 "CDSFL_Agent_Operational_Plan.md"):
+        (notes / name).write_text("x", encoding="utf-8")
+    out = "\n".join(R.first_read_lines(tmp_path))
+    assert str(fake) in out, "the substituted mirror was not used"
+    assert str(Path.home() / "Desktop") not in out, (
+        "the live machine's Desktop still leaked into a fixture run")
+
+
+def test_the_real_mirror_is_still_offered_by_default():
+    """The negative control: substituting it must not have removed it."""
+    out = "\n".join(R.first_read_lines(REPO))
+    assert str(R.DESKTOP_MIRROR) in out or not R.DESKTOP_MIRROR.exists(), (
+        "the Desktop mirror is no longer offered on a real run; the hoist "
+        "removed a capability instead of relocating it")

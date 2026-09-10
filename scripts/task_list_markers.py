@@ -129,6 +129,38 @@ def parse_entries(path: Path = LIST) -> list[Entry]:
     return out
 
 
+def unsupported_done_entries(failed_nodeids, path: Path = LIST) -> dict[str, list[str]]:
+    """DONE entries whose named evidence produced a failure this session.
+
+    WHY THIS EXISTS, and it is the gap the guard shipped with. The DONE-evidence
+    guard checks that each named file EXISTS, contains a real asserting test, and
+    sits where the suite collects it. **It never checks that the test passes.**
+
+    Proven on 2026-09-10 and not hypothetically: task V3 was marked DONE naming
+    `bench/tests/test_note_lint_guard_2026-09-09.py`, that file went 10 of 10 RED
+    when task V1 added a 6th guard to `hooks/pre-commit` and V3's fixture still
+    built its repository with 4, and the DONE-evidence guard stayed green
+    throughout. A completion claim was standing on a wholly failing test.
+
+    This maps failures back to the entries that claim them, so a red suite says
+    WHICH completion claims it invalidates rather than only how many tests broke.
+    It adds no test runs: it reads outcomes the session already produced.
+
+    `failed_nodeids` is any iterable of pytest node ids ("path::test_name").
+    """
+    failed_files = {str(n).split("::", 1)[0].replace("\\", "/")
+                    for n in failed_nodeids}
+    out: dict[str, list[str]] = {}
+    for e in parse_entries(path):
+        if e.state != "DONE":
+            continue
+        hit = [ev for ev in e.evidence
+               if any(f.endswith(ev) or ev.endswith(f) for f in failed_files)]
+        if hit:
+            out[e.ident] = sorted(hit)
+    return out
+
+
 def infer(text: str) -> tuple[str, str]:
     """Best-effort defaults for an entry with no marker yet.
 

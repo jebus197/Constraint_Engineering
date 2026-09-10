@@ -43,6 +43,17 @@ DIRTY = ("# A note with a spelled number\n\nWritten 2026-09-09. It carries "
          "note standard v1.7 (26 August 2026).\n")
 
 
+def _hook_guard_files() -> list[str]:
+    """Parse the hook's own `GUARDS=` block. See the note in `_repo`."""
+    src = HOOK.read_text(encoding="utf-8")
+    body = src[src.index("GUARDS=") + len("GUARDS="):]
+    quote = body[0]
+    assert quote in "\"'", "the GUARDS assignment in hooks/pre-commit is not quoted"
+    names = [ln.strip() for ln in body[1:body.index(quote, 1)].splitlines() if ln.strip()]
+    assert names, "the hook names no guard files at all"
+    return names
+
+
 def _repo(tmp_path):
     """A real git repository with the hook wired the way this one wires it."""
     work = tmp_path / "repo"
@@ -53,14 +64,22 @@ def _repo(tmp_path):
     shutil.copy(LINT, work / "scripts" / "note_vagueness_lint.py")
     shutil.copy(HOOK, work / "hooks" / "pre-commit")
     os.chmod(work / "hooks" / "pre-commit", 0o755)
-    for g in ("test_documentation_drift_guards_2026-08-25.py",
-              "test_recovery_memory_doc_repairs.py",
-              "test_memory_index_limits_match_the_loader_2026-09-01.py",
-              "test_line_citations_resolve_2026-09-01.py"):
-        # The 4 earlier guards are stubbed to pass, so these tests isolate the
-        # 5th. Stubbing them out entirely would let the hook exit before it.
-        (work / "bench" / "tests" / g).write_text("def test_stub():\n    pass\n",
-                                                  encoding="utf-8")
+    # THE GUARD LIST IS READ OUT OF THE HOOK, NOT TYPED HERE. It was typed, as 4
+    # names, and the hook has since grown to 6 -- task V1 added
+    # `test_done_markers_carry_evidence_2026-09-10.py` and task M2 added
+    # `test_task_list_markers_2026-09-09.py`. The hook then correctly refused
+    # every commit in this fixture with "guard file(s) missing", and all 10 tests
+    # in this file went red. The hook was right and the fixture was stale.
+    #
+    # This is the same defect as everything else found on 2026-09-10: a list
+    # written down in 2 places, where one place moved. Reading it from the hook
+    # means adding a 7th guard cannot silently break this file again.
+    #
+    # The other guards are STUBBED TO PASS so these tests isolate the note-lint
+    # stage. Omitting them entirely would make the hook exit before reaching it.
+    for g in _hook_guard_files():
+        (work / "bench" / "tests" / g.split("/")[-1]).write_text(
+            "def test_stub():\n    pass\n", encoding="utf-8")
     env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
     for cmd in (["git", "init", "-q"], ["git", "config", "core.hooksPath", "hooks"],

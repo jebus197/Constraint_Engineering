@@ -24,6 +24,9 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 ORCH = REPO / "bench" / "experiment_11_orchestrator.py"
 RUNNER = REPO / "bench" / "reference_runner_v3.py"
 
+#: The panel is 5 seats. Named so an omission is loud rather than silent.
+EXPECTED_SEATS = 5
+
 SEAT_RE = re.compile(
     r'label="(?P<label>[A-Za-z0-9_-]+)".*?'
     r'timeout=(?P<timeout>\d+).*?'
@@ -38,6 +41,16 @@ def seats():
     out = []
     for m in SEAT_RE.finditer(block):
         out.append((m.group("label"), int(m.group("timeout")), int(m.group("retries"))))
+    # LOUD ON OMISSION (2026-09-10, panel round 4, fable F3). The block is sliced
+    # from `label="CC2"` to the next `def `, so a seat defined outside that window
+    # simply vanishes and every proportion silently gets a smaller denominator.
+    # The panel is 5 seats; a different number is a fact about this script's reach,
+    # not about the configuration, and it says so instead of proceeding quietly.
+    if len(out) != EXPECTED_SEATS:
+        print(f"  !! this script found {len(out)} seat(s), not {EXPECTED_SEATS}: "
+              f"{[o[0] for o in out]}\n     the slice window in seats() no longer "
+              f"covers the whole panel; every proportion below is over a partial "
+              f"denominator.", file=sys.stderr)
     return out
 
 
@@ -56,20 +69,33 @@ def multipliers():
     #
     # BOTH FORMS ARE ACCEPTED so the script also runs against any archived
     # revision, and it says which form it found rather than silently assuming.
+    # THE COMBINING OPERATOR IS READ, NOT TYPED (2026-09-10, panel round 4, CC2 F2).
+    # The 2 multipliers were read from the runner and the `max` that combines them
+    # with the retry budget was typed into this script. A seat mutated the runner's
+    # `max` to `min` and this instrument still reported "fits" for every seat and
+    # "truncated: 0 of 5" -- reporting no truncation while the runner truncated
+    # Gemini from 1500 s to 900 s. An instrument that hardcodes half of the
+    # expression it claims to read cannot detect that expression regressing.
     post = re.search(
-        r"_mult = (\d+) if base_model_label\(mc\.label\) == \"CC2\" else (\d+)", src)
+        r"_mult = (\d+) if base_model_label\(mc\.label\) == \"CC2\" else (\d+)\n"
+        r"\s*_retry_budget = [^\n]+\n"
+        r"\s*wall_limit = (max|min)\(mc\.timeout \* _mult, _retry_budget\)", src)
     if post:
-        return int(post.group(1)), int(post.group(2)), "post-2026-09-09 (max of multiplier and retry budget)"
+        return (int(post.group(1)), int(post.group(2)),
+                f"post-2026-09-09 ({post.group(3)} of multiplier and retry budget)",
+                post.group(3))
     pre = re.search(r"wall_limit = \(mc\.timeout \* (\d+) if base_model_label\("
                     r"mc\.label\) == \"CC2\"\s*\n\s*else mc\.timeout \* (\d+)\)", src)
     if pre:
-        return int(pre.group(1)), int(pre.group(2)), "pre-2026-09-09 (multiplier only)"
+        # The pre-fix form has no combining operator at all: the cap IS the
+        # multiplier product. `None` says so rather than inventing one.
+        return int(pre.group(1)), int(pre.group(2)), "pre-2026-09-09 (multiplier only)", None
     raise SystemExit("the watchdog expression at reference_runner_v3.py has moved, "
                      "and neither the pre- nor post-2026-09-09 form was found")
 
 
 def main():
-    cc2_mult, other_mult, form = multipliers()
+    cc2_mult, other_mult, form, op = multipliers()
     print(f"watchdog multipliers, read from the runner: CC2 x{cc2_mult}, "
           f"every other seat x{other_mult}")
     print(f"expression form found: {form}\n")
@@ -81,7 +107,9 @@ def main():
         # cap can no longer sit below the budget. Modelling only the multiplier
         # would report a truncation the shipped code no longer performs.
         mult_cap = timeout * mult
-        cap = mult_cap if form.startswith("pre-") else max(mult_cap, budget)
+        # The operator comes from the runner. If the runner regresses to `min`,
+        # this instrument reports the truncation instead of hiding it.
+        cap = mult_cap if op is None else (max if op == "max" else min)(mult_cap, budget)
         is_trunc = cap < budget
         truncated += is_trunc
         rows.append((label, timeout, retries, budget, cap, is_trunc))

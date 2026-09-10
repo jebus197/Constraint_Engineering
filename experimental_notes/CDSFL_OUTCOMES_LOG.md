@@ -106,17 +106,35 @@ Discussed 5 times since 2026-08-25, never built; `57d5a0e` reached HEAD that mor
 ### Pass 5 — the evidence I said I preserved was never tracked. Commit `3c6f143`
 Commit `3c4987d` stated the log and 22 snapshots "are now in the repo". They went into `bench/logs/`, which `.gitignore:41` excludes. **22 on disk, 0 tracked**, and the commit message asserting otherwise was false. Moved to `experimental_notes/evidence/`, stored as `.py.txt` so seat-written code stays out of the source scanners. Repository-wide: **177 of 3,803 cited `bench/logs/` paths are untracked**, 4.65%, Wilson [4.03%, 5.37%].
 
+### Pass 10 — the panel reviewed 3 repairs, and both seats found the correcting sentence repeating the defect
+Round 4, 2026-09-10 03:30 to 03:40 BST, seats `cc2` and `fable`, both on the Max subscription, **0 paid dispatches** (`PANEL_ONLY=cc2,fable`). 48 and 35 recorded tool calls; both executed rather than read. Verdict PARTIAL from both. Repairs 1 (restore ordering) and 2 (task 6.7) cleared by both seats under mutation. Repair 3 refused by both, independently, for the same reason: entry 2.1's corrected sentence quoted **97.32%, Wilson [96.17%, 98.13%]**, which is 1,052 of **1,081** — the denominator that same sentence had just retired — matching to 4 decimal places. Corrected to **98.50%, Wilson [97.58%, 99.08%]**.
+
+### Pass 10 — the stop criterion's gamma side does not mean what its own gloss said
+`gamma` is fitted to the CUMULATIVE series, so a large opening round produces a sublinear log-log fit whatever the tail does. Reproduced against `_estimate_gamma` and cross-checked against an independent numpy `polyfit` and a scipy `linregress`, all 3 agreeing to 1e-9: the series `[11, 1, 2, 3, 4, 5, 6, 7, 8]`, which rises for 8 consecutive passes, scores **0.324155** and PASSES side (a). **Gamma is not demoted and no threshold moved** — it still correctly returns 0 for constant, linear and doubling discovery. The repair is a printed resurgence diagnostic, wired and tested, which fires on the live series (last 3 passes 21 against 11 in the 3 before).
+
+### Pass 10 — the brief itself carried a wrong figure, and both seats caught it
+The round-4 brief stated `gamma` was **0.451**; it is **0.415413**. `GAMMA_BANDS` puts the boundary at 0.45, so the brief upgraded the convergence evidence by one band, in a brief whose subject was 9 wrong figures. Traced: the 8-pass prefix scores **0.453703**, carried forward one pass too long and garbled in prose. `grep` for `0.451` across the task list, the series JSON, the cycle script and every committed note returns nothing — **the artefacts were clean and only the prose was wrong**. Fixed additively: a brief may now declare `<!-- figure: <label> | <script> | <value> -->` and `scripts/panel_brief_validate.py` re-executes it, refusing the brief on disagreement. Wired into the dispatcher before any seat is reached, and it refuses both `0.451` (invented) and `0.453703` (correct but stale).
+
+### Pass 10 — 4 defects in instruments written the same session, found by my own tests
+8 mutation tests were **vacuous**: mutants were written to TMPDIR, so each died at startup, produced empty output, and `assert "<figure>" not in ""` passed. A mutant that crashes reads as caught. Mutants now live in `.mutants/` inside the repo — where `parents[1]` still resolves and no suite scanner looks — and the harness refuses any mutant that did not run. One mutation then SURVIVED and was re-aimed: it had targeted a line the reported figure does not read. A measurement script printed a **typed** closing number that a mutation could not move. And a test asserted `g == 0.0` on a value read from a display rounded to 6 places; the true value is 1.5543122344752192e-15.
+
+### Pass 10 — 1.1's cost figure had been corrected twice, each correction inside the last
+The entry read *"56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)"* — a sentence quoting itself as the thing it refutes. Measured with `scripts/precommit_gate_cost_2026-09-10.py`, which reads the file list out of `hooks/pre-commit` rather than typing it: the hook names **6** files, not 4, and they collect **169** tests, not 56. The script's own first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it.
+
 ---
 
 ## STANDING NUMBERS
 
 | Measure | Value |
 |---|---|
-| Full suite | see the closing report; last green 5555, went red at 6 failed 20:17, repaired |
-| Task list | 60 entries, 6 done, 1 withdrawn, 1 blocked |
-| Commits today | 17 |
+| Full suite | measured at each commit with `python3 -m pytest bench/tests/ -q --netguard-strict`; see the closing report for the current figure |
+| Task list | 80 entries, 22 done, 54 open, 2 blocked, 2 withdrawn |
+| Commits since 2026-09-10 00:00 | 9 |
 | Files deleted today | 0 |
-| Mutations run today | 27, all caught once verified applied; 1 survived a first round and was re-aimed |
+| Paid model dispatches today | **0** — panel rounds 3 and 4 both ran `PANEL_ONLY=cc2,fable`, Max subscription only |
+| FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |
+
+Counts in this table are produced by `scripts/task_list_markers.py` and `git log`, not typed.
 
 ---
 
