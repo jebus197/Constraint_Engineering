@@ -197,6 +197,21 @@ def main() -> int:
                     help="also print the numbered list of decisions still needing a ruling")
     ap.parse_args()
 
+    # DECLINE, DO NOT TRACEBACK, when the journal is absent. It lives OUTSIDE
+    # the repository -- it is a workflow transcript under the agent session
+    # directory -- so it is absent on any other machine and in any clone. Its 2
+    # sibling scripts, salvage_task_reconstruction.py and
+    # triage_open_founder_decisions.py, already print "no journal at ..." and
+    # exit 2; this one raised a bare FileNotFoundError, which reads as a broken
+    # script rather than as a missing input. Measured 2026-09-11 by pointing all
+    # 3 at an absent path: exits 1, 2, 2 -- this was the odd one.
+    if not JOURNAL.is_file():
+        print(f"no journal at {JOURNAL}", file=sys.stderr)
+        print("This script reads a workflow transcript from the agent session "
+              "directory, which is outside the repository and is not present "
+              "in a clone or on another machine.", file=sys.stderr)
+        return 2
+
     raw = []
     for line in JOURNAL.read_text().splitlines():
         try:
