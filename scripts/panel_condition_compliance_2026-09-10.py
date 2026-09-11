@@ -169,7 +169,24 @@ def main() -> int:
             c = int(j.get("n_tool_calls") or 0)
             calls += c
             tool_ok += c > 0
-            if re.search(r"strongest[_ ]disagreement", j.get("response", ""), re.I):
+            # BOTH FIELD NAMES, AND MATCHING ONLY THE FIRST WAS A FALSE ZERO
+            # IN A FOUNDER-CONDITION COMPLIANCE FIGURE.
+            #
+            # The brief asked for `strongest_disagreement` up to round 7 and for
+            # "WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1" from round 8.
+            # Measured 2026-09-11 across the 28 seat replies dispatched under the
+            # ruling: 12 carry the old name, 14 the new, 2 neither -- and the 2
+            # are `panel_roster_fix_2026-09-09`, which the task list already
+            # identifies as the only round dispatched before the field existed at
+            # all. 28 of 28 discuss disagreement in prose.
+            #
+            # So a scan for the old name alone reports 12 of 28 = 42.8571% and
+            # FALLING, when the truth is 26 of 28 = 92.8571% and the decline is a
+            # RENAME. P5 is a founder condition -- no compelled convergence --
+            # and an instrument that reads a renamed field as non-compliance
+            # would have had the panel appearing to abandon it.
+            _DISAGREE = r"strongest[_ ]disagreement|where i disagree"
+            if re.search(_DISAGREE, j.get("response", ""), re.I):
                 dis += 1
                 disagree_ok += 1
         seatn += n
