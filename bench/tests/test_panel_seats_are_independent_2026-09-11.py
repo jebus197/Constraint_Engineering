@@ -73,18 +73,43 @@ class TestOneSandboxPerSeat:
             "panel_sandbox.build is not inside a loop, so every seat shares 1 "
             "writable copy and their verdicts are not independent")
 
-    def test_the_seat_map_exists_and_is_read_by_dispatch(self):
+    def test_the_seat_map_is_read_on_the_path_dispatch_takes(self):
+        """Reachability, not a name lookup in one function's body.
+
+        REWRITTEN 2026-09-11, hours after it was written. The first version
+        asserted `_SEAT_SANDBOXES` appeared as a Name inside `dispatch`. Hours
+        later the confinement was extracted into `confine_this_thread` -- so
+        another source-text guard could EXECUTE it rather than read it -- and
+        this one went red while the behaviour was correct and better tested. The
+        fourth source-text guard broken by a correct refactor in a single day,
+        and the second of them written by me the same day.
+
+        The property is that the map is read SOMEWHERE ON THE PATH DISPATCH
+        TAKES, so the chain is followed instead of one frame being inspected.
+        """
         src = PANEL.read_text(encoding="utf-8")
-        assert "_SEAT_SANDBOXES" in src
         tree = ast.parse(src)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name == "dispatch":
-                names = {n.id for n in ast.walk(node) if isinstance(n, ast.Name)}
-                assert "_SEAT_SANDBOXES" in names, (
-                    "dispatch does not consult the per-seat map, so seats still "
-                    "share whatever the module-level path says")
-                return
-        raise AssertionError("confer_maths_panel has no dispatch()")
+        funcs = {n.name: n for n in ast.walk(tree)
+                 if isinstance(n, ast.FunctionDef)}
+        assert "dispatch" in funcs, "confer_maths_panel has no dispatch()"
+
+        seen, queue, found = set(), ["dispatch"], False
+        while queue:
+            name = queue.pop()
+            if name in seen or name not in funcs:
+                continue
+            seen.add(name)
+            node = funcs[name]
+            if any(isinstance(n, ast.Name) and n.id == "_SEAT_SANDBOXES"
+                   for n in ast.walk(node)):
+                found = True
+                break
+            queue.extend(getattr(c.func, "id", "") for c in ast.walk(node)
+                         if isinstance(c, ast.Call))
+        assert found, (
+            f"nothing dispatch reaches consults the per-seat sandbox map "
+            f"(followed: {sorted(seen)}), so seats share whatever the "
+            f"module-level path says")
 
     def test_every_sandbox_is_torn_down(self):
         """N-1 sandboxes left behind is 606 MB each AND a seat's proposals still

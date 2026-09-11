@@ -157,7 +157,20 @@ def unsupported_done_entries(failed_nodeids, path: Path = LIST) -> dict[str, lis
         hit = [ev for ev in e.evidence
                if any(f.endswith(ev) or ev.endswith(f) for f in failed_files)]
         if hit:
-            out[e.ident] = sorted(hit)
+            # MERGE, NEVER OVERWRITE. Found 2026-09-11 by the fable seat in panel
+            # round 11 and reproduced before accepting. With 2 entries sharing an
+            # identifier -- which happened the same day this guard shipped, when
+            # 4 new entries reused Section P's own P1 to P4 -- the second
+            # assignment DELETED the first entry's failing evidence from the
+            # report. A guard keyed on identifiers, silently losing a finding to
+            # a duplicate identifier, is the "a model can delete a finding by
+            # repeating itself" shape in a new place.
+            #
+            # The duplicate ids are separately forbidden by
+            # bench/tests/test_no_orphan_task_markers_2026-09-11.py, but a
+            # reporter that loses data when its input is malformed is a second
+            # defect and is fixed on its own terms.
+            out[e.ident] = sorted(set(out.get(e.ident, ())) | set(hit))
     return out
 
 

@@ -155,6 +155,22 @@ def declared_project_names(repo_root: "os.PathLike[str] | str | None" = None
         return set()
     out = set()
     for rel in (data.get("related_identifiers") or []):
+        # ONLY THE RELATION THAT MEANS "THIS IS MY OWN REPOSITORY".
+        # Found 2026-09-11 by the fable seat in panel round 11 and reproduced
+        # before accepting: this read EVERY GitHub-shaped identifier, and the
+        # docstring's claim that the file "names its own repository and nothing
+        # else" was an unguarded invariant of today's file rather than a property
+        # of the format. Appending 1 citation of `github.com/jebus197/OpenBrain`
+        # made OpenBrain an identity of THIS project, so `foreign_repo_roots`
+        # returned `/home/x/OpenBrain` and the falsifier rebase would have
+        # rewritten an unrelated project's absolute paths into the overlay.
+        #
+        # `isSupplementTo` is Zenodo's relation for "this deposit supplements
+        # that repository" -- the only one that asserts ownership. A citation is
+        # `cites`, `references` or `isDerivedFrom`, and none of those says the
+        # repository is ours.
+        if str((rel or {}).get("relation") or "").strip() != "isSupplementTo":
+            continue
         ident = (rel or {}).get("identifier") or ""
         m = _GITHUB_REPO.search(str(ident).strip())
         if m and m.group(1).lower() not in _NOT_AN_IDENTITY:

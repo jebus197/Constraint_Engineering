@@ -172,6 +172,42 @@ def mask_quoted(flat: str) -> str:
     return _QUOTED_SPAN.sub(lambda m: " " * len(m.group(0)), flat)
 
 
+#: The ONE paragraph break. Written once because 2 expressions of it is what
+#: broke the verbatim exemption -- see `paragraphs`.
+PARAGRAPH_BREAK = re.compile(r"\n[ \t]*\n")
+
+
+def paragraphs(text: str) -> list[str]:
+    """Split into blank-line-separated blocks. THE ONLY splitter in this module.
+
+    FOUND 2026-09-11 BY BOTH PANEL SEATS INDEPENDENTLY, in separate sandboxes,
+    and reproduced here before either fix was accepted. `sentences()` split on a
+    literal 2-newline string and `verbatim_paragraphs()` on a whitespace-tolerant
+    regular expression. A blank
+    line carrying ONE SPACE is a paragraph break to the second and not to the
+    first, so the two paragraph NUMBERINGS drift apart -- and the exempt set,
+    computed by the second, is applied to findings numbered by the first.
+
+    THE CONSEQUENCE IS AMNESTY FOR THE NOTE'S OWN PROSE. Measured on a fixture
+    whose Rule 27 violation sits AFTER `verbatim-end`, in the note's own voice:
+
+        before: `amnesty.md: 0 finding(s)` with the sentence tagged [verbatim]
+        control, same bytes without the space: `1 finding(s)`
+
+    The count is what the blocking pre-commit ratchet reads, so the note commits.
+    `verbatim_paragraphs`' docstring asserted the 2 numberings *"agree by
+    construction rather than by coincidence"*. They agreed by coincidence, on
+    files whose blank lines happen to be byte-exact: **20 of 730 markdown files
+    in this tree already break that coincidence, 2.7397%, Wilson [1.7804%,
+    4.1938%], Clopper-Pearson [1.6814%, 4.1997%]**.
+
+    THE REGEX FORM IS THE CORRECT ONE, not merely the surviving one: a line
+    holding only whitespace IS a paragraph break to every markdown renderer, and
+    to a reader.
+    """
+    return PARAGRAPH_BREAK.split(text)
+
+
 def sentences(text: str):
     """Yield (paragraph number, sentence) with quotes kept WHOLE.
 
@@ -189,7 +225,7 @@ def sentences(text: str):
     the original. `lint` then does its own per-sentence quote handling on a
     sentence that now contains the whole quotation rather than a fragment of it.
     """
-    for para_no, para in enumerate(text.split("\n\n"), 1):
+    for para_no, para in enumerate(paragraphs(text), 1):
         flat = " ".join(para.split())
         if not flat or flat.startswith(("|", "#", "```")):
             continue
@@ -238,14 +274,36 @@ VERBATIM_END = re.compile(r"<!--\s*verbatim-end\s*-->")
 def verbatim_paragraphs(text: str) -> set[int]:
     """Paragraph numbers that fall inside a verbatim region.
 
-    Paragraph numbering matches `sentences()`, which counts blank-line-separated
-    blocks from 1, so the 2 agree by construction rather than by coincidence.
+    Paragraph numbering matches `sentences()` because both call `paragraphs()`.
+
+    THAT SENTENCE USED TO READ "the 2 agree by construction rather than by
+    coincidence" AND IT WAS FALSE. They were 2 hand-written expressions of one
+    rule with no comparator -- the shape `execute-do-not-grep` names -- sitting
+    inside the exemption whose entire claim is that it is scoped. Rewritten
+    rather than deleted, so the claim's history stays visible.
     """
     inside = False
     marked: set[int] = set()
-    for i, para in enumerate(re.split(r"\n\s*\n", text), 1):
-        opened = bool(VERBATIM_BEGIN.search(para))
-        closed = bool(VERBATIM_END.search(para))
+    for i, para in enumerate(paragraphs(text), 1):
+        # A MARKER INSIDE A CODE FENCE IS DOCUMENTATION, NOT AN INSTRUCTION.
+        # Found 2026-09-11 by the fable seat and reproduced before accepting: a
+        # note DOCUMENTING this syntax in a fenced block opened a real region and
+        # exempted everything after it. `sentences()` already skips fenced
+        # paragraphs; this scan did not, so the 2 disagreed about what a fence
+        # means -- the same 2-expressions-of-one-rule shape as the splitter above,
+        # in the same function's neighbourhood.
+        #
+        # A fence INSIDE an open region is quoted text too, so the stripping is
+        # UNCONDITIONAL. The first version made it conditional on being outside
+        # a region, and the test written to prove the inside case passed for the
+        # wrong reason: with `inside` true the fenced `verbatim-end` was scanned,
+        # the region CLOSED at it, and the paragraph after -- still meant to be
+        # quoted -- silently stopped being exempt. Caught by mutating the
+        # condition away and watching every test stay green, which is the only
+        # thing that would have shown it.
+        scan = _strip_fenced(para)
+        opened = bool(VERBATIM_BEGIN.search(scan))
+        closed = bool(VERBATIM_END.search(scan))
         if inside or opened:
             marked.add(i)
         if opened:
@@ -253,6 +311,18 @@ def verbatim_paragraphs(text: str) -> set[int]:
         if closed:
             inside = False
     return marked
+
+
+def _strip_fenced(para: str) -> str:
+    """Blank out ``` fenced spans, preserving line count so numbering is safe."""
+    out, fenced = [], False
+    for line in para.splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            out.append("")
+            continue
+        out.append("" if fenced else line)
+    return "\n".join(out)
 
 
 def lint(path: pathlib.Path) -> list:

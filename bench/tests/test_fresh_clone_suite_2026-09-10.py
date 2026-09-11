@@ -321,6 +321,41 @@ class TestTheDeclaredIdentityTier:
         names, _ = project_names(d)
         assert "ce_fresh" in names, names
 
+    def test_a_citation_is_not_an_identity(self, tmp_path):
+        """FOUND 2026-09-11 by the fable seat, reproduced before accepting.
+
+        `declared_project_names` read EVERY GitHub-shaped identifier in
+        `.zenodo.json`, so appending 1 CITATION of another repository made that
+        repository an identity of THIS project -- and `foreign_repo_roots` then
+        claimed `/home/x/OpenBrain`, which the falsifier rebase would have
+        rewritten into the overlay. The docstring's "names its own repository and
+        nothing else" was an unguarded invariant of today's file, not a property
+        of the format. Only `isSupplementTo` asserts ownership.
+        """
+        import json
+        from bench.repo_paths import declared_project_names, foreign_repo_roots
+
+        z = json.loads((ROOT / ".zenodo.json").read_text())
+        z["related_identifiers"].append(
+            {"identifier": "https://github.com/jebus197/OpenBrain",
+             "relation": "cites", "scheme": "url"})
+        (tmp_path / ".zenodo.json").write_text(json.dumps(z))
+        names = declared_project_names(tmp_path)
+        assert "OpenBrain" not in names, names
+        assert "Constraint_Engineering" in names, (
+            "the real identity was lost with the citation; the filter is too "
+            "tight and the rebase now recognises nothing")
+        assert foreign_repo_roots("/home/x/OpenBrain/bench/a.py", tmp_path) == []
+
+    def test_the_live_file_still_declares_ownership(self):
+        """ANTI-VACUITY. If `.zenodo.json` stopped carrying an isSupplementTo
+        relation, the filter above would silently yield no identity at all and
+        every rebase control would pass on an empty set."""
+        import json
+        z = json.loads((ROOT / ".zenodo.json").read_text())
+        rels = [r.get("relation") for r in (z.get("related_identifiers") or [])]
+        assert "isSupplementTo" in rels, rels
+
     def test_only_the_declared_file_is_read_not_prose(self):
         """A prose scan would have been WRONG. `PAPER.md` cites
         github.com/jebus197/OpenBrain and github.com/jebus197/Project_Genesis;

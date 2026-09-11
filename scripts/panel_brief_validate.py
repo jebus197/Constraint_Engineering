@@ -318,6 +318,50 @@ _NAMED_PATH_RE = re.compile(
     r"`?((?:scripts|bench|resources|experimental_notes|hooks)/[\w./-]+\.(?:py|sh|md|json))`?")
 
 
+#: A numeric claim in PROSE. A figure declaration proves that a DECLARED value
+#: re-executes; it says nothing about the numbers written in the brief's own
+#: sentences, which is where the defect that created task V6 lived.
+_NUMERIC_CLAIM = re.compile(r"(?<![\w.])(\d+\.\d+)(?=\D|$)")
+
+
+def undeclared_figures(text: str) -> list[str]:
+    """Numeric claims in the prose that no declared figure backs.
+
+    WHY THIS EXISTS, task V6 reopened 2026-09-11 by BOTH panel seats in round 11,
+    independently. `check_declared_figures` re-executes every DECLARED figure and
+    refuses when the script does not print it -- which is sound, and which the
+    round-4 defect walks straight past. That defect was a WRONG INSTRUMENT VALUE
+    TYPED IN PROSE: the brief said `gamma` is 0.451 and it is 0.415413. Declaring
+    nothing keeps the gate green. A brief can state a false number beside a true
+    declaration and pass every check.
+
+    IT REPORTS, IT DOES NOT REFUSE, and that is deliberate rather than timid. The
+    precedent is `check_currency` in this same module: refusing here would refuse
+    every brief in the archive -- the 6 most recent carry 1, 2, 4, 7, 8 and 56
+    prose claims each -- and this module's own words are that a guard which
+    refuses a correct brief teaches people to skip the validator.
+
+    THE BOUNDARY IS CONTEXT-SENSITIVE, and getting it wrong is the round-7 defect
+    documented in this file: a trailing `.` ends a sentence and must not be read
+    as part of the number, so `0.415413.` is the number `0.415413`. The
+    look-behind and look-ahead here allow a `.` only when a digit follows it.
+    """
+    declared = {m.group("value").strip() for m in FIGURE.finditer(text)}
+    declared_numbers = set()
+    for d in declared:
+        declared_numbers |= set(_NUMERIC_CLAIM.findall(d))
+    # The declaration comments themselves are not prose.
+    prose = FIGURE.sub(" ", text)
+    seen, out = set(), []
+    for m in _NUMERIC_CLAIM.finditer(prose):
+        v = m.group(1)
+        if v in declared_numbers or v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+    return out
+
+
 def check_currency(brief_path, repo: Path = REPO) -> list[str]:
     """Is the brief OLDER than an artefact it tells the panel about?
 
@@ -414,6 +458,19 @@ def main() -> int:
         print("  It compares MODIFICATION TIMES only: it cannot see a change to "
               "something the\n  brief describes without naming.", file=sys.stderr)
     text = a.brief.read_text(encoding="utf-8", errors="replace")
+    # TASK V6, SECOND HALF: numeric claims in the PROSE that nothing re-executes.
+    # Reported, never refused -- see `undeclared_figures`.
+    _bare = undeclared_figures(text)
+    if _bare and not a.quiet:
+        print(f"panel-brief: FIGURE COVERAGE — {len(_bare)} numeric claim(s) in "
+              f"the prose are backed by no declared figure:", file=sys.stderr)
+        print("  " + ", ".join(_bare[:12])
+              + (f", ... and {len(_bare) - 12} more" if len(_bare) > 12 else ""),
+              file=sys.stderr)
+        print("  A declared figure is RE-EXECUTED. A number typed in a sentence "
+              "is not,", file=sys.stderr)
+        print("  and that is exactly how `gamma is 0.451` reached 2 seats when "
+              "it is 0.415413.", file=sys.stderr)
     problems = validate(text)
     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
     problems += check_declared_figures(text)
