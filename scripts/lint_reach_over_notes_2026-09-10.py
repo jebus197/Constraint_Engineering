@@ -127,6 +127,25 @@ def _revision_declaring(rev: str) -> frozenset[str]:
         if len(parts) < 3:
             continue
         path, text = parts[1], parts[2]
+        # `.md` ONLY, MATCHING THE LIVE SELECTOR. `_v17_notes()` globs
+        # `NOTES.rglob("*.md")`; this half asked git grep for the foot-line
+        # across `experimental_notes/` with NO extension filter, so any file
+        # CONTAINING the string counted as a note.
+        #
+        # It became live on 2026-09-11, when the panel record mirror committed
+        # 364 files under `experimental_notes/evidence/`. Two of them are
+        # `seat_proposals.diff` -- a seat's proposed patch that happens to
+        # include a note's foot-line in its diff body -- so HEAD declared 52
+        # notes where the working tree declared 50, and the comparison failed in
+        # a fresh clone. The 2 extra were diffs, not notes.
+        #
+        # This file's own docstring says "THE SELECTOR IS IMPORTED, NOT RETYPED
+        # (`execute-do-not-grep`)", and it is, for the live half. The HEAD half
+        # retyped the POPULATION instead of the pattern, which is the same
+        # defect one level out: 2 expressions of "which files are notes", and
+        # only 1 of them was the imported one.
+        if not path.endswith(".md"):
+            continue
         m = re.search(r"CDSFL note standard v(\d+)\.(\d+)", text)
         if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
             hits.add(path)

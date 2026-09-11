@@ -40,6 +40,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+DEST_ROOT = REPO / "experimental_notes" / "evidence"
 
 
 def _mirror_module():
@@ -88,11 +89,25 @@ def resolve(rel: str) -> dict:
         raise
     if len(p.parts) < 3 or p.parts[0] != "bench" or p.parts[1] != "logs":
         return out
-    round_dir = REPO / "bench" / "logs" / p.parts[2]
-    if not round_dir.is_dir():
-        return out
-    cand = m.dest_for(round_dir) / m.mirrored_name(Path(p.name))
-    if cand.is_file():
+
+    # THE MIRROR IS FOUND BY SEARCHING THE TRACKED TREE, NOT BY COMPUTING A PATH
+    # FROM THE ORIGINAL DIRECTORY -- and the first version did the latter.
+    #
+    # `dest_for()` takes the round DIRECTORY under `bench/logs`, and in a clone
+    # that directory is usually absent: measured 2026-09-11, 14 of the 78 review
+    # directories survive a clone -- all `confer_*` and `pr_*` committed before
+    # `.gitignore:41` -- and **0 post-ruling rounds do**. So the resolver
+    # returned "no mirror" for every relocated record, and only ever worked on
+    # the maintainer's machine.
+    #
+    # That is the A2 defect class inside the tool built to close A2: an
+    # instrument that reads what the maintainer has rather than what a reader
+    # has. The mirror is TRACKED, so it is present in every checkout, and
+    # searching for it there is the route a reader can actually take.
+    wanted = m.mirrored_name(Path(p.name))
+    hits = sorted(DEST_ROOT.glob(f"*/{p.parts[2]}/{wanted}"))
+    if hits:
+        cand = hits[0]
         out["mirror"] = str(cand.relative_to(REPO))
         if src.is_file():
             out["identical"] = _sha(cand) == _sha(src)
