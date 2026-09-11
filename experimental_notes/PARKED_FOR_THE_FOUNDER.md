@@ -148,13 +148,13 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 
 Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to leave it.
 
-## 3 committed scripts are reached by nothing at all: wire or retire is your ruling
+## 2 committed scripts are reached by nothing at all: wire or retire is your ruling
 
 *Parked 2026-09-11T10:18:10+01:00.*
 
 The additive standard's own symmetric half says an addition that nothing reaches is not additive. `test_additive_standard_2026-09-07.py` ratchets config fields nothing READS; scripts had no equivalent, and this project's record holds 11 confirmed defects that were additions doing nothing.
 
-**Measured 2026-09-11: 119 of 122 scripts are reached, 97.5410%, Wilson [93.0192%, 99.1602%], Clopper-Pearson [92.9818%, 99.4900%]**, both intervals cross-checked by 2 tools. **3 of the original 6 came off by being WIRED rather than ruled on**, and a test now executes all 3; all 3 still work. **Wiring is not the half that needs your ruling**; the removal clause is. The remaining 3 stay parked and unrun: 2 write files outright, and the third spawns a script carrying 10 write calls behind a `--dry-run` flag, so its safety rests on a different script honouring that flag — a reasonable bet, and not one worth taking against a preserved archive.
+**Measured 2026-09-11: 120 of 122 scripts are reached, 98.3607%, Wilson [94.2195%, 99.5493%], Clopper-Pearson [94.2036%, 99.8008%]**, both intervals cross-checked by 2 tools. **4 of the original 6 came off by being WIRED rather than ruled on**, and a test now executes all 4; all 4 still work. **Wiring is not the half that needs your ruling**; the removal clause is. **The 4th came off because the reason for parking it was a BET rather than a fact** — it spawns another script behind a `--dry-run` flag, and that script carries 10 write calls, so its safety rested on a different program honouring a flag. That is now proven: the guard sits at line 424 of the spawned script's `main()` with no write call and no local function call before it, and running the pair in a throwaway clone changes 0 paths. **The last 2 write files outright with no flag to turn that off**, so there is nothing to verify and they stay parked and unrun.
 
 **2 OF THE ORIGINAL 8 CAME OFF THE LIST THE SAME DAY, AND THEY NEEDED NO RULING.** Their figures had simply travelled without them, which is a defect with a fix rather than a disposition awaiting a decision. `measure_toolonly_status_without_falsifier.py` produced "118 of 864 archived findings with a tool-only status have no falsifier code, 13.66%, Wilson [11.53%, 16.11%]", quoted in the 2026-09-05 morning report and in `resources/RECOVERY.md` with no producer named anywhere; its own docstring calls that the fourth repeat of the same omission. `v2_vs_v3_runner_2026-09-10.py` produced the 153-definition comparison quoted in task 8.2 and carries `measured-rate-travels-with-its-script` in its docstring while nothing outside an archival panel record named it. Naming the producer discharges your ruling and wires the script in the same act.
 
@@ -164,7 +164,6 @@ The additive standard's own symmetric half says an addition that nothing reaches
 
     scripts/quarantine_to_candidate.py
     scripts/readjudicate_pairs.py
-    scripts/scope_remaining_adjudication_and_materiality.py
 
 **NOTHING WAS DELETED, and that is deliberate.** The additive standard's removal clause requires a committed measurement showing a replacement dominates on a named property, and no such measurement exists for any of these. Deleting a measurement script also risks breaking `measured-rate-travels-with-its-script` for a figure quoted somewhere the scan cannot see. The disposition is yours, exactly as it was for `update_drift` under I31: wire it, or retire it with an explicit entry.
 

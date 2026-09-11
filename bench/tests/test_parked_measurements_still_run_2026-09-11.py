@@ -8,7 +8,7 @@ anything is taken away, while its other half — *"an addition that nothing reac
 is not additive either"* — is discharged by giving a script a caller, and a test
 that EXECUTES it is exactly that caller.
 
-SO THESE 3 ARE WIRED HERE, and the other 3 are not. The difference is measured
+SO THESE 4 ARE WIRED HERE, and the other 2 are not. The difference is measured
 rather than assumed: an AST walk over all 6 found that these 2 contain no write
 call, no subprocess spawn and no absolute path, so running them cannot change
 anything. A 3rd joined them after asking WHICH processes the spawners run:
@@ -17,11 +17,18 @@ read-only, and writes nothing. Classifying it by the SHAPE of the call rather
 than by what the call does was a coarser version of the mistake this session
 keeps finding.
 
-THE REMAINING ONES STAY PARKED AND UNRUN, and are NOT NAMED HERE. 2 write files
-outright; another spawns a script that carries 10 write calls with a `--dry-run`
-flag, so its safety rests on a different script honouring that flag -- a
-reasonable bet, and not one to take against a preserved archive, which the
-standing instruction exists because someone already lost one.
+THE REMAINING 2 STAY PARKED AND UNRUN, and are NOT NAMED HERE. Both write files
+outright, with no flag to turn that off, so there is nothing to verify: running
+them would do the thing the standing instruction exists to prevent.
+
+A THIRD WAS PARKED AND HAS BEEN RELEASED, because the reason for parking it was a
+BET rather than a fact. It spawns another script behind a `--dry-run` flag, and
+that script carries 10 write calls -- so its safety rested on a different program
+honouring a flag. That is now proven rather than assumed: the spawned script's
+dry-run guard sits at line 424 of its `main()`, with no write call and no
+locally-defined function called before it, and running the pair in a throwaway
+clone changes 0 paths. "Reasonable bet" was the right call at the time and the
+wrong place to stop.
 
 THEY ARE UNNAMED FOR A MEASURED REASON. Writing a script's path into a tracked
 file makes `scripts_are_reached_2026-09-11.py` count it as REACHED, because a
@@ -60,6 +67,15 @@ WIRED = [
     # both read-only, and it has no write call at all -- so the "it spawns
     # processes" objection that parked it does not survive the question.
     ("scripts/inventory_2026_09_06.py", "programme inventory"),
+    # ADDED after the `--dry-run` bet was replaced by a proof. This script spawns
+    # `adjudicate_by_repair.py --dry-run`, and that script carries 10 write calls,
+    # so parking it was reasonable while its safety rested on another program
+    # honouring a flag. It no longer rests on that: an AST walk over the spawned
+    # script's `main()` shows the dry-run guard at line 424 with NO write call and
+    # NO locally-defined function called before it, and running it in a throwaway
+    # clone changes 0 paths. A bet became a measurement.
+    ("scripts/scope_remaining_adjudication_and_materiality.py",
+     "adjudication scope"),
 ]
 
 
@@ -79,7 +95,7 @@ class TestTheyStillRun:
                 f"in its docstring:\n{r.stdout[:600]}")
 
     def test_neither_changes_the_working_tree(self):
-        """The reason these 3 and not the other 3. An AST walk found no write
+        """The reason these 4 and not the other 2. An AST walk found no write
         call, no subprocess and no absolute path in either; this asserts the
         consequence rather than trusting the scan."""
         before = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,

@@ -6,24 +6,24 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED 2026-09-11: **119 of 122 scripts are reached -- 97.5410%, Wilson
-[93.0192%, 99.1602%], Clopper-Pearson [92.9818%, 99.4900%]**, both intervals
+MEASURED 2026-09-11: **120 of 122 scripts are reached -- 98.3607%, Wilson
+[94.2195%, 99.5493%], Clopper-Pearson [94.2036%, 99.8008%]**, both intervals
 cross-checked by 2 tools.
 
 PINNED TO A COMMIT WAS STILL NOT ENOUGH, which is the 4th statement of this
-figure in a day. 114 of 120, 115 of 121, 116 of 122, 118 of 122, now 119 of 122 --
+figure in a day. 114 of 120, 115 of 121, 116 of 122, 118 of 122, 119 of 122, now 120 of 122 --
 the first 3 moved because scripts were ADDED, and this one moved because 2
 orphans were WIRED. A figure over a set that is being actively worked on is a
 snapshot of the moment it was taken, and no amount of dating or pinning changes
 that. Re-run the producer.
 
-3 OF THE 6 ORPHANS WERE WIRED RATHER THAN RULED ON, 2026-09-11. Wiring is not the
+4 OF THE 6 ORPHANS WERE WIRED RATHER THAN RULED ON, 2026-09-11. Wiring is not the
 half that needs the founder: the removal clause demands a committed measurement
 before anything is taken away, while "an addition that nothing reaches is not
 additive either" is discharged by giving a script a caller.
-`bench/tests/test_parked_measurements_still_run_2026-09-11.py` EXECUTES all 3, and
-all 3 still work. The other 3 write files, or spawn a script that writes, so they
-stay parked and unrun -- running the scripts directory as a survey once overwrote a preserved
+`bench/tests/test_parked_measurements_still_run_2026-09-11.py` EXECUTES all 4, and
+all 4 still work. The other 2 write files outright, with no flag to turn that
+off, so they stay parked and unrun -- running the scripts directory as a survey once overwrote a preserved
 archive, and that instruction stands.
 
 THE RATCHET IS THE DURABLE CLAIM. The percentage is a snapshot of one revision;
@@ -149,7 +149,6 @@ SELF_REFERENTIAL = (
 UNREACHED = (
     "scripts/quarantine_to_candidate.py",
     "scripts/readjudicate_pairs.py",
-    "scripts/scope_remaining_adjudication_and_materiality.py",
 )
 
 
