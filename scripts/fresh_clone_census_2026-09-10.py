@@ -21,6 +21,19 @@ The census is a committed table rather than a parse of a log, because a log is
 not evidence of a diagnosis -- it is evidence of a symptom. Each row names what
 broke, the mechanism, and the repair, and `--check` re-runs the named tests in
 this checkout so the table cannot quietly go stale.
+
+THE CAUSE KEY IS THE ORIGINAL DIAGNOSIS, AT THE 2026-09-10 CENSUS, and the
+proportion below is about that census -- not a running total. Two rows carry a
+RECURRED CLONE-ONLY 2026-09-11 note in their repair text and keep their
+`both-trees` key, because that is what they were when they were counted.
+Re-keying them would silently change a published proportion to mean something
+else, which is the defect this whole file was written to stop.
+
+WHAT `--check` CAN AND CANNOT SEE, stated rather than implied. It re-runs the
+named tests HERE, in the maintainer's checkout. That is the tree whose greenness
+was never in doubt, so it catches a row that has gone stale and CANNOT catch a
+clone-only regression. `scripts/fresh_clone_suite_2026-09-11.py` is the one that
+clones.
 """
 from __future__ import annotations
 
@@ -91,17 +104,31 @@ CENSUS = [
     ("bench/tests/test_citation_content_2026-09-10.py", "both-trees",
      "notes cite the runner by line number; editing the runner moves every "
      "symbol below the edit, and the guard's own --fix was run by nothing",
-     "the hook runs --fix at stage 0, repair before check"),
+     "the hook runs --fix at stage 0, repair before check. RECURRED CLONE-ONLY "
+     "2026-09-11: the repair wrote the WORKING TREE and never staged what it "
+     "wrote, so every commit shipped the unrepaired file and the repair lagged "
+     "1 commit behind -- green here, red in every clone. hooks/stage0_restage.sh"),
     ("bench/tests/test_experiment_run_ledger_2026-08-26.py", "both-trees",
      "the ledger is derived and cites the runner by line, so it goes stale on "
      "any runner edit; and a clone holds fewer artefacts than it declares",
      "the ledger declares its corpus, --check tolerates a SMALLER one only, and "
-     "the hook refreshes it at stage 0 -- refusing to shrink it"),
+     "the hook refreshes it at stage 0 -- refusing to shrink it. RECURRED "
+     "CLONE-ONLY 2026-09-11 for the same reason as the citation guard above: "
+     "the refresh was never staged. hooks/stage0_restage.sh"),
     ("bench/tests/test_immune_memory_consumption.py", "both-trees",
      "study_programme_report (task 9.1) reads sk_result to count "
      "threshold_shadow blocks and was not in the allowlist",
      "admitted with the evidence; the R_k assertion that actually holds the "
      "line is unchanged"),
+    ("bench/tests/test_measurement_survey_is_safe_2026-09-11.py", "help-ignored",
+     "the survey runs every measurement script with --help and judged the "
+     "answer by EXIT CODE. 30 of 53 scripts had no argument parser at all, so "
+     "--help ran the whole measurement and exited 0, which read as a clean "
+     "answer. Here they all exited 0; in a clone 2 of them failed, because the "
+     "work they silently did needs untracked archives and a .env",
+     "scripts/_cli_help.py answers --help before any work and refuses an "
+     "unrecognised argument; the survey now requires a `usage:` line, not an "
+     "exit code. 0 of 54, measured by scripts/help_is_answered_2026-09-11.py"),
     ("bench/tests/test_panel_cwd_reaches_worker_threads_2026-09-08.py", "both-trees",
      "the guard searched a 400-character window of SOURCE for the worker-mirror "
      "assignment; a comment grew, the window stopped reaching, and it went red "
@@ -162,6 +189,9 @@ def main() -> int:
     print(f"  Clopper-Pearson 95% : [{lo_c:.4%}, {hi_c:.4%}]  (statsmodels/beta)")
     print(f"  Clopper-Pearson 95% : [{lo_c:.4%}, {hi_s:.4%}]  (scipy cross-check, "
           f"upper agrees to {abs(hi_s - hi_c):.1e})")
+    print("  (cause keys are the ORIGINAL 2026-09-10 diagnosis; the 2 rows that "
+          "recurred\n   clone-only on 2026-09-11 keep their key and say so in "
+          "their repair text)")
     print(f"\nthe other {n - clone_only} were red in the MAINTAINER'S tree too, "
           f"which the entry's premise denied.")
 

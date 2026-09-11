@@ -80,8 +80,15 @@ def working_tree_is_clean(repo: Path = REPO) -> tuple[bool, str]:
     dirty = [ln for ln in r.stdout.splitlines() if ln.strip()]
     if not dirty:
         return True, "clean"
-    return False, f"{len(dirty)} uncommitted path(s): " + ", ".join(
-        ln[3:] for ln in dirty[:6]) + (" ..." if len(dirty) > 6 else "")
+    shown = [ln[3:] for ln in dirty[:6]]
+    more = len(dirty) - len(shown)
+    # STATE THE REMAINDER. A list cut to 6 under a heading that reads as
+    # complete is a silent falsehood; " ..." says there is more and not how
+    # much. Held by test_operational_scripts.py::
+    # TestTruncatedListsStateTheirRemainder, which caught this the hour it was
+    # written.
+    tail = f", and {more} more" if more else ""
+    return False, f"{len(dirty)} uncommitted path(s): " + ", ".join(shown) + tail
 
 
 def head(repo: Path = REPO) -> str:
@@ -121,9 +128,12 @@ def run(targets: list[str], keep: bool = False,
     m = _RESULT_RE.findall(blob)
     line = m[-1].strip() if m else "(pytest printed no result line)"
     failed = [ln for ln in blob.splitlines() if ln.startswith(("FAILED", "ERROR"))]
+    shown, more = failed[:40], max(0, len(failed) - 40)
+    if more:
+        shown.append(f"... and {more} more FAILED/ERROR line(s) not shown")
     if not keep:
         shutil.rmtree(tmp, ignore_errors=True)
-    return p.returncode, line, "\n".join(failed[:40])
+    return p.returncode, line, "\n".join(shown)
 
 
 def main() -> int:

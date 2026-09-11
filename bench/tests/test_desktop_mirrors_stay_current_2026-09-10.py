@@ -242,23 +242,56 @@ class TestTheHookRefreshesButCannotRefuse:
         assert "sync_desktop_mirrors.py" in src, (
             "the hook does not refresh the mirrors, so they will drift again")
 
-    def test_the_refresh_stage_cannot_exit_non_zero(self):
-        """A convenience copy must never block a commit.
+    #: Every stage-0 block that REPAIRS something. None of these may refuse.
+    REPAIR_BLOCKS = (
+        "scripts/sync_desktop_mirrors.py",
+        "scripts/experiment_run_ledger.py",
+        "scripts/citation_content_guard_2026-09-10.py",
+    )
 
-        Parsed as a block rather than grepped for `exit 1`: the hook contains
-        many legitimate refusals earlier, and this asserts only about the stage
-        that was added for the mirrors.
-        """
+    def _block(self, src: str, script: str) -> str:
+        """The `if [ -f <script> ]; then ... fi` block, and nothing else."""
+        start = src.index(f"if [ -f {script} ]")
+        end = src.index("\nfi\n", start) + len("\nfi\n")
+        return src[start:end]
+
+    def test_no_stage_zero_REPAIR_can_exit_non_zero(self):
+        """A repair must never block a commit. Narrowed 2026-09-11, and the
+        narrowing is a tightening rather than a loosening.
+
+        It used to slice the WHOLE of stage 0 and forbid `exit 1` anywhere in
+        it. That was sound while stage 0 held only repairs. It stopped being
+        sound when stage 0 gained something that is NOT a repair: a check that
+        `hooks/stage0_restage.sh` is present. Without that file the repairs
+        write the working tree and never reach the commit, so every commit ships
+        unrepaired content and every clone at HEAD is broken -- measured
+        2026-09-11 as 3 failures in a clone against 0 here. That is an
+        infrastructure fault, and the hook's own header already says an
+        infrastructure fault blocks, loudly.
+
+        So the invariant is now stated on the thing it was always about: each
+        REPAIR block individually. Three blocks are checked instead of one
+        region, which is a stronger statement than the old one, not a weaker."""
         src = HOOK.read_text(encoding="utf-8")
-        # BOUNDED AT BOTH ENDS. This used to slice from the marker to EOF, which
-        # was only sound while the stage was last. It is now first, and an
-        # unbounded slice would sweep in every legitimate refusal after it and
-        # fail for the wrong reason.
+        for script in self.REPAIR_BLOCKS:
+            block = self._block(src, script)
+            assert "exit 1" not in block and "exit 2" not in block, (
+                f"the stage-0 repair running {script} can refuse a commit; a "
+                f"repair must repair and report, never block:\n{block}")
+
+    def test_the_only_stage_zero_refusal_is_the_missing_helper(self):
+        """ANTI-DRIFT. The test above is per block, so a new refusal added
+        BETWEEN the blocks would not be seen by it. This counts them."""
+        src = HOOK.read_text(encoding="utf-8")
         i = src.index("# STAGE 0 --")
         stage = src[i:src.index('MISSING=""', i)]
         assert "sync_desktop_mirrors.py" in stage, "wrong block sliced"
-        assert "exit 1" not in stage, (
-            "the mirror-refresh stage can refuse a commit; it must not")
+        assert stage.count("exit 1") == 1, (
+            f"stage 0 now contains {stage.count('exit 1')} refusals; exactly 1 "
+            f"is expected, the missing-helper check. Anything else must be "
+            f"argued here before it is added.")
+        assert "RESTAGE_LIB" in stage, (
+            "the 1 permitted refusal is no longer the missing-helper check")
 
     def test_the_refresh_runs_BEFORE_the_guard_that_checks_mirrors(self):
         """THE ORDERING DEFECT, 2026-09-10. A repair below its own check.
