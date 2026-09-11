@@ -215,6 +215,22 @@ A third followed from the repair. `test_future_timestamp_guard` grepped for the 
 
 Reversible: revert `a72c1c6`. No note was edited — the seat's sentence stands exactly as `fable` wrote it, which was the point.
 
+### Pass 13 — panel round 15 broke 2 of 5 fixes, and the sharpest finding was a guard that turned itself off. Commit `9348514`
+
+`cc2` and `fable`, free seats only, **0 paid dispatches**. Both returned SPLIT, both reproduced their findings, both delivered fixes rather than problems. Every finding was re-verified here by execution before being acted on, because a fix proposed by a panel seat is a hypothesis until it has been run, exactly as one written locally is.
+
+**THE DESKTOP GUARD FAILED OPEN.** Its first line treated "this is not the passwd user's Desktop" as proof that a drill was running, and returned *allowed* before any other rule was consulted. Under `sudo` this platform keeps `HOME` while the numeric user becomes root, so the passwd Desktop becomes root's, the paths differ, and **the guard classified the highest-privilege run there is as a drill and switched both its remaining rules off**. It failed in the permissive direction, which is the one that lets a clone through. Both seats found it independently and both rated it the sharpest finding of the round. 2 further bypasses followed from the same design: a clone outside the scratch tree satisfied neither rule and replayed the original incident exactly, and with the temporary-directory variable unset a clone in the usual place escaped the temp rule entirely. The decision is now a function of explicit inputs — which is what made all 3 cases reachable by a test — the drill exemption requires displacement INTO scratch rather than mere difference, unreliable identification fails closed, and a marker on the Desktop names the single checkout allowed to write it. Verified end-to-end in all 4 directions after committing. **The remaining limit is written into a test rather than hidden**: with no marker, a clone outside scratch is still admitted.
+
+**A TALLY IS ORDER-BLIND AND AN UNCLOSED REGION IS A FACT ABOUT ORDER.** The balance check written that morning compared the number of opening markers with the number of closing ones, so a stray close before an unclosed open gave 1 and 1 and reported BALANCED while a region was genuinely open and genuinely exempting to end of file — the silent amnesty it was written to end, unchanged, inside the guard meant to end it. A close and an open inside a single paragraph ended the exemption instead of restarting it, because the old walk kept 1 flag per paragraph and applied the close last wherever it sat; **a seat's quoted words were then counted as the note's own, which is precisely the task V8 defeat**. 2 opens in 1 paragraph counted as 1. One ordered walk now, read by both consumers. Corpus differential: **402 notes, 0 whose counted total moved**.
+
+**2 findings were against work done hours earlier and are worth naming plainly.** A control shipped that morning was red in every clone made under the platform's temporary-file root — exactly where the reproducibility harness clones — confirmed by cloning there and running it: 1 failed, 20 passed. It had also been contaminating the intermittent-failure record sitting beside it, since 6 of the 8 censused runs are clones. And a test written to pin an asymmetry left a mutant alive: it covered 3 of the 4 cases in the table, and the uncovered direction was the one the mutant flipped. **3 of 4 quadrants is not a decision table.**
+
+**The panel harness itself crashed after both seats had replied**, `diff -u` under text mode raising on a byte that is not valid UTF-8, so the artefact carrying the seats' FIXES was never written. The replies survived on disk. Reproduced with that exact byte before fixing.
+
+**AND THE CLONE HARNESS DISCARDED THE EVIDENCE IT WAS EXTENDED TO CAPTURE.** The I38 flake reproduced at `37cc328` — the first reproduction since diagnostics were added to its assertion for exactly that moment — and the run reported the test's NAME and nothing else. That is why the entry has read OBSERVED rather than diagnosed across 8 runs: not because the state was unavailable, but because the instrument dropped it. Re-counted with the new run: **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%], Clopper-Pearson [8.5233%, 75.5137%]. Both seats made the same point unprompted: 8 observations spanning a factor of 5 is a description of 8 runs, not a rate.
+
+Reversible: revert `9348514`, `3b1cb37`, `68bf559`, `4917b5e`. The only behaviour removed is mirroring the founder's Desktop from a clone, a test, or a second checkout, none of which was ever intended. **A marker file `.cdsfl_canonical_checkout` was written to the Desktop**, naming this checkout; deleting it restores the previous behaviour exactly.
+
 ---
 
 ## STANDING NUMBERS
@@ -223,11 +239,14 @@ Reversible: revert `a72c1c6`. No note was edited — the seat's sentence stands 
 |---|---|
 | Full suite | measured at each commit with `python3 -m pytest bench/tests/ -q --netguard-strict`; see the closing report for the current figure |
 | Task list | **2026-09-11: 92 entries, 81 done, 2 open, 4 blocked, 1 deferred, 4 withdrawn** (was 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn) |
-| Commits since 2026-09-10 00:00 | 28 |
-| Commits on 2026-09-11 | 47 |
+| Commits since 2026-09-10 00:00 | 127 |
+| Commits on 2026-09-11 | 61 |
 | Files deleted today | 0 |
-| Paid model dispatches today | **0** — panel rounds 3 and 4 both ran `PANEL_ONLY=cc2,fable`, Max subscription only |
-| Paid dispatches, WHOLE ARCHIVE | **30 across 16 of 78 review directories**, latest 2026-09-05; **0 of the 24 directories since**, Wilson [0.0000%, 11.6970%]. The figure read 10 until 2026-09-11, because the instrument globbed `panel_*` and read a missing `route` field as free |
+| Paid model dispatches today | **0** — panel rounds 3, 4, 14 and 15 all ran `PANEL_ONLY=cc2,fable`, Max subscription only |
+| Paid dispatches, WHOLE ARCHIVE | **30 across 79 review directories**, latest 2026-09-05; **0 of the 25 directories since**, Wilson [0.0000%, 13.3192%]. The figure read 10 until 2026-09-11, because the instrument globbed `panel_*` and read a missing `route` field as free |
+| Scripts reached by a caller, a citation or a document | **115 of 121 = 95.0413%**, Wilson [89.6029%, 97.7078%]. Producer: `scripts/scripts_are_reached_2026-09-11.py`. The denominator grows; re-run rather than quote |
+| I38 artefact-classifier flake | **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%]. Producer: `scripts/flake_rate_2026-09-11.py`. 8 observations is a description of 8 runs, not a rate |
+| Panel records mirrored | **79 of 79** round directories have a tracked copy |
 | FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |
 
 Counts in this table are produced by `scripts/task_list_markers.py` and `git log`, not typed.
