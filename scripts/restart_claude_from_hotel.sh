@@ -37,7 +37,15 @@ for a in "$@"; do
     # AN UNRECOGNISED FLAG MUST NOT READ AS SUCCESS. This project spent 118 days
     # on that defect; a script you run from a hotel is the last place to repeat it.
     *) echo "unknown option: $a" >&2
-       echo "try: $0 --help" >&2; exit 2 ;;
+       echo "try: $0 --help" >&2
+       # NOTHING HAS RUN AT THIS POINT, so the reassurance is true here and is
+       # the one a reader most needs after a typo. Entry 10.1 claimed "every
+       # failure path says NOTHING WAS CHANGED" and this path did not -- found by
+       # the adversarial audit of 2026-09-11. Making the universal TRUE is worth
+       # more than narrowing it. It is deliberately NOT added after the restart
+       # step, where it would be false.
+       echo "  NOTHING WAS CHANGED." >&2
+       exit 2 ;;
   esac
 done
 

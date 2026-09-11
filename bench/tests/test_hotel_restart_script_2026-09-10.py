@@ -124,3 +124,63 @@ class TestTheDesktopCopyMatches:
         assert DESKTOP.read_text(encoding="utf-8") == src, (
             "the copy he actually runs has drifted from the versioned one; the "
             "repository copy is canonical by founder ruling of 2026-08-06")
+
+
+class TestEveryFailurePathSaysNothingWasChanged:
+    """Entry 10.1 claimed a universal that one path did not satisfy.
+
+    It read *"every failure path says NOTHING WAS CHANGED"*. The unknown-flag
+    path (`exit 2`) did not say it -- found by the adversarial audit of the list's
+    DONE entries on 2026-09-11, and confirmed by reading the script rather than
+    taking the finding on trust.
+
+    THE UNIVERSAL WAS MADE TRUE RATHER THAN NARROWED, because at that point
+    nothing has run, so the reassurance is accurate and is the one a reader most
+    needs after a typo on hotel wifi. It is deliberately NOT added after the
+    restart step, where it would be false.
+    """
+
+    def test_every_nonzero_exit_is_preceded_by_the_reassurance(self):
+        import re
+        src = REPO_COPY.read_text(encoding="utf-8")
+        lines = src.splitlines()
+        missing = []
+        for i, ln in enumerate(lines):
+            m = re.search(r"\bexit ([1-9])\b", ln)
+            if not m:
+                continue
+            # COMMENTS STRIPPED. The first version scanned the raw window, and
+            # the explanatory COMMENT above `exit 2` contains the phrase -- so
+            # deleting the real `echo` left this test green. A guard reading its
+            # own documentation as evidence of the thing documented is the defect
+            # this session found repeatedly; it survived a mutation here before
+            # being caught.
+            window = "\n".join(
+                ln.split("#", 1)[0] for ln in lines[max(0, i - 8):i + 1])
+            if "NOTHING WAS CHANGED" not in window:
+                missing.append(f"line {i + 1}: exit {m.group(1)}")
+        assert not missing, (
+            f"these failure exits do not say NOTHING WAS CHANGED: {missing}. "
+            f"Entry 10.1 states that as a universal, so either the path says it "
+            f"or the entry stops claiming it.")
+
+    def test_the_reassurance_is_not_claimed_after_the_restart(self):
+        """ANTI-VACUITY, and the reason the universal is safe to state at all.
+        After the restart step something MAY have changed, so the same string
+        there would be a lie. A version that printed it everywhere would satisfy
+        the test above and be worse than the defect it fixes."""
+        src = REPO_COPY.read_text(encoding="utf-8")
+        after = src.split("open -a Claude", 1)
+        if len(after) > 1:
+            assert "NOTHING WAS CHANGED" not in after[1], (
+                "the script claims nothing was changed AFTER restarting the "
+                "application, which is false")
+
+    def test_a_bad_flag_actually_exits_two_and_says_it(self):
+        """EXECUTED, not read. The path is safe to run: it exits before anything
+        happens, which is the whole reason the message is true there."""
+        import subprocess
+        r = subprocess.run(["bash", str(REPO_COPY), "--not-a-flag"],
+                           capture_output=True, text=True, timeout=120)
+        assert r.returncode == 2, (r.returncode, r.stderr[-300:])
+        assert "NOTHING WAS CHANGED" in r.stderr, r.stderr[-300:]
