@@ -189,3 +189,21 @@ The additive standard's own symmetric half says an addition that nothing reaches
 
 
 
+
+## A8 needs the founder's policy ruling on the 177 untracked bench/logs/ paths: track, relocate, or accept and label
+
+*Parked 2026-09-11T22:21:32+01:00.*
+
+
+
+## The triage script cannot see an entry that says "NEEDS A POLICY RULING"
+
+*Found 2026-09-11 22:23 BST while the Stop hook was pushing work on A8. Recorded, NOT fixed, because the instruction was to pause.*
+
+`scripts/blocker_triage.py` implements 2 of the 3 questions its own header names. It tests **does it block progress** (does another entry declare a dependency), and it tests **is this an action he must authorise** (`NEEDS_PERMISSION`, 2 patterns: irreversible things, and his machine or accounts). It does **not** test **is the item itself a decision only he can make**.
+
+So A8 — whose own committed text ends *"**NEEDS A POLICY RULING**: track them, relocate them, or accept and label them"* — triages as PARK with no permission flag. The Stop hook then reads PARK as "carry on", and pushes the assistant to do a thing that is, in the entry's own words, the founder's to decide. A19 is the same shape: a flag on/off design call, status TESTED, priority measured at 0 occurrences in 5,834 archived outcomes.
+
+**The consequence, which is the whole point of the hook.** Both remaining OPEN entries are rulings. The hook's message *"2 items are still OPEN and nothing is blocking. Do not stop here"* is therefore false at the entry level, and `hooks/work_not_narrate.py`, built to stop the assistant narrating instead of working, is instead pushing it to act on a decision the founder reserved to himself.
+
+**The fix is small and is not being applied unilaterally:** a third predicate that reads the entry's own declaration — `NEEDS A (POLICY )?RULING`, `THE FOUNDER'S`, `awaiting (his|the founder)` — and returns a DECISION flag alongside the verdict, so PARK-with-a-decision-flag is distinguishable from PARK-and-carry-on.
