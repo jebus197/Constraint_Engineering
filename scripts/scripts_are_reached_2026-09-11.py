@@ -146,9 +146,14 @@ DIAGNOSTIC = ("scripts/scripts_are_reached_2026-09-11.py",)
 #: Files that carry a ROLL-CALL but may also hold real references, so only the
 #: roll-call LINES are dropped. The parked note cites producers as well as listing
 #: orphans, so excluding it wholly would lose those citations.
-SELF_REFERENTIAL = (
-    "experimental_notes/PARKED_FOR_THE_FOUNDER.md",
-)
+#: EMPTY, 2026-09-11, and its own guard is what emptied it. The parked note
+#: carried a roll call of orphan paths while orphans existed; all 6 were wired
+#: that day, the roll call went with them, and
+#: `test_every_self_referential_file_carries_a_roll_call` then fired -- correctly.
+#: Listing a file that carries no roll call is pure over-exclusion: it drops every
+#: REAL reference the file holds and protects nothing, which is precisely the
+#: defect that guard exists to catch and which it caught here.
+SELF_REFERENTIAL: tuple[str, ...] = ()
 
 #: Measured 2026-09-11. A RATCHET: it may fall, never rise. Raising it means a
 #: new script exists that nothing calls, nothing cites and no document names.
