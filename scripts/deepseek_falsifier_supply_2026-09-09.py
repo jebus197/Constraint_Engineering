@@ -34,8 +34,17 @@ every seat scored 100%, including on empty text. Checked by feeding it an empty
 string before any figure was believed.
 """
 import json, pathlib, re, collections, sys
-REPO = pathlib.Path("/Users/georgejackson/Developer_Projects/Constraint_Engineering")
+# THE REPOSITORY THIS FILE IS IN. See the note in
+# absorb_rule_disagreement_2026-09-05.py: an absolute path to the maintainer's
+# checkout makes a clone-only defect invisible, because the script measures
+# the maintainer's tree wherever it is launched from.
+REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO/"bench"))
+
+if __name__ == "__main__":
+    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    answer_help(__doc__, __file__)
+
 from bench.runner_core import extract_falsifiers
 
 per_model = collections.Counter(); with_fals = collections.Counter()

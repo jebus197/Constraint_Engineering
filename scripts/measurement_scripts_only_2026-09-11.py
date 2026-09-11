@@ -237,7 +237,23 @@ def survey(run: bool, timeout: int):
         try:
             r = subprocess.run([sys.executable, str(p), "--help"], cwd=REPO,
                                capture_output=True, text=True, timeout=timeout)
-            ok = r.returncode == 0
+            # EXIT 0 IS NOT AN ANSWER, and reading it as one hid 30 scripts.
+            #
+            # Measured 2026-09-11: of the 53 scripts this survey classed as
+            # measurements, 30 exited 0 with no usage line at all -- 56.6038%,
+            # Wilson [43.2654%, 69.0496%]. They have no argument parser, so
+            # `--help` was ignored, the whole measurement ran, and a successful
+            # run was counted as a clean answer to a question never asked. 2 of
+            # them showed up only in a fresh clone, where the work they silently
+            # did happened to fail, and those 2 were part of what made task A2's
+            # "a fresh clone is green" untrue.
+            #
+            # The predicate lives in scripts/_cli_help.py so this file and
+            # scripts/help_is_answered_2026-09-11.py cannot drift apart.
+            sys.path.insert(0, str(REPO / "scripts"))
+            from _cli_help import usage_line_present
+            ok = (r.returncode == 0
+                  and usage_line_present((r.stdout or "") + (r.stderr or "")))
         except subprocess.SubprocessError as exc:
             ok, r = False, None
             print(f"    {p.name}: {type(exc).__name__}")

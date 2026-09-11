@@ -7,8 +7,19 @@ compiles it, and calls it. Then calls (a) the falsifier-difference rule and
 import glob, itertools, json, re, sys, textwrap, types
 from pathlib import Path
 
-REPO = Path("/Users/georgejackson/Developer_Projects/Constraint_Engineering")
+# THE REPOSITORY THIS FILE IS IN, not the one the author happened to have.
+# It was `Path("/Users/.../Constraint_Engineering")`, an absolute path to the
+# maintainer's checkout, so running this script from a fresh clone measured
+# the MAINTAINER'S tree and reported it as the clone's result. A script that
+# cannot see the checkout it was launched from cannot fail in a clone, which
+# is how a clone-only defect stays invisible (task A2, 2026-09-11).
+REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "bench"))
+
+if __name__ == "__main__":
+    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    answer_help(__doc__, __file__)
+
 from bench.convergence_location import signature_similarity, stem_signature
 
 SRC = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")

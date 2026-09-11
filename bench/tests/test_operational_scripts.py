@@ -1365,12 +1365,25 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
             # the 12 parser-less scripts: 10 never read sys.argv at all, and 2
             # do. Those are different properties and both are assertable, so
             # neither needs skipping.
-            if "sys.argv" not in src:
+            # `answer_help(` COUNTS AS READING ARGV, added 2026-09-11.
+            #
+            # THE HOLE IT CLOSES, and it was opened by a fix. 28 scripts were
+            # wired to scripts/_cli_help.py that hour so that `--help` would be
+            # answered instead of triggering the whole measurement. None of them
+            # names `sys.argv`: the helper does. So all 28 landed in the branch
+            # below, were declared argv-free, and inherited a pass -- while
+            # `python3 scripts/track_record_audit.py --bogus` ran the full audit
+            # and exited 0, which is exactly the "118-day no-op" this test
+            # exists to refuse. A scanner that resolves 1 form of a thing and
+            # reports a false zero for the other; the 10th instance this
+            # session. The refusal is enforced inside `answer_help`, and this
+            # scan is taught to see the call.
+            if "sys.argv" not in src and "answer_help(" not in src:
                 # Argv-free: there is no unknown flag to reject because the
                 # script reads no arguments. Asserted as a POSITIVE property,
                 # so a later edit that starts reading argv lands in the branch
                 # below instead of quietly inheriting a pass.
-                assert "sys.argv" not in src
+                assert "sys.argv" not in src and "answer_help(" not in src
                 return
             # Reads argv with no parser, so it must still refuse an argument it
             # does not understand. Measured 2026-08-30:

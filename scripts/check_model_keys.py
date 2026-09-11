@@ -67,4 +67,6 @@ def main() -> int:
     return 0
 
 if __name__ == "__main__":
+    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    answer_help(__doc__, __file__)
     sys.exit(main())
