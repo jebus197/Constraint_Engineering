@@ -34,8 +34,20 @@ from bench import archive_corpus as corpus  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "panel_condition_compliance_2026-09-10.py"
-#: Rounds run under the section P ruling.
-UNDER_P = "2026-09-"
+#: The date Section P made a panel review a precondition on closing any entry.
+RULING = "2026-09-09"
+
+#: Seats that cost money, per this project's own routing table. Used ONLY as the
+#: fallback when a reply records no route at all.
+PAID_SEATS = ("cx", "cgpt", "ds")
+
+#: RETIRED 2026-09-11: `UNDER_P = "2026-09-"`, a SUBSTRING test on the directory
+#: name. It worked only by accident of naming. Post-ruling rounds are dated with
+#: dashes (`panel_round11_2026-09-11`) and pre-ruling September rounds with the
+#: compact form (`panel_maths_20260905T032107Z`), which contains no `2026-09-`,
+#: so the PAID round of 2026-09-05 fell outside the filter by luck rather than by
+#: design. One directory renamed to the dashed form and a paid round would have
+#: been asserted as running under the ruling. Dates are parsed and compared now.
 
 
 @pytest.fixture(scope="module")
@@ -46,18 +58,76 @@ def mod():
     return m
 
 
+def _round_date(name: str) -> str | None:
+    """A round's date from its own directory name, in both conventions."""
+    m = re.search(r"(20\d\d-\d\d-\d\d)", name)
+    if m:
+        return m.group(1)
+    c = re.search(r"(20\d{6})T\d{6}Z", name)
+    if c:
+        g = c.group(1)
+        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
+    return None
+
+
+def _review_dirs():
+    """Every directory holding review output, selected by CONTENT not by name.
+
+    IT GLOBBED `panel_*`, WHICH IS 46 OF 78, INSIDE A MONEY GUARD. The other 32
+    are the `confer_*`, `severity_*`, `track_record_*`, `bugzilla_*` and
+    `pr_*` reviews -- and 12 of those hold PAID seat replies. The assertion below
+    claims "no paid seat was dispatched in any round under Section P"; its
+    population was a naming convention adopted after the ruling, so a paid
+    dispatch into a differently-named directory would have been invisible to it.
+    The predicate is imported rather than reimplemented, because this file and
+    the compliance script drifting apart is the defect that produced 4 wrong
+    figures today.
+    """
+    import importlib.util as _ilu
+    spec = _ilu.spec_from_file_location(
+        "mirror_records", ROOT / "scripts" / "mirror_panel_records_2026-09-11.py")
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    logs = ROOT / "bench" / "logs"
+    if not logs.is_dir():
+        return []
+    return sorted(d for d in logs.iterdir() if mod.holds_review_output(d))
+
+
 def _replies():
+    """Every seat reply, INCLUDING those that record no route.
+
+    `if "route" in d` was a second narrowing in the same direction as the first.
+    Measured 2026-09-11: 20 of the 30 paid-named seat files in the archive carry
+    NO route field -- 66.6667%, Wilson [48.7801%, 80.7695%] -- every one a
+    `confer_*` or `track_record_pr_*` run from the older harness. Dropping them
+    made a money guard blind to exactly the rounds most likely to have cost
+    money. They are kept, and `_is_paid` decides by seat identity where the file
+    itself cannot say.
+    """
     out = []
-    for f in sorted((ROOT / "bench" / "logs").glob("panel_*/*.json")):
-        if f.name.endswith((".tools.json", "canonical_touched.json")):
-            continue
-        try:
-            d = json.loads(f.read_text(encoding="utf-8", errors="replace"))
-        except Exception:
-            continue
-        if isinstance(d, dict) and "route" in d:
-            out.append((f.parent.name, d))
+    for d in _review_dirs():
+        for f in sorted(d.glob("*.json")):
+            if f.name.endswith((".tools.json", "canonical_touched.json",
+                                "canonical_attribution.json")):
+                continue
+            try:
+                j = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            if isinstance(j, dict) and ("route" in j or "response" in j):
+                out.append((d.name, {**j, "_seat": f.stem}))
     return out
+
+
+def _is_paid(reply: dict) -> bool:
+    """A reply cost money if its route says so, or -- where it records none --
+    if the seat that produced it is a paid route. Conservative in the direction
+    that matters, exactly as task A5 settled for the containment alarm."""
+    route = reply.get("route")
+    if route:
+        return route != "claude_cli"
+    return reply.get("_seat") in PAID_SEATS
 
 
 class TestTheScriptRuns:
@@ -91,8 +161,8 @@ class TestP1NoPaidSeatWasEverDispatchedUnderTheRuling:
         # meaningful at any n >= 1 and trivially true at n = 0. A corpus argument
         # is a reason to doubt a rate, never a reason to stop looking for a
         # violation that is right there in the records you do hold.
-        paid = [(rnd, d["model"]) for rnd, d in _replies()
-                if UNDER_P in rnd and d.get("route") != "claude_cli"]
+        paid = [(rnd, d.get("model") or d["_seat"]) for rnd, d in _replies()
+                if (_round_date(rnd) or "") >= RULING and d.get("route") != "claude_cli"]
         assert paid == [], f"a paid seat was dispatched under the ruling: {paid}"
 
     def test_the_rounds_under_the_ruling_exist_at_all(self):
@@ -106,7 +176,7 @@ class TestP1NoPaidSeatWasEverDispatchedUnderTheRuling:
         fact about what a clone can check, and it now says so. The claim above
         skips WITH it, so the pair never separates into a vacuous pass.
         """
-        n = len([1 for rnd, _ in _replies() if UNDER_P in rnd])
+        n = len([1 for rnd, _ in _replies() if (_round_date(rnd) or "") >= RULING])
         reason = corpus.shortfall(n, 10, "panel seat replies under Section P")
         if reason:
             pytest.skip(reason)
@@ -115,15 +185,15 @@ class TestP1NoPaidSeatWasEverDispatchedUnderTheRuling:
 
 class TestP3SeatsUsedTheHarness:
     def test_every_reply_under_the_ruling_recorded_a_tool_call(self):
-        silent = [(rnd, d["model"]) for rnd, d in _replies()
-                  if UNDER_P in rnd and not int(d.get("n_tool_calls") or 0)]
+        silent = [(rnd, d.get("model") or d["_seat"]) for rnd, d in _replies()
+                  if (_round_date(rnd) or "") >= RULING and not int(d.get("n_tool_calls") or 0)]
         assert silent == [], (
             f"a seat returned prose with 0 recorded tool calls: {silent}. "
             f"P3 requires the harness be USED, not discussed")
 
     def test_the_condition_changed_behaviour_rather_than_describing_it(self):
         """If every round had always been tool-enabled, P3 would prove nothing."""
-        old = [d for rnd, d in _replies() if UNDER_P not in rnd]
+        old = [d for rnd, d in _replies() if (_round_date(rnd) or "") < RULING]
         reason = corpus.shortfall(len(old), 5, "pre-ruling panel seat replies")
         if reason:
             pytest.skip(reason)
@@ -155,7 +225,8 @@ DISAGREEMENT_RE = re.compile(
 
 class TestP5DisagreementIsPreserved:
     def test_most_replies_under_the_ruling_carry_their_own_disagreement(self):
-        under = [(rnd, d) for rnd, d in _replies() if UNDER_P in rnd]
+        under = [(rnd, d) for rnd, d in _replies()
+                 if (_round_date(rnd) or "") >= RULING]
         got = [(rnd, d["model"]) for rnd, d in under
                if DISAGREEMENT_RE.search(d.get("response", ""))]
         assert len(got) >= len(under) - 2, (
@@ -164,7 +235,8 @@ class TestP5DisagreementIsPreserved:
             f"before the field was in the brief")
 
     def test_the_misses_are_the_ones_we_think_they_are(self):
-        under = [(rnd, d) for rnd, d in _replies() if UNDER_P in rnd]
+        under = [(rnd, d) for rnd, d in _replies()
+                 if (_round_date(rnd) or "") >= RULING]
         missing = {rnd for rnd, d in under
                    if not DISAGREEMENT_RE.search(d.get("response", ""))}
         assert missing <= {"panel_roster_fix_2026-09-09"}, (
