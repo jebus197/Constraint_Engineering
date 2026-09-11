@@ -154,9 +154,17 @@ def main() -> int:
     by_file: dict[str, int] = {}
     for name, _fn, _ln, _h in rows:
         by_file[name] = by_file.get(name, 0) + 1
-    print(f"across {len(by_file)} file(s); the heaviest:")
-    for name, n in sorted(by_file.items(), key=lambda kv: -kv[1])[:12]:
+    ranked = sorted(by_file.items(), key=lambda kv: -kv[1])
+    shown = ranked[:12]
+    print(f"across {len(by_file)} file(s); the heaviest {len(shown)}:")
+    for name, n in shown:
         print(f"    {n:3d}  {name}")
+    if len(ranked) > len(shown):
+        # A LIST CUT TO N UNDER A HEADING THAT READS AS COMPLETE IS A SILENT
+        # FALSEHOOD. The project's own guard says so and caught this one.
+        rest = sum(n for _f, n in ranked[len(shown):])
+        print(f"    ... and {len(ranked) - len(shown)} more file(s) carrying "
+              f"{rest} further assertion(s), not shown")
 
     if not total:
         return 0

@@ -241,6 +241,44 @@ def _whole_bindings_from(node: ast.AST) -> list[ast.Name]:
     return [t for t in targets if isinstance(t, ast.Name)]
 
 
+def _locally_shadowed(src: str, names: set[str]) -> set[str]:
+    """Names this file DEFINES ITSELF that do NOT return a (bool, message) tuple.
+
+    TASK A17. The guard collects tuple-returning function names across every
+    script and then flags any call to a function with one of those NAMES, without
+    resolving which function is actually called. On 2026-09-10 a new script
+    defined `scan()` returning a 3-tuple, and `scripts/supersession_check.py:149`
+    was flagged for `if not findings:` -- a truth test that is entirely correct,
+    because THAT file's own `scan()` returns a LIST. A green suite went red for a
+    file nobody had touched, and the fix applied at the time was to rename the
+    new function, which removes the collision without addressing the cause.
+
+    THE CAUSE IS NAME MATCHING WHERE RESOLUTION IS NEEDED. A file that defines a
+    name shadows every other definition of it, so the local definition decides.
+    That is not a heuristic -- it is Python's scoping rule.
+
+    WHAT THIS DELIBERATELY DOES NOT DO. It does not resolve IMPORTS. A name
+    imported from a module that returns a tuple is still flagged, which is the
+    guard working. Only a name the file defines for itself is shadowed, and only
+    when that local definition demonstrably does not return a >= 2-element tuple.
+    """
+    shadowed: set[str] = set()
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if node.name not in names:
+            continue
+        if _outer_annotation_name(node.returns) in ("tuple", "Tuple"):
+            continue
+        returns_a_tuple = any(
+            isinstance(ret.value, ast.Tuple) and len(ret.value.elts) >= 2
+            for ret in _returns_in_own_scope(node))
+        if not returns_a_tuple:
+            shadowed.add(node.name)
+    return shadowed
+
+
 def _truthiness_violations(src: str, label: str, names: set[str]) -> list[str]:
     """Both spellings of the defect, because the real one was the second.
 
@@ -250,6 +288,8 @@ def _truthiness_violations(src: str, label: str, names: set[str]) -> list[str]:
     """
     tree = ast.parse(src)
     hits: set[str] = set()
+    # A NAME THIS FILE DEFINES ITSELF WINS. See `_locally_shadowed`.
+    names = names - _locally_shadowed(src, names)
 
     for node in _boolean_contexts(ast.walk(tree)):
         if isinstance(node, ast.Call):

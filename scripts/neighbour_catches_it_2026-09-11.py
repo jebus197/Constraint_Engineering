@@ -122,10 +122,23 @@ def run(paths, timeout=3600):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--module", required=True, help="repo-relative .py file")
-    ap.add_argument("--symbol", required=True, action="append",
+    # SAME REASON AS `--symbol` BELOW: a required argument makes argparse report
+    # the missing one and exit before it reaches an unknown flag, so a typo gets
+    # the wrong complaint. Both are checked explicitly after parsing instead.
+    ap.add_argument("--module", help="repo-relative .py file")
+    # NOT `required=True`. A required argument makes argparse report the MISSING
+    # one and exit before it ever reaches an unknown flag, so
+    # `--nonsense-flag` produced "the following arguments are required" instead
+    # of "unrecognized arguments" -- and `test_an_unknown_flag_is_rejected_loudly`
+    # caught it. A script that answers the wrong complaint first teaches the
+    # reader that its diagnostics are unreliable.
+    ap.add_argument("--symbol", action="append",
                     help="function to destroy; repeatable")
     a = ap.parse_args()
+    if not a.module:
+        ap.error("--module is required")
+    if not a.symbol:
+        ap.error("at least one --symbol is required")
 
     if not tree_is_clean():
         print("REFUSING: the working tree is not clean.", file=sys.stderr)
