@@ -25,6 +25,24 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-11 13:12 BST (READ THIS FIRST)
+
+HEAD `a18e83b`, main, **122 ahead of `origin/main` — NOT PUSHED**. Working tree clean.
+
+**★★★ THE TASK LIST IS UNCHANGED AT 81 DONE OF 92, 2 OPEN, AND BOTH OPEN ITEMS ARE RULINGS RATHER THAN WORK.** A8: 20 of 23 resolved by execution, and what is left is whether to re-point 20 citations — the recommendation is to leave them. A19: the `sk_score_prose_listings` flag is built, tested and default OFF, and is the founder's to rule on. Blocked on him: 10.2 Tailscale SSH, A11's 5 rulings, R1 Exp 53 restart, W1 Wolfram MCP. Deferred: 0.1, Exp 56.
+
+**★★★ A SUITE RUN IN A CLONE OVERWROTE `~/Desktop/CDSFL_OUTCOMES_LOG.md`** — 27,669 bytes over 34,082, the file the founder actually reads. `scripts/cdsfl_recover.py` reported the divergence 13 minutes later and the pre-commit mirror refresh restored it, which was luck rather than design. Attributed by EXECUTION: 43 candidate test files run under a fake HOME holding sentinels, exactly 1 rewrote them. `DESKTOP` is absolute while `REPO` is not — task A2's shape.
+
+**★★★ PANEL ROUND 15 THEN BROKE THE GUARD WRITTEN FOR IT, AND THE BYPASS IS WORTH KNOWING.** Its first line treated "this is not the passwd user's Desktop" as proof of a drill and returned *allowed* before any other rule. Under `sudo` this platform keeps `HOME` while the uid becomes root, so the paths differ and **the guard switched itself off on the highest-privilege run there is**, failing OPEN. 2 further bypasses: a clone outside the scratch tree, and a relocated `TMPDIR`. `refuse_reason_for()` now takes every input as an argument, the drill exemption requires displacement INTO scratch, unreliable passwd identification fails closed, and `~/Desktop/.cdsfl_canonical_checkout` names the single checkout allowed to write the mirrors. **This checkout is registered. Deleting that file restores the old behaviour exactly.**
+
+**★★★ `preserve_before_overwrite` IS THE ONLY RULE HERE ABOUT BYTES RATHER THAN PATHS**, adopted from the panel: before any mirror is replaced, the superseded bytes are kept at `.cdsfl-superseded-<name>` beside it. Every hole found in the path rules was a location they did not anticipate; this one does not care where the writer is.
+
+**★★★ THE FALSE-ZERO DEFECT CLASS NOW HAS A MECHANICAL CHECK**, which is what 15 individual fixes never produced. `scripts/false_zero_probe_2026-09-11.py` imports the REAL scanners and requires their verdict to survive a change of FORM: 6 scanners, 29 axes, **0 undeclared flips, 2 declared with reasons**. Re-planting the morning's anchored matcher makes it report the flip on 3 axes at once.
+
+**★★★ THE I38 FLAKE REPRODUCED AND THE HARNESS THREW THE DIAGNOSTICS AWAY.** First reproduction since the diagnostics were added for exactly that moment; `fresh_clone_suite` reported the test's NAME and nothing else. That, not unavailability, is why I38 read OBSERVED across 8 runs. Fixed: full output at `bench/logs/fresh_clone_last_run.txt`. **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%] — an interval spanning a factor of 5 describes 8 runs, it does not establish a rate. Producer: `scripts/flake_rate_2026-09-11.py`.
+
+**Reproduce the day's figures**: `python3 scripts/fresh_clone_suite_2026-09-11.py`, `scripts/false_zero_probe_2026-09-11.py --check`, `scripts/flake_rate_2026-09-11.py`, `scripts/scripts_are_reached_2026-09-11.py`, `scripts/panel_condition_compliance_2026-09-10.py`.
+
 ## SESSION STATE — 2026-09-11 09:13 BST (READ THIS FIRST)
 
 HEAD `d33647d`, main, **90 ahead of `origin/main` — NOT PUSHED**. Working tree clean.
