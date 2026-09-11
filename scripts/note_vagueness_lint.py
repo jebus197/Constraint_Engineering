@@ -314,8 +314,10 @@ def partition(path) -> tuple[list, list]:
     if state["unclosed"] or state["stray_closes"]:
         why = []
         if state["unclosed"]:
-            why.append("a region is still open at end of file, so every "
-                       "paragraph after it is silently exempt")
+            where = state["opened_at"]
+            why.append(f"a region opened at paragraph {where} is still open at "
+                       f"end of file, so every paragraph after it is silently "
+                       f"exempt")
         if state["stray_closes"]:
             why.append(f"{state['stray_closes']} verbatim-end marker(s) close "
                        f"nothing, which is how a tally of markers can look "
@@ -391,6 +393,7 @@ def region_state(text: str) -> dict:
     inside = False
     opens = closes = stray = 0
     last_para = 0
+    opened_at: int | None = None
     for n, _off, kind in marker_events(text):
         # Every paragraph between the opening one and this one is inside.
         if inside:
@@ -398,6 +401,8 @@ def region_state(text: str) -> dict:
         if kind == "begin":
             opens += 1
             marked.add(n)
+            if not inside:
+                opened_at = n
             inside = True
             last_para = n
         else:
@@ -412,7 +417,11 @@ def region_state(text: str) -> dict:
         total = len(list(paragraphs(text)))
         marked.update(range(last_para, total + 1))
     return {"marked": marked, "opens": opens, "closes": closes,
-            "unclosed": inside, "stray_closes": stray}
+            "unclosed": inside, "stray_closes": stray,
+            # WHERE it opened, not just THAT it did. A reader told only that a
+            # region is unclosed still has to find it; the paragraph number is
+            # the difference between a report and a diagnosis.
+            "opened_at": opened_at if inside else None}
 
 
 def verbatim_paragraphs(text: str) -> set[int]:

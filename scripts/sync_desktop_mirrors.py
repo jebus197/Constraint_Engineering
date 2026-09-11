@@ -96,6 +96,23 @@ def refuse_reason_for(desktop: Path, passwd_desktop: Path, passwd_reliable: bool
     in_scratch_desktop = _under(desktop, roots) is not None
     if in_scratch_desktop:
         return None  # displaced to scratch: a drill, and drills must still run
+    if not passwd_reliable:
+        # FAILS CLOSED, AND THE DOCSTRING SAID SO BEFORE THE CODE DID. The first
+        # version only WITHHELD the drill exemption when identification was
+        # unreliable and then carried on to return None -- so the claim "fails
+        # closed" was true of the prose and not of the behaviour. Panel round 15
+        # (cc2) supplied the case that exposed it.
+        #
+        # UNCONDITIONAL, and the weaker version is the one to argue against.
+        # An earlier draft refused only when the Desktop ALSO named no canonical
+        # checkout, on the reasoning that a marker is positive evidence
+        # independent of the passwd database. That is true, and it is still the
+        # wrong trade for a guard whose failure destroyed a file: failing closed
+        # here costs a printed refusal on a platform the founder does not use,
+        # and failing open costs the file. The seat's stricter rule is adopted
+        # over my own weaker one for that reason.
+        return ("the user cannot be identified from the passwd database, so "
+                "nothing establishes that this writer is the founder's own")
     if passwd_reliable and desktop.resolve() != passwd_desktop.resolve():
         # Different, but NOT displaced to scratch. Under the old rule this
         # returned None. It is now only a reason to keep checking.
@@ -142,6 +159,42 @@ def _passwd_desktop() -> tuple[Path, bool]:
         return Path(pwd.getpwuid(os.getuid()).pw_dir) / "Desktop", True
     except (ImportError, KeyError, OSError):
         return Path.home() / "Desktop", False
+
+
+def preserve_before_overwrite(dst: Path) -> Path | None:
+    """Keep the bytes about to be replaced. Returns where they went, or None.
+
+    ADOPTED FROM PANEL ROUND 15 (cc2), AND IT IS THE ONLY RULE HERE ABOUT BYTES
+    RATHER THAN PATHS -- which is why it is right in every case a path rule gets
+    wrong. `refuse_reason_for` decides whether a writer is legitimate by
+    reasoning about where it lives, and every hole found in it so far has been a
+    location it did not anticipate: a privileged run, a relocated scratch root, a
+    clone in a home directory. This rule does not care where the writer is. If
+    the bytes differ, the old ones are kept.
+
+    That converts the one hole still open -- a Desktop with no marker, written by
+    a clone outside the scratch tree -- from SILENT LOSS into something
+    recoverable, which is the difference that mattered on 2026-09-11: the founder
+    got his file back only because the repository copy happened to be canonical
+    and a later commit happened to restore it.
+
+    ONE SLOT, NOT A HISTORY. The copy goes to a single hidden name per mirror and
+    is replaced each time. An unbounded set of dated backups accumulating on his
+    Desktop would be a second defect, and git already holds the history; this
+    exists to survive the minutes between a bad write and noticing it.
+
+    DOT-PREFIXED AND NOT MATCHING `CDSFL_*`, deliberately: cc2's own refutation
+    condition for this rule was that a Desktop tool globbing `CDSFL_*.md` might
+    pick the preserved copy up and show it as a real document.
+    """
+    if not dst.is_file():
+        return None
+    keep = dst.parent / f".cdsfl-superseded-{dst.name}"
+    try:
+        shutil.copy2(dst, keep)
+    except OSError:
+        return None
+    return keep
 
 
 def registered_checkout(desktop: Path) -> str | None:
@@ -298,12 +351,14 @@ def main() -> int:
         if not src.is_file():
             print(f"  SKIPPED {name}: {why}")
             continue
+        kept = preserve_before_overwrite(dst)
         shutil.copy2(src, dst)
         # VERIFIED, not assumed. A copy that silently failed would leave the
         # founder reading a stale file believing it had just been refreshed,
         # which is the exact defect this script exists to end.
         assert _sha(src) == _sha(dst), f"{name} did not copy identically"
-        print(f"  refreshed {name} ({why})")
+        print(f"  refreshed {name} ({why})"
+              + (f"; superseded bytes kept at {kept.name}" if kept else ""))
     if not bad:
         print(f"  all {len(MIRRORED)} Desktop copies were already current")
     return 0
