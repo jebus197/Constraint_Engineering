@@ -61,6 +61,22 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ---
 
+**★ RESUME POINTER (2026-09-11 09:15 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `d33647d`, main, **90 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 06:54 and again at 08:29 with `--record-restore`, **exit code 0** both times, after a compaction at 05:10; `rg` ran at 08:43 on the founder's instruction and is recorded below.
+
+**THE TASK LIST IS AT 81 DONE OF 92, 2 OPEN**, and both open items are his: **A8** (20 of 23 now resolved by execution — what remains is whether to re-point 20 citations, and the recommendation is to leave them) and **A19** (the `sk_score_prose_listings` flag, built, tested, default OFF).
+
+**WHAT THIS SESSION FOUND, and it starts with a DONE claim that was false.** A2 said a fresh clone runs green. Cloning HEAD proved otherwise: **3 failed, 6952 passed** against **6988 passed, 0 failed** here. **Nothing in the repository performed a clone** — A2's declared evidence guards the individual repairs and clones nothing, and the census re-runs its tests in THIS checkout, the tree whose greenness was never in doubt. `scripts/fresh_clone_suite_2026-09-11.py` now does the clone.
+
+**THE CAUSE WAS THE PRE-COMMIT REPAIRS NEVER REACHING THE COMMIT.** A hook sees the STAGED snapshot; stage 0 wrote the working tree and never staged what it wrote, so every commit shipped unrepaired content and the repair lagged 1 commit behind. `hooks/stage0_restage.sh`.
+
+**PANEL ROUND 14 (cc2 and fable, `PANEL_ONLY=cc2,fable`, 0 paid dispatch) FOUND 5 DEFECTS IN THOSE FIXES**, 3 of them independently by both seats. For the worst one — a repair sweeping the author's withheld hunks into the commit — cc2 proposed a 3-way `git merge-file` and fable a zero-context `git apply --cached`, and **the disagreement was settled by measurement rather than argument**: at a 1-line gap between the repair and the unstaged hunk, `git merge-file` conflicts where `git apply --cached` succeeds with the withheld hunk correctly excluded.
+
+**THE WHOLE EXTERNAL REVIEW RECORD EXISTED ON ONE MACHINE.** 78 directories under `bench/logs` hold a seat reply or a brief, 9.98 MB, all gitignored; 12 had been rescued by hand. Now **78 of 78** mirrored into `experimental_notes/evidence/`, 364 files, each verified by sha256. Reproduce with `python3 scripts/mirror_panel_records_2026-09-11.py --check`.
+
+**A COST-CONTROL FIGURE UNDERCOUNTED PAID DISPATCH BY A FACTOR OF 3**, because an absent `route` field read as free. The archive holds **30** paid replies, not 10. **The conclusion is unchanged: the latest paid dispatch is 2026-09-05 and 0 of the 24 directories since hold one.**
+
+**DO NOT DO THIS.** Do not run every script in `scripts/` as a survey — it mixes measurements with actions and once overwrote a deliberately preserved archive. See tasks A15 and A16. `scripts/measurement_scripts_only_2026-09-11.py` is the safe selector.
+
 **★ RESUME POINTER (2026-09-10 04:55 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `efbaf8a`, main, working tree DIRTY with the pass 10 and pass 11 work, level with `origin/main` as of the last push. `rs` ran at 03:43 with `--record-restore`, **exit code 0**, after a compaction at 02:25 that the compaction hook announced on every turn until it cleared.
 
 **WHERE THE WORK IS.** The founder's standing instruction is *"f everything (FFAFP in cyclic mode until diminishing returns, as per our maths model), sy everything, panel review everything, without exception, until all unsupervised work is fully complete"*. That cycle is at **pass 11**: series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10, 4]`, gamma 0.329575, gamma side PASS, count side FAIL, **verdict KEEP GOING**, and the new resurgence diagnostic is firing (last 3 passes 23 against 7 in the 3 before). Recorded and reproducible with `python3 scripts/ffafp_cycle_gamma_2026-09-10.py`.

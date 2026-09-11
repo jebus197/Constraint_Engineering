@@ -17,6 +17,20 @@ WHAT THIS CHECKS, and what it deliberately does not. It checks that the newest
 block names a commit reachable from HEAD and is not absurdly old. It does NOT
 check the prose: no test can tell whether a recovery narrative is a good one, and
 pretending otherwise would be a guard that fires on style.
+
+AND THERE IS ONE DECIDABLE SLICE OF THE PROSE, added 2026-09-11 after this guard
+stayed GREEN over a claim that had become FALSE. The block read *"A FRESH `git
+clone` NOW RUNS THE FULL SUITE GREEN: 6658 passed ... EXIT 0"*. Cloning HEAD that
+morning gave 3 failed, 6952 passed. The guard was right not to judge the
+narrative -- but that sentence was not a narrative, it was a MEASUREMENT, and
+this project already has a rule for those: `measured-rate-travels-with-its-script`
+says a figure may be cited only if the script that produced it is committed
+alongside. The 6658 named no producer, because nothing in the repository performed
+a clone at all, which is exactly how it survived being false for a day.
+
+So: a suite-shaped or clone-shaped figure in the newest block must name a script.
+That is mechanically decidable, it would have caught this, and it still says
+nothing about whether the prose is any good.
 """
 from __future__ import annotations
 
@@ -105,3 +119,55 @@ class TestTheCheckIsNotVacuous:
         dates = re.findall(r"^## SESSION STATE — (\d{4}-\d{2}-\d{2})", text, re.M)
         assert dates == sorted(dates, reverse=True), (
             f"SESSION STATE blocks are no longer newest-first: {dates[:5]}")
+
+
+#: A figure that reports a test run: "6658 passed", "3 failed", "0 failed".
+_SUITE_FIGURE = re.compile(r"\b\d{1,6}\s+(?:passed|failed)\b")
+
+#: Anything that looks like it names a committed producer.
+_NAMES_A_SCRIPT = re.compile(r"scripts/[\w./-]+\.py")
+
+
+def _newest_block_text() -> str:
+    """The newest SESSION STATE block's body, up to the next one."""
+    text = RECOVERY.read_text(encoding="utf-8")
+    heads = [m.start() for m in
+             re.finditer(r"^## SESSION STATE — ", text, re.M)]
+    assert heads, "no SESSION STATE block at all"
+    start = heads[0]
+    end = heads[1] if len(heads) > 1 else len(text)
+    return text[start:end]
+
+
+class TestASuiteFigureNamesItsProducer:
+    """`measured-rate-travels-with-its-script`, applied to the 1 document a
+    post-compaction reader trusts most."""
+
+    def test_the_block_carries_suite_figures_at_all(self):
+        """ANTI-VACUITY. A block with no figures would pass the next test
+        without the rule ever being exercised."""
+        figures = _SUITE_FIGURE.findall(_newest_block_text())
+        assert len(figures) >= 2, (
+            f"the newest SESSION STATE block carries {len(figures)} suite "
+            f"figure(s); if it has genuinely stopped quoting any, delete this "
+            f"pair of tests deliberately rather than letting them pass on "
+            f"nothing")
+
+    def test_every_paragraph_with_a_suite_figure_names_a_script(self):
+        """The paragraph is the unit, not the sentence: a figure and its
+        producer are routinely a sentence apart, and demanding them in one
+        sentence would fire on correct prose."""
+        block = _newest_block_text()
+        offenders = []
+        for para in re.split(r"\n\s*\n", block):
+            if not _SUITE_FIGURE.search(para):
+                continue
+            if not _NAMES_A_SCRIPT.search(para):
+                offenders.append(_SUITE_FIGURE.search(para).group(0)
+                                 + " -- " + para.strip()[:110])
+        assert not offenders, (
+            "a suite figure in the newest SESSION STATE block names no "
+            "producing script, so a reader cannot re-run it and it can go "
+            "false without anything noticing -- which is what happened to "
+            "\"6658 passed ... EXIT 0\" on 2026-09-11:\n  "
+            + "\n  ".join(offenders))
