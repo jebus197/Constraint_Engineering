@@ -134,6 +134,16 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 
 *Parked 2026-09-11T09:18:20+01:00.*
 
+## A superseded copy from August is sitting visible on your Desktop
+
+`~/Desktop/CDSFL_Agent_Operational_Plan.md.superseded-20260815T152747`, 166,340 bytes, dated 2026-08-15. It predates today's work and nothing here created it.
+
+**It is raised because it is the exact failure mode a panel seat named as its own refutation condition today.** The byte-preservation rule added this afternoon keeps the replaced copy of a mirror before overwriting it, and `cc2` said the rule should be considered refuted if a preserved copy could be picked up by a tool globbing `CDSFL_*` on your Desktop and shown as a real document. Today's copies are dot-prefixed and hidden precisely for that reason. **The August file is not, and it does match that glob** — so the hazard is real, it simply arrived before the rule did.
+
+**Nothing has been deleted.** Removing a file from your Desktop is not a call to make on your behalf, and the additive standard's removal clause would want a measurement showing it is redundant. Two facts bear on it: it is a copy of a tracked file, so git holds that content, and the mirror it superseded has been refreshed many times since.
+
+Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to leave it.
+
 ## 6 committed scripts are reached by nothing at all: wire or retire is your ruling
 
 *Parked 2026-09-11T10:18:10+01:00.*
