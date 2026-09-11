@@ -238,7 +238,7 @@ Reversible: revert `9348514`, `3b1cb37`, `68bf559`, `4917b5e`. The only behaviou
 | Measure | Value |
 |---|---|
 | Full suite | measured at each commit with `python3 -m pytest bench/tests/ -q --netguard-strict`; see the closing report for the current figure |
-| Task list | **2026-09-11: 92 entries, 81 done, 2 open, 4 blocked, 1 deferred, 4 withdrawn** (was 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn) |
+| Task list | **2026-09-11: 94 entries, 83 done, 2 open, 4 blocked, 1 deferred, 4 withdrawn** (was 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn) |
 | Commits since 2026-09-10 00:00 | 127 |
 | Commits on 2026-09-11 | 61 |
 | Files deleted today | 0 |
