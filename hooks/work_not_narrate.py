@@ -78,6 +78,35 @@ TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 MARKERS = REPO / "scripts"
 
 
+def is_founder_message(d: dict) -> bool:
+    """True ONLY for a message the founder actually typed.
+
+    THE DEFECT THIS CLOSES, 2026-09-11. Claude Code records hook feedback and
+    harness injections in the transcript as `"type":"user"` entries, flagged
+    `isMeta`. This hook's OWN refusal text is one of them. Both readers below
+    walked user entries without checking that flag, so the moment this hook
+    refused once, it re-read the turn, found its own words where the founder's
+    had been, and concluded he had not typed `d`. His command was erased by the
+    machine that was supposed to obey it, and the refusal budget -- keyed on the
+    same timestamp -- reset to 0 on every refusal, so `MAX_REFUSALS_PER_TURN`
+    never bound. The founder watched it refuse 11 times after he said "Pause all
+    activity", and ruled: "all commands issued by me should be considered law,
+    and are non-optional under any condition!"
+
+    ONE predicate, both callers, so the two cannot drift apart again -- that
+    being the shape of defect this project keeps withdrawing.
+    """
+    if d.get("type") != "user":
+        return False
+    if d.get("isCompactSummary") or d.get("isMeta"):
+        return False
+    c = d.get("message", {}).get("content")
+    if isinstance(c, list) and any(
+            isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
+        return False
+    return True
+
+
 def _turn_key(transcript: pathlib.Path) -> str:
     """The timestamp of the turn's own user message. A new message, a new budget."""
     try:
@@ -91,11 +120,7 @@ def _turn_key(transcript: pathlib.Path) -> str:
             d = json.loads(line)
         except Exception:
             continue
-        if d.get("type") != "user" or d.get("isCompactSummary"):
-            continue
-        c = d.get("message", {}).get("content")
-        if isinstance(c, list) and any(
-                isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
+        if not is_founder_message(d):
             continue
         return str(d.get("timestamp") or "")
     return ""
@@ -150,12 +175,10 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
             d = json.loads(line)
         except Exception:
             continue
-        if d.get("type") != "user" or d.get("isCompactSummary"):
+        if not is_founder_message(d):
             continue
         c = d.get("message", {}).get("content")
         if isinstance(c, list):
-            if any(isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
-                continue
             c = " ".join(x.get("text", "") for x in c if isinstance(x, dict))
         if not isinstance(c, str) or "<system-reminder>" in c:
             continue
