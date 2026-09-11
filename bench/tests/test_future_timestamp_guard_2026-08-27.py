@@ -19,6 +19,7 @@ land one minute ahead.
 """
 import datetime as dt
 import pathlib
+import subprocess
 import sys
 
 import pytest
@@ -88,8 +89,44 @@ class TestItNeverRaises:
         assert lint.future_stamp(p) is None
 
 
-def test_it_is_wired_into_the_lint_report():
-    """A check nobody runs is the shape this project keeps finding."""
-    src = (REPO / "scripts" / "note_vagueness_lint.py").read_text(encoding="utf-8")
-    assert "future_stamp(p)" in src, "the check is defined but never called by main"
-    assert "FUTURE TIMESTAMP" in src
+def test_it_is_wired_into_the_lint_report(tmp_path):
+    """A check nobody runs is the shape this project keeps finding.
+
+    THIS TEST USED TO GREP FOR THE LITERAL `future_stamp(p)` AND IT FALSE-ALARMED
+    ON 2026-09-11, when the call moved from `main` into `partition()` and the
+    variable was named `path` instead of `p`. The call still happened; the report
+    still carried the finding; the guard failed anyway. That is the defect
+    `execute-do-not-grep` names -- a source-text assertion cannot tell a moved
+    call from a deleted one, because each version of the text is individually
+    consistent.
+
+    So it now RUNS the reporter against a note stamped in the future and looks
+    for the finding in the output. MEASURED dominance, both forms run against the
+    same 2 states of the module:
+
+        state                              grep-form   executing-form
+        call present, variable `path`      FAIL        PASS
+        call DELETED                       FAIL        FAIL
+
+    Row 2 is what the guard exists for and both catch it, so nothing is lost.
+    Row 1 is the live repository and only the executing form is right about it.
+    Dominance on the named property -- reporting a regression and only a
+    regression -- with no case where the grep form is the better of the 2.
+    """
+    note = tmp_path / "note.md"
+    note.write_text("A NOTE\n\n2099-01-01 12:00 BST\n\nBody.\n", encoding="utf-8")
+    r = subprocess.run([sys.executable,
+                        str(REPO / "scripts" / "note_vagueness_lint.py"), str(note)],
+                       capture_output=True, text=True, timeout=120)
+    assert "FUTURE TIMESTAMP" in r.stdout, (
+        "the reporter did not carry the future-stamp finding, so the check is "
+        f"defined and not reached:\n{r.stdout[-800:]}")
+
+    # POSITIVE CONTROL: a note stamped in the past must NOT raise it, or the
+    # test above would pass against a reporter that printed the line always.
+    ok = tmp_path / "ok.md"
+    ok.write_text("A NOTE\n\n2020-01-01 12:00 BST\n\nBody.\n", encoding="utf-8")
+    r2 = subprocess.run([sys.executable,
+                         str(REPO / "scripts" / "note_vagueness_lint.py"), str(ok)],
+                        capture_output=True, text=True, timeout=120)
+    assert "FUTURE TIMESTAMP" not in r2.stdout, r2.stdout[-800:]

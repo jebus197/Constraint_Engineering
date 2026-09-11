@@ -267,6 +267,56 @@ def sentences(text: str):
 #: verbatim region are still printed, under their own heading, with their own
 #: count. Prose OUTSIDE the markers is linted normally, so a note cannot buy
 #: amnesty for its own writing by quoting someone.
+def partition(path) -> tuple[list, list]:
+    """(counted, exempted) for one note: everything `lint` reports plus the
+    future-stamp finding, split on whether it sits inside a verbatim region.
+
+    WHY THIS IS A FUNCTION AND NOT 4 LINES IN `main`. The exemption used to live
+    only in `main`, so every other consumer had to re-derive it -- and one did
+    not. `test_note_standard_v17_enforced_2026-08-26.py` called `lint()` raw and
+    failed the suite on a sentence a panel seat wrote inside
+    `<!-- verbatim-begin: fable -->`. Task V8 exists precisely so a seat's words
+    reach the record unedited; a guard that blocks on them defeats it.
+
+    `main` CALLS this rather than reimplementing it, so the CLI and every test
+    cannot drift apart. That is the `execute-do-not-grep` shape: 1 implementation
+    with 2 callers, never 2 implementations asserted to agree.
+    """
+    hits = lint(path)
+    exempt = verbatim_paragraphs(path.read_text(encoding="utf-8"))
+    # `is not None`, not a bare truth test. future_stamp returns Optional
+    # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a glance
+    # from the (bool, message) pattern that this project's own guard
+    # test_no_script_discards_a_verdict_by_testing_the_tuple exists to catch,
+    # and that guard flagged this line within twenty minutes of it being
+    # written. Being right is not the same as being readable.
+    fs = future_stamp(path)
+    if fs is not None:
+        hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
+                 fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
+    return ([h for h in hits if h[0] not in exempt],
+            [h for h in hits if h[0] in exempt])
+
+
+def blocking(path) -> list:
+    """The findings that COUNT. What a guard must gate on."""
+    return partition(path)[0]
+
+
+#: Rule 28's phrases, bounded so an inflection is not read as the noun.
+#:
+#: A BARE SUBSTRING TEST MATCHED THE VERB. `"the decay curve measure" in low`
+#: fires on "the decay curve measureS the latter" and on "measureMENT" -- and it
+#: did, on `Panel_Roster_Round2_FULL_RECORD_2026-09-09.md`, where the sentence is
+#: a seat using the founder's own term "the decay curve" with a verb after it.
+#: Rule 28 asks that gamma be CALLED gamma; it does not ban the founder's phrase
+#: from appearing as a subject.
+#:
+#: MEASURED over 402 notes before the change: 28 substring matches, 27 bounded
+#: matches. The fix drops exactly 1, and that 1 is the verb above.
+CATEGORY_NOUN_RE = {ph: re.compile(r"(?<![a-z])" + re.escape(ph) + r"(?![a-z])")
+                    for ph in CATEGORY_NOUN}
+
 VERBATIM_BEGIN = re.compile(r"<!--\s*verbatim-begin:.*?-->")
 VERBATIM_END = re.compile(r"<!--\s*verbatim-end\s*-->")
 
@@ -366,7 +416,7 @@ def lint(path: pathlib.Path) -> list:
             out.append((para_no, "SPELLED NUMBER (Rule 27: use digits)",
                         m.group(0), s))
         for phrase, name in CATEGORY_NOUN.items():
-            if phrase in low:
+            if CATEGORY_NOUN_RE[phrase].search(low):
                 out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",
                             phrase, s)); break
     return out
@@ -399,20 +449,7 @@ def main() -> int:
     for p in paths:
         if not p.is_file():
             print(f"  missing: {p}"); missing += 1; continue
-        hits = lint(p)
-        exempt_paras = verbatim_paragraphs(p.read_text(encoding="utf-8"))
-        # `is not None`, not a bare truth test. future_stamp returns Optional
-        # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a
-        # glance from the (bool, message) pattern that this project's own guard
-        # test_no_script_discards_a_verdict_by_testing_the_tuple exists to catch,
-        # and that guard flagged this line within twenty minutes of it being
-        # written. Being right is not the same as being readable.
-        fs = future_stamp(p)
-        if fs is not None:
-            hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
-                     fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
-        counted = [h for h in hits if h[0] not in exempt_paras]
-        exempted = [h for h in hits if h[0] in exempt_paras]
+        counted, exempted = partition(p)
         total += len(counted)
         print(f"\n  {p.name}: {len(counted)} finding(s)")
         for para_no, kind, token, s in counted:

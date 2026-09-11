@@ -23,12 +23,80 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 DESKTOP = Path.home() / "Desktop"
+
+
+def real_desktop() -> Path:
+    """The founder's ACTUAL Desktop, read from the passwd database, not `$HOME`.
+
+    `Path.home()` honours `$HOME`, and the drills in
+    `test_desktop_mirrors_stay_current_2026-09-10.py` set `$HOME` to a temporary
+    directory on purpose -- so comparing `DESKTOP` against `Path.home()` cannot
+    tell a drill from an escape: under a faked `$HOME` they are the same path.
+    Keying on the passwd entry separates them, because a drill cannot move it.
+
+    This is the difference between asking "is this the Desktop?" and asking "is
+    this HIS Desktop?", and only the second question is the one that matters.
+    """
+    try:
+        import pwd
+        return Path(pwd.getpwuid(os.getuid()).pw_dir) / "Desktop"
+    except (ImportError, KeyError, OSError):
+        return Path.home() / "Desktop"
+
+
+def refuse_reason() -> str | None:
+    """Why this run must NOT write the founder's real Desktop, or None if it may.
+
+    MEASURED 2026-09-11, and this is not a hypothetical. A full-suite run in a
+    fresh clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md` with the clone's own
+    older copy -- 27,669 bytes over 34,082, a 6,413-byte loss of the file the
+    founder actually reads. `scripts/cdsfl_recover.py` reported the divergence 13
+    minutes later and the pre-commit mirror refresh put it back, so nothing was
+    lost permanently; that was luck, not design. Attributed by running each of 43
+    candidate test files under a fake HOME holding sentinels:
+    `bench/tests/test_precommit_guard_2026-09-09.py` wrote all 5 mirrors.
+
+    THE CAUSE IS THAT `DESKTOP` IS ABSOLUTE AND `REPO` IS NOT. A scratch fixture
+    or a clone moves `REPO` and leaves `DESKTOP` pointing at the one real
+    Desktop, so the wrong source is copied over the right destination. This is
+    the same shape as task A2: a path that escapes its sandbox because it was
+    never relative to it.
+
+    2 INDEPENDENT RULES, AND BOTH ARE NEEDED -- also measured. The environment
+    IS inherited through `git` into the hook, so the pytest rule fires for an
+    ordinary hook test; but `test_precommit_guard`'s own `test_no_python3` builds
+    a PATH with only `git` in it, so a rule that depended on the interpreter
+    seeing pytest would miss other shapes. The temp-root rule catches any clone,
+    whether or not a test is running.
+
+    A DRILL THAT POINTS `DESKTOP` SOMEWHERE ELSE IS NEVER REFUSED. The existing
+    tests that monkeypatch `DESKTOP` or set a fake HOME still exercise every line
+    of the copy path -- refusing those would make this guard a disabled feature
+    rather than a scoped one.
+    """
+    if DESKTOP.resolve() != real_desktop().resolve():
+        return None  # pointed at a fake: a drill, and drills must still run
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return ("a test is running and DESKTOP is the founder's real one; a "
+                "suite must never rewrite the files he reads")
+    try:
+        tmp = Path(tempfile.gettempdir()).resolve()
+        repo = REPO.resolve()
+        if repo == tmp or tmp in repo.parents:
+            return (f"the source repository is under {tmp}, so it is a clone or "
+                    f"a scratch fixture and not the founder's checkout")
+    except OSError:
+        pass
+    return None
+
 
 #: (repository path, Desktop filename) for every mirror the founder reads.
 #:
@@ -122,6 +190,13 @@ def main() -> int:
         print(f"  {len(bad)} of {len(MIRRORED)} Desktop copies are not current")
         return 1 if bad else 0
 
+    refused = refuse_reason()
+    if refused is not None:
+        # LOUD, AND EXIT 0. The commit this hook runs inside is legitimate; it is
+        # only the mirroring that is wrong here. Failing the commit would turn a
+        # correct refusal into a broken clone.
+        print(f"  REFUSED to refresh the Desktop mirrors: {refused}")
+        return 0
     if not DESKTOP.is_dir():
         print("  no Desktop directory on this machine; nothing to mirror")
         return 0

@@ -397,3 +397,69 @@ class TestTheOrderingActuallyHolds:
             assert (desk / desktop_name).read_text(encoding="utf-8") \
                 != "deliberately stale\n", (
                 f"{desktop_name} was not refreshed by the hook")
+
+
+class TestACloneCannotWriteTheFoundersDesktop:
+    """A suite run in a fresh clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md`.
+
+    MEASURED 2026-09-11. `scripts/cdsfl_recover.py` reported the Desktop copy as
+    diverged by 6,413 bytes and newer than the repository copy. The clone's own
+    copy was 27,669 bytes against the working tree's 34,082 -- the same 6,413 --
+    so the founder's file had been replaced by an older one. The pre-commit
+    mirror refresh put it back 13 minutes later, which was luck, not design.
+
+    ATTRIBUTED BY EXECUTION, not by reading: each of 43 candidate test files was
+    run under a fake HOME holding sentinels, and exactly 1 rewrote them --
+    `test_precommit_guard_2026-09-09.py::test_a_commit_is_refused_in_a_clone_of_this_actual_repository`,
+    which clones this repository into a temporary directory and commits there.
+    The clone carries `scripts/sync_desktop_mirrors.py`, the hook runs it, and
+    `DESKTOP = Path.home() / "Desktop"` is absolute while `REPO` is not.
+
+    Task A2's shape exactly: a path that escapes its sandbox because it was never
+    relative to it.
+    """
+
+    def test_a_test_run_may_not_write_the_real_desktop(self, sync, monkeypatch):
+        monkeypatch.setenv("PYTEST_CURRENT_TEST", "bench/tests/x.py::test_y (call)")
+        monkeypatch.setattr(sync, "DESKTOP", sync.real_desktop())
+        assert sync.refuse_reason() is not None, (
+            "a suite may rewrite the files the founder reads")
+
+    def test_a_repo_under_the_temp_root_may_not_write_it(self, sync, monkeypatch, tmp_path):
+        """The INDEPENDENT half. `test_no_python3` builds a PATH holding only
+        git, so a guard resting solely on the interpreter seeing pytest would
+        miss shapes this one catches: any clone, test or not."""
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.setattr(sync, "REPO", tmp_path)
+        monkeypatch.setattr(sync, "DESKTOP", sync.real_desktop())
+        r = sync.refuse_reason()
+        assert r is not None and "clone" in r, r
+
+    def test_a_drill_against_a_fake_desktop_is_never_refused(self, sync, monkeypatch, tmp_path):
+        """ANTI-VACUITY. A guard that refused everything would disable the
+        feature rather than scope it, and every existing test here drives
+        `main()` against a fake Desktop."""
+        monkeypatch.setenv("PYTEST_CURRENT_TEST", "bench/tests/x.py::test_y (call)")
+        monkeypatch.setattr(sync, "DESKTOP", tmp_path / "Desktop")
+        assert sync.refuse_reason() is None
+
+    def test_the_founders_own_checkout_is_not_refused(self, sync, monkeypatch):
+        """POSITIVE CONTROL: outside a test, the real repository still mirrors,
+        or the hook has silently stopped refreshing what he reads."""
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        assert sync.refuse_reason() is None
+
+    def test_main_consults_the_guard_before_copying(self, sync, monkeypatch, tmp_path, capsys):
+        """EXECUTE IT. `main()` is called with the guard forced on and the copy
+        target set to a directory that must stay empty."""
+        fake = tmp_path / "Desktop"
+        fake.mkdir()
+        monkeypatch.setattr(sync, "DESKTOP", fake)
+        monkeypatch.setattr(sync, "refuse_reason", lambda: "forced, for this test")
+        # `main()` parses sys.argv, which under pytest holds pytest's own
+        # arguments and makes argparse exit 2 before the guard is ever reached.
+        monkeypatch.setattr(sys, "argv", ["sync_desktop_mirrors.py"])
+        assert sync.main() == 0, "a refusal must not fail the commit it runs inside"
+        assert "REFUSED" in capsys.readouterr().out
+        assert not list(fake.iterdir()), (
+            f"main() copied despite the refusal: {list(fake.iterdir())}")

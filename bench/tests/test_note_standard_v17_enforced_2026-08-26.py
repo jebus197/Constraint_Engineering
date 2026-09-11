@@ -121,7 +121,15 @@ class TestTheRealNotes:
     def test_v17_notes_obey_rules_27_and_28(self, path):
         if path is None:
             pytest.skip("no note declares v1.7 yet; this activates with the first")
-        hits = [(n, k, t) for n, k, t, _ in lint.lint(path)
+        # `blocking`, NOT `lint`. `lint` reports everything it sees, including
+        # what a panel seat wrote inside a verbatim region -- and this guard once
+        # failed the whole suite on a sentence `fable` wrote inside
+        # `<!-- verbatim-begin: fable -->` in Panel_Roster_Round2_FULL_RECORD.
+        # Task V8 exists so a seat's words reach the record unedited; a guard
+        # that blocks on them defeats the mechanism it shares a repository with.
+        # `blocking` is the SAME function the CLI counts with, not a second one
+        # asserted to agree with it.
+        hits = [(n, k, t) for n, k, t, _ in lint.blocking(path)
                 if RULE_27 in k or RULE_28 in k]
         assert not hits, (
             f"{path.name} declares v1.7 and violates it:\n"
