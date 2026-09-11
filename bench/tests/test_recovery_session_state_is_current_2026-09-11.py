@@ -122,7 +122,13 @@ class TestTheCheckIsNotVacuous:
 
 
 #: A figure that reports a test run: "6658 passed", "3 failed", "0 failed".
-_SUITE_FIGURE = re.compile(r"\b\d{1,6}\s+(?:passed|failed)\b")
+#: A suite figure. THOUSANDS SEPARATORS INCLUDED, because "7,237 passed"
+#: matched as "237 passed" under the previous pattern -- the count was
+#: unaffected, since this is only ever used to ask HOW MANY figures a block
+#: quotes, but a matcher that reads 7,237 as 237 is one consumer away from
+#: reporting the wrong number, and that is the defect class this session
+#: found 16 times.
+_SUITE_FIGURE = re.compile(r"\b\d{1,3}(?:,\d{3})*\s+(?:passed|failed)\b")
 
 #: Anything that looks like it names a committed producer.
 _NAMES_A_SCRIPT = re.compile(r"scripts/[\w./-]+\.py")

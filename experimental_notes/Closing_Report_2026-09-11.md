@@ -5,6 +5,14 @@
 
 A single day's work, from 05:00 to 13:11. The sections up to and including "Two Things Recorded Honestly Rather Than Closed" were written at 10:05 and cover the morning; the afternoon sections were added later and correct 2 of the morning's own figures where they had been measured wrongly. The starting point was a task entry marked complete, A2, whose claim was that anyone who clones the repository and runs the test suite sees the same result the maintainer sees. That claim turned out to be false, and everything below follows from establishing why.
 
+## The Result, Measured At The End Of The Day
+
+A fresh copy of the repository now runs the complete test suite green: 7,237 tests passed, 52 skipped, 1 expected failure, nothing failed, and pytest exited with code 0.
+
+That is the claim task A2 had been making. It is the first time it has been true. It was asserted on 10 September and again on 11 September and was false both times, and on each occasion it was discovered by somebody actually making a copy rather than by anything in the project. The script that makes the copy and runs the suite is committed, so the claim is now reproducible rather than asserted.
+
+Getting there took the whole day, and the last three failures were one defect wearing three different sets of clothes. A copy whose folder is called "clone" could not recognise itself, because identity was decided by the folder's name. A request for help ran a script's ordinary work and destroyed a verbatim record, because the flag fell through to the work. And guarding the flag closed only one of two doors: the suite also inspects scripts by importing them, and the work ran on import.
+
 ## The Headline, Stated Plainly
 
 A2 said a fresh clone runs green. It did not. Cloning the repository at its current commit and running the full suite there gave 3 failures against 6952 passes, while the same suite in the maintainer's own working copy gave 6988 passes and 0 failures. The claim had been wrong for 2 days and nothing in the project could have noticed, because nothing in the project performed a clone at all.
