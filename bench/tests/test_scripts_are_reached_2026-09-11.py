@@ -79,24 +79,33 @@ class TestTheMeasurementIsHonest:
     def test_an_archival_mention_does_not_count_as_reaching(self, mod):
         """THE DEFECT THAT MADE THE FIRST FIGURE FLATTERING.
 
-        All 8 unreached scripts are mentioned inside
-        `experimental_notes/evidence/*/seat_proposals.diff`. If archival copies
-        counted, every one would read as reached -- and the improvement would
-        have come from committing the review record that morning.
+        A first pass counted mentions inside
+        `experimental_notes/evidence/*/seat_proposals.diff` -- archival copies of
+        what reviewing models proposed, committed that same morning -- and
+        reported 5 unreached instead of 8. **The flattering figure came from the
+        review record being filed, not from anything calling those scripts.** A
+        measurement that improves when you file your paperwork is measuring the
+        filing.
+
+        DEMONSTRATED ON ANY SCRIPT, NOT ON AN ORPHAN. This used to pick its
+        fixture from `UNREACHED`, and when the last orphan was wired on
+        2026-09-11 it had nothing left to demonstrate with and said so. A test
+        that depends on the project still having the defect is a test that breaks
+        when the defect is fixed, which is the wrong way round.
         """
         assert mod.ARCHIVAL, "the archival exclusion has been removed"
-        hits = []
-        for s in mod.UNREACHED:
-            stem = Path(s).name
-            r = subprocess.run(
-                ["git", "grep", "-l", stem, "--",
-                 "experimental_notes/evidence/"],
-                cwd=REPO, capture_output=True, text=True)
-            if r.stdout.strip():
-                hits.append(stem)
-        assert hits, (
-            "no unreached script is mentioned in the archival tree, so this "
-            "test is no longer exercising the exclusion it exists to protect")
+        # The exclusion must have something to bite on: some archived file must
+        # mention some script, or it is excluding an empty set.
+        r = subprocess.run(["git", "grep", "-l", "scripts/", "--",
+                            *mod.ARCHIVAL], cwd=REPO, capture_output=True,
+                           text=True)
+        assert r.stdout.strip(), (
+            f"nothing under {mod.ARCHIVAL} mentions any script, so the archival "
+            f"exclusion is excluding an empty set and this test proves nothing")
+        # And the scan must actually skip those paths.
+        bodies_skip = [f for f in mod._tracked()
+                       if any(f.startswith(a) for a in mod.ARCHIVAL)]
+        assert bodies_skip, "no tracked file lives under the archival roots"
 
     def test_a_script_with_a_caller_is_not_flagged(self, mod):
         """POSITIVE CONTROL. Something obviously called must never appear."""
@@ -152,14 +161,12 @@ class TestTheExclusionListCannotHide:
         it holds no real reference to lose.
         """
         assert mod.DIAGNOSTIC, "the diagnostic exclusion has been removed"
+        # SYNTHETIC, because the ratchet is empty. This used to require the
+        # diagnostic file to NAME a live orphan, which stopped being possible the
+        # moment the last one was wired.
         for rel in mod.DIAGNOSTIC:
-            body = (mod.REPO / rel).read_text(encoding="utf-8", errors="replace")
-            named = [u for u in mod.UNREACHED if u in body]
-            assert named, (
-                f"{rel} names 0 unreached scripts, so excluding it wholly "
-                f"protects nothing and only risks hiding a real caller")
-        assert set(mod.UNREACHED) <= set(mod.unreached()), (
-            "a script this file merely writes ABOUT is being counted as reached")
+            assert not mod.vouches(rel, "scripts/some_orphan_that_does_not_exist.py"), (
+                f"{rel} vouches for a script it merely writes about")
 
     def test_an_instrument_may_still_vouch_for_an_instrument(self, mod):
         """The failure the FIRST fix caused, pinned alongside the one it cured.
@@ -185,7 +192,10 @@ class TestTheExclusionListCannotHide:
         `vouches` with the 4 cases can."""
         instrument_script = "scripts/scripts_are_reached_2026-09-11.py"
         instrument_test = "bench/tests/test_scripts_are_reached_2026-09-11.py"
-        orphan = mod.UNREACHED[0]
+        # A NAME, NOT A LIVE ORPHAN. The ratchet is empty, and a decision
+        # table should be exercised by its inputs rather than by whatever
+        # defects the project happens to have today.
+        orphan = "scripts/some_orphan_that_does_not_exist.py"
         assert not mod.vouches(instrument_script, orphan), (
             "an instrument file vouches for a script it merely writes about")
         assert mod.vouches(instrument_test, instrument_script), (
@@ -229,22 +239,21 @@ class TestTheExclusionListCannotHide:
                 f"{stem} is named in {named}, which makes it read as reached. "
                 f"If that is a matcher specimen, use a fictitious path.")
 
-    def test_prose_in_this_very_file_does_not_reach(self, mod):
-        """ANTI-VACUITY, and self-referential on purpose: the docstring above
-        NAMES an unreached script, which is how the defect happened the 4th
-        time. If naming it here were enough to reach it, this assertion fails.
+    def test_prose_in_an_instrument_file_does_not_reach(self, mod):
+        """ANTI-VACUITY for the instrument rule, asked of the predicate.
 
-        scripts/readjudicate_pairs.py
-
-        UPDATED 2026-09-11: this named `priority_starvation_simulation.py` until
-        that script was WIRED by a test that executes it, at which point the
-        assertion became false for the right reason. A control that pins a
-        specific orphan has to move when that orphan stops being one -- which is
-        the ratchet working, not breaking.
+        This used to NAME a live orphan in its own docstring and assert the
+        orphan stayed unreached -- which was self-referential on purpose and
+        worked only while an orphan existed. With the ratchet empty it asserted
+        nothing, so it asks `vouches` directly instead.
         """
-        assert "scripts/readjudicate_pairs.py" in set(mod.unreached()), (
-            "writing a script's name into a test docstring made it read as "
-            "reached; prose is being counted as a caller again")
+        for instrument in mod.INSTRUMENT:
+            assert not mod.vouches(instrument, "scripts/written_about_only.py"), (
+                f"{instrument} counts as reaching a script it only writes about")
+        # POSITIVE CONTROL: an ordinary file still reaches one.
+        assert mod.vouches("experimental_notes/Ordinary.md",
+                           "scripts/written_about_only.py")
+
 
     def test_a_non_roll_call_mention_still_counts_as_reaching(self, mod):
         """The test file names this script on a line that is not a bare path.

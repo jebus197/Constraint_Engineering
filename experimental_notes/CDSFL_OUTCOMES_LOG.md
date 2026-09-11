@@ -264,7 +264,7 @@ Reversible: revert `75beb74`. The only behaviour changed is that 9 scripts answe
 | Files deleted today | 0 |
 | Paid model dispatches today | **0** — panel rounds 3, 4, 14 and 15 all ran `PANEL_ONLY=cc2,fable`, Max subscription only |
 | Paid dispatches, WHOLE ARCHIVE | **30 across 79 review directories**, latest 2026-09-05; **0 of the 25 directories since**, Wilson [0.0000%, 13.3192%]. The figure read 10 until 2026-09-11, because the instrument globbed `panel_*` and read a missing `route` field as free |
-| Scripts reached by a caller, a citation or a document | **120 of 122 = 98.3607%**, Wilson [94.2195%, 99.5493%]. Producer: `scripts/scripts_are_reached_2026-09-11.py`. **Stated 6 times in a day** — 114/120 through 120/122. The first 3 moves were scripts being added, the last 3 were orphans being wired. Re-run the producer rather than quoting it; the durable claim is the ratchet |
+| Scripts reached by a caller, a citation or a document | **122 of 122 = 100.0000%**, Wilson [96.9474%, 100.0000%], Clopper-Pearson [97.0216%, 100.0000%]. Producer: `scripts/scripts_are_reached_2026-09-11.py`. All 6 recorded orphans were WIRED, each one RUN and shown to work, each one's safety established before it was run. The ratchet is empty and still bites: planting a fresh orphan fails the suite |
 | I38 artefact-classifier flake | **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%]. Producer: `scripts/flake_rate_2026-09-11.py`. 8 observations is a description of 8 runs, not a rate |
 | Panel records mirrored | **79 of 79** round directories have a tracked copy |
 | FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |

@@ -144,3 +144,93 @@ class TestTheWiringIsHonest:
             f"{named} are recorded as unreached and are named in this file, "
             f"which both risks running them and makes the scan read them as "
             f"reached")
+
+
+class TestTheLastTwoRunSafelyWithTheirOutputRedirected:
+    """The final 2, and they were parked for a reason that arguments dissolve.
+
+    Both WRITE, which is why they sat unrun while 4 siblings were wired. But
+    neither writes to a fixed place: each takes its destination from an argument.
+    `readjudicate_pairs.py` builds `REPO / args.out`, and `Path / <absolute>`
+    yields the absolute path, so an absolute `--out` redirects the write entirely
+    while the inputs still resolve against the real repository.
+    `quarantine_to_candidate.py` writes beside the diff it is given, so a diff in
+    a temporary directory keeps the output there too.
+
+    CHECKED BEFORE RUNNING, NOT AFTER. Neither imports `requests`, `urllib` or
+    any HTTP client, and neither spawns a process -- so neither can dispatch a
+    model. That mattered more than the file writes: spending money is one of the
+    3 categories reserved to the founder, and "re-adjudicate" is exactly the word
+    that would make a reader assume a dispatch.
+
+    This takes the recorded orphan set to 0. It got there by execution, not by
+    argument: every one of the 6 was run, and each one's safety was established
+    before it was.
+    """
+
+    def test_readjudicate_writes_where_it_is_told(self, tmp_path):
+        out = tmp_path / "readjudicated.json"
+        r = subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "readjudicate_pairs.py"),
+             "--limit", "1", "--out", str(out)],
+            cwd=REPO, capture_output=True, text=True, timeout=900)
+        assert r.returncode == 0, r.stderr[-600:]
+        assert "re-adjudicate" in r.stdout, r.stdout[:400]
+        assert out.is_file(), "the redirected output was not written"
+        import json
+        assert "tally" in json.loads(out.read_text(encoding="utf-8"))
+
+    def test_quarantine_converts_a_diff_beside_it(self, tmp_path):
+        diff = tmp_path / "x.diff"
+        diff.write_text(
+            "--- a/bench/toy.py\n+++ b/bench/toy.py\n"
+            "@@ -1,2 +1,2 @@\n-old_line = 1\n+new_line = 2\n", encoding="utf-8")
+        test = tmp_path / "test_toy.py"
+        test.write_text("def test_toy():\n    assert True\n", encoding="utf-8")
+        r = subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "quarantine_to_candidate.py"),
+             str(diff), str(test)],
+            cwd=REPO, capture_output=True, text=True, timeout=300)
+        assert r.returncode == 0, r.stderr[-600:]
+        made = tmp_path / "x.candidate.md"
+        assert made.is_file(), "no candidate was written beside the diff"
+        body = made.read_text(encoding="utf-8")
+        assert "<<<< SEARCH" in body and "TEST_FILE:" in body, body[:300]
+
+    def test_neither_can_dispatch_a_model(self):
+        """The check that had to come FIRST. A script that could spend money must
+        not be run to find out whether it does.
+
+        NETWORK by IMPORT, SPAWNING by CALL, and the difference is not pedantry.
+        The first version of this test failed on `quarantine_to_candidate.py`
+        because it IMPORTS `subprocess` -- and that import is dead, never called
+        anywhere in the file. Treating the import as the hazard is the same
+        source-text-for-behaviour substitution `execute-do-not-grep` exists to
+        stop, and it would have kept a harmless script parked indefinitely.
+
+        An HTTP import keeps the stricter treatment, because the cost of a false
+        positive there is one line of justification and the cost of a false
+        negative is a bill the founder did not authorise.
+        """
+        import ast
+        for name in ("readjudicate_pairs.py", "quarantine_to_candidate.py"):
+            tree = ast.parse((REPO / "scripts" / name).read_text(encoding="utf-8"))
+            mods = {a.name.split(".")[0] for n in ast.walk(tree)
+                    if isinstance(n, ast.Import) for a in n.names}
+            mods |= {n.module.split(".")[0] for n in ast.walk(tree)
+                     if isinstance(n, ast.ImportFrom) and n.module}
+            assert not (mods & {"requests", "urllib", "http", "httpx", "socket"}), (
+                f"{name} imports a network client: {sorted(mods)}")
+            spawns = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Call)
+                      and (getattr(n.func, "attr", None) in
+                           ("run", "Popen", "check_call", "check_output", "call")
+                           or getattr(n.func, "id", None) == "system")]
+            assert not spawns, f"{name} spawns a process at line(s) {spawns}"
+
+    def test_neither_run_changed_the_repository(self):
+        """Asserted as a consequence, not trusted from the argument above."""
+        r = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
+                           capture_output=True, text=True)
+        assert r.returncode == 0
+        assert not [ln for ln in r.stdout.splitlines()
+                    if "candidate.md" in ln or "readjudicated" in ln], r.stdout

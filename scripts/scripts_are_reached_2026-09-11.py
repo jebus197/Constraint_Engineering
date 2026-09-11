@@ -6,27 +6,33 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED 2026-09-11: **120 of 122 scripts are reached -- 98.3607%, Wilson
-[94.2195%, 99.5493%], Clopper-Pearson [94.2036%, 99.8008%]**, both intervals
+MEASURED 2026-09-11: **122 of 122 scripts are reached -- 100.0000%, Wilson
+[96.9474%, 100.0000%], Clopper-Pearson [97.0216%, 100.0000%]**, both intervals
 cross-checked by 2 tools.
 
 PINNED TO A COMMIT WAS STILL NOT ENOUGH, which is the 4th statement of this
-figure in a day. 114 of 120, 115 of 121, 116 of 122, 118 of 122, 119 of 122, now 120 of 122 --
+figure in a day. 114 of 120 through 122 of 122, 7 times in a day --
 the first 3 moved because scripts were ADDED, and this one moved because 2
 orphans were WIRED. A figure over a set that is being actively worked on is a
 snapshot of the moment it was taken, and no amount of dating or pinning changes
 that. Re-run the producer.
 
-4 OF THE 6 ORPHANS WERE WIRED RATHER THAN RULED ON, 2026-09-11. Wiring is not the
+ALL 6 ORPHANS WERE WIRED RATHER THAN RULED ON, 2026-09-11. Wiring is not the
 half that needs the founder: the removal clause demands a committed measurement
 before anything is taken away, while "an addition that nothing reaches is not
 additive either" is discharged by giving a script a caller.
-`bench/tests/test_parked_measurements_still_run_2026-09-11.py` EXECUTES all 4, and
-all 4 still work. The other 2 write files outright, with no flag to turn that
-off, so they stay parked and unrun -- running the scripts directory as a survey once overwrote a preserved
+`bench/tests/test_parked_measurements_still_run_2026-09-11.py` EXECUTES all 6, and
+all 6 still work. The 2 that write take their destination from an ARGUMENT, so a
+temporary path contains them; neither can dispatch a model, checked before either
+was run -- running the scripts directory as a survey once overwrote a preserved
 archive, and that instruction stands.
 
-THE RATCHET IS THE DURABLE CLAIM. The percentage is a snapshot of one revision;
+THE RATCHET IS NOW EMPTY, AND AN EMPTY RATCHET IS NOT A DISABLED ONE:
+`test_the_unreached_set_has_not_grown` compares the live set against it, so
+the FIRST script that stops being reached fails the suite. What changed is
+that there is no longer a standing exception to explain.
+
+THE DURABLE CLAIM IS THE RATCHET. The percentage is a snapshot of one revision;
 the set of 6 named scripts is what may not grow. Re-run the producer rather than
 quoting either., both intervals
 cross-checked by 2 tools (statsmodels against a 50-digit mpmath Wilson closed
@@ -146,10 +152,7 @@ SELF_REFERENTIAL = (
 
 #: Measured 2026-09-11. A RATCHET: it may fall, never rise. Raising it means a
 #: new script exists that nothing calls, nothing cites and no document names.
-UNREACHED = (
-    "scripts/quarantine_to_candidate.py",
-    "scripts/readjudicate_pairs.py",
-)
+UNREACHED: tuple[str, ...] = ()
 
 
 #: A line that is nothing but one script path, in any form a roll call is
