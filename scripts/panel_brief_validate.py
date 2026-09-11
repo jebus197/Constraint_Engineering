@@ -347,6 +347,7 @@ def undeclared_figures(text: str) -> list[str]:
     look-behind and look-ahead here allow a `.` only when a digit follows it.
     """
     declared = {m.group("value").strip() for m in FIGURE.finditer(text)}
+    dated = bool(re.search(r"20\d\d-\d\d-\d\d", text))
     declared_numbers = set()
     for d in declared:
         declared_numbers |= set(_NUMERIC_CLAIM.findall(d))
@@ -471,6 +472,18 @@ def main() -> int:
               "is not,", file=sys.stderr)
         print("  and that is exactly how `gamma is 0.451` reached 2 seats when "
               "it is 0.415413.", file=sys.stderr)
+        if not re.search(r"20\d\d-\d\d-\d\d", text):
+            # A RATE TRAVELS WITH ITS DATE, the sibling of
+            # `measured-rate-travels-with-its-script`. Added 2026-09-11 after a
+            # seat pointed out that round 12's brief quoted 67 DONE entries,
+            # 5026 test functions and 112 scripts as though current, against a
+            # list that was at 80, 5091 and 113 by the time it was read. None of
+            # it changed a conclusion; all of it invites the reproduction
+            # failures the brief was asking about.
+            print("  AND THIS BRIEF CARRIES NO DATE AT ALL. Every count above "
+                  "is measured against a\n  corpus that grows; undated, a "
+                  "reader cannot tell drift from disagreement.",
+                  file=sys.stderr)
     problems = validate(text)
     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
     problems += check_declared_figures(text)
