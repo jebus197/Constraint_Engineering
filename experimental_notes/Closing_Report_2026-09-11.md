@@ -7,7 +7,7 @@ A single day's work, from 05:00 to 13:11. The sections up to and including "Two 
 
 ## The Result, Measured At The End Of The Day
 
-A fresh copy of the repository now runs the complete test suite green: 7,237 tests passed, 52 skipped, 1 expected failure, nothing failed, and pytest exited with code 0.
+A fresh copy of the repository now runs the complete test suite green, and it has done so at 4 consecutive commits: 7,247 tests passed at the latest, 52 skipped, 1 expected failure, nothing failed, and pytest exited with code 0. The count rises across the four because tests were added between them.
 
 That is the claim task A2 had been making. It is the first time it has been true. It was asserted on 10 September and again on 11 September and was false both times, and on each occasion it was discovered by somebody actually making a copy rather than by anything in the project. The script that makes the copy and runs the suite is committed, so the claim is now reproducible rather than asserted.
 
