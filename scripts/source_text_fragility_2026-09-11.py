@@ -144,9 +144,17 @@ def main() -> int:
         print("\nA FILE RED UNDER EOF IS ASSERTING ON BYTES. Nothing above the "
               "appended line\nmoved and nothing executes differently, so no "
               "honest check can have an opinion.")
-    if not tree_is_clean():
-        print("\n*** THE TREE IS NOT CLEAN AFTER THE RUN. Inspect before "
-              "continuing. ***", file=sys.stderr)
+    # THE FINAL CHECK IS ABOUT THE REVERT, NOT ABOUT THE TREE. The first version
+    # re-used the entry guard, and a file created in another terminal WHILE the
+    # 20-minute run was in flight made it print "THE TREE IS NOT CLEAN AFTER THE
+    # RUN" -- an alarm about something the script neither touched nor could
+    # affect. An alarm that fires on the ordinary case is on its way to being
+    # ignored, which is this project's own sentence about 2 other alarms.
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", a.target],
+                           cwd=REPO, capture_output=True, text=True).stdout.strip()
+    if dirty:
+        print(f"\n*** {a.target} IS STILL MODIFIED AFTER THE RUN. The revert "
+              f"failed; inspect before continuing. ***", file=sys.stderr)
         return 1
     return 0
 
