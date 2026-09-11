@@ -149,19 +149,25 @@ The permanent check is deliberately a static one, and the reason is worth statin
 
 And the check written to catch this had the defect it was written to catch. Its first version asked whether the name of the help function appeared anywhere in the script's text, so deleting the real call left it satisfied, because the explanatory comment beside the call still contained the name. A guard reading its own comment about a function as evidence that the function is called. It now asks the parsed program whether the function is actually called.
 
-## Half The Orphaned Scripts Did Not Need A Ruling After All
+## None Of The Orphaned Scripts Needed A Ruling After All
 
-Six committed scripts were reaching nothing at all, and the question of whether to keep or remove them was parked for you. On a closer look, only half of that question is yours.
+Six committed scripts were reaching nothing at all, and whether to keep or remove them was parked for you. It turns out none of it was yours to decide.
 
-The project's standard has two halves. Removing something requires a measurement showing that a replacement is better, and that is a decision for you. The other half says an addition nothing reaches is not an addition either, and that one is discharged simply by giving a script a caller. A test that runs it is exactly such a caller.
+The standard has two halves. Removing something requires a measurement showing a replacement is better, and that is your call. The other half says an addition nothing reaches is not an addition either, and that is discharged simply by giving a script a caller. A test that runs it is exactly such a caller. So all six are now wired, nothing was removed, and there is nothing left to rule on.
 
-So three of the six are now wired, and the choice of which three was measured rather than assumed. A structural scan of all six found that three contain no write, no spawned process and no absolute path, so running them cannot change anything. All three still work, which is worth knowing whichever way you rule: a committed measurement that no longer runs is a defect regardless of whether it is kept.
+Each one was run and shown to work, and each one's safety was established before it was run rather than after. That ordering matters more than it sounds: the standing instruction against running the scripts directory as a survey exists because doing so once overwrote a preserved archive.
 
-The third of those three was added only after asking which processes the "spawners" actually run. One of them spawns nothing but two read-only version-control queries. Classifying it by the shape of the call rather than by what the call does was a coarser version of the same mistake found repeatedly today.
+Three were straightforward: a structural scan found no write, no spawned process and no absolute path, so running them could not change anything. A fourth was added after asking which processes the "spawners" actually run — one spawns nothing but two read-only version-control queries, and classifying it by the shape of the call rather than by what the call does was a coarser version of the day's recurring mistake.
 
-Three remain parked and unrun, and the reason is now specific rather than general. Two write files outright. The third runs another script with a "change nothing" flag, and that other script carries ten separate writes, so its safety depends on a different program honouring a flag. That is a reasonable bet and not one worth taking against a preserved archive, which is exactly what the standing instruction exists to protect after someone already lost one.
+The fifth had been left parked on a bet rather than a fact. It runs another script behind a "change nothing" flag, and that other script carries ten separate writes, so its safety rested on a different program honouring a flag. A bet you can replace with a measurement should be replaced with one: the guard sits at line 424 of the other script, with no write and no local call before it, and running the pair in a throwaway copy changes nothing at all.
 
-And naming those three in the new test's own explanation un-orphaned one of them within a minute, because writing a script's path into a tracked file is all it takes for the reachability scan to count it as reached. That is the fifth time in a day that prose about an orphan stopped it being one. They are no longer named there; the list lives in the parked file, and the check reads it from the ratchet rather than repeating it.
+The last two write files outright, which is why they sat unrun longest. But neither writes to a fixed place — each takes its destination from an argument, so a temporary path contains it. Before running either, the more important question was whether they could spend money, because "re-adjudicate" is exactly the word that would make a reader assume a model dispatch. Neither can.
+
+That check was wrong on its first attempt, in the familiar direction. It treated the mere import of Python's subprocess library as the hazard, and one of the two imports that library without ever calling it — dead code that would have kept a harmless script parked indefinitely. Network access is judged by import; spawning is judged by the call. Confusing the two is the same substitution of source text for behaviour that this project has a rule against.
+
+And naming the still-parked scripts in the new test's own explanation un-orphaned one of them within a minute, because writing a script's path into a tracked file is all the reachability scan can see. That was the fifth instance in a day.
+
+The tally now reads 122 of 122. The ratchet that held the number of unreached scripts at 6 is now empty, which is not the same as switched off: planting a fresh orphan still fails the suite, and that was verified rather than assumed. Four of its own checks had been using a live orphan as their example and had nothing left to demonstrate with once the last one was wired — they said so themselves, in their own failure messages. They now use invented examples, because a test that depends on the project still having the fault is a test that breaks when the fault is fixed.
 
 ## Two Things Recorded Honestly Rather Than Closed
 
