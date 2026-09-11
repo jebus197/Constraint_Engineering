@@ -373,6 +373,17 @@ def lint(path: pathlib.Path) -> list:
 
 
 def main() -> int:
+    # ANSWER `--help` RATHER THAN LINTING IT. Found 2026-09-11 by task A16's
+    # survey. The comment 6 lines below already anticipated this exactly -- "an
+    # unrecognised flag, which lands here as a 'path'" -- and treating that as a
+    # missing file is the right behaviour for a TYPO and the wrong one for a
+    # request for usage. The distinction is that `--help` is a request this
+    # program can satisfy, and a program that answers the wrong complaint first
+    # teaches its reader that its diagnostics are unreliable.
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print((__doc__ or "").strip())
+        print("\n  usage: note_vagueness_lint.py <file> [file ...]")
+        return 0
     paths = [pathlib.Path(a) for a in sys.argv[1:]]
     if not paths:
         print("  usage: note_vagueness_lint.py <file> [file ...]"); return 1

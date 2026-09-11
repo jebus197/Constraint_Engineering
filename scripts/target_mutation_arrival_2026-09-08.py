@@ -153,7 +153,39 @@ def arrival_stats(t: np.ndarray, burst_window: float = 600.0, *, seed: int = 202
     }
 
 
+
+
+def _print_usage_and_exit() -> "None":
+    """Answer `--help` instead of consuming it as data.
+
+    FOUND 2026-09-11 BY TASK A16'S SURVEY, which is exactly what that survey was
+    for. All 5 measurement scripts that failed `--help` failed the SAME way: the
+    flag was not recognised, so it was taken as a positional argument -- a report
+    path, a note to lint, a log to read. One crashed with FileNotFoundError on
+    the literal string `--help`; the others silently ran a full measurement when
+    the caller asked for usage.
+
+    This project already carries the rule in its strong form -- "a `--help` must
+    never cost money", written after 15 of 17 runners billed a live dispatch on
+    an unrecognised argument. These are measurements and cost nothing but time.
+    The principle is the same: a flag the program does not understand must not be
+    read as data.
+    """
+    import sys as _sys
+    print((__doc__ or "").strip())
+    print()
+    print(f"usage: {_sys.argv[0].split('/')[-1]} [paths...]")
+    raise SystemExit(0)
+
+
+def _help_requested() -> bool:
+    import sys as _sys
+    return any(a in ("-h", "--help") for a in _sys.argv[1:])
+
+
 def main(path: Path = DEFAULT_LOG) -> int:
+    if _help_requested():
+        _print_usage_and_exit()
     t, sizes, _ = parse_log(path.read_text())
     try:
         s = arrival_stats(t)
