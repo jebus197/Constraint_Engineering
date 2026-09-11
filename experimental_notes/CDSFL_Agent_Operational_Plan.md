@@ -61,6 +61,16 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ---
 
+**★ RESUME POINTER (2026-09-11 22:20 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `8768311`, main, **164 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 22:16 with `--record-restore`, **exit code 0**, after a compaction at 21:09; the founder issued it because he did not trust the post-compaction summary, and he was right to — see below.
+
+**PAUSED ON THE FOUNDER'S INSTRUCTION.** Nothing is running. Pause record: `experimental_notes/PAUSED_2026-09-11.md`. Everything awaiting him: `experimental_notes/PARKED_FOR_THE_FOUNDER.md`, the scope decision first.
+
+**WHERE TO PICK UP.** 95 entries: 84 DONE, 2 OPEN (A8, A19 — both rulings), 4 BLOCKED on the founder (R1, 10.2, A11, W1), 1 DEFERRED, 4 WITHDRAWN. Nothing is waiting on work. Exp 56 stays deferred until he rules.
+
+**THE DONE AUDIT IS NOW COMPLETE AT 84 of 84.** Round 2 covered the 13 entries round 1 never reached: 6 upheld (3.3, 9.2, 9.3, 9.4, L2, P7). Combined **30 of 84 = 35.7143%**, Wilson [26.2994%, 46.3787%], cross-verified 3 ways. Evidence, unfiltered, at `experimental_notes/evidence/done_audit_2026-09-11/`.
+
+**3 THINGS THE POST-COMPACTION SUMMARY GOT WRONG, all caught by this restore.** The tracker pointer below was 9 hours stale (it said 81 of 92). Open Brain's last session summary is from 2026-09-08, so `sv` has not run in 3 days and none of today's 107 commits are in it. And 164 commits sit unpushed.
+
 **★ RESUME POINTER (2026-09-11 13:13 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `1147f63`, main, **123 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 10:37 with `--record-restore`, **exit code 0**, after a compaction at 09:26.
 
 **WHERE TO PICK UP.** Nothing on the task list is waiting on work. 81 of 92 done; the 2 OPEN entries (A8, A19) are rulings, and 4 more are blocked on the founder. 0.1 was observed twice today, 09:37 and 11:09, and is DEFERRED until the day has passed rather than open. Exp 56 stays deferred until the rest of the list is closed, which means until he rules.
