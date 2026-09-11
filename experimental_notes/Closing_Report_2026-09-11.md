@@ -3,7 +3,7 @@
 
 ## What This Covers
 
-A single morning's work, from 05:00 to 10:05. The starting point was a task entry marked complete, A2, whose claim was that anyone who clones the repository and runs the test suite sees the same result the maintainer sees. That claim turned out to be false, and everything below follows from establishing why.
+A single day's work, from 05:00 to 13:11. The sections up to and including "Two Things Recorded Honestly Rather Than Closed" were written at 10:05 and cover the morning; the afternoon sections were added later and correct 2 of the morning's own figures where they had been measured wrongly. The starting point was a task entry marked complete, A2, whose claim was that anyone who clones the repository and runs the test suite sees the same result the maintainer sees. That claim turned out to be false, and everything below follows from establishing why.
 
 ## The Headline, Stated Plainly
 
