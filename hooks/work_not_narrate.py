@@ -79,6 +79,29 @@ TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 MARKERS = REPO / "scripts"
 
 
+#: PARKING THE HOOK TAKES EFFECT IMMEDIATELY, not at the next session.
+#: Claude Code reads its hook configuration once, at session start. On
+#: 2026-09-11 the founder said "park the hook thing", the `Stop` key was
+#: renamed out of settings.json, that was verified on disk -- and the hook went
+#: on firing for the rest of the session, because the running process still held
+#: the configuration it started with. He was told it was parked. It was not.
+#: The presence of this file is checked at every invocation, so parking is
+#: effective the moment the file exists and is undone by deleting it.
+PARKED = pathlib.Path.home() / ".claude" / "hooks" / ".work_not_narrate_PARKED"
+
+
+def is_parked() -> bool:
+    """True when the founder has parked this hook.
+
+    FAILS TOWARD FIRING, deliberately. An unreadable home directory must not
+    silently disable a guard; only a file that is actually there does that.
+    """
+    try:
+        return PARKED.exists()
+    except Exception:
+        return False
+
+
 def founder_commands(text: str) -> list[str]:
     """His MC commands, read with the SAME parser the MC hook uses.
 
@@ -311,6 +334,8 @@ def self_test() -> int:
 def main() -> int:
     if "--self-test" in sys.argv:
         return self_test()
+    if is_parked():
+        return 0                      # parked by the founder; never refuse
     try:
         payload = json.load(sys.stdin)
     except Exception:

@@ -123,9 +123,19 @@ class TestItIsVersionedAndWired:
         if not s.is_file():
             pytest.skip("no settings.json on this machine")
         d = json.loads(s.read_text())
-        assert "work_not_narrate" in json.dumps(d.get("hooks", {}).get("Stop", [])), (
-            "the hook exists and nothing calls it, which is the unwired-addition "
-            "half of the additive standard")
+        hooks = d.get("hooks", {})
+        armed = "work_not_narrate" in json.dumps(hooks.get("Stop", []))
+        # A DELIBERATE PARK IS NOT AN UNWIRED ADDITION. The founder parked this
+        # hook on 2026-09-11 -- "park the hook thing we built" -- and parking
+        # preserves the entry under a `_PARKED_` key rather than deleting it, so
+        # restoring it is one rename. What this guard exists to catch is the
+        # entry VANISHING, which is the unwired-addition half of the additive
+        # standard. So a parked entry passes and a missing one still fails.
+        parked = any(k.startswith("_PARKED_") and "work_not_narrate" in json.dumps(v)
+                     for k, v in hooks.items())
+        assert armed or parked, (
+            "the hook exists and nothing calls it, and no parked entry preserves "
+            "it either, which is the unwired-addition half of the additive standard")
 
     def test_the_five_existing_hooks_still_run(self):
         s = Path.home() / ".claude" / "settings.json"

@@ -211,3 +211,32 @@ def test_the_shared_parser_file_is_versioned_and_current():
     repo = REPO / "hooks" / "mc_commands.py"
     assert repo.is_file() and live.is_file()
     assert repo.read_bytes() == live.read_bytes(), "the shared parser has diverged"
+
+
+# ---------------------------------------------------------------------------
+# PARKING MUST BE EFFECTIVE IMMEDIATELY.
+# Claude Code reads hook configuration once at session start. Renaming the Stop
+# key out of settings.json is correct on disk and does NOTHING to the running
+# session, so the founder was told the hook was parked while it went on firing.
+# ---------------------------------------------------------------------------
+
+def test_a_parked_hook_never_refuses(hook, tmp_path, monkeypatch):
+    monkeypatch.setattr(hook, "PARKED", tmp_path / "parked")
+    assert hook.is_parked() is False
+    (tmp_path / "parked").write_text("", encoding="utf-8")
+    assert hook.is_parked() is True
+
+
+def test_parking_fails_toward_firing(hook, monkeypatch):
+    """An unreadable path must not silently disable the guard."""
+    class Boom:
+        def exists(self):
+            raise OSError("no home")
+    monkeypatch.setattr(hook, "PARKED", Boom())
+    assert hook.is_parked() is False
+
+
+def test_the_verdict_logic_is_untouched_by_parking(hook):
+    """Parking suppresses the REFUSAL, it does not rewrite what a refusal is."""
+    assert hook.verdict(1, 5000, False, False, n_open=2, nxt="A8")[0] is True
+    assert hook.self_test() == 0
