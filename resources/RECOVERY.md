@@ -41,6 +41,8 @@ HEAD `a18e83b`, main, **122 ahead of `origin/main` — NOT PUSHED**. Working tre
 
 **★★★ THE I38 FLAKE REPRODUCED AND THE HARNESS THREW THE DIAGNOSTICS AWAY.** First reproduction since the diagnostics were added for exactly that moment; `fresh_clone_suite` reported the test's NAME and nothing else. That, not unavailability, is why I38 read OBSERVED across 8 runs. Fixed: full output at `bench/logs/fresh_clone_last_run.txt`. **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%] — an interval spanning a factor of 5 describes 8 runs, it does not establish a rate. Producer: `scripts/flake_rate_2026-09-11.py`.
 
+**★★★ SUITE FIGURES, EACH PINNED TO THE COMMIT IT MEASURES.** A fresh clone at `c87368a` gave **3 failed, 7221 passed**, 52 skipped, 1 xfailed. The working tree at `ad2804e` gave **1 failed, 7193 passed**, 5 skipped, 1 xfailed, and that 1 failure was a mirror-drift window opened by editing the task list mid-run; it passes on re-run. **The 3 clone failures are all now fixed and verified in a clone**: the I38 classifier, the reachability ratchet, and a `--help` that rewrote a verbatim panel record. Producer: `scripts/fresh_clone_suite_2026-09-11.py`, whose full output now lands at `bench/logs/fresh_clone_last_run.txt`. **A wall-clock figure is a property of this machine under this load and is not quoted here.**
+
 **Reproduce the day's figures**: `python3 scripts/fresh_clone_suite_2026-09-11.py`, `scripts/false_zero_probe_2026-09-11.py --check`, `scripts/flake_rate_2026-09-11.py`, `scripts/scripts_are_reached_2026-09-11.py`, `scripts/panel_condition_compliance_2026-09-10.py`.
 
 ## SESSION STATE — 2026-09-11 09:13 BST (READ THIS FIRST)
