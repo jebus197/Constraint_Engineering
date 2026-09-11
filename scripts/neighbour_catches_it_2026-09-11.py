@@ -50,12 +50,51 @@ def tree_is_clean() -> bool:
 
 
 def claimants(symbol: str) -> list[str]:
+    """Test files that NAME the symbol. The weak sense of 'claims to cover it'."""
     out = []
     for p in sorted(TESTS.glob("test_*.py")):
         t = p.read_text(encoding="utf-8", errors="replace")
         if symbol in t:
             out.append(f"bench/tests/{p.name}")
     return out
+
+
+def calls_it(path: str, symbol: str) -> bool:
+    """Does the file actually CALL the symbol? The strong sense.
+
+    WHY THE DISTINCTION IS NOT PEDANTRY, and it moved the headline figure by more
+    than half. The first run of this script reported 11 of 37 claimants surviving
+    the function's destruction -- 29.7297% -- and a hand reading of 3 survivors
+    found all 3 were CORRECT:
+
+      test_fix_complexity asserts `"compute_rk" not in called`. It names the
+      symbol in order to require that it is NOT called. Destroying it cannot
+      break that, and should not.
+
+      test_target_complexity_is_reported AST-scans for CALL SITES of
+      check_sk_threshold. Emptying the function leaves its call sites exactly
+      where they were.
+
+      test_instrument_gaps_from_panel's own docstring RECORDS a prior mutation
+      study of the same function.
+
+    So "names it" is a bad proxy for "claims to cover it", and a number built on
+    it would have put an alarming figure in front of the founder that a
+    15-minute read refutes. A file that never calls the symbol is not claiming
+    anything about its behaviour.
+    """
+    import ast as _ast
+
+    try:
+        tree = _ast.parse((REPO / path).read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return False
+    for n in _ast.walk(tree):
+        if isinstance(n, _ast.Call):
+            f = n.func
+            if getattr(f, "id", None) == symbol or getattr(f, "attr", None) == symbol:
+                return True
+    return False
 
 
 def destroy(text: str, symbol: str) -> str | None:
@@ -99,7 +138,7 @@ def main() -> int:
         claims = claimants(symbol)
         if not claims:
             print(f"{symbol}: no test file names it at all -- UNCLAIMED")
-            rows.append((symbol, [], [], []))
+            rows.append((symbol, [], [], [], []))
             continue
         mutated = destroy(original, symbol)
         if mutated is None:
@@ -114,12 +153,16 @@ def main() -> int:
         assert target.read_text(encoding="utf-8") == original, "revert failed"
         newly = [f for f in red if f not in base_red]
         survivors = [c for c in claims if c not in newly and c not in base_red]
-        rows.append((symbol, claims, newly, survivors))
-        print(f"\n{symbol}: {len(claims)} claimant(s), {len(newly)} went red")
+        callers = [c for c in survivors if calls_it(c, symbol)]
+        rows.append((symbol, claims, newly, callers, survivors))
+        print(f"\n{symbol}: {len(claims)} name it, {len(newly)} went red, "
+              f"{len(survivors)} survived, {len(callers)} of those CALL it")
         for s in survivors:
-            print(f"    SURVIVED the destruction of {symbol}: {s}")
+            tag = "CALLS IT -- candidate" if s in callers else "names only"
+            print(f"    survived ({tag}): {s}")
 
-    total_claims = sum(len(r[1]) for r in rows)
+    # THE DENOMINATOR IS FILES THAT CALL THE SYMBOL, not files that mention it.
+    total_claims = sum(sum(1 for c in r[1] if calls_it(c, r[0])) for r in rows)
     total_surv = sum(len(r[3]) for r in rows)
     if total_claims:
         from statsmodels.stats.proportion import proportion_confint
@@ -128,7 +171,7 @@ def main() -> int:
         lo_c, hi_c = proportion_confint(total_surv, total_claims, method="beta")
         hi_s = (1.0 if total_surv == total_claims
                 else sbeta.ppf(0.975, total_surv + 1, total_claims - total_surv))
-        print(f"\nclaimants that survived the function being destroyed: "
+        print(f"\nfiles that CALL the symbol and survived its destruction: "
               f"{total_surv}/{total_claims} = {total_surv / total_claims:.4%}")
         print(f"  Wilson 95%          : [{lo:.4%}, {hi:.4%}]  (statsmodels)")
         print(f"  Clopper-Pearson 95% : [{lo_c:.4%}, {hi_c:.4%}]  (statsmodels/beta)")
