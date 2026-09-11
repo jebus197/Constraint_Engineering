@@ -7,6 +7,25 @@ never replace it. This script writes every response exactly as returned.
 """
 import json, pathlib, sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _cli_help import answer_help  # noqa: E402
+
+# `--help` MUST NOT ACT, AND ON THIS SCRIPT IT DESTROYED 54,480 BYTES.
+# Measured 2026-09-11 in a throwaway clone: `--help` rewrote
+# `experimental_notes/Panel_Enforcement_Prose_FULL_RECORD_2026-08-19.md` from
+# 55,814 bytes to 1,334 and exited 0. This script REGENERATES a panel record
+# from `bench/logs/`, which `.gitignore:41` excludes, so in any clone the source
+# is empty and every seat is written back as "NO RESPONSE FILE" -- a verbatim
+# record of a 5-model review replaced by a stub, silently, by a flag that is
+# supposed to print a sentence.
+#
+# THE MORNING'S `--help` SWEEP REPORTED 0 OF 54 AND WAS CLEAN, because its
+# population is MEASUREMENT scripts and this is an ACTION script. 122 scripts are
+# tracked. The 68 the sweep does not cover are exactly the ones where a `--help`
+# that acts is destructive rather than merely rude. A false zero in the
+# POPULATION rather than in the matcher.
+answer_help(__doc__, __file__, sys.argv[1:])
+
 LOGS = pathlib.Path("bench/logs/confer_stage1_audit_2026-08-18")
 ORDER = [("ge", "Gemini 3.1 Pro Preview", "OpenRouter"),
          ("cgpt", "ChatGPT GPT-5.5", "OpenRouter"),

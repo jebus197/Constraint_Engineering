@@ -37,6 +37,19 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _cli_help import answer_help  # noqa: E402
+
+# `--help` MUST NOT ACT. MEASURED 2026-09-11: `--help` on
+# `scripts/assemble_panel_record_0819.py` rewrote a 55,814-byte verbatim panel
+# record down to 1,334 bytes and exited 0, because the flag fell through to the
+# script's ordinary work. 7 tracked scripts both WROTE something and ignored the
+# flag -- 5.7377% of 122, Wilson [2.8068%, 11.3709%].
+#
+# `answer_help` returns immediately when argv is empty, so a plain run reaches
+# exactly the code it reached before.
+answer_help(__doc__, __file__, sys.argv[1:])
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 REL = "experimental_notes/CDSFL_MASTER_TASK_LIST.md"
 LIST = REPO / REL
