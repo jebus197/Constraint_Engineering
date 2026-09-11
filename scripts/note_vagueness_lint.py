@@ -311,13 +311,25 @@ def partition(path) -> tuple[list, list]:
     # AN UNCLOSED REGION EXEMPTS TO END OF FILE, AND SAYS NOTHING WHILE IT DOES.
     # Gated on the ORDERED state, not on `opens != closes`: a stray close before
     # an unclosed open balances the tally while a region is genuinely open.
-    if state["unclosed"] or state["stray_closes"]:
+    # 3 CONDITIONS, AND NONE OF THEM SUBSUMES THE OTHERS. The original check was
+    # the tally alone and missed a stray close before an unclosed open, which
+    # balances at 1 and 1. Replacing it with the ordered walk alone then missed 2
+    # begins and 1 end, which is ordered-consistent -- the second begin changes
+    # no state and the single end closes -- and yet counts 2 against 1. The tally
+    # was not WRONG, it was INSUFFICIENT, so it is restored beside the other 2
+    # rather than in place of them.
+    if state["unclosed"] or state["stray_closes"] or state["opens"] != state["closes"]:
         why = []
         if state["unclosed"]:
             where = state["opened_at"]
             why.append(f"a region opened at paragraph {where} is still open at "
                        f"end of file, so every paragraph after it is silently "
                        f"exempt")
+        if state["opens"] != state["closes"] and not state["unclosed"]:
+            why.append(f"{state['opens']} begin marker(s) against "
+                       f"{state['closes']} end marker(s), which is malformed even "
+                       f"though no region is left open -- 2 begins in 1 paragraph "
+                       f"is the shape that does this")
         if state["stray_closes"]:
             why.append(f"{state['stray_closes']} verbatim-end marker(s) close "
                        f"nothing, which is how a tally of markers can look "

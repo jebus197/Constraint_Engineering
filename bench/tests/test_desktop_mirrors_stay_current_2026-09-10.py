@@ -557,3 +557,67 @@ class TestTheGuardSurvivesPanelRound15:
         roots = {str(r) for r in sync.scratch_roots()}
         assert any("/var/folders" in r for r in roots), roots
         assert any(r in ("/tmp", "/private/tmp") for r in roots), roots
+
+
+class TestTheGapsFableNamed:
+    """Cases panel round 15 (fable) covered and this file did not.
+
+    Its own test file tested its own implementation, so rather than porting that
+    file wholesale these are written against the signature that shipped. They are
+    here because the scenarios were genuinely uncovered, not because a second
+    seat asked for them.
+    """
+
+    def test_a_var_folders_clone_is_refused_when_tmpdir_says_tmp(self, sync, monkeypatch):
+        """The environment-dependent hole, end to end rather than by inspection.
+
+        With `TMPDIR` unset, `gettempdir()` returns `/tmp`, and a clone under
+        `/var/folders` -- which is where this platform actually puts them --
+        escaped the rule entirely. The existing test asserts the ROOT SET
+        contains both; this asserts the REFUSAL, which is the property.
+        """
+        monkeypatch.delenv("TMPDIR", raising=False)
+        desktop = sync.real_desktop()
+        r = sync.refuse_reason_for(
+            desktop=desktop, passwd_desktop=desktop, passwd_reliable=True,
+            repo=Path("/private/var/folders/cc/x/T/cdsfl_clone"),
+            under_pytest=False, roots=sync.scratch_roots(), canonical=None)
+        assert r is not None and "clone" in r, r
+
+    def test_a_scratch_clone_cannot_register_itself(self, sync, monkeypatch,
+                                                    tmp_path, capsys):
+        """Without this the mechanism INVERTS: the clone that caused the incident
+        claims ownership and then refuses the founder's own checkout, which is
+        the worse direction. Verified by hand after committing; untested until
+        fable named it.
+        """
+        fake_desktop = tmp_path / "Desktop"
+        fake_desktop.mkdir()
+        monkeypatch.setattr(sync, "REPO", Path(sync.scratch_roots()[0]) / "cdsfl_clone")
+        monkeypatch.setattr(sync, "DESKTOP", fake_desktop)
+        monkeypatch.setattr(sys, "argv", ["sync_desktop_mirrors.py",
+                                          "--register-canonical"])
+        assert sync.main() == 4
+        assert "REFUSED" in capsys.readouterr().err
+        assert not (fake_desktop / sync.MARKER).exists(), (
+            "a scratch clone registered itself as the canonical checkout")
+
+    def test_the_founders_checkout_can_register(self, sync, monkeypatch,
+                                                tmp_path, capsys):
+        """POSITIVE CONTROL: a refusal that refused everything would make the
+        marker unreachable and the whole mechanism dead."""
+        fake_desktop = tmp_path / "Desktop"
+        fake_desktop.mkdir()
+        # NOT `tmp_path`, WHICH IS ITSELF SCRATCH. The first version of this
+        # control put the repo under `tmp_path` and the guard refused it --
+        # correctly, and the test was wrong. A positive control that cannot pass
+        # is the same defect as a guard that cannot fail, pointing the other way.
+        # Registration only reads the path, so it need not exist.
+        repo = Path("/Users/someone/Developer_Projects/Constraint_Engineering")
+        monkeypatch.setattr(sync, "REPO", repo)
+        monkeypatch.setattr(sync, "DESKTOP", fake_desktop)
+        monkeypatch.setattr(sys, "argv", ["sync_desktop_mirrors.py",
+                                          "--register-canonical"])
+        assert sync.main() == 0
+        assert (fake_desktop / sync.MARKER).read_text(encoding="utf-8").strip() \
+            == str(repo.resolve())

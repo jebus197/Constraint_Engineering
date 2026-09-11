@@ -201,3 +201,75 @@ class TestAnUnclosedRegionCannotSwallowAFile:
         assert len(ex) > 50, (
             f"only {len(ex)} paragraphs are exempt; the inline strip has broken "
             f"real regions, whose markers sit on their own lines")
+
+
+class TestTheOrderedWalk:
+    """Order-sensitive cases panel round 15 found and the tally could not see.
+
+    A TALLY IS ORDER-BLIND AND AN UNCLOSED REGION IS A FACT ABOUT ORDER. The
+    first balance check compared `opens != closes`, and both seats showed that
+    answers the wrong question.
+    """
+
+    def test_a_stray_close_before_an_unclosed_open_is_reported(self, lint, tmp_path):
+        """1 begin and 1 end, so the tally BALANCES -- while a region is open and
+        exempting to end of file. cc2's case."""
+        note = _note(tmp_path, "A NOTE\n\n<!-- verbatim-end -->\n\n"
+                               "<!-- verbatim-begin: x -->\n\n" + VIOLATION + "\n")
+        st = lint.region_state(note.read_text(encoding="utf-8"))
+        assert st["opens"] == st["closes"] == 1, st
+        assert st["unclosed"] and st["stray_closes"] == 1, st
+        counted, _ = lint.partition(note)
+        assert [h for h in counted if "UNBALANCED" in h[1]], counted
+
+    def test_a_close_then_an_open_in_one_paragraph_keeps_exempting(self, lint, tmp_path):
+        """fable's case, and the WORSE direction: the old walk kept 1 flag per
+        paragraph and applied the close last wherever it sat, so the exemption
+        ENDED and a seat's quoted words were counted as the note's own. That is
+        the task V8 defeat -- the blocking ratchet would then refuse the record.
+        """
+        body = ("A NOTE\n\n<!-- verbatim-begin: seat one -->\n\nfirst seat.\n\n"
+                "<!-- verbatim-end -->\n<!-- verbatim-begin: seat two -->\n\n"
+                + VIOLATION + "\n\n<!-- verbatim-end -->\n")
+        note = _note(tmp_path, body)
+        counted, exempted = lint.partition(note)
+        assert not [h for h in counted if "Rule 28" in h[1]], (
+            "the second seat's words are being counted as the note's own")
+        assert [h for h in exempted if "Rule 28" in h[1]], (
+            "the second seat's words are not exempt at all")
+
+    def test_two_opens_in_one_paragraph_are_two_opens(self, lint, tmp_path):
+        """A second flag-per-paragraph blind spot: 2 begins read as 1, so the
+        balance counter could not see the imbalance either."""
+        note = _note(tmp_path, "A NOTE\n\n<!-- verbatim-begin: a -->\n"
+                               "<!-- verbatim-begin: b -->\n\nBody.\n\n"
+                               "<!-- verbatim-end -->\n")
+        st = lint.region_state(note.read_text(encoding="utf-8"))
+        assert st["opens"] == 2, st
+        # NOT `unclosed`. Regions do not nest here: the second begin changes no
+        # state and the single end closes. The property that matters is that the
+        # note is REPORTED as malformed, and this case is caught by the tally --
+        # which is why the tally was restored beside the ordered checks instead
+        # of being replaced by them. The first version of this test asserted
+        # `unclosed` and was asserting the wrong thing.
+        assert not st["unclosed"] and st["opens"] != st["closes"], st
+        counted, _ = lint.partition(note)
+        assert [h for h in counted if "UNBALANCED" in h[1]], counted
+
+    def test_a_future_stamp_in_a_leading_region_is_still_counted(self, lint, tmp_path):
+        """A note whose FIRST paragraph opens a region used to buy amnesty for
+        its own Rule 1 violation, because the future-stamp finding was added
+        BEFORE the exempt split while the unbalanced finding was added after.
+        The inconsistency was the defect."""
+        note = _note(tmp_path, "<!-- verbatim-begin: x -->\n\n2099-01-01 12:00 BST\n\n"
+                               "Body.\n\n<!-- verbatim-end -->\n")
+        counted, exempted = lint.partition(note)
+        assert [h for h in counted if "FUTURE TIMESTAMP" in h[1]], counted
+        assert not [h for h in exempted if "FUTURE TIMESTAMP" in h[1]], exempted
+
+    def test_the_report_names_where_the_region_opened(self, lint, tmp_path):
+        """A reader told only THAT a region is unclosed still has to find it."""
+        note = _note(tmp_path, "A NOTE\n\nBody.\n\n<!-- verbatim-begin: x -->\n\nMore.\n")
+        counted, _ = lint.partition(note)
+        hit = [h for h in counted if "UNBALANCED" in h[1]]
+        assert hit and "paragraph 3" in hit[0][3], hit
