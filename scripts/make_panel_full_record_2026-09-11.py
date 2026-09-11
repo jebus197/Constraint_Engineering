@@ -101,11 +101,23 @@ def main() -> int:
         epilog="The CONTEXT -- what was reviewed, why, and what was done with "
                "the findings -- is read from stdin, because it is judgement and "
                "cannot be generated.")
-    ap.add_argument("round_dir", help="a directory name under bench/logs/")
-    ap.add_argument("title", help="the note's title line")
-    ap.add_argument("out_name", help="the file name under experimental_notes/")
+    # OPTIONAL POSITIONALS, VALIDATED BELOW, and the reason is a guard.
+    # With them REQUIRED, argparse reports the missing positionals BEFORE it
+    # reports an unrecognised flag -- so `--this-flag-does-not-exist` produced
+    # "the following arguments are required" and never the words "unrecognized
+    # arguments", and test_operational_scripts.py's
+    # test_an_unknown_flag_is_rejected_loudly went red. The flag IS rejected
+    # either way, with exit 2; the guard checks the MESSAGE, because a script
+    # that refuses without saying what it refused teaches nothing.
+    ap.add_argument("round_dir", nargs="?",
+                    help="a directory name under bench/logs/")
+    ap.add_argument("title", nargs="?", help="the note's title line")
+    ap.add_argument("out_name", nargs="?",
+                    help="the file name under experimental_notes/")
     a = ap.parse_args()
 
+    if not (a.round_dir and a.title and a.out_name):
+        ap.error("round_dir, title and out_name are all required")
     if (REPO / "bench" / "logs" / a.round_dir).is_dir() is False:
         print(f"no such round directory: bench/logs/{a.round_dir}", file=sys.stderr)
         return 2
