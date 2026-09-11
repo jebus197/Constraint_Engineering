@@ -75,6 +75,44 @@ def snapshots() -> list[tuple[str, str, int, int]]:
     return out
 
 
+def per_day(rows: list) -> tuple[dict, dict]:
+    """(discovered, closed) counts keyed by calendar day.
+
+    DISCOVERED means an id seen for the FIRST time on that day. Day 1 is the list
+    being CREATED, not discovery while working it, so a reader comparing days must
+    drop the first.
+
+    THIS IS THE FIGURE AN ETA ACTUALLY NEEDS. The closure rate says how fast the
+    list empties; this says how fast it refills. Measured 2026-09-09 to 09-11:
+    discovery ran 72, 16, 7 and closure ran 19, 44, 21. Closure outpaces discovery
+    by 3x on the latest day, which is why the list converges at all.
+
+    THE DECAY RATE IS NOT ESTABLISHED AND MUST NOT BE QUOTED AS ONE. With 2
+    days of discovery-while-working, the day-on-day ratio is 0.4375 and a 95%
+    Wilson interval on the split admits a ratio up to 1.0352 -- that is, the data
+    cannot rule out a process that does not decay at all. The convergence
+    argument rests on closure OUTPACING discovery, which is measured, not on a
+    decay that is not.
+    """
+    import collections
+    import subprocess as _sp
+    seen, done_seen = set(), set()
+    disc, clo = collections.Counter(), collections.Counter()
+    for when, sha, _t, _d in rows:
+        blob = _sp.run(["git", "show", f"{sha}:{LIST}"],
+                       capture_output=True, text=True).stdout
+        ids = {i.strip(): st for i, st in MARK.findall(blob)}
+        day = when[:10]
+        for i, st in ids.items():
+            if i not in seen:
+                seen.add(i)
+                disc[day] += 1
+            if st == "DONE" and i not in done_seen:
+                done_seen.add(i)
+                clo[day] += 1
+    return dict(disc), dict(clo)
+
+
 def figures(rows: list[tuple[str, str, int, int]]) -> dict:
     populated = [r for r in rows if r[2] > 0]
     if len(populated) < 2:
@@ -95,12 +133,21 @@ def figures(rows: list[tuple[str, str, int, int]]) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--per-day", action="store_true",
+                    help="discovered and closed counts per calendar day")
     ap.add_argument("--curve", action="store_true",
                     help="print the full total/DONE curve, one line per commit")
     a = ap.parse_args()
 
     rows = snapshots()
     f = figures(rows)
+    if a.per_day:
+        disc, clo = per_day(rows)
+        print(f"  {'day':12} {'discovered':>11} {'closed':>7}")
+        for d in sorted(set(disc) | set(clo)):
+            print(f"  {d:12} {disc.get(d, 0):>11} {clo.get(d, 0):>7}")
+        print("  (day 1 is the list being CREATED, not discovery while working it)")
+        print()
     if a.curve:
         print(f"  {'when':17} {'total':>6} {'done':>5} {'not done':>9}")
         for when, _sha, total, done in rows:

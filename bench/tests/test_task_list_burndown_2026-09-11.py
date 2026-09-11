@@ -110,3 +110,52 @@ class TestItRuns:
                            capture_output=True, text=True, timeout=300)
         assert r.returncode != 0
         assert "unrecognized arguments" in r.stderr
+
+
+class TestTheConvergenceArgumentRestsOnTheRightThing:
+    """The list converges because closure OUTPACES discovery, not because
+    discovery is decaying.
+
+    Discovery ran 72, 16, 7 across the list's 3 days and closure ran 19, 44, 21.
+    The temptation is to fit a decay to the discovery series and quote a date.
+    With 2 days of discovery-while-working -- day 1 is the list being CREATED --
+    the day-on-day ratio is 0.4375 and a 95% Wilson interval on that split admits
+    a ratio up to 1.0352, which is a process that does not decay at all. So the
+    decay is NOT established and an ETA resting on it would be fabricated
+    certainty.
+
+    What IS measured is that closure outpaces discovery roughly 3 to 1 on the
+    latest day. That is the property this class pins.
+    """
+
+    def test_closure_outpaced_discovery_on_the_latest_full_day(self, mod):
+        rows = mod.snapshots()
+        disc, clo = mod.per_day(rows)
+        days = sorted(set(disc) | set(clo))
+        assert len(days) >= 3, f"only {len(days)} days of history"
+        latest = days[-1]
+        assert clo.get(latest, 0) > disc.get(latest, 0), (
+            f"on {latest} the list gained {disc.get(latest, 0)} entries and closed "
+            f"{clo.get(latest, 0)}; the convergence argument no longer holds and "
+            f"any ETA resting on it must be withdrawn")
+
+    def test_day_one_is_creation_not_discovery(self, mod):
+        """A reader comparing days must drop the first, and the numbers make that
+        unmistakable rather than relying on the docstring."""
+        rows = mod.snapshots()
+        disc, _clo = mod.per_day(rows)
+        days = sorted(disc)
+        assert disc[days[0]] > 3 * disc[days[1]], (
+            "day 1 is no longer dominated by the list's initial population, so "
+            "treating it as creation rather than discovery may no longer be right")
+
+    def test_discovery_and_closure_cover_every_entry(self, mod):
+        """ANTI-VACUITY. If either counter silently missed entries, both the
+        convergence claim and the growth share would be measuring a subset."""
+        rows = mod.snapshots()
+        disc, clo = mod.per_day(rows)
+        last = [r for r in rows if r[2]][-1]
+        assert sum(disc.values()) == last[2], (
+            f"discovery totals {sum(disc.values())} but the list holds {last[2]}")
+        assert sum(clo.values()) == last[3], (
+            f"closure totals {sum(clo.values())} but {last[3]} entries are DONE")
