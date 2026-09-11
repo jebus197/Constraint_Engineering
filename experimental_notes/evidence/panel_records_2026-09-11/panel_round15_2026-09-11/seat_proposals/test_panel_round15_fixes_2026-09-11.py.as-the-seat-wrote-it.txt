@@ -1,0 +1,181 @@
+"""Panel round 15: the four escapes found by execution, pinned.
+
+Every case here was first demonstrated RED against the unpatched module in the
+panel sandbox on 2026-09-11, then the fix was written, then the case went
+green. The four:
+
+  1. SUDO-SHAPED UID/PASSWD MISMATCH. macOS sudo preserves $HOME while
+     `os.getuid()` becomes 0, so `real_desktop()` answers /var/root/Desktop
+     while DESKTOP is the founder's real one. The bare inequality classified
+     that as a DRILL and bypassed BOTH rules at once: refuse_reason() returned
+     None with PYTEST_CURRENT_TEST set AND the repo under the temp root.
+  2. TMPDIR-STRIPPED ENVIRONMENT. `tempfile.gettempdir()` fell back to /tmp
+     while the clone lived under /var/folders; the temp rule went silent.
+  3. A NOTE OPENING WITH A VERBATIM REGION exempted its own FUTURE TIMESTAMP
+     finding, because the finding was pinned to paragraph 1 BEFORE the exempt
+     split.
+  4. `verbatim-end` THEN `verbatim-begin` IN ONE PARAGRAPH silently ended the
+     exemption (bool-per-paragraph processed `closed` last), so the second
+     seat's verbatim words were COUNTED and the blocking ratchet would refuse
+     the record -- the exact V8 defeat -- while the balance counter (1 begin,
+     1 end per paragraph) reported nothing.
+"""
+from __future__ import annotations
+
+import importlib.util
+import pathlib
+import sys
+
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+
+
+def _load(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+@pytest.fixture()
+def sync():
+    return _load(ROOT / "scripts" / "sync_desktop_mirrors.py", "sync_r15")
+
+
+@pytest.fixture()
+def nvl():
+    return _load(ROOT / "scripts" / "note_vagueness_lint.py", "nvl_r15")
+
+
+class TestTheDrillExemptionCannotBeForgedByAUidMismatch:
+    def test_a_sudo_shaped_run_in_a_clone_is_refused(self, sync, monkeypatch, tmp_path):
+        """Escape 1. DESKTOP is real-looking (NOT scratch), passwd disagrees."""
+        monkeypatch.setattr(sync, "real_desktop",
+                            lambda: pathlib.Path("/var/root/Desktop"))
+        monkeypatch.setattr(sync, "DESKTOP",
+                            pathlib.Path("/Users/somebody/Desktop"))
+        monkeypatch.setattr(sync, "REPO", tmp_path)  # a clone under scratch
+        monkeypatch.setenv("PYTEST_CURRENT_TEST", "x::y (call)")
+        assert sync.refuse_reason() is not None, (
+            "a uid/passwd mismatch (sudo) turns the drill exemption into a "
+            "bypass of both rules")
+
+    def test_a_drill_pointing_desktop_at_scratch_still_runs(self, sync, monkeypatch, tmp_path):
+        """ANTI-VACUITY: the tightening must refuse no legitimate drill."""
+        monkeypatch.setattr(sync, "DESKTOP", tmp_path / "Desktop")
+        monkeypatch.setattr(sync, "REPO", tmp_path / "repo")
+        monkeypatch.setenv("PYTEST_CURRENT_TEST", "x::y (call)")
+        assert sync.refuse_reason() is None
+
+
+class TestTheScratchRuleSurvivesAStrippedEnvironment:
+    def test_a_var_folders_clone_is_refused_even_when_gettempdir_says_tmp(
+            self, sync, monkeypatch):
+        """Escape 2. gettempdir() lies (TMPDIR stripped); literal roots hold."""
+        monkeypatch.setattr(sync.tempfile, "gettempdir", lambda: "/tmp")
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.setattr(sync, "DESKTOP", sync.real_desktop())
+        monkeypatch.setattr(
+            sync, "REPO",
+            pathlib.Path("/var/folders/cc/xx/T/somewhere/repo"))
+        r = sync.refuse_reason()
+        assert r is not None and "scratch" in r, r
+
+
+class TestTheCanonicalMarker:
+    def test_no_marker_means_no_new_refusal(self, sync, monkeypatch, tmp_path):
+        desk = tmp_path / "Desktop"
+        desk.mkdir()
+        monkeypatch.setattr(sync, "real_desktop", lambda: desk)
+        monkeypatch.setattr(sync, "DESKTOP", desk)
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.setattr(sync, "REPO", pathlib.Path("/Users/somebody/repo"))
+        assert sync.refuse_reason() is None, (
+            "the marker rule refuses with no marker present; it must be "
+            "default-off")
+
+    def test_a_second_checkout_is_refused_by_name_once_registered(
+            self, sync, monkeypatch, tmp_path):
+        """The residual class: a clone OUTSIDE scratch (the Desktop itself,
+        ~/src) passes both rules. Registration closes it, opt-in."""
+        desk = tmp_path / "Desktop"
+        desk.mkdir()
+        (desk / ".cdsfl_canonical_checkout").write_text(
+            "/Users/somebody/the-real-checkout\n", encoding="utf-8")
+        monkeypatch.setattr(sync, "real_desktop", lambda: desk)
+        monkeypatch.setattr(sync, "DESKTOP", desk)
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.setattr(sync, "REPO",
+                            pathlib.Path("/Users/somebody/Desktop/repo-clone"))
+        r = sync.refuse_reason()
+        assert r is not None and "canonical" in r, r
+
+    def test_the_registered_checkout_itself_is_not_refused(
+            self, sync, monkeypatch, tmp_path):
+        """THE WORSE FAILURE DIRECTION, guarded: registration must never
+        starve the founder's own checkout of its mirror refresh."""
+        desk = tmp_path / "Desktop"
+        desk.mkdir()
+        repo = pathlib.Path("/Users/somebody/the-real-checkout")
+        (desk / ".cdsfl_canonical_checkout").write_text(
+            str(repo) + "\n", encoding="utf-8")
+        monkeypatch.setattr(sync, "real_desktop", lambda: desk)
+        monkeypatch.setattr(sync, "DESKTOP", desk)
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.setattr(sync, "REPO", repo)
+        assert sync.refuse_reason() is None
+
+    def test_a_scratch_clone_cannot_register_itself(self, sync, monkeypatch,
+                                                    tmp_path, capsys):
+        monkeypatch.setattr(sync, "REPO", tmp_path)
+        monkeypatch.setattr(sys, "argv", ["sync", "--register-canonical"])
+        assert sync.main() == 1
+        assert "REFUSED to register" in capsys.readouterr().out
+
+
+class TestARegionCannotExemptTheNotesOwnStampOrSwallowASeat:
+    def test_a_future_stamp_inside_a_leading_region_is_still_counted(
+            self, nvl, tmp_path):
+        """Escape 3."""
+        note = tmp_path / "a.md"
+        note.write_text(
+            "<!-- verbatim-begin: seat -->\n2030-01-01 12:00 BST\n"
+            "some quoted words here indeed\n<!-- verbatim-end -->\n\n"
+            "plain closing paragraph naming note_vagueness_lint.py with 3.\n",
+            encoding="utf-8")
+        counted, exempted = nvl.partition(note)
+        kinds = [k for _, k, *_ in counted]
+        assert any("FUTURE TIMESTAMP" in k for k in kinds), (
+            "a note whose first paragraph opens a verbatim region buys "
+            "amnesty for its own Rule 1 violation: %r / %r" % (counted, exempted))
+
+    def test_end_then_begin_in_one_paragraph_keeps_the_second_seat_exempt(
+            self, nvl, tmp_path):
+        """Escape 4."""
+        note = tmp_path / "c.md"
+        note.write_text(
+            "intro paragraph naming note_vagueness_lint.py with value 5.\n\n"
+            "<!-- verbatim-begin: seat1 -->\n\n"
+            "seat one words, quoted verbatim, with somewhat hedged phrasing.\n\n"
+            "<!-- verbatim-end -->\n<!-- verbatim-begin: seat2 -->\n\n"
+            "seat two words: the mechanism debited the measured competence "
+            "rate.\n\n<!-- verbatim-end -->\n", encoding="utf-8")
+        counted, exempted = nvl.partition(note)
+        assert counted == [], (
+            "a seat's verbatim words are COUNTED because adjacent end/begin "
+            "markers share a paragraph; the blocking ratchet would refuse "
+            "the record: %r" % (counted,))
+        assert len(exempted) == 2, exempted
+
+    def test_two_begins_in_one_paragraph_are_two_opens_to_the_balance_counter(
+            self, nvl, tmp_path):
+        note = tmp_path / "d.md"
+        note.write_text(
+            "<!-- verbatim-begin: a -->\n<!-- verbatim-begin: b -->\n\n"
+            "quoted words of a seat, held here for the record today.\n\n"
+            "<!-- verbatim-end -->\n", encoding="utf-8")
+        counted, _ = nvl.partition(note)
+        assert any("UNBALANCED" in k for _, k, *_ in counted), (
+            "2 begin markers in 1 paragraph read as 1, so a genuinely "
+            "unclosed region is reported balanced")

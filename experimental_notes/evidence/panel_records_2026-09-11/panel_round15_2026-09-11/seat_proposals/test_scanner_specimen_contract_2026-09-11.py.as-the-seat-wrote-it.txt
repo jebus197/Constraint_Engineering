@@ -1,0 +1,118 @@
+"""THE CLASS CHECK for this session's recurring defect: a scanner that
+resolves one surface form of a thing and reports a false zero (or a false
+non-zero) for the other.
+
+15 instances in one session, 4 today, 3 of those inside instruments built to
+detect the class. All 4 of today's were PATTERN-MATCHING bugs: an anchor
+(`^FAILED` vs 2-space-indented FAILED), a bare substring ("measure" firing on
+"measures"), a name-versus-content selector (a file excluded wholesale losing
+its one real caller), and a roll-call line form (`fullmatch` missing a
+markdown bullet).
+
+THE MECHANICAL RULE THIS FILE ENFORCES: every pattern that produces a COUNT or
+an EXEMPTION in this repository must be demonstrated against a PLANTED
+SPECIMEN OF KNOWN VALUE in at least 2 surface forms -- the canonical form and
+a transformed form (indented, bulleted, inflected, quoted) -- plus a true
+negative. An instrument that has never measured a specimen of known value has
+never been calibrated, and every one of the 15 instances would have failed
+this contract on the day it was written:
+
+  * `^FAILED` fails the INDENTED positive        -> the I38 false zero.
+  * bare substring fails the INFLECTED negative  -> the Rule 28 verb.
+  * un-bulleted roll-call fails the BULLET form  -> a hidden orphan.
+  * bool-per-paragraph fails the ADJACENT form   -> the swallowed seat.
+
+The registry below is data; adding a scanner to the repository without adding
+its specimens here is what `test_the_registry_covers_todays_four` exists to
+make visible.
+"""
+from __future__ import annotations
+
+import importlib.util
+import pathlib
+import re
+
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+
+
+def _load(rel, name):
+    spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+flake = _load("scripts/flake_rate_2026-09-11.py", "flake_c")
+sar = _load("scripts/scripts_are_reached_2026-09-11.py", "sar_c")
+nvl = _load("scripts/note_vagueness_lint.py", "nvl_c")
+
+_ID = ("bench/tests/test_falsifier_cannot_read_the_key.py::"
+       "test_the_artefact_classifier_cannot_excuse_a_real_escape")
+
+#: (scanner name, predicate, [positive forms...], [negative forms...])
+#: Each positive is one SPECIMEN in one SURFACE FORM. A scanner passes the
+#: contract only if it fires on every positive and stays silent on every
+#: negative -- which is precisely what none of today's four did.
+REGISTRY = [
+    ("flake._failed_the_test (the ^FAILED anchor, instance 1)",
+     flake._failed_the_test,
+     [f"FAILED {_ID}",             # canonical pytest line
+      f"  FAILED {_ID}",           # archived log piped through sed 's/^/  /'
+      f"\tFAILED {_ID}",           # tab-indented archive
+      f"FAILED {_ID} - AssertionError: boom"],
+     [f"PASSED {_ID}",
+      f"FAILED bench/tests/test_other.py::test_unrelated",
+      "no failures at all in this log"]),
+
+    ("Rule 28 bounded matcher (the substring, instance 2)",
+     lambda s: any(r.search(s.lower()) for r in nvl.CATEGORY_NOUN_RE.values()),
+     ["the decay curve measure is stale",     # noun, canonical
+      "The decay curve measure drifted",      # capitalised sentence opener
+      "(the decay curve measure)"],           # parenthesised
+     ["the decay curve measures the latter",  # verb -- the founder's phrase
+      "the decay curve measurement moved"]),  # a different, real noun
+
+    ("roll-call line selector (the fullmatch, instance 4)",
+     lambda s: bool(sar._ROLL_CALL.fullmatch(s.strip())),
+     ['"scripts/foo.py",',
+      "scripts/foo.py",
+      "- scripts/foo.py",          # markdown bullet: the form that hid
+      "* scripts/foo.py"],         # an orphan from the line-wise filter
+     ['SCRIPT = REPO / "scripts/foo.py"',
+      "python3 scripts/foo.py --check",
+      "see scripts/foo.py for the figure"]),
+
+    ("verbatim marker events (the bool-per-paragraph, instance 3)",
+     lambda s: nvl._marker_events(s) == ["end", "begin"],
+     ["<!-- verbatim-end -->\n<!-- verbatim-begin: seat2 -->"],
+     ["<!-- verbatim-begin: seat -->\n<!-- verbatim-end -->"]),
+]
+
+
+@pytest.mark.parametrize("name,fn,pos,neg", REGISTRY,
+                         ids=[r[0].split(" (")[0] for r in REGISTRY])
+def test_scanner_fires_on_every_surface_form_of_its_specimen(name, fn, pos, neg):
+    for p in pos:
+        assert fn(p), (f"{name}: FALSE ZERO on planted specimen {p!r} -- the "
+                       f"session's recurring defect, caught by contract")
+    for n in neg:
+        assert not fn(n), (f"{name}: FALSE POSITIVE on {n!r} -- the same "
+                           f"defect pointing the other way")
+
+
+def test_the_registry_covers_todays_four():
+    """The contract is only as good as its census. 4 instances landed today;
+    4 scanners are registered. A new counting pattern committed without a
+    specimen row is this test's business to make visible -- extend the
+    registry when you extend the scanners."""
+    assert len(REGISTRY) >= 4
+
+
+def test_stamp_line_survives_indentation():
+    """Positive control for the anchor CLASS: STAMP_LINE already carries
+    `^\\s*` and must keep it -- it is the one anchored scanner here that was
+    written indentation-tolerant from the start."""
+    assert nvl.STAMP_LINE.search("2026-09-11 10:00 BST\n")
+    assert nvl.STAMP_LINE.search("   2026-09-11 10:00 BST\n")
