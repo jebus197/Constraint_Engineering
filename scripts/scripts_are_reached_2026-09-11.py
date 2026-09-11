@@ -6,8 +6,14 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED 2026-09-11: **114 of 120 scripts are reached -- 95.0000%, Wilson
-[89.5197%, 97.6886%], Clopper-Pearson [89.4346%, 98.1432%]**, both intervals
+MEASURED 2026-09-11: **115 of 121 scripts are reached -- 95.0413%, Wilson
+[89.6029%, 97.7078%], Clopper-Pearson [89.5194%, 98.1588%]**
+
+THE DENOMINATOR GROWS, so this figure is dated on purpose and the producer is
+named beside it. It read 114 of 120 an hour earlier and moved when 1 script was
+added -- the entry-6.1 lesson in the task list, that a typed figure over a
+growing corpus is not merely unverifiable but guaranteed to go stale. The RATCHET
+is the durable claim; the percentage is a snapshot. Re-run rather than quote., both intervals
 cross-checked by 2 tools (statsmodels against a 50-digit mpmath Wilson closed
 form; statsmodels `beta` against `scipy.stats.beta` for Clopper-Pearson).
 
