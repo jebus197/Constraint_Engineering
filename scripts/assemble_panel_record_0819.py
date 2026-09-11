@@ -7,24 +7,29 @@ never replace it. This script writes every response exactly as returned.
 """
 import json, pathlib, sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from _cli_help import answer_help  # noqa: E402
-
-# `--help` MUST NOT ACT, AND ON THIS SCRIPT IT DESTROYED 54,480 BYTES.
-# Measured 2026-09-11 in a throwaway clone: `--help` rewrote
-# `experimental_notes/Panel_Enforcement_Prose_FULL_RECORD_2026-08-19.md` from
-# 55,814 bytes to 1,334 and exited 0. This script REGENERATES a panel record
-# from `bench/logs/`, which `.gitignore:41` excludes, so in any clone the source
-# is empty and every seat is written back as "NO RESPONSE FILE" -- a verbatim
-# record of a 5-model review replaced by a stub, silently, by a flag that is
-# supposed to print a sentence.
+# `--help` MUST NOT ACT, AND ON A SIBLING OF THIS SCRIPT IT DESTROYED 54,480
+# BYTES. Measured 2026-09-11: `--help` on `scripts/assemble_panel_record_0819.py`
+# rewrote a 55,814-byte verbatim panel record down to 1,334 and exited 0, because
+# the flag fell through to the script's ordinary work.
 #
-# THE MORNING'S `--help` SWEEP REPORTED 0 OF 54 AND WAS CLEAN, because its
-# population is MEASUREMENT scripts and this is an ACTION script. 122 scripts are
-# tracked. The 68 the sweep does not cover are exactly the ones where a `--help`
-# that acts is destructive rather than merely rude. A false zero in the
-# POPULATION rather than in the matcher.
-answer_help(__doc__, __file__, sys.argv[1:])
+# GUARDED BY `__main__`, WHICH THE FIRST VERSION WAS NOT. Calling it at module
+# level meant that any test IMPORTING this module handed pytest's own argv to the
+# help handler, which refused it and exited 2 -- 12 failures and errors in the
+# next clone run. The established form in this directory guards the call, and
+# importing the module then reaches exactly the code it reached before.
+if __name__ == "__main__":
+    try:
+        from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    except ImportError:
+        # A COPY OUTSIDE scripts/, which is how the mutation harness runs
+        # this file: it writes the mutant to `.mutants/` where `_cli_help`
+        # is not importable. Crashing there would make every mutant
+        # "caught" for the wrong reason -- a crashing mutant produces no
+        # output and every `not in` check passes. The guard protects real
+        # invocations; a mutant copy is not one.
+        pass
+    else:
+        answer_help(__doc__, __file__)
 
 LOGS = pathlib.Path("bench/logs/confer_enforcement_prose_2026-08-19")
 ORDER = [("ge", "Gemini 3.1 Pro Preview", "OpenRouter"),

@@ -21,18 +21,29 @@ from pathlib import Path
 import sys
 import pathlib
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from _cli_help import answer_help  # noqa: E402
-
-# `--help` MUST NOT ACT. MEASURED 2026-09-11: `--help` on
-# `scripts/assemble_panel_record_0819.py` rewrote a 55,814-byte verbatim panel
-# record down to 1,334 bytes and exited 0, because the flag fell through to the
-# script's ordinary work. 7 tracked scripts both WROTE something and ignored the
-# flag -- 5.7377% of 122, Wilson [2.8068%, 11.3709%].
+# `--help` MUST NOT ACT, AND ON A SIBLING OF THIS SCRIPT IT DESTROYED 54,480
+# BYTES. Measured 2026-09-11: `--help` on `scripts/assemble_panel_record_0819.py`
+# rewrote a 55,814-byte verbatim panel record down to 1,334 and exited 0, because
+# the flag fell through to the script's ordinary work.
 #
-# `answer_help` returns immediately when argv is empty, so a plain run reaches
-# exactly the code it reached before.
-answer_help(__doc__, __file__, sys.argv[1:])
+# GUARDED BY `__main__`, WHICH THE FIRST VERSION WAS NOT. Calling it at module
+# level meant that any test IMPORTING this module handed pytest's own argv to the
+# help handler, which refused it and exited 2 -- 12 failures and errors in the
+# next clone run. The established form in this directory guards the call, and
+# importing the module then reaches exactly the code it reached before.
+if __name__ == "__main__":
+    try:
+        from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    except ImportError:
+        # A COPY OUTSIDE scripts/, which is how the mutation harness runs
+        # this file: it writes the mutant to `.mutants/` where `_cli_help`
+        # is not importable. Crashing there would make every mutant
+        # "caught" for the wrong reason -- a crashing mutant produces no
+        # output and every `not in` check passes. The guard protects real
+        # invocations; a mutant copy is not one.
+        pass
+    else:
+        answer_help(__doc__, __file__)
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 
