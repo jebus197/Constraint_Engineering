@@ -283,7 +283,8 @@ def partition(path) -> tuple[list, list]:
     with 2 callers, never 2 implementations asserted to agree.
     """
     hits = lint(path)
-    exempt = verbatim_paragraphs(path.read_text(encoding="utf-8"))
+    text = path.read_text(encoding="utf-8")
+    exempt = verbatim_paragraphs(text)
     # `is not None`, not a bare truth test. future_stamp returns Optional
     # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a glance
     # from the (bool, message) pattern that this project's own guard
@@ -294,8 +295,26 @@ def partition(path) -> tuple[list, list]:
     if fs is not None:
         hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
                  fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
-    return ([h for h in hits if h[0] not in exempt],
-            [h for h in hits if h[0] in exempt])
+    counted = [h for h in hits if h[0] not in exempt]
+    exempted = [h for h in hits if h[0] in exempt]
+    # AN UNCLOSED REGION EXEMPTS TO END OF FILE, AND SAYS NOTHING WHILE IT DOES.
+    # This finding is prepended to `counted` and never to `exempted`, because a
+    # report about the region's structure must not be swallowed by the region it
+    # is reporting on. Counted with the SAME scanner the exemption uses, so the
+    # guard and the exemption cannot disagree about what a marker is.
+    opens = closes = 0
+    for para in paragraphs(text):
+        scan = _strip_quoted(para)
+        opens += 1 if VERBATIM_BEGIN.search(scan) else 0
+        closes += 1 if VERBATIM_END.search(scan) else 0
+    if opens != closes:
+        counted.insert(0, (1, "UNBALANCED VERBATIM REGION (Rule: an unclosed "
+                              "region exempts every paragraph after it)",
+                           f"{opens} begin, {closes} end",
+                           f"{opens} verbatim-begin marker(s) and {closes} "
+                           f"verbatim-end marker(s); an unclosed region silently "
+                           f"stops the linter for the rest of the file"))
+    return (counted, exempted)
 
 
 def blocking(path) -> list:
@@ -351,7 +370,7 @@ def verbatim_paragraphs(text: str) -> set[int]:
         # quoted -- silently stopped being exempt. Caught by mutating the
         # condition away and watching every test stay green, which is the only
         # thing that would have shown it.
-        scan = _strip_fenced(para)
+        scan = _strip_quoted(para)
         opened = bool(VERBATIM_BEGIN.search(scan))
         closed = bool(VERBATIM_END.search(scan))
         if inside or opened:
@@ -361,6 +380,27 @@ def verbatim_paragraphs(text: str) -> set[int]:
         if closed:
             inside = False
     return marked
+
+
+def _strip_quoted(para: str) -> str:
+    """Everything in the paragraph that is SHOWN rather than used.
+
+    `_strip_fenced` removes fenced blocks. It does not remove INLINE code spans,
+    and on 2026-09-11 a paragraph of `CDSFL_OUTCOMES_LOG.md` wrote the
+    begin-marker inside single backticks while describing it. That opened a real
+    region, nothing closed it, and **12 paragraphs from there to the end of the
+    file stopped being linted** -- silently, because an exemption reports nothing
+    when it swallows a file.
+
+    A marker wrapped in backticks is being quoted, exactly as a fenced one is.
+    The fenced rule was already right about this; it simply did not reach far
+    enough. `_strip_fenced` is untouched and still used by this function.
+    """
+    return INLINE_CODE.sub(" ", _strip_fenced(para))
+
+
+#: An inline code span: `like this`, or ``like `this` ``.
+INLINE_CODE = re.compile(r"`+[^`\n]*`+")
 
 
 def _strip_fenced(para: str) -> str:

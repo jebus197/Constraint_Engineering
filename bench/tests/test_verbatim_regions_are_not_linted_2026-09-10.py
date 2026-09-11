@@ -114,12 +114,31 @@ class TestTheExemptionIsScoped:
         That is the safe direction for a record — a truncated marker cannot make
         a quoted violation count — but it must be a known property rather than a
         surprise, so it is pinned here.
+
+        UPDATED 2026-09-11, and the docstring above is why. "A known property
+        rather than a surprise" was the stated intent and the assertion did not
+        deliver it: the swallow was pinned as SILENT, `_counted(out) == 0` with
+        nothing said about the unclosed marker. It stopped being hypothetical
+        that day, when a paragraph of `CDSFL_OUTCOMES_LOG.md` wrote the marker in
+        backticks while describing it and 12 paragraphs quietly stopped being
+        linted.
+
+        So both halves are now pinned. The swallow still happens and the quoted
+        violation is still not counted — unchanged, and that is the safe
+        direction. What is new is that the STRUCTURE is reported, so the property
+        is announced rather than merely known to whoever read this docstring.
         """
         body = ("# Note\n\n<!-- verbatim-begin: someone else -->\n\n"
                 f"{VIOLATION}\n\nand more.\n")
         out = _run(_write(tmp_path, body)).stdout
-        assert _counted(out) == 0
-        assert "[verbatim]" in out
+        assert "[verbatim]" in out, "the quoted violation is no longer exempted"
+        assert "UNBALANCED VERBATIM REGION" in out, (
+            "the unclosed region is not announced, so the swallow is silent "
+            "again — which is the surprise this docstring says it is not")
+        # The quoted violation itself is STILL not counted. Everything counted
+        # here is the structural report and nothing else.
+        assert _counted(out) == 1, out
+        assert VIOLATION.split()[0] not in out.split("UNBALANCED")[1].split("\n")[0]
 
 
 class TestTheRealRecord:

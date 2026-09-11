@@ -133,3 +133,71 @@ class TestTheMatcherIsBounded:
         for phrase in lint.CATEGORY_NOUN:
             note = _note(tmp_path, f"A sentence using {phrase} in it.\n")
             assert [h for h in lint.lint(note) if "Rule 28" in h[1]], phrase
+
+
+class TestAnUnclosedRegionCannotSwallowAFile:
+    """An exemption reports nothing when it swallows a whole file.
+
+    MEASURED 2026-09-11, on this project's own outcomes log. A paragraph
+    describing the begin-marker wrote it inside single backticks. `_strip_fenced`
+    removes FENCED blocks and not inline spans, so the marker opened a real
+    region, nothing closed it, and 12 paragraphs from there to the end of the
+    file stopped being linted -- silently. The fenced rule was already right
+    about quoted markers; it simply did not reach inline code.
+
+    2 fixes, and they are independent. `_strip_quoted` treats an inline span as
+    quoted, which is the correctness half. The balance finding is the safety net
+    for every other way a region can be left open, and it is prepended to the
+    COUNTED list precisely so the region it reports on cannot exempt it.
+
+    MEASURED across 402 notes after both: 0 carry an unbalanced region, so the
+    guard blocks nothing that exists today -- which is why the positive control
+    below matters more than the corpus figure.
+    """
+
+    def test_an_unclosed_region_is_reported(self, lint, tmp_path):
+        note = _note(tmp_path, "A NOTE\n\n<!-- verbatim-begin: a seat -->\n\nBody.\n")
+        counted, _ = lint.partition(note)
+        assert [h for h in counted if "UNBALANCED" in h[1]], (
+            "an unclosed region is not reported, so it silently stops the "
+            "linter for the rest of the file")
+
+    def test_the_report_is_never_itself_exempted(self, lint, tmp_path):
+        """The region swallows every paragraph after it, including the one the
+        finding is pinned to. If the finding were placed by paragraph number it
+        would be exempted by the very defect it reports."""
+        note = _note(tmp_path, "<!-- verbatim-begin: a seat -->\n\nBody.\n")
+        counted, exempted = lint.partition(note)
+        assert any("UNBALANCED" in h[1] for h in counted)
+        assert not any("UNBALANCED" in h[1] for h in exempted)
+
+    def test_a_balanced_region_is_not_reported(self, lint, tmp_path):
+        """POSITIVE CONTROL. Every FULL RECORD note has balanced markers; a
+        guard that fired on them would block the mechanism it protects."""
+        note = _note(tmp_path, "A NOTE\n\n<!-- verbatim-begin: a seat -->\n\n"
+                               "Body.\n\n<!-- verbatim-end -->\n")
+        counted, _ = lint.partition(note)
+        assert not [h for h in counted if "UNBALANCED" in h[1]]
+
+    def test_a_marker_shown_in_backticks_opens_nothing(self, lint, tmp_path):
+        note = _note(tmp_path, "A NOTE\n\nDescribing the "
+                               "`<!-- verbatim-begin: a seat -->` marker in prose.\n\n"
+                               "Body with a spelled number: twenty-nine.\n")
+        assert not lint.verbatim_paragraphs(note.read_text(encoding="utf-8")), (
+            "a marker quoted in an inline code span opened a real region")
+        counted, _ = lint.partition(note)
+        assert not [h for h in counted if "UNBALANCED" in h[1]]
+        assert [h for h in counted if "Rule 27" in h[1]], (
+            "the paragraph after the quoted marker is not being linted, so the "
+            "region opened anyway")
+
+    def test_a_real_region_still_exempts(self, lint):
+        """ANTI-VACUITY for the inline strip: the mechanism must still work on
+        the record that motivated all of this."""
+        note = REPO / "experimental_notes" / "Panel_Roster_Round2_FULL_RECORD_2026-09-09.md"
+        if not note.is_file():
+            pytest.skip("the record has been renamed or removed")
+        ex = lint.verbatim_paragraphs(note.read_text(encoding="utf-8"))
+        assert len(ex) > 50, (
+            f"only {len(ex)} paragraphs are exempt; the inline strip has broken "
+            f"real regions, whose markers sit on their own lines")

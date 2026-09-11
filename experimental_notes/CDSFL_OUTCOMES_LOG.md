@@ -187,6 +187,34 @@ The failure message also reported line counts alone, so the first real drift rea
 
 **Mutation-verified in both halves.** Moving the refresh back below the guards takes 3 tests red, including one that RUNS the hook against a drifted Desktop; dropping the renamed mirror from the table takes 3 different tests red. Sources restored byte-identical, 15 pass.
 
+### Pass 12 — the record of the orphans declared them non-orphans. Commit `397a2d9`
+
+`scripts/scripts_are_reached_2026-09-11.py` asks whether any tracked file mentions a script. Committing it put its own 8 orphan paths into a tracked file, so the figure rose from 111 of 119 to **120 of 120 within 8 minutes of being published**. A ratchet whose record of the orphans makes them non-orphans measures nothing, and it was caught only because `--check` was re-run against the figure that had just been quoted.
+
+**The first fix over-corrected, and that half is the more instructive one.** It excluded 3 whole FILES, one of them the test — which carries 0 roll-call lines and genuinely runs the script. Throwing the file away threw away a real caller, and the count then read 111 of 120 with the instrument itself as the 9th orphan: it reported itself unreached because the fix for reading everything as reached had deleted its only caller. The same defect class as the one being repaired, one level up. The filter now drops the roll-call LINES and keeps the files. **112 of 120 = 93.3333%**, Wilson [87.3949%, 96.5835%], Clopper-Pearson [87.2863%, 97.0781%], both intervals cross-checked by 2 tools.
+
+Reversible: revert `397a2d9`. Nothing outside those 2 files changed and no script was wired or retired — the 8 remain parked for the founder.
+
+### Pass 12 — a suite run in a clone overwrote the file the founder reads. Commit `a72c1c6`
+
+`scripts/cdsfl_recover.py` reported the Desktop copy of the outcomes log as diverged by 6,413 bytes and NEWER than the repository copy. The flake clone's own copy is 27,669 bytes against the working tree's 34,082 — the same 6,413 — so **the founder's Desktop copy had been replaced by an older one from a temporary clone**. The pre-commit mirror refresh restored it 13 minutes later, which was luck rather than design: had the direction been reversed, or had the repository copy not existed, the loss would have been permanent.
+
+The cause is that `DESKTOP` is absolute and `REPO` is not, so any clone or scratch fixture copies the wrong source over the right destination — task A2's shape exactly. **Attributed by execution, not by reading**: each of 43 candidate test files was run under a fake HOME holding sentinels, and exactly 1 rewrote them, the test that clones this repository and commits inside it. The refusal keys on the **passwd** home rather than `Path.home()`, because the legitimate drills fake `$HOME` on purpose and under a faked `$HOME` a drill and an escape are the same path. End-to-end: the offending test now leaves all 5 Desktop files byte-identical and still passes.
+
+Reversible: revert `a72c1c6`. The only behaviour removed is mirroring from a clone or a test, which was never intended.
+
+### Pass 12 — a guard blocked the suite on a panel seat's own words. Commit `a72c1c6`
+
+The full suite failed on `Panel_Roster_Round2_FULL_RECORD_2026-09-09.md` at line 290 — inside the region opened by that note's `verbatim-begin: fable` marker, which is the exemption task V8 added so a seat's words reach the record unedited. **Writing that marker's full HTML-comment form in this paragraph opened a real region here**, and because nothing closed it, 12 paragraphs from this one to the end of the file were silently exempted from the linter that guards them — measured before the delimiters were removed from this sentence.
+
+**That hazard was then closed rather than merely avoided, because it is not specific to this file.** Any note that shows the marker in prose opens a region, and an unclosed region exempts to the end of the file while reporting nothing — an exemption says nothing when it swallows a whole file. 2 independent repairs: an inline code span is now treated as quoted, exactly as a fenced block already was, and an unbalanced pair is reported as a COUNTED finding that the region it describes cannot itself exempt. **Measured across 402 notes: 0 carry an unbalanced region**, so the new check blocks nothing that exists today and its positive control matters more than that figure. The project had pinned the swallow as a known property in `test_verbatim_regions_are_not_linted_2026-09-10.py`, whose own docstring asked for it to be "a known property rather than a surprise" while asserting only that nothing was counted; both halves are pinned now. The lint CLI subtracted the verbatim paragraphs; `test_note_standard_v17_enforced_2026-08-26.py` called the reporter raw and subtracted nothing. Each was internally consistent, so neither could detect the disagreement. `partition()` now owns the split and the CLI CALLS it: 1 implementation with 2 callers, never 2 asserted to agree.
+
+A second, independent defect sat underneath. The Rule 28 check was a bare substring test, so `"the decay curve measure"` fired on "measure**s**" — a verb, using the founder's own term as a subject, which the rule does not ban. **Measured over 402 notes: 28 substring matches against 27 bounded ones.** The boundary drops exactly 1 and it is that verb. The 2 defects are independent, proved by putting the NOUN form inside a verbatim region: still reported, still not counted.
+
+A third followed from the repair. `test_future_timestamp_guard` grepped for the literal `future_stamp(p)` and false-alarmed when the call moved into `partition()` and its variable was renamed — a source-text assertion cannot tell a moved call from a deleted one. It now RUNS the reporter, with the dominance measured rather than asserted: with the call present but renamed the grep form fails and the executing form passes; with the call deleted both fail.
+
+Reversible: revert `a72c1c6`. No note was edited — the seat's sentence stands exactly as `fable` wrote it, which was the point.
+
 ---
 
 ## STANDING NUMBERS
