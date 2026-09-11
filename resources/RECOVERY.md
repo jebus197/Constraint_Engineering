@@ -25,6 +25,28 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-11 03:16 BST (READ THIS FIRST)
+
+HEAD `5fcded5`, main, **73 ahead of `origin/main` — NOT PUSHED**. Working tree clean.
+
+**★★★ THE TASK LIST IS AT 78 DONE OF 92, 5 OPEN.** Open: **A8** (parked, needs the founder's policy ruling), **A19** (his S_k design point), **V2** (built and tested, waiting on Section P), **A22** and **A23** (both raised during this session's own work). Blocked on him: 10.2 Tailscale SSH, A11 five rulings, R1 Exp 53 restart, W1 Wolfram MCP. Deferred: 0.1 (Wolfram observation), Exp 56.
+
+**★★★ A FRESH `git clone` NOW RUNS THE FULL SUITE GREEN: 6658 passed, 32 skipped, 1 xfailed, EXIT 0** — against **22 failed, exit 1** on the morning of 2026-09-10. That is task A2, and the entry's own premise was false when it was worked: the clone count was 22 and not 11, and the working tree had **6** failures and not 0.
+
+**★★★ THE LARGEST SINGLE CAUSE WAS A STALE ABSOLUTE PATH.** Archived falsifiers carry the absolute path of the checkout they were WRITTEN in. On this machine that path IS the repository root, so the containment guard allows it; anywhere else it refuses and routes the finding to a human. **35 of 640 archived falsifiers** in a clone (5.4688%, Wilson [3.9582%, 7.5107%]) and **5 of the 15 exp44 execution rows**, so `execution_based_matcher`'s headline **12 of 15 came out 7 of 15 for every reader**. Repaired by rebasing a foreign checkout of this project onto the overlay at REPLAY; the containment guard is unchanged.
+
+**★★★ THE PANEL SEATS SHARED ONE WRITABLE SANDBOX AND RAN IN IT CONCURRENTLY.** Round 10's fable reply describes the identity tier the cc2 seat had just invented. **Agreement between seats was not evidence of anything.** Each seat now gets its own sandbox and `seat_proposals.diff` is keyed `<seat>:<path>`. Round 11 is the first round with real independence, and it paid immediately: both seats broke task V8's scoping claim separately.
+
+**★★★ TWO CONTAINMENT HOLES I OPENED MYSELF, both found by the panel and both reproduced here before the fix was accepted.** (1) The A2 rebase laundered a `..` escape past the static guard — the fable seat read `/etc/passwd` through it, 9,344 bytes. The shipped fix is stronger than the one proposed: it normalises the RESULT rather than refusing one `..` position. (2) I gated the NO-PAID-SEAT check behind a corpus shortfall, so a checkout holding 1 to 9 replies would skip a founder-reserved money constraint. Never gated now.
+
+**THE RECURRING DEFECT OF THE SESSION, in 7 distinct places:** a scanner that resolves one form of a thing and reports a false zero for the other. `--get user.email` falling back to global config; `Path(root).name` as a project's identity; an AST attribute scan blind to `getattr(cfg, "field")`; `sentences()` and `verbatim_paragraphs()` splitting paragraphs differently; a name-matching guard that never resolved the call; a pattern requiring `item` and its number adjacent when markdown emphasis sits between them; and a one-liner using `x and x.append(...)` that short-circuits on an empty list. **Every one of them was caught by a control, and 3 were caught only after the control itself was rewritten.**
+
+**PANEL ROUNDS 10 AND 11 RAN FREE-SEAT ONLY (cc2, fable, `PANEL_ONLY=cc2,fable`). 0 paid dispatch throughout.**
+
+**THE PRE-COMMIT HOOK NOW REPAIRS BEFORE IT CHECKS, at stage 0, in this order:** the citation guard's `--fix`, the run ledger's `--refresh`, then the Desktop mirror refresh LAST, because it copies what the others write. That ordering fault happened TWICE in one day and is now held by `bench/tests/test_precommit_stage0_order_2026-09-11.py`.
+
+---
+
 ## SESSION STATE — 2026-09-08 16:10 BST (READ THIS FIRST)
 
 HEAD `beb39fb` + 4 uncommitted files (the compaction-marker fix), main, **7 ahead of `origin/main` at `071f1ed` — NOT PUSHED**.
