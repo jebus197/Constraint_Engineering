@@ -116,6 +116,32 @@ bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
 # repair that WRITES a file goes ABOVE the mirror refresh; the mirror refresh is
 # always LAST, because it is the one that copies. Held by
 # bench/tests/test_precommit_stage0_order_2026-09-10.py.
+#
+# ─── AND A REPAIR MUST RE-STAGE WHAT IT WROTE. Found 2026-09-11 by cloning HEAD
+# ─── and running the suite there: 3 failures, all of them repairs that had run.
+#
+# A pre-commit hook sees the STAGED snapshot. A repair that writes to the
+# WORKING TREE and does not `git add` its output ships the UNREPAIRED content
+# and leaves the repair sitting uncommitted, to be swept into the NEXT commit.
+# So the repairs were permanently one commit behind, every clone at HEAD was
+# broken, and the working tree looked perfect the whole time -- which is why it
+# took a clone to see it.
+#
+# ONLY THE EXACT PATHS EACH REPAIR REPORTS CHANGING are staged, so an unrelated
+# work-in-progress edit in the same file is never swept in.
+
+RESTAGE_LIB="hooks/stage0_restage.sh"
+if [ ! -f "$RESTAGE_LIB" ]; then
+    echo "pre-commit: $RESTAGE_LIB is missing." >&2
+    echo "            Without it the stage-0 repairs below write the working" >&2
+    echo "            tree and never reach the commit, so every clone at HEAD" >&2
+    echo "            is broken while this tree looks clean. That is the defect" >&2
+    echo "            measured on 2026-09-11 (3 failures in a fresh clone, 0" >&2
+    echo "            here). Refusing rather than reintroducing it silently." >&2
+    exit 1
+fi
+. "$RESTAGE_LIB"
+cdsfl_warn_if_partial_commit
 
 # THE SAME REPAIR-BEFORE-CHECK ORDERING, FOR LINE CITATIONS. Added 2026-09-10,
 # task A2.
@@ -143,15 +169,16 @@ bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
 # the 2 stages around it. `--refresh` DECLINES on a checkout holding fewer
 # artefacts than the ledger declares, so a clone cannot shrink it.
 if [ -f scripts/experiment_run_ledger.py ]; then
-    python3 scripts/experiment_run_ledger.py --refresh 2>&1 \
-        | grep -E "refreshed|NOT refreshed" | sed 's/^/pre-commit: /' || true
+    _LEDGER_OUT=$(python3 scripts/experiment_run_ledger.py --refresh 2>&1 || true)
+    echo "$_LEDGER_OUT" | grep -E "refreshed|NOT refreshed" \
+        | sed 's/^/pre-commit: /' || true
+    echo "$_LEDGER_OUT" | cdsfl_restage_from_ledger_output
 fi
 
 if [ -f scripts/citation_content_guard_2026-09-10.py ]; then
-    if ! python3 scripts/citation_content_guard_2026-09-10.py --fix 2>&1 \
-            | grep -E "repaired|->" | sed 's/^/pre-commit: /'; then
-        :   # nothing to repair is the ordinary case and prints nothing
-    fi
+    _CIT_OUT=$(python3 scripts/citation_content_guard_2026-09-10.py --fix 2>&1 || true)
+    echo "$_CIT_OUT" | grep -E "repaired|->" | sed 's/^/pre-commit: /' || true
+    echo "$_CIT_OUT" | cdsfl_restage_from_citation_output
 fi
 
 

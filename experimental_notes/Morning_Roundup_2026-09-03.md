@@ -4,7 +4,7 @@
 
 ## Headline: a live defect in fix acceptance
 
-`check_sk_threshold` (`bench/reference_runner_v3.py:11204`) computes
+`check_sk_threshold` (`bench/reference_runner_v3.py:11306`) computes
 `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
 
 **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
