@@ -231,6 +231,20 @@ Reversible: revert `a72c1c6`. No note was edited — the seat's sentence stands 
 
 Reversible: revert `9348514`, `3b1cb37`, `68bf559`, `4917b5e`. The only behaviour removed is mirroring the founder's Desktop from a clone, a test, or a second checkout, none of which was ever intended. **A marker file `.cdsfl_canonical_checkout` was written to the Desktop**, naming this checkout; deleting it restores the previous behaviour exactly.
 
+### Pass 14 — a `--help` destroyed 54,480 bytes of a verbatim panel record and exited 0. Commit `75beb74`
+
+`python3 scripts/assemble_panel_record_0819.py --help` rewrote `Panel_Enforcement_Prose_FULL_RECORD_2026-08-19.md` from 55,814 bytes to 1,334 and returned success. The script regenerates a panel record from `bench/logs/`, which `.gitignore:41` excludes, so **in any clone the source is empty and every seat is written back as "NO RESPONSE FILE"** — the complete verbatim record of a 5-model review replaced by a stub, by a flag whose entire job is to print a sentence. The founder's Personalisation directive requires exactly these records preserved *"in full and in unfiltered format"*.
+
+**IT HAD BEEN HAPPENING IN EVERY CLONE RUN, AND THE SYMPTOM LOOKED LIKE SOMETHING ELSE.** It reached the suite as `test_each_record_reproduces_a_seat_verbatim` failing on 2 August notes, which reads as a defect in the records and was a defect in a flag. **Found by keeping the clone** — `fresh_clone_suite --keep` — and asking `git status` inside it, which said 2 notes were MODIFIED. That is the second time today the fix was to stop an instrument throwing away the evidence: the same harness had been discarding the pytest output that diagnosed I38.
+
+**THE MORNING'S `--help` SWEEP REPORTED 0 OF 54 AND WAS HONEST.** Its population is MEASUREMENT scripts; both offenders are ACTION scripts. **122 scripts are tracked, and the 68 the sweep does not reach are exactly the ones where a `--help` that acts is destructive rather than merely rude.** A false zero in the POPULATION rather than in the matcher — the same defect class one level further out than where it was being looked for. **7 tracked scripts both WROTE something and ignored the flag: 5.7377% of 122**, Wilson [2.8068%, 11.3709%], Clopper-Pearson [2.3377%, 11.4648%]. All 7, plus the 2 record assemblers, now answer it; verified by execution in a throwaway clone, where all 9 print usage, exit 0 and leave the tree clean.
+
+**THE RATCHET IS STATIC ON PURPOSE AND SAYS SO.** Running every tracked script with `--help` is precisely what must not be done: the standing note records that **15 of 17 runners once billed a live dispatch on an unrecognised argument**, and spending money is one of the 3 categories reserved to the founder. The executing proof was done once, by hand, in a clone.
+
+**AND THE RATCHET HAD THE DEFECT IT WAS WRITTEN TO CATCH.** Its first version asked whether the string `answer_help` appeared in the source — so removing the real call left it green, because the explanatory COMMENT beside the call still contains the word. **A guard that reads its own documentation as evidence of the thing documented.** It now asks the PARSED module whether `answer_help` or `ArgumentParser` is actually called, and the mutation that survived dies.
+
+Reversible: revert `75beb74`. The only behaviour changed is that 9 scripts answer `--help` instead of running; a plain invocation with no arguments reaches exactly the code it reached before, because `answer_help` returns immediately on an empty argv.
+
 ---
 
 ## STANDING NUMBERS
