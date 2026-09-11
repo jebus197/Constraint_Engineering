@@ -207,3 +207,11 @@ So A8 — whose own committed text ends *"**NEEDS A POLICY RULING**: track them,
 **The consequence, which is the whole point of the hook.** Both remaining OPEN entries are rulings. The hook's message *"2 items are still OPEN and nothing is blocking. Do not stop here"* is therefore false at the entry level, and `hooks/work_not_narrate.py`, built to stop the assistant narrating instead of working, is instead pushing it to act on a decision the founder reserved to himself.
 
 **The fix is small and is not being applied unilaterally:** a third predicate that reads the entry's own declaration — `NEEDS A (POLICY )?RULING`, `THE FOUNDER'S`, `awaiting (his|the founder)` — and returns a DECISION flag alongside the verdict, so PARK-with-a-decision-flag is distinguishable from PARK-and-carry-on.
+
+## The Stop hook is PARKED, 2026-09-11 23:18 BST, on the founder's instruction
+
+*"First just pause and park the hook thing we built that has caused you (I suspect) to run on well past the point of useful utility?"*
+
+`work_not_narrate.py` no longer fires. The entry was **not deleted** — it was renamed inside `~/.claude/settings.json` from `Stop` to `_PARKED_Stop_2026-09-11`, so restoring it is renaming 1 key back. A timestamped backup sits at `~/.claude/settings.json.bak-2026-09-11-2317`. Every other key was asserted unchanged and the file was validated as JSON before and after. The 5 `UserPromptSubmit` injectors — clock, MC commands, compaction notice, FFAFP audit, task pulse — are untouched: they supply context and force nothing.
+
+**His suspicion is supported.** The hook refused 11 consecutive stops after he said *"Pause all activity"*, because its own output was written into the transcript as a user message and it then read its own words where his had been. Both defects are fixed and tested (`fdaadc7`, `c112dc1`). It is parked anyway, because the founder asked for it and because a mechanism whose purpose is to keep the assistant working is the wrong thing to have armed while the scope of the work is itself in question.
