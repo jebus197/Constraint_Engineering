@@ -44,6 +44,20 @@ OUTSIDE_INPUTS = (
      "/Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects"),
     ("scripts/triage_open_founder_decisions.py",
      "/Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects"),
+    # FOUND BY A PANEL SEAT, and it was worse than the 3 above. This one builds
+    # its path as `Path.home() / ".claude/projects/-Users-georgejackson-..."`,
+    # so the machine-specific part is a DIRECTORY NAME rather than a leading
+    # absolute path -- and the scan that found the first 3 required the literal
+    # `"/Users/georgejackson`, so it reported a false zero for this form. The
+    # 11th instance this session of a scanner resolving 1 form of a thing.
+    #
+    # With the transcript absent it did not traceback: it printed
+    # "Sources written BEFORE at least 1 later founder message: 0 of 5 = 0.0%"
+    # with a Wilson interval and its conclusion, and exited 0. An authoritative
+    # no-staleness result manufactured from no data, which is worse than a
+    # crash because it reads as a measurement.
+    ("scripts/decision_label_staleness_2026-09-09.py",
+     "-Users-georgejackson-Developer-Projects"),
 )
 
 
@@ -99,10 +113,23 @@ class TestTheProbeItselfWorks:
     failing for reasons unconnected to the property."""
 
     def test_the_prefix_substitution_changes_the_source(self):
+        """The SAME substitution the runner performs, not a lookalike.
+
+        The first version asserted `prefix.replace("/Users", "/cdsfl") not in
+        src`, which assumed every prefix is a leading absolute path. The 4th row
+        builds its path as `Path.home() / ".claude/projects/-Users-george..."`,
+        so its prefix is a DIRECTORY NAME with no "/Users" in it at all, and the
+        assertion compared the prefix with itself and failed. Comparing against
+        the real substitution cannot drift from the runner."""
+        sentinel = "/cdsfl-nonexistent-outside-input"
         for rel, prefix in OUTSIDE_INPUTS:
             src = (REPO / rel).read_text(encoding="utf-8")
-            assert src.count(prefix) >= 1
-            assert prefix.replace("/Users", "/cdsfl") not in src
+            assert src.count(prefix) >= 1, rel
+            patched = src.replace(prefix, sentinel)
+            assert patched != src, (
+                f"substituting {prefix!r} in {rel} changed nothing, so every "
+                f"case for it runs the REAL script against the REAL input")
+            assert sentinel in patched
 
     def test_the_unpatched_script_behaves_differently(self):
         """The real journal exists on this machine, so the unpatched script must

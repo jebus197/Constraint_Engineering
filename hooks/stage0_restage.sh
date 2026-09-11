@@ -48,7 +48,24 @@ cdsfl_restage_paths() {
             echo "pre-commit: repair named $_p, which is not a file; not staged" >&2
             continue
         fi
-        cdsfl_warn_if_partially_staged "$_p"
+        if cdsfl_is_partially_staged "$_p"; then
+            cdsfl_stage_repair_delta "$_p"
+            _rc=$?
+            if [ "$_rc" -eq 0 ]; then
+                echo "pre-commit: staged only the repair's delta in $_p"
+                echo "            (it was partially staged; your withheld hunks" \
+                     "are untouched)"
+            elif [ "$_rc" -eq 2 ]; then
+                :   # nothing changed, so nothing to stage and nothing to say
+            else
+                echo "pre-commit: $_p is partially staged AND the repair collides" >&2
+                echo "            with a hunk you left out. NOT staged: staging it" >&2
+                echo "            would commit work you withheld. The repair is in" >&2
+                echo "            your working tree and will lag 1 commit behind." >&2
+                echo "            Stage it yourself, or: git commit --no-verify" >&2
+            fi
+            continue
+        fi
         if git add -- "$_p"; then
             echo "pre-commit: re-staged $_p (stage-0 repair)"
         else
@@ -74,14 +91,120 @@ cdsfl_restage_paths() {
 # considered and rejected: it means building a tree object by hand inside a
 # shell hook, and a subtle bug there writes a WRONG blob, which is worse than an
 # extra hunk that the author can see in the diff.
-cdsfl_warn_if_partially_staged() {
-    _f=$1
-    git diff --cached --quiet -- "$_f" && return 0   # nothing staged for it
-    git diff --quiet -- "$_f" && return 0            # nothing unstaged for it
-    echo "pre-commit: $_f had BOTH staged and unstaged changes." >&2
-    echo "            The stage-0 repair rewrote it and the whole file is now" >&2
-    echo "            staged, so hunks you left out are in this commit. Check" >&2
-    echo "            the diff, or: git commit --no-verify" >&2
+cdsfl_is_partially_staged() {
+    git diff --cached --quiet -- "$1" && return 1   # nothing staged for it
+    git diff --quiet -- "$1" && return 1            # nothing unstaged for it
+    return 0
+}
+
+# SNAPSHOT BEFORE ANY REPAIR WRITES. Called once from hooks/pre-commit, ahead of
+# the repair blocks. Normally copies nothing: 2 git calls and an empty set.
+#
+# Only PARTIALLY STAGED paths are copied, because those are the only ones where
+# `git add` would take something the author withheld. Everything else keeps the
+# plain `git add` path, unchanged.
+CDSFL_SNAP=""
+cdsfl_snapshot_partially_staged() {
+    # `-z`, AND THE READS ARE LINE-WISE. Two defects were fixed here in
+    # succession, both in code written to be careful.
+    #
+    # 1. The first version intersected the lists with `comm -12 - <(...)`.
+    #    Process substitution is a bashism; this file is sourced by a
+    #    `#!/bin/sh` hook and `sh -n` accepted it only because /bin/sh is bash
+    #    in POSIX mode here. Under dash it is a syntax error, so the hook would
+    #    fail to parse and every commit on a Debian-like system would be refused
+    #    by the guard meant to protect it.
+    #
+    # 2. Its POSIX replacement used `for _b in $_both`, which WORD-SPLITS. A
+    #    path containing a space became several words, matched nothing, and was
+    #    never snapshotted -- so the delta path could not run and the file took
+    #    the collision branch, printing "the repair collides with a hunk you
+    #    left out" when nothing had collided. Measured on
+    #    `A Note With Spaces.md`: index unchanged, repair not staged. It fails
+    #    SAFE -- nothing is swept and nothing is corrupted -- but the repair
+    #    lags a commit behind and the message is false.
+    #
+    # `--name-only -z` also stops git quoting unusual paths as `"caf\303\251.md"`,
+    # which the unquoted form would have mangled. A path containing a NEWLINE is
+    # still not handled; git can express one and this cannot, and saying so is
+    # better than implying coverage.
+    _both=$(git diff --cached --name-only -z 2>/dev/null | tr '\0' '\n')
+    [ -n "$_both" ] || return 0
+    _unstaged=$(git diff --name-only -z 2>/dev/null | tr '\0' '\n')
+    [ -n "$_unstaged" ] || return 0
+    _paths=$(
+        printf '%s\n' "$_both" | while IFS= read -r _b; do
+            [ -n "$_b" ] || continue
+            printf '%s\n' "$_unstaged" | while IFS= read -r _u; do
+                [ "$_b" = "$_u" ] && printf '%s\n' "$_b"
+            done
+        done
+    )
+    [ -n "$_paths" ] || return 0
+    CDSFL_SNAP=$(mktemp -d "${TMPDIR:-/tmp}/cdsfl_stage0_snap.XXXXXX") || { CDSFL_SNAP=""; return 0; }
+    printf '%s\n' "$_paths" | while IFS= read -r _p; do
+        [ -n "$_p" ] && [ -f "$_p" ] || continue
+        mkdir -p "$CDSFL_SNAP/$(dirname "$_p")"
+        cp "$_p" "$CDSFL_SNAP/$_p"
+    done
+}
+
+cdsfl_snapshot_cleanup() {
+    [ -n "${CDSFL_SNAP:-}" ] && [ -d "$CDSFL_SNAP" ] && rm -rf "$CDSFL_SNAP"
+    CDSFL_SNAP=""
+}
+
+# STAGE ONLY THE REPAIR'S DELTA into a partially staged file.
+#
+# `git add -- <path>` stages the WHOLE file, so a file the author staged with
+# `git add -p` loses its withheld hunks to the next commit the moment a repair
+# touches it. Both panel seats found this on 2026-09-11 and each built a fix;
+# they disagreed on the mechanism, and the disagreement was settled by
+# measurement rather than by argument. Repair at a varying distance from the
+# author's unstaged hunk, 8-line file, real index:
+#
+#     gap  3-way `git merge-file`   zero-context `git apply --cached`
+#      0   CONFLICT                 FAILED            (same line -- no answer)
+#      1   CONFLICT                 OK, WIP excluded
+#      2   OK                       OK
+#      3   OK                       OK
+#
+# Zero-context apply succeeds everywhere merge-file does AND at gap 1, which is
+# the common geometry: a citation repair 1 line from an edit in progress. That
+# is a committed measurement showing one mechanism dominates on a named
+# property, which is what choosing between them requires.
+#
+# At gap 0 BOTH refuse, correctly: the repair and the withheld hunk touch the
+# same line and there is no right answer without asking. The caller then
+# reports a lag rather than staging, because a visible 1-commit lag is better
+# than an irreversible commit of content nobody reviewed.
+#
+# RETURN CODES, and the 3rd was added after a P-pass on this very function.
+#   0  the repair's delta was staged
+#   1  the delta could not be applied -- the caller REPORTS a collision
+#   2  there was no delta: the repair reported a path it did not change
+#
+# There were 2 codes at first, and an empty patch returned 1. So a repair that
+# reported a path without changing it made the hook print "the repair collides
+# with a hunk you left out", which is false on every count -- nothing collided
+# and nothing needed staging. A guard that cries wolf on the ordinary case is
+# the same decay path as one that cannot fire.
+cdsfl_stage_repair_delta() {
+    _p=$1
+    [ -n "${CDSFL_SNAP:-}" ] || return 1
+    _before="$CDSFL_SNAP/$_p"
+    [ -f "$_before" ] || return 1
+    _patch="$CDSFL_SNAP/.delta.patch"
+    # `git diff --no-index` exits 1 when the files differ, which is the ordinary
+    # case here, so its status says nothing about success.
+    git diff --no-index -U0 -- "$_before" "$_p" 2>/dev/null | awk -v p="$_p" '
+        /^diff --git / { print "diff --git a/" p " b/" p; next }
+        /^--- /        { print "--- a/" p; next }
+        /^\+\+\+ /      { print "+++ b/" p; next }
+        { print }
+    ' > "$_patch"
+    [ -s "$_patch" ] || return 2
+    git apply --cached --unidiff-zero "$_patch" 2>/dev/null
 }
 
 # `scripts/experiment_run_ledger.py --refresh` prints, on success and only then:
@@ -121,8 +244,26 @@ cdsfl_warn_if_partial_commit() {
     # sh -x showed _real resolving to the fake lock path that had just been
     # exported.  `--absolute-git-dir` does not consult GIT_INDEX_FILE.
     _dir=$(git rev-parse --absolute-git-dir 2>/dev/null) || return 0
+    # `index.lock` IS THE REAL INDEX. Both panel seats found this independently
+    # on 2026-09-11 and it was reproduced here from a live hook, git 2.50.1:
+    #
+    #     git commit           .git/index                     real index
+    #     git commit --amend   .git/index                     real index
+    #     git commit -a        <gitdir>/index.lock            real index
+    #     git commit -- <path> <gitdir>/next-index-<pid>.lock  TEMPORARY
+    #
+    # Without the `index.lock` escape, EVERY `git commit -am` in this repository
+    # was told "this is a pathspec commit" and that files outside the pathspec
+    # would land -- both false, on the commonest commit command there is. The
+    # first version of this function could never fire; this one fired when it
+    # must not. A notice that is wrong on the ordinary case stops being read,
+    # which is a guard that cannot fail in mirror image.
+    #
+    # The discriminator is the basename: git names the final index `index`, its
+    # lock `index.lock`, and a genuinely temporary index `next-index-<pid>`.
     case "$GIT_INDEX_FILE" in
         "$_dir/index"|*/index|index) return 0 ;;
+        "$_dir/index.lock"|*/index.lock|index.lock) return 0 ;;
     esac
     echo "pre-commit: this is a pathspec commit (git commit -- <path>), so the" >&2
     echo "            stage-0 repairs below are staged into git's TEMPORARY" >&2

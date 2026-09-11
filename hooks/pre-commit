@@ -142,6 +142,11 @@ if [ ! -f "$RESTAGE_LIB" ]; then
 fi
 . "$RESTAGE_LIB"
 cdsfl_warn_if_partial_commit
+# BEFORE ANY REPAIR WRITES. Copies the working-tree content of every path that
+# is modified in BOTH the index and the worktree, so a repair to such a file can
+# be staged as a DELTA rather than by `git add`, which would take the hunks the
+# author withheld. Normally an empty set and 2 git calls.
+cdsfl_snapshot_partially_staged
 
 # THE SAME REPAIR-BEFORE-CHECK ORDERING, FOR LINE CITATIONS. Added 2026-09-10,
 # task A2.
@@ -170,17 +175,25 @@ cdsfl_warn_if_partial_commit
 # artefacts than the ledger declares, so a clone cannot shrink it.
 if [ -f scripts/experiment_run_ledger.py ]; then
     _LEDGER_OUT=$(python3 scripts/experiment_run_ledger.py --refresh 2>&1 || true)
-    echo "$_LEDGER_OUT" | grep -E "refreshed|NOT refreshed" \
+    # `REFUSED|Traceback|Error` TOO. A traceback contains none of the success
+    # tokens and `|| true` eats the exit code, so a repair that CRASHED printed
+    # nothing at all and the commit went through with the repair not done --
+    # which is the defect this whole stage exists to close, re-entering through
+    # its own reporting. Found by the fable seat, round 14.
+    echo "$_LEDGER_OUT" | grep -E "refreshed|NOT refreshed|REFUSED|Traceback|Error" \
         | sed 's/^/pre-commit: /' || true
     echo "$_LEDGER_OUT" | cdsfl_restage_from_ledger_output
 fi
 
 if [ -f scripts/citation_content_guard_2026-09-10.py ]; then
     _CIT_OUT=$(python3 scripts/citation_content_guard_2026-09-10.py --fix 2>&1 || true)
-    echo "$_CIT_OUT" | grep -E "repaired|->" | sed 's/^/pre-commit: /' || true
+    echo "$_CIT_OUT" | grep -E "repaired|->|REFUSED|Traceback|Error" \
+        | sed 's/^/pre-commit: /' || true
     echo "$_CIT_OUT" | cdsfl_restage_from_citation_output
 fi
 
+
+cdsfl_snapshot_cleanup
 
 if [ -f scripts/sync_desktop_mirrors.py ]; then
     if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then

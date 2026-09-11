@@ -49,6 +49,36 @@ def spans(path: str) -> dict:
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
 
 
+def read_citing(path: pathlib.Path) -> tuple[bytes, str]:
+    """The ONE way a citing file is read. Returns (raw bytes, decoded text).
+
+    THREE DEFECTS CLOSED BY HAVING 1 READER, all found 2026-09-11 by both panel
+    seats independently.
+
+    1. `check()` read with `errors="replace"` and `repair()` with the strict
+       default. One bad byte in one note therefore raised inside `repair()`, the
+       hook's `|| true` swallowed it, and NO citation was repaired in that pass
+       -- the "repair lags a commit behind" defect re-entering through the
+       repair that exists to close it.
+
+    2. `read_text` translates CRLF to LF on the way in and `write_text` writes
+       LF on the way out, so repairing 1 line number silently rewrote EVERY line
+       ending in the file. The offset guard cannot see that: the offsets agree;
+       the damage is in the write.
+
+    3. Worse, translation makes `check()`'s offsets index a DIFFERENT string
+       from the bytes on disk, so a positional splice would land in the wrong
+       place on any CRLF file. `decode` does no translation, so both agree by
+       construction.
+
+    Reachability today is 0 -- 862 citing files, 0 invalid UTF-8, 0 CRLF -- which
+    is exactly why it needs a mechanism rather than a note. Nothing enforces LF
+    or UTF-8 on these paths: there is no `.gitattributes` and no encoding check.
+    """
+    raw = path.read_bytes()
+    return raw, raw.decode("utf-8", errors="replace")
+
+
 def citing_files():
     seen = set()
     for pat in SEARCH:
@@ -64,7 +94,7 @@ def check(target: str):
     n_lines = len((REPO / target).read_text(encoding="utf-8").splitlines())
     good, bad, unchecked, past_end = [], [], 0, []
     for p in citing_files():
-        txt = p.read_text(encoding="utf-8", errors="replace")
+        _raw, txt = read_citing(p)
         for m in rx.finditer(txt):
             line = int(m.group(1))
             if line > n_lines:
@@ -132,7 +162,16 @@ def repair(target: str) -> int:
         by_path.setdefault(path, []).append((start, end, line, lo, anchor))
     applied = 0
     for path, edits in by_path.items():
-        txt = path.read_text(encoding="utf-8")
+        raw, txt = read_citing(path)
+        # REFUSE A FILE WHOSE BYTES DO NOT SURVIVE THE ROUND TRIP, and carry on
+        # with the rest. `errors="replace"` would otherwise write U+FFFD over
+        # real bytes. Refusing 1 file is a repair that did not happen; raising
+        # is a pass that did not happen, for every file.
+        if txt.encode("utf-8") != raw:
+            print(f"  REFUSED {path.relative_to(REPO)}: its bytes are not valid "
+                  f"UTF-8, so repairing it would overwrite them; nothing "
+                  f"written", file=sys.stderr)
+            continue
         messages = []
         for start, end, line, lo, anchor in sorted(edits, reverse=True):
             if txt[start:end] != str(line):
@@ -145,7 +184,9 @@ def repair(target: str) -> int:
                                     f"  (`{anchor}`)"))
             applied += 1
         if messages:
-            path.write_text(txt, encoding="utf-8")
+            # write_bytes, not write_text: write_text re-translates newlines, so
+            # repairing 1 number in a CRLF file would rewrite every line ending.
+            path.write_bytes(txt.encode("utf-8"))
             for _s, msg in sorted(messages):
                 print(msg)
     return applied

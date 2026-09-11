@@ -34,6 +34,13 @@ must never cost money. None of these 30 spend money, but several run the full
 measurement they exist to produce -- minutes of work, and in 1 case a git walk
 over the whole history -- in answer to a request to be told what they do.
 
+TWO COUNTS, AND THEY MEASURE DIFFERENT THINGS, so neither is wrong. **30** is
+how many scripts were MEASURED as ignoring the flag, and how many were edited to
+call this helper. **31** is how many files CALL it today: the 30, plus
+`scripts/help_is_answered_2026-09-11.py`, which was written with the call
+already in it. A panel seat counted callers, found 31 against a stated 30, and
+asked for the line; this is the line.
+
 THE CONTRACT. `answer_help` is a no-op unless `-h` or `--help` is present in
 argv, so a script's behaviour with any other arguments, including none, is
 unchanged by construction. None of the 30 read `sys.argv` or use `argparse` at

@@ -19,6 +19,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import pathlib
+import sys
 import subprocess
 
 import mpmath as mp
@@ -122,6 +123,34 @@ def wilson_mp(k: int, n: int, conf: float = 0.95) -> tuple[float, float]:
 
 
 def main() -> int:
+    # AN ABSENT TRANSCRIPT IS NOT ZERO STALENESS. Found 2026-09-11, after the
+    # fable panel seat pointed at this file's machine-specific input path.
+    #
+    # `founder_message_times()` returns [] when the transcript is missing, and
+    # every "founder msgs since" count is then 0, so the script printed
+    #
+    #     Sources written BEFORE at least 1 later founder message: 0 of 5 = 0.0%
+    #         Wilson 95% [statsmodels] : [0.0%, 43.4%]
+    #
+    # with its conclusion, and exited 0. A clean authoritative no-staleness
+    # result manufactured from no data at all -- which is worse than a
+    # traceback, because it reads as a measurement. This project's own record
+    # names the shape: "a roster filter that returns EMPTY is indistinguishable,
+    # downstream, from the feature working".
+    #
+    # The transcript lives under the agent session directory, OUTSIDE the
+    # repository, so it is absent in every clone and on every other machine.
+    # The 3 sibling scripts that read it already decline by name; this one now
+    # does too. Held by bench/tests/test_outside_inputs_decline_2026-09-11.py.
+    if not TRANSCRIPT.exists():
+        print(f"no transcript at {TRANSCRIPT}", file=sys.stderr)
+        print("This script counts the founder's messages from a session "
+              "transcript under the agent session directory, which is outside "
+              "the repository and absent in a clone or on another machine. "
+              "Without it every count is 0 and the staleness rate would read "
+              "as 0 of 5 rather than as unmeasured.", file=sys.stderr)
+        return 2
+
     msgs = founder_message_times()
     now = dt.datetime.now(dt.timezone.utc)
     print(f"Founder messages found in this session's transcript: {len(msgs)}")

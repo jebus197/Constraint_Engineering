@@ -198,3 +198,61 @@ class TestTheRealRepositoryIsClean:
         assert not offenders, (
             f"{len(offenders)} citation(s) point past line {n_lines} of "
             f"{target}: {offenders}")
+
+
+class TestOneFileCannotKillTheWholePass:
+    """`check()` read with errors="replace" and `repair()` with the strict
+    default. One bad byte in one note raised inside `repair()`, the hook's
+    `|| true` swallowed it, and NO citation was repaired in that pass -- the
+    "repair lags a commit behind" defect re-entering through the repair that
+    exists to close it. Found independently by both panel seats, round 14.
+
+    Reachability today is 0: 866 citing files, 0 invalid UTF-8, 0 CRLF, Wilson
+    [0.0000%, 0.4416%] for each. Nothing enforces LF or UTF-8 on these paths --
+    there is no .gitattributes and no encoding check -- which is why this is a
+    mechanism and not a note."""
+
+    def test_an_undecodable_file_is_refused_and_the_good_one_is_repaired(
+            self, guard, tmp_path, capsys):
+        _toy_target(tmp_path, {40: "alpha"})
+        bad = tmp_path / "bad.md"
+        bad.write_bytes(b"\xff\xfe `alpha` at toy_target.py:12 here\n")
+        good = tmp_path / "good.md"
+        good.write_text("`alpha` at toy_target.py:12 here\n", encoding="utf-8")
+        before = bad.read_bytes()
+
+        n = guard.repair("toy_target.py")
+
+        assert "toy_target.py:40" in good.read_text(encoding="utf-8"), (
+            "one undecodable file stopped the whole pass; every other file "
+            "ships stale and HEAD is broken in a clone")
+        assert bad.read_bytes() == before, "the undecodable file was rewritten"
+        assert n == 1, n
+        assert "REFUSED" in capsys.readouterr().err
+
+    def test_crlf_line_endings_survive_a_repair(self, guard, tmp_path):
+        """read_text translates CRLF in and write_text writes LF out, so
+        repairing 1 number rewrote EVERY line ending. Worse, the translation
+        makes check()'s offsets index a different string from the bytes on disk,
+        so a positional splice lands in the wrong place."""
+        _toy_target(tmp_path, {40: "alpha"})
+        doc = tmp_path / "crlf.md"
+        doc.write_bytes(b"intro\r\n`alpha` at toy_target.py:12 here\r\nend\r\n")
+
+        assert guard.repair("toy_target.py") == 1
+        out = doc.read_bytes()
+        assert b"\r\n" in out, "the repair rewrote every line ending in the file"
+        assert b"toy_target.py:40" in out, "the splice landed in the wrong place"
+        assert out.count(b"\r\n") == 3, out
+
+    def test_the_reader_is_shared_by_check_and_repair(self, guard, tmp_path):
+        """ANTI-DRIFT. The 2 faults above both came from 2 readers. This asserts
+        there is 1, by calling it -- not by reading the source."""
+        doc = tmp_path / "x.md"
+        doc.write_bytes(b"line\r\nnext\r\n")
+        raw, txt = guard.read_citing(doc)
+        assert raw == b"line\r\nnext\r\n"
+        assert txt == "line\r\nnext\r\n", (
+            "the shared reader translates newlines, so offsets and bytes "
+            "disagree again")
+        assert txt.encode("utf-8") == raw

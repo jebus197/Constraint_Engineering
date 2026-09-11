@@ -54,6 +54,9 @@ def _hook_guard_files() -> list[str]:
     return names
 
 
+from bench.tests.hook_fixture import install_hook  # noqa: E402
+
+
 def _repo(tmp_path):
     """A real git repository with the hook wired the way this one wires it."""
     work = tmp_path / "repo"
@@ -62,8 +65,16 @@ def _repo(tmp_path):
     (work / "hooks").mkdir()
     (work / "bench" / "tests").mkdir(parents=True)
     shutil.copy(LINT, work / "scripts" / "note_vagueness_lint.py")
-    shutil.copy(HOOK, work / "hooks" / "pre-commit")
-    os.chmod(work / "hooks" / "pre-commit", 0o755)
+    # THE HOOK AND EVERY SHELL LIBRARY BESIDE IT. This copied only the hook,
+    # and on 2026-09-11 the hook gained hooks/stage0_restage.sh, which it
+    # sources and REFUSES without -- so all 10 tests in this file went red with
+    # "stage0_restage.sh is missing". Same defect as the guard-list note below,
+    # one level out: a list of what the hook needs, written down in 2 places.
+    _installed = install_hook(work / "hooks")
+    assert len(_installed) >= 2, (
+        f"install_hook copied {_installed}; the hook needs its shell libraries "
+        f"too, and a fixture with no hook passes every 'it refused' test "
+        f"vacuously")
     # THE GUARD LIST IS READ OUT OF THE HOOK, NOT TYPED HERE. It was typed, as 4
     # names, and the hook has since grown to 6 -- task V1 added
     # `test_done_markers_carry_evidence_2026-09-10.py` and task M2 added
