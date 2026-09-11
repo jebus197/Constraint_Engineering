@@ -28,6 +28,10 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 **Founder standing instruction on the run:** *"you don't need to stop at one simulated run. You can run as many as it takes to guarantee accuracy."*
 
+**★ FLAGGED ON ITEM 46 FOR THE ONE-MODEL / ONE-MODEL-PLUS-SEVERAL-AGENTS EXPERIMENT (2026-09-11, founder's instruction).** The guard built for task 9.4 refuses study item 46 when a run had only 1 architecture, and it decides that by **counting distinct `source_model` values**. Cardinality is not provenance. A simulated panel gives every seat the same stand-in model under a different label, so the labels differ while the architecture does not, and the refusal can fail to fire on exactly the run it was built for. The founder's reading: *"it sounds like a glitch that could prevent this test from working at all!"*
+
+The signal needed is already at the call site — `run_is_simulated(cfg)` sits in the same module as the refusal and `cfg` is already passed — so the fix is to read provenance alongside cardinality. **NOT APPLIED.** The founder has this under discussion elsewhere and ruled it *"safe to discount for now"*; it is recorded here so the one-model experiment does not run on a guard that cannot see its own condition. Full finding: `experimental_notes/evidence/done_audit_2026-09-11/round2_never_audited_13.json`, entry 9.4.
+
 ### Runway — AFTER the simulated run, BEFORE Bench Run 2
 
 | # | Item | Ruling |
