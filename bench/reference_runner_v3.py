@@ -10021,8 +10021,53 @@ def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[s
         f"gating {len(blocks)} fenced listing(s) extracted from a non-Python target")
 
 
-def _run_hard_gate_ast(modified_source: str, source_path: str = "") -> Tuple[int, str]:
-    """g1: AST parse of the target's CODE. Returns (score, detail)."""
+def _baseline_code_is_parseable(original_source: Optional[str],
+                                source_path: str,
+                                compiler=None) -> Optional[bool]:
+    """Did the target's code parse BEFORE the fix? None when unknown.
+
+    WHY g1 AND g2 NEED THIS, found 2026-09-11 by the cc2 seat in panel round 13.
+    e2, e3 and e4 are all measured AGAINST A BASELINE. g1 and g2 are ABSOLUTE.
+    On a Python module that is harmless -- the repository's own source parses.
+    On a prose target a fenced listing is routinely an ILLUSTRATIVE FRAGMENT --
+    `    return 0`, a method body, a diff hunk -- that never parsed on its own
+    and never will. A = g1*g2 = 0, every fix REJECTED, and the failure is NOT
+    ATTRIBUTABLE TO THE FIX.
+
+    THE GUARD IS NOT A LICENCE. It abstains only where the code was ALREADY
+    unparseable; a fix that breaks code which previously parsed is still
+    convicted, and there is a test for exactly that. The limit is stated rather
+    than hidden: the check is coarse -- parses or does not -- and does not diff
+    the two failures, so a fix that breaks a listing DIFFERENTLY from how the
+    baseline was broken is swallowed. That residue is real and is not closed.
+
+    THE BASELINE MUST BE TESTED BY THE SAME COMPILER THE GATE USES, and the
+    first version of this was not. `ast.parse("return 0")` SUCCEEDS while
+    `compile("return 0", ..., "exec")` raises "'return' outside function" -- so
+    on an illustrative fragment the baseline check said "it parsed" and g2
+    convicted the fix anyway. Two expressions of one question with no
+    comparator, inside the guard written to stop exactly that.
+    """
+    if original_source is None:
+        return None
+    src, _why = _gateable_source(original_source, source_path)
+    if src is None:
+        return None
+    check = compiler or ast.parse
+    try:
+        check(src)
+        return True
+    except (SyntaxError, ValueError):
+        return False
+
+
+def _run_hard_gate_ast(modified_source: str, source_path: str = "",
+                       original_source: Optional[str] = None) -> Tuple[int, str]:
+    """g1: AST parse of the target's CODE. Returns (score, detail).
+
+    `original_source` defaults to None, which reproduces the previous ABSOLUTE
+    behaviour exactly, so no existing caller changes.
+    """
     src, why = _gateable_source(modified_source, source_path)
     if src is None:
         return 1, f"AST parse not applicable ({why})"
@@ -10030,6 +10075,9 @@ def _run_hard_gate_ast(modified_source: str, source_path: str = "") -> Tuple[int
         ast.parse(src)
         return 1, f"AST parse succeeded ({why})"
     except (SyntaxError, ValueError) as e:
+        if _baseline_code_is_parseable(original_source, source_path) is False:
+            return 1, (f"AST parse fails, and it ALSO failed before this fix, so "
+                       f"the failure is not attributable to it: {e} ({why})")
         return 0, f"ParseError: {e} ({why})"
 
 
@@ -10105,8 +10153,18 @@ def _anchor_dir_for(source_path: str) -> Optional[str]:
     return None
 
 
-def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
-    """g2: py_compile of the target's CODE. Returns (score, detail)."""
+def _run_hard_gate_compile(modified_source: str, source_path: str,
+                           original_source: Optional[str] = None) -> Tuple[int, str]:
+    """g2: py_compile of the target's CODE. Returns (score, detail).
+
+    `original_source` defaults to None, reproducing the previous ABSOLUTE
+    behaviour exactly. See `_baseline_code_is_parseable` for why an absolute
+    gate convicts every fix on an illustrative fragment.
+    """
+    # THE SAME COMPILER g2 ITSELF USES. See `_baseline_code_is_parseable`.
+    original_parseable = _baseline_code_is_parseable(
+        original_source, source_path,
+        compiler=lambda t: compile(t, source_path or "<target>", "exec"))
     modified_source, why = _gateable_source(modified_source, source_path)
     if modified_source is None:
         return 1, f"py_compile not applicable ({why})"
@@ -10128,6 +10186,10 @@ def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int,
         compile(modified_source, source_path or "<gate>", "exec")
         return 1, "py_compile succeeded"
     except SyntaxError as e:
+        if original_parseable is False:
+            return 1, (f"py_compile fails, and it ALSO failed before this "
+                       f"fix, so the failure is not attributable to it: {e}")
+
         return 0, f"CompileError: {e}"
     except ValueError as e:
         # source containing null bytes: a real compile failure, not a crash
@@ -10496,7 +10558,9 @@ def compute_sk(
     # still returns NO_SCORE whatever the flag says -- there is nothing
     # computationally reducible in it, which is exactly his "purely prose" case.
     _reducible, _why_reducible = _gateable_source(source, source_path)
-    if kind != TARGET_KIND_PYTHON and score_prose_listings and _reducible:
+    _scoring_prose = (kind != TARGET_KIND_PYTHON and score_prose_listings
+                      and bool(_reducible))
+    if _scoring_prose:
         kind_reason = (f"{kind_reason}; scored anyway because the target carries "
                        f"reducible code ({_why_reducible})")
     elif kind != TARGET_KIND_PYTHON:
@@ -10530,12 +10594,50 @@ def compute_sk(
             blocks_parsed=len(blocks), blocks_applied=0,
         )
 
-    # Hard gates
     details: Dict[str, Any] = {}
-    g1_score, g1_detail = _run_hard_gate_ast(modified, source_path)
+
+    # g0: A FIX THAT DELETES EVERY LISTING HAS FAILED, NOT BECOME UNSCOREABLE.
+    #
+    # Found 2026-09-11 by the cc2 seat in panel round 13 and reproduced before
+    # accepting. `apply_fix_blocks` edits the WHOLE source, prose included, and
+    # extraction happens AFTER -- so a hunk that removes the fence markers takes
+    # the code out of every gate's view, and the result came back
+    # `0.0 ESCALATE` with all 3 gates reporting "target carries no code".
+    #
+    # The target was admitted to the scoring branch BECAUSE it carried reducible
+    # code. A fix that deletes all of it is a removal with no measured
+    # replacement, which is the additive standard as a gate. REJECT is the safer
+    # default than an ESCALATE that reads as "unscoreable".
+    #
+    # THE SEAT FLAGGED THE DESIGN CALL AND SO DO I: a finding whose whole point
+    # is "this example is wrong, delete it" would be wrongly rejected here, and
+    # the right answer would be a distinct outcome rather than either of these.
+    # That is the founder's to settle.
+    if _scoring_prose:
+        _post, _why_post = _gateable_source(modified, source_path)
+        if _post is None:
+            details["g0_code_retained"] = {
+                "score": 0,
+                "detail": ("the fix removed every fenced listing from a target "
+                           "that was scored BECAUSE it carried reducible code; "
+                           "a removal with no measured replacement"),
+            }
+            return SkResult(
+                sk=0.0, A=0.0, E=0.0, tristate=SK_REJECTED,
+                gate_details=details,
+                blocks_parsed=len(blocks), blocks_applied=applied,
+            )
+        details["g0_code_retained"] = {"score": 1, "detail": _why_post}
+
+    # Hard gates
+    g1_score, g1_detail = _run_hard_gate_ast(
+        modified, source_path,
+        original_source=source if _scoring_prose else None)
     details["g1_ast"] = {"score": g1_score, "detail": g1_detail}
 
-    g2_score, g2_detail = _run_hard_gate_compile(modified, source_path)
+    g2_score, g2_detail = _run_hard_gate_compile(
+        modified, source_path,
+        original_source=source if _scoring_prose else None)
     details["g2_compile"] = {"score": g2_score, "detail": g2_detail}
 
     A = g1_score * g2_score
