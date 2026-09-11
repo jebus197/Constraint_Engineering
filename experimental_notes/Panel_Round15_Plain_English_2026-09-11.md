@@ -71,6 +71,4 @@ The second rests on 8 observations. Its range runs from roughly 14 percent to ro
 
 A third defect was found in the review machinery itself. The harness that runs the project's tests in a throwaway copy reported which test had failed and nothing else. An intermittent fault reproduced during this round for the first time since extra diagnostic information had been added to it for exactly that purpose, and the harness discarded that information. It now keeps the full output and says where it put it.
 
-Written under CDSFL note standard v1.7, 26 August 2026.
-
 Written under CDSFL note standard v1.7 (26 August 2026).
