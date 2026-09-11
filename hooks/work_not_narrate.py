@@ -45,6 +45,7 @@ Self-test: `python3 work_not_narrate.py --self-test`
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import pathlib
@@ -76,6 +77,39 @@ MIN_PROSE = 1200
 REPO = pathlib.Path.home() / "Developer_Projects" / "Constraint_Engineering"
 TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 MARKERS = REPO / "scripts"
+
+
+def founder_commands(text: str) -> list[str]:
+    """His MC commands, read with the SAME parser the MC hook uses.
+
+    THERE WERE 2 IMPLEMENTATIONS AND THEY DISAGREED. This hook carried its own
+    `re.fullmatch(r"[a-z, ]{1,20}", tail)`, which accepts only a bare trailing
+    line. He routinely explains a command as he issues it -- "rg (for the task
+    list discussion), then, a, d" -- and that form matched neither parser. 6 of
+    his messages in one session had every command silently dropped. His ruling:
+    "all commands issued by me should be considered law, and are non-optional
+    under any condition!"
+
+    So there is now 1 parser. On any failure to load it this falls back to the
+    old pattern, because a guard must never end up reading LESS of him than it
+    did before.
+    """
+    for cand in (pathlib.Path(__file__).with_name("mc_commands.py"),
+                 REPO / "hooks" / "mc_commands.py",
+                 pathlib.Path.home() / ".claude" / "hooks" / "mc_commands.py"):
+        try:
+            if not cand.is_file():
+                continue
+            spec = importlib.util.spec_from_file_location("mc_commands_shared", cand)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)                    # type: ignore[union-attr]
+            return list(mod.commands_in(text))
+        except Exception:
+            continue
+    tail = text.strip().splitlines()[-1].strip().lower() if text.strip() else ""
+    if re.fullmatch(r"[a-z, ]{1,20}", tail):
+        return [t for t in re.split(r"[,\s]+", tail) if t]
+    return []
 
 
 def is_founder_message(d: dict) -> bool:
@@ -183,8 +217,7 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
         if not isinstance(c, str) or "<system-reminder>" in c:
             continue
         start = i
-        tail = c.strip().splitlines()[-1].strip().lower() if c.strip() else ""
-        had_d = bool(re.fullmatch(r"[a-z, ]{1,20}", tail) and re.search(r"\bd\b", tail))
+        had_d = "d" in founder_commands(c)
 
     calls = prose = 0
     commit = False

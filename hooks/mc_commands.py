@@ -115,21 +115,36 @@ def commands_in(text: str):
     # Widened deliberately, then re-tested against the false-positive set: a line
     # still only counts when MOST of it is commands and at least two are present,
     # or it is a single bare command like `y`.
+    # WIDENED AGAIN 2026-09-11, on his ruling: "all commands issued by me should
+    # be considered law, and are non-optional under any condition!" It had just
+    # dropped every command in `rg (for the task list discussion), then, a, d` --
+    # 3 known tokens against 9 raw, so the "overwhelmingly commands" rule threw
+    # the whole line away. He explains his commands in passing; a parser that
+    # only accepts bare ones is a parser that ignores him when he is being clear.
+    # Two changes, each narrow: a parenthetical is an ASIDE and is stripped
+    # before tokenising, and a run of commands at the END of a line is taken even
+    # when prose precedes it.
     lines = [ln for ln in text.strip().splitlines() if ln.strip()][-6:]
     for line in lines:
-        raw = [t.strip().lower().rstrip(".!?") for t in re.split(r"[,\s]+", line.strip()) if t.strip()]
+        bare = re.sub(r"\([^)]*\)", " ", line.strip())
+        raw = [t.strip().lower().rstrip(".!?") for t in re.split(r"[,\s]+", bare) if t.strip()]
         if not raw or len(raw) > 14:
             continue
         known = [t for t in raw if t in _KNOWN]
-        if not known:
-            continue
-        # A line of ordinary prose has few known tokens relative to its length.
-        # Require the line to be overwhelmingly commands.
-        if len(known) < len(raw) - 1:
-            continue
-        if len(known) == 1 and len(raw) > 1:
-            continue
-        for t in known:
+        accepted: list[str] = []
+        if known and len(known) >= len(raw) - 1 and not (len(known) == 1 and len(raw) > 1):
+            accepted = known
+        else:
+            # A TRAILING RUN. Walk back from the end while tokens are commands.
+            run: list[str] = []
+            for t in reversed(raw):
+                if t in _KNOWN:
+                    run.append(t)
+                else:
+                    break
+            if len(run) >= 2:                      # 2 or more, so a lone "d" in
+                accepted = list(reversed(run))      # ordinary prose cannot fire
+        for t in accepted:
             if t not in seen:
                 seen.add(t)
                 out.append(t)

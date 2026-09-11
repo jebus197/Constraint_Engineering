@@ -153,3 +153,61 @@ def test_the_versioned_copy_is_the_one_that_runs(hook):
 
 def test_the_hooks_own_self_test_passes(hook):
     assert hook.self_test() == 0
+
+
+# ---------------------------------------------------------------------------
+# THE SECOND HALF OF THE SAME RULING, 2026-09-11.
+# The isMeta fix stopped the hook reading its OWN words as his. It did not stop
+# the hook MISREADING his. He writes "rg (for the task list discussion), then,
+# a, d", and both parsers -- this hook's private regex AND mc_commands.py --
+# threw the whole line away. 6 of his messages in one session lost every command
+# that way, measured across the live transcript, 0 commands lost by the fix and
+# 0 new false positives.
+# ---------------------------------------------------------------------------
+
+EXPLAINED = "Show me the 36 entries.\n\nrg (for the task list discussion), then, a, d"
+
+
+def test_a_command_he_explains_is_still_a_command(hook, tmp_path):
+    t = _transcript(tmp_path, _entry(FOUNDER_TS, EXPLAINED))
+    assert hook.turn_signals(t)[3] is True
+
+
+def test_an_explained_command_survives_the_hook_speaking_after_it(hook, tmp_path):
+    """Both defects at once, which is how it actually reached him."""
+    t = _transcript(
+        tmp_path,
+        _entry(FOUNDER_TS, EXPLAINED),
+        _entry(HOOK_TS, HOOK_FEEDBACK, meta=True),
+    )
+    assert hook.turn_signals(t)[3] is True
+
+
+def test_there_is_only_one_parser(hook):
+    """Two implementations disagreed. The hook must now DEFER to the shared one."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mc_shared_check", REPO / "hooks" / "mc_commands.py")
+    mc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mc)
+    for msg in (EXPLAINED, "pause\n\na, d", "y", "carry on please", "What are you doing?"):
+        assert hook.founder_commands(msg) == mc.commands_in(msg), msg
+
+
+@pytest.mark.parametrize("prose", [
+    "just some prose about d-day and things",
+    "carry on please",
+    "What are you doing?",
+    "the options are a, b, c and d",
+    "Show me the 36 entries I actually wrote and their status.",
+])
+def test_ordinary_prose_does_not_become_a_command(hook, prose):
+    """Widening must not make every sentence an instruction."""
+    assert "d" not in hook.founder_commands(prose)
+
+
+def test_the_shared_parser_file_is_versioned_and_current():
+    live = pathlib.Path.home() / ".claude" / "hooks" / "mc_commands.py"
+    repo = REPO / "hooks" / "mc_commands.py"
+    assert repo.is_file() and live.is_file()
+    assert repo.read_bytes() == live.read_bytes(), "the shared parser has diverged"
