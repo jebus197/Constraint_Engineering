@@ -118,13 +118,17 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 
 *Parked 2026-09-10T22:03:49+01:00.*
 
-## Enable Tailscale SSH on the private network
+## Enable Tailscale SSH on the private network — SAME DECISION AS 10.2 ABOVE, NOT A SECOND ONE
+
+**Merged 2026-09-11.** This heading and *"10.2: should the private network's own shell service be turned on?"* are 1 decision, not 2. The stub below was written by the triage script and the analysis above was written by hand; nothing here asks anything the entry above does not. **Answer 10.2 and this is answered.** Left in place rather than deleted so the parking record stays complete.
 
 *Parked 2026-09-10T22:04:26+01:00.*
 
 Analysis complete and parked. Enabling it changes the authentication posture of the founder's private network, so the decision is his. Task 10.1 works today without it. 20 other entries are open and none depends on it.
 
-## A8 needs a POLICY RULING from the founder: track, relocate, or accept-and-label the untracked cited bench/logs paths
+## A8 policy ruling: track, relocate, or accept-and-label — SUPERSEDED, THE QUESTION GOT SMALLER
+
+**Superseded 2026-09-11 by the A8 heading below.** When this was parked the question was a 3-way policy choice over 23 orphaned citations. The work since reduced it: 20 of the 23 now have a byte-identical tracked copy, and the other 3 name log files for an experiment that has never run, so they are citations to a future artefact rather than lost evidence. **What is actually left is the yes/no below — re-point 20 citations, or leave them — and the recommendation is to leave them.** Do not answer this heading; answer that one.
 
 *Parked 2026-09-11T02:20:33+01:00.*
 
