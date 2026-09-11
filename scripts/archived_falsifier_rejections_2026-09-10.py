@@ -136,8 +136,39 @@ def _names_this_checkout(raw: str) -> bool:
     Two shapes, both measured in the archive: the repository ROOT itself, with
     or without a trailing slash (31 of 35 offending strings), and a path beneath
     it whose tail exists here (4 of 35).
+
+    ANSWERED BY PATH IDENTITY BEFORE ANYTHING ELSE, because the name checks
+    cannot recognise a checkout that is not named after the project -- which is
+    the whole of defect I38. The name checks are RETAINED beneath it: they still
+    resolve the archived strings that name a DIFFERENT machine's checkout, where
+    no path identity exists to compare against.
     """
     stripped = raw.rstrip("/")
+
+    # IDENTITY FIRST, NAME SECOND. This predicate used to begin with the NAME
+    # check, and that is why I38 existed: a checkout whose directory is not
+    # called `Constraint_Engineering` failed to recognise ITSELF.
+    #
+    # `scripts/fresh_clone_suite_2026-09-11.py` clones into a directory named
+    # `clone`, so every run through that harness failed and every run through a
+    # harness that named the directory differently passed. It was recorded as an
+    # intermittent failure across 8 full-size runs and a rate was computed for it
+    # with confidence intervals; it is DETERMINISTIC. Cloning into a directory
+    # named `clone` fails and cloning into one named `Constraint_Engineering`
+    # passes, 2 for 2, executed.
+    #
+    # Deciding "is this my tree?" by the directory's NAME is this session's
+    # recurring defect once more -- resolve one form, return a false zero for the
+    # other -- and it was sitting inside the classifier that decides which
+    # rejections are location artefacts.
+    try:
+        here = REPO.resolve()
+        probe = pathlib.Path(stripped).resolve()
+        if probe == here or here in probe.parents or probe in here.parents:
+            return True
+    except (OSError, ValueError):
+        pass
+
     if pathlib.PurePosixPath(stripped).name in _PROJECT_NAMES:
         return True
     for name in _PROJECT_NAMES:

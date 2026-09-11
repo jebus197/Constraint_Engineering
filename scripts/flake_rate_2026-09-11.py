@@ -1,6 +1,23 @@
 #!/usr/bin/env python3
 """How often does I38's artefact-classifier test fail in a full-size suite run?
 
+THE ANSWER IS "ALWAYS, IN SOME HARNESSES, NEVER IN OTHERS", AND THIS SCRIPT WAS
+ASKING THE WRONG QUESTION. I38 was RESOLVED on 2026-09-11 and it was never a
+flake: the classifier could not recognise a checkout whose directory is named
+`clone`, which is exactly what `fresh_clone_suite_2026-09-11.py` names it. Every
+run through that harness failed and every run through another passed. The rate
+below, with its confidence intervals, was therefore measuring which harness made
+each clone -- a property of the census, not of the software.
+
+IT IS KEPT, NOT DELETED, AND THE CENSUS IS STILL WORTH HAVING. The per-run rows
+record which harness produced each full-size run and whether the test failed in
+it, and that is the evidence that identified the harness as the variable. What
+must not be quoted is the PROPORTION as a failure rate. A rate over a
+deterministic phenomenon is a description of the sample.
+
+The anchoring lesson below stands unchanged and is the reason this file exists.
+
+
 WHY A SCRIPT AND A COMMITTED CENSUS, RATHER THAN A FIGURE IN THE ISSUES LOG.
 `measured-rate-travels-with-its-script` requires the producer beside the number,
 and the raw suite logs live in a session scratchpad on 1 machine -- the same

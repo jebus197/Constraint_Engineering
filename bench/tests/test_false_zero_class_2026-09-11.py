@@ -69,8 +69,8 @@ class TestTheClassCheck:
         old = re.compile(r'["\'`]?(scripts/[\w./-]+\.py)["\'`]?,?')
         subject = lambda s: bool(old.fullmatch(s.strip()))  # noqa: E731
         flips = [axis for axis, t in probe.LIST_FORMS
-                 if not subject(t("scripts/priority_starvation_simulation.py"))]
-        assert subject("scripts/priority_starvation_simulation.py"), \
+                 if not subject(t("scripts/a_specimen_path_that_is_not_a_real_script.py"))]
+        assert subject("scripts/a_specimen_path_that_is_not_a_real_script.py"), \
             "positive control broken: the old matcher rejects the bare form too"
         assert len(flips) >= 4, (
             f"the old matcher was expected to drop the markdown list forms and "

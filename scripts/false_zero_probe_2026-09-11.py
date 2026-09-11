@@ -171,7 +171,7 @@ def probes() -> list[Probe]:
         # was first run: every markdown list form was silently rejected.
         Probe("roll-call line matcher",
               lambda s: bool(reach._ROLL_CALL.fullmatch(s.strip())),
-              "scripts/priority_starvation_simulation.py", LIST_FORMS,
+              "scripts/a_specimen_path_that_is_not_a_real_script.py", LIST_FORMS,
               "a roll call gets reformatted as a bullet list by anyone tidying"),
 
         # THE PHRASE MATCHER. 2 of its axes are declared in ACCEPTED above.

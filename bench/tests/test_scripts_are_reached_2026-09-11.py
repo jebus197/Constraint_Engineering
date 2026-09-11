@@ -204,6 +204,31 @@ class TestTheExclusionListCannotHide:
             "an ordinary document can no longer cite the instrument as a "
             "producer, which is how CDSFL_OUTCOMES_LOG.md reaches it")
 
+    def test_no_tracked_file_uses_an_orphan_as_a_specimen(self, mod):
+        """A matcher SPECIMEN is test data, not a reference -- and `unreached()`
+        cannot tell them apart, so a real orphan used as a specimen quietly stops
+        being an orphan.
+
+        THAT HAPPENED. The form-invariance probe adopted from panel round 15 used
+        `priority_starvation_simulation.py` as its roll-call specimen, and 3
+        tests here went red in the next clone run. It is the 5th instance in one
+        day of writing ABOUT an orphan un-orphaning it, and the 1st where the
+        naming file was neither the roll call nor a test of it -- which is why
+        the INSTRUMENT exclusion could not cover it and a fictitious specimen is
+        the right fix rather than a longer exclusion list.
+        """
+        import subprocess
+        for orphan in mod.UNREACHED:
+            stem = orphan.split("/")[-1]
+            r = subprocess.run(["git", "grep", "-l", stem, "--",
+                                "scripts/", "bench/"],
+                               cwd=mod.REPO, capture_output=True, text=True)
+            named = [f for f in r.stdout.split()
+                     if f != orphan and f not in mod.INSTRUMENT]
+            assert not named, (
+                f"{stem} is named in {named}, which makes it read as reached. "
+                f"If that is a matcher specimen, use a fictitious path.")
+
     def test_prose_in_this_very_file_does_not_reach(self, mod):
         """ANTI-VACUITY, and self-referential on purpose: the docstring above
         NAMES an unreached script, which is how the defect happened the 4th

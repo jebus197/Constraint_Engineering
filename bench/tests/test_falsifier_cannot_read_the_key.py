@@ -651,3 +651,66 @@ def test_the_real_repository_is_allowed_even_under_a_shadow_root(tmp_path):
     # The key location is still refused under the same shadow root.
     assert scan_falsifier_source(
         "open('/Users/nobody/keys/x_answer_key.json')", repo_root=str(shadow))
+
+
+def test_a_checkout_named_generically_still_recognises_itself():
+    """I38, RESOLVED 2026-09-11. It was never a flake.
+
+    `test_the_artefact_classifier_cannot_excuse_a_real_escape` failed in some
+    full-size clone runs and not others, was recorded as OBSERVED rather than
+    diagnosed across 8 runs, and had a failure rate computed for it with
+    confidence intervals. It is DETERMINISTIC.
+
+    `bench/repo_paths.py` deliberately refuses to treat generic directory names
+    -- "checkout", "clone", "git" -- as a project's identity, because a clone
+    sits wherever the reader put it and a clone at `/tmp/ce_fresh` must not claim
+    "ce_fresh" as the project. That blocklist is right. The defect was that
+    `_names_this_checkout` then had NO other way to recognise its own tree, so a
+    checkout whose directory is called `clone` could not identify itself.
+
+    `scripts/fresh_clone_suite_2026-09-11.py` clones into a directory named
+    exactly `clone`. Every run through that harness failed; every run through a
+    harness that named the directory anything else passed. That is the whole of
+    the apparent intermittency.
+
+    MEASURED, same command, same shape: a clone named `clone` gives
+    `1 failed, 35 passed` at the old revision and `36 passed` with the identity
+    check. Across 4 names at the old revision -- clone, ctrl,
+    Constraint_Engineering, cdsfl_fresh_clone_zz -- only `clone` failed.
+
+    The fix asks path IDENTITY before asking about names. Deciding "is this my
+    own tree?" by the directory's NAME is this session's recurring false-zero
+    shape, and it was inside the classifier that decides which rejections are
+    location artefacts.
+    """
+    import importlib.util
+    import pathlib as _pl
+    import tempfile
+
+    spec = importlib.util.spec_from_file_location(
+        "afr_live", REPO_ROOT / "scripts" / "archived_falsifier_rejections_2026-09-10.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    # THE ACTUAL FAILING SHAPE. `mod.REPO` is pointed at a directory named
+    # `clone`, which `bench/repo_paths.py` refuses to treat as a project name.
+    # Only the identity check can answer this, which is what makes the assertion
+    # discriminating -- a first version asserted on the live REPO and passed
+    # through the NAME check, so removing the identity check left it green and
+    # the test proved nothing about the defect it was written for.
+    with tempfile.TemporaryDirectory() as d:
+        generic = _pl.Path(d) / "clone"
+        generic.mkdir()
+        mod.REPO = generic
+        assert "clone" not in mod._PROJECT_NAMES, (
+            "`clone` is being treated as a project name; the blocklist in "
+            "bench/repo_paths.py has changed and this test no longer poses the "
+            "question it was written to pose")
+        assert mod._names_this_checkout(str(generic)), (
+            "a checkout whose directory is called `clone` does not recognise "
+            "itself -- I38 has returned")
+
+        # ANTI-VACUITY: a path that is genuinely not this tree must still be
+        # refused, or the identity check has become "yes" for everything.
+        assert not mod._names_this_checkout("/nowhere/at/all/some_other_project"), (
+            "the predicate now accepts any path")
