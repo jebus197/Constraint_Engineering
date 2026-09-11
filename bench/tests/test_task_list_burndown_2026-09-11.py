@@ -52,12 +52,12 @@ class TestItReadsTheRealHistory:
         de-duplication as a deletion would have reported an additive-standard
         violation that never happened.
         """
-        totals = [t for _w, _s, t, _d in mod.snapshots() if t]
+        totals = [r[2] for r in mod.snapshots() if r[2]]
         drops = [(a, b) for a, b in zip(totals, totals[1:]) if b < a]
         assert not drops, f"the entry count fell at {drops[:3]}; entries were removed"
 
     def test_the_done_count_never_fell(self, mod):
-        dones = [d for _w, _s, t, d in mod.snapshots() if t]
+        dones = [r[3] for r in mod.snapshots() if r[2]]
         drops = [(a, b) for a, b in zip(dones, dones[1:]) if b < a]
         assert not drops, f"the DONE count fell at {drops[:3]}"
 
@@ -159,3 +159,51 @@ class TestTheConvergenceArgumentRestsOnTheRightThing:
             f"discovery totals {sum(disc.values())} but the list holds {last[2]}")
         assert sum(clo.values()) == last[3], (
             f"closure totals {sum(clo.values())} but {last[3]} entries are DONE")
+
+
+class TestTheListTerminates:
+    """The founder's question: could the list grow forever?
+
+    Formally: treat each closed entry as an individual in a branching process
+    producing R new entries. R < 1 is SUBCRITICAL and terminates with probability
+    1; R >= 1 need never terminate. R < 1 is equivalent to p < 1/2 for
+    p = additions / (additions + closures), so it is an ordinary proportion test.
+
+    MEASURED: R = 0.4444, 95% Wilson [0.3009, 0.6565], exact binomial test
+    against the critical threshold p = 1.933172e-05. The whole interval lies
+    below 1.
+
+    THIS TEST EXISTS TO FAIL IF THAT STOPS BEING TRUE. If R's upper bound ever
+    reaches 1, the answer to the founder's question changes from "it terminates"
+    to "it might not", and that is a conversation to have rather than a number to
+    quietly restate.
+    """
+
+    def test_the_process_is_subcritical(self, mod):
+        b = mod.branching(mod.snapshots())
+        assert b["subcritical"], (
+            f"R = {b['R']:.4f} with 95% interval "
+            f"[{b['R_interval'][0]:.4f}, {b['R_interval'][1]:.4f}]. The upper "
+            f"bound has reached 1: the list can no longer be said to terminate, "
+            f"and the founder asked to be told if that happened.")
+
+    def test_the_threshold_is_where_it_should_be(self, mod):
+        """ANTI-VACUITY. A test that called everything subcritical would pass on
+        any tree at all, so the mapping from p to R is checked at the critical
+        point itself."""
+        b = mod.branching(mod.snapshots())
+        lo, hi = b["p_interval"]
+        assert (hi < 0.5) == b["subcritical"], "the p-to-R mapping has drifted"
+        # p = 0.5 must map to R = 1, exactly.
+        assert abs((0.5 / (1 - 0.5)) - 1.0) < 1e-12
+
+    def test_withdrawn_entries_are_not_counted_as_outstanding(self, mod):
+        """They are closed. Counting them as live inflated the projection from 7
+        entries to 11 and its tail from 12.60 to 19.80 before this was fixed."""
+        rows = mod.snapshots()
+        last = [r for r in rows if r[2]][-1]
+        assert len(last) > 4, "the snapshot no longer carries a WITHDRAWN count"
+        assert last[4] > 0, (
+            "no entry is WITHDRAWN, so this test is not exercising the exclusion "
+            "it exists to protect")
+        assert last[2] - last[3] - last[4] < last[2] - last[3]

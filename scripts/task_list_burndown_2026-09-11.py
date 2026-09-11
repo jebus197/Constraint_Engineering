@@ -71,7 +71,8 @@ def snapshots() -> list[tuple[str, str, int, int]]:
         # The set of ids is the thing that must never shrink.
         ids = {i.strip(): st for i, st in marks}
         out.append((when, sha[:7], len(ids),
-                    sum(1 for st in ids.values() if st == "DONE")))
+                    sum(1 for st in ids.values() if st == "DONE"),
+                    sum(1 for st in ids.values() if st == "WITHDRAWN")))
     return out
 
 
@@ -98,7 +99,7 @@ def per_day(rows: list) -> tuple[dict, dict]:
     import subprocess as _sp
     seen, done_seen = set(), set()
     disc, clo = collections.Counter(), collections.Counter()
-    for when, sha, _t, _d in rows:
+    for when, sha, *_rest in rows:
         blob = _sp.run(["git", "show", f"{sha}:{LIST}"],
                        capture_output=True, text=True).stdout
         ids = {i.strip(): st for i, st in MARK.findall(blob)}
@@ -131,6 +132,53 @@ def figures(rows: list[tuple[str, str, int, int]]) -> dict:
             "multiplier": 1.0 / (1.0 - k / n)}
 
 
+def branching(rows: list) -> dict:
+    """Is the list SUBCRITICAL -- does it terminate at all?
+
+    THE FOUNDER'S QUESTION, 2026-09-11: *"If the work list keeps growing ... and
+    it looks like it might never finish, then that could be a problem."* It is the
+    right question and it has a formal answer. Treat each closed entry as an
+    individual in a branching process that produces R new entries. R < 1 is
+    SUBCRITICAL and the process terminates with probability 1; R >= 1 and it need
+    never terminate.
+
+    R < 1 is equivalent to p < 1/2 for p = additions / (additions + closures), so
+    the test is an ordinary proportion against the 0.5 threshold and carries an
+    ordinary interval.
+
+    MEASURED: R = 0.4444, 95% Wilson [0.3009, 0.6565], exact binomial test against
+    the critical threshold p = 1.933172e-05. The interval lies entirely below 1,
+    so the list terminates. Expected total from the 7 entries now live: 12.60,
+    i.e. about 5.6 more entries ever, and 20.38 at the pessimistic bound.
+
+    THREE CAVEATS, BECAUSE THE NUMBER IS MORE FRAGILE THAN IT LOOKS.
+
+    1. R IS PARTLY A POLICY VARIABLE. The assistant decides what becomes an entry.
+       A lower bar would raise R. It is not a pure property of the codebase, which
+       cuts both ways: it is also controllable.
+    2. THE REMAINING ENTRIES MAY NOT BE LIKE THE CLOSED ONES. If what is left is
+       systematically harder, R could rise. The 7 now live are rulings rather than
+       work, so this is weak here, but it is the right thing to watch.
+    3. THIS R DESCRIBES THIS BODY OF WORK. Discovery may be falling because the
+       areas being swept are nearly swept, not because defects are rare. Opening a
+       genuinely new area -- Exp 56 -- could restart discovery at a rate this
+       window says nothing about. **That is the honest limit of this figure.**
+    """
+    from statsmodels.stats.proportion import proportion_confint
+    from scipy.stats import binomtest
+
+    f = figures(rows)
+    added, closed = f["added"], f["closed"]
+    k, n = added, added + closed
+    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
+    bt = binomtest(k, n, 0.5, alternative="less")
+    R = k / n / (1 - k / n)
+    return {"added": added, "closed": closed, "R": R,
+            "R_interval": (lo / (1 - lo), hi / (1 - hi)),
+            "p": (k, n), "p_interval": (lo, hi), "pvalue": bt.pvalue,
+            "subcritical": hi < 0.5}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--per-day", action="store_true",
@@ -150,7 +198,7 @@ def main() -> int:
         print()
     if a.curve:
         print(f"  {'when':17} {'total':>6} {'done':>5} {'not done':>9}")
-        for when, _sha, total, done in rows:
+        for when, _sha, total, done, *_w in rows:
             print(f"  {when:17} {total:>6} {done:>5} {total - done:>9}")
         print()
 
@@ -167,6 +215,24 @@ def main() -> int:
     print(f"    Wilson          [{100 * f['wilson'][0]:.4f}%, {100 * f['wilson'][1]:.4f}%]")
     print(f"    Clopper-Pearson [{100 * f['cp'][0]:.4f}%, {100 * f['cp'][1]:.4f}%]")
     print(f"  implied work multiplier 1/(1-r): {f['multiplier']:.4f}")
+    b = branching(rows)
+    # WITHDRAWN entries are CLOSED, not outstanding. Counting them as live
+    # inflated the projection from 7 to 11 and its tail from 12.60 to 19.80.
+    last = f["last"]
+    withdrawn = last[4] if len(last) > 4 else 0
+    live = last[2] - last[3] - withdrawn
+    print("\n  BRANCHING VIEW -- does the list terminate at all?")
+    print(f"    R, new entries per entry closed : {b['R']:.4f}")
+    print(f"    95% interval on R               : "
+          f"[{b['R_interval'][0]:.4f}, {b['R_interval'][1]:.4f}]")
+    print(f"    exact test against R = 1        : p = {b['pvalue']:.6e}")
+    print(f"    SUBCRITICAL (terminates)        : {b['subcritical']}")
+    if b["subcritical"]:
+        tot = live / (1 - b["R"])
+        worst = live / (1 - b["R_interval"][1])
+        print(f"    expected entries ever from the {live} now live: {tot:.2f} "
+              f"({worst:.2f} at the pessimistic bound); {withdrawn} WITHDRAWN "
+              f"entries are excluded as already closed")
     print("\n  AN ETA FROM THE CLOSURE RATE ALONE WOULD BE WRONG BY THAT MULTIPLIER.")
     print("  The list is not a fixed target: closing an entry keeps turning up")
     print("  defects that become entries.")
