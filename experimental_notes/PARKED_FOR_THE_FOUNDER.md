@@ -134,4 +134,27 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 
 *Parked 2026-09-11T09:18:20+01:00.*
 
+## 8 committed scripts are reached by nothing at all: wire or retire is your ruling
 
+*Parked 2026-09-11T10:18:10+01:00.*
+
+The additive standard's own symmetric half says an addition that nothing reaches is not additive. `test_additive_standard_2026-09-07.py` ratchets config fields nothing READS; scripts had no equivalent, and this project's record holds 11 confirmed defects that were additions doing nothing.
+
+**Measured: 111 of 119 scripts are reached, 93.2773%, Wilson [87.2935%, 96.5544%], Clopper-Pearson [87.1830%, 97.0531%].** Producer: `scripts/scripts_are_reached_2026-09-11.py`.
+
+**Reached means 3 things and a script can be legitimate with no caller at all:** something calls it; a note cites it as a figure's producer, which `measured-rate-travels-with-its-script` requires; or a canonical document names it as a command to run. The 8 below satisfy none of the 3.
+
+    scripts/inventory_2026_09_06.py
+    scripts/measure_round_zero_irreducible_escalations.py
+    scripts/measure_toolonly_status_without_falsifier.py
+    scripts/priority_starvation_simulation.py
+    scripts/quarantine_to_candidate.py
+    scripts/readjudicate_pairs.py
+    scripts/scope_remaining_adjudication_and_materiality.py
+    scripts/v2_vs_v3_runner_2026-09-10.py
+
+**NOTHING WAS DELETED, and that is deliberate.** The additive standard's removal clause requires a committed measurement showing a replacement dominates on a named property, and no such measurement exists for any of these. Deleting a measurement script also risks breaking `measured-rate-travels-with-its-script` for a figure quoted somewhere the scan cannot see. The disposition is yours, exactly as it was for `update_drift` under I31: wire it, or retire it with an explicit entry.
+
+**A ratchet holds the count meanwhile.** `bench/tests/test_scripts_are_reached_2026-09-11.py` refuses a NEW unreached script and equally refuses a stale entry in the list, so the bound cannot loosen by leaving slack in it. 2 mutations verified red.
+
+**The first figure was flattering and the reason is worth 1 line.** A first pass counted mentions inside `experimental_notes/evidence/*/seat_proposals.diff` and reported 5 unreached instead of 8. All 8 appear in those archival copies of what reviewing models proposed, committed that same morning, so the better number came from the review record being filed rather than from anything calling the scripts. A measurement that improves when you file your paperwork is measuring the filing.
