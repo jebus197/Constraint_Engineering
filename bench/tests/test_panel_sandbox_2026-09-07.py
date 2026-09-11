@@ -162,29 +162,17 @@ def test_the_dispatcher_sets_the_cwd_per_worker_not_on_main():
     import concurrent.futures
     import importlib.util
 
-    # THE DISPATCHER CANNOT SIMPLY BE IMPORTED: it reads `sys.argv[1]` at module
-    # level and validates the brief, exiting 2 when neither is supplied. That is
-    # the same import-time-side-effect class as the `compose_all` defect fixed
-    # under task A2 this morning, and it is recorded on the task list as its own
-    # entry rather than patched over here. Supplying both makes the import
-    # succeed without dispatching anything.
-    import os
-
-    argv, env = sys.argv[:], os.environ.get("PANEL_BRIEF_UNCHECKED")
-    sys.argv = ["confer_maths_panel", "panel_round10_2026-09-10"]
-    os.environ["PANEL_BRIEF_UNCHECKED"] = "1"
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "panelmod", REPO / "bench" / "confer_maths_panel_2026-09-05.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["panelmod"] = mod
-        spec.loader.exec_module(mod)
-    finally:
-        sys.argv = argv
-        if env is None:
-            os.environ.pop("PANEL_BRIEF_UNCHECKED", None)
-        else:
-            os.environ["PANEL_BRIEF_UNCHECKED"] = env
+    # A PLAIN IMPORT, as of task A22 (2026-09-11). This used to have to set
+    # `sys.argv` and `PANEL_BRIEF_UNCHECKED=1` around the import, because the
+    # dispatcher read argv and required a BRIEF.md at MODULE LEVEL -- a test
+    # working around the code rather than testing it. The binding moved into
+    # `main()`; running it still refuses without an argument and without a brief,
+    # held by bench/tests/test_panel_dispatcher_imports_2026-09-11.py.
+    spec = importlib.util.spec_from_file_location(
+        "panelmod", REPO / "bench" / "confer_maths_panel_2026-09-05.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["panelmod"] = mod
+    spec.loader.exec_module(mod)
 
     from experiment_11_orchestrator import get_panel_cwd, set_panel_cwd
 

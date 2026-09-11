@@ -90,15 +90,43 @@ if _env.is_file():
         _k, _, _v = _l.partition("=")
         os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
-if len(sys.argv) < 2:
-    print("usage: confer_maths_panel_2026-09-05.py <log-dir-name>", file=sys.stderr)
-    raise SystemExit(2)
-LOGS = _REPO / "bench" / "logs" / sys.argv[1]
-BRIEF = LOGS / "BRIEF.md"
-if not BRIEF.is_file():
-    print(f"no BRIEF.md in {LOGS}", file=sys.stderr)
-    raise SystemExit(2)
-PROMPT = BRIEF.read_text(encoding="utf-8")
+# THE MODULE MUST BE IMPORTABLE. Task A22, 2026-09-11.
+#
+# This block used to run at IMPORT: it read `sys.argv[1]`, required a BRIEF.md
+# beside it, and raised SystemExit(2) when either was missing. So NOTHING could
+# import this file -- not a test wanting to inspect one function, not a tool,
+# not a reader. The guard for the per-seat sandboxes had to set `sys.argv` and
+# `PANEL_BRIEF_UNCHECKED=1` around its import to get in, which is a test working
+# around the code rather than testing it.
+#
+# IT IS THE SAME IMPORT-TIME-SIDE-EFFECT CLASS as `compose_all_2026-08-23.py`,
+# fixed under task A2 the day before: a module-level read of a file that need not
+# exist, taking down every importer with it. It is also why `--help` on this
+# dispatcher printed `no BRIEF.md in .../bench/logs/--help` instead of usage.
+#
+# WHAT IS PRESERVED EXACTLY: running it still requires the argument and the
+# brief, still exits 2, and still prints the same messages. `resolve_brief()` is
+# called from `main()`, so the behaviour of an actual run is unchanged -- and
+# `bench/tests/test_panel_dispatcher_imports_2026-09-11.py` holds both halves.
+LOGS = None
+BRIEF = None
+PROMPT = ""
+
+
+def resolve_brief(argv=None) -> None:
+    """Bind LOGS, BRIEF and PROMPT from the command line. Called by main()."""
+    global LOGS, BRIEF, PROMPT
+    argv = list(sys.argv if argv is None else argv)
+    if len(argv) < 2 or argv[1] in ("-h", "--help"):
+        print("usage: confer_maths_panel_2026-09-05.py <log-dir-name>",
+              file=sys.stderr)
+        raise SystemExit(0 if len(argv) > 1 else 2)
+    LOGS = _REPO / "bench" / "logs" / argv[1]
+    BRIEF = LOGS / "BRIEF.md"
+    if not BRIEF.is_file():
+        print(f"no BRIEF.md in {LOGS}", file=sys.stderr)
+        raise SystemExit(2)
+    PROMPT = BRIEF.read_text(encoding="utf-8")
 
 import os as _os
 _ONLY = _os.environ.get("PANEL_ONLY", "")
@@ -372,6 +400,8 @@ def _validate_brief_or_refuse() -> None:
 
 
 def main() -> int:
+    # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
+    resolve_brief()
     _validate_brief_or_refuse()
     paid = [m for m in MODELS if m[2] != "claude_cli"]
     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")
