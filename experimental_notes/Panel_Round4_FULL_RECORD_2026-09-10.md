@@ -360,4 +360,12 @@ Stop when a further pass produces no new above-threshold findings, and say how m
 
 <!-- verbatim-end -->
 
+
+
+## Where the raw record lives
+
+**Added 2026-09-11.** This note was written by hand before a builder existed and never named the directory it came from — so a coverage check over the notes reported it as having no record at all, which is the shape of false zero this project keeps meeting. It is named here.
+
+`bench/logs/panel_round4_2026-09-10/` holds the brief, both seat replies, both tool logs, `BRIEF_CORRECTION_SIDECAR.md` and `seat_proposals.diff`. That directory is excluded by `.gitignore:41`, so a byte-identical copy is committed under `experimental_notes/evidence/panel_records_2026-09-10/panel_round4_2026-09-10/`, verified by sha256 and checked on every suite run by `bench/tests/test_panel_records_are_preserved_2026-09-11.py`.
+
 Written under CDSFL note standard v1.7 (26 August 2026).
