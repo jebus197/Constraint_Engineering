@@ -152,3 +152,51 @@ class TestTheHelperIsNotUsedWhereArgparseAlreadyWorks:
         assert r.returncode == 0
         for flag in ("--subset", "--only", "--keep", "--timeout"):
             assert flag in r.stdout, f"--help does not mention {flag}"
+
+
+class TestTheTranscriptSurvives:
+    """A clone run that reports only WHICH test failed discards the evidence.
+
+    MEASURED 2026-09-11. The I38 artefact-classifier flake reproduced in a clone
+    at `37cc328` -- the FIRST reproduction since diagnostics were added to its
+    assertion for exactly that moment -- and the run reported the test's name and
+    nothing else. The diagnostics built to be read from a log could not be read
+    from the log, which is why I38 stayed OBSERVED rather than diagnosed across
+    7 full-size runs.
+
+    An instrument that discards the evidence it was extended to capture is the
+    same shape as a scanner reporting a false zero: it answers, and the answer is
+    missing the thing you needed.
+    """
+
+    def test_the_full_output_is_written_somewhere(self, tmp_path):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fcs", SCRIPT)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        dest = tmp_path / "transcript.txt"
+        rc, line, _shown = m.run(["bench/tests/test_flake_rate_2026-09-11.py"],
+                                 timeout=1800, transcript=dest)
+        assert dest.is_file(), "the clone run kept no transcript"
+        blob = dest.read_text(encoding="utf-8")
+        assert "passed" in blob, blob[:300]
+        # ANTI-VACUITY: the transcript must be the pytest output, not the summary
+        # line the caller already had.
+        assert len(blob) > len(line) + 40, (len(blob), len(line))
+
+    def test_a_failure_keeps_its_assertion_detail(self, tmp_path):
+        """The property that matters. A name is not a diagnosis."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fcs", SCRIPT)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        dest = tmp_path / "t.txt"
+        # A file that FAILS in a clone at this HEAD would make this exact, but
+        # the set changes; so force a failure that cannot depend on the tree.
+        rc, _line, _shown = m.run(["bench/tests/does_not_exist_at_all.py"],
+                                  timeout=900, transcript=dest)
+        assert rc != 0
+        blob = dest.read_text(encoding="utf-8")
+        assert "does_not_exist_at_all" in blob, (
+            "the transcript does not name what went wrong, so a reader still "
+            "cannot diagnose from it")

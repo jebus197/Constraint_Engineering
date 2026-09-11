@@ -97,12 +97,17 @@ def head(repo: Path = REPO) -> str:
     return r.stdout.strip() if r.returncode == 0 else "UNKNOWN"
 
 
-def run(targets: list[str], keep: bool = False,
-        timeout: int = 7200) -> tuple[int, str, str]:
+def run(targets: list[str], keep: bool = False, timeout: int = 7200,
+        transcript: Path | None = None) -> tuple[int, str, str]:
     """Clone HEAD into a temporary directory and run pytest there.
 
     Returns (pytest exit code, the result line, the clone path).
+
+    `transcript` receives the FULL pytest output. Without it a failure reaches
+    the reader as a test name and nothing else -- see the note in the body.
     """
+    transcript = transcript or (REPO / "bench" / "logs" /
+                                "fresh_clone_last_run.txt")
     tmp = tempfile.mkdtemp(prefix="cdsfl_fresh_clone_")
     dest = Path(tmp) / "clone"
     c = subprocess.run(
@@ -131,6 +136,23 @@ def run(targets: list[str], keep: bool = False,
     shown, more = failed[:40], max(0, len(failed) - 40)
     if more:
         shown.append(f"... and {more} more FAILED/ERROR line(s) not shown")
+
+    # KEEP THE WHOLE OUTPUT, NOT JUST WHICH TEST FAILED.
+    #
+    # MEASURED 2026-09-11: the I38 artefact-classifier flake finally reproduced
+    # in a clone at 37cc328, the FIRST reproduction since diagnostics were added
+    # to its assertion for exactly this moment -- and this function had already
+    # thrown the assertion message away. The run reported the test's NAME and
+    # nothing else, so the diagnostics that were built to be read from a log
+    # could not be read from the log. That is why I38 has stayed "OBSERVED
+    # rather than diagnosed" across 7 full-size runs.
+    #
+    # An instrument that discards the evidence it was extended to capture is the
+    # same shape as a scanner reporting a false zero: it answers, and the answer
+    # is missing the thing you needed.
+    if blob.strip():
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.write_text(blob, encoding="utf-8")
     if not keep:
         shutil.rmtree(tmp, ignore_errors=True)
     return p.returncode, line, "\n".join(shown)
@@ -164,6 +186,8 @@ def main() -> int:
     print(f"\nfresh clone result  : {line}")
     print(f"pytest exit code    : {code}")
     if failures:
+        print(f"full output      : "
+              f"{(REPO / 'bench' / 'logs' / 'fresh_clone_last_run.txt')}")
         print("failing:")
         for ln in failures.splitlines():
             print(f"  {ln}")

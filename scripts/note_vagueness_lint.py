@@ -269,22 +269,33 @@ def sentences(text: str):
 #: amnesty for its own writing by quoting someone.
 def partition(path) -> tuple[list, list]:
     """(counted, exempted) for one note: everything `lint` reports plus the
-    future-stamp finding, split on whether it sits inside a verbatim region.
+    structural findings, split on whether it sits inside a verbatim region.
 
     WHY THIS IS A FUNCTION AND NOT 4 LINES IN `main`. The exemption used to live
     only in `main`, so every other consumer had to re-derive it -- and one did
     not. `test_note_standard_v17_enforced_2026-08-26.py` called `lint()` raw and
-    failed the suite on a sentence a panel seat wrote inside
-    `<!-- verbatim-begin: fable -->`. Task V8 exists precisely so a seat's words
-    reach the record unedited; a guard that blocks on them defeats it.
+    failed the suite on a sentence a panel seat wrote inside a verbatim region.
+    Task V8 exists precisely so a seat's words reach the record unedited; a guard
+    that blocks on them defeats it.
 
     `main` CALLS this rather than reimplementing it, so the CLI and every test
     cannot drift apart. That is the `execute-do-not-grep` shape: 1 implementation
     with 2 callers, never 2 implementations asserted to agree.
+
+    THE 2 STRUCTURAL FINDINGS ARE ADDED AFTER THE SPLIT, NEVER BEFORE. A report
+    ABOUT a region must not be swallowed BY that region. The future-stamp finding
+    was added before the split until panel round 15 (fable) showed a note whose
+    FIRST paragraph opens a region buying amnesty for its own Rule 1 violation --
+    the unbalanced finding was region-immune and the future-stamp finding was
+    not, and that inconsistency was the defect.
     """
     hits = lint(path)
     text = path.read_text(encoding="utf-8")
-    exempt = verbatim_paragraphs(text)
+    state = region_state(text)
+    exempt = state["marked"]
+    counted = [h for h in hits if h[0] not in exempt]
+    exempted = [h for h in hits if h[0] in exempt]
+
     # `is not None`, not a bare truth test. future_stamp returns Optional
     # tuple, so `if fs:` is correct -- but it is INDISTINGUISHABLE at a glance
     # from the (bool, message) pattern that this project's own guard
@@ -293,27 +304,26 @@ def partition(path) -> tuple[list, list]:
     # written. Being right is not the same as being readable.
     fs = future_stamp(path)
     if fs is not None:
-        hits = [(1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)",
-                 fs[0], f"note claims {fs[0]}; the file was written at {fs[1]}")] + hits
-    counted = [h for h in hits if h[0] not in exempt]
-    exempted = [h for h in hits if h[0] in exempt]
+        counted.insert(0, (1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not "
+                              "extrapolate)", fs[0],
+                           f"note claims {fs[0]}; the file was written at {fs[1]}"))
+
     # AN UNCLOSED REGION EXEMPTS TO END OF FILE, AND SAYS NOTHING WHILE IT DOES.
-    # This finding is prepended to `counted` and never to `exempted`, because a
-    # report about the region's structure must not be swallowed by the region it
-    # is reporting on. Counted with the SAME scanner the exemption uses, so the
-    # guard and the exemption cannot disagree about what a marker is.
-    opens = closes = 0
-    for para in paragraphs(text):
-        scan = _strip_quoted(para)
-        opens += 1 if VERBATIM_BEGIN.search(scan) else 0
-        closes += 1 if VERBATIM_END.search(scan) else 0
-    if opens != closes:
+    # Gated on the ORDERED state, not on `opens != closes`: a stray close before
+    # an unclosed open balances the tally while a region is genuinely open.
+    if state["unclosed"] or state["stray_closes"]:
+        why = []
+        if state["unclosed"]:
+            why.append("a region is still open at end of file, so every "
+                       "paragraph after it is silently exempt")
+        if state["stray_closes"]:
+            why.append(f"{state['stray_closes']} verbatim-end marker(s) close "
+                       f"nothing, which is how a tally of markers can look "
+                       f"balanced while a region is open")
         counted.insert(0, (1, "UNBALANCED VERBATIM REGION (Rule: an unclosed "
                               "region exempts every paragraph after it)",
-                           f"{opens} begin, {closes} end",
-                           f"{opens} verbatim-begin marker(s) and {closes} "
-                           f"verbatim-end marker(s); an unclosed region silently "
-                           f"stops the linter for the rest of the file"))
+                           f"{state['opens']} begin, {state['closes']} end",
+                           "; ".join(why)))
     return (counted, exempted)
 
 
@@ -340,6 +350,71 @@ VERBATIM_BEGIN = re.compile(r"<!--\s*verbatim-begin:.*?-->")
 VERBATIM_END = re.compile(r"<!--\s*verbatim-end\s*-->")
 
 
+def marker_events(text: str):
+    """Every verbatim marker, in DOCUMENT ORDER, as (paragraph, offset, kind).
+
+    Markers that are SHOWN rather than used -- inside a code fence or an inline
+    span -- are already gone, because `_strip_quoted` runs first.
+
+    ORDER IS THE WHOLE POINT, and its absence was 2 defects. The previous walk
+    kept 1 bool per paragraph (`opened`, `closed`) and applied `closed` last
+    regardless of where it sat, so `verbatim-end` followed by `verbatim-begin` in
+    a SINGLE paragraph ended the exemption when it should have opened one -- and
+    a seat's quoted words were then COUNTED, which is precisely the V8 defeat the
+    exemption exists to prevent. A second bool-per-paragraph counter made 2
+    begins in 1 paragraph read as 1. Both found by panel round 15, independently,
+    by both seats.
+    """
+    for n, para in enumerate(paragraphs(text), 1):
+        scan = _strip_quoted(para)
+        events = [(m.start(), "begin") for m in VERBATIM_BEGIN.finditer(scan)]
+        events += [(m.start(), "end") for m in VERBATIM_END.finditer(scan)]
+        for off, kind in sorted(events):
+            yield n, off, kind
+
+
+def region_state(text: str) -> dict:
+    """One ordered walk; every consumer reads its answer from here.
+
+    Returns `marked` (paragraphs inside a region), `opens`, `closes`,
+    `unclosed` (a region still open at end of file) and `stray_closes` (a close
+    with no region open).
+
+    A TALLY IS ORDER-BLIND AND AN UNCLOSED REGION IS A FACT ABOUT ORDER. The
+    balance check added earlier on 2026-09-11 compared `opens != closes`, so a
+    stray `verbatim-end` BEFORE an unclosed `verbatim-begin` gave 1 and 1 and the
+    guard said BALANCED while a region really was open and really did exempt to
+    end of file -- the silent amnesty it was written to end, unchanged, inside
+    the guard that was supposed to end it. cc2 put it exactly that way.
+    """
+    marked: set[int] = set()
+    inside = False
+    opens = closes = stray = 0
+    last_para = 0
+    for n, _off, kind in marker_events(text):
+        # Every paragraph between the opening one and this one is inside.
+        if inside:
+            marked.update(range(last_para, n + 1))
+        if kind == "begin":
+            opens += 1
+            marked.add(n)
+            inside = True
+            last_para = n
+        else:
+            closes += 1
+            if inside:
+                marked.add(n)
+                inside = False
+            else:
+                stray += 1
+        last_para = n
+    if inside:
+        total = len(list(paragraphs(text)))
+        marked.update(range(last_para, total + 1))
+    return {"marked": marked, "opens": opens, "closes": closes,
+            "unclosed": inside, "stray_closes": stray}
+
+
 def verbatim_paragraphs(text: str) -> set[int]:
     """Paragraph numbers that fall inside a verbatim region.
 
@@ -350,36 +425,17 @@ def verbatim_paragraphs(text: str) -> set[int]:
     rule with no comparator -- the shape `execute-do-not-grep` names -- sitting
     inside the exemption whose entire claim is that it is scoped. Rewritten
     rather than deleted, so the claim's history stays visible.
+
+    A MARKER INSIDE A CODE FENCE IS DOCUMENTATION, NOT AN INSTRUCTION, and so is
+    one inside an inline span; `_strip_quoted` removes both. The fenced half was
+    found 2026-09-11 by the fable seat, the inline half the same day by a
+    paragraph of `CDSFL_OUTCOMES_LOG.md` describing the marker and silently
+    exempting 12 paragraphs.
+
+    DELEGATES to `region_state` so the exemption and the balance check cannot
+    disagree about what a marker is: 1 implementation, 2 callers.
     """
-    inside = False
-    marked: set[int] = set()
-    for i, para in enumerate(paragraphs(text), 1):
-        # A MARKER INSIDE A CODE FENCE IS DOCUMENTATION, NOT AN INSTRUCTION.
-        # Found 2026-09-11 by the fable seat and reproduced before accepting: a
-        # note DOCUMENTING this syntax in a fenced block opened a real region and
-        # exempted everything after it. `sentences()` already skips fenced
-        # paragraphs; this scan did not, so the 2 disagreed about what a fence
-        # means -- the same 2-expressions-of-one-rule shape as the splitter above,
-        # in the same function's neighbourhood.
-        #
-        # A fence INSIDE an open region is quoted text too, so the stripping is
-        # UNCONDITIONAL. The first version made it conditional on being outside
-        # a region, and the test written to prove the inside case passed for the
-        # wrong reason: with `inside` true the fenced `verbatim-end` was scanned,
-        # the region CLOSED at it, and the paragraph after -- still meant to be
-        # quoted -- silently stopped being exempt. Caught by mutating the
-        # condition away and watching every test stay green, which is the only
-        # thing that would have shown it.
-        scan = _strip_quoted(para)
-        opened = bool(VERBATIM_BEGIN.search(scan))
-        closed = bool(VERBATIM_END.search(scan))
-        if inside or opened:
-            marked.add(i)
-        if opened:
-            inside = True
-        if closed:
-            inside = False
-    return marked
+    return region_state(text)["marked"]
 
 
 def _strip_quoted(para: str) -> str:

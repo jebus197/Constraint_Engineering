@@ -200,11 +200,24 @@ def changes(sandbox: Path, repo: Path) -> Dict[str, str]:
                 continue
         except OSError:
             continue
+        # BYTES, NOT TEXT. `text=True` decodes as UTF-8 and RAISES on the first
+        # byte that is not -- and on 2026-09-11 round 15 died exactly there,
+        # `UnicodeDecodeError: invalid start byte 0x91`, AFTER both seats had
+        # replied. The replies survived on disk; what was lost was
+        # `seat_proposals.diff`, which is the artefact carrying the seats' FIXES.
+        # The founder's whole instruction for these rounds is "they need to
+        # supply fixes, not just problems", so the one step that captures the
+        # fixes is the worst possible place for a decode to be fatal.
+        #
+        # A seat can legitimately produce such a file: a test fixture of raw
+        # bytes, a smart quote in latin-1, a truncated binary. Refusing to
+        # describe it is right; killing the run is not.
         d = subprocess.run(
             ["diff", "-u", str(original) if original.is_file() else "/dev/null", str(path)],
-            capture_output=True, text=True)
-        if d.stdout.strip():
-            found[rel] = d.stdout
+            capture_output=True)
+        out = d.stdout.decode("utf-8", errors="replace")
+        if out.strip():
+            found[rel] = out
     return found
 
 

@@ -33,69 +33,142 @@ REPO = Path(__file__).resolve().parents[1]
 DESKTOP = Path.home() / "Desktop"
 
 
-def real_desktop() -> Path:
-    """The founder's ACTUAL Desktop, read from the passwd database, not `$HOME`.
+#: Every root a clone or a scratch fixture plausibly lives under. A SET, because
+#: `tempfile.gettempdir()` alone is environment-dependent: with `TMPDIR` unset it
+#: returns `/tmp`, and a clone under `/var/folders` then escapes the rule
+#: entirely. Panel round 15, fable, verified by subprocess.
+SCRATCH_ROOTS = ("/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp",
+                 "/var/folders", "/private/var/folders", "/dev/shm")
 
-    `Path.home()` honours `$HOME`, and the drills in
-    `test_desktop_mirrors_stay_current_2026-09-10.py` set `$HOME` to a temporary
-    directory on purpose -- so comparing `DESKTOP` against `Path.home()` cannot
-    tell a drill from an escape: under a faked `$HOME` they are the same path.
-    Keying on the passwd entry separates them, because a drill cannot move it.
+#: Names the checkout allowed to write this Desktop. Lives ON the Desktop,
+#: because the Desktop is the resource being protected and it is the only place
+#: a clone does not carry a copy of.
+MARKER = ".cdsfl_canonical_checkout"
 
-    This is the difference between asking "is this the Desktop?" and asking "is
-    this HIS Desktop?", and only the second question is the one that matters.
+
+def scratch_roots() -> list[Path]:
+    """Resolved scratch roots, including whatever TMPDIR currently says."""
+    out = []
+    for r in (tempfile.gettempdir(), *SCRATCH_ROOTS):
+        try:
+            rp = Path(r).resolve()
+        except OSError:
+            continue
+        if rp not in out:
+            out.append(rp)
+    return out
+
+
+def _under(path: Path, roots: list[Path]) -> Path | None:
+    try:
+        rp = path.resolve()
+    except OSError:
+        return None
+    for root in roots:
+        if rp == root or root in rp.parents:
+            return root
+    return None
+
+
+def refuse_reason_for(desktop: Path, passwd_desktop: Path, passwd_reliable: bool,
+                      repo: Path, under_pytest: bool, roots: list[Path],
+                      canonical: str | None) -> str | None:
+    """The whole decision, with every input explicit. None means "may write".
+
+    A PURE FUNCTION BECAUSE THE FIRST VERSION COULD NOT BE TESTED WHERE IT
+    MATTERED. It read `os.environ`, `Path.home()` and the passwd database
+    directly, so `sudo`, a passwd-less container and a clone outside the scratch
+    tree were all unreachable from a test -- and all 3 were live holes. Panel
+    round 15 found them by executing the guard, not by reading it.
+
+    THE DRILL EXEMPTION NOW REQUIRES DISPLACEMENT **TO SCRATCH**, not mere
+    difference. The old rule said "if DESKTOP is not the passwd user's Desktop,
+    this is a drill" -- and under `sudo` macOS keeps `$HOME` while `getuid()`
+    becomes 0, so `passwd_desktop` becomes `/var/root/Desktop`, the paths differ,
+    and the guard turned ITSELF OFF on the highest-privilege run there is. It
+    failed OPEN, which is the worse direction: a clone gets through. Both seats
+    found this independently and both rated it the sharpest of the round.
+
+    UNRELIABLE IDENTIFICATION NOW FAILS CLOSED. If the passwd entry cannot be
+    read at all, the old code fell back to `Path.home()` and carried on; now the
+    drill exemption is withheld, so the other rules still apply.
     """
+    in_scratch_desktop = _under(desktop, roots) is not None
+    if in_scratch_desktop:
+        return None  # displaced to scratch: a drill, and drills must still run
+    if passwd_reliable and desktop.resolve() != passwd_desktop.resolve():
+        # Different, but NOT displaced to scratch. Under the old rule this
+        # returned None. It is now only a reason to keep checking.
+        pass
+    if under_pytest:
+        return ("a test is running and DESKTOP is a real Desktop; a suite must "
+                "never rewrite the files the founder reads")
+    root = _under(repo, roots)
+    if root is not None:
+        return (f"the source repository is under {root}, so it is a clone or a "
+                f"scratch fixture and not the founder's checkout")
+    if canonical is not None:
+        try:
+            here = str(repo.resolve())
+        except OSError:
+            here = str(repo)
+        if canonical != here:
+            return (f"this Desktop is registered to {canonical}, and this "
+                    f"checkout is {here}; a second checkout may not overwrite "
+                    f"the mirrors of the first")
+    return None
+
+
+def real_desktop() -> Path:
+    """The founder's actual Desktop, read from the passwd database, not `$HOME`.
+
+    `Path.home()` honours `$HOME`, and the drills set `$HOME` to a temporary
+    directory on purpose, so comparing against it cannot tell a drill from an
+    escape. The passwd entry does not move.
+
+    THIS IS NO LONGER THE WHOLE TEST. See `refuse_reason_for`: under `sudo` the
+    passwd entry moves to root's and the mismatch meant "drill", which turned the
+    guard off. Displacement TO SCRATCH is the test now; this stays because
+    knowing the passwd Desktop is still useful, and `passwd_reliable` reports
+    whether it could be read at all.
+    """
+    return _passwd_desktop()[0]
+
+
+def _passwd_desktop() -> tuple[Path, bool]:
+    """(Desktop from the passwd database, whether it could be read)."""
     try:
         import pwd
-        return Path(pwd.getpwuid(os.getuid()).pw_dir) / "Desktop"
+        return Path(pwd.getpwuid(os.getuid()).pw_dir) / "Desktop", True
     except (ImportError, KeyError, OSError):
-        return Path.home() / "Desktop"
+        return Path.home() / "Desktop", False
+
+
+def registered_checkout(desktop: Path) -> str | None:
+    """The checkout this Desktop is registered to, or None."""
+    try:
+        t = (desktop / MARKER).read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return t or None
 
 
 def refuse_reason() -> str | None:
-    """Why this run must NOT write the founder's real Desktop, or None if it may.
+    """Why this run must NOT write the founder's real Desktop, or None.
 
-    MEASURED 2026-09-11, and this is not a hypothetical. A full-suite run in a
+    MEASURED 2026-09-11, and this is not hypothetical. A full-suite run in a
     fresh clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md` with the clone's own
     older copy -- 27,669 bytes over 34,082, a 6,413-byte loss of the file the
-    founder actually reads. `scripts/cdsfl_recover.py` reported the divergence 13
-    minutes later and the pre-commit mirror refresh put it back, so nothing was
-    lost permanently; that was luck, not design. Attributed by running each of 43
-    candidate test files under a fake HOME holding sentinels:
-    `bench/tests/test_precommit_guard_2026-09-09.py` wrote all 5 mirrors.
+    founder actually reads. Attributed by running each of 43 candidate test files
+    under a fake HOME holding sentinels: exactly 1 rewrote them.
 
-    THE CAUSE IS THAT `DESKTOP` IS ABSOLUTE AND `REPO` IS NOT. A scratch fixture
-    or a clone moves `REPO` and leaves `DESKTOP` pointing at the one real
-    Desktop, so the wrong source is copied over the right destination. This is
-    the same shape as task A2: a path that escapes its sandbox because it was
-    never relative to it.
-
-    2 INDEPENDENT RULES, AND BOTH ARE NEEDED -- also measured. The environment
-    IS inherited through `git` into the hook, so the pytest rule fires for an
-    ordinary hook test; but `test_precommit_guard`'s own `test_no_python3` builds
-    a PATH with only `git` in it, so a rule that depended on the interpreter
-    seeing pytest would miss other shapes. The temp-root rule catches any clone,
-    whether or not a test is running.
-
-    A DRILL THAT POINTS `DESKTOP` SOMEWHERE ELSE IS NEVER REFUSED. The existing
-    tests that monkeypatch `DESKTOP` or set a fake HOME still exercise every line
-    of the copy path -- refusing those would make this guard a disabled feature
-    rather than a scoped one.
+    A thin wrapper over `refuse_reason_for`, which holds the reasoning.
     """
-    if DESKTOP.resolve() != real_desktop().resolve():
-        return None  # pointed at a fake: a drill, and drills must still run
-    if os.environ.get("PYTEST_CURRENT_TEST"):
-        return ("a test is running and DESKTOP is the founder's real one; a "
-                "suite must never rewrite the files he reads")
-    try:
-        tmp = Path(tempfile.gettempdir()).resolve()
-        repo = REPO.resolve()
-        if repo == tmp or tmp in repo.parents:
-            return (f"the source repository is under {tmp}, so it is a clone or "
-                    f"a scratch fixture and not the founder's checkout")
-    except OSError:
-        pass
-    return None
+    passwd, reliable = _passwd_desktop()
+    return refuse_reason_for(
+        desktop=DESKTOP, passwd_desktop=passwd, passwd_reliable=reliable,
+        repo=REPO, under_pytest=bool(os.environ.get("PYTEST_CURRENT_TEST")),
+        roots=scratch_roots(), canonical=registered_checkout(DESKTOP))
 
 
 #: (repository path, Desktop filename) for every mirror the founder reads.
@@ -180,7 +253,26 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true",
                     help="report drift and exit 1 if any; write nothing")
+    ap.add_argument("--register-canonical", action="store_true",
+                    help="record THIS checkout as the one allowed to write the "
+                         "Desktop mirrors; refuses from a scratch clone")
     a = ap.parse_args()
+
+    if a.register_canonical:
+        # A SCRATCH CLONE MAY NOT CLAIM OWNERSHIP. Without this the mechanism
+        # inverts: the clone that caused the incident registers itself and then
+        # refuses the founder's own checkout, which is the worse direction.
+        if _under(REPO, scratch_roots()) is not None:
+            print(f"  REFUSED: {REPO} is under a scratch root; a clone may not "
+                  f"register itself as the canonical checkout", file=sys.stderr)
+            return 4
+        if not DESKTOP.is_dir():
+            print("  no Desktop directory on this machine; nothing to register")
+            return 0
+        (DESKTOP / MARKER).write_text(str(REPO.resolve()) + "\n", encoding="utf-8")
+        print(f"  registered {REPO.resolve()} as the canonical checkout for "
+              f"{DESKTOP}")
+        return 0
 
     bad = drift()
     if a.check:

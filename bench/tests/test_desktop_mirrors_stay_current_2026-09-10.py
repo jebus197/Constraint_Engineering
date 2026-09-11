@@ -444,10 +444,29 @@ class TestACloneCannotWriteTheFoundersDesktop:
         assert sync.refuse_reason() is None
 
     def test_the_founders_own_checkout_is_not_refused(self, sync, monkeypatch):
-        """POSITIVE CONTROL: outside a test, the real repository still mirrors,
-        or the hook has silently stopped refreshing what he reads."""
+        """POSITIVE CONTROL: the canonical checkout still mirrors, or the hook
+        has silently stopped refreshing what the founder reads.
+
+        THIS ASSERTED ON THE LIVE ENVIRONMENT AND WAS RED IN EVERY CLONE UNDER
+        THE SYSTEM TEMP ROOT -- which is exactly where `fresh_clone_suite`
+        clones. Found by panel round 15 (cc2), reproduced here by cloning to
+        `tempfile.gettempdir()` and running this file: `1 failed, 20 passed`. A
+        control that fails in the one environment task A2 exists to check is
+        worse than no control, and 5 of the 6 full-size runs in the I38 census
+        are clones, so it was also polluting the flake record.
+
+        The property is now checked where it is DETERMINISTIC -- the pure
+        decision, given the canonical checkout's inputs -- so it holds in a clone
+        too.
+        """
         monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-        assert sync.refuse_reason() is None
+        desktop = sync.real_desktop()
+        assert sync.refuse_reason_for(
+            desktop=desktop, passwd_desktop=desktop, passwd_reliable=True,
+            repo=Path("/Users/someone/Developer_Projects/Constraint_Engineering"),
+            under_pytest=False, roots=sync.scratch_roots(),
+            canonical="/Users/someone/Developer_Projects/Constraint_Engineering",
+        ) is None, "the canonical checkout is refused; the founder's mirrors have stopped"
 
     def test_main_consults_the_guard_before_copying(self, sync, monkeypatch, tmp_path, capsys):
         """EXECUTE IT. `main()` is called with the guard forced on and the copy
@@ -463,3 +482,78 @@ class TestACloneCannotWriteTheFoundersDesktop:
         assert "REFUSED" in capsys.readouterr().out
         assert not list(fake.iterdir()), (
             f"main() copied despite the refusal: {list(fake.iterdir())}")
+
+
+class TestTheGuardSurvivesPanelRound15:
+    """3 bypasses, all reproduced by both seats, all against the first guard.
+
+    THE FIRST VERSION READ ITS INPUTS FROM THE ENVIRONMENT, so the cases that
+    mattered were unreachable from a test. `refuse_reason_for` takes them as
+    arguments, which is what makes this class possible at all.
+
+    THE SHARPEST WAS A FAIL-OPEN. The old first line said "if DESKTOP is not the
+    passwd user's Desktop, this is a drill" and returned None before every other
+    rule. Under `sudo`, macOS keeps `$HOME` while `getuid()` becomes 0, so the
+    passwd Desktop becomes `/var/root/Desktop`, the paths differ, and the guard
+    turned ITSELF OFF -- on the highest-privilege run there is, with both other
+    rules dead. Displacement **to scratch** is the drill test now.
+    """
+
+    FOUNDER = Path("/Users/someone/Desktop")
+    CANON = Path("/Users/someone/Developer_Projects/Constraint_Engineering")
+
+    def _ask(self, sync, **kw):
+        base = dict(desktop=self.FOUNDER, passwd_desktop=self.FOUNDER,
+                    passwd_reliable=True, repo=self.CANON, under_pytest=False,
+                    roots=sync.scratch_roots(), canonical=str(self.CANON))
+        base.update(kw)
+        return sync.refuse_reason_for(**base)
+
+    def test_sudo_does_not_disable_the_guard(self, sync):
+        """The uid changes, `$HOME` does not. The old guard read the mismatch as
+        proof of a drill and stopped checking."""
+        r = self._ask(sync, passwd_desktop=Path("/var/root/Desktop"),
+                      under_pytest=True)
+        assert r is not None, "one sudo turns the whole guard off"
+
+    def test_a_clone_under_a_scratch_root_is_refused(self, sync):
+        for root in ("/var/folders/cc/x/T", "/tmp", "/private/var/tmp"):
+            r = self._ask(sync, repo=Path(root) / "cdsfl_clone")
+            assert r is not None and "clone" in r, (root, r)
+
+    def test_a_clone_outside_every_scratch_root_is_refused_by_the_marker(self, sync):
+        """The class neither rule could see: a clone in `~/repos`, on the
+        Desktop, or on an external drive. It replays the 2026-09-11 incident
+        with the clone moved 3 directories."""
+        r = self._ask(sync, repo=Path("/Users/someone/repos/ce"))
+        assert r is not None and "registered" in r, r
+
+    def test_without_a_marker_that_clone_still_gets_through(self, sync):
+        """STATED, NOT HIDDEN. The marker is the only thing closing this class,
+        so a Desktop with no marker is still exposed to a non-scratch clone.
+        Recorded as a known limit rather than left for a reader to discover."""
+        assert self._ask(sync, repo=Path("/Users/someone/repos/ce"),
+                         canonical=None) is None
+
+    def test_unreliable_passwd_identification_fails_closed(self, sync):
+        """A container with no passwd entry used to fall back to `Path.home()`
+        and carry on."""
+        assert self._ask(sync, passwd_reliable=False, under_pytest=True) is not None
+
+    def test_a_drill_displaced_to_scratch_is_still_allowed(self, sync, tmp_path):
+        """ANTI-VACUITY. Every existing drill in this file points DESKTOP at a
+        `tmp_path`; refusing those would disable the feature rather than scope
+        it."""
+        assert self._ask(sync, desktop=tmp_path / "Desktop",
+                         under_pytest=True) is None
+
+    def test_the_canonical_checkout_is_allowed(self, sync):
+        """POSITIVE CONTROL: the founder's own commit must still mirror."""
+        assert self._ask(sync) is None
+
+    def test_the_scratch_root_set_is_not_just_tempdir(self, sync):
+        """With `TMPDIR` unset, `gettempdir()` returns `/tmp` and a clone under
+        `/var/folders` escaped the rule entirely (fable, subprocess-verified)."""
+        roots = {str(r) for r in sync.scratch_roots()}
+        assert any("/var/folders" in r for r in roots), roots
+        assert any(r in ("/tmp", "/private/tmp") for r in roots), roots

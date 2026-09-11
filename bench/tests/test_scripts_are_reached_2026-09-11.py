@@ -194,6 +194,15 @@ class TestTheExclusionListCannotHide:
         assert mod.vouches("experimental_notes/Ordinary_Note.md", orphan), (
             "an ordinary document can no longer cite a producer at all")
         assert not mod.vouches(orphan, orphan), "a file vouches for itself"
+        # THE 4TH QUADRANT, AND ITS ABSENCE LEFT A MUTANT ALIVE. Panel round 15,
+        # fable: mutating `vouches` to "both in INSTRUMENT or both out" --
+        # `not ((voucher in INSTRUMENT) != (target in INSTRUMENT))` -- left all
+        # 14 tests green, this one included, because the only direction it flips
+        # is an ORDINARY file vouching FOR an instrument and no case covered it.
+        # 3 of 4 quadrants is not a decision table.
+        assert mod.vouches("experimental_notes/Ordinary_Note.md", instrument_script), (
+            "an ordinary document can no longer cite the instrument as a "
+            "producer, which is how CDSFL_OUTCOMES_LOG.md reaches it")
 
     def test_prose_in_this_very_file_does_not_reach(self, mod):
         """ANTI-VACUITY, and self-referential on purpose: the docstring above

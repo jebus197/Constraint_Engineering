@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -65,13 +66,37 @@ class TestTheCensusIsTheEvidence:
         assert tracked.returncode == 0, "the census exists but is not tracked"
 
     def test_it_reproduces_the_figure_quoted_in_the_issues_log(self, mod):
+        """PARSED FROM THE NOTE, NOT PINNED IN THE TEST.
+
+        This asserted `(k, n) == (2, 6)` with 4 hard-coded interval bounds, and
+        went red the moment a 7th and 8th run were censused -- over a corpus that
+        grows by design. Pinning an absolute figure over a growing corpus is the
+        staleness trap this project named in entry 6.1 and then walked into here.
+
+        The DURABLE invariant is that the producer and the note agree. Reading
+        the figure out of the note and recomputing it enforces exactly that, and
+        cannot go stale: if either moves without the other, this fails.
+        """
         rows = json.loads(mod_census().read_text(encoding="utf-8"))
         r = mod.rate(rows)
-        assert (r["k"], r["n"]) == (2, 6), (r["k"], r["n"])
-        assert round(100 * r["wilson"][0], 4) == 9.6771
-        assert round(100 * r["wilson"][1], 4) == 70.0007
-        assert round(100 * r["cp"][0], 4) == 4.3272
-        assert round(100 * r["cp"][1], 4) == 77.7222
+        note = (REPO / "experimental_notes" / "ISSUES_LOG_2026-09-09.md").read_text(
+            encoding="utf-8")
+        m = re.search(r"\*\*(\d+) failures? in (\d+) full-size runs, "
+                      r"([\d.]+)%, Wilson \[([\d.]+)%, ([\d.]+)%\]", note)
+        assert m, "the issues log no longer states the figure in the expected form"
+        k, n = int(m.group(1)), int(m.group(2))
+        assert (r["k"], r["n"]) == (k, n), (
+            f"the producer says {r['k']} of {r['n']} and the issues log says "
+            f"{k} of {n}; one of them has drifted")
+        assert abs(100 * r["k"] / r["n"] - float(m.group(3))) < 5e-5
+        assert abs(100 * r["wilson"][0] - float(m.group(4))) < 5e-5
+        assert abs(100 * r["wilson"][1] - float(m.group(5))) < 5e-5
+
+    def test_the_census_is_not_trivially_small(self, mod):
+        """ANTI-VACUITY for the test above: parsing agreement between an empty
+        census and an empty claim would pass while measuring nothing."""
+        rows = json.loads(mod_census().read_text(encoding="utf-8"))
+        assert len(rows) >= 6, f"only {len(rows)} full-size runs censused"
 
     def test_both_wilson_tools_agree(self, mod):
         """The 2-tool rule, executed rather than asserted."""

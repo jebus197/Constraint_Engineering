@@ -141,9 +141,20 @@ UNREACHED = (
 )
 
 
-#: A line that is nothing but one script path: `"scripts/x.py",` or
-#: `    scripts/x.py` in a fenced list.
-_ROLL_CALL = re.compile(r'["\'`]?(scripts/[\w./-]+\.py)["\'`]?,?')
+#: A line that is nothing but one script path, in any form a roll call is
+#: plausibly written in: `"scripts/x.py",`, a bare indented path, or a markdown
+#: bullet or numbered item, with or without backticks.
+#:
+#: THE LIST FORMS WERE IN THE DOCSTRING AND NOT IN THE PATTERN. Panel round 15,
+#: both seats: the old comment claimed "quotes, comma or list marker" and the
+#: test docstring said "in a fenced list", while `- scripts/x.py`, `* ...`,
+#: `1. ...` and `` - `...` `` all returned False. The roll call worked only
+#: because `PARKED_FOR_THE_FOUNDER.md` happens to use bare indented paths;
+#: reformatting that note as a bullet list would have made every orphan read as
+#: reached. A documented-but-unimplemented form is the same false zero as an
+#: over-anchored pattern, pointing the other way.
+_ROLL_CALL = re.compile(
+    r'(?:[-*+]\s+|\d+[.)]\s+)?["\'`]?(scripts/[\w./-]+\.py)["\'`]?,?')
 
 
 def _tracked() -> list[str]:
