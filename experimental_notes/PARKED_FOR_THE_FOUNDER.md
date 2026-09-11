@@ -129,3 +129,9 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 *Parked 2026-09-11T02:20:33+01:00.*
 
 
+
+## A8: re-point the 20 note citations at their mirrored copies, or leave them
+
+*Parked 2026-09-11T09:18:20+01:00.*
+
+

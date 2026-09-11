@@ -100,7 +100,21 @@ def dest_for(round_dir: Path) -> Path:
         date = f"{c[0:4]}-{c[4:6]}-{c[6:8]}"
     else:
         import datetime as dt
-        stamp = max((f.stat().st_mtime for f in round_dir.iterdir()), default=0)
+        # A BROKEN SYMLINK MAKES `stat()` RAISE, and one is in this tree:
+        # `bench/logs/exp36_evidence_latest` points at
+        # `exp36_evidence_20260407T004931Z`, which is gone. The first version
+        # called `f.stat()` over `iterdir()` unguarded, so the whole script died
+        # on it -- found the moment a SECOND caller
+        # (`resolve_cited_evidence_2026-09-11.py`) reached this branch, which is
+        # what wiring an addition to a caller is for. A dangling link is a
+        # legitimate state in an archive directory, not an error to propagate.
+        stamps = []
+        for f in round_dir.iterdir():
+            try:
+                stamps.append(f.stat().st_mtime)
+            except OSError:
+                continue
+        stamp = max(stamps, default=round_dir.stat().st_mtime)
         date = dt.datetime.fromtimestamp(stamp).strftime("%Y-%m-%d")
     return DEST_ROOT / f"panel_records_{date}" / round_dir.name
 
