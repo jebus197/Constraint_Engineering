@@ -67,6 +67,13 @@ def _scratch(tmp_path: Path, guard_body: str, omit: list[str] | None = None) -> 
     (root / "hooks").mkdir()
     shutil.copy2(HOOK, root / "hooks" / "pre-commit")
     os.chmod(root / "hooks" / "pre-commit", 0o755)
+    # EVERY SHELL LIBRARY THE HOOK SOURCES, not a named list. Adding
+    # hooks/stage0_restage.sh on 2026-09-11 broke 3 tests here, because the
+    # scratch repository copied the hook and nothing beside it; the hook then
+    # refused, correctly, and the refusal read as "a green tree will not
+    # commit". A glob cannot go stale the same way a list can.
+    for lib in sorted(HOOK.parent.glob("*.sh")):
+        shutil.copy2(lib, root / "hooks" / lib.name)
     _git("config", "core.hooksPath", "hooks", cwd=root)
     for rel in GUARDS:
         if omit and rel in omit:

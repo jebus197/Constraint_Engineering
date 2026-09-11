@@ -75,7 +75,11 @@ def check(target: str):
                 unchecked += 1
                 continue
             lo, hi = sp[anchor]
-            (good if lo <= line <= hi else bad).append((p, line, anchor, lo, hi))
+            # The number's exact offsets travel with the finding, because
+            # `repair` must splice AT THIS POSITION rather than search for the
+            # digits again. See the corruption recorded in `repair`.
+            (good if lo <= line <= hi else bad).append(
+                (p, line, anchor, lo, hi, m.start(1), m.end(1)))
     return good, bad, unchecked, past_end, n_lines
 
 
@@ -88,14 +92,63 @@ def repair(target: str) -> int:
     red inside the hour. Repairing by hand each time is a treadmill, and a
     treadmill is how the figure got wrong in the first place. The guard already
     computes the correct line, so it can write it.
+
+        IT CORRUPTED 3 CITATIONS ON 2026-09-11 AND THE FIX IS POSITIONAL.
+
+    The first version wrote `txt.replace(f"{target}:{line}", f"{target}:{lo}")`.
+    That is an unbounded substring replace with no digit boundary, so a SHORT
+    stale line number rewrites the PREFIX of every longer one. Reproduced by
+    deliberately staling 1 citation to `:1` and committing, which turned
+    `reference_runner_v3.py:1` into `:11456` and, in the same pass:
+
+        in reference_runner_v3.py, line number before -> after:
+            10934  ->  114560934
+            12638  ->  114562638
+            14984  ->  114564984
+
+    (The numbers are written bare, not as `path:number` tokens, because a
+    scanner cannot tell a warning about a corrupted citation from a corrupted
+    citation -- and the guard added below duly flagged this very paragraph.)
+
+    3 correct citations destroyed while repairing 1. The probe used `:1`, but
+    nothing about the fault needs a contrived value: any stale number that is a
+    prefix of another citation's number in the same file does it, and 4-digit
+    and 5-digit line numbers into an 11,000-line file collide constantly --
+    `:1135` would eat `:11354`.
+
+    The SECOND fault in the same line is that `str.replace` is GLOBAL. Two
+    citations sharing a line number, 1 stale and 1 correct, were both rewritten,
+    so a citation that pointed inside its own symbol could be moved out of it.
+
+    Both faults come from searching for the text again when the position was
+    already known. `check` now carries the number's offsets and this splices at
+    them, right to left so earlier offsets stay valid. If the bytes at an offset
+    are not the digits expected, the edit is REFUSED and reported rather than
+    applied to whatever is there.
     """
     _good, bad, _u, _p, _n = check(target)
-    for path, line, anchor, lo, _hi in bad:
+    by_path: dict = {}
+    for path, line, anchor, lo, _hi, start, end in bad:
+        by_path.setdefault(path, []).append((start, end, line, lo, anchor))
+    applied = 0
+    for path, edits in by_path.items():
         txt = path.read_text(encoding="utf-8")
-        txt = txt.replace(f"{target}:{line}", f"{target}:{lo}")
-        path.write_text(txt, encoding="utf-8")
-        print(f"  {path.relative_to(REPO)}: {line} -> {lo}  (`{anchor}`)")
-    return len(bad)
+        messages = []
+        for start, end, line, lo, anchor in sorted(edits, reverse=True):
+            if txt[start:end] != str(line):
+                print(f"  REFUSED {path.relative_to(REPO)}: offset {start} holds "
+                      f"{txt[start:end]!r}, not {line}; nothing written",
+                      file=sys.stderr)
+                continue
+            txt = txt[:start] + str(lo) + txt[end:]
+            messages.append((start, f"  {path.relative_to(REPO)}: {line} -> {lo}"
+                                    f"  (`{anchor}`)"))
+            applied += 1
+        if messages:
+            path.write_text(txt, encoding="utf-8")
+            for _s, msg in sorted(messages):
+                print(msg)
+    return applied
 
 
 def main() -> int:
@@ -131,7 +184,7 @@ def main() -> int:
             lo_c, hi_c = proportion_confint(k, n, method="beta")
             print(f"  {k}/{n} = {k / n:.4%}  Wilson [{lo:.4%}, {hi:.4%}]  "
                   f"Clopper-Pearson [{lo_c:.4%}, {hi_c:.4%}]")
-        for p, line, anchor, lo, hi in bad:
+        for p, line, anchor, lo, hi, _s, _e in bad:
             rel = p.relative_to(REPO)
             print(f"    {rel}:{line} names `{anchor}`, which spans {lo}-{hi} "
                   f"(off by {lo - line:+d})")
