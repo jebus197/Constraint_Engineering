@@ -31,6 +31,61 @@ Every change is a `git revert` away. The 3 categories that would NOT be recovera
 
 ## OUTCOMES, newest first
 
+### 2026-09-11 — A2'S COMPLETION CLAIM WAS FALSE AT HEAD, AND NOTHING IN THE PROJECT COULD HAVE SEEN IT
+
+**What was done.** A2 said a fresh clone runs the suite green. Cloning HEAD and running it there gave **3 failed, 6952 passed, 38 skipped, 1 xfailed** against **6988 passed, 0 failed** in the working tree. Both of A2's declared instruments were sound and neither could see the claim: one guards the individual repairs and clones nothing, the other re-runs its named tests in THIS checkout. `scripts/fresh_clone_suite_2026-09-11.py` performs the clone; `bench/tests/test_fresh_clone_is_actually_run_2026-09-11.py` runs it end to end on 1 fast file.
+
+**The cause.** A pre-commit hook sees the STAGED snapshot. Stage 0's repairs wrote the working tree and never staged what they wrote, so every commit shipped the unrepaired content and the repair lagged 1 commit behind — green here, broken in every clone, for 2 days. `hooks/stage0_restage.sh`.
+
+**Cost.** 0 paid dispatches. 47 commits. 0 files deleted. Roughly 12 MB added to the repository, of which 8 MB is the preserved review record.
+
+**Reversibility.** Every change is a commit and is revertible. The 364 mirrored review files are COPIES; `bench/logs/` is untouched and remains archival. 3 corrupted line references that reached HEAD at `b024c97` were restored by hand, and the corrupting substitution is replaced by a positional splice.
+
+### 2026-09-11 — THE PROBE THAT PROVED THE STAGING FIX DESTROYED 3 CITATIONS
+
+**What was done.** To prove a repair now reaches the commit, 1 citation was deliberately staled and a commit allowed to run. The repair landed. It also rewrote the PREFIX of every longer citation to the same file, because `str.replace` had no digit boundary: 3 correct citations destroyed while repairing 1, and they reached HEAD.
+
+**Cost.** 3 wrong line numbers in the permanent record for roughly 1 hour. **Reversibility.** Restored from the previous revision; `bench/tests/test_citation_repair_does_not_corrupt_2026-09-11.py` holds it, with a mutation control that reproduces the corruption from the old form.
+
+### 2026-09-11 — 30 OF 53 MEASUREMENT SCRIPTS NEVER ANSWERED `--help`
+
+**What was done.** The survey judged the answer by EXIT CODE, and a script with no parser ignores the flag, runs its whole measurement and exits 0. Requiring a `usage:` line: **30 of 53 = 56.6038%**, Wilson [43.2654%, 69.0496%], Clopper-Pearson [42.2826%, 70.1608%]. 2 of those 30 were among the clone's 3 failures. Now **0 of 54**, Wilson [0.0000%, 6.6414%].
+
+**Cost.** 0 paid. 31 scripts edited, each by 2 lines inside its `__main__` block. **Reversibility.** `answer_help` is a no-op on empty argv, so a plain run reaches exactly the code it reached before; an unrecognised argument now exits 2 rather than being ignored.
+
+### 2026-09-11 — PANEL ROUND 14: 5 DEFECTS IN MY OWN FIXES, 3 FOUND BY BOTH SEATS
+
+`bench/logs/panel_round14_2026-09-11/`. **0 paid seats**, `PANEL_ONLY=cc2,fable`. Agreement **3 of 5 = 60.0000%**, Wilson [23.0724%, 88.2379%]; cc2 found nothing fable missed, fable found 2 more.
+
+**cc2 proposed a 3-way `git merge-file` and fable a zero-context `git apply --cached`, and the choice between them was settled by measurement rather than argument.** On an 8-line file against a real index, with the repair at a varying distance from the author's withheld hunk: at gap 1 — the common geometry — `git merge-file` CONFLICTS and zero-context `git apply --cached` succeeds with the hunk excluded. fable's shipped. At gap 0 both refuse, correctly.
+
+**Reversibility.** The index is the only thing written; the working tree is never touched, so a hook that dies mid-repair loses nothing.
+
+### 2026-09-11 — 64 OF 78 REVIEW DIRECTORIES EXISTED ON ONE MACHINE AND IN NO COMMIT
+
+**What was done.** **64 of 78 = 82.0513%**, Wilson [72.0976%, 88.9961%], Clopper-Pearson [71.7227%, 89.8251%], were wholly untracked; **0 of the 14 that survive a clone is a post-ruling round**. None was partially tracked. All 78 are mirrored now, 364 files, each verified by sha256, and all 14 post-ruling rounds have a readable FULL RECORD note.
+
+**A CORRECTION TO MY OWN PREMISE.** I claimed a clone has no `bench/logs/` at all. **6,462 files under it are TRACKED** and a clone carries 159 subdirectories; what a clone lacks is the recent record.
+
+**Cost.** Roughly 8 MB added. **Reversibility.** Copies only; `bench/logs/` is never edited.
+
+### 2026-09-11 — THE PAID-DISPATCH COUNT WAS 30 AND REPORTED 10
+
+**What was done.** The instrument globbed `panel_*`, which is 46 of 78, and read a MISSING `route` field as free — **20 of 30 paid-named replies record no route at all, 66.6667%**, Wilson [48.7801%, 80.7695%]. The guard asserting the condition was blind the same 2 ways, demonstrated: a paid reply planted in a post-ruling `confer_*` directory passes the old guard both with and without a route field.
+
+**THE CONCLUSION IS UNCHANGED AND IS NOW ARCHIVE-WIDE:** the latest paid dispatch is **2026-09-05** and **0 of the 24 directories dated after it** hold one, Wilson [0.0000%, 11.6970%]. What was broken was the ability to NOTICE one, not the record.
+
+**Cost.** 0. **Reversibility.** Instrument-only; no experiment or archive touched.
+
+### 2026-09-11 — P3 IS STRONGER THAN RECORDED AND P5's INSTRUMENT READ A RENAME AS ABANDONMENT
+
+**P3**, over all 78: under the ruling **28 of 28 = 100.0000%**, Wilson [87.9357%, 100.0000%], against **8 of 134 = 5.9701%** before it. **Fisher exact p = 1.495245e-24**, chi-square with Yates p = 2.051864e-26.
+
+**P5**: the brief renamed the field at round 8, and the scan matched only the old name — reporting **12 of 28 = 42.8571%** and apparently falling where the figure is **26 of 28 = 92.8571%**, Wilson [77.3546%, 98.0188%]. **The rule lived in 2 places and only 1 was repaired:** the guard already carried the wider pattern and its own comment records the rename; the script did not, and the script produces the figure the founder reads.
+
+**Cost.** 0. **Reversibility.** Instrument-only.
+
+
 ### PANEL ROUND 2 — both seats returned, and cc2 found a defect that would have destroyed a paid run
 
 `bench/logs/panel_roster_round2_2026-09-09/`. **0 paid seats**, verified before dispatch by importing the dispatcher with `PANEL_ONLY=cc2,fable` and printing the resolved list. Confinement held: 0 canonical-path references from either seat, all sandbox. The "CANONICAL TREE MODIFIED" alert fired on 14 files, and all 14 are the assistant's own concurrent edits — **the alert cannot tell an assistant edit from a seat escape**, which is I27.
@@ -139,10 +194,12 @@ The failure message also reported line counts alone, so the first real drift rea
 | Measure | Value |
 |---|---|
 | Full suite | measured at each commit with `python3 -m pytest bench/tests/ -q --netguard-strict`; see the closing report for the current figure |
-| Task list | 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn |
+| Task list | **2026-09-11: 92 entries, 81 done, 2 open, 4 blocked, 1 deferred, 4 withdrawn** (was 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn) |
 | Commits since 2026-09-10 00:00 | 28 |
+| Commits on 2026-09-11 | 47 |
 | Files deleted today | 0 |
 | Paid model dispatches today | **0** — panel rounds 3 and 4 both ran `PANEL_ONLY=cc2,fable`, Max subscription only |
+| Paid dispatches, WHOLE ARCHIVE | **30 across 16 of 78 review directories**, latest 2026-09-05; **0 of the 24 directories since**, Wilson [0.0000%, 11.6970%]. The figure read 10 until 2026-09-11, because the instrument globbed `panel_*` and read a missing `route` field as free |
 | FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |
 
 Counts in this table are produced by `scripts/task_list_markers.py` and `git log`, not typed.
