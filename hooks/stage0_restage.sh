@@ -48,12 +48,40 @@ cdsfl_restage_paths() {
             echo "pre-commit: repair named $_p, which is not a file; not staged" >&2
             continue
         fi
+        cdsfl_warn_if_partially_staged "$_p"
         if git add -- "$_p"; then
             echo "pre-commit: re-staged $_p (stage-0 repair)"
         else
             echo "pre-commit: could not stage $_p; it will lag a commit behind" >&2
         fi
     done
+}
+
+# PARTIAL STAGING: the one case where re-staging costs something.
+#
+# `git add -- <path>` stages the WHOLE file. If the author had staged part of a
+# file with `git add -p` and deliberately left the rest out, a repair to that
+# file sweeps the rest into the commit. The master task list is repaired by the
+# citation guard AND is edited constantly, so this is not hypothetical.
+#
+# WHY IT STILL STAGES. The alternative is the defect this file exists to fix:
+# the commit ships the unrepaired content and a clone at HEAD is broken. Between
+# "an extra hunk lands, visibly, with a line saying so" and "every clone is
+# broken, silently, for 2 days", the first is the lesser cost -- but it is a
+# cost, so it is announced rather than absorbed.
+#
+# Surgical staging -- splicing only the repaired line into the index blob -- was
+# considered and rejected: it means building a tree object by hand inside a
+# shell hook, and a subtle bug there writes a WRONG blob, which is worse than an
+# extra hunk that the author can see in the diff.
+cdsfl_warn_if_partially_staged() {
+    _f=$1
+    git diff --cached --quiet -- "$_f" && return 0   # nothing staged for it
+    git diff --quiet -- "$_f" && return 0            # nothing unstaged for it
+    echo "pre-commit: $_f had BOTH staged and unstaged changes." >&2
+    echo "            The stage-0 repair rewrote it and the whole file is now" >&2
+    echo "            staged, so hunks you left out are in this commit. Check" >&2
+    echo "            the diff, or: git commit --no-verify" >&2
 }
 
 # `scripts/experiment_run_ledger.py --refresh` prints, on success and only then:

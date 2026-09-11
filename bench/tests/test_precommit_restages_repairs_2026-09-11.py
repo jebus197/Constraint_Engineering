@@ -298,6 +298,53 @@ class TestThePartialCommitNotice:
         assert r.stderr == ""
 
 
+class TestPartialStagingIsAnnounced:
+    """`git add -- <path>` stages the WHOLE file.
+
+    If the author staged part of a file with `git add -p` and deliberately left
+    the rest out, a repair to that file sweeps the rest into the commit. The
+    master task list is repaired by the citation guard and edited constantly, so
+    this is not hypothetical. It still stages -- the alternative is the defect
+    this whole file exists to fix -- but it says so, because a cost that is
+    announced can be checked and a cost that is absorbed cannot.
+    """
+
+    def _partially_staged(self, repo: Path) -> None:
+        """Stage line 1's change and leave line 3's change unstaged."""
+        f = repo / "experimental_notes" / "Note.md"
+        f.write_text("A-staged\nB\nC\n", encoding="utf-8")
+        _git(repo, "add", "experimental_notes/Note.md")
+        f.write_text("A-staged\nB\nC-work-in-progress\n", encoding="utf-8")
+
+    def test_it_says_so(self, repo):
+        self._partially_staged(repo)
+        r = _feed(repo, "cdsfl_restage_from_citation_output", CITATION_OK + "\n")
+        assert r.returncode == 0
+        assert "BOTH staged and unstaged" in r.stderr, r.stderr
+        assert "experimental_notes/Note.md" in r.stderr
+
+    def test_it_still_stages_the_repair(self, repo):
+        """The announcement must not become a refusal: a refusal restores the
+        original defect, where the commit ships unrepaired content."""
+        self._partially_staged(repo)
+        _feed(repo, "cdsfl_restage_from_citation_output", CITATION_OK + "\n")
+        blob = _git(repo, "show", ":experimental_notes/Note.md")
+        assert "C-work-in-progress" in blob, (
+            "the repair did not reach the index, so the commit ships the "
+            "unrepaired file")
+
+    def test_a_file_with_nothing_staged_is_silent(self, repo):
+        """ANTI-NOISE. A notice on the ordinary case teaches people to ignore
+        it, and the ordinary case is a file with only unstaged changes."""
+        r = _feed(repo, "cdsfl_restage_from_citation_output", CITATION_OK + "\n")
+        assert "BOTH staged and unstaged" not in r.stderr, r.stderr
+
+    def test_a_fully_staged_file_is_silent(self, repo):
+        _git(repo, "add", "experimental_notes/Note.md")
+        r = _feed(repo, "cdsfl_restage_from_citation_output", CITATION_OK + "\n")
+        assert "BOTH staged and unstaged" not in r.stderr, r.stderr
+
+
 class TestTheHookActuallyCallsIt:
     """WIRING.  An addition nothing reaches is not additive."""
 
