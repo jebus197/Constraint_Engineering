@@ -123,3 +123,9 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 *Parked 2026-09-10T22:04:26+01:00.*
 
 Analysis complete and parked. Enabling it changes the authentication posture of the founder's private network, so the decision is his. Task 10.1 works today without it. 20 other entries are open and none depends on it.
+
+## A8 needs a POLICY RULING from the founder: track, relocate, or accept-and-label the untracked cited bench/logs paths
+
+*Parked 2026-09-11T02:20:33+01:00.*
+
+
