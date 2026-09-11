@@ -169,3 +169,23 @@ The additive standard's own symmetric half says an addition that nothing reaches
 **The ratchet is now EMPTY, which is not the same as disabled.** `bench/tests/test_scripts_are_reached_2026-09-11.py` compares the live set against it, so the first script that stops being reached fails the suite — verified by planting a fresh orphan and watching it go red. 4 of its controls previously used a live orphan as their fixture and had nothing left to demonstrate with once the last one was wired; they now use synthetic inputs, because a test that depends on the project still having the defect is a test that breaks when the defect is fixed.
 
 **The first figure was flattering and the reason is worth 1 line.** A first pass counted mentions inside `experimental_notes/evidence/*/seat_proposals.diff` and reported 5 unreached instead of 8. All 8 appear in those archival copies of what reviewing models proposed, committed that same morning, so the better number came from the review record being filed rather than from anything calling the scripts. A measurement that improves when you file your paperwork is measuring the filing.
+
+## Scope decision: fix all 24 audit findings now, fix only the misleading ones, or record and stop
+
+*Parked 2026-09-11T22:06:33+01:00.*
+
+**WHERE THIS CAME FROM, AND IT WAS NOT YOUR LIST.** An adversarial audit of the 84 DONE entries — 52 agents, every flag handed to a second agent instructed to refute it — found that **24 of 71 audited entries, 33.8028%**, Wilson [23.8850%, 45.3834%], carry at least one claim their named evidence does not establish. That audit was commissioned to back up a completion figure quoted to you, and the repair work it generated is work the assistant created rather than work you asked for. Full findings, unsummarised, at `experimental_notes/evidence/done_audit_2026-09-11/`.
+
+**WHAT IS AND IS NOT WRONG.** No test fails. Every named evidence file exists and passes, and the full suite ran green in a fresh clone 4 times on 2026-09-11 with 7,247 passing. The gap is between what the tests establish and what the entries CLAIM: 25 quote a figure no committed script produces, 25 name evidence asserting on source text where the claim is about behaviour, 13 name evidence testing something adjacent, 9 state a claim broader than what was run. **This misleads a reader; it does not break anything.**
+
+**3 OPTIONS.**
+
+1. **Stop.** The gap is measured, the audit is committed, and the work list is complete on the assistant's side either way. Cost: nothing. The list keeps 24 entries that overclaim, with a committed record saying which.
+2. **Fix only what could mislead a decision** — false universals and self-contradictory headlines, the shape of the 3 already done (P3's date contradicting the archive, 10.1's universal that one path broke, 2.2's headline contradicting itself in the same sentence). Estimated 5 to 8 entries, 1 to 2 hours.
+3. **Fix all 24.** Most of a working day. Each has a concrete closing plan from the verifier that flagged it.
+
+**The recommendation is 2.** Option 3 was being done without asking, which is the same work-spawns-work dynamic you raised, with the assistant as the source rather than the codebase.
+
+
+
+
