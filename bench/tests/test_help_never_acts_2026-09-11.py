@@ -120,3 +120,84 @@ class TestNoWriterIgnoresTheFlag:
         assert WRITES.search("open(f, 'w')")
         assert not WRITES.search("p.read_text()")
         assert not WRITES.search("open(f) as fh")
+
+
+#: Calls that change something on disk.
+_WRITE_CALLS = {"write_text", "write_bytes", "copy", "copy2", "move", "rmtree",
+                "remove", "unlink", "rename", "mkdir", "makedirs"}
+
+
+def module_level_writes(src: str) -> list[str]:
+    """Writes that happen merely because the module was IMPORTED.
+
+    A `__main__` guard is fine: importing does not enter it.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    out = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        if isinstance(node, ast.If) and isinstance(node.test, ast.Compare) \
+                and getattr(node.test.left, "id", "") == "__name__":
+            continue
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Call):
+                name = getattr(sub.func, "attr", None) or getattr(sub.func, "id", None)
+                if name in _WRITE_CALLS:
+                    out.append(f"{name}() at line {sub.lineno}")
+    return out
+
+
+class TestImportingAScriptChangesNothing:
+    """Guarding `--help` was not enough, and the next clone run said so.
+
+    `bench/tests/test_operational_scripts.py` probes every script by IMPORTING it
+    (`spec_from_file_location`). A script whose work runs at module scope
+    therefore does its work whenever it is inspected -- and in a clone
+    `bench/logs/` is empty, so importing `assemble_panel_record_0819.py` rebuilt
+    a 55,814-byte verbatim panel record as a 1,334-byte stub. Every clone run.
+
+    THE FLAG WAS NEVER THE ONLY WAY IN. Fixing `--help` fixed one entrance to a
+    room with two doors, which is why the same 2 notes were still truncated in
+    the run after that fix. A script that acts at import has no safe way to be
+    inspected, and inspecting scripts is something this suite does deliberately.
+
+    MEASURED after the repair: 0 of 122 tracked scripts write at module level.
+    """
+
+    def test_no_tracked_script_writes_at_import(self):
+        offenders = {}
+        for p in tracked_scripts():
+            w = module_level_writes(p.read_text(encoding="utf-8", errors="replace"))
+            if w:
+                offenders[str(p.relative_to(REPO))] = w[:3]
+        assert not offenders, (
+            f"{len(offenders)} tracked script(s) write when merely imported, so "
+            f"any tool that inspects them changes the tree: {offenders}\n"
+            f"Move the work into a function and call it under "
+            f"`if __name__ == \"__main__\":`.")
+
+    def test_the_detector_sees_a_module_level_write(self):
+        """ANTI-VACUITY. A detector that found nothing would pass over any tree."""
+        assert module_level_writes("import pathlib\npathlib.Path('x').write_text('y')\n")
+        assert module_level_writes("import shutil\nshutil.copy2('a','b')\n")
+
+    def test_a_guarded_write_is_not_flagged(self):
+        """POSITIVE CONTROL: the `__main__` form must be accepted, or the fix
+        this test exists to protect would itself be reported as the defect."""
+        assert not module_level_writes(
+            'import pathlib\n'
+            'def main():\n    pathlib.Path("x").write_text("y")\n'
+            'if __name__ == "__main__":\n    main()\n')
+
+    def test_the_two_records_are_importable_without_acting(self):
+        """POSITIVE CONTROL naming the scripts that caused this."""
+        for name in ("assemble_panel_record.py", "assemble_panel_record_0819.py"):
+            src = (REPO / "scripts" / name).read_text(encoding="utf-8")
+            assert not module_level_writes(src), name
+            assert "def main(" in src, (
+                f"{name} no longer has a main(); its work may have drifted back "
+                f"to module scope")

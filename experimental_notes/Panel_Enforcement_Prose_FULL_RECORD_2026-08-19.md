@@ -8,6 +8,8 @@ numbers, raw measurement tables) plus a quarantined ledger of CC1's claims.
 returned, unedited and untrimmed. Analysis and synthesis live in the companion
 note; nothing here is summarised.
 
+**FIGURE PROVENANCE, added 2026-09-11 by the generator.** Every figure below was quoted by a panel seat, not computed by this project. The replies they come from survive in this repository at `experimental_notes/evidence/panel_records_2026-08-19/confer_enforcement_prose_2026-08-19/`, 8 tracked files, and this note is rebuilt from them by `scripts/assemble_panel_record_0819.py`, which is committed beside it. **The figures are therefore traceable to their source and are NOT independently verified here** -- they are a record of what each model said.
+
 ---
 
 ## Gemini 3.1 Pro Preview (`ge`) — OpenRouter
