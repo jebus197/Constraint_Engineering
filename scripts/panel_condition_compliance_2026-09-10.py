@@ -76,20 +76,14 @@ def rounds() -> list[pathlib.Path]:
     return sorted(d for d in LOGS.iterdir() if mod.holds_review_output(d))
 
 
-_D_DASH = re.compile(r"(20\d\d-\d\d-\d\d)")
-_D_COMPACT = re.compile(r"(20\d{6})T\d{6}Z")
-
-
 def _round_date(d: pathlib.Path) -> str | None:
-    """The run's date from its own directory name, both conventions."""
-    m = _D_DASH.search(d.name)
-    if m:
-        return m.group(1)
-    c = _D_COMPACT.search(d.name)
-    if c:
-        g = c.group(1)
-        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
-    return None
+    """DELEGATED to the 1 module that decides. See `rounds()` for why."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mirror_records", REPO / "scripts" / "mirror_panel_records_2026-09-11.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.round_date(d.name)
 
 
 def source_files(d: pathlib.Path) -> list[str]:

@@ -206,15 +206,19 @@ class TestNoPaidSeatWasDispatched:
 
     @staticmethod
     def _date(name: str) -> str | None:
-        import re
-        m = re.search(r"(20\d\d-\d\d-\d\d)", name)
-        if m:
-            return m.group(1)
-        c = re.search(r"(20\d{6})T\d{6}Z", name)
-        if c:
-            g = c.group(1)
-            return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
-        return None
+        """DELEGATED to the module under test, which is the 1 place that decides.
+
+        This carried its own copy of the 2 date regular expressions, making 4
+        copies across this file, the compliance script, the Section-P guard and
+        the full-record ratchet -- all written on 2026-09-11 while correcting
+        exactly this defect elsewhere. A rule written down 4 times is 4 rules.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "mirror_records", SCRIPT)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m.round_date(name)
 
     def test_no_round_since_the_ruling_holds_a_paid_seat_reply(self, mod):
         _requires_the_archive(mod)

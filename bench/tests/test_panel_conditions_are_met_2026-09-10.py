@@ -59,15 +59,13 @@ def mod():
 
 
 def _round_date(name: str) -> str | None:
-    """A round's date from its own directory name, in both conventions."""
-    m = re.search(r"(20\d\d-\d\d-\d\d)", name)
-    if m:
-        return m.group(1)
-    c = re.search(r"(20\d{6})T\d{6}Z", name)
-    if c:
-        g = c.group(1)
-        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
-    return None
+    """DELEGATED to the 1 module that decides. See `_review_dirs()` for why."""
+    import importlib.util as _ilu
+    spec = _ilu.spec_from_file_location(
+        "mirror_records", ROOT / "scripts" / "mirror_panel_records_2026-09-11.py")
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.round_date(name)
 
 
 def _review_dirs():

@@ -28,7 +28,6 @@ its directory at all, and now does.
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -38,34 +37,31 @@ NOTES = REPO / "experimental_notes"
 #: The date Section P made a panel review a precondition on closing any entry.
 RULING = "2026-09-09"
 
-SEAT_FILES = ("cc2.json", "fable.json", "cx.json", "cgpt.json", "ds.json",
-              "ge.json")
+def _mirror():
+    """The 1 module that decides what a review round IS and when it ran.
 
-_DASH = re.compile(r"(20\d\d-\d\d-\d\d)")
-_COMPACT = re.compile(r"(20\d{6})T\d{6}Z")
-
-
-def _date_of(name: str) -> str | None:
-    m = _DASH.search(name)
-    if m:
-        return m.group(1)
-    c = _COMPACT.search(name)
-    if c:
-        g = c.group(1)
-        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
-    return None
+    IMPORTED, NOT REIMPLEMENTED. This file briefly carried its own copy of the
+    seat-file list and of the 2 date regular expressions, making 3 copies of each
+    across the compliance script, the Section-P guard and here -- all written on
+    2026-09-11, while correcting exactly this defect elsewhere. The morning's own
+    evidence is that copies drift: the disagreement pattern was repaired in the
+    guard and not in the script, and the paid-seat population in the script and
+    not in the guard.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mirror_records", REPO / "scripts" / "mirror_panel_records_2026-09-11.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
 
 
 def _post_ruling_rounds() -> list[str]:
+    m = _mirror()
     if not LOGS.is_dir():
         return []
-    out = []
-    for d in sorted(p for p in LOGS.iterdir() if p.is_dir()):
-        if not any((d / n).is_file() for n in SEAT_FILES):
-            continue
-        if (_date_of(d.name) or "") >= RULING:
-            out.append(d.name)
-    return out
+    return [d.name for d in sorted(p for p in LOGS.iterdir() if p.is_dir())
+            if m.holds_review_output(d) and (m.round_date(d.name) or "") >= RULING]
 
 
 def _all_record_text() -> str:

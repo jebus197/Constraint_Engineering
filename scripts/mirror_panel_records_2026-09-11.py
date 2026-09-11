@@ -80,6 +80,33 @@ def rounds() -> list[Path]:
     return sorted(p for p in SOURCE.iterdir() if holds_review_output(p))
 
 
+def round_date(name: str) -> str | None:
+    """A round's date from its own directory name, in BOTH conventions.
+
+    ONE DEFINITION, AND THERE WERE BRIEFLY THREE -- all written on 2026-09-11
+    within an hour, while correcting exactly this defect elsewhere. The compliance
+    script, the Section-P guard and the full-record ratchet each carried a private
+    copy of these 2 regular expressions. A rule written down 3 times is 3 rules,
+    and the morning's own evidence is that they drift: the disagreement-field
+    pattern was repaired in the guard and not in the script, and the paid-seat
+    population was widened in the script and not in the guard.
+
+    Dashed (`panel_round11_2026-09-11`) and compact (`panel_verify_20260904T203042Z`)
+    are both in live use; roughly 30 of the 78 review directories use the compact
+    form, and a parser that knows only the dashed one silently returns None for
+    them -- which is how a substring test on "2026-09-" came to separate
+    pre-ruling from post-ruling rounds by luck rather than by design.
+    """
+    m = _DATE.search(name)
+    if m:
+        return m.group(1)
+    c = _COMPACT_DATE.search(name)
+    if c:
+        g = c.group(1)
+        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
+    return None
+
+
 def dest_for(round_dir: Path) -> Path:
     """Where a round belongs, grouped by the date in its own name.
 
