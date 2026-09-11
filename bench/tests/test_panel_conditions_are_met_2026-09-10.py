@@ -273,3 +273,56 @@ class TestP4AFixMustArriveAsAFile:
         assert len(empties) == 2, (
             f"rounds 5 and 6 were expected to have delivered 0 source files, "
             f"which is what makes round 7 evidence that the rule worked: {empties}")
+
+
+class TestTheToolEnabledDateMatchesTheArchive:
+    """Entry P3 stated a date the archive does not support, and nothing checked it.
+
+    It read *"Every round before 2026-09-07 recorded 0 tool calls"*. The archive
+    holds 2 rounds on **2026-09-05** that recorded 17 and 27 calls --
+    `panel_maths_tools_20260905T034234Z` and
+    `panel_maths_toolsfixed_20260905T035958Z`. Found by an adversarial audit of
+    the list's DONE entries on 2026-09-11 and confirmed here before the entry was
+    edited.
+
+    A DATE IN PROSE IS A CLAIM ABOUT THE ARCHIVE, so it gets the same treatment
+    as any other figure: the archive is asked, and the entry must agree with the
+    answer. Without this the date drifts again the next time someone rewrites the
+    sentence from memory.
+    """
+
+    def test_the_entry_and_the_archive_agree_on_the_first_tool_enabled_date(self):
+        import json
+        import pathlib
+        import re
+
+        repo = pathlib.Path(__file__).resolve().parents[2]
+        per_round = {}
+        for f in (repo / "bench" / "logs").glob("*/*.json"):
+            if f.name.endswith(".tools.json"):
+                continue
+            try:
+                d = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            if not isinstance(d, dict) or "n_tool_calls" not in d:
+                continue
+            per_round[f.parent.name] = per_round.get(f.parent.name, 0) + (
+                d.get("n_tool_calls") or 0)
+
+        def rdate(name: str):
+            m = re.search(r"(20\d{2})[-_]?(\d{2})[-_]?(\d{2})", name)
+            return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else None
+
+        dated = sorted(rdate(k) for k, v in per_round.items() if v > 0 and rdate(k))
+        if not dated:
+            import pytest
+            pytest.skip("no round in this checkout records a tool call; "
+                        "bench/logs is gitignored and absent in a clone")
+        earliest = dated[0]
+        entry = (repo / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md").read_text(
+            encoding="utf-8")
+        assert f"Every round before **{earliest}** recorded 0 tool calls" in entry, (
+            f"the archive's earliest tool-enabled round is {earliest}, and entry P3 "
+            f"does not say so. A date in prose is a claim about the archive and "
+            f"must agree with it.")
