@@ -9942,6 +9942,51 @@ def apply_fix_blocks(
 
 _MD_PY_FENCE = re.compile(r"```(?:python|py)\n(.*?)```", re.S)
 
+#: THE SHAPES A REAL DESIGN NOTE ACTUALLY USES. Found 2026-09-11 by the cc2 seat
+#: in panel round 13 and reproduced across 7 markdown shapes before accepting:
+#: the original pattern matched only a bare ```` ```python ```` fence with LF
+#: line endings and no attributes, and it captured the body WITH its markdown
+#: scaffolding attached.
+#:
+#:     tilde / attrs / crlf  -> extracted NOTHING (fail-safe, but the flag then
+#:                              silently does nothing on such a document)
+#:     indented / blockquote -> extracted `    x = 1` or `> x = 1`, so
+#:                              `ast.parse` raises and A = g1*g2 = 0, and EVERY
+#:                              fix to that document is REJECTED
+#:
+#: A REJECT IS A CLAIM; NO_SCORE IS AN ABSTENTION. Turning the A19 flag on would
+#: have made the instrument WORSE on an indented fence rather than silent -- and
+#: a listing inside a numbered list is the commonest shape in a design note.
+#: That is the 2026-08-01 halt re-armed on a new input: 50 straight A=0.0
+#: rejections, nothing closable, the run unable to converge.
+#:
+#: `pycon` STAYS EXCLUDED ON PURPOSE: a doctest block interleaves source with
+#: output, and abstaining is right where convicting is not.
+_MD_PY_FENCE_ANY = re.compile(
+    r"^(?P<prefix>[ \t]*(?:>[ \t]?)*)(?P<f>```|~~~)[ \t]*(?:python|py)\b[^\n]*\n"
+    r"(?P<body>.*?)^(?P=prefix)?(?P=f)",
+    re.S | re.M)
+
+
+def _strip_listing_prefix(body: str, prefix: str) -> str:
+    """Remove the markdown scaffolding a fence body carries into the extract.
+
+    CRLF to LF, then the blockquote marker, then a dedent by the COMMON prefix
+    over non-blank lines only -- so the listing's own Python indentation
+    survives while the markdown indentation does not.
+    """
+    text = body.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    if prefix.strip().startswith(">") or any(
+            ln.lstrip().startswith(">") for ln in lines if ln.strip()):
+        lines = [re.sub(r"^[ \t]*>[ \t]?", "", ln) for ln in lines]
+    real = [ln for ln in lines if ln.strip()]
+    if real:
+        common = min(len(ln) - len(ln.lstrip(" \t")) for ln in real)
+        if common:
+            lines = [ln[common:] if ln.strip() else ln for ln in lines]
+    return "\n".join(lines)
+
 
 def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[str], str]:
     """The Python the syntax gates should actually check, for any target type.
@@ -9962,7 +10007,11 @@ def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[s
     """
     if source_path.endswith(".py") or not source_path:
         return modified_source, "python target"
-    blocks = _MD_PY_FENCE.findall(modified_source)
+    # CRLF NORMALISED BEFORE MATCHING: a Windows-authored note extracted nothing
+    # at all, so the flag silently did no work on it.
+    _normalised = modified_source.replace("\r\n", "\n").replace("\r", "\n")
+    blocks = [_strip_listing_prefix(m.group("body"), m.group("prefix"))
+              for m in _MD_PY_FENCE_ANY.finditer(_normalised)]
     if not blocks:
         # Nothing to break, so nothing for a syntax gate to say. The falsifier
         # and HIL carry a pure-prose finding; see bugzilla_loop.run_verification,
@@ -10289,6 +10338,27 @@ def _capture_baseline(source: str, source_path: str = "") -> Dict[str, Any]:
         "ruff_violations": None,
         "bandit_findings": None,
     }
+    # THE BASELINE MUST BE MEASURED ON THE SUBSTRATE THE GATES SCORE.
+    #
+    # FOUND 2026-09-11 BY BOTH PANEL SEATS INDEPENDENTLY, in separate sandboxes,
+    # and reproduced here before either fix was accepted. Task A19 gave
+    # `_run_effect_ruff` and `_run_effect_bandit` the extracted listings and left
+    # this function reading the WHOLE document. Measured on
+    # `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`: baseline 311, gate 4, so e3
+    # reported "0 new" no matter what a fix did.
+    #
+    # THE GATE THAT COULD NOT FAIL MOVED FROM e4 TO e3, INSIDE THE COMMIT THAT
+    # FIXED e4. Repairing one half of a comparison and not the other is the
+    # same shape as the 2026-08-01 hard-gate repair that left the effect gates
+    # reading prose for 41 days -- and it recurred within a day of my writing
+    # that sentence into the A19 entry.
+    #
+    # For a `.py` target `_gateable_source` returns the source unchanged, so
+    # this is a no-op there by construction.
+    _gateable, _why = _gateable_source(source, source_path)
+    if _gateable is None:
+        return baseline          # nothing to measure; both tools stay None
+    source = _gateable
     # Anchor temp files to the source directory so ruff/bandit discover the
     # project's own config (pyproject.toml, setup.cfg) by walking upwards.
     #
