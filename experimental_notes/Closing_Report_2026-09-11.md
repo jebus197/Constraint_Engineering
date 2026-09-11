@@ -61,11 +61,57 @@ The first concerns evidence cited in notes that lives in the ignored directory. 
 
 The second is a design point about the admissibility gate and prose documents. The switch, which lets the admissibility gate read the runnable code fragments inside a prose document instead of the prose around them, is built, tested, and off by default. Turning it on changes what reaches a verdict, which is a founder decision. One fact bears on it directly: with the switch on, the project's own archived exploit still scores 1.0000 and fully admissible, identical to a correct fix, because the security scanner rates that particular construction as low severity and the gate counts only high and medium severities. The switch repairs what the gates read, not how strictly they judge.
 
+## The Afternoon: A Second Review Panel Broke 2 Of The Morning's 5 Fixes
+
+The same 2 models were asked to attack the 5 repairs written that morning, with instructions to deliver working fixes rather than a list of problems. Both returned a split verdict. Both confirmed 2 repairs closed the holes they named. Both found a third bypassable, and both picked out the same bypass as the sharpest finding. Neither softened its disagreement to match the other.
+
+Every finding was reproduced here before anything was changed, because a repair proposed by another model is a hypothesis until it has been run, exactly as one written locally is. All 8 defects were confirmed and none was refuted. One attack the briefing itself invited turned out to be wrong, and is recorded as refuted.
+
+## A Guard That Switched Itself Off
+
+The guard written that morning to stop a throwaway copy overwriting the founder's files began by asking whether the folder it was about to write belonged to the current user. If it did not, the guard concluded a rehearsal was in progress and allowed everything.
+
+That question has a wrong answer under one common circumstance. When a command runs with elevated privileges, this operating system keeps the original home folder setting while changing the numeric identity of the user. The guard then looked up the wrong folder, found a mismatch, concluded rehearsal, and skipped both of its remaining checks. It disabled itself precisely on the most privileged kind of run there is, and it did so in the permissive direction, which is the one that lets a throwaway copy through.
+
+Two further ways round followed from the same design. A copy living outside the usual scratch area satisfied neither remaining check and reproduced the original accident exactly. And when one environment setting is absent, the scratch area resolves elsewhere, so a copy in the usual place escaped entirely.
+
+The decision now depends only on values handed to it rather than on the surrounding environment, which is what made all 3 failing cases reachable by a test at all. A marker file now records which single copy of the project may write those files. All 4 behaviours were verified end to end after committing: a copy in the scratch area is refused, a copy elsewhere is refused by name, a copy cannot register itself, and the founder's own checkout still refreshes normally.
+
+One rule was adopted from a model's proposal over anything written here, because it is better. Before any file is replaced, the bytes about to be overwritten are kept. It is the only rule in the guard that is about content rather than location, which is exactly why it is right in every case a location rule gets wrong, and every hole found so far has been a location the rules did not anticipate. It turns the one remaining gap from silent loss into something recoverable.
+
+## Counting Is Not The Same As Knowing The Order
+
+The verbatim-region exemption, which lets a review record be stored without editing what a model said, marks passages and exempts them from the writing checker. A check written that morning compared the number of opening marks with the number of closing ones.
+
+Both models showed that comparison answers the wrong question. A closing mark that closes nothing, followed by an opening mark that nothing closes, gives one of each: the totals match while a passage is genuinely left open and everything after it silently stops being checked. Worse, a closing and an opening mark inside the same paragraph ended the exemption rather than restarting it, so a model's quoted words were then checked as though they were the project's own writing. That is the precise outcome the exemption exists to prevent.
+
+The repair reads the marks in the order they appear. Across all 402 notes the change alters the result for none of them, so it adds no new complaints about existing documents.
+
+## The Class-Level Answer The Briefing Asked For
+
+Fixing this defect one instance at a time has a 15-for-15 record of not preventing the 16th, so the briefing asked for a mechanical check that catches the class. Both models built one, and the method is the same: take a checking tool and an input it says yes about, change the form of that input without changing its meaning, and require the answer not to change. No reading of any pattern is involved, which is the point.
+
+It is now in the project, running against 6 real checking tools across 29 different form changes, and it reports no undeclared failures. Re-introducing that morning's anchored pattern makes it report the problem on 3 separate form changes at once.
+
+## Two Findings Against Work Done Hours Earlier
+
+A safety check written that morning failed in every throwaway copy made in the usual scratch area, which is exactly where the reproducibility harness makes its copies. It had also been contaminating a separate record of intermittent failures sitting beside it, because 6 of the 8 recorded runs are such copies.
+
+And a test written to prove a rule was asymmetric left a deliberately broken version of that rule alive. It covered 3 of the 4 cases in the table, and the missing case was the one the broken version changed. Three quarters of a decision table is not a decision table.
+
+## The Intermittent Failure Finally Reproduced, And The Harness Threw The Evidence Away
+
+The intermittent test failure that has been recorded as observed rather than diagnosed for several days occurred again, in a throwaway copy, for the first time since extra diagnostic information was added to it for exactly that purpose.
+
+The harness that ran it reported which test had failed and nothing else. The diagnostic information built to be read from a log could not be read from the log. That, and not the unavailability of the information, is why the entry has said observed rather than diagnosed across 8 runs. The harness now keeps the full output and says where it put it.
+
+The rate is 3 failures in 8 full-size runs, 37.5 percent, with a 95 percent Wilson interval running from 13.6844 to 69.4258 percent. Both models made the same point without being asked twice: an interval spanning a factor of 5 describes 8 runs rather than establishing a rate, and acting on it means collecting more runs rather than reasoning harder about the 8.
+
 ## Two Things Recorded Honestly Rather Than Closed
 
-A test in the suite has now failed twice in 5 full-size runs, both times in a fresh copy of the repository, and passes in the maintainer's copy, in isolation, and in a partial run. Reading the source produced no mechanism, and inventing one would be exactly the habit this project exists to avoid. Its failure message now prints the internal state a diagnosis would need, so the next occurrence explains itself. A full run is under way to try to catch it.
+A test in the suite has now failed 3 times in 8 full-size runs, every time in a fresh copy of the repository, and passes in the maintainer's copy, in isolation, and in a partial run. Reading the source produced no mechanism, and inventing one would be exactly the habit this project exists to avoid. It reproduced this afternoon, and the harness discarded the diagnostic information rather than recording it; that is fixed, so the next occurrence will explain itself. The earlier figure in this report, 2 failures in 5 runs, was itself undercounted: the audit that produced it searched for failure lines anchored to the start of a line, and the archived logs are indented, so 2 real failures read as none.
 
-The Wolfram licence observation, which was deliberately deferred to today, was made at 09:37. The licence file has not been rewritten and the expiry date has not moved: it is today. The engine still computes correctly, verified on 2 known results that match independent tools exactly. So nothing is broken, and the founder's reading, that renewal happens close to the expiry date, is not contradicted at 09:37 on that date. The question becomes real only if the date has still not moved once today has passed.
+The Wolfram licence observation, which was deliberately deferred to today, was made at 09:37 and repeated at 11:09 with the same result. The licence file has not been rewritten and the expiry date has not moved: it is today. The engine still computes correctly, verified on 2 known results that match independent tools exactly. So nothing is broken, and the founder's reading, that renewal happens close to the expiry date, is not contradicted at 09:37 on that date. The question becomes real only if the date has still not moved once today has passed.
 
 ## The State Of The Work List
 
