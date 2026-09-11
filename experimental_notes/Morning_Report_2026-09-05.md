@@ -213,7 +213,7 @@ Still enabled in **0** shipped configs, deliberately: switching either on change
 
 **Q2, are the 4 irreducible? No — and worse.** Hypothesis that they were already tool-settled (status is tool-only; `CONFIRMED` ≡ "a falsifier fired") was **refuted twice**: the enforcement making tool-only statuses unfakeable landed **2026-08-23** (`b312b84`) and all 4 runs predate it; and **0 of 4 carry any `falsifier_code`**. Their status came from model verdicts — CC2 CONFIRM, DeepSeek CONFIRM, Codex/ChatGPT CONFIRM. **Confirmation by model vote, which the project forbids.**
 
-**Wider:** **118 of 864** archived findings with a tool-only status have no falsifier code — **13.66%**, Wilson [11.53%, 16.11%] (CONFIRMED 65, CLOSED 28, REFUTED 13, MERGED 12; MERGED legitimately needs none → ~106 concerning). All pre-2026-08-23.
+**Wider:** **118 of 864** archived findings with a tool-only status have no falsifier code — **13.66%**, Wilson [11.53%, 16.11%] (CONFIRMED 65, CLOSED 28, REFUTED 13, MERGED 12; MERGED legitimately needs none → ~106 concerning). Produced by `scripts/measure_toolonly_status_without_falsifier.py`, named here 2026-09-11 because it was not named anywhere: the script was committed and the figure travelled without it, which is the defect `measured-rate-travels-with-its-script` exists to stop, and the script's own docstring records this as the fourth repeat. All pre-2026-08-23.
 
 ## Items 4, 5 and line 13
 

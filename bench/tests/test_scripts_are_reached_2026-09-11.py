@@ -141,6 +141,71 @@ class TestTheExclusionListCannotHide:
                 f"listing it only removes whatever REAL references it holds. "
                 f"That is how this script came to report itself unreached.")
 
+    def test_the_diagnostic_file_cannot_vouch_for_anything(self, mod):
+        """A file whose job is to NAME orphans is never evidence about them.
+
+        Line-wise was not enough for this one. The module docstring explains why
+        `priority_starvation_simulation.py` cannot be wired, and writing that
+        sentence made the script read as REACHED -- a prose mention is not a
+        roll-call line. So the diagnostic module is excluded WHOLLY, which is
+        safe here and nowhere else: it calls none of the scripts it measures, so
+        it holds no real reference to lose.
+        """
+        assert mod.DIAGNOSTIC, "the diagnostic exclusion has been removed"
+        for rel in mod.DIAGNOSTIC:
+            body = (mod.REPO / rel).read_text(encoding="utf-8", errors="replace")
+            named = [u for u in mod.UNREACHED if u in body]
+            assert named, (
+                f"{rel} names 0 unreached scripts, so excluding it wholly "
+                f"protects nothing and only risks hiding a real caller")
+        assert set(mod.UNREACHED) <= set(mod.unreached()), (
+            "a script this file merely writes ABOUT is being counted as reached")
+
+    def test_an_instrument_may_still_vouch_for_an_instrument(self, mod):
+        """The failure the FIRST fix caused, pinned alongside the one it cured.
+
+        The rule is asymmetric on purpose. An instrument file cannot vouch for a
+        script it merely writes about, because prose is not a caller. It CAN
+        vouch for another instrument file, because this test genuinely runs the
+        module -- and deleting that reference is exactly what made the module
+        report itself unreached on the first attempt.
+        """
+        me = "bench/tests/test_scripts_are_reached_2026-09-11.py"
+        assert me in mod.INSTRUMENT, "the test is no longer treated as instrument"
+        assert "scripts/scripts_are_reached_2026-09-11.py" in mod.INSTRUMENT
+        assert "scripts/scripts_are_reached_2026-09-11.py" not in set(mod.unreached()), (
+            "the module reports ITSELF unreached: the instrument rule has "
+            "stopped letting this test vouch for the script it runs")
+
+    def test_the_vouching_rule_is_asymmetric(self, mod):
+        """CALL THE PREDICATE. Mutating the rule to its symmetric form left all
+        13 tests green, because `CDSFL_OUTCOMES_LOG.md` happens to name this
+        module -- so the test meant to prove the asymmetry was passing for an
+        unrelated reason. Asserting on the live corpus could not see it; calling
+        `vouches` with the 4 cases can."""
+        instrument_script = "scripts/scripts_are_reached_2026-09-11.py"
+        instrument_test = "bench/tests/test_scripts_are_reached_2026-09-11.py"
+        orphan = mod.UNREACHED[0]
+        assert not mod.vouches(instrument_script, orphan), (
+            "an instrument file vouches for a script it merely writes about")
+        assert mod.vouches(instrument_test, instrument_script), (
+            "the test can no longer vouch for the module it runs; that is what "
+            "made the module report itself unreached the first time")
+        assert mod.vouches("experimental_notes/Ordinary_Note.md", orphan), (
+            "an ordinary document can no longer cite a producer at all")
+        assert not mod.vouches(orphan, orphan), "a file vouches for itself"
+
+    def test_prose_in_this_very_file_does_not_reach(self, mod):
+        """ANTI-VACUITY, and self-referential on purpose: the docstring above
+        NAMES an unreached script, which is how the defect happened the 4th
+        time. If naming it here were enough to reach it, this assertion fails.
+
+        scripts/priority_starvation_simulation.py
+        """
+        assert "scripts/priority_starvation_simulation.py" in set(mod.unreached()), (
+            "writing a script's name into a test docstring made it read as "
+            "reached; prose is being counted as a caller again")
+
     def test_a_non_roll_call_mention_still_counts_as_reaching(self, mod):
         """The test file names this script on a line that is not a bare path.
         If that stopped counting, the instrument would orphan itself."""

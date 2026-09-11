@@ -134,24 +134,26 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 
 *Parked 2026-09-11T09:18:20+01:00.*
 
-## 8 committed scripts are reached by nothing at all: wire or retire is your ruling
+## 6 committed scripts are reached by nothing at all: wire or retire is your ruling
 
 *Parked 2026-09-11T10:18:10+01:00.*
 
 The additive standard's own symmetric half says an addition that nothing reaches is not additive. `test_additive_standard_2026-09-07.py` ratchets config fields nothing READS; scripts had no equivalent, and this project's record holds 11 confirmed defects that were additions doing nothing.
 
-**Measured: 111 of 119 scripts are reached, 93.2773%, Wilson [87.2935%, 96.5544%], Clopper-Pearson [87.1830%, 97.0531%].** Producer: `scripts/scripts_are_reached_2026-09-11.py`.
+**Measured 2026-09-11: 114 of 120 scripts are reached, 95.0000%, Wilson [89.5197%, 97.6886%], Clopper-Pearson [89.4346%, 98.1432%]**, both intervals cross-checked by 2 tools. Producer: `scripts/scripts_are_reached_2026-09-11.py`.
+
+**2 OF THE ORIGINAL 8 CAME OFF THE LIST THE SAME DAY, AND THEY NEEDED NO RULING.** Their figures had simply travelled without them, which is a defect with a fix rather than a disposition awaiting a decision. `measure_toolonly_status_without_falsifier.py` produced "118 of 864 archived findings with a tool-only status have no falsifier code, 13.66%, Wilson [11.53%, 16.11%]", quoted in the 2026-09-05 morning report and in `resources/RECOVERY.md` with no producer named anywhere; its own docstring calls that the fourth repeat of the same omission. `v2_vs_v3_runner_2026-09-10.py` produced the 153-definition comparison quoted in task 8.2 and carries `measured-rate-travels-with-its-script` in its docstring while nothing outside an archival panel record named it. Naming the producer discharges your ruling and wires the script in the same act.
+
+**The other 6 were checked the same way and cannot be wired by citation, so they are still yours to rule on.** Two carry no figure at all. For the rest the apparent matches were an extractor artefact: `3660816` in `priority_starvation_simulation.py` is a COMMIT HASH rather than a measurement, and short tokens matched dates. Wiring on any of those would have been an addition made to move a number, and an addition nothing reaches is exactly what this ratchet exists to detect.
 
 **Reached means 3 things and a script can be legitimate with no caller at all:** something calls it; a note cites it as a figure's producer, which `measured-rate-travels-with-its-script` requires; or a canonical document names it as a command to run. The 8 below satisfy none of the 3.
 
     scripts/inventory_2026_09_06.py
     scripts/measure_round_zero_irreducible_escalations.py
-    scripts/measure_toolonly_status_without_falsifier.py
     scripts/priority_starvation_simulation.py
     scripts/quarantine_to_candidate.py
     scripts/readjudicate_pairs.py
     scripts/scope_remaining_adjudication_and_materiality.py
-    scripts/v2_vs_v3_runner_2026-09-10.py
 
 **NOTHING WAS DELETED, and that is deliberate.** The additive standard's removal clause requires a committed measurement showing a replacement dominates on a named property, and no such measurement exists for any of these. Deleting a measurement script also risks breaking `measured-rate-travels-with-its-script` for a figure quoted somewhere the scan cannot see. The disposition is yours, exactly as it was for `update_drift` under I31: wire it, or retire it with an explicit entry.
 
