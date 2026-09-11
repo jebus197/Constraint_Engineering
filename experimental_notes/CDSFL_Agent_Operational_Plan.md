@@ -61,6 +61,16 @@ scheduled, not open: nothing here needs a further decision, only execution at th
 
 ---
 
+**★ RESUME POINTER (2026-09-11 13:13 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `1147f63`, main, **123 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 10:37 with `--record-restore`, **exit code 0**, after a compaction at 09:26.
+
+**WHERE TO PICK UP.** Nothing on the task list is waiting on work. 81 of 92 done; the 2 OPEN entries (A8, A19) are rulings, and 4 more are blocked on the founder. 0.1 was observed twice today, 09:37 and 11:09, and is DEFERRED until the day has passed rather than open. Exp 56 stays deferred until the rest of the list is closed, which means until he rules.
+
+**WHAT CHANGED THIS AFTERNOON, in 1 line each.** A suite run in a clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md` and the guard written for it failed OPEN under `sudo` until panel round 15 found it; the verbatim-region check was order-blind and let a seat's words be counted as the note's own; the false-zero defect class now has a mechanical form-invariance probe rather than a 16th individual fix; and the clone harness was discarding the diagnostics it had been extended to capture, which is why I38 read OBSERVED across 8 runs.
+
+**1 CHANGE OUTSIDE THE REPOSITORY.** `~/Desktop/.cdsfl_canonical_checkout` now names this checkout as the only one allowed to write the Desktop mirrors. Deleting it restores the previous behaviour exactly.
+
+**Panel round 15** dispatched free-seat only (`PANEL_ONLY=cc2,fable`), **0 paid dispatches**; record at `experimental_notes/Panel_Round15_FULL_RECORD_2026-09-11.md`, evidence mirrored 79 of 79.
+
 **★ RESUME POINTER (2026-09-11 09:15 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `d33647d`, main, **90 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 06:54 and again at 08:29 with `--record-restore`, **exit code 0** both times, after a compaction at 05:10; `rg` ran at 08:43 on the founder's instruction and is recorded below.
 
 **THE TASK LIST IS AT 81 DONE OF 92, 2 OPEN**, and both open items are his: **A8** (20 of 23 now resolved by execution — what remains is whether to re-point 20 citations, and the recommendation is to leave them) and **A19** (the `sk_score_prose_listings` flag, built, tested, default OFF).
