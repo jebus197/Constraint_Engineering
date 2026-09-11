@@ -149,6 +149,20 @@ The permanent check is deliberately a static one, and the reason is worth statin
 
 And the check written to catch this had the defect it was written to catch. Its first version asked whether the name of the help function appeared anywhere in the script's text, so deleting the real call left it satisfied, because the explanatory comment beside the call still contained the name. A guard reading its own comment about a function as evidence that the function is called. It now asks the parsed program whether the function is actually called.
 
+## Half The Orphaned Scripts Did Not Need A Ruling After All
+
+Six committed scripts were reaching nothing at all, and the question of whether to keep or remove them was parked for you. On a closer look, only half of that question is yours.
+
+The project's standard has two halves. Removing something requires a measurement showing that a replacement is better, and that is a decision for you. The other half says an addition nothing reaches is not an addition either, and that one is discharged simply by giving a script a caller. A test that runs it is exactly such a caller.
+
+So three of the six are now wired, and the choice of which three was measured rather than assumed. A structural scan of all six found that three contain no write, no spawned process and no absolute path, so running them cannot change anything. All three still work, which is worth knowing whichever way you rule: a committed measurement that no longer runs is a defect regardless of whether it is kept.
+
+The third of those three was added only after asking which processes the "spawners" actually run. One of them spawns nothing but two read-only version-control queries. Classifying it by the shape of the call rather than by what the call does was a coarser version of the same mistake found repeatedly today.
+
+Three remain parked and unrun, and the reason is now specific rather than general. Two write files outright. The third runs another script with a "change nothing" flag, and that other script carries ten separate writes, so its safety depends on a different program honouring a flag. That is a reasonable bet and not one worth taking against a preserved archive, which is exactly what the standing instruction exists to protect after someone already lost one.
+
+And naming those three in the new test's own explanation un-orphaned one of them within a minute, because writing a script's path into a tracked file is all it takes for the reachability scan to count it as reached. That is the fifth time in a day that prose about an orphan stopped it being one. They are no longer named there; the list lives in the parked file, and the check reads it from the ratchet rather than repeating it.
+
 ## Two Things Recorded Honestly Rather Than Closed
 
 A test in the suite has now failed 3 times in 8 full-size runs, every time in a fresh copy of the repository, and passes in the maintainer's copy, in isolation, and in a partial run. Reading the source produced no mechanism, and inventing one would be exactly the habit this project exists to avoid. It reproduced this afternoon, and the harness discarded the diagnostic information rather than recording it; that is fixed, so the next occurrence will explain itself. The earlier figure in this report, 2 failures in 5 runs, was itself undercounted: the audit that produced it searched for failure lines anchored to the start of a line, and the archived logs are indented, so 2 real failures read as none.
