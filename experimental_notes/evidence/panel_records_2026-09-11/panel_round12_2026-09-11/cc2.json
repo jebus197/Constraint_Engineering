@@ -1,0 +1,367 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 19394,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -5 && git status --porcelain | head -30\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -E \\\"2026-09-1|overstated|archived_falsifier|ruled_items\\\" \", \"description\": \"List recent scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/overstated_entries_2026-09-11.py scripts/archived_falsifier_rejections_2026-09-10.py scripts/ruled_items_are_accounted_2026-09-11.py scripts/escalation_paths_2026-09-11.py scripts/source_text_fragility_2026-09-11.py scripts/measurement_scripts_only_2026-09-11.py scripts/config_fields_are_read_2026-09-11.py\", \"description\": \"Size the relevant scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/overstated_entries_2026-09-11.py 2>&1 | tail -60\", \"description\": \"Run V2 instrument\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/overstated_entries_2026-09-11.py 2>&1 | tail -70\", \"description\": \"Run V2 instrument\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__q156qdl/repo/scripts/overstated_entries_2026-09-11.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git ls-files --error-unmatch bench/tests/test_escalation_paths_2026-09-11.py; echo \\\"rc=$?\\\"; ls -la bench/tests/test_escalation_paths_2026-09-11.py 2>&1 | head -2\", \"description\": \"Confirm git absence drives tracked()\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/archived_falsifier_rejections_2026-09-10.py 2>&1 | tail -20 && echo \\\"=====RULED=====\\\" && python3 scripts/ruled_items_are_accounted_2026-09-11.py 2>&1 | tail -20\", \"description\": \"Run two declared figure scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -ln '\\\"git\\\"' scripts/*.py bench/tests/*.py 2>/dev/null | head -40; echo \\\"--- count:\\\"; grep -ln '\\\"git\\\"' scripts/*.py bench/tests/*.py 2>/dev/null | wc -l; echo \\\"--- which check returncode/rev-parse guard:\\\"; grep -l 'rev-parse\\\\|is_git\\\\|not a git repo' scripts/*.py bench/tests/*.py 2>/dev/null\", \"description\": \"Find git-dependent scripts and guards\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__q156qdl/repo/scripts/escalation_paths_2026-09-11.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/escalation_paths_2026-09-11.py 2>&1 | tail -30\", \"description\": \"Run A7\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | wc -l; ls bench/logs | head -5; python3 -c \\\"\\nimport json,pathlib\\np=pathlib.Path('bench/logs/exp55_v3_control_'+'')\\nimport glob\\nprint([d for d in sorted(__import__('os').listdir('bench/logs')) if 'exp55' in d])\\n\\\"\", \"description\": \"Inspect logs dirs\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__q156qdl/repo/scripts/a7_predicate_is_underdetermined_2026-09-11.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"A7 attack: the family figure `exp55_v3_control = 8` does not pick out ONE predicate.\\n\\nA7 chose `severity >= 0.7 AND hil_escalated AND no falsifier_code` and defended the\\nchoice on the ground that it \\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"printf '#t\\\\n' > scripts/_wtest.py && echo \\\"scripts OK\\\" && rm scripts/_wtest.py; printf '#t\\\\n' > bench/tests/_wtest.py && echo \\\"bench/tests OK\\\" && rm bench/tests/_wtest.py; ls -ld . scripts bench/tests\", \"description\": \"Test writability of target dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/a7_predicate_is_underdetermined_2026-09-11.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A7 attack: the family figure `exp55_v3_control = 8` does not pick out ONE predicate.\\n\\nA7 chose `severity >= 0.7 AND hil_escalated AND no falsifier_code` and defended the\\nchoice on the ground that it \\\"reproduces the entry's OTHER family figure exactly,\\n`exp55_v3_control` = 8, so i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which git; git --version; echo \\\"---\\\"; grep -n 'subprocess.run(\\\\[\\\"git\\\"' scripts/done_evidence_commit_coverage_2026-09-11.py scripts/orphan_figures_2026-09-10.py scripts/task_list_entry_count_2026-09-10.py scripts/neighbour_catches_it_2026-09-11.py scripts/source_text_fragility_2026-09-11.py 2>/dev/null\", \"description\": \"Check git binary and sibling scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B3 -A12 'def .*git\\\\|ls-files\\\\|returncode' scripts/done_evidence_commit_coverage_2026-09-11.py | head -60\", \"description\": \"Inspect V7 git usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '35,60p;110,163p' scripts/source_text_fragility_2026-09-11.py\", \"description\": \"Read A6 mutation harness git usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B4 -A18 'porcelain' scripts/measurement_scripts_only_2026-09-11.py\", \"description\": \"Read A16 wrote-nothing check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'porcelain' bench/tests/test_measurement_survey_is_safe_2026-09-11.py scripts/measurement_scripts_only_2026-09-11.py 2>/dev/null; echo \\\"--- A16 script head:\\\"; sed -n '1,60p' scripts/measurement_scripts_only_2026-09-11.py\", \"description\": \"Locate A16 wrote-nothing check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '95,135p' bench/tests/test_measurement_survey_is_safe_2026-09-11.py\", \"description\": \"Read A16 test before/after check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,45p' bench/tests/test_measurement_survey_is_safe_2026-09-11.py\", \"description\": \"Read A16 test header\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport subprocess, pathlib, os\\nROOT = pathlib.Path(\\\".\\\").resolve()\\ndef porc():\\n    r = subprocess.run([\\\"git\\\",\\\"status\\\",\\\"--porcelain\\\"],cwd=ROOT,capture_output=True,text=True)\\n    return r.returncode, repr(r.stdout)\\nprint(\\\"before:\\\", porc())\\n# simulate the survey writing a file into the tree\\np = ROOT / \\\"logs\\\" / \\\"_vacuity_demo.txt\\\"\\np.parent.mkdir(ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport os, time, pathlib\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nEXC = {\\\".git\\\", \\\"__pycache__\\\", \\\".pytest_cache\\\", \\\".mypy_cache\\\", \\\".venv\\\", \\\"node_modules\\\"}\\nt=time.time(); n=0; man={}\\nfor dp, dns, fns in os.walk(ROOT):\\n    dns[:] = [d for d in dns if d not in EXC]\\n    for f in fns:\\n        if f.endswith((\\\".pyc\\\",\\\".pyo\\\")) or f == \\\".DS_Store\\\": continu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/git_probe.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A git query that cannot be mistaken for an answer.\\n\\nWHY THIS EXISTS. `git status --porcelain` outside a work tree exits 128 and prints\\nNOTHING ON STDOUT. Code that reads only `.stdout` therefore receives the exact\\nbyte string that means \\\"the tree is clean\\\". Three guards in this repository were\\nbuilt that way, "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport os, pathlib, sys, collections\\nsys.path.insert(0,\\\"scripts\\\")\\nimport git_probe as gp\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nnew = set(gp.tree_manifest(ROOT))\\nEXC = {\\\".git\\\",\\\"__pycache__\\\",\\\".pytest_cache\\\",\\\".mypy_cache\\\",\\\".venv\\\",\\\"node_modules\\\"}\\nold=set()\\nfor dp,dns,fns in os.walk(ROOT):\\n    dns[:] = [d for d in dns if d not in EXC]\\n    for f in "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport os, pathlib, sys\\nsys.path.insert(0,\\\"scripts\\\"); import git_probe as gp\\nROOT=pathlib.Path(\\\".\\\").resolve(); new=set(gp.tree_manifest(ROOT))\\nEXC={\\\".git\\\",\\\"__pycache__\\\",\\\".pytest_cache\\\",\\\".mypy_cache\\\",\\\".venv\\\",\\\"node_modules\\\"}\\nold=set()\\nfor dp,dns,fns in os.walk(ROOT):\\n    dns[:]=[d for d in dns if d not in EXC]\\n    for f in fns:\\n        if f.en"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la \\\"bench/logs/exp36_evidence_20260407T004931Z/exp36_evidence_20260407T004931Z\\\"; python3 -c \\\"\\nimport os;p='bench/logs/exp36_evidence_20260407T004931Z/exp36_evidence_20260407T004931Z'\\nprint('islink',os.path.islink(p),'exists',os.path.exists(p),'lstat ok',bool(os.lstat(p)))\\\"\", \"description\": \"Confirm dangling symlink\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__q156qdl/repo/scripts/git_probe.py\", \"old_string\": \"    Coarser than `git status` -- it has no gitignore -- but it is the fallback\\n    that keeps a \\\"nothing was written\\\" claim falsifiable when git cannot answer.\\n    It notices writes to ignored paths too, which `git status` does not.\\n    "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/git_probe.py\\\"); s = p.read_text()\\nold = \\\"\\\"\\\"    It notices writes to ignored paths too, which `git status` does not.\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    It notices writes to ignored paths too, which `git status` does not.\\n\\n    USES `lstat`, NOT `stat`, AND THE FIRST VERSION USED `stat`. Reconciling this\\n    f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/overstated_entries_2026-09-11.py\\\"); s = p.read_text()\\n\\ns = s.replace(\\n\\\"\\\"\\\"import task_list_markers as tlm  # noqa: E402\\\"\\\"\\\",\\n\\\"\\\"\\\"import git_probe  # noqa: E402\\nimport task_list_markers as tlm  # noqa: E402\\\"\\\"\\\", 1)\\n\\nold = '''def tracked(path: str) -> bool:\\n    r = subprocess.run([\\\"git\\\", \\\"ls-files\\\", \\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_measurement_survey_is_safe_2026-09-11.py\\\"); s = p.read_text()\\n\\ns = s.replace(\\\"\\\"\\\"ROOT = pathlib.Path(__file__).resolve().parents[2]\\\"\\\"\\\",\\n\\\"\\\"\\\"ROOT = pathlib.Path(__file__).resolve().parents[2]\\nsys.path.insert(0, str(ROOT / \\\"scripts\\\"))\\nimport git_probe  # noqa: E402\\\"\\\"\\\", 1)\\n\\nold = '''        befo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'tree_is_clean' scripts/source_text_fragility_2026-09-11.py scripts/neighbour_catches_it_2026-09-11.py; echo \\\"---\\\"; grep -n -A8 'if not tree_is_clean' scripts/source_text_fragility_2026-09-11.py scripts/neighbour_catches_it_2026-09-11.py\", \"description\": \"Check tree_is_clean usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/source_text_fragility_2026-09-11.py\\\"); s = p.read_text()\\ns = s.replace(\\\"\\\"\\\"REPO = pathlib.Path(__file__).resolve().parents[1]\\\"\\\"\\\",\\n\\\"\\\"\\\"REPO = pathlib.Path(__file__).resolve().parents[1]\\nsys.path.insert(0, str(REPO / \\\"scripts\\\"))\\nimport git_probe  # noqa: E402\\\"\\\"\\\", 1)\\n\\nold = '''def tree_is_clean() -> bool:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py << 'PYEOF'\\n\\\"\\\"\\\"A guard that cannot fail is not a guard.\\n\\nWHAT THIS PINS. `git status --porcelain` and `git ls-files --error-unmatch` both\\nfail outside a git work tree -- and porcelain's failure prints NOTHING ON STDOUT,\\nwhich is byte-for-byte what \\\"the tree is clean\\\" looks like. Three checks in this\\nreposi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py 2>&1 | grep -E \\\"^(FAILED|ERROR|[0-9]+ (passed|failed)|=)|passed|failed\\\" | tail -8\", \"description\": \"Run the test, filter warnings\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\ncp scripts/git_probe.py /tmp/gp.bak\\ncp scripts/overstated_entries_2026-09-11.py /tmp/v2.bak\\ncp bench/tests/test_measurement_survey_is_safe_2026-09-11.py /tmp/a16.bak\\nT=bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py\\n\\necho \\\"############ BREAK 1: porcelain returns stdout unconditionally (the original bug)\\\"\\npython3 - << 'EOF'\\nimport pathlib\\np=pathlib.Pat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_measurement_survey_is_safe_2026-09-11.py --collect-only 2>&1 | grep -E \\\"tests collected|error\\\" | tail -3\\npython3 -m pytest -q -p no:cacheprovider bench/tests/test_measurement_survey_is_safe_2026-09-11.py -k \\\"not running_the_measurement and not consumes_the_flag\\\" 2>&1 | grep -E \\\"passed|failed\\\" | tail -2\\npython3 -m pytest"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport sys, pathlib, re\\nsys.path.insert(0,'scripts')\\nimport task_list_markers as tlm\\nLIST = pathlib.Path(\\\"experimental_notes/CDSFL_MASTER_TASK_LIST.md\\\")\\nlines = LIST.read_text().splitlines()\\nes = sorted(tlm.parse_entries(LIST), key=lambda e: e.line_no)\\nby={e.ident:(k,e) for k,e in enumerate(es)}\\nfor ident in [\\\"6.7\\\",\\\"6.4\\\",\\\"7.2\\\",\\\"6.3\\\"]:\\n    k,e = by"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== 6.7: does ImmuneMemory have has_evidence, and do 0 attrs contain the word? ===\\\"\\ngrep -rn \\\"has_evidence\\\" bench/ --include=*.py | head -20\\necho \\\"--- ImmuneMemory location:\\\"\\ngrep -rn \\\"class ImmuneMemory\\\" bench/ --include=*.py\\necho \\\"--- 'evidence' in ImmuneMemory attribute names:\\\"\\npython3 - << 'EOF'\\nimport re,pathlib\\nfor p in pathlib.Path(\\\"bench\\\").rglob(\\\"*.py"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== 6.4: repo_paths predicate and the 2 newly-wired sites ===\\\"\\nls -l bench/repo_paths.py 2>&1 | head -2\\ngrep -rn \\\"repo_paths\\\" bench/tests/test_panel_sandbox_2026-09-07.py bench/tests/test_immune_memory_evaluation.py 2>&1 | head\\necho \\\"--- how many checkers call it:\\\"\\ngrep -rln \\\"repo_paths\\\" bench/ scripts/ --include=*.py | head -20\\necho \\\"--- residual bare substring te"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '100,135p' bench/tests/test_config_aliases_survive_both_paths.py; echo \\\"=== docstring/purpose:\\\"; sed -n '105,122p' bench/tests/test_config_aliases_survive_both_paths.py | head -3; echo \\\"=== does repo_paths get imported here?\\\"; grep -c repo_paths bench/tests/test_config_aliases_survive_both_paths.py; echo \\\"=== quarantine dir exists?\\\"; ls -d bench/logs_quarantine bench/resu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport sys, pathlib, json\\nREPO = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(REPO))\\nfrom bench.repo_paths import is_archived_run_output as arc\\nALIASES = None\\n# read the alias list from the test itself rather than retyping it\\nsrc = (REPO/\\\"bench/tests/test_config_aliases_survive_both_paths.py\\\").read_text()\\nimport re, ast\\nm = re.search(r\\\"^ALIASES\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"ALIASES\\\" bench/tests/test_config_aliases_survive_both_paths.py | head -5; grep -n -A12 \\\"ALIASES =\\\" bench/tests/test_config_aliases_survive_both_paths.py | head -18\", \"description\": \"Locate ALIASES\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport sys, pathlib, json, importlib.util, collections\\nREPO = pathlib.Path(\\\".\\\").resolve(); sys.path.insert(0, str(REPO))\\nfrom bench.repo_paths import is_archived_run_output as arc\\nspec=importlib.util.spec_from_file_location(\\\"t\\\", REPO/\\\"bench/tests/test_config_aliases_survive_both_paths.py\\\")\\nt=importlib.util.module_from_spec(spec); spec.loader.exec_module(t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -A30 \\\"def is_archived_run_output\\\" bench/repo_paths.py | head -45\", \"description\": \"Read the predicate's contract\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B8 -A6 \\\"is_archived_run_output\\\" bench/tests/test_panel_sandbox_2026-09-07.py | head -50\", \"description\": \"Check site 1 call form\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B8 -A6 \\\"is_archived_run_output\\\" bench/tests/test_immune_memory_evaluation.py | head -50\", \"description\": \"Check site 2 call form\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport sys, pathlib, json, collections\\nREPO = pathlib.Path(\\\".\\\").resolve(); sys.path.insert(0,str(REPO))\\nfrom bench.repo_paths import is_archived_run_output as arc, ARCHIVE_ROOTS\\nprint(\\\"ARCHIVE_ROOTS:\\\", list(ARCHIVE_ROOTS))\\nbare=set(); comp=set(); tot=0\\nfor p in (REPO/\\\"bench\\\").rglob(\\\"*.json\\\"):\\n    tot+=1; rel=p.relative_to(REPO)\\n    if \\\"/logs/\\\" not "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport sys, pathlib, json\\nREPO=pathlib.Path(\\\".\\\").resolve(); sys.path.insert(0,str(REPO))\\nfrom bench.repo_paths import is_archived_run_output as arc\\nALIAS=\\\"take_up_slack_enabled\\\"\\nbare_users=[]; comp_users=[]\\nfor p in (REPO/\\\"bench\\\").rglob(\\\"*.json\\\"):\\n    rel=p.relative_to(REPO)\\n    try: d=json.loads(p.read_text())\\n    except Exception: continue\\n    if"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"is_archived_run_output\\\\|is_production_source\\\" --include=\\\"*.py\\\" bench scripts hooks 2>/dev/null | grep -v \\\"^bench/repo_paths.py\\\" | grep -v \\\"bench/logs/\\\"\", \"description\": \"Enumerate all predicate callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,55p' bench/repo_paths.py\", \"description\": \"Read repo_paths head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '52,75p' bench/tests/test_derived_docs_match_their_generators_2026-09-01.py; echo \\\"=== and line 169 context:\\\"; sed -n '163,172p' bench/tests/test_derived_docs_match_their_generators_2026-09-01.py\", \"description\": \"Read the known absolute-path comment\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/git_stdout_without_a_returncode_check_2026-09-11.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"How many checks read git's STDOUT without ever asking whether git RAN?\\n\\nTHE FAILURE THIS COUNTS. `git status --porcelain` outside a work tree exits 128\\nand prints nothing; `git ls-files` exits 128 and prints nothing; `git log` the\\nsame. Empty stdout is also exactly what SUCC"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/git_stdout_without_a_returncode_check_2026-09-11.py\\\"); s=p.read_text()\\nold = '''    print(\\\"\\\\\\\\nTHE CLASSIFIER OVER-REPORTS BY CONSTRUCTION'''\\nnew = '''    # ------------------------------------------------------------------\\n    # THE NARROWING THAT MATTERS, because the wide figure is not a defect count.\\n    # A `git"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for spec in \\\"bench/tests/test_derived_docs_match_their_generators_2026-09-01.py 160 178\\\" \\\"bench/tests/test_line_citations_resolve_2026-09-01.py 94 112\\\" \\\"bench/tests/test_lint_reach_over_notes_2026-09-10.py 115 132\\\"; do\\n  set -- $spec; echo \\\"################ $1 : $2-$3\\\"; sed -n \\\"$2,$3p\\\" \\\"$1\\\"\\ndone\\necho \\\"################ module-level skip guards present?\\\"\\nfor f in bench"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"### derived_docs 160-176\\\"; sed -n '160,176p' bench/tests/test_derived_docs_match_their_generators_2026-09-01.py\\necho \\\"### line_citations 94,112\\\"; sed -n '94,112p' bench/tests/test_line_citations_resolve_2026-09-01.py\\necho \\\"### lint_reach 115,132\\\"; sed -n '115,132p' bench/tests/test_lint_reach_over_notes_2026-09-10.py\", \"description\": \"Read candidate contexts batch 1 fixe"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"### task_list_entry_count 85,100\\\"; sed -n '85,100p' bench/tests/test_task_list_entry_count_2026-09-10.py\\necho \\\"### task_list_entry_count 120,142\\\"; sed -n '120,142p' bench/tests/test_task_list_entry_count_2026-09-10.py\\necho \\\"### severs_history 98,122\\\"; sed -n '98,122p' bench/tests/test_the_sandbox_severs_history_2026-09-01.py\", \"description\": \"Read candidate contexts batc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '112,150p' bench/tests/test_line_citations_resolve_2026-09-01.py; echo \\\"=== _tracked_text_files:\\\"; grep -n -A10 \\\"def _tracked_text_files\\\" bench/tests/test_line_citations_resolve_2026-09-01.py\", \"description\": \"Check line_citations failure direction\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -A12 \\\"_docs_promising_reproduction()\\\" bench/tests/test_derived_docs_match_their_generators_2026-09-01.py | head -30\", \"description\": \"Check derived_docs consumer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '83,130p' bench/repo_paths.py\", \"description\": \"Check whether line_mentions calls the predicate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\n\\n# ---------- F3: repo_paths absolute-path fail-open ----------\\np = pathlib.Path(\\\"bench/repo_paths.py\\\"); s = p.read_text()\\nold = '''def is_archived_run_output(path: PathLike, roots: Iterable[str] = ARCHIVE_ROOTS) -> bool:\\n    \\\"\\\"\\\"True when a repo-relative path lies inside an archive root.\\n\\n    A root itself counts, so `bench/logs` is arc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_line_citations_resolve_2026-09-01.py bench/tests/test_python_floor_2026-09-07.py bench/tests/test_derived_docs_match_their_generators_2026-09-01.py 2>&1 | grep -E \\\"passed|failed|error\\\" | tail -4\", \"description\": \"Regression-check predicate callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_line_citations_resolve_2026-09-01.py bench/tests/test_python_floor_2026-09-07.py bench/tests/test_derived_docs_match_their_generators_2026-09-01.py 2>&1 | grep -E \\\"^(ERROR|E  )\\\" | head -12\", \"description\": \"Identify the 2 errors\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\n\\n# ---------- F5a: test_derived_docs :165 \\u2014 a coverage ratchet that reports full coverage when git fails\\np = pathlib.Path(\\\"bench/tests/test_derived_docs_match_their_generators_2026-09-01.py\\\"); s = p.read_text()\\nold = '''    def _docs_promising_reproduction(self):\\n        out = subprocess.run([\\\"git\\\", \\\"ls-files\\\", \\\"*.md\\\"], cwd=str(RE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_derived_docs_match_their_generators_2026-09-01.py bench/tests/test_task_list_entry_count_2026-09-10.py 2>&1 | grep -E \\\"^FAILED|^SKIPPED\\\" ; echo \\\"=== are they all git-absence failures?\\\"; python3 -m pytest -q -p no:cacheprovider bench/tests/test_task_list_entry_count_2026-09-10.py 2>&1 | grep -c \\\"not a git repository\\\"\", \"de"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/tests/test_task_list_entry_count_2026-09-10.py /tmp/tlec.fixed\\npython3 - << 'EOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_task_list_entry_count_2026-09-10.py\\\"); s=p.read_text()\\ni=s.index(\\\"    def test_the_marker_form_finds_none_at_that_revision\\\")\\nj=s.index(\\\"    def \\\", i+10)\\norig = '''    def test_the_marker_form_finds_none_at_that_revision(self, mod):\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py << 'PYEOF'\\n\\\"\\\"\\\"The archive predicate failed OPEN on an absolute path, and two guards were vacuous.\\n\\nTHREE REPAIRS, ONE FAILURE SHAPE: a check that returns the permissive answer when\\nit cannot answer at all.\\n\\n  F3  `bench/repo_paths.py::is_archived_run_output` matches repo-relative roots\\n      (`bench/lo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py\\\"); s=p.read_text()\\ntail = '''\\n\\ntry:                                        # pytest's skip signal, by any name\\n    from _pytest.outcomes import Skipped\\nexcept ImportError:                         # pragma: no cover\\n    Skipped = pytest.skip.Exception\\n'''\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py\\\"); s=p.read_text()\\nold = '''    def test_the_live_guard_scans_no_archived_config(self):\\n        mod = _load(ROOT / \\\"bench\\\" / \\\"tests\\\"\\n                    / \\\"test_config_aliases_survive_both_paths.py\\\")\\n        assert mod.ALIASES, \\\"no aliases discovered; "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_a7_anchor_does_not_identify_the_predicate_2026-09-11.py << 'PYEOF'\\n\\\"\\\"\\\"A7's total of 22 is a CHOICE of predicate, not a deduction from its anchor.\\n\\nA7 (`scripts/escalation_paths_2026-09-11.py`) reports 22 archived criticals\\nescalated with no falsifier, under `severity >= 0.7 AND hil_escalated AND no\\nfalsifier_code`, and defends that predicate in its own d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"########## MY TEST FILES\\\"\\npython3 -m pytest -q -p no:cacheprovider bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py bench/tests/test_a7_anchor_does_not_identify_the_predicate_2026-09-11.py 2>&1 | grep -E \\\"passed|failed\\\" | tail -1\\necho \\\"########## FIGURE 1 (brief header): archived falsifier "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/measurement_scripts_only_2026-09-11.py 2>&1 | grep -E \\\"^[0-9]+ of|ACTION|MEASUREMENT\\\" | head -6; echo \\\"---\\\"; python3 scripts/measurement_scripts_only_2026-09-11.py 2>&1 | grep -iE \\\"are actions|of 11|of 1[0-9][0-9]\\\" | head -4\\necho \\\"=== how are my 3 new scripts classified?\\\"\\npython3 - << 'EOF'\\nimport importlib.util, pathlib\\nspec=importlib.util.spec_from_file_l"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport importlib.util, pathlib, tempfile\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\ncases = {\\n \\\"cross-module write helper\\\": \\\"import cdsfl_utils\\\\ncdsfl_utils.persist_report('x.json', {})\\\\n\\\",\\n \\\"write via a local function\\\": \\\"def "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport importlib.util, pathlib, ast, sys\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nREPO=pathlib.Path(\\\".\\\").resolve()\\nSCRIPTS=REPO/\\\"scripts\\\"\\nlocal_mods={p.stem for p in SCRIPTS.glob(\\\"*.py\\\")} | {\\\"bench\\\",\\\"cdsfl_utils\\\",\\\"cdsfl_sv"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport importlib.util, pathlib, ast\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nREPO=pathlib.Path(\\\".\\\").resolve(); SCRIPTS=REPO/\\\"scripts\\\"\\n\\ndef find_module(name):\\n    for cand in (SCRIPTS/f\\\"{name}.py\\\", REPO/\\\"bench\\\"/f\\\"{name}.py\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name verification_chain.py -not -path \\\"*/logs/*\\\" | head; F=$(find . -name verification_chain.py -not -path \\\"*/logs/*\\\" | head -1); echo \\\"== $F\\\"; sed -n '610,630p' \\\"$F\\\"; echo \\\"=== does cdsfl_seal_logs actually construct/call it?\\\"; grep -n \\\"VerificationChain\\\\|def main\\\\|write\\\\|seal\\\" scripts/cdsfl_seal_logs.py | head -20\", \"description\": \"Verify the replace() is a fi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"argparse\\\\|add_argument\\\\|parse_args\\\\|sys.argv\\\\|def main\\\" scripts/cdsfl_seal_logs.py | head -20; echo \\\"=== is it in the survey's MEASUREMENT set?\\\"; python3 - << 'EOF'\\nimport importlib.util, pathlib\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '58,120p' scripts/measurement_scripts_only_2026-09-11.py\", \"description\": \"Read classify body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/measurement_scripts_only_2026-09-11.py\\\"); s = p.read_text()\\n\\nhelper = '''\\n#: Where a locally-imported module might live, in resolution order.\\n_LOCAL_SEARCH = (\\\"scripts\\\", \\\"bench\\\", \\\"bench/dm\\\", \\\".\\\")\\n\\n\\ndef _local_module(name: str) -> \\\"pathlib.Path | None\\\":\\n    \\\"\\\"\\\"The file defining a locally-imported mod"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport importlib.util, pathlib\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nprint(\\\"cdsfl_seal_logs.py ->\\\", m.classify(pathlib.Path(\\\"scripts/cdsfl_seal_logs.py\\\")))\\nprint()\\nprint(\\\"newly ACTION by cross-module resolution only:\\\")\\nimpo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== convergence_location.py:65\\\"; sed -n '60,68p' $(find . -name convergence_location.py -not -path \\\"*/logs/*\\\" | head -1); echo \\\"=== _pn in repo_paths:\\\"; grep -n \\\"_pn\\\" bench/repo_paths.py | head -5; echo \\\"=== gate in reference_runner_v3:\\\"; grep -n \\\"^def gate\\\\|^    def gate\\\\|gate =\\\" bench/reference_runner_v3.py | head -5; echo \\\"=== os.replace vs str.replace across v"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/measurement_scripts_only_2026-09-11.py\\\"); s = p.read_text()\\n\\nold = '''        for c in ast.walk(n):\\n            if not isinstance(c, ast.Call):\\n                continue\\n            nm = getattr(c.func, \\\"attr\\\", None) or getattr(c.func, \\\"id\\\", None)\\n            if nm in _WRITING_ATTRS or nm in _WRITING_FUNCS or n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'EOF'\\nimport importlib.util, pathlib\\nspec=importlib.util.spec_from_file_location(\\\"m\\\",\\\"scripts/measurement_scripts_only_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nflips=[]\\nfor p in sorted(pathlib.Path(\\\"scripts\\\").glob(\\\"*.py\\\")):\\n    k,r=m.classify(p)\\n    if k==\\\"ACTION\\\" and r and all(\\\"reaches\\\" in x for x in r): flips"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_a16_classifier_sees_across_modules_2026-09-11.py << 'PYEOF'\\n\\\"\\\"\\\"A16's survey green-lit a script whose default invocation seals log directories.\\n\\n`scripts/measurement_scripts_only_2026-09-11.py` decides which scripts the survey\\nmay execute. Its docstring states the safety rule:\\n\\n    \\\"Anything this cannot resolve is an ACTION: an unrecognised call, a dyna"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"T=bench/tests/test_a16_classifier_sees_across_modules_2026-09-11.py\\ncp scripts/measurement_scripts_only_2026-09-11.py /tmp/a16.bak2\\necho \\\"########## MUT A: remove the cross-module pass entirely (the original hole)\\\"\\npython3 -c \\\"\\nimport pathlib;p=pathlib.Path('scripts/measurement_scripts_only_2026-09-11.py');s=p.read_text()\\ns=s.replace('    reasons.extend(_cross_module_reasons(t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== ALL MY TESTS\\\"\\npython3 -m pytest -q -p no:cacheprovider \\\\\\n  bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py \\\\\\n  bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py \\\\\\n  bench/tests/test_a7_anchor_does_not_identify_the_predicate_2026-09-11.py \\\\\\n  bench/tests/test_a16_classifier_sees_across_modules_2026-09-11.py 2>&1 | grep -E \\\"passed|"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"repo_paths\\\\|git_probe\\\" bench/reference_runner_v3.py bench/dm/*.py 2>/dev/null | head; echo \\\"rc-check done\\\"; grep -rn \\\"gamma\\\" bench/reference_runner_v3.py | head -3\", \"description\": \"Check verdict-path impact\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/*.py | wc -l; ls -lt scripts/*.py | head -8 | awk '{print $6,$7,$8,$9}'\", \"description\": \"Reconcile the A16 population\"}"
+    }
+  ],
+  "n_tool_calls": 89,
+  "elapsed_s": 1774.6,
+  "response": "All work is green and verified. Writing up.\n\n---\n\n# VERDICT\n\n**V2 \u2014 `NOT READY`.** Its headline instrument fails open outside a git work tree. Run in this sandbox it reported *\"11 of 11 still fail a MECHANICAL check = 100.0000%, Wilson [74.1167%, 100.0000%]\"*; with the probe repaired the same script reads **0.0000%, Wilson [0.0000%, 25.8833%]**. The two 95% intervals are **disjoint** \u2014 the original figure was an artefact of the instrument, not a property of the entries. Fixed and tested below; the fix has not itself been panel-reviewed, which Section P requires.\n\n- **A6 \u2014 `READY WITH EXCEPTIONS`.** Its core is sound: the mutation revert is verified by *content* comparison, not by git, so it cannot silently fail to restore. One post-run guard read `git status` stdout with no returncode check and could only ever report \"clean\"; fixed. I did **not** extend I13 (Section 3.3).\n- **A7 \u2014 `READY WITH EXCEPTIONS`.** The number is right and reproduces exactly (22; ANONYMOUS 0 of 22; 0 uncovered runner sites). The *stated reason for believing it* is refuted: eight readings reproduce the `exp55_v3_control = 8` anchor and they give three different totals \u2014 **20, 22, 32**.\n- **A16 \u2014 `NOT READY`.** A material hole: the classifier green-lit `cdsfl_seal_logs.py`, whose default invocation seals log directories through `os.replace`. Fixed.\n- **A18 \u2014 `NOT ASSESSED`.** I ran it (22/69 unread, Wilson [22.0948%, 43.5841%]) but did not attack it. Treating that as a pass would be a vote, not a tool.\n\n# FILES I LEFT IN THE TREE\n\n**New**\n- `scripts/git_probe.py`\n- `scripts/git_stdout_without_a_returncode_check_2026-09-11.py`\n- `scripts/a7_predicate_is_underdetermined_2026-09-11.py`\n- `bench/tests/test_git_probe_guards_are_not_vacuous_2026-09-11.py`\n- `bench/tests/test_archive_predicate_and_vacuous_guards_2026-09-11.py`\n- `bench/tests/test_a7_anchor_does_not_identify_the_predicate_2026-09-11.py`\n- `bench/tests/test_a16_classifier_sees_across_modules_2026-09-11.py`\n- `logs/a7_predicate_sensitivity_2026-09-11.json`\n\n**Modified** \u2014 `scripts/overstated_entries_2026-09-11.py`, `scripts/source_text_fragility_2026-09-11.py`, `scripts/measurement_scripts_only_2026-09-11.py`, `bench/repo_paths.py`, `bench/tests/test_measurement_survey_is_safe_2026-09-11.py`, `bench/tests/test_config_aliases_survive_both_paths.py`, `bench/tests/test_derived_docs_match_their_generators_2026-09-01.py`, `bench/tests/test_task_list_entry_count_2026-09-10.py`\n\nNo patch of mine contains any of the three reserved operations. Nothing was removed; every change adds a capability or makes an existing check able to fail.\n\n# FINDINGS\n\n### 1. A guard that compares `git status` output to itself cannot fail, and it guards the archive-overwrite incident\n\n**SEVERITY 0.75** \u00b7 **WHERE** `bench/tests/test_measurement_survey_is_safe_2026-09-11.py:110-119` (pre-fix)\n\n**WHAT.** `git status --porcelain` outside a work tree exits 128 and prints **nothing on stdout** \u2014 byte-identical to \"the tree is clean\". The test captured `.stdout` before and after the survey and asserted `before == after`. Both sides are `''`. A staged panel sandbox carries no `.git`, so this is the ordinary environment for a reviewer. The incident this test exists for is a survey **overwriting a deliberately preserved archive**.\n\n**EVIDENCE.**\n```\n$ python3 - (porcelain before \u2192 write a file \u2192 porcelain after)\nbefore: (128, \"''\")\nafter  : (128, \"''\")\nassert before == after HOLDS despite a real write: True\n```\n\n**FIX.** `scripts/git_probe.py` (`porcelain()` returns `None`, never a misleading `''`) + `snapshot_tree`/`tree_difference` in the test: git when git can answer (founder's checkout unchanged), a filesystem manifest otherwise \u2014 so the check still runs and can still fail.\n```\ndetects the write: True {'added': ['logs/_demo_write.txt'], 'removed': [], 'changed': []}\n```\n\n**WHAT WOULD REFUTE THIS.** A demonstration that the A16 survey is only ever run inside a git work tree \u2014 i.e. that `git status` cannot fail where this test runs. I found no such precondition anywhere in the file or its runner.\n\n---\n\n### 2. V2's own headline is produced by the same fail-open, and it is a 100% vs 0% swing\n\n**SEVERITY 0.7** \u00b7 **WHERE** `scripts/overstated_entries_2026-09-11.py:68-71` (pre-fix)\n\n**WHAT.** `tracked()` returned `r.returncode == 0`. `git ls-files --error-unmatch` exits non-zero for *\"not tracked\"* **and** for *\"not a repository\"*. Outside a work tree every evidence path came back untracked, all 84 of them, and V2 reported every one of its 11 named entries as failing a mechanical check.\n\n**EVIDENCE.** Before:\n```\nof V2's 11 named entries, 11 still fail a MECHANICAL check = 100.0000%\n  Wilson 95%          : [74.1167%, 100.0000%]  (statsmodels)\n  Clopper-Pearson 95% : [71.5086%, 100.0000%]  (statsmodels/beta)\n```\nAfter:\n```\n  *** 84 evidence path(s) COULD NOT BE CHECKED: this tree has no git work tree ***\nof V2's 11 named entries, 0 still fail a MECHANICAL check = 0.0000%\n  Wilson 95%          : [0.0000%, 25.8833%]  (statsmodels)\n```\nDisjoint at 95%. In a real git checkout `tracked()` returns `True`/`False` exactly as before, so no existing behaviour moved.\n\n**FIX.** `scripts/git_probe.py::is_tracked` (tri-state) wired into `tracked()`; UNCHECKED rows are reported separately and excluded from the proportion, whose basis is now printed.\n\n**WHAT WOULD REFUTE THIS.** Running the unrepaired script in a genuine git checkout and getting a figure materially above 0 \u2014 that would mean the 11 entries really do fail and git absence merely coincided. I cannot run that here; the repaired script separates the two cases so the next reviewer can.\n\n---\n\n### 3. `is_archived_run_output` fails *open* on an absolute path, and has already cost one dead branch\n\n**SEVERITY 0.5** \u00b7 **WHERE** `bench/repo_paths.py:56` (pre-fix)\n\n**WHAT.** Every declared root is repo-relative (`bench/logs`), so an absolute path never matched one and returned `False` \u2014 *\"not archived\"*, the **permissive** answer, from the predicate whose entire job is to protect archives. `Path.rglob` yields absolute paths, so handing one over is the natural idiom. I made this exact mistake myself within minutes of reading the file.\n\n**EVIDENCE.**\n```\narc('bench/logs/x.json')      = True\narc(REPO/'bench/logs/x.json') = False\n```\nAnd the repository's own record, `bench/tests/test_derived_docs_match_their_generators_2026-09-01.py:60`: *\"`is_archived_run_output` matches declared roots like `bench/logs`, which an absolute path does not begin with \u2014 so the first version of this branch never fired and the skip was unreachable. Caught 2026-09-10 by running it in the clone rather than reading it.\"* That caller hand-rebased its own path; **the shared predicate was left unguarded**.\n\n**FIX.** `bench/repo_paths.py::_rebase_if_inside_repo` \u2014 rebases absolute paths that lie inside the repository; absolute paths *outside* stay `False`, because `line_mentions_archive_path` feeds this predicate real paths like `/usr/lib/python3/os.py` and raising would break it. Relative behaviour is byte-identical (pinned by test).\n\n**WHAT WOULD REFUTE THIS.** A caller that depends on an in-repo absolute path being classified as production source. I enumerated all 8 call sites; all pass repo-relative paths, and all 29 of their existing tests still pass.\n\n---\n\n### 4. A16's classifier green-lit a script that seals log directories\n\n**SEVERITY 0.6** \u00b7 **WHERE** `scripts/measurement_scripts_only_2026-09-11.py:58` (pre-fix)\n\n**WHAT.** The script's docstring states the safety rule: *\"Anything this cannot resolve is an ACTION: an unrecognised call, a dynamic attribute\u2026\"*. **The code did not do that** \u2014 an unrecognised call was simply not a reason, so it fell through to MEASUREMENT, the runnable set.\n\n**EVIDENCE.** Synthetic probe:\n```\n  MEASUREMENT  cross-module write helper    []\n  MEASUREMENT  unrecognised bare call       []\n  MEASUREMENT  io.open write                []\n```\nReachable in the real population: of the 57 MEASUREMENT-classed scripts, **12 call into a local module the scanner cannot see \u2014 21.0526%, Wilson [12.4745%, 33.2861%]**. Resolving them one level found a live one:\n```\ncdsfl_seal_logs.py -> ('MEASUREMENT', [])        # empty reason list\nchain: VerificationChain() reaches replace() at verification_chain.py:621\nbench/verification_chain.py:621:            os.replace(tmp_path, path)\n```\n`cdsfl_seal_logs.py`'s **default** invocation \"seals every unsealed directory under logs/confer and logs/chat\"; `--dry-run` is the opt-in for writing nothing. Only argparse's `--help` short-circuit keeps the survey off it \u2014 and *\"5 of 54 scripts consumed `--help` as a positional argument\"* is this same entry's other finding. Two independent things had to hold; one was never checked.\n\n**FIX.** One-level cross-module resolution in `classify`, plus the `io.open` alias. Blast radius pinned: **exactly one script flips** (`cdsfl_seal_logs.py`), 57/59 \u2192 56/60. The first version flipped four, and two were wrong \u2014 `str.replace` counted as a file write (`convergence_location.py:65` is `h.strip().lower().replace(\" \", \"_\")`), and symbols were attributed to modules that do not define them. Unresolved symbols are now reported loudly (9 of them) rather than reclassified, because removing a working measurement from the survey needs evidence too.\n\n**WHAT WOULD REFUTE THIS.** Evidence that the survey never invokes a MEASUREMENT-classed script without `--help`, *and* that argparse's short-circuit is itself guarded. The second half is what A16's own `--help` finding shows cannot be assumed.\n\n---\n\n### 5. Two vacuous git-read guards; one reports full coverage while examining nothing\n\n**SEVERITY 0.4** \u00b7 **WHERE** `test_derived_docs_match_their_generators_2026-09-01.py:165`, `test_task_list_entry_count_2026-09-10.py:136`\n\n**WHAT.** The first builds `found` from `git ls-files` stdout with no returncode check; its only consumer is `assert not stray`, so with git absent the coverage ratchet reports **full coverage over zero documents**. The second asserts an expected value of **0**, which empty input also produces.\n\n**EVIDENCE.** The contrast, live in this sandbox, same missing `.git`:\n```\ntest_line_citations_resolve_2026-09-01.py   \u2192 2 errors (it HAS `assert out.returncode == 0`)\ntest_derived_docs_match_their_generators\u2026   \u2192 12 passed\n```\nCensus: `scripts/git_stdout_without_a_returncode_check_2026-09-11.py` \u2192 39/70 candidates, narrowed to 9 git reads in tests, **hand-read down to 2**. `test_line_citations:99` was a declared over-report (returncode checked one frame up); `test_the_sandbox_severs_history:117` is vacuous *by design* and has its own positive control at `:105` \u2014 that is the pattern I copied.\n\n**FIX.** Honest `pytest.skip` when git cannot answer; a **positive control** (`== 15` under the prose patterns) added so a `0` from an empty fetch cannot pass as a `0` from a real revision. Proven pre-existing vs mine: baseline `7 failed, 8 passed`; after `7 failed, 7 passed, 1 skipped` \u2014 my change converts exactly one falsely-passing test into an honest skip.\n\n**WHAT WOULD REFUTE THIS.** A demonstration that both tests are only ever collected inside a git work tree.\n\n---\n\n### 6. A7's anchor does not identify A7's predicate\n\n**SEVERITY 0.45** \u00b7 **WHERE** `scripts/escalation_paths_2026-09-11.py:7-11`\n\n**WHAT.** A7 defends its predicate because it *\"reproduces the entry's OTHER family figure exactly, `exp55_v3_control` = 8, so it is almost certainly the one that was meant.\"* One scalar at one site is a one-bit test and cannot select among nine readings.\n\n**EVIDENCE.**\n```\n total  exp55  runs  predicate\n    22      8     7  A7 baseline                          <-- hits the anchor\n    20      8     7  same but severity STRICTLY > thr      <-- hits the anchor\n    32      8     8  drop the severity threshold entirely  <-- hits the anchor\npredicates reproducing exp55_v3_control = 8 : 8\ndistinct TOTALS among them                  : [20, 22, 32]\n```\n**This does not show 22 is wrong** \u2014 it reproduces exactly, and I confirmed the probe and A7 agree on A7's own predicate (both 22). It shows the stated reason for believing it is not a reason. 22 must travel as \"22 *under this predicate*\".\n\n**FIX.** `scripts/a7_predicate_is_underdetermined_2026-09-11.py` + test pinning `[20, 22, 32]`.\n\n**WHAT WOULD REFUTE THIS.** A second independent anchor from the entry that the 20- and 32-readings fail. The entry's only other family figure is the one already used.\n\n---\n\n### 7. A seventh instance of the bare-substring shape task 6.4 closed at six sites\n\n**SEVERITY 0.3** \u00b7 **WHERE** `bench/tests/test_config_aliases_survive_both_paths.py:119`\n\n**WHAT.** `if \"/logs/\" in str(p): continue` \u2014 the exact shape 6.4's correction documents. It admits **703** archived files the shared predicate excludes: **690** under `bench/results/` and **13** under `bench/logs_quarantine/` \u2014 precisely the two roots 6.4 names a bare substring as missing.\n\n**LATENT, NOT BITING.** 0 of those 703 sets a legacy alias true today, so nothing enters the assertion. Reported at 0.3 for that reason.\n\n**FIX.** Wired to `is_archived_run_output`. The wiring is proven load-bearing by a monkeypatch recorder that *runs* the guard \u2014 see the disagreement section below.\n\n**WHAT WOULD REFUTE THIS.** Nothing changes my measurement; the honest counter is that a latent divergence is below the founder's materiality bar. I have argued it is worth one line because 6.4 exists to remove exactly this divergence.\n\n# THE FIGURE I LEAST BELIEVED\n\n**V2's \"11 of 11 = 100.0000%\".** A unanimous result is the one most likely to be produced by a broken instrument rather than by eleven independent facts, and a 95% lower bound of 74.1167% on n = 11 is a lot of confidence to draw from one predicate.\n\nI re-derived the underlying predicate independently rather than re-running the script: `git ls-files --error-unmatch <path>` directly, and `ls -la` on the same path.\n\n```\n$ git ls-files --error-unmatch bench/tests/test_escalation_paths_2026-09-11.py\nfatal: not a git repository (or any of the parent directories): .git\nrc=128\n$ ls -la bench/tests/test_escalation_paths_2026-09-11.py\n-rw-r--r--@ 1 georgejackson staff 6263 Sep 11 02:18 \u2026\n```\n\nThe file is present; git's non-zero exit says nothing about tracking. **100.0000% was the count of times `git` failed to start, presented as a defect rate.** That is Finding 2, and the repaired script reads 0.0000% on the identical tree.\n\n# FIGURES I RE-RAN\n\n| Figure | Declared | I got | Match |\n|---|---|---|---|\n| Header: real-rejection rate | 2/640 = 0.3125% | `2/640 = 0.3125%`, Wilson [0.0857%, 1.1322%] | \u2705 exact |\n| Header: unaccounted ruled items | 0/15 = 0.0000% | `0/15 = 0.0000%`, Wilson [0.0000%, 20.3883%] | \u2705 exact |\n| A7: escalated criticals, no falsifier | 22 | 22 | \u2705 exact |\n| A7: `exp53_control_zero_live` contributes 0 | 0 | 0 (holds no `*_report.json`) | \u2705 |\n| A7: ANONYMOUS | 0 of 22 | `0/22 = 0.0000%`, Wilson [0.0000%, 14.8655%] | \u2705 exact |\n| A7: uncovered runner escalation sites | 0 | 0 | \u2705 |\n| A16: scripts that are ACTIONS | 58 of 112 | 59 of 116 (pre-fix, incl. my 3 additions) \u2192 **113 pre-existing, not 112** | \u26a0\ufe0f population differs by 1, cause unidentified |\n| A16: the 4 named scripts are ACTIONS | 4 of 4 | 4 of 4 | \u2705 |\n| A18 | 2 of 3 fields read via `getattr` | script runs; reports 22/69 unread | \u26a0\ufe0f not the same figure; not attacked |\n| V2: entries failing a mechanical check | (implied low) | 100.0000% pre-fix \u2192 0.0000% post-fix | \u274c instrument defect |\n\n# WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\n1. **On V2's method (Section 3.1), I partly disagree with the brief's framing.** I picked two corrections and checked them. **6.7's correction is RIGHT** \u2014 `ImmuneMemory` in `bench/dm/_memory.py` has 12 methods and **0 contain the word \"evidence\"**, so `self.has_evidence(...)` does raise; the only file in the tree defining `has_evidence` is a 2026-09-08 mutation snapshot. **6.4's correction is RIGHT about what it claims and incomplete about its class** \u2014 it says \"the scope the entry claimed is closed\", which is true and carefully scoped, and a seventh instance survives outside that scope. So the answer to *\"is a correction that exists necessarily right?\"* is: **both I checked were right**; what a dated CORRECTED paragraph does not establish is *completeness*. That is a weaker and more useful conclusion than \"corrections may be wrong\".\n\n2. **I do not accept A7's 22 as refuted, and I will not join anyone who says the figure is wrong.** It reproduces exactly and its ANONYMOUS set is genuinely empty. Only the justification falls. Preserving that distinction matters more than the finding.\n\n3. **I disagree with my own first attempt, and record it because the brief asks for it.** My initial F4 test was **vacuous** \u2014 it re-derived both path sets itself and never touched the site, so reverting the site to `\"/logs/\" in str(p)` left it **green**. Caught by mutating the site, not by reading the test. Replaced with a monkeypatch recorder that *runs* the guard; that version fails with *\"the shipped-config guard never consulted bench/repo_paths\"*. Also caught in my own work: `tree_manifest` used `os.stat`, which follows symlinks, and silently dropped a dangling self-referential link under `bench/logs/exp36_evidence_20260407T004931Z/` \u2014 found by reconciling two counts of the same tree (9711 vs 16722) and chasing the one file the exclusions did not explain. Now `os.lstat`; count reconciles exactly (9712 = 16722 \u2212 7010 ruff-cache).\n\n4. **A16's rule gives the wrong answer for the right reason on my own `git_probe.py`** (Section 3.4). It is classed ACTION because it spawns `git` \u2014 yet it spawns only read-only queries and cannot write. The asymmetry argument makes ACTION the correct call: the cost is a missing survey row, versus overwriting a preserved archive. I report this as the rule working, **not** as a defect, and I did not change it.\n\n# WHAT I DID NOT CHECK\n\n- **Section 3.3 \u2014 A6's I13 extension beyond 5 functions in 1 module.** Not attempted. The 0-of-22 result stands unchallenged by me and its 15% upper bound is untested.\n- **A18 entirely.** I ran `config_fields_are_read_2026-09-11.py` and reproduced no figure from it; the brief's \"2 of the 3\" claim is unexamined.\n- **`classify_citation` in A8** (the other half of Section 3.4). I attacked only A16's `classify`.\n- **Whether any repaired figure changes `severity` or the two-sided `gamma` gate: it does not, and I checked.** The runner imports only `foreign_repo_roots` from `repo_paths` (`reference_runner_v3.py:4048`), which I did not touch; nothing else I changed is imported by the verdict path. No finding severity and no gamma input moves.\n- **The two long-running A16 tests** (`test_running_the_measurement_set_leaves_the_tree_untouched`, `test_none_consumes_the_flag_as_data`, both `timeout=3600`). Deselected, per the standing instruction not to spend the dispatch waiting. **This is the weakest point in my A16 fix**: I changed which scripts the survey executes and could not run the test that executes them. The change is strictly conservative (one fewer script runs, and that script writes), but it is unconfirmed by execution and should be confirmed before A16 moves to DONE.\n- **The full suite.** Not run. I ran targeted files only; the 7 pre-existing failures in `test_task_list_entry_count` are environmental (no `.git`) and I proved them present before my edit as well as after."
+}

@@ -1,0 +1,223 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 17881,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && git -C . rev-parse --show-toplevel 2>/dev/null; ls\", \"description\": \"Locate sandbox repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i 2026-09-10\", \"description\": \"List tonight's scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py 2>&1 | tail -30\", \"description\": \"Run nu grid figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/missing_falsifiers_2026-09-10.py 2>&1 | tail -30\", \"description\": \"Run missing falsifiers figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/target_mutation_blast_radius_2026-09-10.py 2>&1 | tail -30\", \"description\": \"Run blast radius figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py 2>&1 | tail -25\", \"description\": \"Run nu grid figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/missing_falsifiers_2026-09-10.py 2>&1 | tail -25\", \"description\": \"Run missing falsifiers figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/target_mutation_blast_radius_2026-09-10.py 2>&1 | tail -25\", \"description\": \"Run blast radius figure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/wolfram_route_health_2026-09-10.py bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py scripts/materiality_population_2026-09-10.py 2>&1; echo ---; grep -rn \\\"change_point\\\" --include=*.py . | head -20\", \"description\": \"Sizes and change_point locations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"target_complexity\\\" -A 40 -B 10 bench/reference_runner_v3.py | head -120\", \"description\": \"Read target_complexity block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"compute_gamma_input\\\\|MIN_WINDOWS\\\\|WINDOW_CHARS\\\\|def _tokenize\\\\|def tokenize\\\" bench/dm/input_complexity.py 2>/dev/null | head -30; echo \\\"=== path search ===\\\"; ls bench/dm/ | head -50\", \"description\": \"Find input_complexity module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_ic_tokenize\\\\|_IC_WINDOW_CHARS\\\\|_IC_MIN_WINDOWS\\\\|compute_gamma_input\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find imports in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 215,230p bench/reference_runner_v3.py\", \"description\": \"Read import block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name \\\"input_complexity*.py\\\" -not -path \\\"*/__pycache__/*\\\" | head\", \"description\": \"Locate input_complexity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def tokenize\\\\|^MIN_WINDOWS\\\\|^WINDOW_SIZE_CHARS\\\\|def compute_gamma_input\\\" -A 60 bench/input_complexity.py | sed -n '1,160p'\", \"description\": \"Read tokenize and compute_gamma_input\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,140p scripts/wolfram_route_health_2026-09-10.py\", \"description\": \"Read wolfram route health script part 1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 140,258p scripts/wolfram_route_health_2026-09-10.py\", \"description\": \"Read rest of wolfram script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/wolfram_route_health_2026-09-10.py 2>&1 | tail -40\", \"description\": \"Run wolfram route health\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib\\nsys.path.insert(0, \\\"scripts\\\")\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"wrh\\\", \\\"scripts/wolfram_route_health_2026-09-10.py\\\")\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrows = m.dated_attempts()\\nprint(\\\"n rows:\\\", len(rows), \\\"fails:\\\", sum(f for _,f in rows))\\ndates = sorted({t[:10]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,142p bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py\", \"description\": \"Read C0053 falsifier test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_recidivism_text\\\" bench/dm/_divergence.py | head -20\", \"description\": \"Check _recidivism_text call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom input_complexity import compute_gamma_input, tokenize, MIN_WINDOWS\\n# empty-token target\\nfor name, txt in [(\\\"CJK\\\", \\\"\\u56db\\u4e03\\u516b\\u4e5d \\u4e94\\u516d \\u4e00\\u4e8c\\u4e09\\\"*500),\\n                  (\\\"all stopwords\\\", \\\"the a an is of to in on at \\\"*2000),\\n                  (\\\"short toks\\\", "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom input_complexity import (MIN_WINDOWS as _IC_MIN_WINDOWS, tokenize as _ic_tokenize,\\n                              WINDOW_SIZE_CHARS as _IC_WINDOW_CHARS, compute_gamma_input)\\ndef block(_tgt_text):\\n    _cx = compute_gamma_input(_tgt_text); _win = _IC_WINDOW_CHARS\\n    _n_tokens = len(_ic_tokenize(_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib; sys.path.insert(0,'.')\\nimport bench.dm._divergence as D\\nfrom bench.dm._divergence import AlternativeRecord, DivergenceConfig, check_sibling_admissibility, score_isomorphism\\nBODY=(\\\"The retry budget is truncated because the watchdog caps wall clock at a multiple of the timeout \\\"\\n      \\\"while the configured budget is the timeout times the re"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, random\\nfrom scipy.stats import fisher_exact\\nspec = importlib.util.spec_from_file_location(\\\"wrh\\\",\\\"scripts/wolfram_route_health_2026-09-10.py\\\")\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrows = m.dated_attempts()\\ndates_of = [t[:10] for t,_ in rows]; labels=[f for _,f in rows]\\ncuts = sorted(set(dates_of))[1:]\\"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__sewni2b/repo/scripts/wolfram_route_health_2026-09-10.py\", \"old_string\": \"    from scipy.stats import fisher_exact\\n    rows = dated_attempts()\\n    if not rows or not any(f for _t, f in rows):\\n        return None\\n    dates = sorted({t[:10] for t, _f in rows})\\n    best = None\\n    for cut i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo probe > /tmp/_probe_ok && python3 -c \\\"\\nimport pathlib\\np=pathlib.Path('scripts/.__write_probe')\\np.write_text('ok'); print('WRITE OK', p.exists()); p.unlink()\\\"\", \"description\": \"Probe sandbox write access\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch1.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/wolfram_route_health_2026-09-10.py\\\")\\ns = p.read_text()\\n\\nOLD = '''    from scipy.stats import fisher_exact\\n    rows = dated_attempts()\\n    if not rows or not any(f for _t, f in rows):\\n        return None\\n    dates = sorted({t[:10] for t, _f in rows})\\n    best = None\\n    for cut in dates[1:]:           "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch2.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/wolfram_route_health_2026-09-10.py\\\")\\ns = p.read_text()\\n\\nOLD = '''        print(f\\\"  Fisher exact p = {cp['p']:.6e}\\\")'''\\nNEW = '''        # THE HEADLINE IS NOW THE CORRECTED NUMBER, not the minimum.\\n        # `p_uncorrected` is printed first and LABELLED as the minimum over m\\n        # tests, so it canno"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_change_point_multiple_comparisons_2026-09-10.py <<'PYEOF'\\n\\\"\\\"\\\"Round 8: the fitted change point in task 0.2 was a MAXIMALLY-SELECTED\\nstatistic reported as a single test. This is the test that says so.\\n\\nTHE DEFECT. `scripts/wolfram_route_health_2026-09-10.py::change_point` tries\\nevery candidate cut date, keeps the split minimising the Fisher exact p, and\\nt"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, pathlib, random\\nspec=importlib.util.spec_from_file_location(\\\"w\\\",\\\"scripts/wolfram_route_health_2026-09-10.py\\\")\\nW=importlib.util.module_from_spec(spec); spec.loader.exec_module(W)\\nimport bench.tests.test_change_point_multiple_comparisons_2026-09-10 as _  # noqa\\nEOF\\npython3 - <<'EOF'\\nimport importlib.util, random\\nspec=importlib.util.sp"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch3.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py\\\")\\ns = p.read_text()\\n\\nOLD = '''class TestTheFalsifierCanActuallyFail:\\n    \\\"\\\"\\\"WITHOUT THIS, THE 2 TESTS ABOVE PROVE NOTHING.\\n\\n    The fix is `_recidivism_text`, which folds the contrast statement back in.\\n    Reverting it means comparing `alternative_te"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 166,190p bench/input_complexity.py\", \"description\": \"Read r_squared computation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys,time; sys.path.insert(0,'bench')\\nfrom input_complexity import compute_gamma_input, tokenize, MIN_WINDOWS, WINDOW_SIZE_CHARS\\nt=open('bench/reference_runner_v3.py').read()\\ns=time.time(); cx=compute_gamma_input(t); n=len(tokenize(t)); print(f\\\"771k-char target: {time.time()-s:.3f}s  n_windows={cx.n_windows} tokens={n} gamma={cx.gamma}\\\")\\nEOF\", \"descripti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch4.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text()\\n\\nOLD = '''                    _measured = _cx.n_windows >= _IC_MIN_WINDOWS\\n                    result[\\\"target_complexity\\\"] = {'''\\nNEW = '''                    _measured = _cx.n_windows >= _IC_MIN_WINDOWS\\n                    # THE FLAG IS RIGHT; TWO FIELDS BEHIND"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_target_complexity_no_tokens_2026-09-10.py <<'PYEOF'\\n\\\"\\\"\\\"Round 8: `target_complexity` recorded gamma 1.0 beside prose saying 0.5.\\n\\nTHE DEFECT. `bench/reference_runner_v3.py`'s `target_complexity` block keys its\\n`fit` flag on `n_windows >= MIN_WINDOWS`, which is the RIGHT key. But it then\\ndescribed every not-measured case as \\\"the module's assumed default o"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_target_complexity_no_tokens_2026-09-10.py\\\")\\ns=p.read_text()\\ns=s.replace('    tmp = pathlib.Path(pytest.ensure_none) if False else None  # noqa: F841\\\\n','')\\np.write_text(s); print(\\\"cleaned\\\")\\nEOF\\npython3 -m pytest bench/tests/test_target_complexity_no_tokens_2026-09-10.py -q 2>&1 | tail -3\\necho \\\"=== NON-VACU"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status --porcelain 2>&1 | head -5; echo \\\"rc=$?\\\"; git rev-parse HEAD 2>&1 | head -2\", \"description\": \"Check git state in sandbox\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Reconstruct the PRE-PATCH runner by inverting exactly the 3 string\\n# substitutions applied, then lift the block from THAT file with the same\\n# ast lifter the shipped test uses. Not a retyping: an inverse of a\\n# recorded transformation on the real file.\\nimport ast, pathlib, sys\\nsys.path.insert(0,'bench')\\nfrom input_complexity import (MIN_WINDOWS as M, WINDOW_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q 2>&1 | tail -8; echo \\\"=== mirror table consumers ===\\\"; grep -rln \\\"CDSFL_RUNWAY\\\\|Desktop/CDSFL\\\\|MIRROR\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" --include=\\\"*.md\\\" . 2>/dev/null | grep -v __pycache__ | head -20\", \"description\": \"Run mirror test and find consumers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/materiality_population_2026-09-10.py 2>&1 | tail -25\", \"description\": \"Run materiality population script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q -p no:cacheprovider 2>&1 | grep -E \\\"^[0-9]+ (passed|failed)|passed|failed\\\" | head -3\", \"description\": \"Get mirror test result line\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"MIRRORS\\\\|mirror_pairs\\\\|from.*sync_desktop_mirrors import\\\\|desktop_mirrors\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" . 2>/dev/null | grep -v __pycache__ | grep -vi \\\"^./bench/logs\\\" | head -20\", \"description\": \"Find single mirror table and its importers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q -p no:cacheprovider 2>&1 | grep -B2 -A 25 \\\"FAILED\\\\|assert\\\" | head -60\", \"description\": \"Get the failing mirror test detail\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"repository root\\\\|Refusing\\\\|mirror\\\\|Desktop\\\\|stage 0\\\\|stage 6\\\" hooks/pre-commit | head -30; echo \\\"=== test 280-310 ===\\\"; sed -n 265,310p bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py\", \"description\": \"Inspect hook and the failing test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch5.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py\\\")\\ns = p.read_text()\\n\\nOLD = '''        env = {**os.environ, \\\"HOME\\\": str(home)}\\n        r = subprocess.run([\\\"sh\\\", str(HOOK)], cwd=ROOT, env=env,\\n                           capture_output=True, text=True, timeout=900)\\n        assert r.returncode == 0, "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p .git && python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q -p no:cacheprovider -k ordering 2>&1 | grep -E \\\"SKIPPED|passed|failed|Stage 0\\\" | head -5; rmdir .git 2>/dev/null; echo \\\"--- .git removed again: $( [ -d .git ] && echo STILL || echo GONE )\\\"\", \"description\": \"Prove the skip cannot fire when .git exists\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, subprocess, os, sys\\ng = pathlib.Path(\\\".git\\\")\\nmade = False\\nif not g.exists():\\n    g.mkdir(); made = True\\ntry:\\n    r = subprocess.run([sys.executable, \\\"-m\\\", \\\"pytest\\\",\\n        \\\"bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py\\\",\\n        \\\"-q\\\", \\\"-p\\\", \\\"no:cacheprovider\\\", \\\"-k\\\", \\\"ordering\\\", \\\"-rs\\\"],\\n        capture_outpu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider \\\\\\n  bench/tests/test_change_point_multiple_comparisons_2026-09-10.py \\\\\\n  bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py \\\\\\n  bench/tests/test_target_complexity_no_tokens_2026-09-10.py \\\\\\n  bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py \\\\\\n  bench/tests/test_documentation_drift_guards_2026-08-25.py 2>&1 | grep -E \\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_documentation_drift_guards_2026-08-25.py 2>&1 | grep -E \\\"FAILED|AssertionError|Desktop\\\" | head -8\", \"description\": \"Identify the 2 pre-existing failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"p_bonferroni\\\\\\\"\\\\] = min\\\" scripts/wolfram_route_health_2026-09-10.py; grep -n \\\"_no_tokens = _cx.n_windows == 0\\\" bench/reference_runner_v3.py; grep -n \\\"test_reverting_the_fix_rejects_the_repair_through_the_real_gate\\\" bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py; grep -n \\\"_PRECONDITION = \\\" bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py; grep -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"ArithmeticError\\\" bench/reference_runner_v3.py | head -3\", \"description\": \"Verify ArithmeticError patch landed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 13326,13350p bench/reference_runner_v3.py\", \"description\": \"Inspect except block\"}"
+    }
+  ],
+  "n_tool_calls": 53,
+  "elapsed_s": 745.3,
+  "response": "VERDICT: `SOUND_WITH_CAVEATS`\n\nAll three declared figures reproduced exactly. Tonight's substantive conclusions survive my pass \u2014 including the one I attacked hardest (the fitted change point), which survives correction by 12 orders of magnitude. Four defects found, all in the *measurement and verification machinery* rather than in the conclusions, all delivered as fixes in the tree.\n\n## FILES I LEFT IN THE TREE\n\n| Path | New/edited |\n|---|---|\n| `scripts/wolfram_route_health_2026-09-10.py` | edited \u2014 multiple-comparisons correction + current-state reporting |\n| `bench/tests/test_change_point_multiple_comparisons_2026-09-10.py` | **new** \u2014 6 tests |\n| `bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py` | edited \u2014 vacuous control replaced with a real revert |\n| `bench/reference_runner_v3.py` | edited \u2014 `NO_TOKENS` third state in the `target_complexity` block |\n| `bench/tests/test_target_complexity_no_tokens_2026-09-10.py` | **new** \u2014 8 tests, lifts the real block by `ast` |\n| `bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py` | edited \u2014 false-red repair on the ordering test |\n\n`43 passed, 1 skipped` across the four test files plus the drift guard (2 pre-existing failures unrelated to my edits \u2014 see \u00a75).\n\n---\n\n## FINDINGS\n\n### 1. The fitted change point reports `min_j p_j` over 17 tests as if it were one test \u2014 and it justifies a removal\n\n**WHAT** `change_point()` searches every candidate cut and prints the minimising Fisher p as \"Fisher exact p\"; a minimum over m dependent tests is not a p-value, and this figure is what `.claude/CLAUDE.md` quotes to justify retiring the Wolfram route.\n\n**WHERE** `scripts/wolfram_route_health_2026-09-10.py:217` (was: the bare `best[\"p\"]` print in `main`)\n\n**EVIDENCE**\n```\n$ python3 scripts/wolfram_route_health_2026-09-10.py\n  fitted cut : 2026-09-04\n  Fisher exact p = 2.199086e-14          # \u2190 before my edit\n```\nThe search space, counted:\n```\n$ python3 -c \"...dated_attempts()...\"\ndistinct dates: 18 ; candidate cuts tried (dates[1:]): 17\n```\nThe inflation, measured on 400 null replicates (no change point, labels iid):\n```\nUNCORRECTED min-p rejects at 0.05 in 16.5%   <-- should be 5%\nBONFERRONI       rejects at 0.05 in  1.8%\n```\nA 3.3\u00d7 inflation of the stated error rate.\n\n**DERIVATION** (union bound, no independence assumption \u2014 which is essential, since consecutive cuts share nearly all their data): Fisher's exact test is valid, so `P(p_j \u2264 \u03b1) \u2264 \u03b1` for each j. Then `P(min_j p_j \u2264 \u03b1) = P(\u222a_j{p_j \u2264 \u03b1}) \u2264 \u03a3_j P(p_j \u2264 \u03b1) \u2264 m\u03b1`. Hence `p_adj := min(1, m\u00b7p_min)` satisfies `P(p_adj \u2264 \u03b1) \u2264 \u03b1`. \u0160id\u00e1k's `1\u2212(1\u2212p)^m` is **invalid** here \u2014 it requires independence and would be anti-conservative on these nested splits. That is why the fix uses Bonferroni.\n\n**FIX** `scripts/wolfram_route_health_2026-09-10.py` \u2014 extracted `_min_p_over_cuts()` so the observed and permuted statistics are *one function* (two implementations would calibrate the wrong quantity), then added `p_bonferroni` and a permutation test of the maximally-selected statistic. New output:\n```\ncandidate cuts searched : 17  (this is a MAXIMALLY-SELECTED statistic, not a single test)\nmin Fisher exact p over those cuts = 2.199086e-14  <- NOT a p-value; do not quote alone\nBonferroni-corrected p  = 3.738445e-13  (= 17 x min p; valid under ARBITRARY dependence)\npermutation p (B=2000) <= 4.9975e-04  [0 of 2000 shuffles reached the observed minimum]\n```\n**The conclusion is unchanged.** `3.74e-13` is still overwhelming. The number was wrong; the decision was right. Test: `bench/tests/test_change_point_multiple_comparisons_2026-09-10.py`.\n\n**Sub-finding, same fix:** the log's **most recent attempt of any kind SUCCEEDED** \u2014 `2026-09-09 09:07:25`, `announcing WolframCloud: 3 tool(s)`. Entry 0.2 quotes the most recent *failure* (09:02:48) and concludes \"dead\". The last attach, five minutes later, worked. The script now prints this beside the retirement figure:\n> *THE ROUTE'S LAST OBSERVED ATTACH SUCCEEDED. The post-cut rate is 'almost always fails', NOT 'never works'. A retirement argued from 'dead' is arguing something the data does not show; the defensible claim is availability too low to depend on.*\n\nThe additive standard permits removal only on a committed measurement showing dominance on a named property. Availability of 1/43 still dominates 0/43 in the sense that matters to that standard's wording \u2014 the retirement should be argued on the rate, not on \"dead\".\n\n**WHAT WOULD REFUTE THIS** (a) A demonstration that the 17 splits are jointly independent, which would make Bonferroni the wrong correction and \u0160id\u00e1k right \u2014 I derived they are not (they share data), but a formal argument that Fisher's conditional test at nested cuts is independent would overturn my choice of correction, though not the fact that a correction is needed. (b) A rerun of the null sweep showing the uncorrected minimum crossing 0.05 at \u22485% \u2014 that is exactly what `test_the_uncorrected_minimum_is_anticonservative` asserts against, and it would fire. (c) On the success: evidence that `announcing WolframCloud: 3 tool(s)` is emitted from cache rather than a live attach would kill the sub-finding entirely.\n\n**SEVERITY 0.55**\n\n---\n\n### 2. The C0053 falsifier's \"revert\" control is a tautology \u2014 it passes with the fix destroyed\n\n**WHAT** `test_reverting_the_fix_reproduces_the_defect_exactly` asserted `score_isomorphism(prior.alternative_text, fixed.alternative_text) == 1.0`, but both records are built by `_record(BODY, \u2026)` so both attributes are the **same `str` object** \u2014 the assertion is `score_isomorphism(s, s) == 1.0`, a property of `score_isomorphism` and of nothing else.\n\n**WHERE** `bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py:151` (replacing the old control)\n\n**EVIDENCE**\n```\n$ python3 - <<'EOF' ...\nshipped control value: 1.0\n  are the two args the SAME object? True\ncontrol passes with _recidivism_text destroyed: True\nREAL revert -> gate rejection_reasons: ['recidivism_near_copy (jaccard_vs_prior_round_alt_0=1.000 >= 0.98)']\nfix in place -> gate rejection_reasons: []\n```\nThe control survives `_divergence._recidivism_text = lambda r: \"TOTAL GARBAGE\"`. It also short-circuits the mechanism: `parse_contrast_statement` never runs, so the **stripping step C0053 is entirely about** is never exercised by the control. To the founder's question 5 directly: **it is not a real revert. It tests a hand-constructed post-strip state, not the logic that produces it.**\n\nThis is the file whose own docstring says *\"A falsifier that cannot fail confirms nothing\"*, and it is a \u00a710 category-3 defect (verification-integrity corruption) under CDSFL's own classification.\n\n**FIX** `bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py` \u2014 the control now rebinds the module-level `_divergence._recidivism_text` to the pre-fix expression (`_divergence.py:638-640` looks the name up on the module at call time, so the rebinding reaches the real call site) and demonstrates the defect **through `check_sibling_admissibility`**, the gate C0053 complains about. Undone in a `finally`, with a test asserting it was. Added a meta-control proving the new control responds to what `_recidivism_text` *does*, and a test pinning the old control's tautology so the account of why it was replaced is itself checkable. `9 passed`.\n\n**WHAT WOULD REFUTE THIS** If `prior.alternative_text is fixed.alternative_text` ever evaluates False (different string objects with equal content), the old control would be comparing two objects and my \"tautology\" characterisation weakens to \"trivially-true comparison\" \u2014 `test_the_superseded_control_was_a_tautology` asserts the identity and would fail, forcing a re-read. If `check_sibling_admissibility` stops routing through the module-level `_recidivism_text` (e.g. it gets inlined or bound at import), my new control silently stops reverting anything \u2014 `test_the_control_would_notice_a_destroyed_fix` is the tripwire for that and would fail.\n\n**SEVERITY 0.6**\n\n---\n\n### 3. `target_complexity` recorded `gamma_input: 1.0` beside prose asserting 0.5\n\n**WHAT** The `ASSUMED_DEFAULT` flag is keyed correctly, but the two fields behind it describe only one of the two not-measured cases: when a target tokenises to nothing, `compute_gamma_input` returns early at `input_complexity.py:211` with `gamma=1.0` and never reaches the assumed-default branch at `:232`.\n\n**WHERE** `bench/reference_runner_v3.py:13287` (the new `_no_tokens` line and the three fields below it)\n\n**EVIDENCE** \u2014 the founder asked me to *construct a case where the flag lies*. Here it is:\n```\n$ python3 -c \"compute_gamma_input('\u56db\u4e03\u516b\u4e5d \u4e94\u516d \u4e00\u4e8c\u4e09'*500)\"\nCJK            tokens=0 n_windows=0 gamma=1.0 beta=0.0 r2=0.0\nall stopwords  tokens=0 n_windows=0 gamma=1.0 beta=0.0 r2=0.0\nshort toks     tokens=0 n_windows=0 gamma=1.0 beta=0.0 r2=0.0\n```\nRunning the **pre-patch block itself**, lifted from source by `ast`:\n```\nPRE-PATCH gamma_input : 1.0\nPRE-PATCH fit         : ASSUMED_DEFAULT\nPRE-PATCH reading     : ...gamma is the module's assumed default of 0.5...\n```\n`1.0` is the **extreme \"maximally simple\" end** of the scale, recorded for a target never measured, with prose beside it naming a different number. Reachable, not theoretical: `tokenize` keeps only `[a-zA-Z_][a-zA-Z0-9_]*` runs longer than 2 chars, so any CJK, RTL, minified or short-identifier target yields zero tokens.\n\n**On the founder's actual question \u2014 is `n_windows >= MIN_WINDOWS` the right key? Yes, and I declare that sound.** Keying on `r_squared > 0` was correctly rejected (a saturated text legitimately returns `r_squared 0.0` with `gamma 1.0`). And with \u22653 windows `_fit_heaps` **cannot** reach its `(0,0,0)` sentinel: cumulative token counts strictly increase by construction, so `len(pairs) < 2` is unreachable and `denom` is a strictly positive variance of distinct logs. The key is right. Only the fields behind it were wrong.\n\n**FIX** `bench/reference_runner_v3.py` \u2014 three states instead of two (`measured` / `NO_TOKENS` / `ASSUMED_DEFAULT`), and the `reading` now interpolates `round(_cx.gamma, 6)` rather than hardcoding `0.5`, so the prose cannot drift from the field again. Test: `bench/tests/test_target_complexity_no_tokens_2026-09-10.py` \u2014 which **lifts the real `if \"target_complexity\" not in result:` node out of `reference_runner_v3.py` with `ast` and executes it**, rather than retyping the logic. Retyping is exactly the defect in Finding 2, and I was not going to commit it in the same round I reported it. Non-vacuity proven above against the reconstructed pre-patch source: the shipped assertion `\"0.5\" not in reading` fails on it. `8 passed`.\n\n**WHAT WOULD REFUTE THIS** If `input_complexity.compute_gamma_input` changes its empty-input return to `gamma=0.5`, the mismatch disappears and this finding is void \u2014 `test_and_the_module_then_returns_gamma_one_not_half` asserts the premise and would fail first, which is the design. If it can be shown the exam can never be dispatched against a zero-token target (a staging guard I did not find), severity drops toward 0 but the internal contradiction remains.\n\n**SEVERITY 0.4**\n\n---\n\n### 4. The ordering test reported tonight's headline fix as BROKEN, for a reason that has nothing to do with ordering\n\n**WHAT** `test_a_drifted_mirror_does_not_refuse_the_commit` asserts only `r.returncode == 0`, and cannot tell *which* refusal it observed; `hooks/pre-commit:40` refuses at \"cannot find the repository root\" before any mirror stage exists.\n\n**WHERE** `bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py:333`\n\n**EVIDENCE**\n```\n$ python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q\nE   AssertionError: a drifted Desktop mirror still refuses the commit:\nE     pre-commit: cannot find the repository root. Refusing.\n1 failed, 14 passed\n```\nThat is a **false red on Section 1 item 1** \u2014 the guard built to confirm the ordering fix reported the ordering fix broken. This file's own comment, twelve lines above the assertion, says *\"a test that turns unrelated guards red proves nothing about the ordering it claims to test\"*; the earliest guard of all was the one it did not account for.\n\n**FIX** `bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py` \u2014 two additive repairs: (1) when the hook's own documented precondition is unmet, **skip with the reason named**, gated on the literal refusal string **and** on `.git` being genuinely absent so it cannot fire on a real checkout; (2) when the hook refuses for any other reason, the message now names **which stage** refused. Both verified:\n```\n# no .git:\nSKIPPED [1] ...: the pre-commit hook refuses at hooks/pre-commit:40 before any\nmirror stage runs, because this tree has no .git directory...\n14 passed, 1 skipped\n\n# with .git present \u2014 the skip is proven unreachable:\nSKIPPED present with .git existing: False\nE   AssertionError: the hook refused the commit. Stage 0 (the Desktop mirror\n    refresh) did NOT run, so the refusal came from BEFORE the mirror refresh\n```\n\n**WHAT WOULD REFUTE THIS** If `hooks/pre-commit` gains a `.git`-independent root detection, the precondition is always satisfiable and the skip becomes dead code \u2014 which the additive standard forbids, and this finding should then be reverted rather than kept. If someone shows a path where a *genuinely drifted mirror* produces the literal string `\"cannot find the repository root\"`, my skip would hide a real failure and the fix is actively harmful; I searched `hooks/pre-commit` and found that string only at :40, above all mirror logic, but I did not exhaust the scripts it invokes.\n\n**SEVERITY 0.35**\n\n---\n\n## FIGURES I RE-RAN\n\n| Figure | Declared | I got | Match |\n|---|---|---|---|\n| nu grid points whose verdict moves | 570 | **570 of 676 (84.3%)**; 645/676 over `[0,1]\u00b2` | \u2705 exact |\n| post-mechanism missing falsifiers | 28 | **28** (789 predate 20260603; 817 naive) | \u2705 exact |\n| archived runs that cannot be checked | 35 of 39 | **35 of 39**; 0 mutated, 0 needing revert | \u2705 exact |\n| Wolfram pooled rate (0.2) | \u2014 | **43 of 64 = 67.19%**, cut `2026-09-04`, `1/21` \u2192 `42/43`, p `2.199086e-14`, OR 840 | \u2705 reproduced, then corrected (Finding 1) |\n| materiality population (R5a) | 690 defs, none reproduces 11/6/2 | reproduced; positive control names `escalated == true` | \u2705 |\n| `_memory.py` token ratio | 20,563 chars / 1,485 tokens \u2248 13.8:1 | reproduced; `gamma_input` **0.394127**, `fit: measured` | \u2705 |\n\n---\n\n## WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\n**I do not disagree with any Section 1 conclusion.** Every figure I could run, ran and matched. The four defects above are in the machinery that produces and checks the figures, not in the figures.\n\n**Two points of friction, stated rather than smoothed:**\n\n1. **On \"the route is dead\" (0.2).** The most recent attempt in the log succeeded. The change-point analysis is sound and the availability argument is sound; the word \"dead\" is not what the data shows. I have made the script say so at the point of the recommendation. This does not change the retirement decision, but the additive standard is specific about what a removal must rest on, and it should rest on `1/43`, not on \"dead\".\n\n2. **Another seat broadened my exception fix while I was working.** I narrowed `except (OSError, ValueError)` \u2192 `+ ArithmeticError`; a second round-8 seat broadened the same clause to `except Exception` with the stronger reasoning that anything unnamed falls through to the outer integrity handler and blinds the target-hash detective control before it records \u2014 *\"35 of 39 archived runs already carry no target hash; this path must not create more.\"* **Their fix dominates mine on a named property (blast radius of an uncaught class) and I withdraw the `ArithmeticError` narrowing as superseded.** My `test_an_arithmetic_failure_is_caught_rather_than_killing_the_run` passes unchanged under their broader clause and now serves as the executed check on *their* fix \u2014 which is what an addition being reached looks like.\n\n---\n\n## WHAT I DID NOT CHECK\n\n- **Section 2 item 2 (the R5a `candidates()` search).** I ran `scripts/materiality_population_2026-09-10.py` and reproduced its conclusion, but I did **not** audit the 690 definitions for expressiveness and I did **not** find a definition the search cannot express. I ran out of budget before opening `candidates()`. This is the one Section 2 item I am returning unanswered \u2014 flagged rather than dropped.\n- **Section 2 item 1, the \"4th consumer\" question.** I confirmed three consumers import `sync.MIRRORS` (`test_documentation_drift_guards_2026-08-25.py:138-141`, `cdsfl_recover.DESKTOP_MIRRORS`, the sync script itself) and found no fourth in a repo-wide `--include=*.py,*.sh` sweep. I did **not** check whether a mirror can be *declared in a document* and escape both guard and refresher \u2014 the founder's sharper sub-question. Unanswered.\n- **The 2 pre-existing failures in `test_documentation_drift_guards_2026-08-25.py`** (`CDSFL_MASTER_TASK_LIST.md` 150,312 vs 153,501 bytes; `CDSFL_Consolidated_Plan_2026-04-21.md`). These are the *sandbox copy* drifting against the founder's *live* Desktop and are not caused by my edits. I did not investigate whether they indicate real drift or sandbox staleness \u2014 I believe staleness, but I did not verify it, so I am not asserting it.\n- **The remaining 27 missing falsifiers** from task 2.2. I verified the population is 28 and that C0053's is the one already written; I wrote none of the other 27.\n- **Full test suite.** Per the dispatch rule, targeted runs only. My edits touch `bench/reference_runner_v3.py`, which many tests import; I did not run its full dependent set.\n- **Whether `math.exp` in `_fit_heaps` can actually overflow in practice.** I argued the path is expressible (`:168` uses the unclamped `beta`) and tested that the handler catches it, but I did not construct a real target that triggers it, so I make no claim that it is reachable."
+}

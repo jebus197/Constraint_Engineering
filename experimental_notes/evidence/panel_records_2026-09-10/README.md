@@ -1,5 +1,9 @@
 # Panel records, 2026-09-10 — rescued from an ignored directory
 
+**SUPERSEDED IN SCOPE 2026-09-11, and the correction is the point.** This file described a rescue of 4 rounds, performed by hand. An act is not a mechanism, so nothing rescued the next 9 rounds and nothing said so. Measured on 2026-09-11: **12 panel rounds under `bench/logs/`, 0 of them fully mirrored — 0.0000%, Wilson [0.0000%, 24.2494%]**. Nine had never been copied at all, and the 3 described below were INCOMPLETE: each was missing its `seat_proposals.diff`, the file recording what the seats actually WROTE rather than what they said.
+
+`scripts/mirror_panel_records_2026-09-11.py` now does the rescue as a mechanism, verifies every copy against its original by sha256, and its `--check` mode returns non-zero while any round is unmirrored. `bench/tests/test_panel_records_are_preserved_2026-09-11.py` runs that check, so the next round cannot slip through the way 9 did. **12 of 12 preserved, Wilson [75.7506%, 100.0000%].**
+
 These are byte copies of the raw panel output for 4 rounds run on 2026-09-10.
 The originals live under `bench/logs/`, which `.gitignore:41` excludes, so they
 were recoverable by no commit and existed on one machine only.

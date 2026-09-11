@@ -1,0 +1,67 @@
+# PANEL BRIEF — round 8: attack tonight's task-list work, and DELIVER YOUR FIX AS A FILE
+
+<!-- figure: nu grid points whose verdict moves | scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py | 570 -->
+<!-- figure: post-mechanism missing falsifiers | scripts/missing_falsifiers_2026-09-10.py | 28 raised after it -->
+<!-- figure: archived runs that cannot be checked | scripts/target_mutation_blast_radius_2026-09-10.py | 35 of 39 -->
+
+## SECTION 0 — READ THIS FIRST. THE DELIVERY RULE.
+
+**Founder ruling, verbatim, 2026-09-10:** *"they need to supply fixes, not just problems!"* and *"its fine to find problems, but you must also provide (tool verified) fixes in all cases"*.
+
+**A finding without a fix is not a deliverable. A fix described in prose is not delivered either.** Measured across rounds 5 and 6: the seats handed back **0 source files**. The cause is mechanical — `bench/panel_sandbox.py:teardown` destroys the sandbox and `changes()` preserves only files still **inside the sandbox repository tree**.
+
+**Write your fix INTO the sandbox repository tree, at the path it would live at, and leave it there.** Not `/tmp`. Edit existing files in place. Put a new test at `bench/tests/<name>.py`. Anything outside the tree is destroyed. You may write freely; it is a copy and the canonical tree is fingerprinted before and after.
+
+## SECTION 1 — What landed tonight. 7 task-list entries.
+
+**1. The commit hook could refuse every remaining commit and carried its own cure out of reach.** The Desktop-mirror drift guard went red; the stage that REPAIRS mirror drift was stage 6 of the same hook, below the exit. Fixed by ordering: the refresh is now stage 0, still unable to refuse a commit. Underneath it, **3 hand-written mirror tables existed and all 3 disagreed** — 3 names in `scripts/sync_desktop_mirrors.py`, 2 pairs in `bench/tests/test_documentation_drift_guards_2026-08-25.py`, 3 names again in `scripts/cdsfl_recover.py`. Union 4, intersection 1. All 3 keyed on a bare filename and so could not express `RUNWAY_to_BR2_2026-08-18.md` → `~/Desktop/CDSFL_RUNWAY.md`. One table of pairs now, imported by all 3.
+
+**2. R5a — the materiality population 11 / 6 / 2 is withdrawn.** `scripts/materiality_population_2026-09-10.py` enumerates every count the 3 archives can produce, 690 candidate definitions, and none reproduces the triple. Positive control: fed a triple that IS one measure (the archives' own escalated counts 0, 1, 6) the search must name `escalated == true`.
+
+**3. R6 — blast radius.** 0 of 39 archived runs show a mutated target; **35 of 39 carry no instrument at all** and are reported as neither clean nor dirty. Question (b) is fully decidable and the answer is nothing needs reverting: all 3 observed rewrites of `bench/dm/_memory.py` appear in no commit on any ref.
+
+**4. 4.3 / R11 — complexity reported, reaching no decision.** `result["target_complexity"]` in `bench/reference_runner_v3.py`. It goes to `gamma_input`, not nu, because **570 of 676** grid points in the reachable nu box give a different admission verdict. A near-miss: below `MIN_WINDOWS` the measuring function returns an ASSUMED beta of 0.5, and at the default window EVERY ordinary code target falls below it — `bench/dm/_memory.py` is 20,563 chars but only **1,485 tokens**, a 13.8:1 ratio against the module's assumed 4:1. The report would have carried `gamma_input` 0.5 in a field a reader takes as measured.
+
+**5. 0.2 — the Wolfram route disabled, with the cut FITTED not chosen.** `change_point()` tries every candidate date and takes the split minimising Fisher exact p. A first version cut at the FIRST failure and got 2026-08-25, which is a 1-off blip with a success 19 seconds later.
+
+**6. 2.2 — the missing-falsifier population was wrong by a factor of 29.** The naive sweep returns 817; the falsifier mechanism was built 2026-06-03, so **789 predate it**. Real population **28**. All 28 carry the verdict `UNTOOLABLE` and the first one examined was not: exp47 C0053 is a claim about 2 named functions in a module still in this repository.
+
+## SECTION 2 — Attack these specifically
+
+1. **The single mirror table.** I claim importing it into 3 consumers closes the gap. Does it? Is there a 4th consumer? Can a mirror be declared in a document and still escape both the guard and the refresher? `bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py` claims to check both directions — break it.
+2. **The R5a search.** 690 candidate definitions sounds exhaustive. Is it? Name a definition of "HIL residual" the search cannot express, and if you find one, ADD IT to `candidates()` and report what it yields.
+3. **The `ASSUMED_DEFAULT` flag.** I key it on `n_windows >= MIN_WINDOWS`. I first keyed it on `r_squared > 0` and that was wrong — a perfectly saturated text has zero variance and returns `r_squared` 0.0 while gamma 1.0 is exactly right. Is the current key right? Construct a case where it lies.
+4. **The fitted change point.** Minimising Fisher p over every candidate date is a multiple-comparisons procedure and I report the p-value as if it were a single test. That is a real statistical objection and I have not addressed it. **Address it, and deliver the corrected code.**
+5. **The C0053 falsifier's control.** It reverts the fix by writing the pre-fix expression out in the test rather than monkeypatching the module. Is that a real revert, or does it test a copy of the logic instead of the logic?
+6. **Anything in `bench/reference_runner_v3.py`'s new `target_complexity` block.** It runs inside the round loop on every run. Can it throw where I do not catch? Can it be slow on a large target?
+
+## SECTION 3 — Use the harness
+
+**Form your answer by RUNNING things.** Every script named above executes offline. Run them. If a figure in this brief does not reproduce, that IS the finding — say so and give the number you got.
+
+Every claim you make must be executed or withdrawn. Every finding must arrive with a fix, in the tree, at its real path.
+
+## SECTION 4 — What would refute YOU
+
+State, for each finding you return, **what evidence would overturn it**. A finding that names no such evidence is an opinion, and this project does not act on opinions. If your fix rests on a measurement, name the measurement that would falsify it. If you cannot name one, say so and mark the finding as unfalsifiable rather than dropping it.
+
+The same applies to disagreeing with me: if you think a claim in Section 1 is wrong, say what you ran and what it returned. "This looks wrong" is not a finding.
+
+## SECTION 5 — When to stop
+
+**Diminishing returns, which is this project's own criterion.** Stop when a further pass over the same material produces no new above-threshold finding. A finding is above threshold if missing it could cause a wrong number to reach the founder, a guard to pass something it should refuse, or a run to record a value it did not measure.
+
+Do not pad to a count. 2 findings with working fixes beat 9 with none. Do not nitpick style, naming or comment density; every file here is deliberately over-commented and that is not a defect to report.
+
+## SECTION 6 — The output shape, field by field
+
+Return **Markdown**, in this order:
+
+1. **`VERDICT`** — one of `SOUND`, `SOUND_WITH_CAVEATS`, `UNSOUND`, for tonight's work as a whole, in the first line.
+2. **`FILES I LEFT IN THE TREE`** — a list of repo-relative paths you created or edited in the sandbox. If this list is empty, say `NONE` and explain why; an empty list with no explanation is a failed round.
+3. **`FINDINGS`** — numbered. For each: **WHAT** (1 sentence), **WHERE** (`path:line`), **EVIDENCE** (the exact command you ran and its output, quoted), **FIX** (the path you wrote it to, and what it changes), **WHAT WOULD REFUTE THIS** (per Section 4), **SEVERITY** (0.0 to 1.0).
+4. **`FIGURES I RE-RAN`** — each declared figure in this brief, the number you got, and whether it matched.
+5. **`WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1`** — disagreement is preserved as information, never smoothed. If you agree with everything, say so explicitly; silent agreement is indistinguishable from not looking.
+6. **`WHAT I DID NOT CHECK`** — the honest boundary of your pass.
+
+Do not return a summary in place of the full output. The founder decides what matters, not the summariser.

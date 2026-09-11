@@ -1,0 +1,215 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 20754,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/jebus/Downloads 2>/dev/null; ls -d ~/*/ 2>/dev/null | head -50; echo \\\"---\\\"; pwd\", \"description\": \"Locate working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find ~ -maxdepth 4 -name \\\"_convergence.py\\\" -path \\\"*bench*\\\" 2>/dev/null | head; echo \\\"---\\\"; find ~ -maxdepth 5 -type d -name \\\"bench\\\" 2>/dev/null | head\", \"description\": \"Find bench directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"---\\\" && ls bench | head -60\", \"description\": \"List sandbox repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"sk_score_prose_listings\\\" --include=*.py --include=*.md --include=*.json . | head -40\", \"description\": \"Find flag usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"sk_score_prose_listings\\\" . 2>/dev/null | grep -v \\\".git/\\\" | head -40\", \"description\": \"Find flag usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_gateable_source\\\\|_MD_PY_FENCE\\\" . 2>/dev/null | grep -v \\\".git/\\\" | head -40\", \"description\": \"Find extractor\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 9930,10060p bench/reference_runner_v3.py\", \"description\": \"Read _gateable_source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10140,10330p bench/reference_runner_v3.py\", \"description\": \"Read effect gates\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_sk\\\\|def _capture_baseline\\\\|def _evaluate_sk_for_findings\\\" bench/reference_runner_v3.py\", \"description\": \"Locate compute_sk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10330,10400p bench/reference_runner_v3.py\", \"description\": \"Rest of baseline\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10400,10560p bench/reference_runner_v3.py\", \"description\": \"Read compute_sk body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11475,11560p bench/reference_runner_v3.py; echo \\\"=== 13960-14010 ===\\\"; sed -n 13960,14010p bench/reference_runner_v3.py\", \"description\": \"Read _evaluate_sk_for_findings and call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_capture_baseline(\\\" bench/*.py bench/dm/*.py 2>/dev/null | head -20\", \"description\": \"Find baseline call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff --version; python3 -m bandit --version 2>&1 | head -2; python3 --version; git log --oneline -3 2>/dev/null\", \"description\": \"Check tooling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sigma\\\\b\\\" bench/reference_runner_v3.py | head -30; echo \\\"=== gamma ===\\\"; grep -n \\\"gamma\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find sigma and gamma\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/a19 && cat > /tmp/a19/probe.py <<'PYEOF'\\nimport sys, json\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\n\\nPROSE = \\\"\\\"\\\"# Design note\\n\\nThis document describes the retry policy. The timeout budget is 30 seconds,\\nand the backoff is exponential with a cap. Offsets are l"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v3 as R, inspect\\nprint(inspect.getsource(R.parse_search_replace_blocks)[:3000])\\\"\", \"description\": \"Read block parser\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF' 2>&1 | tail -50\\nimport sys, json\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\n\\nPROSE = \\\"\\\"\\\"# Design note\\n\\nThis document describes the retry policy. The timeout budget is 30 seconds,\\nand the backoff is exponential with a cap. Offsets are liste"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF' 2>&1 | tail -40\\nimport sys, json\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\nPROSE = open(\\\"/dev/stdin\\\").read() if False else \\\"\\\"\\\"# Design note\\n\\nProse. Offsets 007, 013.\\n\\n```python\\ndef run(cmd):\\n    return 0\\n```\\n\\nMore prose.\\n\\\"\\\"\\\"\\np"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v3 as R\\ncases = {\\n \\\"tilde fence\\\": \\\"~~~python\\\\nx = 1\\\\n~~~\\\\n\\\",\\n \\\"unclosed fence\\\": \\\"```python\\\\nx = (\\\\n\\\",\\n \\\"pycon\\\": \\\"```pycon\\\\n>>> x = 1\\\\n```\\\\n\\\",\\n \\\"indented fence\\\": \\\"Text:\\\\n\\\\n    ```python\\\\n    x = 1\\\\n    ```\\\\n\\\",\\n \\\"blockquote fence\\\": \\\"> ```python\\\\n> x = 1\\\\n> ```\\\\n\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"s_floor\\\\|SK_ADMISSIBLE\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find s_floor and admissible usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF' 2>&1 | tail -30\\nimport sys\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\n# indented fence: extremely common -- a listing inside a numbered list\\nPROSE = \\\"\\\"\\\"# Note\\n\\n1. First do this:\\n\\n    ```python\\n    def run(cmd):\\n        return 0\\n    ```"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11130,11200p bench/reference_runner_v3.py; echo \\\"=== 11575,11620 ===\\\"; sed -n 11575,11620p bench/reference_runner_v3.py\", \"description\": \"Read threshold logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF'\\nimport sys\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\n# runner defaults from _evaluate_sk_for_findings\\nnu_b, nu_f, q, R_old = 0.05, 0.20, 0.5, 0.5\\nfor sk in (1.0, 0.6667, 0.3333, 0.2, 0.0001):\\n    p,s = R.check_sk_threshold_corrected(sk, nu_b="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF' 2>&1 | tail -30\\nimport sys\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\nPROSE = \\\"\\\"\\\"# Note\\n\\nProse here.\\n\\n```python\\ndef run(cmd):\\n    return 0\\n```\\n\\nTrailing prose.\\n\\\"\\\"\\\"\\npath=\\\"t.md\\\"\\nb = R._capture_baseline(PROSE, source_path=path)\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10255,10262p bench/reference_runner_v3.py; echo \\\"--- compile gate ---\\\"; sed -n 10254,10282p bench/reference_runner_v3.py | head -5; grep -n \\\"def _run_hard_gate_compile\\\" -A 30 bench/reference_runner_v3.py | sed -n 1,35p\", \"description\": \"Read compile gate\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench/reference_runner_v3.py\", \"offset\": 9943, \"limit\": 32}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench/reference_runner_v3.py\", \"old_string\": \"_MD_PY_FENCE = re.compile(r\\\"```(?:python|py)\\\\n(.*?)```\\\", re.S)\\n\\n\\ndef _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[str], str]:\\n    \\\"\\\"\\\"The Python the syntax gates should actually check, for any ta"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/reference_runner_v3.py; touch /tmp/a19/x && echo \\\"tmp writable\\\"; python3 -c \\\"\\np='bench/reference_runner_v3.py'\\nopen(p,'a').close(); print('repo file appendable')\\\" 2>&1 | tail -2\", \"description\": \"Check write permission\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/a19/patch1.py <<'PYEOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\nOLD = '''_MD_PY_FENCE = re.compile(r\\\"```(?:python|py)\\\\\\\\n(.*?)```\\\", re.S)\\n\\n\\ndef _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[str], str]:\\n'''\\nNEW = '''_MD_PY_FENCE = re.compile(r\\\"```(?:python|py)\\\\\\\\n(.*?)```\\\", re.S)\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v3 as R, ast\\ncases = {\\n \\\"plain fence\\\": \\\"```python\\\\nx = 1\\\\n```\\\\n\\\",\\n \\\"tilde fence\\\": \\\"~~~python\\\\nx = 1\\\\n~~~\\\\n\\\",\\n \\\"unclosed fence\\\": \\\"```python\\\\nx = (\\\\n\\\",\\n \\\"pycon (must stay out)\\\": \\\"```pycon\\\\n>>> x = 1\\\\n```\\\\n\\\",\\n \\\"indented fence\\\": \\\"1. Do:\\\\n\\\\n    ```python\\\\n    def f():"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/a19/patch2.py <<'PYEOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\nn = 0\\n\\n# --- (a) CRLF normalisation before fence matching -------------------------\\nOLD = '''    if source_path.endswith(\\\".py\\\") or not source_path:\\n        return modified_source, \\\"python target\\\"\\n    blocks = [_strip_listing_prefix(m.group(\\\"body\\\"),"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF' 2>&1 | tail -40\\nimport sys\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\nPROSE = \\\"\\\"\\\"# Design note\\n\\nThis document describes the retry policy. Offsets are 007, 013, 021.\\n\\n| offset | meaning |\\n|--------|---------|\\n| 007    | header  |\\n\\n```py"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF'\\nimport sys\\nsys.path.insert(0, \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo/bench\\\")\\nimport reference_runner_v3 as R\\nnb,nf,q,Ro = 0.05,0.20,0.5,0.5\\n_,sstar = R.check_sk_threshold_corrected(0.5, nu_b=nb, nu_f=nf, q=q, R=Ro)\\nprint(\\\"corrected S* at runner defaults =\\\", sstar)\\ndef E(gates):\\n    W=sum(w for "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_a19_prose_listing_gates_2026-09-11.py <<'PYEOF'\\n\\\"\\\"\\\"A19 round 13 -- the prose-listing S_k path, and the gates that could not fail.\\n\\nWHAT THIS PINS. `sk_score_prose_listings` lets `compute_sk` score the fenced\\nlistings inside a prose target instead of returning NO_SCORE. Round 12 handed\\n`_gateable_source` to `_run_effect_ruff` and `_run_effect_bandit`. It "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io\\np=\\\"bench/tests/test_a19_prose_listing_gates_2026-09-11.py\\\"\\ns=io.open(p,encoding=\\\"utf-8\\\").read()\\ns=s.replace('''        direct = R._capture_baseline(listing, source_path=TARGET)''',\\n'''        # NB the path must say .py here: `_capture_baseline` now gates its\\n        # input, and re-gating already-extracted Python under a .md path would\\n        "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/reference_runner_v3.py /tmp/a19/FIXED.py\\ncat > /tmp/a19/mutate.py <<'PYEOF'\\n\\\"\\\"\\\"Reverse ONE fix hunk at a time and prove the test goes red.\\\"\\\"\\\"\\nimport io, sys\\np = \\\"bench/reference_runner_v3.py\\\"\\nMUT = {\\n # M1: un-gate the baseline -> e3 pinned at 1.0 again\\n \\\"M1_baseline_ungated\\\": (\\n   \\\"    gateable, _why_base = _gateable_source(source, source_path)\\\",\\n   \\\"  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_hard_gates_non_python_target.py \\\"bench/tests/test_prose_listings_are_scoreable_2026-09-11.py\\\" -q 2>&1 | tail -25\", \"description\": \"Regression: existing gate tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i \\\"sk\\\\|gate\\\\|compute\\\" | head -20\", \"description\": \"Find related tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_sk_break_even_2026-09-06.py bench/tests/test_sk_format_precheck.py bench/tests/test_hardened_gate.py bench/tests/test_gate_writes_no_files_2026-08-26.py bench/tests/test_falsifier_gate.py -q -p no:cacheprovider 2>&1 | grep -E \\\"passed|failed\\\" | head -3\", \"description\": \"Regression: S_k tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _load_config\\\\|RunnerConfig(\\\\*\\\\*\\\\|setattr(cfg\\\\|for k, v in .*items()\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find config loading path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1428,1470p bench/reference_runner_v3.py\", \"description\": \"Read config from_dict\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def build_runner_config_from_dict\\\" -A 40 bench/launcher_core.py 2>/dev/null | head -60\", \"description\": \"Check launcher config path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys, json, types\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.launcher_core import build_runner_config_from_dict\\ncfg_dict = {\\\"experiment_name\\\":\\\"x\\\",\\\"models\\\":[\\\"a\\\"],\\\"test_article\\\":\\\"t.md\\\",\\n            \\\"sk_enabled\\\":True,\\\"sk_score_prose_listings\\\":True}\\nclass A: resume=False\\ncfg = build_runner_config_from_dict(cfg_dict, A())\\nprint(\\\"launcher path ->"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/a19 && python3 - <<'PYEOF'\\nimport sys, subprocess, json, tempfile, os\\nREPO=\\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lt1y7lo0/repo\\\"\\nsys.path.insert(0, REPO+\\\"/bench\\\")\\nimport reference_runner_v3 as R\\ndoc = open(REPO+\\\"/bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\\\", encoding=\\\"utf-8\\\").read()\\npath = \\\"bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\\\"\\ndef "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom math import sqrt\\ndef wilson(k,n,z=1.959963985):\\n    if n==0: return (0.0,1.0)\\n    p=k/n; d=1+z*z/n; c=p+z*z/(2*n); h=z*sqrt(p*(1-p)/n+z*z/(4*n*n))\\n    return ((c-h)/d,(c+h)/d)\\ntry:\\n    from scipy.stats import beta\\n    def cp(k,n,a=0.05):\\n        lo=0.0 if k==0 else beta.ppf(a/2,k,n-k+1)\\n        hi=1.0 if k==n else beta.ppf(1-a/2,k+1,n-k)\\n        ret"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 240 python3 -m pytest -q -p no:cacheprovider $(grep -ln \\\"_capture_baseline\\\\|_run_effect_ruff\\\\|_run_effect_bandit\\\\|_gateable_source\\\\|compute_sk\\\\|resolve_target_kind\\\" bench/tests/*.py | tr '\\\\n' ' ') 2>&1 | grep -E \\\"^(FAILED|ERROR)|passed|failed\\\" | head -20\", \"description\": \"Targeted regression sweep\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"FILES=$(grep -ln \\\"_capture_baseline\\\\|_run_effect_ruff\\\\|_run_effect_bandit\\\\|_gateable_source\\\\|compute_sk\\\\|resolve_target_kind\\\" bench/tests/*.py | tr '\\\\n' ' '); echo \\\"FILES: $FILES\\\"; timeout 300 python3 -m pytest -q -p no:cacheprovider $FILES 2>&1 | tail -5\", \"description\": \"Targeted regression sweep retry\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"FILES=$(grep -ln \\\"_capture_baseline\\\\|_run_effect_ruff\\\\|_run_effect_bandit\\\\|_gateable_source\\\\|compute_sk\\\\|resolve_target_kind\\\" bench/tests/*.py | tr '\\\\n' ' '); python3 -m pytest -q -p no:cacheprovider $FILES 2>&1 | grep -E \\\"^(FAILED|ERROR)|passed|failed\\\" | head -20\", \"description\": \"Targeted regression sweep\", \"timeout\": 400000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_a19_prose_listing_gates_2026-09-11.py bench/tests/test_d9_d11_configs_valid_2026-09-05.py bench/tests/test_gate_writes_no_files_2026-08-26.py bench/tests/test_hard_gates_non_python_target.py bench/tests/test_immune_memory_consumption.py bench/tests/test_instrument_gaps_from_panel_2026-08-28.py bench/tests/test_launch_preflight_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport ast,io\\ns=io.open('bench/reference_runner_v3.py',encoding='utf-8').read()\\nast.parse(s); print('reference_runner_v3.py parses OK,', len(s.splitlines()), 'lines')\\n\\\" ; ls -la \\\"bench/tests/test_a19_prose_listing_gates_2026-09-11.py\\\"; python3 -m pytest \\\"bench/tests/test_a19_prose_listing_gates_2026-09-11.py\\\" -q -p no:cacheprovider 2>&1 | tail -2\", \"description\""
+    }
+  ],
+  "n_tool_calls": 51,
+  "elapsed_s": 701.2,
+  "response": "# VERDICT\n\n**NOT READY.** A19 removed \"structurally incapable of failing\" from `e4_bandit` and **reintroduced it in `e3_ruff` in the same commit**, and turning the flag ON re-arms the 2026-08-01 A=0.0 halt on a second markdown shape. Four defects found, all four measured, all four fixed and mutation-tested. The flag itself is correctly wired and reachable.\n\n---\n\n# FILES I LEFT IN THE TREE\n\n| Path | What |\n|---|---|\n| `bench/reference_runner_v3.py` | The fix. 6 hunks: `_MD_PY_FENCE_ANY` + `_strip_listing_prefix` (new), `_gateable_source` (CRLF + normalised extraction), `_capture_baseline` (**the critical hunk**), `_baseline_code_is_parseable` (new), `_run_hard_gate_ast` / `_run_hard_gate_compile` (optional `original_source=`), `compute_sk` (`g0_code_retained` + threads the original into g1/g2). |\n| `bench/tests/test_a19_prose_listing_gates_2026-09-11.py` | 17 tests, 6 classes. **17 passed in 2.79s.** All 4 fix hunks verified RED by mutation. |\n\nUnchanged: `RunnerConfig.sk_score_prose_listings` still defaults **False**. No archived measurement moves until the founder rules. I touched no git ref, no paid seat, no key store.\n\n---\n\n# FINDINGS\n\n## F1 \u2014 e3_ruff was PINNED AT 1.0. The gate that could not fail moved from e4 to e3. \u2014 CRITICAL\n\n**WHERE** `bench/reference_runner_v3.py::_capture_baseline` (was line 10282) vs `_run_effect_ruff` (10152).\n\n**WHAT.** Round 12 handed `_gateable_source` to `_run_effect_ruff` and `_run_effect_bandit`. It did **not** hand it to `_capture_baseline`. So e3 subtracts two numbers taken over **different texts**:\n\n```\ndelta = max(0, violations(LISTINGS after fix) \u2212 violations(WHOLE PROSE before fix))\n```\n\nThe subtrahend is enormous, the minuend tiny, so `delta` is 0 for every reachable fix.\n\n**EVIDENCE** (pre-fix runner, 12-line design note):\n\n```\nBASELINE (runner, whole prose): {'ruff_violations': 66, 'bandit_findings': {'high': 0, 'medium': 0}}\nBASELINE (if extracted first):  {'ruff_violations': 0,  'bandit_findings': {'high': 0, 'medium': 0}}\nSK: 0.6667 ADMISSIBLE A=1 E=0.6667\n  \"e3_ruff\": {\"score\": 1.0, \"detail\": \"7 total, 0 new (baseline: 66)\"}\n```\n\nThe fix injected **seven real ruff diagnostics** into the listing and e3 scored **1.0**. To make e3 fail you must add **67+** diagnostics to a listing that has none. On the brief's own document the headroom is 307 (`311 \u2212 4`).\n\nThis is verbatim the property the A19 docstring condemns in e4 \u2014 *\"structurally incapable of failing, which is worse than unavailable, because an unavailable gate is excluded from the weighted mean and a gate that always passes drags it up\"* \u2014 reproduced in e3 by the commit that removed it from e4.\n\nIt also runs the other way. Bandit could not parse the prose, so its baseline was a false `0H/0M`, and a HIGH **already present** in a listing counted as NEW \u2014 a correct fix convicted for a pre-existing defect.\n\n**FIX.** `_capture_baseline` now gates its input through `_gateable_source` before measuring. No reducible code \u21d2 return `None` baselines, which *excludes* e3/e4 from the weighted mean rather than handing them a number measured over English. `.py` targets untouched by construction.\n\n**AFTER:**\n```\nBASELINE NOW: {'ruff_violations': 0, 'bandit_findings': {'high': 0, 'medium': 0}}\nGOOD            sk=1.0     ADMISSIBLE   e3: 0 total, 0 new (baseline: 0)\nBAD-lint        sk=0.7333  ADMISSIBLE   e3: 8 total, 8 new (baseline: 0)   <- e3 = 0.2, it can fail\nBAD-shell-HIGH  sk=0.6667  ADMISSIBLE   e4: 1 HIGH/0 MEDIUM (new: 1H/0M)\n```\n\n**WHAT WOULD REFUTE THIS.** A call site that already extracts before calling `_capture_baseline`. I checked both: `reference_runner_v3.py:12768` and `reference_runner.py:3490` \u2014 both pass `target_text` raw. Or: a demonstration that `violations(listings) > violations(prose)` is reachable, which would need a listing carrying more diagnostics than the whole document error-recovered.\n\n**SEVERITY: CRITICAL** \u2014 admits a bad fix; a gate that cannot fail.\n\n---\n\n## F2 \u2014 Turning the flag ON converts NO_SCORE \u2192 REJECTED on indented and blockquoted fences. The 2026-08-01 halt, re-armed. \u2014 CRITICAL\n\n**WHERE** `_MD_PY_FENCE = re.compile(r\"```(?:python|py)\\n(.*?)```\", re.S)` (line 9943).\n\n**WHAT.** The regex takes the fence body *with its markdown scaffolding attached*. A listing inside a numbered list \u2014 the single most common shape in a design note \u2014 extracts as `    def f():\\n        return 0`. `ast.parse` raises `unexpected indent`. `A = g1\u00b7g2 = 0`. **Every fix to that document is REJECTED.**\n\n**EVIDENCE** (pre-fix, 10 markdown shapes):\n\n```\ntilde fence      -> src=None                    (extracted nothing)\ncrlf fence       -> src=None                    (extracted nothing)\nlang+attrs       -> src=None                    (extracted nothing)\nindented fence   -> '    x = 1\\n'               AST FAIL: unexpected indent\nblockquote fence -> '> x = 1\\n>\\n'              AST FAIL: invalid syntax\nfragment         -> '    return 0\\n'            AST FAIL: unexpected indent\n```\n\nEnd to end, a **correct** fix on an indented-fence target:\n\n```\nINDENTED-FENCE, CORRECT FIX -> sk=0.0 REJECTED A=0.0\n  g1: ParseError: unexpected indent (<unknown>, line 1)\nSAME, FLAG OFF -> NO_SCORE\n```\n\nA REJECT is a claim; NO_SCORE is an abstention. **The flag makes the instrument worse, not silent.** That is the exact failure `_gateable_source` was written on 2026-08-01 to end \u2014 fifty straight A=0.0 rejections, no finding closable, run cannot converge \u2014 on a new input shape.\n\nThe three that extracted *nothing* are fail-safe but mean the flag silently does nothing on a `~~~` document, a Windows-authored document, or any fence carrying attributes.\n\n**FIX.** `_MD_PY_FENCE_ANY` (blockquote/indent prefix, ` ``` ` and `~~~`, language attributes) + `_strip_listing_prefix` (CRLF \u2192 LF, strip `> `, dedent by the **common** prefix over non-blank lines only, so the listing's own Python indentation survives). CRLF normalised before matching. `pycon` **stays excluded on purpose** \u2014 a doctest block interleaves source with output, and abstaining is right where convicting is not.\n\n**AFTER \u2014 all 7 real shapes, 0 broken:**\n```\nplain / tilde / attrs / crlf / indented / blockquote / four_tick  -> AST OK\npycon -> NO CODE (abstain)\n```\n\n**WHAT WOULD REFUTE THIS.** A markdown corpus where dedenting changes the meaning of a listing (I cannot construct one \u2014 the common prefix over non-blank lines is by definition not part of any line's Python indentation *relative to its siblings*). Or evidence that no real CDSFL target ever uses a list-nested fence.\n\n**SEVERITY: CRITICAL** \u2014 rejects correct fixes universally on an affected target; reproduces a known convergence halt.\n\n---\n\n## F3 \u2014 g1/g2 are the only ABSOLUTE gates in a pipeline that is otherwise all deltas. A fenced fragment convicts every fix. \u2014 HIGH\n\n**WHERE** `_run_hard_gate_ast` / `_run_hard_gate_compile`.\n\n**WHAT.** e2, e3, e4 are all measured *against a baseline*. g1 and g2 are absolute. On a Python module that is harmless \u2014 the repo's own source parses. On a prose target a listing is routinely an **illustrative fragment** (`    return 0`, a method body, a diff hunk) that never parsed on its own and never will. `A = 0`, every fix rejected, and the failure is **not attributable to the fix**.\n\n**EVIDENCE.** `TestAbsoluteHardGatesGetABaseline::test_a_fragment_that_never_compiled_is_not_charged_to_the_fix` \u2014 RED before the fix: `A=0.0, SK_REJECTED (\"'return' outside function\")` on a correct `return 0 \u2192 return 1` edit.\n\n**FIX.** `_baseline_code_is_parseable(original_source, source_path)`. If the target's listings did not compile **before** the fix, g1/g2 abstain (score 1, with the reason stated in `detail`) instead of convicting. Signature default `original_source=None` reproduces the previous absolute behaviour exactly, so no existing caller changes \u2014 pinned by `test_absolute_behaviour_is_unchanged_when_no_original_is_passed`.\n\n**The guard is not a licence**, and this is the mutation that proves it: `test_a_fix_that_really_breaks_good_code_is_still_rejected` \u2014 a fix turning good code into `return (((` still gives `A=0.0, SK_REJECTED`.\n\n**WHAT WOULD REFUTE THIS.** A case where a fix breaks a listing *differently* from how the baseline was broken and the guard swallows it. That is real residual scope: the guard is coarse (parses / does not parse) rather than diffing the two failures. I report it as a known limit, not as closed.\n\n**SEVERITY: HIGH.**\n\n---\n\n## F4 \u2014 A hunk straddling the fence can DELETE every listing and escape scoring as ESCALATE. \u2014 HIGH\n\nThis is \u00a73.3's answer.\n\n**WHAT.** `apply_fix_blocks` operates on the **whole source**, prose included, and extraction happens *after*. So a hunk that edits prose and a listing together: the prose half is applied but invisible to every gate; only the listing half is scored \u2014 listing-granularity is correct as claimed. But a hunk that removes the fence markers removes the code from the gates' view entirely.\n\n**EVIDENCE** (pre-fix):\n```\nDELETE-THE-LISTING -> 0.0 ESCALATE A=1 E=0.0\n  g1: AST parse not applicable (target carries no code; syntax gates not applicable)\n  e3: target carries no code; ruff not applicable\n  e4: target carries no code; bandit not applicable\n```\n\nThe target was admitted to the scoring branch **because** it carried reducible code. A fix that deletes all of it has not become unscoreable \u2014 it has failed. This is the additive standard as a gate: a removal with no measured replacement.\n\n**FIX.** `g0_code_retained` in `compute_sk`: if `_reducible is not None and _post is None`, return `SK_REJECTED`, not `SK_ESCALATE`.\n\n**WHAT WOULD REFUTE THIS.** A legitimate fix whose whole purpose is deleting a listing (e.g. the finding is \"this example is wrong, remove it\"). Then REJECT is wrong and the right answer is a distinct outcome. I judged REJECT the safer default over ESCALATE-that-reads-as-unscoreable, but this one is a genuine design call and I flag it for the founder rather than claiming it settled.\n\n**SEVERITY: HIGH.**\n\n---\n\n## F5 \u2014 On a Python target with a green suite and clean lint, NO number of new bandit HIGHs can fall below S*. \u2014 HIGH, PRE-EXISTING, OUT OF A19 SCOPE\n\nNot caused by A19, but A19 is what routes prose targets into this machinery, so it is in the blast radius.\n\n**DERIVATION.** `E` is the renormalised weighted mean over *available* gates; weights e2=2.0, e3=1.0, e4=2.0. With e2 available and passing:\n\n```\nE_min = (2/5)(1) + (1/5)(e3) + (2/5)(0)     [e4 = 0 \u21d2 \u22652 new HIGH]\n      = 0.4 + 0.2\u00b7e3\n      = 0.6   when lint is clean\n```\n\n**MEASURED:**\n```\ncorrected S* at runner defaults = 0.5049311709704235\nPY target, e2=1 e3=1 e4=0 (>=2 new bandit HIGH):  E= 0.6000000000000001\n```\n\n`0.600 > 0.5049` \u21d2 **ADMITTED**. Unbounded new bandit HIGHs are admissible on a Python target whose tests pass and whose lint is clean. The only way a Python fix falls below S* is to break the suite or be lint-filthy. Pinned as a *documented* behaviour in `test_a_python_fix_with_green_tests_can_never_fall_below_s_star`, not silently.\n\n**WHAT WOULD REFUTE THIS.** A real config with `sk_s_floor > 0.6`, or per-finding `model_params` that push `s_star` above 0.6. I checked: `sk_s_floor` defaults 0.0 and `model_params` is, per the runner's own comment at line ~11290, *\"never populated\"* \u2014 so `nu_b=0.05, nu_f=0.20, q=0.5, R=0.5` are the operating point.\n\n**SEVERITY: HIGH**, deliberately **not fixed**: reweighting the effect gates changes which fixes are admitted on every Python target ever run. That is a founder ruling, not an assistant's.\n\n---\n\n# CAN A BAD FIX BE ADMITTED\n\n**Yes. I constructed one and ran it.** This is the answer to \u00a73.1, and the answer survives my own fix.\n\n```\nBAD-shell-HIGH   sk=0.6667  ADMISSIBLE  passes_S*=True\n                 e4: 1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)\n```\n\nThe fix injects `subprocess.call(cmd, shell=True)` \u2014 arbitrary shell execution, bandit HIGH \u2014 into a fenced listing, and it is **ADMITTED and clears the corrected break-even**.\n\n**The derivation, not a vote.** On a prose target `e2_regression` is unavailable, so `W = 1.0 + 2.0 = 3`:\n\n```\nE = (1/3)\u00b7e3 + (2/3)\u00b7e4\ne4 = max(0, 1 \u2212 0.5\u00b7H_new \u2212 0.2\u00b7M_new)\nS*_corrected = 0.50493   (nu_b=0.05, nu_f=0.20, q=0.5, R=0.5, s_floor=0)\n\nAdmission \u21d4 1/3 + (2/3)\u00b7e4 \u2265 0.50493 \u21d4 e4 \u2265 0.25740\n                                     \u21d4 0.5\u00b7H + 0.2\u00b7M \u2264 0.74260\n\nH=1, M=0 \u2192 e4=0.5 \u2192 sk=0.6667 \u2192 ADMITTED   \u2190 the shell-injection fix\nH=1, M=1 \u2192 e4=0.3 \u2192 sk=0.5333 \u2192 ADMITTED\nH=1, M=2 \u2192 e4=0.1 \u2192 sk=0.4000 \u2192 rejected\nH=2, M=0 \u2192 e4=0.0 \u2192 sk=0.3333 \u2192 rejected\n```\n\n**One new bandit HIGH is not enough to reject.** Two are.\n\n**What my fix did and did not change here.** Pre-fix, the *only* thing separating good from bad was e4, because e3 was pinned \u2014 and pre-round-12 the ranking was *inverted* (`sk=1.0000` for the `rm -rf` fix against `0.6667` for a correct one, per the runner's own docstring). Post-fix the ordering is correct and e3 is live (`BAD-lint` 1.0 \u2192 0.7333). **But both still clear the threshold.** The discrimination is ordinal, not decisive.\n\n**And the A19 docstring's own headline number is the tell:** it cites `0.6667` as the score of *a correct prose fix*. Post-A19 the shell-injection fix scores exactly `0.6667`. The malicious fix now scores what the docstring uses as its example of an acceptable one. That coincidence is worth the founder's attention.\n\n---\n\n# FIGURES I RE-RAN\n\n| Figure | Claimed | I measured | Verdict |\n|---|---|---|---|\n| e3 over `BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, whole vs extracted | 311 / 4 | **311 / 4** | **Exact.** |\n| e4 on an injected HIGH | `e4 = 0.5` | **0.5** (`1 HIGH/0 MEDIUM`) | **Exact.** |\n| e2 still unavailable on prose | stands | `\"no test command configured\"` | **Stands, correctly not claimed fixed.** |\n| Flag reachable config \u2192 `compute_sk` (\u00a73.5) | \u2014 | `RunnerConfig.from_dict` \u2192 **True**; `launcher_core.build_runner_config_from_dict` \u2192 **True** | **Reachable on both ingestion boundaries.** Not an addition nothing reaches. No shipped config sets it, so no measurement moves until he rules. |\n\n**The one figure the brief does not state, and should:** the runner's baseline on that same document was **311**, not 4. Post-fix it is **4**. That is 307 diagnostics of free headroom a fix could previously consume.\n\n**Proportions, with the second tool as required** (`scipy.stats.beta` Clopper\u2013Pearson alongside Wilson):\n\n```\nfence shapes BROKEN, before fix   5/7=0.7143  Wilson95 [0.3589,0.9178]  CP [0.2904,0.9633]\nfence shapes BROKEN, after fix    0/7=0.0000  Wilson95 [0.0000,0.3543]  CP [0.0000,0.4096]\nmutants killed by the new test    4/4=1.0000  Wilson95 [0.5101,1.0000]  CP [0.3976,1.0000]\n```\n\n**I will not over-read these.** n=7 and n=4 give intervals too wide to support any claim beyond \"the shapes I tested\". The 7 shapes were chosen adversarially, not sampled \u2014 these are a census of a hand-picked set, and the interval is decoration on it. The load-bearing evidence is the per-shape table, not the proportion.\n\n**Effect on `severity` / `sigma` / `gamma`:** `sigma \u2261 s_k`, so F1 raised `sigma` by pinning e3 at 1.0 \u2014 every prose fix was scored as more correct than it was, which *lowers* `R_k` too fast through `compute_rk`. Findings closed on inflated `sigma` leave `R_k` understating residual risk. `severity` is untouched (S_k scores fixes, not findings). `gamma` is untouched directly, but F2 reaches it: A=0 rejections leave findings OPEN, they stay novel-eligible, and the novelty series that feeds `_estimate_gamma` never decays \u2014 the 2026-08-01 non-convergence signature.\n\n---\n\n# MUTATION EVIDENCE (\u00a73B: the test must be able to FAIL)\n\nEach fix hunk reversed one at a time against the real module, test re-run, module restored:\n\n```\nMUTANT APPLIED: M1_baseline_ungated        -> 3 failed, 14 passed\nMUTANT APPLIED: M2_narrow_fence            -> 1 failed, 16 passed\nMUTANT APPLIED: M3_absolute_hard_gates     -> 1 failed, 16 passed\nMUTANT APPLIED: M4_allow_code_deletion     -> 1 failed, 16 passed\n=== RESTORED ===                              17 passed in 2.87s\n```\n\n**M2 killing only 1 test is itself a result, and I looked rather than assumed.** With the narrow fence restored, `test_a_correct_fix_on_an_indented_fence_is_not_rejected` still passes \u2014 because the F3 guard catches it: the original listing does not parse either, so g1/g2 abstain. Defence in depth, confirmed by accident and then deliberately.\n\n**Two of my own tests were wrong on first run and I fixed the tests, not the assertions.** `2 failed, 15 passed` initially: (a) `_capture_baseline(listing, source_path=TARGET)` re-gated already-extracted Python under a `.md` path and found no fence \u2014 extraction is not idempotent w.r.t. path; the runner calls it once on the raw target, so this is a test artefact, now documented in the test. (b) An assertion whose premise was simply false (`x = (` inside a closed fence *is* a syntax error, so 0 was right). Both are in the file's history of this turn, stated rather than buried.\n\n**Regression, 11 files touching `_capture_baseline` / the effect gates / `_gateable_source` / `compute_sk` / `resolve_target_kind`:**\n```\n449 passed, 1 warning in 25.27s\n```\nBlast radius on Python targets is nil by construction and pinned by `TestPythonTargetsAreUntouched`: `_gateable_source` returns Python unchanged, so `_capture_baseline` on a `.py` target is byte-identical to before. Pure prose with no listing still returns **NO_SCORE** with the flag ON \u2014 the founder's own distinction, preserved.\n\n---\n\n# WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\nI did not read the other seats' round-13 output; this is my independent verdict.\n\nI disagree with the **round-12 tracker entry**, on the record at `experimental_notes/CDSFL_MASTER_TASK_LIST.md:493`, on three points:\n\n1. **\"Two of the short-circuit's 3 stated reasons ... are repaired.\"** One and a half. e4 is genuinely repaired \u2014 I confirmed `e4 = 0.5` on a real HIGH. **e3 is not.** It was moved from \"reads prose as Python\" to \"compares listings against prose\", which is the same disease with a better cover story: pre-fix, `7 total, 0 new (baseline: 66)` scored **1.0**. The entry's own standard \u2014 *\"structurally incapable of failing, which is worse than unavailable\"* \u2014 condemns the state it shipped.\n\n2. **\"10 tests, 4 mutations verified red.\"** I believe the count; the mutations did not cover the *baseline* path, which is why F1 survived them. A mutation suite that cannot reach the defect is the project's own vacuous-test failure mode \u2014 8 found that way historically, 7 in the last two days per the brief. This is the 16th.\n\n3. **\"A Python target is untouched by construction \u2014 so no existing measurement can move.\"** True for round 12 and true for my fix. But it is stated as though it bounded the risk, and it does not: the uncovered surface was never Python targets, it was the *prose baseline*, which round 12 did not touch and therefore did not test.\n\nI **agree** with the entry, against any instinct to find more fault, on: default-OFF is right; pure prose returning NO_SCORE is right and is his distinction, not a hedge; `e2_regression` is honestly not claimed fixed; and reading the flag with `getattr` so an older config cannot break the call is the correct defensive choice.\n\n---\n\n# WHAT I DID NOT CHECK\n\n- **The full suite.** Brief forbade it (8+ min). 449 tests over the 11 files touching this machinery. A failure in an untouched file is possible; I have no evidence either way.\n- **`bench/reference_runner.py`** carries its own `_capture_baseline` at line 2663 with, as far as I can see from the call at 3490, **the identical defect**. I did not fix it \u2014 I do not know whether that runner is live or archived, and fixing a dead path is the \"addition nothing reaches\" failure in reverse. **Flagged for the founder: if v2 is live, F1 is open there.**\n- **The F3 guard's coarseness.** It asks \"did it parse before\", not \"did it fail the *same way*\". A fix that breaks a listing differently from how it was already broken is swallowed. Stated as residual, not closed.\n- **Whether any real exam target uses `~~~`, CRLF, or list-nested fences.** I fixed the extractor against seven constructed shapes; I did not survey the corpus. If none of them occur in practice, F2's severity drops to the NO_SCORE-silently cases only \u2014 though the fix costs nothing either way.\n- **`gamma` end to end.** I derived the path from A=0 rejections \u2192 findings stay OPEN \u2192 novelty series does not decay. I did not run a multi-round experiment to measure it. Marked **[SPECULATIVE]** on the magnitude; the mechanism is `_estimate_gamma`'s dependence on the novelty counts and is not speculative.\n- **`pycon` extraction.** Deliberately left excluded. That is a decision, not an omission, but it means doctest-style STEM documents get NO_SCORE rather than a score."
+}

@@ -1,0 +1,235 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10787,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"sk_score_prose_listings\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_MD_PY_FENCE|_gateable_source\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_MD_PY_FENCE|_gateable_source|sk_score_prose_listings|def compute_sk|def _evaluate_sk_for_findings\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/reference_runner_v3.py && ls bench/tests/ | head -50\", \"description\": \"File size and test listing\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 9930, \"limit\": 130}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 10059, \"limit\": 250}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 10308, \"limit\": 260}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11475, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 13950, \"limit\": 80}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"sk_baseline|_capture_baseline\\\\(\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def resolve_target_kind|TARGET_KIND_PYTHON\\\\s*=|TARGET_KIND_PROSE\\\\s*=\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_prose_listings_are_scoreable_2026-09-11.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 12750, \"limit\": 30}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 1576, \"limit\": 80}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"RunnerConfig\\\\(\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 20}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 15330, \"limit\": 90}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 1240, \"limit\": 80}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def from_json|def load_default_config\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 25}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python -c \\\"import ruff\\\" 2>/dev/null; python -m ruff --version; python -m bandit --version 2>&1 | head -2; git log --oneline -3 2>/dev/null | head -3; git status --porcelain | head\", \"description\": \"Check ruff/bandit availability and git state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which python3; python3 --version; python3 -m ruff --version 2>&1 | head -1; python3 -m bandit --version 2>&1 | head -1\", \"description\": \"Check python3, ruff, bandit\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 1398, \"limit\": 56}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def build_runner_config_from_dict\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/launcher_core.py\", \"offset\": 153, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/launcher_core.py\", \"offset\": 272, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11595, \"limit\": 130}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '```' bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md | head -20; echo ---; sed -n '/```python/,/```/p' bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md | head -30\", \"description\": \"Inspect fenced listings in the measured spec file\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/tmp/demo_bad_fix_admitted.py\", \"content\": \"\\\"\\\"\\\"Section 3.1 demo: with sk_score_prose_listings=True, can a BAD fix be admitted?\\n\\nAttack: the runner captures the S_k baseline over the WHOLE document\\n(_capture_baseline, reference_runner_v3.py:12768) but the repaired effect gates\\nscore the EXTRACTED LISTINGS. On a prose target ruff's baseline is inflated by\\nphantom prose diagnos"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p scratch_seat && echo ok\", \"description\": \"Create scratch directory inside sandbox tree\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7wtbmri7/repo/scratch_seat/demo_bad_fix_admitted.py\", \"content\": \"\\\"\\\"\\\"Section 3.1 demo: with sk_score_prose_listings=True, can a BAD fix be admitted?\\n\\nAttack: the runner captures the S_k baseline over the WHOLE document\\n(_capture_baseline, called at reference_runner_v3.py:12768 with target_text) but\\nthe repai"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scratch_seat/demo_bad_fix_admitted.py <<'EOF'\\n\\\"\\\"\\\"Section 3.1 demo: with sk_score_prose_listings=True, can a BAD fix be admitted?\\n\\nAttack: the runner captures the S_k baseline over the WHOLE document\\n(_capture_baseline, called at reference_runner_v3.py:12768 with target_text) but\\nthe repaired effect gates score the EXTRACTED LISTINGS. On a prose target ruff's\\nbaseline is"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def parse_search_replace_blocks\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 45}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import parse_search_replace_blocks\\nFIX = (\\\"<<<<<<< SEARCH\\\\ndef f():\\\\n    return 1\\\\n=======\\\\n\\\"\\n       \\\"def f():\\\\n    return 2\\\\n>>>>>>> REPLACE\\\")\\nprint(parse_search_replace_blocks(FIX))\\nBAD = \\\"\\\"\\\"<<<<<<< SEARCH\\n    value = match.group(1).strip()\\n    return value or None\\n=======\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import parse_search_replace_blocks, _looks_like_fix_path\\nfor head in (\\\"<<<< SEARCH\\\", \\\"<<<<<<< SEARCH\\\"):\\n    FIX = (head + \\\"\\\\ndef f():\\\\n    return 1\\\\n====\\\\ndef f():\\\\n    return 2\\\\n>>>> REPLACE\\\")\\n    print(repr(head), \\\"->\\\", parse_search_replace_blocks(FIX))\\n# 7-angle with 7-equals\\nF"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import compute_sk\\nFIX = (\\\"<<<<<<< SEARCH\\\\ndef f():\\\\n    return 1\\\\n=======\\\\n\\\"\\n       \\\"def f():\\\\n    return 2\\\\n>>>>>>> REPLACE\\\")\\nPROSE_WITH_CODE = \\\"# note\\\\n\\\\nprose\\\\n\\\\n```python\\\\ndef f():\\\\n    return 1\\\\n```\\\\n\\\"\\nr = compute_sk(FIX, PROSE_WITH_CODE, \\\"notes/design.md\\\", baseline={}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import compute_sk, _capture_baseline, _run_effect_ruff\\n\\nspec_path = \\\"bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\\\"\\nsrc = open(spec_path, encoding=\\\"utf-8\\\").read()\\n\\nbaseline = _capture_baseline(src, source_path=spec_path)\\nprint(\\\"BASELINE over whole document (as run_experiment captures it):\\\", bas"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"sk_s_floor\\\\|sk_enabled\\\" configs bench/exp*_configs 2>/dev/null | grep -v \\\"\\\\.py\\\" | head -20; echo ---; python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import check_sk_threshold_corrected, check_sk_threshold\\n# defaults used by _evaluate_sk_for_findings when model_params absent:\\nprint(\\\"corrected:\\\", check_sk_threshold_corrected(0."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import _gateable_source\\n\\ncases = {\\n \\\"crlf\\\":        \\\"# n\\\\r\\\\n\\\\r\\\\n```python\\\\r\\\\ndef f():\\\\r\\\\n    return 1\\\\r\\\\n```\\\\r\\\\n\\\",\\n \\\"tilde\\\":       \\\"# n\\\\n\\\\n~~~python\\\\ndef f():\\\\n    return 1\\\\n~~~\\\\n\\\",\\n \\\"info_string\\\": \\\"# n\\\\n\\\\n```python title=x\\\\ndef f():\\\\n    return 1\\\\n```\\\\n\\\",\\n \\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '<<<< SEARCH\\\\|<<<<<<< SEARCH' bench/reference_runner_v3.py | head -10; echo --- other tests using 7-angle:; grep -rln '<<<<<<< SEARCH' bench/tests | head; echo --- reachability:; python3 - <<'EOF'\\nimport sys, types; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import RunnerConfig\\nfrom bench.launcher_core import build_runner_config_from_dict\\nc1 = RunnerConfig.fro"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7wtbmri7/repo/bench/reference_runner_v3.py\", \"old_string\": \"def _capture_baseline(source: str, source_path: str = \\\"\\\") -> Dict[str, Any]:\\n    \\\"\\\"\\\"Capture baseline gate scores before fix application.\\n\\n    Values are None when a tool is unavailable, so downstream gates\\n    can distinguish"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/reference_runner_v3.py scratch_seat/reference_runner_v3.py.ORIG && python3 - <<'EOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nold = '''def _capture_baseline(source: str, source_path: str = \\\"\\\") -> Dict[str, Any]:\\n    \\\"\\\"\\\"Capture baseline gate scores before fix application.\\n\\n    Values are None when a tool is unavailable"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scratch_seat/demo_bad_fix_admitted.py 2>&1 | tail -8\", \"description\": \"Re-run bad-fix demo against fixed code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import compute_sk, _capture_baseline\\nspec_path = \\\"bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\\\"\\nsrc = open(spec_path, encoding=\\\"utf-8\\\").read()\\nbaseline = _capture_baseline(src, source_path=spec_path)\\nprint(\\\"BASELINE (post-fix, listing substrate):\\\", baseline)\\nBAD_FIX = \\\"\\\"\\\"<<<< SEARCH\\n    val"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_sk_baseline_gates_same_substrate_2026-09-11.py <<'EOF'\\n\\\"\\\"\\\"Panel round 13: the S_k baseline must be captured over the SAME substrate\\nthe effect gates score, or the delta is a comparison between two different\\nmeasurements.\\n\\nTHE DEFECT. The A19 repair handed `_gateable_source` to `_run_effect_ruff` and\\n`_run_effect_bandit` but not to `_capture_baseline`, w"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/reference_runner_v3.py scratch_seat/reference_runner_v3.py.FIXED && cp scratch_seat/reference_runner_v3.py.ORIG bench/reference_runner_v3.py && python3 -m pytest bench/tests/test_sk_baseline_gates_same_substrate_2026-09-11.py -q 2>&1 | tail -12; cp scratch_seat/reference_runner_v3.py.FIXED bench/reference_runner_v3.py && echo \\\"--- fix restored ---\\\" && python3 -m pytest benc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"bench/tests/test_prose_listings_are_scoreable_2026-09-11.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\nold_fix = '''FIX = (\\\"<<<<<<< SEARCH\\\\\\\\ndef f():\\\\\\\\n    return 1\\\\\\\\n=======\\\\\\\\n\\\"\\n       \\\"def f():\\\\\\\\n    return 2\\\\\\\\n>>>>>>> REPLACE\\\")'''\\nnew_fix = '''# PANEL ROUND 13: this constant previously used 7-angle git-conflict markers\\n# (\\\"<<<<<<< SE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"_capture_baseline\\\\|compute_sk\\\" bench/tests/*.py | head; echo ---; python3 -m pytest bench/tests/test_hard_gates_non_python_target.py -q 2>&1 | tail -2\", \"description\": \"Find tests touching compute_sk/_capture_baseline; run hard-gate prose tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_hard_gates_non_python_target.py bench/tests/test_target_kind_and_no_score.py bench/tests/test_prose_acceptance_stem.py bench/tests/test_instrument_gaps_from_panel_2026-08-28.py -q 2>&1 | grep -E \\\"passed|failed\\\" | tail -3\", \"description\": \"Run targeted blast-radius test suites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_immune_memory_consumption.py bench/tests/test_ouroboros_loop_close.py -q 2>&1 | grep -E \\\"passed|failed\\\" | tail -2; echo --- FIGURES ---; python3 scripts/archived_falsifier_rejections_2026-09-10.py 2>&1 | tail -4; python3 scripts/ruled_items_are_accounted_2026-09-11.py 2>&1 | tail -4\", \"description\": \"Run remaining sk-touching suites and re-run the "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/archived_falsifier_rejections_2026-09-10.py 2>&1 | grep -iE \\\"real|rate|2/640\\\" | head -5; python3 scripts/ruled_items_are_accounted_2026-09-11.py 2>&1 | grep -iE \\\"unaccounted|0/15|rate\\\" | head -5\", \"description\": \"Extract headline rate lines from both figure scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nimport importlib.util\\n# Load the UNFIXED runner from the backup for the pre-fix sweep\\nspec = importlib.util.spec_from_file_location(\\\"orig_runner\\\", \\\"scratch_seat/reference_runner_v3.py.ORIG\\\")\\n# (module imports from bench.* absolutely, so this works with repo on sys.path)\\norig = importlib.util.module_from_spec(spec); spec.l"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scratch_seat/reference_runner_v3.py.ORIG scratch_seat/orig_runner_snapshot.py && python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.'); sys.path.insert(0, 'scratch_seat')\\nimport orig_runner_snapshot as orig\\n\\nadmitted = 0\\nfor k in range(1, 21):\\n    listing = \\\"def f(x):\\\\n\\\" + \\\"\\\".join(f\\\"    undef_{i}(x)\\\\n\\\" for i in range(k)) + \\\"    return x\\\\n\\\"\\n    score, detail = orig"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, '.')\\nfrom bench.reference_runner_v3 import compute_sk, _capture_baseline\\n\\nDOC = (\\\"# note\\\\n\\\\nThe function returns x plus one.\\\\n\\\\n\\\"\\n       \\\"```python\\\\ndef f(x):\\\\n    return x + 1\\\\n```\\\\n\\\")\\nbaseline = _capture_baseline(DOC, source_path=\\\"notes/design.md\\\")\\n\\n# 3.3 STRADDLE: one SEARCH/REPLACE block spans prose AND the fen"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"bench/reference_runner_v3.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nold = '_MD_PY_FENCE = re.compile(r\\\"```(?:python|py)\\\\\\\\n(.*?)```\\\", re.S)'\\nnew = '''# PANEL ROUND 13 (2026-09-11): tolerate an info string after the language tag\\n# (\\\"```python title=x\\\") and CRLF line endings, both of which previously\\n# extracted NOTHING -- so a listing-bearing docu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_sk_baseline_gates_same_substrate_2026-09-11.py bench/tests/test_prose_listings_are_scoreable_2026-09-11.py bench/tests/test_hard_gates_non_python_target.py bench/tests/test_target_kind_and_no_score.py bench/tests/test_prose_acceptance_stem.py -q 2>&1 | grep -E \\\"passed|failed\\\"\", \"description\": \"Re-run combined suites, capture pass/fail line\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rm -f scratch_seat/reference_runner_v3.py.FIXED scratch_seat/orig_runner_snapshot.py\\npython3 - <<'EOF'\\np = \\\"scratch_seat/demo_bad_fix_admitted.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nsrc = src.replace('\\\"\\\"\\\"<<<<<<< SEARCH', '\\\"\\\"\\\"<<<< SEARCH').replace(\\\"\\\\n=======\\\\n\\\", \\\"\\\\n====\\\\n\\\").replace(\\\">>>>>>> REPLACE\\\", \\\">>>> REPLACE\\\")\\nsrc = src.replace('delta = max(0, listi"
+    }
+  ],
+  "n_tool_calls": 56,
+  "elapsed_s": 822.2,
+  "response": "**VERDICT: READY WITH EXCEPTIONS** \u2014 the A19 flag is sound in intent, reachable from both config ingestion paths, and correctly preserves the founder's \"purely prose \u2192 NO_SCORE\" distinction; but as dispatched it contained one critical hole (fixed in my tree, red/green tested) and one vacuous pinning test (repaired). Exceptions are two founder-call items: markdown-dialect fragilities I report but do not fix, and the `sk_s_floor=0.0` policy that makes effect-gate rejection on prose nearly impossible.\n\n## FILES I LEFT IN THE TREE\n\n- `bench/reference_runner_v3.py` \u2014 2 edits: `_capture_baseline` now routes through `_gateable_source` (the fix); `_MD_PY_FENCE` tolerates info strings and CRLF (with `pycon` still excluded).\n- `bench/tests/test_sk_baseline_gates_same_substrate_2026-09-11.py` \u2014 NEW, 8 tests, all green; 4 fail against the unfixed runner.\n- `bench/tests/test_prose_listings_are_scoreable_2026-09-11.py` \u2014 repaired the vacuous fixture and strengthened the flag-on assertion.\n- `scratch_seat/demo_bad_fix_admitted.py` \u2014 the Section 3.1 attack, runnable; `scratch_seat/reference_runner_v3.py.ORIG` \u2014 pre-fix snapshot for diffing.\n\n## FINDINGS\n\n**F1 \u2014 The S_k baseline is captured over the WHOLE document while the repaired gates score the extracted listings, so with the flag ON, e3 was structurally incapable of failing \u2014 the exact defect class A19 claimed to repair, moved one function upstream.**\n- **WHERE**: `_capture_baseline` (was line 10282), called by `run_experiment` at line 12768 with raw `target_text`; vs `_run_effect_ruff`/`_run_effect_bandit`, which now extract.\n- **EVIDENCE** (unfixed runner, `python3 scratch_seat/demo_bad_fix_admitted.py`):\n  ```\n  BASELINE over whole document: {'ruff_violations': 311, 'bandit_findings': {'high': 0, 'medium': 0}}\n  tristate: ADMISSIBLE sk: 1.0 A: 1 E: 1.0\n    e3_ruff -> {'score': 1.0, 'detail': '10 total, 0 new (baseline: 311)'}\n  ```\n  That is a **perfect score for a fix replacing a working listing line with five undefined names and an unused `pickle` import**. Derivation: e3 = max(0, 1 \u2212 max(0, T \u2212 311)\u00b70.1) < 1 requires T \u2265 312 total diagnostics *over the listings* \u2014 a fix must add \u2265308 new defects before the gate loses its first 0.1. Confirmed mechanically: 310 undefined names in one listing \u2192 `e3=1.0 (310 total, 0 new (baseline: 311))`. Sweep: 20/20 escalating bad fixes scored e3=1.0; Wilson 95% [0.8389, 1.0000] by closed form AND statsmodels (agree to 4 dp). Mirror defect on bandit: whole-document baseline is unparseable \u2192 0H/0M, so a pre-existing listing HIGH is billed as NEW to any innocent fix.\n- **FIX**: `_capture_baseline` extracts via `_gateable_source` first; nothing gateable \u2192 both baselines stay `None` (gates say \"baseline unavailable\" \u2192 ESCALATE, never a fabricated 0/0). Identity on `.py` by construction.\n- **TESTED**: red run against ORIG: `4 failed, 1 passed` (only the .py blast-radius test passes, as it should \u2014 quoted above); green: `5 passed`. Post-fix: bad fix sk=0.8 (`10 total, 6 new (baseline: 4)`), evil `shell=True` fix sk=0.6333 (e4: `new: 1H/0M`), good fix sk=1.0 \u2014 ranking restored. Blast radius: 320 tests across the sk/target-kind/hard-gate/immune-memory/ouroboros suites pass.\n- **WHAT WOULD REFUTE THIS**: a call path that captures the baseline over the listings that I missed (there is exactly one call site, line 12768, and it passes raw text); or evidence that prose runs never reach e3 with the flag ON (they do \u2014 demonstrated end-to-end through `compute_sk`).\n- **SEVERITY**: CRITICAL \u2014 admits a bad fix at an unimprovable score; the inflated sk then enters `compute_rk_with_eta_channel` as the fix-efficacy term.\n\n**F2 \u2014 The shipped A19 pinning test is vacuous: its fixture uses 7-angle git-conflict markers, which `parse_search_replace_blocks` parses to ZERO blocks, so the flag-on test asserted on the parse-error path and no gate ever ran.**\n- **WHERE**: `bench/tests/test_prose_listings_are_scoreable_2026-09-11.py`, `FIX` constant + `test_a_listing_bearing_target_is_scored`.\n- **EVIDENCE**: `parse_search_replace_blocks(\"<<<<<<< SEARCH\\n...=======\\n...>>>>>>> REPLACE\")` \u2192 `[]`; `compute_sk(FIX, \u2026, score_prose_listings=True)` \u2192 `ESCALATE {'error': 'no SEARCH/REPLACE blocks found'}` \u2014 which satisfies `tristate != \"NO_SCORE\"` without a single gate running. The runner's own prompt (line 12823) specifies `<<<< SEARCH file_path`. This is the 8-vacuous-mutation-tests class the brief warns about.\n- **FIX**: 4-angle fixture + assertions `blocks_parsed > 0`, `tristate == \"ADMISSIBLE\"`, and e3/e4 scores non-None with a real baseline. File now `10 passed`.\n- **WHAT WOULD REFUTE THIS**: the parser accepting 7-angle markers somewhere I didn't find \u2014 I tested the exact shipped string and it returns `[]`.\n- **SEVERITY**: HIGH \u2014 the sole test pinning A19's headline claim proved a parse error, not scoring.\n\n**F3 \u2014 Fence extraction silently misses CRLF documents and info-string fences; blockquoted/indented fences extract garbage.**\n- **WHERE**: `_MD_PY_FENCE`, line 9943.\n- **EVIDENCE** (probe against unfixed code): `crlf -> NOT EXTRACTED`, `info_string -> NOT EXTRACTED`, `tilde -> NOT EXTRACTED` (feature silently defeated \u2192 NO_SCORE); `blockquote -> SYNTAX ERROR (A=0)`, `indented -> unexpected indent (A=0)`, `fragment -> (A=0)` \u2014 every fix on such a target REJECTED, the 2026-08-01 fifty-rejection class resurrected behind the flag. `pycon` correctly excluded. `unclosed_spill` fails closed (A=0). A genuinely-unclosed FINAL fence's payload (`os.system(...)`) escapes all gates while earlier listings keep the target scoreable.\n- **FIX**: CRLF + info-string tolerance applied and tested (3 new tests; `pycon` exclusion pinned). `~~~` fences, blockquote/indent stripping, and unclosed-final-fence handling **reported, not fixed** \u2014 supporting a markdown dialect properly wants a real fence scanner, and that scope is the founder's call. Note the unclosed-fence escape is power-equivalent to writing in prose, which the gates never scan by design \u2014 but the gates' silence may be read as \"scanned\"; worth a sentence in the run report when listings are gated.\n- **WHAT WOULD REFUTE THIS**: measurement that real CDSFL prose targets never carry CRLF/info-string/quoted fences. The measured spec file uses plain LF fences, so the *current* corpus is unaffected; the defect fires on the next Windows-authored document.\n- **SEVERITY**: MEDIUM (conservative failure directions, but wrong verdicts of both kinds: NO_SCORE for scoreable targets, REJECTED for unassessed fixes).\n\n**F4 \u2014 With `sk_s_floor=0.0` (every shipped sk-enabled config) the two-gate prose mean can barely reject anything. Derived, not asserted.** E_prose = (1\u00b7e3 + 2\u00b7e4)/3. With bandit clean, E \u2265 2/3 even at e3=0. The corrected threshold at the defaults every finding actually receives (nu_b=0.05, nu_f=0.20, q=0.5, R=0.5) is S* = 0.5049 (computed via `check_sk_threshold_corrected`; the shipped checker returns 0.0). Hence: **ruff alone can never reject on prose** (0.667 > 0.505); one new bandit HIGH still passes (E=0.667); rejection requires \u22652 new HIGHs (E=0.333) or 1 HIGH + \u22657 new ruff violations (E=0.433). Against 5-gate Python weighting {2,1,2}/5, dropping e2 renormalizes to {1,2}/3 \u2014 a HIGH costs 0.333 of E on prose vs 0.2 on Python, so per-gate failures weigh *more*, but the absent regression gate removes the only correctness evidence: **S_k on prose is a lint/security non-regression instrument, not a correctness instrument; correctness stays with the falsifier path.** Recommendation (founder's call, not mine to set): prose-scoring runs should carry a non-zero `sk_s_floor`, and the run report should say which gates contributed. SEVERITY: MEDIUM, policy.\n\n**Effect on the instruments** (Section 3B): `severity` \u2014 untouched; sk does not enter severity. `sigma`/S_k \u2014 sk is the efficacy term in `compute_rk_with_eta_channel`; pre-fix, garbage fixes carried \u03c3=1.0 and drove R_k down on fabricated evidence; post-fix they carry 0.8/0.633. `gamma` \u2014 the two-sided gate reads critical density; a finding falsely resolved by an sk=1.0 garbage fix leaves the open-critical count it feeds, so the pre-fix hole was a path to convergence on a corrupted registry. My fix narrows that path; it does not change the gamma thresholds themselves.\n\n## CAN A BAD FIX BE ADMITTED\n\n**As dispatched: YES, at sk=1.0000 ADMISSIBLE, and it also passes the corrected threshold (0.5049 at defaults).** Ran: `compute_sk` with the runner's real baseline (311) on `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, flag ON, fix = five undefined names + unused import \u2192 `e3: 10 total, 0 new (baseline: 311)`, sk=1.0. **After my fix: the same fix scores 0.8 and a `shell=True` injection 0.6333** \u2014 the gates fail and rank correctly \u2014 but both remain tristate-ADMISSIBLE and threshold-passing at `s_floor=0.0` (see F4). Tools decided all of the above; every number quoted is from an executed run.\n\n## FIGURES I RE-RAN\n\n- `scripts/archived_falsifier_rejections_2026-09-10.py`: **2/640 = 0.3125%**, Wilson 95% [0.0857%, 1.1322%] (statsmodels), Clopper\u2013Pearson cross-check agrees to 1.7e-18. Matches the brief.\n- `scripts/ruled_items_are_accounted_2026-09-11.py`: **0/15 = 0.0000% unaccounted**. Matches the brief.\n- The 311-vs-4 measurement: re-derived live \u2014 whole-document baseline 311, listing-substrate baseline 4.\n\n## WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\nWith the A19 author's dispatch note: (1) \"The gates must be able to fail \u2014 e4 = 0.5 on a real HIGH\" was measured with a **hand-supplied** baseline, not the baseline `run_experiment` actually captures; with the real baseline, e3 could not fail at all (F1). The e4=0.5 claim itself replicates. (2) The claim that the flag is \"wired\" was pinned by a test that never exercised the wiring past the parser (F2). (3) The claim \"half the machinery repaired, the other half never handed the extractor\" was itself incomplete \u2014 the *baseline*, a third piece of the same machinery, was never handed it either. I have no other seat's output to dispute.\n\n## WHAT I DID NOT CHECK\n\nThe full test suite (per dispatch rule; 566 targeted tests run instead). `_run_effect_regression` on a prose target with a configured `test_cmd` (writes markdown into a repo sandbox \u2014 untested path, currently unreachable since no prose config sets `test_cmd`). `detect_target_kind` edge: a PYTHON-kind target at a non-`.py` path would send hard gates through fence extraction \u2014 not audited. `bench/tests/test_rejection_reasons_reach_the_panel.py` also uses 7-angle markers \u2014 possibly intentionally, not audited. Whether any archived report replays differently: none should \u2014 no completed run ever had the flag ON, the `.py` substrate is byte-identical, and the only flag-OFF delta is the baseline log line at 12769 now printing listing-based numbers on prose targets."
+}

@@ -1,0 +1,133 @@
+{
+  "_per_path": {
+    "bench/repo_paths.py": {
+      "attributable_to_a_seat": true,
+      "hits": [
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"ls -ld . bench bench/repo_paths.py bench/tests 2>&1; touch bench/.wtest 2>&1 && echo WRITABLE && rm bench/.wtest\", \"description\": \"Check writabilit"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/repo_paths.py\\\")\\ns = p.read_text()\\n\\nANCHOR = \\\"\\\"\\\"# \\u2500\\u2500 This project's i"
+        }
+      ],
+      "verdict": "A SEAT NAMED THIS CANONICAL PATH"
+    },
+    "bench/tests/test_documentation_drift_guards_2026-08-25.py": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "bench/tests/test_fresh_clone_suite_2026-09-10.py": {
+      "attributable_to_a_seat": true,
+      "hits": [
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | tail -40\", \"description\": \"Run A2 test suite\"}"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q -p no:warnings bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | grep -E \\\"^(FAILED|ERROR|PASSED|[0-9]+ (passed|failed))"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q -p no:warnings bench/tests/test_fresh_clone_suite_2026-09-10.py -k \\\"location_independent or named_from_another\\\" 2>&1 | sed -"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q -p no:warnings bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | grep -E \\\"FAILED|passed|failed|skipped\\\" | tail -10\", \""
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_fresh_clone_suite_2026-09-10.py\\\")\\ns = p.read_text()\\nOLD = '''        fr"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q -p no:warnings -rs bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | grep -A3 \\\"SKIPPED\\\\|short test\\\" | head\", \"descrip"
+        },
+        {
+          "seat": "cc2",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_fresh_clone_suite_2026-09-10.py\\\")\\ns = p.read_text()\\nOLD = '''        na"
+        },
+        {
+          "seat": "fable",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | tail -30\", \"description\": \"Run the fresh-clone suite test\"}"
+        },
+        {
+          "seat": "fable",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_fresh_clone_suite_2026-09-10.py 2>&1 | grep -E \\\"passed|failed|error|skipped\\\" | tail -5\", \"description\": \"Ge"
+        },
+        {
+          "seat": "fable",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_fresh_clone_suite_2026-09-10.py -p no:cacheprovider 2>&1 | grep -vE \\\"PytestWarning|rm_rf|warnings.warn|OSErr"
+        },
+        {
+          "seat": "fable",
+          "tool": "Bash",
+          "preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_fresh_clone_suite_2026-09-10.py bench/tests/test_panel_conditions_are_met_2026-09-10.py bench/tests/test_repo"
+        }
+      ],
+      "verdict": "A SEAT NAMED THIS CANONICAL PATH"
+    },
+    "bench/tests/test_precommit_stage0_order_2026-09-10.py": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "experimental_notes/CDSFL_MASTER_TASK_LIST.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "experimental_notes/EXPERIMENT_RUN_LEDGER.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "experimental_notes/Morning_Roundup_2026-09-03.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "experimental_notes/Overnight_Consolidated_2026-09-08.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "experimental_notes/Research_FULL_RECORD_2026-09-09.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "hooks/pre-commit": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    },
+    "resources/ONBOARDING.md": {
+      "attributable_to_a_seat": false,
+      "hits": [],
+      "verdict": "no seat is shown to have touched it"
+    }
+  },
+  "_seats_examined": [
+    "cc2",
+    "fable"
+  ],
+  "_any_attributable": true,
+  "_truncated_previews_seen": 0,
+  "_limit": "an input preview is truncated, so this supports 'no seat is SHOWN to have touched it' and never 'no seat did'"
+}

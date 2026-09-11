@@ -1,0 +1,207 @@
+{
+  "model": "opus",
+  "elapsed_s": 1823.2,
+  "tool_calls": 50,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Inspect working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(pwd)\\\" && git log --oneline -5 2>/dev/null; git status --short 2>/dev/null | head -50\", \"description\": \"Check git state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff --stat && wc -l bench/runner_core.py bench/reference_runner_v2.py\", \"description\": \"Diff stat and file sizes\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"Review(?:\\\\\\\\\\\\\\\\s\\\\\\\\+Summary)?|Review\\\\(\\\\?:|review_summary|Round\\\\\\\\s\\\\+\\\\\\\\\\\\\\\\d\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo/bench\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff\", \"description\": \"Show working diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1019,1140p bench/runner_core.py\", \"description\": \"Read fallback section\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"Review\\\\(\\\\?:\\\\\\\\\\\\\\\\s\\\\+Summary\\\\)\\\\?|Round\\\\\\\\\\\\\\\\s\\\\+\\\\\\\\\\\\\\\\d\\\\+\\\\\\\\\\\\\\\\s\\\\+\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 425,445p bench/runner_core.py\", \"description\": \"Read parse entry + strip order\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -path ./.git -prune -o -name 'round_08.json' -print 2>/dev/null | head -20; echo ---; ls logs 2>/dev/null | head -30; echo ---; find . -path ./.git -prune -o -type d -name '*exp43*' -print | head\", \"description\": \"Locate exp43 archive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/logs/exp43_macrophage_locationkey_live_20260719T014326Z && python3 -c \\\"\\nimport json,sys\\nd=json.load(open('round_08.json'))\\nprint(type(d), list(d.keys()) if isinstance(d,dict) else len(d))\\n\\\" \", \"description\": \"Inspect exp43 round_08 structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/logs/exp43_macrophage_locationkey_live_20260719T014326Z && python3 -c \\\"\\nimport json\\nd=json.load(open('round_08.json'))\\nmr=d['model_responses']\\nprint('truncated?', d['model_responses_truncated'])\\nfor k,v in mr.items():\\n    print('===',k,len(v))\\n    print(repr(v[:160]))\\n\\\"\", \"description\": \"Print exp43 r8 replies heads\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('round_08.json'))\\nmr=d['model_responses']\\nprint('truncated?', d['model_responses_truncated'])\\nfor k,v in mr.items():\\n    print('===',k,len(v))\\n    print(repr(v[:200]))\\n\\\"\", \"description\": \"Print exp43 r8 replies heads\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/h1.py <<'PY'\\nimport json, re, sys, os\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo')\\nfrom bench import runner_core as rc\\n\\nGUARD = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b', re.I)\\n\\nd=json.load(open('/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo && grep -rl 'CC2-SIM\\\\|CC2_SIM' --include='*.json' --include='*.py' --include='*.md' . 2>/dev/null | head -20\", \"description\": \"Find rehearsal SIM replies\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo/bench/logs/sim45_memory_20260830T235237Z && ls | head -40 && echo --- && python3 -c \\\"\\nimport json\\nd=json.load(open('round_00.json'))\\nfor k,v in d['model_responses'].items():\\n    print('===',k,len(v)); print(repr(v[:120]))\\n\\\"\", \"description\": \"Inspect rehearsal round 0\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob\\nfor p in sorted(glob.glob('r0_*.json')):\\n    d=json.load(open(p))\\n    print('===',p, list(d.keys())[:12])\\n\\\"\", \"description\": \"Inspect r0 per-model files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/h2.py <<'PY'\\nimport json,glob,re,sys,os\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo')\\nfrom bench import runner_core as rc\\nD='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo/bench/logs/sim45_memory_20260830T235237Z/'\\nGUARD_A = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?R"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo && grep -rn '## Review: bench/dm/_memory' --include='*.json' --include='*.md' --include='*.txt' . 2>/dev/null | head; echo \\\"--- any '## Review:' ---\\\"; grep -rln '## Review:' --include='*.json' . 2>/dev/null | head\", \"description\": \"Search for the claimed rehearsal heading\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo/bench/logs && ls -d *sim* *rehears* 2>/dev/null | head -20\", \"description\": \"List sim/rehearsal log dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/h3.py <<'PY'\\nimport json,glob,re,sys\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nfrom bench import runner_core as rc\\nD=R+'/bench/logs/sim45_memory_20260901T003907Z/'\\nGUARD_A = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b', re.I)\\n# (b) tightened: require explicit round ref "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/sweep.py <<'PY'\\nimport json,glob,re,sys,os\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nGA = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b', re.I)\\nGB = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+Review\\\\b|Review\\\\s+Summary\\\\b|Summary\\\\s+of\\\\s+Round\\\\s+\\\\d+\\\\b)', re.I)\\nM"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/sweep2.py <<'PY'\\nimport json,glob,re,sys,os\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nfrom bench import runner_core as rc\\nGA = re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b', re.I)\\ndef norm(v): return re.sub(r'\\\\*{2,}','',v)\\ndef cid_prose(s):\\n    po=\\\"\\\\n\\\".join(l for l "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/var && git show HEAD:bench/runner_core.py > /tmp/var/rc_head.py && cp bench/runner_core.py /tmp/var/rc_a.py && python3 - <<'PY'\\nimport re\\nsrc=open('/tmp/var/rc_a.py').read()\\nOLD = \\\"\\\"\\\"        if re.search(r'^\\\\\\\\s*(?:#+\\\\\\\\s*)?(?:Round\\\\\\\\s+\\\\\\\\d+\\\\\\\\s+)?Review(?:\\\\\\\\s+Summary)?\\\\\\\\b',\\n                     response.strip()[:80], re.IGNORECASE):\\n            _hits ="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cmp.py <<'PY'\\nimport json,glob,re,sys,os,importlib.util\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\ndef load(name,path):\\n    spec=importlib.util.spec_from_file_location(name,path)\\n    m=importlib.util.module_from_spec(spec); sys.modules[name]=m; spec.loader.exec_module(m); return m\\nV={k:load('rc_'+k,f'/t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -i '' '1s|^|import sys; sys.path.insert(0,\\\"'\\\"$PWD\\\"'/bench\\\")\\\\n|' /tmp/var/rc_head.py /tmp/var/rc_a.py /tmp/var/rc_b.py /tmp/var/rc_c.py && python3 /tmp/cmp.py\", \"description\": \"Fix imports and rerun comparison\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in head a b c; do sed -i '' '1d' /tmp/var/rc_$f.py; done && sed -i '' 's|^from __future__ import annotations$|from __future__ import annotations\\\\nimport sys as _s; _s.path.insert(0,\\\"'\\\"$PWD\\\"'/bench\\\")|' /tmp/var/rc_head.py /tmp/var/rc_a.py /tmp/var/rc_b.py /tmp/var/rc_c.py && python3 /tmp/cmp.py\", \"description\": \"Patch path after future import and rerun\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/full.py <<'PY'\\nimport json,glob,re,sys,os,importlib.util\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s)\\n    sys.modules[n]=m; s.loader.exec_module(m); return m\\nV={k:load('rc_'+k,f'/tmp/var/rc_{k}.py') for "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260901T003907Z/r1_chatgpt-sim_20260901T010116Z.json'))\\nprint(d['response'][:6000])\\n\\\"\", \"description\": \"Read r1 ChatGPT-SIM reply\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260901T003907Z/r2_fable-sim_20260901T011605Z.json'))\\nr=d['response']\\nprint(r[:3500])\\n\\\"\", \"description\": \"Read r2 Fable-SIM reply\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/adv.py <<'PY'\\nimport sys,importlib.util,re\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p);m=importlib.util.module_from_spec(s)\\n    sys.modules[n]=m;s.loader.exec_module(m);return m\\nV={k:load('rc_'+k,f'/tmp/var/rc_{k}.py') for k in ('head','a',"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cid.py <<'PY'\\nimport json,glob,re,sys,os\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nMD=re.compile(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING[ \\\\t]+)?(F\\\\d{2,4})\\\\b',re.M)\\ndef cidprose(s):\\n    po=\\\"\\\\n\\\".join(l for l in re.sub(r'```.*?```','',s,flags=re.S).splitlines()\\n                 if not l.lstrip().startswith(('#','//')))\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nsrc=open('/tmp/var/rc_c.py').read()\\nOLD = \\\"\\\"\\\"                if _fid in _seen:          # a summary table repeating a heading\\n                    continue               # must not mint a second finding\\n                _seen.add(_fid)\\\"\\\"\\\"\\nassert OLD in src\\nNEW = \\\"\\\"\\\"                if _fid in _seen:          # a summary table repeating a heading\\n         "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -i '' 's|A={len(out\\\\[.a.\\\\])} B={len(out\\\\[.b.\\\\])} C={len(out\\\\[.c.\\\\])}|A={len(out[\\\"a\\\"])} B={len(out[\\\"b\\\"])} C={len(out[\\\"c\\\"])} D={len(out[\\\"d\\\"])}|' /tmp/adv.py && python3 /tmp/adv.py\", \"description\": \"Adversarial cases under D\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\np='/tmp/full.py'; s=open(p).read()\\ns=s.replace(\\\"\\\"\\\"    if c['a']!=c['b']: diffAB.append((os.path.relpath(p,R),k,c))\\n    if c['b']!=c['c']: diffBC.append((os.path.relpath(p,R),k,c))\\\"\\\"\\\",\\n\\\"\\\"\\\"    if len(set(c.values()))>1: diffAB.append((os.path.relpath(p,R),k,c))\\\"\\\"\\\")\\ns=s.replace(\\\"\\\"\\\"print(f\\\"replies={n}  totals HEAD={tot['head']} A={tot['a']} B={tot['b'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nsrc=open('/tmp/var/rc_c.py').read()\\nOLD = \\\"\\\"\\\"                if _fid in _seen:          # a summary table repeating a heading\\n                    continue               # must not mint a second finding\\n                _seen.add(_fid)\\\"\\\"\\\"\\nNEW = \\\"\\\"\\\"                if _fid in _seen:\\n                    continue\\n                # (d2) PER-HEADING CONTENT TE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat >> /tmp/full.py <<'PY'\\n\\nprint(\\\"\\\\n--- replies where D2 < C (content test dropping headings C keeps) ---\\\")\\nfor path,k,c in diffAB:\\n    if c['d']<c['c']: print(\\\"  \\\",path,k,c)\\nprint(\\\"--- replies where D2 < A (regression vs shipped guard) ---\\\")\\nfor path,k,c in diffAB:\\n    if c['d']<c['a']: print(\\\"  \\\",path,k,c)\\nPY\\npython3 /tmp/full.py 2>&1 | sed -n '/D2 < C/,$p'\", \"des"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,re\\nd=json.load(open('bench/logs/falsifier_matrix_2026-06-06_run1/r0_deepseekwholer2_20260606T112637Z.json'))\\nr=re.sub(r'\\\\*{2,}','',d['response'])\\ni=r.find('F001')\\nprint(r[max(0,i-300):i+1400])\\n\\\"\", \"description\": \"Inspect the D2 regression case\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/insp.py <<'PY'\\nimport json,sys,importlib.util,re\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p);m=importlib.util.module_from_spec(s)\\n    sys.modules[n]=m;s.loader.exec_module(m);return m\\nA=load('rcA','/tmp/var/rc_a.py')\\nd=json.load(open(R+'/b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fals.py <<'PY'\\nimport sys,importlib.util\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo')\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p);m=importlib.util.module_from_spec(s)\\n    sys.modules[n]=m;s.loader.exec_module(m);return m\\nA=load('rcA','/tmp/var/rc_a.py'); D=load('rcD','/tmp/var/rc_d.py')\\nR"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/runner_core.py /tmp/var/rc_working_backup.py && timeout 3000 python3 -m pytest -q -x --timeout=120 2>&1 | tail -8\", \"description\": \"Baseline test suite run (variant A)\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q 2>&1 | tail -12\", \"description\": \"Baseline test suite (variant A)\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash && python3 -m pytest -q 2>&1 | tail -3; git stash pop\", \"description\": \"Test suite at true HEAD\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\np='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo/bench/runner_core.py'\\nsrc=open(p).read()\\nOLD = \\\"\\\"\\\"        # Same guard the fallback applies: a round-review/summary that cites\\n        # canonical registry ids is not a new finding (exp43 C0040).\\n        if re.search(r'^\\\\\\\\s*(?:#+\\\\\\\\s*)?(?:Round\\\\\\\\s+\\\\\\\\d+\\\\\\\\s+)?Review(?:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/runner_core.py /tmp/var/rc_d2_installed.py && cat > /tmp/final.py <<'PY'\\nimport json,glob,re,sys,os,importlib.util\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nfrom bench import runner_core as rc   # D2 installed\\nGA=re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b',re.I)\\nHAS_V=re."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/starcheck.py <<'PY'\\nimport json,re,sys\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nG=re.compile(r'^\\\\s*(?:#+\\\\s*)?(?:Round\\\\s+\\\\d+\\\\s+)?Review(?:\\\\s+Summary)?\\\\b',re.I)\\nraw=json.load(open(R+'/bench/logs/exp43_macrophage_locationkey_live_20260719T014326Z/round_08.json'))['model_responses']['DeepSeek']\\nprint(\\\"raw head        :\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,sys,inspect\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nfrom bench import runner_core as rc\\nfns=[n for n in dir(rc) if 'falsif' in n.lower()]\\nprint(\\\"falsifier entry points:\\\",fns)\\nd=json.load(open(R+'/bench/logs/sim45_memory_20260901T003907Z/r1_chatgpt-sim_20260901T010116Z.json'))\\nfor"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,sys,importlib.util\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p);m=importlib.util.module_from_spec(s)\\n    sys.modules[n]=m;s.loader.exec_module(m);return m\\nA=load('rcA','/tmp/var/rc_a.py')\\nfrom bench import runner_core as D"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,sys\\nR='/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7jo512mf/repo'\\nsys.path.insert(0,R)\\nfrom bench import runner_core as rc\\nresp=json.load(open(R+'/bench/logs/sim45_memory_20260901T003907Z/r1_chatgpt-sim_20260901T010116Z.json'))['response']\\na,b=rc.extract_falsifiers(resp)\\nprint(\\\"extract_falsifiers ->\\\", type(a), len(a) if ha"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nfor p in ['bench/logs/falsifier_matrix_2026-06-06_run1/r0_deepseekwholer3_20260606T112847Z.json','bench/logs/sim45_memory_20260901T003907Z/r1_chatgpt-sim_20260901T010116Z.json']:\\n    d=json.load(open(p)); print(p.split('/')[-1]); print('  meta:',json.dumps(d.get('metadata'))[:300])\\n\\\"\", \"description\": \"Confirm real vs simulated provenance\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff bench/runner_core.py | sed -n '/4b. Markdown-header/,$p' | head -60\", \"description\": \"Show final arm 4b patch\"}"
+    }
+  ]
+}

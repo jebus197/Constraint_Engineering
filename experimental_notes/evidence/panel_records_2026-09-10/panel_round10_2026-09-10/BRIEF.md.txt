@@ -1,0 +1,64 @@
+# PANEL BRIEF — round 10: the suite must pass for a reader who CLONES, and DELIVER YOUR FIX AS A FILE
+
+<!-- figure: archived falsifier rejections that are NOT location artefacts | scripts/archived_falsifier_rejections_2026-09-10.py | real-rejection rate : 2/640 = 0.3125% -->
+<!-- figure: entry A19's NO_SCORE claim, re-derived over the tracked archive | scripts/orphan_figures_2026-09-10.py | NO_SCORE: 0 of 1035 = 0.0000% -->
+
+## SECTION 0 — THE DELIVERY RULE, AND THREE HARD PROHIBITIONS
+
+**Founder ruling:** *"they need to supply fixes, not just problems!"* A finding without a fix is not a deliverable, and a fix in prose is not delivered. **Write it INTO the sandbox repository tree at its real path and leave it there.** `bench/panel_sandbox.py:teardown` destroys everything else.
+
+**THE 3 CATEGORIES THE FOUNDER RESERVES TO HIMSELF IN PERSON.** Do not delete a git ref, do not spend money on a paid seat, do not touch the sealed answer-key store. You may recommend; you may not enact. Any patch containing `git branch -D`, `git tag -d`, `git push --delete`, `git gc --prune`, `git reflog expire` or `filter-repo` is refused whole.
+
+## SECTION 1 — The question
+
+Task A2: *"Make the suite pass in a fresh clone. For a project whose stated purpose is reproducibility this is central, not cosmetic — a reader who follows the documented steps does not see what the maintainer sees."*
+
+## SECTION 2 — What is measured so far. RUN THESE.
+
+`scripts/fresh_clone_census_2026-09-10.py` and `scripts/archived_falsifier_rejections_2026-09-10.py` establish the facts. Run both. `--check` on the first re-runs every test the census names.
+
+1. **The entry's own premise was FALSE.** It said "11 failed, 5487 passed, exit 1, against **0 failures in the working tree**", measured 2026-09-09. Re-measured 2026-09-10 at the same HEAD: **the clone gave 22 failed, 6592 passed**, and the **working tree gave 6**. The count had doubled in a day and the maintainer's tree was not clean.
+2. **15 test files, 5 distinct causes.** 10 of 15 were clone-only (66.6667%, Wilson [41.7135%, 84.8237%], Clopper-Pearson [38.3804%, 88.1759%]); the other 5 were red in both trees.
+3. **The largest single cause is a stale ABSOLUTE PATH.** Archived falsifiers carry the absolute path of the checkout they were written in. On the maintainer's machine that path IS the repo root, so the containment guard allows it; anywhere else it refuses. **35 of 640 archived falsifiers (5.4688%, Wilson [3.9582%, 7.5107%])**, and **5 of the 15 exp44 execution rows**, so `execution_based_matcher`'s headline "12 of 15" came out **7 of 15** for every reader.
+4. **The repair is `_retarget_falsifier` rebasing a foreign checkout of THIS project onto the overlay at replay.** The containment guard is NOT changed.
+5. A fix meant to detect a fresh clone **could never fire**: it asked whether `git config --get user.email` was empty, and `--get` falls back to GLOBAL config, which a clone inherits.
+6. Prose figures measured over the maintainer's on-disk archive are not reproducible: 6,770 JSON files here against 6,160 tracked. The pinned "4142 of 4142" gate records is **3507 of 3507** in a clone.
+
+## SECTION 3 — Attack these specifically
+
+1. **THE REBASE IS THE ONE TO BREAK.** `bench/repo_paths.py:foreign_repo_roots` + `bench/reference_runner_v3.py:_retarget_falsifier`. Construct an archived falsifier that reaches something it should not, THROUGH the rebase. If you can, that is the finding of the round. Attack the regex, the identity resolution, and the interaction with `_allow_roots`.
+2. **The identity comes from the git remote.** Break it: a fork, a mirror, a rename, a remote that is a local path, no remote at all, a submodule. What happens then, and is the failure safe?
+3. **Are my SKIPS honest?** I converted several failures into skips where the checkout lacks the artefacts (`bench/archive_corpus.py`). A skip that can fire when the test COULD have run is a deleted test. Find one that can.
+4. **Did I hide a real defect behind a corpus argument?** The gate-count figure moved from 4142 to 3507 because I changed the corpus. Check that the *conclusion* (the gate never fired) is unaffected, and say so if it is not.
+5. **`bench/repo_paths.py` now runs `git` on import-adjacent paths.** Cost, failure modes, and what happens with no git binary.
+6. **Task V4** (`scripts/orphan_figures_2026-09-10.py`): 4 task-list entries carried a figure with no producing script. Check my producers reproduce what the entries now claim, and that the A8 population caveat is correct rather than an excuse.
+
+## SECTION 3B — EVERY FIX MUST BE TESTED, BY YOU, BEFORE YOU HAND IT BACK
+
+**A fix you have not executed is a hypothesis.** Every fix you leave in the tree arrives with a runnable falsifier that you have RUN, and your reply carries its output. Put the test at `bench/tests/<name>.py`, run it with `python3 -m pytest -q <path>`, and quote the result line verbatim.
+
+**The test must be able to FAIL.** Break the thing your fix repairs, run the test again, and quote the red output too. A test that passes against the broken state proves nothing; this project found 8 of its own mutation tests vacuous that way on 2026-09-09, and 2 of MINE tonight — a rebase mutation and an identity mutation both passed my first controls, and I had to rewrite them.
+
+**Use the mathematical instruments where they bear.** Any proportion needs a Wilson interval and a second tool. The `severity` scale and the two-sided `gamma` gate are the runner's own instruments; if a fix of yours changes what reaches a verdict, say what it does to them.
+
+## SECTION 4 — What would refute YOU
+
+For every finding, state what evidence would overturn it. A finding naming no such evidence is an opinion. If you disagree with a claim in Section 2, say what you ran and what it returned.
+
+## SECTION 5 — When to stop
+
+**Diminishing returns.** Stop when another pass produces no new above-threshold finding. Above threshold means: it could put a wrong number in front of the founder, let a falsifier reach material that decides the answer, or make the repository claim something about itself that a reader cannot check. Do not pad to a count. Do not report style.
+
+## SECTION 6 — The output shape, field by field
+
+Return **Markdown**, in this order:
+
+1. **`VERDICT`** — `SOUND`, `UNSOUND`, or `SOUND WITH EXCEPTIONS`, on the A2 repair as a whole, in the first line.
+2. **`FILES I LEFT IN THE TREE`** — repo-relative paths you created or edited. `NONE` plus a reason if empty; an empty list without one is a failed round.
+3. **`FINDINGS`** — numbered. Each: **WHAT** (1 sentence), **WHERE** (`path:line`), **EVIDENCE** (the exact command and its output, quoted), **FIX** (the path you wrote it to), **WHAT WOULD REFUTE THIS**, **SEVERITY** (0.0 to 1.0).
+4. **`THE REBASE`** — your specific verdict on whether it can be used to reach material it should not, with what you ran.
+5. **`FIGURES I RE-RAN`** — each declared figure, what you got, whether it matched.
+6. **`WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1`** — preserved, never smoothed. Say so explicitly if you agree with everything.
+7. **`WHAT I DID NOT CHECK`** — the honest boundary of your pass.
+
+Do not return a summary in place of the full output.

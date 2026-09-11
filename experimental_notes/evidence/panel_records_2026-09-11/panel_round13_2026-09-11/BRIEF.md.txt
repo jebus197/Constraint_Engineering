@@ -1,0 +1,58 @@
+# PANEL BRIEF — round 13: A19, scoring computable fragments inside prose. DELIVER YOUR FIX AS A FILE
+
+<!-- figure: archived falsifier rejections that are NOT location artefacts | scripts/archived_falsifier_rejections_2026-09-10.py | real-rejection rate : 2/640 = 0.3125% -->
+<!-- figure: founder-ruled tracker items neither carried nor declared | scripts/ruled_items_are_accounted_2026-09-11.py | unaccounted rate: 0/15 = 0.0000% -->
+
+## SECTION 0 — THE DELIVERY RULE, AND THREE HARD PROHIBITIONS
+
+**Founder ruling:** *"they need to supply fixes, not just problems!"* Write your fix INTO your own sandbox tree at its real path. **THE 3 CATEGORIES HE RESERVES TO HIMSELF:** do not delete a git ref, do not spend money on a paid seat, do not touch the sealed answer-key store.
+
+## SECTION 1 — The question, in his words
+
+*"Having the admissibility switch off for prose targets is also questionable, as clearly it should simply mark a purely prose input as 'inadmissible', while still solving any computationally reducible elements within that prose! This is STEM. No one will be using CDSFL to write poetry!"*
+
+## SECTION 2 — What is built, and what is measured. RUN IT.
+
+`compute_sk` short-circuited to NO_SCORE on any prose target. Its docstring gave **3 reasons, all about gates reading ENGLISH as Python**. Two are now false.
+
+1. **e3_ruff** error-recovered over markdown. Measured on `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`: **311 diagnostics over the whole file against 4 over the fenced listings extracted from it**.
+2. **e4_bandit** could not parse the file — a syntax error and NO metrics, so it reported "0 HIGH / 0 MEDIUM" forever at weight 2.0, the heaviest in the set. **Structurally incapable of failing.** Handed the listings: **e4 = 0.5 on a real HIGH**.
+3. **e2_regression** is STILL unavailable on prose. That reason stands and is not claimed fixed.
+
+**The extractor is not new.** `_gateable_source` was written 2026-08-01 for the HARD gates after `ast.parse` choking on a markdown table scored A=0.0 for 50 straight fixes. **The effect gates were never handed it** — half the machinery repaired, the other half reading prose as Python for 41 days.
+
+**`sk_score_prose_listings` is False on `RunnerConfig`**, threaded through `_evaluate_sk_for_findings` to `compute_sk`, read with `getattr`. A prose target with **no** fenced listing returns NO_SCORE whatever the flag says.
+
+## SECTION 3 — Attack these specifically
+
+1. **THE GATES MUST BE ABLE TO FAIL ON THE EXTRACTED CODE, not merely to run.** Construct a fix that is BAD and show S_k admits it with the flag ON. That is the exam-key class this project discarded a run over.
+2. **The extraction is `_MD_PY_FENCE`, a regex over ```python fences.** Break it: nested fences, `~~~`, an unclosed fence, a fence inside a blockquote, `pycon`, indented fences, a listing that is a fragment rather than a module.
+3. **A hunk can edit prose AND a listing.** The claim is listing-granularity, not hunk-granularity. What does S_k score when one SEARCH/REPLACE block straddles the fence?
+4. **e2_regression is unavailable on prose, so the weighted mean is computed over fewer gates.** Does that change the admission threshold's meaning? Say what it does to `sigma` and `S_k`.
+5. **The flag is default OFF. Is it reachable at all?** An addition nothing reaches is not additive. Find the path from a config file to `compute_sk` and say whether it works.
+
+## SECTION 3B — EVERY FIX MUST BE TESTED, BY YOU, BEFORE YOU HAND IT BACK
+
+**A fix you have not executed is a hypothesis.** Put the test at `bench/tests/<name>.py`, run it, quote the result line. **The test must be able to FAIL** — break the thing your fix repairs and quote the red output too. This project found 8 of its own mutation tests vacuous that way, and **7 of mine in the last 2 days**.
+
+**Use the mathematical instruments.** Any proportion needs a Wilson interval and a second tool. This fix touches what reaches a verdict, so say what it does to `severity`, `sigma` and the two-sided `gamma` gate.
+
+## SECTION 4 — What would refute YOU
+
+For every finding, state what evidence would overturn it.
+
+## SECTION 5 — When to stop
+
+**Diminishing returns.** Stop when another pass produces no new above-threshold finding. Above threshold means: it could admit a bad fix, put a wrong number in front of the founder, or let a gate pass that cannot fail. Do not pad to a count. Do not report style.
+
+## SECTION 6 — The output shape, field by field
+
+1. **`VERDICT`** — `READY FOR DONE`, `NOT READY`, or `READY WITH EXCEPTIONS`, first line.
+2. **`FILES I LEFT IN THE TREE`**
+3. **`FINDINGS`** — numbered: **WHAT**, **WHERE**, **EVIDENCE** (command and output, quoted), **FIX**, **WHAT WOULD REFUTE THIS**, **SEVERITY**.
+4. **`CAN A BAD FIX BE ADMITTED`** — your answer to Section 3.1, with what you ran.
+5. **`FIGURES I RE-RAN`**
+6. **`WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1`**
+7. **`WHAT I DID NOT CHECK`**
+
+Do not return a summary in place of the full output.

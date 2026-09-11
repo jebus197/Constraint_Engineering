@@ -1,0 +1,63 @@
+# Round 2 — one conflict to settle, with evidence. Which fix is better?
+
+Round 1 outcome, for context:
+
+- **Fix 1 (field-label verdicts).** Fable said VERIFIED; CC2 said REFUTED and was
+  right. I reproduced CC2's falsifier against live code: one model, one reply,
+  three CHALLENGE rows from one distinct model, and `auto_resolve_contested`
+  (which counts ROWS at line 2209, not distinct models) auto-refutes a
+  severity-0.9 finding. **A vote deleting a finding.** Confirmed pre-existing at
+  real HEAD via three plain repeated lines. CC2's repair (five-label whitelist +
+  per-reply dedupe on `(verdict, cid)` keeping longest evidence) is **applied**:
+  6,721 verdicts (HEAD 6,070; my permissive 6,804), all 8 adversarial labels
+  rejected, veto falsifier 3 rows -> 1, suite 4,680 passed / 0 failed.
+- **Fix 2 (markdown headings).** Both refuted my arm 4b. CC2's replacement is
+  applied and **strictly dominates** Fable's on every adversarial case I ran:
+  fenced phantom 0.70 -> 0.30, review summary 1 finding -> 0, repeated heading
+  2 -> 1, genuine finding severity 0.70 -> 0.80. They are not complementary;
+  CC2's subsumes Fable's.
+
+## The one open conflict
+
+CC2's arm 4b applies the fallback's review-summary guard. **Measured cost:** it
+excludes two of six agents in the rehearsal — `CC2-SIM` and `ChatGPT-SIM`, whose
+Round 0 replies open `## Review: bench/dm/_memory.py`. Round 0 is BLIND; there
+are no prior findings to summarise. Both are genuine first-pass reviews carrying
+3 and 2 markdown-heading findings. Rehearsal round 0 is 17 findings / 6 agents
+without the guard, **12 / 4 with it**.
+
+**And the guard does not appear to protect the case it was added for.** The
+archived exp43 C0040 reply (`round_08.json`, DeepSeek) begins:
+
+```
+**Round 8 Review — `bench/macrophage_cell.py`
+```
+
+Measured on that exact reply: the guard regex `^\s*(?:#+\s*)?(?:Round\s+\d+\s+)?
+Review(?:\s+Summary)?\b` **does NOT fire** — the leading `**` defeats the
+optional `#` prefix — and the reply carries **0 markdown F-headings**, so arm 4b
+can never reach it anyway. It parses to 0 findings today.
+
+## The question
+
+Which is better, and why:
+
+- **(a) CC2's guard as written** — safe by construction, costs two genuine agents
+  per round in the rehearsal.
+- **(b) Tighten it** to require an explicit round reference or the word Summary
+  (`Round N Review`, `Review Summary`, `Summary of Round N`), so "a review OF a
+  file" is admitted and "a summary OF a round" is not. Measured: admits both
+  rehearsal replies, still excludes nothing that currently parses.
+- **(c) Drop the review-guard from arm 4b** and rely on the C-id prose guard plus
+  the zero-headings property of summary replies.
+- **(d) Something none of us has proposed.**
+
+Are (a), (b) and (c) mutually exclusive, or does one subsume another? If the
+guard is miscalibrated, is the right repair in arm 4b or in the FALLBACK guard
+it was copied from — which has the same `**` blind spot and is the guard that
+actually fired on exp43?
+
+**Verify before answering.** Re-run the exp43 replies, the rehearsal replies, and
+the archive. State whether admitting the two rehearsal replies would let anything
+harmful through, and give the measured evidence. If you think the whole
+review-guard is the wrong instrument, say so.

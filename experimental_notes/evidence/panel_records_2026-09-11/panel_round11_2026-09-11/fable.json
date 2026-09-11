@@ -1,0 +1,191 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13691,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"experimental_notes/CDSFL_MASTER_TASK_LIST.md\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-09-10*\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/orphan_figures_2026-09-10.py; echo \\\"---exit $?\\\"; python3 scripts/archived_falsifier_rejections_2026-09-10.py; echo \\\"---exit $?\\\"\", \"description\": \"Re-run the two declared figures from the brief\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"^### |^## |V6|V7|V8\", \"path\": \"experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"offset\": 490, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | head -60; echo ---; ls scripts/ | grep -iE 'brief|lint|done' \", \"description\": \"List bench tests and brief/lint/done scripts\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/panel_brief_validate.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/note_vagueness_lint.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/task_list_markers.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/bench/tests/test_verbatim_regions_are_not_linted_2026-09-10.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && mkdir -p v8probe && cd v8probe\\n# Attack 1: whitespace-bearing blank line \\u2014 own prose after a verbatim block, separator is \\\"\\\\n \\\\n\\\"\\nprintf '# Note\\\\n\\\\n<!-- verbatim-begin: seat -->\\\\n\\\\nquoted prose here.\\\\n\\\\n<!-- verbatim-end -->\\\\n \\\\nThe panel returned twenty-nine findings in total.\\\\n' > a1.md\\n# Attack 2: CRLF file \\u2014 verbatim region at top, own violatio"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/bench/tests/conftest.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"state: DONE.*evidence:\", \"path\": \"experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_verbatim_regions_are_not_linted_2026-09-10.py bench/tests/test_done_markers_carry_evidence_2026-09-10.py 2>&1 | tail -8\", \"description\": \"Run V8 and V7 evidence tests\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_verbatim_regions_are_not_linted_2026-09-10.py bench/tests/test_done_markers_carry_evidence_2026-09-10.py -p no:cacheprovider 2>/dev/null | grep -E \\\"passed|failed|error\\\" | head -5; echo ===; python3 scripts/task_list_markers.py --check; echo \\\"exit=$?\\\"\", \"description\": \"Get pytest result line and run task-list coherence check\", \"timeout\": 300000"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/task_list_markers.py --check; echo \\\"exit=$?\\\"\", \"description\": \"Run task-list marker coherence check\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/bench/repo_paths.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd = json.load(open('.zenodo.json'))\\nprint(json.dumps(d.get('related_identifiers'), indent=1))\\n\\\"\", \"description\": \"Show .zenodo.json related_identifiers\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"task_list_markers|note_vagueness_lint|verbatim\", \"path\": \"hooks/pre-commit\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"task: P[0-9]|\\\\bP1\\\\b|\\\\bP2\\\\b\", \"path\": \"bench/tests/test_panel_seats_are_independent_2026-09-11.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"offset\": 31, \"limit\": 34}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_task_list_markers_2026-09-09.py -p no:cacheprovider 2>/dev/null | grep -E \\\"passed|failed|error\\\" | head -3\", \"description\": \"Run the marker guard test the pre-commit hook uses\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/v8probe && python3 - <<'EOF'\\nimport sys, pathlib, importlib.util\\nR = pathlib.Path('/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo')\\nspec = importlib.util.spec_from_file_location(\\\"pbv\\\", R/'scripts/panel_brief_validate.py')\\npbv = importlib.util.module_from_spec(spec); spec.loader.exec_module(pbv)\\nrepo = pathlib.Path('/tmp/v6probe'); (re"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"offset\": 268, \"limit\": 8}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"def test\\\" bench/tests/test_recovery_memory_doc_repairs.py; grep -n \\\"4.2\\\\|memory\\\" bench/tests/test_recovery_memory_doc_repairs.py | head -10; python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom repo_paths import project_names, is_onboarded_checkout, foreign_repo_roots\\nprint('project_names:', project_names())\\nprint('onboarded:', is_onboarded_checkout())\\nprint('f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"feedback_simplest_sufficient\\\\|Prefer extending machinery\\\" bench/tests/test_recovery_memory_doc_repairs.py; ls memory/feedback_simplest_sufficient.md 2>&1; ls ~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/feedback_simplest_sufficient.md 2>&1 | head -1\", \"description\": \"Does 4.2's evidence test its claim at all, and where does the file live\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"def sentences(text: str):\\n    \\\"\\\"\\\"Yield (paragraph number, sentence) with quotes kept WHOLE.\", \"new_string\": \"def paragraphs(text: str) -> list[str]:\\n    \\\"\\\"\\\"The ONE paragraph split every consumer of paragraph numbers uses.\\n\\"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"    for para_no, para in enumerate(text.split(\\\"\\\\n\\\\n\\\"), 1):\\n        flat = \\\" \\\".join(para.split())\", \"new_string\": \"    for para_no, para in enumerate(paragraphs(text), 1):\\n        flat = \\\" \\\".join(para.split())\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__mb7fh20/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"def verbatim_paragraphs(text: str) -> set[int]:\\n    \\\"\\\"\\\"Paragraph numbers that fall inside a verbatim region.\\n\\n    Paragraph numbering matches `sentences()`, which counts blank-line-separated\\n    blocks from 1, so the 2 agree "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/note_vagueness_lint.py')\\nt = p.read_text()\\n\\nold_sent = 'def sentences(text: str):\\\\n    \\\"\\\"\\\"Yield (paragraph number, sentence) with quotes kept WHOLE.'\\nnew_para = '''def paragraphs(text: str) -> list[str]:\\n    \\\"\\\"\\\"The ONE paragraph split every consumer of paragraph numbers uses.\\n\\n    ADDED 2026-09-11 (panel round "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_verbatim_scoping_cannot_be_bought_2026-09-11.py <<'EOF'\\n\\\"\\\"\\\"The verbatim exemption must not be purchasable for a note's OWN prose.\\n\\nPanel round 11, fable seat, 2026-09-11. Two demonstrated-by-execution routes\\nbought amnesty for prose OUTSIDE the markers, and both are closed here:\\n\\n1. A blank line CARRYING A SPACE. `sentences()` split paragraphs on the\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/note_vagueness_lint.py /tmp/nvl_backup.py\\n# MUTATION 1: restore the old mismatched split in verbatim_paragraphs only\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/note_vagueness_lint.py')\\nt = p.read_text()\\nt2 = t.replace(\\\"\\\"\\\"    for i, para in enumerate(paragraphs(text), 1):\\n        touched = False\\\"\\\"\\\", \\\"\\\"\\\"    for i, para in enumerate(re.split(r\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"# FULL REVERT control: both consumers back to their pre-fix splits\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/note_vagueness_lint.py')\\nt = p.read_text()\\nt2 = t.replace('for para_no, para in enumerate(paragraphs(text), 1):',\\n               'for para_no, para in enumerate(text.split(\\\"\\\\\\\\n\\\\\\\\n\\\"), 1):', 1)\\nt2 = t2.replace(\\\"\\\"\\\"    for i, para in enumerate(parag"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/task_list_markers.py')\\nt = p.read_text()\\nold = \\\"\\\"\\\"        hit = [ev for ev in e.evidence\\n               if any(f.endswith(ev) or ev.endswith(f) for f in failed_files)]\\n        if hit:\\n            out[e.ident] = sorted(hit)\\n    return out\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"        hit = [ev for ev in e.evidence\\n               if an"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_duplicate_idents_do_not_eat_failures_2026-09-11.py <<'EOF'\\n\\\"\\\"\\\"A duplicated task identifier must not make a failing evidence file vanish.\\n\\nPanel round 11, fable seat, 2026-09-11. The live master task list carried 4\\nduplicated identifiers that day: the 2026-09-11 additions reused P1-P4, which\\nthe standing panel-condition section P1-P7 already owned, and\\n`"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/task_list_markers.py /tmp/tlm_backup.py\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/task_list_markers.py')\\nt = p.read_text()\\nt2 = t.replace(\\\"out[e.ident] = sorted(set(out.get(e.ident, [])) | set(hit))\\\",\\n               \\\"out[e.ident] = sorted(hit)\\\", 1)\\nassert t2 != t\\np.write_text(t2)\\nEOF\\necho \\\"--- mutation: overwrite restored ---\\\"\\npython3 -m py"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/panel_brief_validate.py')\\nt = p.read_text()\\n\\nanchor = \\\"#: Paths a brief names, worth checking for currency.\\\"\\naddition = '''#: An instrument's VALUE typed into prose: `gamma is 0.451`, `rho = 0.56`.\\n#: Decimals only -- a bare integer in prose is almost never an instrument\\n#: reading, and firing on prose counts would g"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_undeclared_instrument_values_warn_2026-09-11.py <<'EOF'\\n\\\"\\\"\\\"An instrument value typed into prose with nothing declared must be NAMED.\\n\\nPanel round 11, fable seat, 2026-09-11. The V6 figure mechanism is opt-in by\\nrecorded design (49 archived briefs), and the cost of that design is exact:\\nthe round-4 defect itself -- prose saying \\\"gamma is 0.451\\\", nothing"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/panel_brief_validate.py /tmp/pbv_backup.py\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path('scripts/panel_brief_validate.py')\\nt = p.read_text()\\n# mutation: the function exists but nothing calls it (the 'addition nothing reaches' shape)\\nt2 = t.replace(\\\"    _undecl = check_undeclared_instrument_values(text)\\\",\\n               \\\"    _undecl = []\\\", 1)\\nassert t2 != t\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_declared_identity_names_only_itself_2026-09-11.py <<'EOF'\\n\\\"\\\"\\\"`.zenodo.json` must name ONLY this project's repository, and nothing guards that.\\n\\nPanel round 11, fable seat, 2026-09-11. `declared_project_names` reads EVERY\\ngithub-shaped `related_identifiers` entry out of `.zenodo.json` and its result\\nbecomes this project's identity: `foreign_repo_roots` wi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_task_list_figures_have_producers_2026-09-10.py bench/tests/test_panel_conditions_are_met_2026-09-10.py bench/tests/test_task_list_entry_count_2026-09-10.py bench/tests/test_repo_paths_predicate_2026-09-09.py bench/tests/test_done_markers_carry_evidence_2026-09-10.py bench/tests/test_verbatim_regions_are_not_linted_2026-09-10.py bench/tests/test_pa"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_task_list_figures_have_producers_2026-09-10.py bench/tests/test_panel_conditions_are_met_2026-09-10.py bench/tests/test_task_list_entry_count_2026-09-10.py -p no:cacheprovider 2>/dev/null | grep FAILED; echo ----; python3 -m pytest -q bench/tests/test_task_list_entry_count_2026-09-10.py::TestTheNumeratorIsEstablishedNotAssumed::test_fifteen_is_fou"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/note_vagueness_lint.py scripts/task_list_markers.py scripts/panel_brief_validate.py experimental_notes/CDSFL_MASTER_TASK_LIST.md bench/tests/test_task_list_entry_count_2026-09-10.py 2>&1 | head; echo ---; python3 -c \\\"\\nimport pathlib\\nfor f in ['scripts/note_vagueness_lint.py','bench/tests/test_task_list_entry_count_2026-09-10.py']:\\n    p = pathlib.Path(f)\\n    print("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_task_list_figures_have_producers_2026-09-10.py -p no:cacheprovider 2>/dev/null | grep -E \\\"AssertionError|Error|not a git|exit 128\\\" | head -8; echo ----; grep -n \\\"^ROOT\\\\|^REPO\\\\|parents\\\\[\\\" bench/tests/test_task_list_entry_count_2026-09-10.py | head -5; grep -rn \\\"git \\\" scripts/task_list_entry_count_2026-09-10.py | head -4\", \"description\": \"C"
+    }
+  ],
+  "n_tool_calls": 45,
+  "elapsed_s": 946.1,
+  "response": "All confirmed: the 9 failures are `GitCannotAnswer` \u2014 the sandbox has no `.git` (the exact defect P8/P1 documented: `_NEVER_COPY={\".git\"}`), pre-existing environment, not my edits. Note also: **V7's fix fired live during my own run** \u2014 the summary correctly named `task M1 is marked DONE and names: test_task_list_entry_count\u2026` when that git-dependent evidence failed here. The mechanism works.\n\n---\n\n# VERDICT\n\n- **V6 \u2014 READY WITH EXCEPTIONS.** The re-execution mechanism is fail-closed at every edge I probed by execution (absent, slow, non-zero-exit-with-correct-stderr, non-deterministic \u2014 all refused). Exception: the recorded opt-in design means the round-4 defect shape \u2014 a wrong instrument value typed in prose, nothing declared \u2014 still passes clean. Warning channel added, tested, mutation-verified.\n- **V7 \u2014 READY WITH EXCEPTIONS.** The reporter works (it fired correctly during this very review). Exceptions, both repaired this round: duplicate identifiers in the live list made `unsupported_done_entries` silently overwrite one DONE entry's failing evidence with another's; and the list itself was incoherent (`--check` exit 1, 4 duplicates) at dispatch time. Inherent limit stands as stated: it only maps failures the session produced.\n- **V8 \u2014 NOT READY as dispatched.** The load-bearing claim \u2014 \"prose outside the markers is linted normally, so a note cannot buy amnesty for its own writing\" \u2014 was false in two executed ways. Both repaired, tested, and mutation-verified in this round; with the repair accepted it is ready.\n\n# FILES I LEFT IN THE TREE\n\n- `scripts/note_vagueness_lint.py` \u2014 edited (shared `paragraphs()` split; fence-aware, line-accurate verbatim scan)\n- `scripts/task_list_markers.py` \u2014 edited (`unsupported_done_entries` merges duplicate-ident hits instead of overwriting)\n- `scripts/panel_brief_validate.py` \u2014 edited (`check_undeclared_instrument_values`, wired into `main()`, advisory)\n- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` \u2014 edited (2026-09-11 entries renumbered P1\u2013P4 \u2192 P8\u2013P11, dated renumbering note added, content untouched)\n- `bench/tests/test_verbatim_scoping_cannot_be_bought_2026-09-11.py` \u2014 new, 6 tests\n- `bench/tests/test_duplicate_idents_do_not_eat_failures_2026-09-11.py` \u2014 new, 3 tests\n- `bench/tests/test_undeclared_instrument_values_warn_2026-09-11.py` \u2014 new, 6 tests\n- `bench/tests/test_declared_identity_names_only_itself_2026-09-11.py` \u2014 new, 2 tests\n\n# FINDINGS\n\n**1. A whitespace-bearing blank line bought amnesty for a note's OWN prose (V8).**\n**WHAT:** `sentences()` split paragraphs on literal `\"\\n\\n\"` while `verbatim_paragraphs` split on `r\"\\n\\s*\\n\"`; a blank line carrying a space desynchronised the two numberings and mapped own-prose findings into the exempt set. The docstring's \"agree by construction\" was false \u2014 they agreed by byte-coincidence.\n**WHERE:** `scripts/note_vagueness_lint.py:246` (pre-fix).\n**EVIDENCE:** file with `<!-- verbatim-end -->\\n \\n` + a Rule 27 violation: `a1.md: 0 finding(s) \u2014 para 4 \u2026 [verbatim]` (quoted in full above); control file without the space counted 1. Post-fix the same bytes count \u22651.\n**FIX:** `scripts/note_vagueness_lint.py` (`paragraphs()` shared by both consumers; whitespace-only lines normalised first). Test green: `14 passed` with the existing V8 suite; full-revert control: `2 failed, 4 passed`; restored: `6 passed`.\n**WHAT WOULD REFUTE THIS:** the pre-fix linter counting \u22651 on `a1.md` on any machine, or a demonstration that the pre-commit ratchet reads something other than the counted total.\n**SEVERITY:** 0.7 \u2014 it defeats a blocking commit gate for the note's own writing, the exact thing the entry says cannot happen.\n\n**2. A marker inside a code fence opened a real region (V8).**\n**WHAT:** a note *documenting the verbatim syntax* in a ``` block opened an exemption covering everything after it; `sentences()` skips fenced paragraphs but the marker scan did not.\n**WHERE:** `scripts/note_vagueness_lint.py:234-255` (pre-fix).\n**EVIDENCE:** `a3.md: 0 finding(s) \u2014 \u2026 [verbatim]` (quoted above). Post-fix: counted, no `[verbatim]`. Fence-blind mutation: `1 failed, 5 passed`.\n**FIX:** same file \u2014 fence state tracked line-by-line outside regions; fences inside a region are quoted text and cannot poison the scan (also tested).\n**WHAT WOULD REFUTE THIS:** the pre-fix linter counting the a3 violation, or evidence no real note will ever document the syntax (this brief itself quotes the markers).\n**SEVERITY:** 0.6.\n\n**3. Duplicate live-list identifiers + dict overwrite = silent evidence loss inside the V7 guard.**\n**WHAT:** the 2026-09-11 additions reused P1\u2013P4, already owned by the panel-condition section P1\u2013P7; `--check` exited 1 naming all 4; and `unsupported_done_entries` did `out[e.ident] = sorted(hit)`, so with both duplicates' evidence failing, the first entry's failing file vanished from the `DONE ENTRIES WHOSE EVIDENCE FAILED` report \u2014 \u00a710 category 4, inside the guard built to prevent it.\n**WHERE:** `experimental_notes/CDSFL_MASTER_TASK_LIST.md:529-539`; `scripts/task_list_markers.py:160` (pre-fix).\n**EVIDENCE:** `python3 scripts/task_list_markers.py --check` \u2192 4 \u00d7 \"identifier P_n already used\", `exit=1`. Post-fix merge demo: `{'P1': ['bench/tests/test_alpha.py', 'bench/tests/test_beta.py']}`; overwrite mutation: `1 failed, 2 passed`. After renumbering: `task list coherent: 92 entries, 0 problems`, and the guard suites: `301 passed`.\n**FIX:** merge in `scripts/task_list_markers.py`; renumber to P8\u2013P11 with a dated note; pin test `test_the_live_list_has_no_duplicate_identifiers`.\n**WHAT WOULD REFUTE THIS:** a demonstration that pre-fix code reported both files for one ident, or a committed record that P1\u2013P4 reuse was deliberate aliasing.\n**SEVERITY:** 0.65.\n\n**4. V6's gate is satisfied by not opting in \u2014 the original defect still passes (recorded design, now visible).**\n**WHAT:** nothing connects instrument values typed in prose to the declaration mechanism; the exact round-4 text passes clean.\n**WHERE:** `scripts/panel_brief_validate.py:198-312` (pre-fix).\n**EVIDENCE:** `check_declared_figures(\"Section 2: \\`gamma\\` is 0.451, Strong depletion.\")` \u2192 `[]` (executed, quoted above).\n**FIX:** advisory `check_undeclared_instrument_values` wired into `main()` \u2014 refusing would break the panel-reviewed opt-in design, so it names the value instead. `61 passed` with the whole brief-format suite; unwired mutation: `1 failed, 5 passed`.\n**WHAT WOULD REFUTE THIS:** an existing caller that already cross-checks prose instrument values against declarations (I found none).\n**SEVERITY:** 0.5.\n\n**5. Task 4.2 is a DONE entry whose evidence passes for reasons unrelated to its claim (Section 3.2 answer).**\n**WHAT:** 4.2 claims a sentence removed from `memory/feedback_simplest_sufficient.md`, status COMMITTED; its evidence `test_recovery_memory_doc_repairs.py` (24 tests) contains **zero** references to that file or sentence, and the file lives **outside the repository** (`~/.claude/projects/...`, exists on one machine only). The evidence is green with the fix fully reverted, by construction.\n**WHERE:** `experimental_notes/CDSFL_MASTER_TASK_LIST.md:272-273`.\n**EVIDENCE:** `grep -c \"feedback_simplest_sufficient\\|Prefer extending machinery\" bench/tests/test_recovery_memory_doc_repairs.py` \u2192 `0`; `ls memory/feedback_simplest_sufficient.md` \u2192 `No such file or directory` (repo); file present under the home directory.\n**FIX:** none written \u2014 no repo-resident test can honestly assert on an out-of-tree, never-committed file, and a vacuous test would be the 11-confirmed-defects class. The repair belongs to V2 (OPEN, which already lists 4.2): either commit the memory file or move 4.2 off DONE. Recommendation only; V2 is not mine to close.\n**WHAT WOULD REFUTE THIS:** any assertion in that test file (or another named evidence) that reads the corrected sentence.\n**SEVERITY:** 0.55.\n\n**6. `declared_project_names` trusts an unguarded invariant of `.zenodo.json` (Section 3.5).**\n**WHAT:** every GitHub-shaped `related_identifiers` entry becomes a project identity consumed by `foreign_repo_roots`; the docstring asserts the file \"names its own repository and nothing else\", but nothing enforced it \u2014 one added citation would make a foreign project's absolute paths rebase as this project's tree.\n**WHERE:** `bench/repo_paths.py:124-162`.\n**EVIDENCE:** synthetic 2-identifier file \u2192 `{'Constraint_Engineering', 'OtherProject'}` and `foreign_repo_roots(\"/home/x/OtherProject/bench/a.py\")` \u2192 `['/home/x/OtherProject']`. Live-file mutation control (citation appended, then restored): `1 failed, 1 passed` \u2192 restored `2 passed`. Other probed cases behaved correctly: no-`.git` sandbox \u2192 `({'Constraint_Engineering'}, 'declared')`; `is_onboarded_checkout()` \u2192 `False`; folder name `repo` filtered.\n**FIX:** `bench/tests/test_declared_identity_names_only_itself_2026-09-11.py` \u2014 pins the identity and documents the widening mechanism; editing `.zenodo.json` now forces a same-commit identity decision.\n**WHAT WOULD REFUTE THIS:** a filter on `relation` (e.g. only `isSupplementTo`) already excluding citations \u2014 there is none; the code reads all entries.\n**SEVERITY:** 0.4.\n\n**Instruments statement (3B):** none of these fixes touches what reaches a runner verdict \u2014 the `severity` scale, `GAMMA_BANDS` and the two-sided gate are unmodified. Every change moves in the fail-closed direction: V8 can only count *more* own-prose findings, V7 can only report *more* failing evidence, V6 adds an advisory channel. I report my probe results as counts, not rates \u2014 2 of 6 attack shapes produced amnesty is too small an n for an interval to add information rather than decoration; the brief's two declared proportions carry their own intervals and reproduced (below).\n\n# WHICH GATE CAN BE SATISFIED WITHOUT DOING THE THING\n\nAll three, in different ways \u2014 ranked by how cheaply, with what I ran:\n\n1. **V8 (was worst, now repaired):** satisfiable *mechanically*, twice, without even claiming to quote anyone \u2014 the whitespace-line and code-fence bypasses above, both demonstrated by execution and now closed. The *inherent* remainder: the markers assert quotation and nothing can verify authorship, so a note can still wrap its own prose in `verbatim-begin` deliberately \u2014 mitigated only by the exempted findings being printed in full (a reader-visible lie, not an invisible one).\n2. **V6:** satisfiable by *omission* \u2014 type the number, declare nothing. Executed: `check_declared_figures` returned `[]` for an undeclared wrong gamma. Recorded opt-in design; now at least named at dispatch by the warning.\n3. **V7:** satisfiable by *not producing the failure* \u2014 it maps only failures the session produced, so a targeted green run says nothing about the named evidence (stated honestly in its own docstring), and the DONE-evidence guard beneath it accepts any existing, asserting, collected, *unrelated* test \u2014 4.2 is the live specimen. Per-item mutation testing remains the only closure, and the entry says so.\n\n# FIGURES I RE-RAN\n\n- `scripts/orphan_figures_2026-09-10.py` \u2192 `NO_SCORE: 0 of 1035 = 0.0000%`, Wilson [0.0000%, 0.3698%] \u2014 **matched the brief exactly.** (Its A8 section correctly *refused* in this no-git sandbox rather than fabricating 100% \u2014 the round-10 repair working.)\n- `scripts/archived_falsifier_rejections_2026-09-10.py` \u2192 `real-rejection rate : 2/640 = 0.3125%`, Wilson [0.0857%, 1.1322%], location artefacts 35/640 \u2014 **matched the brief exactly.**\n\n# WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\n- **V8's entry text and its test docstring claim the numbering agreed \"by construction.\"** It agreed by coincidence, on byte-exact blank lines only. The 8 shipped tests all used pristine `\\n\\n` separators, so the load-bearing \"scoped, not whole-file\" property was tested only on inputs where the two splits happen to coincide.\n- **CC1 broke the coherence substrate the same day it shipped it:** the P1\u2013P4 reuse landed within hours of `unsupported_done_entries` \u2014 the guard keyed on identifiers while its author was duplicating identifiers. Same-day self-collision, the V1/V3 class again.\n- **P8's (n\u00e9e P1) sandbox-independence claim I checked rather than accepted:** my sandbox files are real copies, not symlinks, and my mutations never reached the canonical tree. Agreement, but by verification.\n- Otherwise I agree with Section 2's three claims as stated; each reproduced when run.\n\n# WHAT I DID NOT CHECK\n\n- **Inline double-quoted markers**: `\"...<!-- verbatim-begin: x -->...\"` in prose still toggles a region (`mask_quoted` is not applied to the marker scan). Residual, lower-risk than the fence case; I kept the fix's blast radius small and disclose it rather than half-fix it.\n- **Gamma itself**: I did not re-derive 0.415413 \u2014 no falsification of V6's motivating number was attempted; round 4's two independent re-derivations stand as the record.\n- **The other ~60 DONE entries' evidence** for 4.2-style vacuousness \u2014 only 4.2 confirmed; the shared-evidence clusters (R4\u2013R9 on `test_rulings_written_back`, 9.1/9.2/9.4) are unaudited candidates.\n- **The full suite** (forbidden by brief). The 9 observed failures are diagnosed environment failures (`GitCannotAnswer`, no `.git` in the panel sandbox \u2014 the P8 finding's own subject); I did not verify they are green in a git checkout.\n- **The dispatcher's live wiring** of `check_declared_figures` (`bench/confer_maths_panel_2026-09-05.py`) \u2014 it validates argv at module import (P10) and spends money when run; I relied on its existing test rather than executing it.\n- **repo_paths fork/mirror/rename/submodule** cases were reasoned through, not executed; only no-`.git`, declared-tier, folder-name filtering and `foreign_repo_roots` were probed by execution."
+}

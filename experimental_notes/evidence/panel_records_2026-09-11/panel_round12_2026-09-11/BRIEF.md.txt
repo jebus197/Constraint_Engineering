@@ -1,0 +1,60 @@
+# PANEL BRIEF — round 12: V2's measurement, and everything this session added. DELIVER YOUR FIX AS A FILE
+
+<!-- figure: archived falsifier rejections that are NOT location artefacts | scripts/archived_falsifier_rejections_2026-09-10.py | real-rejection rate : 2/640 = 0.3125% -->
+<!-- figure: founder-ruled tracker items neither carried nor declared | scripts/ruled_items_are_accounted_2026-09-11.py | unaccounted rate: 0/15 = 0.0000% -->
+
+## SECTION 0 — THE DELIVERY RULE, AND THREE HARD PROHIBITIONS
+
+**Founder ruling:** *"they need to supply fixes, not just problems!"* A finding without a fix is not a deliverable, and a fix in prose is not delivered. **Write it INTO the sandbox repository tree at its real path and leave it there.** Your sandbox is YOURS ALONE as of this round's predecessor; what you leave in it is attributed to you by name.
+
+**THE 3 CATEGORIES THE FOUNDER RESERVES TO HIMSELF IN PERSON.** Do not delete a git ref, do not spend money on a paid seat, do not touch the sealed answer-key store. Any patch containing `git branch -D`, `git tag -d`, `git push --delete`, `git gc --prune`, `git reflog expire` or `filter-repo` is refused whole.
+
+## SECTION 1 — The question
+
+Section P: no entry moves to DONE until its fix has been through a panel review. **Task V2** is BUILT and TESTED and stuck there. Eight further entries were closed this session on measurements that have had no adversarial pass at all. Review them, break them, and fix what you break.
+
+## SECTION 2 — What is measured so far. RUN THESE.
+
+1. **V2 — "repair the 11 overstated entries".** `scripts/overstated_entries_2026-09-11.py` checks each claim rather than acting on it. Result: **9 of the 11 were already answered**; 4.2's defect was real; and the sweep found a **12th the reviewer did not name**, 7.3, the same shape. **A population error in the instrument was caught before it became the answer:** measuring over `Entry.text` — the entry LINE only — reported **25 of 67** DONE entries naming no artefact, 37.3134%, Wilson [26.7182%, 49.2846%]. Over the whole BLOCK it is **0 of 67**.
+2. **A7.** The entry said 25 archived escalated criticals with no falsifier; **no predicate returns 25**. The closest returns 22 and reproduces the entry's one checkable family figure. `exp53_control_zero_live` contributes **0 and cannot contribute any** — it holds no `*_report.json`, its findings are in `checkpoint.json` under `all_findings` in a different schema. All 22 are escalated by a **named** mechanism; ANONYMOUS is 0 of 22.
+3. **A6.** 70 of 5026 test functions assert on Python source text, 1.3928%. An inert comment appended at EOF reddens **0 of 84** runner-dependent files. I13's first answer was **11 of 37 surviving, 29.7297%**, and reading 3 survivors refuted it; refined to files that CALL the symbol it is **0 of 22**.
+4. **A16.** 58 of 112 scripts are ACTIONS. Running the 54 measurements wrote nothing — checked by `git status --porcelain` before and after. It then found **5 of 54** consuming `--help` as a positional argument.
+5. **A18.** 2 of the 3 "unwired" config fields ARE read, via `getattr(cfg, "field", False)` — an attribute read written as a string, which an AST attribute scan reports as zero.
+
+## SECTION 3 — Attack these specifically
+
+1. **V2 IS THE ONE UNDER SECTION P. Break its method, not only its arithmetic.** It concludes "already answered" for 9 entries by finding a dated CORRECTED paragraph. Is a correction that EXISTS necessarily a correction that is RIGHT? Pick one and check it.
+2. **A7's predicate is fitted to a family figure.** I chose severity >= 0.7 AND `hil_escalated` AND no `falsifier_code` partly because it reproduces `exp55_v3_control` = 8. That is a single check against a single number. Find a predicate that also reproduces it and gives a different total.
+3. **A6's I13 result is 5 functions in 1 module.** The upper bound is 15%, not 0. Extend it and see whether the conclusion survives a wider sample.
+4. **The classification in A8 and A16 both turn on a judgement encoded as a rule.** `classify_citation` says a fixture stays a fixture; `classify` says unresolvable is an ACTION. Find a case where either rule gives the wrong answer for the right reason.
+5. **Every number in Section 2 was produced by a script I also wrote.** That is the weakest structural property of this whole session. Pick the figure you least believe and re-derive it independently.
+
+## SECTION 3B — EVERY FIX MUST BE TESTED, BY YOU, BEFORE YOU HAND IT BACK
+
+**A fix you have not executed is a hypothesis.** Put the test at `bench/tests/<name>.py`, run it with `python3 -m pytest -q <path>`, and quote the result line verbatim.
+
+**The test must be able to FAIL.** Break the thing your fix repairs, run the test again, and quote the red output too. This project found 8 of its own mutation tests vacuous that way, and **3 of mine in the last 24 hours** — a rebase control, an identity control, and a fence control whose fixture had its violation suppressed by a colon, so deleting the condition changed nothing and every test stayed green.
+
+**Use the mathematical instruments where they bear.** Any proportion needs a Wilson interval and a second tool. If a fix changes what reaches a verdict, say what it does to `severity` and the two-sided `gamma` gate.
+
+## SECTION 4 — What would refute YOU
+
+For every finding, state what evidence would overturn it. A finding naming no such evidence is an opinion.
+
+## SECTION 5 — When to stop
+
+**Diminishing returns.** Above threshold means: it could put a wrong number in front of the founder, let a completion claim stand on a check that cannot fail, or let a guard go quiet. Do not pad to a count. Do not report style.
+
+## SECTION 6 — The output shape, field by field
+
+Return **Markdown**, in this order:
+
+1. **`VERDICT`** — `READY FOR DONE`, `NOT READY`, or `READY WITH EXCEPTIONS` for **V2**, in the first line, then a one-line verdict for each of A6, A7, A16 and A18.
+2. **`FILES I LEFT IN THE TREE`** — repo-relative paths. `NONE` plus a reason if empty.
+3. **`FINDINGS`** — numbered. Each: **WHAT**, **WHERE** (`path:line`), **EVIDENCE** (the exact command and its output, quoted), **FIX** (the path you wrote it to), **WHAT WOULD REFUTE THIS**, **SEVERITY** (0.0 to 1.0).
+4. **`THE FIGURE I LEAST BELIEVED`** — your answer to Section 3.5, with what you ran.
+5. **`FIGURES I RE-RAN`** — each declared figure, what you got, whether it matched.
+6. **`WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1`** — preserved, never smoothed.
+7. **`WHAT I DID NOT CHECK`** — the honest boundary of your pass.
+
+Do not return a summary in place of the full output.

@@ -1,0 +1,59 @@
+# PANEL BRIEF — round 14: the repairs never reached the commit, and the repair that did corrupted 3 citations. DELIVER YOUR FIX AS A FILE
+
+<!-- figure: measurement scripts that do not answer --help | scripts/help_is_answered_2026-09-11.py | not answering --help: 0/54 = 0.0000% -->
+<!-- figure: the same, with its interval | scripts/help_is_answered_2026-09-11.py | Wilson 95%          : [0.0000%, 6.6414%] -->
+
+## SECTION 0 — THE DELIVERY RULE, AND THREE HARD PROHIBITIONS
+
+**Founder ruling:** *"they need to supply fixes, not just problems!"* Write your fix INTO your own sandbox tree at its real path. **THE 3 CATEGORIES HE RESERVES TO HIMSELF:** do not delete a git ref, do not spend money on a paid seat, do not touch the sealed answer-key store.
+
+## SECTION 1 — The question, in his words
+
+Task A2, in the entry's own words: *"For a project whose stated purpose is reproducibility this is central, not cosmetic — a reader who follows the documented steps does not see what the maintainer sees."*
+
+A2 was marked DONE on 2026-09-11 with the claim that a fresh clone is green. **It was not.** Cloning HEAD and running the suite there gave `3 failed, 6952 passed, 38 skipped, 1 xfailed` (the wall-clock figure is a property of that machine under that load and is not a claim to reproduce), against `6988 passed, 0 failed` in the maintainer's tree. The question for this round is whether the 3 fixes below actually close that, and what they broke.
+
+## SECTION 2 — What is built, and what is measured. RUN IT.
+
+**FIX 1 — `hooks/stage0_restage.sh`, new.** A pre-commit hook sees the STAGED snapshot. Stage 0's repairs — `scripts/experiment_run_ledger.py --refresh` and `scripts/citation_content_guard_2026-09-10.py --fix` — wrote the WORKING TREE and never `git add`ed what they wrote. Every commit therefore shipped the UNREPAIRED content and left the repair uncommitted for the NEXT commit to sweep in. The repairs were permanently 1 commit behind and every clone at HEAD was broken while `git status` here said only "modified". The helper stages ONLY the exact paths a repair reports changing. `hooks/pre-commit` REFUSES if the helper is absent. Measured in a scratch repository: a hook's `git add` does reach a pathspec commit (`git commit -- <path>`) because git sets `GIT_INDEX_FILE` to a temporary index — but a file outside the pathspec lands with it, so there is a notice, which never refuses.
+
+**FIX 2 — `scripts/citation_content_guard_2026-09-10.py`, `repair()` rewritten.** The probe for FIX 1 deliberately staled 1 citation and committed. The repair landed — and destroyed 3 correct citations in the same pass, in `bench/reference_runner_v3.py`, line number before -> after: 10934 -> 114560934, 12638 -> 114562638, 14984 -> 114564984. The cause was `txt.replace(f"{target}:{line}", f"{target}:{lo}")`: unbounded, so a short stale number rewrites the PREFIX of every longer one; and global, so a correct citation sharing the number moved too. `check` now carries each number's offsets and `repair` splices at them, right to left, refusing any edit whose offset does not hold the digits expected.
+
+**FIX 3 — `scripts/_cli_help.py`, new, wired into 30 scripts.** `scripts/measurement_scripts_only_2026-09-11.py --run` reported how many scripts "did not answer `--help` cleanly" using the EXIT CODE. A script with no parser ignores the flag, runs its whole measurement and exits 0. Requiring a `usage:` line instead: **30 of 53 = 56.6038%, Wilson [43.2654%, 69.0496%], Clopper-Pearson [42.2826%, 70.1608%]** did not answer. **That figure is NOT re-executable at this HEAD, because the fix landed and the script now reports 0 of 54** — the declared figure above is the CURRENT one. To reproduce the pre-fix figure, check out `d92564e^` and run the same script; it is committed alongside, which is what `measured-rate-travels-with-its-script` requires. Treat 30 of 53 as a historical measurement and the Section 6 figure block as the place to say whether you could reproduce it. An unrecognised argument exits 2 rather than being ignored, and `bench/tests/test_operational_scripts.py`'s argv scan was taught to count `answer_help(` as reading argv — without that, all 28 helper-wired scripts read as argv-free and inherited a pass.
+
+Also removed: 2 absolute paths to the maintainer's checkout, in `scripts/absorb_rule_disagreement_2026-09-05.py` and `scripts/deepseek_falsifier_supply_2026-09-09.py`, which made those scripts measure THIS tree wherever they were launched from.
+
+## SECTION 3 — Attack these specifically
+
+1. **THE RE-STAGING CAN SWEEP IN WORK THE AUTHOR DID NOT STAGE.** `cdsfl_restage_paths` runs `git add -- <path>` on a whole file. If a repair touches a file the author had partially staged with `git add -p`, the unstaged hunks go into the commit. Construct that case. Is the mitigation ("only paths a repair reports") sufficient, or does it need `git stash`-style isolation? If you think it does, show the failure first.
+2. **THE PATHSPEC-COMMIT NOTICE IS A STRING COMPARISON.** `cdsfl_warn_if_partial_commit` compares `$GIT_INDEX_FILE` against `git rev-parse --absolute-git-dir`/index, with a `*/index` escape. Its FIRST version used `git rev-parse --git-path index`, which RETURNS `$GIT_INDEX_FILE` when set — a check that compared a variable with itself and could never fire. Find the next such hole: worktrees, submodules, `GIT_DIR` set, a repository whose path contains a symlink (`/tmp` vs `/private/tmp` on this machine).
+3. **THE CITATION SPLICE ASSUMES OFFSETS SURVIVE.** `check()` reads each file with `errors="replace"`; `repair()` reads it again without. Show a file where those disagree and the splice lands in the wrong place, or show that the `txt[start:end] != str(line)` guard catches every such case.
+4. **`answer_help` NOW REFUSES EVERY ARGUMENT.** I verified by AST walk over every tracked `.py` that nothing invokes the 30 scripts with an argument. Falsify that: shell scripts, Makefiles, notes documenting a command, a test using `shell=True`, the Desktop mirrors, `cdsfl_qc.py`.
+5. **THE `usage:` CRITERION IS NECESSARY, NOT SUFFICIENT.** A script could print `usage:` and still do its work. Find one that does, or show the class is empty.
+6. **FIX 3 EDITED 30 FILES MECHANICALLY.** Prove no script's no-argument behaviour changed. A diff is not proof; an execution is.
+
+## SECTION 3B — EVERY FIX MUST BE TESTED, BY YOU, BEFORE YOU HAND IT BACK
+
+**A fix you have not executed is a hypothesis.** Put the test at `bench/tests/<name>.py`, run it, quote the result line. **The test must be able to FAIL** — break the thing your fix repairs and quote the red output too. Three of this session's own controls were vacuous on the first attempt and were caught only by mutation.
+
+**Use the mathematical instruments.** Any proportion needs a Wilson interval and a second tool.
+
+## SECTION 4 — What would refute YOU
+
+For every finding, state what evidence would overturn it.
+
+## SECTION 5 — When to stop
+
+**Diminishing returns.** Stop when another pass produces no new above-threshold finding. Above threshold means: it could put wrong content at HEAD, corrupt a file, put a wrong number in front of the founder, or let a check pass that cannot fail. Do not pad to a count. Do not report style.
+
+## SECTION 6 — The output shape, field by field
+
+1. **`VERDICT`** — `READY FOR DONE`, `NOT READY`, or `READY WITH EXCEPTIONS`, first line.
+2. **`FILES I LEFT IN THE TREE`**
+3. **`FINDINGS`** — numbered: **WHAT**, **WHERE**, **EVIDENCE** (command and output, quoted), **FIX**, **WHAT WOULD REFUTE THIS**, **SEVERITY**.
+4. **`CAN A REPAIR STILL MISS THE COMMIT`** — your answer to the partial-staging and temporary-index attacks, with what you ran.
+5. **`FIGURES I RE-RAN`**
+6. **`WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1`**
+7. **`WHAT I DID NOT CHECK`**
+
+Do not return a summary in place of the full output.

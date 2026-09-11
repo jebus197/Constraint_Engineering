@@ -1,0 +1,1020 @@
+### bench/tests/__pycache__/test_declared_figure_token_boundary_2026-09-10.cpython-313-pytest-9.0.3.pyc
+Binary files /dev/null and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/__pycache__/test_declared_figure_token_boundary_2026-09-10.cpython-313-pytest-9.0.3.pyc differ
+
+### bench/tests/__pycache__/test_panel_brief_figures_hardening_2026-09-10.cpython-313-pytest-9.0.3.pyc
+Binary files /dev/null and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/__pycache__/test_panel_brief_figures_hardening_2026-09-10.cpython-313-pytest-9.0.3.pyc differ
+
+### bench/tests/__pycache__/test_panel_brief_format_2026-09-09.cpython-313-pytest-9.0.3.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/__pycache__/test_panel_brief_format_2026-09-09.cpython-313-pytest-9.0.3.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/__pycache__/test_panel_brief_format_2026-09-09.cpython-313-pytest-9.0.3.pyc differ
+
+### bench/tests/__pycache__/test_precommit_gate_cost_2026-09-10.cpython-313-pytest-9.0.3.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/__pycache__/test_precommit_gate_cost_2026-09-10.cpython-313-pytest-9.0.3.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/__pycache__/test_precommit_gate_cost_2026-09-10.cpython-313-pytest-9.0.3.pyc differ
+
+### bench/tests/test_declared_figure_token_boundary_2026-09-10.py
+--- /dev/null	2026-09-10 14:50:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/test_declared_figure_token_boundary_2026-09-10.py	2026-09-10 14:46:50
+@@ -0,0 +1,164 @@
++"""The declared-figure guard must refuse a number the script did not print,
++AND must accept one it did. The round-6 repair got both directions wrong.
++
++WHY THIS FILE EXISTS. `check_declared_figures` is the only mechanism in this
++repository that re-executes a figure quoted in a panel brief instead of
++trusting it. It has now been wrong twice. Round 6 found it matching by
++SUBSTRING -- a declared `0.29` reproduced against a printed `0.294998`. The
++repair expressed "whole token" as a fixed character class,
++`(?<![0-9A-Za-z.\\-])` ... `(?![0-9A-Za-z.\\-])`, and that class is wrong in
++BOTH directions. Panel round 7 measured both by execution:
++
++  * STILL PASSES WRONG NUMBERS. `,` is not in the class, so a declared `234`
++    reproduces against a script printing `entries = 1,234`. That is the round-6
++    defect with a thousands separator instead of a decimal point, and the
++    figure it lets through is wrong by a factor of 5. `elapsed 12:345` against
++    a declared `345` goes through the same hole.
++  * REFUSES RIGHT NUMBERS. `.` is in the class unconditionally, so a script
++    printing `gamma is 0.294998.` -- the figure at the end of a sentence --
++    cannot be declared at all. A guard that refuses a correct brief is a guard
++    that gets bypassed, and this one blocks a PAID dispatch.
++
++THE MEASUREMENT THAT MOTIVATED IT, and the one this file argues with. The
++round-6 change is reported as scoring "8 of 8" over the table in
++`test_panel_brief_format_2026-09-09.py`. Four of those 8 cases (`0.2`, `0.4`,
++`1`, `9`) are refused by the 3-significant-character rule and never reach the
++token rule at all, and 2 more (`0.451`, `0.415413`) are simply absent from the
++output and would be refused by a plain substring test. Exactly ONE case,
++`0.29`, exercises the token boundary. The token rule's real support is 1 of 1,
++Wilson [20.6549%, 100.0000%] -- an interval that contains almost everything.
++The cases below are the ones that were missing.
++
++Nothing here is removed. The final test re-runs the whole round-6 table
++against the new predicate, so a future repair cannot buy these cases by
++giving back the ones already paid for.
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++_SPEC = importlib.util.spec_from_file_location(
++    "pbv_boundary", ROOT / "scripts" / "panel_brief_validate.py")
++pbv = importlib.util.module_from_spec(_SPEC)
++_SPEC.loader.exec_module(pbv)
++
++
++# ---------------------------------------------------------------------------
++# The predicate, directly. No subprocess, so a failure here names the rule
++# rather than the plumbing.
++# ---------------------------------------------------------------------------
++
++@pytest.mark.parametrize("want,haystack,found,why", [
++    # --- must NOT be found: the declared figure is not the printed one ------
++    ("234", "entries = 1,234", False,
++     "a thousands separator: 234 against a printed 1,234 is wrong by 5x"),
++    ("345", "elapsed 12:345", False,
++     "a colon binds a number the same way a comma does"),
++    ("0.29", "gamma (Duane slope) : 0.294998", False,
++     "the round-6 defect itself must stay refused"),
++    ("294998", "gamma = 0.294998", False,
++     "the fractional part of a decimal is not the decimal"),
++    ("0.25", "delta = -0.25", False,
++     "a sign changes the number; the magnitude alone must not reproduce"),
++    ("2026", "dated 2026-09-10", False,
++     "a date field is not a count"),
++    ("0.294998", "gamma_0.294998", False,
++     "an underscore joins an identifier to its value; that is one token"),
++    ("1,234", "total 11,234 rows", False,
++     "a grouped number inside a longer grouped number"),
++    # --- MUST be found: the script really did print this figure -------------
++    ("0.294998", "gamma is 0.294998.", True,
++     "a figure at the end of a sentence must still be declarable"),
++    ("0.294998", "gamma (0.294998)", True,
++     "brackets are not part of the number"),
++    ("0.294998", "  gamma (Duane slope)    : 0.294998\n", True,
++     "the live format of the script this guard is pointed at"),
++    ("-0.25", "delta = -0.25 units", True, "a negative figure is declarable"),
++    ("42.5%", "rate = 42.5% of runs", True, "a percentage is declarable"),
++    ("entries = 84", "entries = 84\n", True,
++     "the remedy the guard's own message recommends must work"),
++    ("234", "entries, 234 rows", True,
++     "a comma with a space after it is punctuation, not a thousands separator"),
++    ("1,234", "entries = 1,234\n", True,
++     "a grouped number declared in full still reproduces"),
++])
++def test_the_figure_boundary_is_decided_by_context(want, haystack, found, why):
++    assert pbv._figure_token_found(want, haystack) is found, (
++        f"{want!r} in {haystack!r}: {why}")
++
++
++# ---------------------------------------------------------------------------
++# End to end, through check_declared_figures, with a real subprocess.
++# ---------------------------------------------------------------------------
++
++def _decl(script: str, value: str) -> str:
++    return f"<!-- figure: probe | {script} | {value} -->"
++
++
++def test_a_thousands_separator_no_longer_launders_a_wrong_count(tmp_path):
++    (tmp_path / "s.py").write_text("print('entries = 1,234')\n", encoding="utf-8")
++    problems = pbv.check_declared_figures(_decl("s.py", "234"), repo=tmp_path,
++                                          timeout=60)
++    assert problems, (
++        "a brief declaring 234 reproduced against a script printing 1,234; the "
++        "guard exists to refuse exactly this")
++    assert not pbv.check_declared_figures(_decl("s.py", "entries = 1,234"),
++                                          repo=tmp_path, timeout=60), (
++        "the true figure must still reproduce, or the guard blocks correct work")
++
++
++def test_a_figure_at_the_end_of_a_sentence_is_declarable(tmp_path):
++    (tmp_path / "s.py").write_text("print('gamma is 0.294998.')\n", encoding="utf-8")
++    assert pbv.check_declared_figures(_decl("s.py", "0.294998"), repo=tmp_path,
++                                       timeout=60) == [], (
++        "a full stop after the figure made a correct brief unrefusable-by-any-"
++        "other-means and refused it; a guard that refuses right answers is "
++        "bypassed within a day")
++
++
++def test_a_figure_is_not_manufactured_in_the_seam_between_two_streams(tmp_path):
++    """`r.stdout + r.stderr` spliced the streams with no separator."""
++    (tmp_path / "s.py").write_text(
++        "import sys\n"
++        "sys.stdout.write('rate = 0.2')\n"
++        "sys.stderr.write('9 done')\n", encoding="utf-8")
++    problems = pbv.check_declared_figures(_decl("s.py", "rate = 0.29"),
++                                          repo=tmp_path, timeout=60)
++    assert problems, (
++        "neither stream printed 'rate = 0.29'; it existed only where the two "
++        "were concatenated, and the guard reported the figure as reproduced")
++
++
++def test_stderr_only_output_still_counts(tmp_path):
++    """The join must not cost the stderr case the guard already handled."""
++    (tmp_path / "s.py").write_text(
++        "import sys; print('gamma = 0.294998', file=sys.stderr)\n", encoding="utf-8")
++    assert pbv.check_declared_figures(_decl("s.py", "gamma = 0.294998"),
++                                       repo=tmp_path, timeout=60) == []
++
++
++# ---------------------------------------------------------------------------
++# Nothing paid for is given back.
++# ---------------------------------------------------------------------------
++
++@pytest.mark.parametrize("want,haystack,found", [
++    ("0.294998", "gamma (Duane slope)    : 0.294998", True),
++    ("0.451", "gamma (Duane slope)    : 0.294998", False),
++    ("0.29", "gamma (Duane slope)    : 0.294998", False),
++    ("0.2", "gamma (Duane slope)    : 0.294998", False),
++    ("0.4", "gamma (Duane slope)    : 0.294998", False),
++    ("0.415413", "gamma (Duane slope)    : 0.294998", False),
++])
++def test_the_round_six_table_still_holds_under_the_new_predicate(want, haystack, found):
++    """The 6 round-6 cases that reach the token rule at all.
++
++    `1` and `9` are excluded here because they never reach it -- the
++    3-significant-character rule refuses them first, which is precisely the
++    point made in this file's docstring about the '8 of 8' figure.
++    """
++    assert pbv._figure_token_found(want, haystack) is found
+
+### bench/tests/test_panel_brief_figures_hardening_2026-09-10.py
+--- /dev/null	2026-09-10 14:50:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/test_panel_brief_figures_hardening_2026-09-10.py	2026-09-10 14:45:33
+@@ -0,0 +1,167 @@
++"""check_declared_figures: the holes the whole-token fix left open.
++
++Panel round 7, 2026-09-10. The round-6 hardening moved the guard from substring
++to whole-token matching and added the 3-significant-character floor. Driving the
++guard adversarially found 6 residual holes, each demonstrated by EXECUTION
++before this file was written:
++
++  1. NUMERIC SEPARATORS ARE TOKEN DELIMITERS. Declared ``234`` reproduced
++     against a printed ``total = 1,234`` and declared ``294998`` against
++     ``n = 1_294998`` -- the comma and underscore fall outside the token
++     character class, so a truncated (wrong) number passes the guard whose one
++     job is refusing wrong numbers.
++  2. THE SCRIPT PATH IS NOT CONFINED. ``repo / rel`` with ``rel`` starting
++     ``../`` or absolute executes an arbitrary script OUTSIDE the repository
++     and accepts its output as evidence. A figure must be re-executable from
++     the repository, or it is not a committed measurement.
++  3. A MALFORMED DECLARATION IS SILENTLY IGNORED. ``<!-- figure: g | s.py -->``
++     (value field missing) does not match the FIGURE regex, so the guard skips
++     it and the brief PASSES -- a declaration that announces itself and then
++     escapes checking, which is the guard failing silently in the exact
++     direction it exists to check.
++  4. STREAM SPLICE. ``r.stdout + r.stderr`` with no separator can manufacture
++     a token neither stream printed: stdout ending ``0.2`` (no newline) and
++     stderr starting ``94998`` matched a declared ``0.294998``.
++
++Every test here CALLS the guard; none asserts on source text.
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++
++_spec = importlib.util.spec_from_file_location(
++    "pbv_figures_under_test", REPO / "scripts" / "panel_brief_validate.py")
++pbv = importlib.util.module_from_spec(_spec)
++sys.modules["pbv_figures_under_test"] = pbv
++_spec.loader.exec_module(pbv)
++
++
++@pytest.fixture()
++def figrepo(tmp_path):
++    (tmp_path / "scripts").mkdir()
++    return tmp_path
++
++
++def _script(figrepo: Path, name: str, body: str) -> str:
++    p = figrepo / "scripts" / name
++    p.write_text(body, encoding="utf-8")
++    return f"scripts/{name}"
++
++
++def _check(figrepo: Path, brief: str) -> list[str]:
++    return pbv.check_declared_figures(brief, repo=figrepo, timeout=60)
++
++
++class TestWhatMustStillPass:
++    """The round-6 behaviour the hardening must not regress."""
++
++    def test_exact_figure_reproduces(self, figrepo):
++        rel = _script(figrepo, "s.py", "print('gamma = 0.294998')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->") == []
++
++    def test_truncated_figure_refused(self, figrepo):
++        """The original round-6 defect: 0.29 must not ride on 0.294998."""
++        rel = _script(figrepo, "s.py", "print('gamma = 0.294998')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.29 -->")
++
++    def test_figure_followed_by_prose_comma_still_accepted(self, figrepo):
++        """A comma AFTER a number is punctuation, not a digit separator.
++
++        The separator fix must not refuse 'gamma = 0.294998, which fails' --
++        that is the common shape of a sentence quoting a figure.
++        """
++        rel = _script(figrepo, "s.py", "print('gamma = 0.294998, which fails')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->") == []
++
++    def test_stderr_only_figure_accepted(self, figrepo):
++        rel = _script(figrepo, "s.py",
++                      "import sys; sys.stderr.write('gamma = 0.294998\\n')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->") == []
++
++    def test_nonzero_exit_refused(self, figrepo):
++        rel = _script(figrepo, "s.py",
++                      "print('gamma = 0.294998'); raise SystemExit(3)")
++        probs = _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->")
++        assert probs and "exited 3" in probs[0]
++
++
++class TestNumericSeparators:
++    def test_comma_separated_thousands_do_not_leak_a_suffix(self, figrepo):
++        """Declared 234 must NOT reproduce against a printed 1,234."""
++        rel = _script(figrepo, "s.py", "print('total = 1,234')")
++        assert _check(figrepo, f"<!-- figure: t | {rel} | 234 -->"), (
++            "declared 234 reproduced against printed 1,234: the comma acts as "
++            "a token delimiter and a wrong number passes the guard")
++
++    def test_underscore_separated_literal_does_not_leak_a_suffix(self, figrepo):
++        """Declared 294998 must NOT reproduce against a printed 1_294998."""
++        rel = _script(figrepo, "s.py", "print('n = 1_294998')")
++        assert _check(figrepo, f"<!-- figure: n | {rel} | 294998 -->"), (
++            "declared 294998 reproduced against printed 1_294998")
++
++    def test_a_declared_value_containing_a_comma_still_matches_itself(self, figrepo):
++        rel = _script(figrepo, "s.py", "print('total = 1,234')")
++        assert _check(figrepo, f"<!-- figure: t | {rel} | 1,234 -->") == []
++
++
++class TestPathConfinement:
++    def test_dotdot_escape_is_refused_and_not_executed(self, figrepo, tmp_path_factory):
++        outside_dir = tmp_path_factory.mktemp("outside")
++        evil = outside_dir / "evil.py"
++        marker = outside_dir / "executed.marker"
++        evil.write_text(
++            f"import pathlib\n"
++            f"pathlib.Path({str(marker)!r}).write_text('ran')\n"
++            f"print('999888777')\n", encoding="utf-8")
++        depth = len(figrepo.resolve().parts) - 1
++        rel = ("../" * depth) + str(evil.resolve()).lstrip("/")
++        probs = _check(figrepo, f"<!-- figure: e | {rel} | 999888777 -->")
++        assert probs, "a ../ escape produced a passing figure"
++        assert not marker.exists(), (
++            "the validator EXECUTED a script outside the repository; "
++            "confinement must refuse before running, not after")
++
++    def test_absolute_path_is_refused_and_not_executed(self, figrepo, tmp_path_factory):
++        outside_dir = tmp_path_factory.mktemp("outside_abs")
++        evil = outside_dir / "evil.py"
++        marker = outside_dir / "executed.marker"
++        evil.write_text(
++            f"import pathlib\n"
++            f"pathlib.Path({str(marker)!r}).write_text('ran')\n"
++            f"print('999888777')\n", encoding="utf-8")
++        probs = _check(figrepo, f"<!-- figure: e | {evil} | 999888777 -->")
++        assert probs, "an absolute path produced a passing figure"
++        assert not marker.exists(), (
++            "the validator EXECUTED a script at an absolute path outside the repo")
++
++
++class TestMalformedDeclarations:
++    def test_a_declaration_missing_its_value_field_is_refused(self, figrepo):
++        """A comment that says 'figure:' and does not parse must refuse, not skip."""
++        rel = _script(figrepo, "s.py", "print('gamma = 0.294998')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} -->"), (
++            "a malformed figure declaration was silently ignored and the brief "
++            "passed; opt-in means an ABSENT declaration passes, not a broken one")
++
++    def test_a_wellformed_declaration_is_not_double_counted(self, figrepo):
++        rel = _script(figrepo, "s.py", "print('gamma = 0.294998')")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->") == []
++
++
++class TestStreamSplice:
++    def test_token_spliced_across_stdout_and_stderr_is_refused(self, figrepo):
++        rel = _script(
++            figrepo, "s.py",
++            "import sys\n"
++            "sys.stdout.write('x = 0.2')\n"
++            "sys.stdout.flush()\n"
++            "sys.stderr.write('94998 warnings')\n")
++        assert _check(figrepo, f"<!-- figure: g | {rel} | 0.294998 -->"), (
++            "stdout ending '0.2' and stderr starting '94998' were concatenated "
++            "into a token neither stream printed")
+
+### bench/tests/test_panel_brief_format_2026-09-09.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_panel_brief_format_2026-09-09.py	2026-09-10 14:21:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/test_panel_brief_format_2026-09-09.py	2026-09-10 14:48:25
+@@ -250,7 +250,17 @@
+ # Two changes, both from the seats. Whole-token matching (cc2), and a minimum of
+ # 3 significant characters (fable's residual: a bare `1` or `9` is a genuine
+ # token somewhere in almost any output, so finding it proves nothing).
+-# Now 8 of 8.
++# Now 8 of 8 -- BUT READ THE DENOMINATOR (annotated 2026-09-10, panel round 7).
++# 8 of 8 here is not comparable with 4 of 7 above: they are different case sets,
++# and the 8th case was added by the repair being scored. Worse, of these 8 only
++# `0.29` reaches the token rule at all -- `0.2`, `0.4`, `1` and `9` are refused
++# by the 3-significant-character rule first, and `0.451` and `0.415413` are
++# simply absent from the output and would be refused by the substring form too.
++# The token rule's real support in this table is 1 of 1, Wilson [20.66%,
++# 100.00%]. Round 7 then found the rule still passing a declared `234` against a
++# printed `1,234`, and refusing a correct `0.294998` against a printed
++# `gamma is 0.294998.`. Nothing below is deleted; the missing cases are added in
++# bench/tests/test_declared_figure_token_boundary_2026-09-10.py.
+ # ---------------------------------------------------------------------------
+ 
+ _CYCLE = "scripts/ffafp_cycle_gamma_2026-09-10.py"
+
+### bench/tests/test_precommit_gate_cost_2026-09-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_precommit_gate_cost_2026-09-10.py	2026-09-10 14:20:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/bench/tests/test_precommit_gate_cost_2026-09-10.py	2026-09-10 14:47:25
+@@ -81,8 +81,12 @@
+ 
+ class TestTheCountIsExactAndCurrent:
+     def test_the_entry_figure_matches_the_hook_today(self, mod):
+-        """Entry 1.1 now says 6 files and 169 tests. Both are checked here.
++        """Entry 1.1 now says 6 files and 174 tests. Both are checked here.
+ 
++        (The count in this docstring was left at 169 by the 14:20 BST
++        correction that updated the assertion below -- a stale figure
++        one line above a fresh one, caught in panel round 7.)
++
+         If this fails because the gate grew again, UPDATE THE ENTRY AND THIS TEST
+         together — that is the whole point. Do not delete it.
+         """
+
+### experimental_notes/evidence/panel_records_2026-09-10/README.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/evidence/panel_records_2026-09-10/README.md	2026-09-10 14:40:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/README.md	2026-09-10 14:40:04
+@@ -10,8 +10,6 @@
+ were derived summaries. An audit on 2026-09-10 measured the exposure: 140 KB
+ across 8 files for round 4 alone, unversioned.
+ 
+-**The briefs carry a `.md.txt` suffix, and that is deliberate.** The commit-time note linter refused these files: 4 of them, being verbatim copies of documents written for other purposes, raised findings the moment they were staged, and the only way to satisfy it would have been to EDIT the record. This project already had the answer — `experimental_notes/evidence/` stores seat-written code as `.py.txt` so it stays out of the source scanners — and the same suffix keeps an archival brief out of the note scanner without changing one byte of it or bypassing the guard with `--no-verify`. Every file here is verified byte-identical to its original by sha256.
+-
+ **These are copies, not the record's new home.** `bench/logs/` remains archival
+ and is never edited; corrections are filed as sidecars beside the original, which
+ is why `panel_round4_2026-09-10/BRIEF_CORRECTION_SIDECAR.md` sits next to the
+
+### experimental_notes/evidence/panel_records_2026-09-10/panel_round4_2026-09-10/BRIEF.md
+--- /dev/null	2026-09-10 14:50:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/panel_round4_2026-09-10/BRIEF.md	2026-09-10 14:39:45
+@@ -0,0 +1,70 @@
++# PANEL BRIEF — round 4: the restore-order fix, the seat-guard repair, and 9 figures that were wrong
++
++## SECTION 1 — The question
++
++**Three repairs landed after round 3 finished, so none of them has been reviewed. Do they hold, and is the process that produced them itself sound?**
++
++Round 3 reviewed the DONE-evidence guard and the note-lint commit guard. Both seats returned PARTIAL with 6 findings between them; the worst was a guard that read its own source file and so satisfied itself from its own literal. Those 6 were repaired at commit `8f88650`. Then 3 further pieces of work landed, at `fc479bb`, `03254e8` and `efbaf8a`, and section P of `experimental_notes/CDSFL_MASTER_TASK_LIST.md` forbids any of them moving to DONE until a panel review has met every clause. This is that review.
++
++**Repair 1 — the restore reads the older document first, and it cost the founder a drive home.** `scripts/cdsfl_recover.py` names an operational tracker as FIRST READ. On 2026-09-09 at 23:00 it fed the assistant a stale line saying the answer-key sealing still awaited the founder. He had already driven home from his hotel and done it himself on 2026-09-07 at 22:03, and the assistant repeated the stale line back to him. The correct record sat in the master task list, written 8 hours earlier. FIRST READ now offers `CDSFL_MASTER_TASK_LIST.md` and `CDSFL_OUTCOMES_LOG.md`, orders every entry by modification time newest-first, and labels how far behind the newest each one is. Its stated rule: the fresher one wins unless it says otherwise, and a stale document is not a second opinion.
++
++**Repair 2 — an assessment declined a question that was answerable.** Task 6.7 recorded a seat's guard proposal as undecidable. `ImmuneMemory` has no `has_evidence` attribute, so the guard raises on its first call, and the premise is executable rather than a matter of opinion. Both verdicts are now executed rather than asserted.
++
++**Repair 3 — 4 agents re-measured the figures in 4 entries and 9 of the figures were wrong.** Task 2.1 said 5,282 captured when its own next sentence said 5,295; missed was 1,068 not 1,081; the rate 16.78% not 16.99%; the description-bearing subset 1,052 not 1,066. Entry M1 said 15 of 29, 51.7%, where the denominator 29 came from the very narrow pattern that entry exists to complain about — the true count at both revisions is 48, so 15 of 48, 31.25%. Entry 6.5 described a repaired state in the broken state's present tense. **And `scripts/watchdog_vs_retry_budget_2026-09-09.py` had not run since the day it was written**: the 6.2 repair replaced the expression its regex matched, in the same commit that added the script, so it exited 1 and produced nothing while the entry went on citing figures it was supposed to be producing.
++
++Artefacts under review, by path:
++
++- `scripts/cdsfl_recover.py` — FIRST READ ordering and the staleness labels
++- `bench/tests/test_first_read_prefers_the_fresher_source_2026-09-10.py` — 9 tests, 5 mutations
++- `scripts/watchdog_vs_retry_budget_2026-09-09.py` — now accepts both expression forms
++- `bench/tests/test_drift_seat_guard_assessment_2026-09-10.py` — the 6.7 repair
++- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — entries 2.1, 6.2, 6.5, M1, V5, 6.7
++- `scripts/ffafp_cycle_gamma_2026-09-10.py` — the stop criterion this whole programme runs under
++- `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` and `hooks/pre-commit` — round 3's repairs, for regression
++
++## SECTION 2 — Use the harness
++
++**Form your answer by RUNNING the machinery. A reply that reasons about these files without having executed them has not answered.**
++
++Instruments that bear on this, and what each is expected to say:
++
++- **`scripts/ffafp_cycle_gamma_2026-09-10.py`** — execute it. It applies this project's own two-sided gate: `gamma` at or above 0.30 AND 3 consecutive zero-discovery passes. The series is `[11, 4, 2, 3, 6, 2, 3, 2, 9]` and `gamma` is 0.451, so the `gamma` side passes and the count side does not. **Pass 9 found more than passes 6, 7 and 8 combined.** Ask whether a Duane slope computed over a series that rises at its tail is being read correctly, or whether the rise means the discovery process changed rather than that it is converging. If the gate is being read wrongly, that is the most important finding available in this brief.
++- **`_estimate_gamma` in `bench/reference_runner_v3.py`** — the cycle script imports it rather than re-implementing it. Verify that. A stop criterion that re-implements its own gate can drift from the gate the runs use.
++- **Wilson intervals** — every proportion in the corrected entries carries one, cross-checked by 2 tools. Re-derive at least 1 of them independently and say whether it agrees. 15 of 48 is quoted as 31.25%, Wilson [19.9%, 45.3%].
++- **`severity` and `S_k`** — the additive standard holds that an addition nothing reaches is not additive. Each repair above is an addition. Ask, for each, whether anything reaches it: is the test collected, and does it go red when the property is violated?
++- **`rho` and `nu`** — probably not implicated. Say so if you agree; if you can show a path by which restore ORDER affects novelty or overlap accounting, that is a finding the assistant missed.
++
++## SECTION 3 — Produce a fix, and test it
++
++A finding without a fix is incomplete. A fix without a runnable falsifier that you have EXECUTED is a hypothesis, not a fix.
++
++**Report the exact command you ran and the exact output.** Where you propose a change, give file, line, old text, new text. Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation APPLIED and that it lands on a line the fixture actually executes, run the test, report whether it went red. A mutation that applies to the file but not to the executed path reads as SURVIVED and is not one — that has happened twice in this programme.
++
++**The specific traps in this batch, each of which has already caught the assistant once:**
++
++1. The freshness test's declared order and its true modification-time order COINCIDED in the live tree, so the suite could not tell a sorted list from an unsorted one until a fixture was rebuilt. Check whether that hole is really closed or merely moved.
++2. The watchdog script now accepts 2 expression forms. A script that accepts anything cannot fail. Check that it still refuses a third, absent form.
++3. 6.5's docstring claimed every test in the file runs the script and none reads its source, while 1 test checks a file mode and another reads a shell script as text. Check the corrected wording against what the file does.
++
++**Work in the sandbox copy you are given. Do not modify the canonical tree.**
++
++## SECTION 4 — What would refute you
++
++State, before concluding, what evidence would overturn your own answer.
++
++Specifically: if you judge these repairs sound, name the class of defect they would still let through. If you judge them unsound, name the cheapest addition that closes your objection and say whether it is worth its cost. If you believe the cycle should stop rather than continue, say what the gate would have to show for you to change your mind.
++
++## SECTION 5 — Output shape
++
++- `verdict` — CONFIRMED / REFUTED / PARTIAL on whether the 3 repairs hold
++- `reasoning` — grounded in tool output you actually saw
++- `findings` — each with file, line, severity, what is wrong, the fix, and the executed falsifier with its command and output
++- `falsifier` and `falsifier_result` — the code you ran and what it returned
++- `gate_reading` — your independent reading of the two-sided gate on the series above: CONVERGED or KEEP GOING, and why
++- `refutation_condition` — Section 4's answer
++- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's framing. Disagreement is preserved as information; do not converge toward the brief.
++- `passes_run` — how many
++
++## SECTION 6 — Termination
++
++Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, break a live run, or feed the founder a stale fact as a current one. Diminishing returns is this project's own criterion and it applies to you too. Do not generate findings for their own sake and do not police style.
+
+### experimental_notes/evidence/panel_records_2026-09-10/panel_round4_2026-09-10/BRIEF_CORRECTION_SIDECAR.md
+--- /dev/null	2026-09-10 14:50:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/panel_round4_2026-09-10/BRIEF_CORRECTION_SIDECAR.md	2026-09-10 14:39:45
+@@ -0,0 +1,51 @@
++# Sidecar correction to BRIEF.md — the brief itself carried a wrong figure
++
++Filed 2026-09-10 04:05 BST. **The brief is NOT edited.** `bench/logs/` is archival: it records what
++the panel was actually given, and a brief rewritten after the fact would make the seats' findings
++unreadable. Corrections are filed beside it.
++
++## The defect
++
++Section 2 of `BRIEF.md` states: *"The series is `[11, 4, 2, 3, 6, 2, 3, 2, 9]` and `gamma` is 0.451"*.
++
++**gamma is 0.415413.** Measured with `bench.reference_runner_v3._estimate_gamma`, cross-checked
++against an independent numpy `polyfit` of the same log-log regression, agreeing to 1e-9.
++
++Both seats found this independently and both raised it as their strongest disagreement with the
++brief. fable: *"A panel brief reviewing '9 figures that were wrong' fed its reviewers a 10th unbacked
++figure."*
++
++## Why it is not a rounding quibble
++
++`GAMMA_BANDS` at `bench/reference_runner_v3.py:2636` places the boundary at 0.45:
++
++    (0.45, inf, 'Strong depletion — confirms state-based closure')
++    (0.30, 0.45, 'Moderate depletion — consistent with PoC convergence')
++
++0.451 falls in the band ABOVE the true value's band. The brief handed the panel a figure that
++upgrades the convergence evidence by one band, in a brief whose subject is 9 figures that were wrong,
++and asked the seats to judge whether the process producing figures is sound.
++
++## Where it came from — measured, not guessed
++
++fable identified it as the stale 8-pass value and that is nearly right. Measured:
++
++| series | gamma | band |
++|---|---|---|
++| 8 passes `[11,4,2,3,6,2,3,2]` | **0.453703** | Strong depletion |
++| 9 passes `[11,4,2,3,6,2,3,2,9]` | **0.415413** | Moderate depletion |
++| 10 passes `[11,4,2,3,6,2,3,2,9,10]` | **0.365597** | Moderate depletion |
++
++So the figure carried forward was the 8-pass value, whose band IS "Strong depletion" — and it was
++then garbled from 0.4537 to 0.451 in prose. `grep` for `0.451` across the task list, the series JSON,
++the cycle script and every committed note returns nothing outside this log directory. **The artefacts
++were clean; only the prose was wrong**, which is `measured-rate-travels-with-its-script` failing at
++the one place the rule does not have a mechanical guard: a number typed into a brief.
++
++## What follows
++
++The seats' findings stand unaffected: neither depended on the brief's figure, both re-derived gamma
++themselves before using it, and both said so. That is the two-sided value of requiring seats to
++execute rather than read — the brief could not propagate its own error into their answers.
++
++Recorded as task V6 in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.
+
+### experimental_notes/evidence/panel_records_2026-09-10/panel_round5_2026-09-10/BRIEF.md
+--- /dev/null	2026-09-10 14:50:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/panel_round5_2026-09-10/BRIEF.md	2026-09-10 14:39:45
+@@ -0,0 +1,71 @@
++# PANEL BRIEF — round 5: a definitive account of the work list, and a diagnosis of the list itself
++
++<!-- figure: gamma at 13 passes | scripts/ffafp_cycle_gamma_2026-09-10.py | 0.294998 -->
++<!-- figure: cycle series | scripts/ffafp_cycle_gamma_2026-09-10.py | [11, 4, 2, 3, 6, 2, 3, 2, 9, 10, 4, 2, 1] -->
++
++**Declared figures above are re-executed by `scripts/panel_brief_validate.py` before dispatch.** That mechanism exists because the round-4 brief told both seats gamma was 0.451 when it was 0.415413, crossing a `GAMMA_BANDS` boundary, and both seats caught it. If a figure in this brief is wrong, say so — it has happened twice.
++
++## SECTION 1 — The question, in the founder's own words
++
++He asked for two things.
++
++**First: a definitive report.** Verbatim: *"look at the canonical work list and come up with a definitive report of what has been done/verified, what remains, and what new issues your work uncovered."*
++
++**Second, and it is the harder one:** *"But what is the problem with this work list? Why are you struggling so much? Is it too big?"*
++
++The canonical list is `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, 508 lines, 84 entries: 22 DONE, 57 OPEN, 2 BLOCKED, 3 WITHDRAWN. Its companion is `experimental_notes/CDSFL_OUTCOMES_LOG.md`. The task-state markers are parsed by `scripts/task_list_markers.py`.
++
++**What has already been measured, so you do not repeat it.** On 2026-09-10 an audit ran 48 agents over 2,182 tool calls, one per DONE entry, each executing the entry's named evidence rather than reading it, with an adversarial reviewer on every overstatement alleged. Result: **22 audited, 0 fully supported, 19 overstated, 3 cleared on appeal.** But the headline misleads and the correction matters:
++
++- **22 of 22 named test files PASS.** No completion claim rests on a failing test. The fixes execute. What fails is the prose describing them.
++- At sentence level, **116 of 266 checked claims do not hold — 43.61%**, Wilson [37.78%, 49.62%].
++- **12 of the 19 overstatements cite evidence that is not committed to git**, 63.16%, Wilson [41.04%, 80.85%]. 35 files have been uncommitted for over 7 hours. That is 1 root cause producing 12 verdicts.
++- An earlier measurement of the same property gave 11 of 19. Fisher exact p = 0.0753 against today's 19 of 22, so the rate is NOT shown to have changed.
++
++**The assistant's own hypothesis about the list, offered so you can attack it rather than inherit it.** The list may not be too big; it may be the wrong KIND of document. It is being used at once as a work queue, an evidence archive, and a correction log, and those three have incompatible update rules — a queue should be mutable, an archive immutable, a correction log append-only. Measured: **15 of 84 entries carry 2 or more in-place correction markers**, Wilson [11.13%, 27.39%]; **entry 1.1 has been corrected 8 times and cites 5 distinct dates in a single paragraph**. Entry size does NOT predict claim failure — Spearman rho 0.4001, p = 0.06506, Kendall tau 0.3071, p = 0.05737, both above 0.05 — which is evidence AGAINST "it is too big" as the explanation.
++
++**A classification the assistant attempted and could not complete, handed to you.** Of the 116 failed claims, a regex over the auditors' own wording put 33 as "the world moved after the claim was written" and 13 as "never true", and **left 70 of 116 unclassified, 60.3%**. That instrument is too weak to support a conclusion. Classifying those 116 properly is the single most useful thing you could do, because the remedy differs: staleness needs a binding between a claim and the revision it was true of; never-true needs a producing script.
++
++## SECTION 2 — Use the harness
++
++**Form your answer by RUNNING things. A reply that reasons about these files without executing them has not answered.**
++
++- **`scripts/task_list_markers.py`** — drive `parse_entries` and `check`. Do the entry states and the Rule 20 statuses agree? An earlier audit found 5 of 21 headings stating a status that disagrees with their own marker, and `check()` reads only the marker.
++- **`scripts/ffafp_cycle_gamma_2026-09-10.py`** — execute it. The cycle stop criterion is this project's two-sided gate: **gamma at or above 0.30 AND 3 consecutive zero-discovery passes.** Both sides currently FAIL. Judge whether continuing to iterate on this list is the right use of the gate at all, or whether the gate is measuring the wrong process — the series mixes discovery modes (solo passes, agent fan-outs, panel rounds), and a Duane slope assumes a stationary process.
++- **Wilson intervals** — re-derive at least 2 of the proportions above independently and say whether they agree. Every proportion you report needs an interval, cross-checked with 2 tools.
++- **`severity`, `S_k`, `nu`, `rho`** — the additive standard says an addition nothing reaches is not additive. Several entries add guards. Ask, for the ones you sample, whether anything reaches them.
++
++**Run the suite** if you need its state: `python3 -m pytest bench/tests/ -q -p no:cacheprovider --netguard-strict`. It is RED by exactly 1 test, `test_precommit_gate_cost_2026-09-10.py`, which pins a count at 169 that the uncommitted work moved to 174. It takes about 16 minutes; you may prefer to sample.
++
++## SECTION 3 — Produce a fix, and test it
++
++The deliverable is a report, but a diagnosis without a remedy is half an answer.
++
++**Produce a concrete fix for the list itself**, and test it. Not advice — a change someone could apply. If your remedy is to split the document, say into what, name the files, and demonstrate on at least 3 real entries what each part would hold. If your remedy is a mechanical rule, write the checker and run it.
++
++**Report the exact command you ran and the exact output.** Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation APPLIED and that it lands on a line the fixture executes, run the test, report whether it went red. A mutation that applies to the file but not the executed path reads as SURVIVED and is not one — that has happened 3 times in this programme, most recently when 8 mutation tests were found to be writing their mutants where the script could not resolve its own repository root, so every mutant died at startup and every check passed against empty output.
++
++**Work in the sandbox copy you are given. Do not modify the canonical tree.** Note that in round 4 one seat reported the shared sandbox losing most of its `bench/` tree mid-review — 8 files against the canonical 167 — and could not attribute it. If your sandbox degrades, say so and say which of your figures were taken before it did.
++
++## SECTION 4 — What would refute you
++
++State, before concluding, what evidence would overturn your own answer.
++
++Specifically: if you judge the list sound and the fault the assistant's, name what a competent worker would do differently with this exact document. If you judge the document at fault, name the cheapest change that fixes it and say what it costs. If you think "too big" IS the right answer despite rho = 0.4001 at p = 0.065, say what measurement would settle it.
++
++## SECTION 5 — Output shape
++
++- `verdict` — CONFIRMED / REFUTED / PARTIAL on the assistant's hypothesis that the list is the wrong kind of document rather than too big
++- `done_and_verified` — which entries are genuinely complete, with the command that proves each
++- `remains` — what is actually outstanding, deduplicated, in the order you would do it
++- `new_issues` — what this work uncovered that is on no list
++- `claim_classification` — your split of the 116 failed claims into stale-but-once-true, never-true, and other, with the method
++- `list_diagnosis` — the answer to his second question
++- `fix` and `falsifier_result` — the remedy you produced and the output of executing it
++- `refutation_condition` — Section 4's answer
++- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's framing. Disagreement is preserved as information; do not converge toward the brief or toward the other seat.
++- `passes_run` — how many
++
++## SECTION 6 — Termination
++
++Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, break a live run, or feed the founder a stale fact as a current one. Diminishing returns is this project's own criterion and it applies to you. Do not generate findings for their own sake and do not police style.
+
+### experimental_notes/evidence/panel_records_2026-09-10/panel_round6_2026-09-10/BRIEF.md
+--- /dev/null	2026-09-10 14:50:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/panel_round6_2026-09-10/BRIEF.md	2026-09-10 14:39:45
+@@ -0,0 +1,63 @@
++# PANEL BRIEF — round 6: how to fix it. You diagnosed it; now produce the repair and test it.
++
++<!-- figure: gamma at 13 passes | scripts/ffafp_cycle_gamma_2026-09-10.py | 0.294998 -->
++
++**Founder instruction, verbatim:** *"Ask them too how you should fix these problems when they are done."*
++
++**Read this first.** Several figures below have NO committed producing script. They are marked UNBACKED where that is true, because in round 5 fable caught the assistant quoting `rho = 0.4001` in a brief arguing about evidence discipline while having no script for it. That is the defect, admitted rather than repeated. Do not treat an UNBACKED figure as established; re-derive or reject it.
++
++## SECTION 1 — What you found, and where you disagree
++
++You reviewed `experimental_notes/CDSFL_MASTER_TASK_LIST.md` (84 entries, 508 lines) and its companion `experimental_notes/CDSFL_OUTCOMES_LOG.md`. You disagreed, and the disagreement is the subject of this round. It is preserved, not smoothed.
++
++**cc2 said CONFIRMED, and sharpened it.** The list is 2 documents in 1 file, and 1 of them is an inbox for the process meant to empty it. Splitting the 84 entries by provenance: the founder's numbered itinerary (sections 0 to 10, plus L and M) is 40 entries with 19 DONE, 47.50%, Wilson [32.94%, 62.50%]; the review-generated backlog (P, R, Z, A, V) is 44 entries with 3 DONE, 6.82%, Wilson [2.35%, 18.23%]. Fisher exact p = 3.555346e-05, odds ratio 12.3651; chi-square with Yates p = 6.694047e-05; an mpmath exact hypergeometric upper tail gives 2.001149e-05. **REPRODUCED by the assistant against `scripts/task_list_markers.py`, but with NO COMMITTED SCRIPT — UNBACKED.**
++
++**fable said PARTIAL, and called that the smaller half.** Its classification of the documented failed claims found **never-true-at-write-time failures outnumbering staleness failures roughly 2 to 1**. Its conclusion: a queue/archive/ledger split fixes accretion and staleness carry-forward and does nothing about a figure that was wrong the moment it was typed. It named the dominant defect generator as **unbacked figures**, and the remedy as the figure-declaration mechanism in `scripts/panel_brief_validate.py` (`check_declared_figures`), not document architecture.
++
++**fable also refuted a claim in the round-5 brief.** It ran the 22 evidence files inside the panel sandbox and got **8 failed, 639 passed, 1 skipped**, because the sandbox has no `.git`. So "22 of 22 pass" is an environment-relative claim reported as an absolute one; **20 of 22**, Wilson [72.19%, 97.47%], with 2 asserting properties of a configured repository rather than of the artefact. That is the fresh-clone class already on the list as entry A2.
++
++**A correction the assistant owes both of you.** It told the founder the list "provably does not converge" at p = 0.000910, from 22 closures of 71 movements. That counted the initial population build-out — 35 to 59 entries on the day the list was written — as discovered work. Excluding it: 25 appended after the list was populated against 22 closed, arrival over closure 1.1364, binomial test p = 0.3854, **not significant**. The divergence claim is WITHDRAWN. cc2's 1.09 was the better denominator.
++
++## SECTION 2 — Use the harness
++
++**Produce your answer by RUNNING things. A remedy you have not executed is a suggestion.**
++
++- **`scripts/task_list_markers.py`** — drive `parse_entries`, `check` and `unsupported_done_entries`. Any remedy that changes the document's shape must keep these working, or say what replaces them.
++- **`scripts/panel_brief_validate.py`** — `check_declared_figures` is the mechanism fable proposes generalising. Execute it. Establish what it can and cannot catch. It re-executes a declared figure's script and compares an exact string; ask what happens to a figure that is a rate rather than a literal, to one whose script takes 45 seconds, and to the 379 archived notes that declare nothing.
++- **`scripts/ffafp_cycle_gamma_2026-09-10.py`** — the two-sided gate, gamma at or above 0.30 AND 3 consecutive zero-discovery passes. Both sides currently FAIL. If your remedy changes what counts as a finding, say what it does to this gate.
++- **Wilson intervals, Fisher exact, and a second independent implementation** for every proportion you report. Two tools, minimum.
++
++## SECTION 3 — Produce a fix, and test it
++
++**This round's deliverable IS the fix.** Round 5 was the diagnosis. Give a repair for each problem below that someone could apply tomorrow, and execute enough of it to show it works.
++
++1. **The register collision.** One entry carries an immutable original statement, a mutable current status, and an append-only correction log, with no rule for which wins. 15 of 84 entries carry 2 or more in-place corrections; entry 1.1 carries 8 and cites 5 distinct dates in one paragraph. UNBACKED. What is the concrete new shape, and what migrates where?
++2. **Unbacked figures.** fable's dominant generator. What is the rule, what enforces it, and what does it cost on a document with hundreds of existing figures? Does it apply retrospectively or only to new claims?
++3. **The review exhaust.** 44 entries generated by the assistant's own review process, closing at one twelfth the rate of the founder's itinerary. Should they be in this list at all? If not, where, and what stops them being lost?
++4. **35 uncommitted files, over 7 hours.** Claimed to cause 12 of 19 overstatement verdicts because entries say COMMITTED while naming untracked files. UNBACKED. What is the rule that prevents it recurring?
++5. **DONE means 2 different things.** The evidence executes for every entry, while 116 of 266 of the surrounding claims do not hold. Should DONE bind the code, the prose, or both, and what checks whichever you choose?
++
++**Where you propose a checker, WRITE IT and RUN IT.** Report the exact command and output. Where you claim an existing test is weak, mutate the source, assert the mutation applied AND that it lands on a line the fixture executes, run the test, report whether it went red.
++
++**Work in the sandbox copy. Do not modify the canonical tree.** Note that the sandbox has no `.git` — fable established that in round 5 — so plan around it and say which of your figures that limits.
++
++## SECTION 4 — What would refute you
++
++State, before concluding, what evidence would overturn your own remedy.
++
++Specifically: name the failure mode your fix does NOT address. If you are cc2, say what document architecture cannot fix. If you are fable, say what figure discipline cannot fix. And say what it would take to change your mind about the other seat's position, because on the evidence so far both of you are partly right and the founder needs to know which half to build first.
++
++## SECTION 5 — Output shape
++
++- `verdict` — your position on which remedy should be built FIRST, and why
++- `fix` — the repair, concretely, per numbered problem above
++- `falsifier` and `falsifier_result` — what you executed and what it returned
++- `migration` — what happens to the 84 existing entries under your remedy, and who does it
++- `cost` — what your fix costs in time and in what it makes harder
++- `refutation_condition` — Section 4's answer
++- `strongest_disagreement` — with THIS brief and with the other seat. Do not converge.
++- `passes_run` — how many
++
++## SECTION 6 — Termination
++
++Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, break a live run, or feed the founder a stale fact as a current one. Diminishing returns is this project's own criterion and it applies to you.
+
+### experimental_notes/evidence/panel_records_2026-09-10/panel_verification_gap_2026-09-10/BRIEF.md
+--- /dev/null	2026-09-10 14:50:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/experimental_notes/evidence/panel_records_2026-09-10/panel_verification_gap_2026-09-10/BRIEF.md	2026-09-10 14:39:45
+@@ -0,0 +1,57 @@
++# PANEL BRIEF — the verification gap, its repair, and whether the repair is itself believable
++
++## SECTION 1 — The question
++
++**Does the new DONE-evidence guard actually close the hole that let 11 of 19 completion claims be overstated, or does it only move the hole?**
++
++Context you need, and it is unflattering to the assistant that wrote it. On 2026-09-09 an assistant marked 19 entries DONE on `experimental_notes/CDSFL_MASTER_TASK_LIST.md`. On 2026-09-10, 18 adversarial agents re-checked all 19 by running the tests rather than reading the claims, with a second reviewer on every disputed one. **11 of 19 were overstated — 57.89%, Wilson [36.3%, 76.9%]** — 2 reviewers agreeing on every one. **One was not an overstatement but a live regression at HEAD**: task 6.3 sent every production run into a single shared directory, and its 8 tests were green throughout because every one built a fake config from `types.SimpleNamespace` instead of the real `ExperimentConfig`.
++
++The founder's question was whether the task-list marker engine ensures the work can be completed mechanically and survives compaction. The compaction half worked. The completion half did not exist: `scripts/task_list_markers.py`'s `CONTRADICTORY` set refuses an entry only when its own 2 labels disagree, and nothing compared DONE against the repository.
++
++Artefacts under review:
++
++- `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` — the new guard
++- `scripts/task_list_markers.py` — the `MARKER` regex, now carrying an optional `evidence:` field, and `parse_entries`
++- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — all 19 DONE markers now name evidence
++- `hooks/pre-commit` — the note-lint guard, repaired for 2 demonstrated bypasses
++- `bench/tests/test_note_lint_guard_2026-09-09.py` — both bypasses reproduced as tests
++- `bench/reference_runner_v3.py` — `_find_or_create_logs_dir` and `_is_the_logs_dir_default`, the 6.3 repair
++
++## SECTION 2 — Use the harness
++
++**Form your answer by RUNNING the machinery, not by describing it.** A reply that reasons about these files without having executed them has not answered.
++
++Instruments that bear on this, and what each is expected to say:
++
++- **`task_list_markers.parse_entries`** — drive it. The `evidence:` field is OPTIONAL in the regex and REQUIRED by the guard. Show that an OPEN entry without it still parses and a DONE entry without it fails. If you can construct a marker that parses but should not, that is a finding.
++- **The guard's 4 checks** — evidence named, file exists, file holds an asserting test, file inside the collected directory. **Try to defeat each.** A file that imports its assertions from elsewhere; a test function whose only assert is `assert True`; a path that starts with `bench/tests/` but resolves elsewhere via `..`; a marker whose evidence field contains a comment terminator.
++- **`nu`, `sigma` and `S_k`** — the additive standard says an addition nothing reaches is not additive. This guard is itself an addition. Ask whether it is reached: does the suite collect it, and does it fail when the property is violated? The assistant ran 4 mutations and reports all caught; re-run them or invent better.
++- **`gamma` and the two-sided gate** — not obviously implicated, and say so if you agree. If you can show a path by which a DONE marker's evidence affects convergence machinery, that is a finding the assistant missed.
++
++## SECTION 3 — Produce a fix, and test it
++
++A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis.
++
++**Report the exact command you ran and the exact output.** Where you propose a change, give file, line, old text, new text. Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation applied AND that it lands on a line your fixture executes, run the test, report whether it went red. A mutation that applies to the file but not to the executed path reads as SURVIVED and is not one — that happened twice on 2026-09-09.
++
++**Work in a sandbox copy. Do not modify the canonical tree.**
++
++## SECTION 4 — What would refute you
++
++State, before concluding, what evidence would overturn your own answer.
++
++Specifically: if you judge the guard sufficient, name the class of overstatement it would still miss. If you judge it insufficient, name the cheapest addition that would close your objection, and say whether it is worth its cost.
++
++## SECTION 5 — Output shape
++
++- `verdict` — CONFIRMED / REFUTED / PARTIAL on whether the guard closes the hole
++- `reasoning` — grounded in tool output you actually saw
++- `findings` — each with file, line, severity, what is wrong, the fix, and the executed falsifier with its command and output
++- `falsifier` and `falsifier_result` — the code you ran and what it returned
++- `refutation_condition` — Section 4's answer
++- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's framing. Disagreement is preserved as information; do not converge toward the brief.
++- `passes_run` — how many
++
++## SECTION 6 — Termination
++
++Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could let a false completion claim stand, or could break a live run. Do not generate findings for their own sake and do not police style.
+
+### hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-09-10 14:43:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/hooks/pre-commit	2026-09-10 01:33:18
+@@ -11,19 +11,14 @@
+ # discipline failed within the hour. This is the mechanism.
+ #
+ # WHY ONLY A HANDFUL OF FILES. Measured on this machine over 3 runs:
+-# 174 tests in 1.87 s to 2.28 s, against 669.92 s for the full suite.
+-# RE-MEASURED 2026-09-10 14:50 BST by scripts/precommit_gate_cost_2026-09-10.py,
+-# which reads this GUARDS list rather than carrying its own copy. The figure has
+-# now been wrong 4 times by being typed and carried forward; it is measured.
++# 155 tests in 1.97 s to 2.39 s, against 669.92 s for the full suite.
+ # (Was 56 tests in 1.00 to 2.02 s with 4 guards; 2 more were added
+ # 2026-09-10 on cc2's finding F5 and the figure is re-measured, not
+ # carried forward — a stale cost figure in a guard about stale claims
+ # would be its own joke.) A per-commit gate costing 11 minutes
+ # would be bypassed within a day, and a guard that gets bypassed is not a guard.
+-# The first 4 of these 6 files are precisely the ones that caught the
+-# 2026-09-09 breakage after the fact, so they are the ones that would have caught
+-# it before. The header said "these 4 files" until 2026-09-10 while the list held
+-# 6, which is the same stale-count defect the guard exists to catch.
++# These 4 files are precisely the ones that caught the 2026-09-09 breakage after
++# the fact, so they are the ones that would have caught it before.
+ #
+ # WHY IT FAILS CLOSED WHEN IT CANNOT RUN. This project's own record names "a guard
+ # that cannot fail is not a guard" and lists 3 instances in a single night. A hook
+@@ -235,23 +230,4 @@
+     echo "pre-commit: note lint ratchet held ($BEFORE_TOTAL at HEAD, $AFTER_TOTAL as staged)."
+ fi
+ 
+-# STAGE 6 -- REFRESH THE FOUNDER'S DESKTOP COPIES. NON-BLOCKING BY DESIGN.
+-#
+-# He reads 3 files from his Desktop and treats them as current. On 2026-09-10 two
+-# of the three had silently diverged -- the master task list 29,044 bytes short
+-# and 3.45 h behind, the outcomes log 5,016 bytes short -- and he asked that
+-# morning whether the companion file "on my desktop (which I presume you have
+-# been updating)" was current. It was not. The same class of staleness had
+-# already cost him a drive home from his hotel on 2026-09-09.
+-#
+-# THIS STAGE NEVER REFUSES A COMMIT. A convenience copy on one machine must not
+-# be able to block work, and a guard that fires on the ordinary case teaches
+-# people to reach for --no-verify. It refreshes and reports; if the Desktop is
+-# absent, as it is on any other machine, it says so and exits 0.
+-if [ -f scripts/sync_desktop_mirrors.py ]; then
+-    if ! python3 scripts/sync_desktop_mirrors.py 2>&1 | sed 's/^/pre-commit: /'; then
+-        echo "pre-commit: the Desktop mirror refresh failed; commit continues." >&2
+-    fi
+-fi
+-
+ exit 0
+
+### scripts/__pycache__/cdsfl_recover.cpython-313.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/__pycache__/cdsfl_recover.cpython-313.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/scripts/__pycache__/cdsfl_recover.cpython-313.pyc differ
+
+### scripts/__pycache__/panel_brief_validate.cpython-313.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/__pycache__/panel_brief_validate.cpython-313.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/scripts/__pycache__/panel_brief_validate.cpython-313.pyc differ
+
+### scripts/cdsfl_recover.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/cdsfl_recover.py	2026-09-10 14:41:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/scripts/cdsfl_recover.py	2026-09-10 03:52:46
+@@ -36,23 +36,6 @@
+ #: constant is monkeypatchable; an inline `Path.home()` call is not.
+ DESKTOP_MIRROR = Path.home() / "Desktop" / "CDSFL_Agent_Operational_Plan.md"
+ 
+-#: EVERY Desktop copy the founder actually reads, not just the tracker's.
+-#: ADDED 2026-09-10 14:45 BST. FIRST READ named 1 of the 3, so the restore was
+-#: structurally blind to the other 2 -- and on this morning's measurement the 2
+-#: it could not see were the STALE ones: the task list 29,044 bytes short and
+-#: 3.45 h behind, the outcomes log 5,016 bytes short and 3.40 h behind. That is
+-#: the same failure that on 2026-09-09 told the founder an answer-key sealing
+-#: awaited him after he had driven home and done it himself. Task V5 fixed the
+-#: ordering and closed 1 door of 3; this closes the other 2.
+-DESKTOP_MIRRORS = {
+-    "CDSFL_MASTER_TASK_LIST.md":
+-        "Desktop copy of the MASTER TASK LIST — the founder reads THIS one",
+-    "CDSFL_OUTCOMES_LOG.md":
+-        "Desktop copy of the OUTCOMES COMPANION — the founder reads THIS one",
+-    "CDSFL_Agent_Operational_Plan.md":
+-        "Desktop copy of the OPERATIONAL TRACKER",
+-}
+-
+ from cdsfl_utils import (
+     git_state,
+     latest_experiment,
+@@ -218,25 +201,11 @@
+             root / "experimental_notes" / "CDSFL_Agent_Operational_Plan.md",
+             "OPERATIONAL TRACKER (canonical) — resume pointer + per-experiment matrix",
+         ),
+-    ]
+-    # Each Desktop copy is offered with a note saying whether it MATCHES its
+-    # canonical original. A mirror that silently diverged is worse than no
+-    # mirror, because it is read with the authority of the thing it copies.
+-    for name, label in DESKTOP_MIRRORS.items():
+-        mirror = Path.home() / "Desktop" / name
+-        canonical = root / "experimental_notes" / name
+-        note = label
+-        if mirror.is_file() and canonical.is_file():
+-            if mirror.read_bytes() != canonical.read_bytes():
+-                short = canonical.stat().st_size - mirror.stat().st_size
+-                note = (f"{label} — *** DIVERGED from the repository copy by "
+-                        f"{short:,} bytes. The repository copy above is the one "
+-                        f"to trust. ***")
+-            else:
+-                note = f"{label} (byte-identical to the repository copy)"
+-        targets.append((mirror, note))
+-    targets += [
+         (
++            DESKTOP_MIRROR,
++            "Desktop mirror of the above (byte-identical; convenient, not the authority)",
++        ),
++        (
+             root / "experimental_notes" / "OUTSTANDING_QUEUE_to_BR2.md",
+             "work queue to Bench Run 2",
+         ),
+
+### scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-09-10 14:22:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rtm61oq8/repo/scripts/panel_brief_validate.py	2026-09-10 14:48:32
+@@ -118,7 +118,83 @@
+     r"<!--\s*figure:\s*(?P<label>[^|]+?)\s*\|\s*(?P<script>[^|]+?)\s*\|\s*"
+     r"(?P<value>[^>]+?)\s*-->")
+ 
++#: Anything that OPENS like a figure declaration, parseable or not. Compared
++#: against FIGURE's matches so a MALFORMED declaration refuses instead of
++#: silently escaping the check (panel round 7, 2026-09-10, demonstrated by
++#: execution): `<!-- figure: g | s.py -->` with its value field missing matched
++#: nothing, was skipped, and the brief PASSED with zero checks run. Opt-in
++#: means an ABSENT declaration passes -- not a broken one.
++FIGURE_OPENER = re.compile(r"<!--\s*figure:")
+ 
++#: A character that CONTINUES a word or a number on either side of a match.
++_TIGHT = re.compile(r"[0-9A-Za-z_]")
++
++#: Characters that bind a number into a LARGER number when they sit between
++#: digits: the thousands comma, the time colon, the ratio slash. `1,234` must
++#: not satisfy a declared `234`; `entries, 234` must still satisfy it, so the
++#: rule is conditioned on a digit sitting on the far side, not on the
++#: separator alone.
++_GROUPERS = ",:/"
++
++
++def _figure_token_found(want: str, haystack: str) -> bool:
++    """True iff `want` occurs in `haystack` as a whole figure.
++
++    WHY THIS REPLACED A CHARACTER CLASS (2026-09-10, panel round 7, found by
++    execution and reproduced before acting). The round-6 repair expressed
++    "whole token" as `(?<![0-9A-Za-z.\\-])` ... `(?![0-9A-Za-z.\\-])`, which is
++    wrong in BOTH directions, and both were measured:
++
++      * IT STILL PASSED WRONG NUMBERS. `,` is not in that class, so a declared
++        `234` reproduced against a script printing `entries = 1,234` -- the
++        round-6 defect exactly, one separator over, and off by a factor of 5.
++        A printed `elapsed 12:345` satisfied a declared `345` the same way.
++      * IT REFUSED RIGHT NUMBERS. `.` is in that class unconditionally, so a
++        script printing `gamma is 0.294998.` -- the figure at the end of a
++        sentence -- could not be declared at all. A guard that refuses a
++        correct brief is bypassed, which costs more than the defect it caught.
++
++    The distinction a fixed character class cannot draw is CONTEXT-SENSITIVE:
++    a `.` or a `,` continues a number only when a digit sits on the far side
++    of it. So each occurrence is judged by looking one character PAST the
++    delimiter, rather than by membership in a set.
++
++    Nothing is removed: every input the round-6 rule refused is still refused
++    (see bench/tests/test_declared_figure_token_boundary_2026-09-10.py, which
++    re-runs the round-6 table against this predicate directly).
++    """
++    if not want:
++        return False
++    n = len(haystack)
++    for m in re.finditer(re.escape(want), haystack):
++        i, j = m.start(), m.end()
++        before = haystack[i - 1] if i else ""
++        after = haystack[j] if j < n else ""
++        # --- left boundary -------------------------------------------------
++        if before:
++            if _TIGHT.match(before):
++                continue                  # inside a word or a number
++            if before == "-":
++                continue                  # a sign: 0.25 must not ride on -0.25
++            if before == "." and not want[:1].isalpha():
++                continue                  # inside a decimal: 294998 in 0.294998
++            if before in _GROUPERS and i >= 2 and haystack[i - 2].isdigit():
++                continue                  # inside a grouped number: 234 in 1,234
++        # --- right boundary ------------------------------------------------
++        if after:
++            nxt = haystack[j + 1] if j + 1 < n else ""
++            if _TIGHT.match(after):
++                continue                  # 0.29 must not ride on 0.294998
++            if after == "-":
++                continue                  # 2026 must not ride on 2026-09-10
++            if after == "." and nxt.isdigit():
++                continue                  # the decimal continues
++            if after in _GROUPERS and nxt.isdigit():
++                continue                  # 1 must not ride on 1,234
++        return True
++    return False
++
++
+ def check_declared_figures(text: str, repo: Path = REPO,
+                            timeout: int = 600) -> list[str]:
+     """Re-execute every declared figure. Empty list means all reproduced.
+@@ -130,11 +206,32 @@
+     round.
+     """
+     problems: list[str] = []
+-    for m in FIGURE.finditer(text):
++    matches = list(FIGURE.finditer(text))
++    opened = len(FIGURE_OPENER.findall(text))
++    if opened != len(matches):
++        problems.append(
++            f"{opened - len(matches)} figure declaration(s) open with "
++            f"'<!-- figure:' but do not parse as "
++            f"'<!-- figure: <label> | <script> | <value> -->'. A declaration "
++            f"that announces itself and then escapes checking is worse than "
++            f"none: fix the comment or remove it")
++    for m in matches:
+         label = m.group("label")
+         rel = m.group("script")
+         want = m.group("value")
+-        script = repo / rel
++        # THE SCRIPT MUST LIVE INSIDE THE REPOSITORY (panel round 7,
++        # 2026-09-10, demonstrated by execution). `repo / rel` with rel
++        # starting `../` -- or absolute, which pathlib joins by REPLACING the
++        # left side -- executed an arbitrary script OUTSIDE the tree and
++        # accepted its output as evidence. A figure is a committed measurement
++        # only if it re-executes from the repository; refuse BEFORE running.
++        script = (repo / rel).resolve()
++        if not script.is_relative_to(Path(repo).resolve()):
++            problems.append(
++                f"declared figure {label!r}: the script path {rel!r} escapes "
++                f"the repository, so the figure is not a committed measurement "
++                f"and was not executed")
++            continue
+         if not script.is_file():
+             problems.append(
+                 f"declared figure {label!r}: the script {rel} does not exist, so "
+@@ -177,11 +274,33 @@
+         # declared `0.29` against a printed `0.294998`, and a declared `1` rode on
+         # the words "pass 1:". Measured across 7 cases the substring form scored
+         # 4 of 7, Wilson [25.05%, 84.18%] -- a guard built to catch a wrong number
+-        # that passes wrong numbers. A token is delimited by anything that is not
+-        # a digit, a letter, a dot or a minus sign, so 0.29 no longer matches
+-        # inside 0.294998 while 0.294998 still matches itself.
+-        if not re.search(r"(?<![0-9A-Za-z.\-])" + re.escape(want)
+-                         + r"(?![0-9A-Za-z.\-])", r.stdout + r.stderr):
++        # that passes wrong numbers.
++        #
++        # THE FIRST REPAIR WAS A FIXED CHARACTER CLASS AND IT WAS WRONG BOTH WAYS
++        # (corrected 2026-09-10, panel round 7, by execution). It read "a token is
++        # delimited by anything that is not a digit, a letter, a dot or a minus
++        # sign", which let a declared `234` reproduce against a printed `1,234`
++        # -- the round-6 defect one separator over, wrong by a factor of 5 -- and
++        # refused a correct `0.294998` against a printed `gamma is 0.294998.`
++        # because the sentence ended. The boundary is context-sensitive and is now
++        # decided per occurrence in `_figure_token_found` above.
++        #
++        # THE "8 of 8" SCORE FOR THE ROUND-6 REPAIR OVERSTATES ITS SUPPORT. Of the
++        # 8 cases in bench/tests/test_panel_brief_format_2026-09-09.py, 4 (`0.2`,
++        # `0.4`, `1`, `9`) are refused by the 3-significant-character rule below
++        # and never reach the token rule, and 2 (`0.451`, `0.415413`) are absent
++        # from the output and would be refused by a plain substring test. Exactly
++        # 1 case, `0.29`, exercises the boundary: 1 of 1, Wilson [20.66%, 100.00%].
++        # The cases that were missing are in
++        # bench/tests/test_declared_figure_token_boundary_2026-09-10.py.
++        # THE TWO STREAMS ARE JOINED WITH A NEWLINE, not concatenated (2026-09-10,
++        # panel round 7, demonstrated). `r.stdout + r.stderr` splices the last
++        # character of stdout onto the first of stderr, synthesising a token
++        # neither stream printed: a script writing `rate = 0.2` to stdout with no
++        # trailing newline and `9 done` to stderr satisfied a declared
++        # `rate = 0.29`. A figure must be found in output that was actually
++        # emitted, not in the seam between two streams.
++        if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
+             problems.append(
+                 f"declared figure {label!r}: the brief says {want!r} and {rel} "
+                 f"does not print it. A number typed into a brief is a claim "
