@@ -179,9 +179,43 @@ def park(title: str, detail: str, stamp: str | None = None) -> pathlib.Path:
             "Nothing here is dropped; it is queued. Items that DO block are raised at once and "
             "never appear in this file.\n\n---\n",
             encoding="utf-8")
+    # ALREADY PARKED IS NOT PARKED AGAIN.
+    #
+    # MEASURED 2026-09-11: running this script on an item already in the file
+    # appended a SECOND heading for it, and a third for A8 within an hour of 2
+    # earlier duplicates being merged by hand. The founder had just asked whether
+    # the workload set out for him was significant; a queue that grows a heading
+    # every time it is re-triaged answers that question wrongly, by inflating the
+    # count of DECISIONS with copies of one decision.
+    #
+    # Compared on a normalised title -- case, punctuation and runs of whitespace
+    # removed -- because "A8: re-point the 20 note citations" and "A8: re-point
+    # 20 note citations" are the same question and differ by a word.
+    existing = PARKED.read_text(encoding="utf-8") if PARKED.is_file() else ""
+    if _normalise(title) in {_normalise(h) for h in _headings(existing)}:
+        return None
     with PARKED.open("a", encoding="utf-8") as f:
         f.write(f"\n## {title}\n\n*Parked {stamp}.*\n\n{detail.strip()}\n")
     return PARKED
+
+
+def _headings(blob: str) -> list[str]:
+    return [ln[3:].strip() for ln in blob.splitlines() if ln.startswith("## ")]
+
+
+def _normalise(title: str) -> str:
+    """A title reduced to the question it asks.
+
+    Drops anything after an em dash or a double hyphen, which is where this
+    file's headings carry status notes such as "SUPERSEDED" or "SAME DECISION AS
+    10.2" -- a heading that gained a note is still the same item.
+    """
+    head = re.split(r"—|--", title)[0].lower()
+    # Articles dropped as well as punctuation: "re-point 20 note citations" and
+    # "re-point THE 20 note citations" are the same question, and the first pair
+    # this was tested on differed by exactly that word.
+    head = re.sub(r"\b(the|a|an)\b", " ", head)
+    return re.sub(r"[^a-z0-9]+", "", head)
 
 
 def main() -> int:
@@ -209,7 +243,13 @@ def main() -> int:
     if perm:
         detail += f"\n\n**Needs your decision — {perm}.** Not blocking; nothing on the list waits on it."
     p = park(a.title, detail)
-    print(f"  -> appended to {p.relative_to(REPO)}")
+    if p is None:
+        # ALREADY PARKED. A queue that grows a heading every time an item
+        # is re-triaged inflates the count of DECISIONS with copies of one
+        # decision, which is the opposite of what this file is for.
+        print("  -> already parked; not appended again")
+    else:
+        print(f"  -> appended to {p.relative_to(REPO)}")
     return 0
 
 

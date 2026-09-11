@@ -109,3 +109,54 @@ class TestTheParkingFileIsRealAndAppendOnly:
         assert "first item" in text and "second item" in text, (
             "parking must never overwrite what is already queued for him")
         assert text.index("first item") < text.index("second item"), "newest last"
+
+class TestParkingIsIdempotent:
+    """A queue that grows a heading on every re-triage inflates the workload.
+
+    MEASURED 2026-09-11, minutes after the founder asked whether the workload set
+    out for him was significant. Two duplicate headings had just been merged by
+    hand -- one decision written twice as an analysis and a triage stub, and an
+    A8 question superseded by a smaller one -- and re-running the triage
+    immediately appended a THIRD A8 heading. The count of DECISIONS was growing
+    with copies of one decision, which is the opposite of what the file is for.
+    """
+
+    def test_an_already_parked_item_is_not_appended_again(self, B, tmp_path,
+                                                          monkeypatch):
+        parked = tmp_path / "PARKED.md"
+        monkeypatch.setattr(B, "PARKED", parked)
+        first = B.park("A8: re-point 20 citations, or leave them", "detail")
+        assert first is not None
+        again = B.park("A8: re-point 20 citations, or leave them", "detail")
+        assert again is None, "the same title was parked twice"
+        assert parked.read_text(encoding="utf-8").count("## A8") == 1
+
+    def test_a_wording_difference_is_not_a_new_decision(self, B, tmp_path,
+                                                        monkeypatch):
+        """The pair this was found on differed by the word "the"."""
+        parked = tmp_path / "PARKED.md"
+        monkeypatch.setattr(B, "PARKED", parked)
+        B.park("A8: re-point 20 note citations, or leave them", "detail")
+        again = B.park("A8: re-point the 20 note citations, or leave them", "detail")
+        assert again is None, "one question parked twice over one article"
+
+    def test_a_status_note_on_a_heading_is_not_a_new_decision(self, B, tmp_path,
+                                                              monkeypatch):
+        """Headings in that file gain notes such as "SUPERSEDED" after an em
+        dash; a heading that gained a note is still the same item."""
+        parked = tmp_path / "PARKED.md"
+        monkeypatch.setattr(B, "PARKED", parked)
+        B.park("10.2: should the shell service be on — SAME AS THE STUB BELOW", "d")
+        again = B.park("10.2: should the shell service be on", "d")
+        assert again is None
+
+    def test_a_genuinely_different_item_is_still_parked(self, B, tmp_path,
+                                                        monkeypatch):
+        """ANTI-VACUITY. A check that refused everything would silently drop new
+        decisions, which is far worse than listing one twice."""
+        parked = tmp_path / "PARKED.md"
+        monkeypatch.setattr(B, "PARKED", parked)
+        B.park("A8: re-point 20 citations, or leave them", "detail")
+        other = B.park("A19: enable the prose-listing flag, or leave it off", "detail")
+        assert other is not None, "a new decision was refused"
+        assert parked.read_text(encoding="utf-8").count("## ") == 2
