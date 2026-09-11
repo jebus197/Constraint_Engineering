@@ -148,13 +148,13 @@ Analysis complete and parked. Enabling it changes the authentication posture of 
 
 Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to leave it.
 
-## 6 committed scripts are reached by nothing at all: wire or retire is your ruling
+## 4 committed scripts are reached by nothing at all: wire or retire is your ruling
 
 *Parked 2026-09-11T10:18:10+01:00.*
 
 The additive standard's own symmetric half says an addition that nothing reaches is not additive. `test_additive_standard_2026-09-07.py` ratchets config fields nothing READS; scripts had no equivalent, and this project's record holds 11 confirmed defects that were additions doing nothing.
 
-**Measured at commit `a0e498d`, 2026-09-11: 116 of 122 scripts are reached, 95.0820%, Wilson [89.6848%, 97.7268%], Clopper-Pearson [89.6027%, 98.1740%]**, both intervals cross-checked by 2 tools. The figure is pinned to a revision because the denominator moved 3 times in one day as scripts were added; the durable claim is the ratchet on the set of 6 named scripts below, not the 95.0820% above. Producer: `scripts/scripts_are_reached_2026-09-11.py`.
+**Measured 2026-09-11: 118 of 122 scripts are reached, 96.7213%, Wilson [91.8724%, 98.7177%], Clopper-Pearson [91.8179%, 99.0996%]**, both intervals cross-checked by 2 tools. **2 of the original 6 came off by being WIRED rather than ruled on**: `measure_round_zero_irreducible_escalations.py` and `priority_starvation_simulation.py` contain no write call, no subprocess and no absolute path — checked by an AST walk — so running them cannot change anything, and `bench/tests/test_parked_measurements_still_run_2026-09-11.py` now executes both. Both still work. **Wiring is not the half that needs your ruling**; the removal clause is. The other 4 write files or spawn processes and stay parked and unrun, because running the scripts directory as a survey once overwrote a preserved archive.
 
 **2 OF THE ORIGINAL 8 CAME OFF THE LIST THE SAME DAY, AND THEY NEEDED NO RULING.** Their figures had simply travelled without them, which is a defect with a fix rather than a disposition awaiting a decision. `measure_toolonly_status_without_falsifier.py` produced "118 of 864 archived findings with a tool-only status have no falsifier code, 13.66%, Wilson [11.53%, 16.11%]", quoted in the 2026-09-05 morning report and in `resources/RECOVERY.md` with no producer named anywhere; its own docstring calls that the fourth repeat of the same omission. `v2_vs_v3_runner_2026-09-10.py` produced the 153-definition comparison quoted in task 8.2 and carries `measured-rate-travels-with-its-script` in its docstring while nothing outside an archival panel record named it. Naming the producer discharges your ruling and wires the script in the same act.
 
@@ -163,8 +163,6 @@ The additive standard's own symmetric half says an addition that nothing reaches
 **Reached means 3 things and a script can be legitimate with no caller at all:** something calls it; a note cites it as a figure's producer, which `measured-rate-travels-with-its-script` requires; or a canonical document names it as a command to run. The 8 below satisfy none of the 3.
 
     scripts/inventory_2026_09_06.py
-    scripts/measure_round_zero_irreducible_escalations.py
-    scripts/priority_starvation_simulation.py
     scripts/quarantine_to_candidate.py
     scripts/readjudicate_pairs.py
     scripts/scope_remaining_adjudication_and_materiality.py

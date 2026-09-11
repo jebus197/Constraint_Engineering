@@ -234,9 +234,15 @@ class TestTheExclusionListCannotHide:
         NAMES an unreached script, which is how the defect happened the 4th
         time. If naming it here were enough to reach it, this assertion fails.
 
-        scripts/priority_starvation_simulation.py
+        scripts/readjudicate_pairs.py
+
+        UPDATED 2026-09-11: this named `priority_starvation_simulation.py` until
+        that script was WIRED by a test that executes it, at which point the
+        assertion became false for the right reason. A control that pins a
+        specific orphan has to move when that orphan stops being one -- which is
+        the ratchet working, not breaking.
         """
-        assert "scripts/priority_starvation_simulation.py" in set(mod.unreached()), (
+        assert "scripts/readjudicate_pairs.py" in set(mod.unreached()), (
             "writing a script's name into a test docstring made it read as "
             "reached; prose is being counted as a caller again")
 

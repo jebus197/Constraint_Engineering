@@ -6,15 +6,25 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED AT COMMIT `a0e498d`, 2026-09-11: **116 of 122 scripts are reached --
-95.0820%, Wilson [89.6848%, 97.7268%], Clopper-Pearson
-[89.6027%, 98.1740%]**, both intervals cross-checked by 2 tools.
+MEASURED 2026-09-11: **118 of 122 scripts are reached -- 96.7213%, Wilson
+[91.8724%, 98.7177%], Clopper-Pearson [91.8179%, 99.0996%]**, both intervals
+cross-checked by 2 tools.
 
-PINNED TO A COMMIT, AND THE 3RD ATTEMPT AT STATING IT. It read 114 of 120, then
-115 of 121, then this, all on the same day -- each time because a script was
-added and the denominator moved. Dating a figure is not enough when the corpus
-grows hourly; naming the REVISION makes it permanently true instead of briefly
-true. That is entry 6.1's lesson taken one step further than entry 6.1 took it.
+PINNED TO A COMMIT WAS STILL NOT ENOUGH, which is the 4th statement of this
+figure in a day. 114 of 120, then 115 of 121, then 116 of 122, now 118 of 122 --
+the first 3 moved because scripts were ADDED, and this one moved because 2
+orphans were WIRED. A figure over a set that is being actively worked on is a
+snapshot of the moment it was taken, and no amount of dating or pinning changes
+that. Re-run the producer.
+
+2 OF THE 6 ORPHANS WERE WIRED RATHER THAN RULED ON, 2026-09-11. Wiring is not the
+half that needs the founder: the removal clause demands a committed measurement
+before anything is taken away, while "an addition that nothing reaches is not
+additive either" is discharged by giving a script a caller.
+`bench/tests/test_parked_measurements_still_run_2026-09-11.py` EXECUTES both, and
+both still work. The other 4 write files or spawn processes, so they stay parked
+and unrun -- running the scripts directory as a survey once overwrote a preserved
+archive, and that instruction stands.
 
 THE RATCHET IS THE DURABLE CLAIM. The percentage is a snapshot of one revision;
 the set of 6 named scripts is what may not grow. Re-run the producer rather than
@@ -138,8 +148,6 @@ SELF_REFERENTIAL = (
 #: new script exists that nothing calls, nothing cites and no document names.
 UNREACHED = (
     "scripts/inventory_2026_09_06.py",
-    "scripts/measure_round_zero_irreducible_escalations.py",
-    "scripts/priority_starvation_simulation.py",
     "scripts/quarantine_to_candidate.py",
     "scripts/readjudicate_pairs.py",
     "scripts/scope_remaining_adjudication_and_materiality.py",
