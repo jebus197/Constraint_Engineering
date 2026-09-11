@@ -107,6 +107,22 @@ The harness that ran it reported which test had failed and nothing else. The dia
 
 The rate is 3 failures in 8 full-size runs, 37.5 percent, with a 95 percent Wilson interval running from 13.6844 to 69.4258 percent. Both models made the same point without being asked twice: an interval spanning a factor of 5 describes 8 runs rather than establishing a rate, and acting on it means collecting more runs rather than reasoning harder about the 8.
 
+## The Intermittent Failure Was Never Intermittent
+
+The test failure that had been carried for several days as observed rather than diagnosed is resolved, and it was deterministic all along.
+
+The project deliberately refuses to treat generic folder names, such as "checkout", "clone" and "git", as a project's identity. That refusal is correct: a copy of the repository sits wherever the reader put it, and it must not claim its parent folder's name as the project's name. The defect was that the code deciding "is this path my own tree?" then had no other way to recognise itself. A copy whose folder is called "clone" could not identify itself as the project.
+
+The harness that makes copies for reproducibility checks names its folder exactly that. So every run through that harness failed and every run through any other harness passed. Measured across 4 folder names at the old revision, only the one called "clone" failed, and on the same shape in a single command the old code gives 1 failure against 35 passes while the fixed code gives 36 passes.
+
+Deciding whether a path belongs to your own project by looking at the folder's name is the same defect shape as everything else recorded here, and it was sitting inside the classifier that decides which rejections are location artefacts rather than real ones. The code now compares the paths themselves before it looks at any name, and keeps the name comparison underneath, because that is still the only way to recognise a path recorded on somebody else's machine.
+
+Two things follow that are worth stating plainly.
+
+The diagnosis was only possible because the harness stopped discarding its own output 2 hours earlier that afternoon. The failure message prints the project names it resolved, where they came from, the folder it is running in, and every path it probed. Before that fix the run reported the test's name and nothing else. The repair to the harness and the diagnosis of the failure are one story, not two.
+
+And the figure computed for it, 3 failures in 8 runs with a confidence interval running from 13.6844 to 69.4258 percent, was measuring which harness made each copy. Over a deterministic process that figure describes the 8 runs rather than the software. The per-run records are kept, because they are the evidence that identified the harness as the variable, but 37.5 percent is withdrawn as a statement about how often the test fails.
+
 ## Two Things Recorded Honestly Rather Than Closed
 
 A test in the suite has now failed 3 times in 8 full-size runs, every time in a fresh copy of the repository, and passes in the maintainer's copy, in isolation, and in a partial run. Reading the source produced no mechanism, and inventing one would be exactly the habit this project exists to avoid. It reproduced this afternoon, and the harness discarded the diagnostic information rather than recording it; that is fixed, so the next occurrence will explain itself. The earlier figure in this report, 2 failures in 5 runs, was itself undercounted: the audit that produced it searched for failure lines anchored to the start of a line, and the archived logs are indented, so 2 real failures read as none.
