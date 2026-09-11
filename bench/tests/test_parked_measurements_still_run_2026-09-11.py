@@ -8,12 +8,29 @@ anything is taken away, while its other half — *"an addition that nothing reac
 is not additive either"* — is discharged by giving a script a caller, and a test
 that EXECUTES it is exactly that caller.
 
-SO THESE 2 ARE WIRED HERE, and the other 4 are not. The difference is measured
+SO THESE 3 ARE WIRED HERE, and the other 3 are not. The difference is measured
 rather than assumed: an AST walk over all 6 found that these 2 contain no write
 call, no subprocess spawn and no absolute path, so running them cannot change
-anything. The other 4 write files or spawn processes, and the founder's standing
-instruction is explicit that running the scripts directory as a survey once
-overwrote a preserved archive. They stay parked, unrun.
+anything. A 3rd joined them after asking WHICH processes the spawners run:
+`inventory_2026_09_06.py` spawns only `git rev-parse` and `git status`, both
+read-only, and writes nothing. Classifying it by the SHAPE of the call rather
+than by what the call does was a coarser version of the mistake this session
+keeps finding.
+
+THE REMAINING ONES STAY PARKED AND UNRUN, and are NOT NAMED HERE. 2 write files
+outright; another spawns a script that carries 10 write calls with a `--dry-run`
+flag, so its safety rests on a different script honouring that flag -- a
+reasonable bet, and not one to take against a preserved archive, which the
+standing instruction exists because someone already lost one.
+
+THEY ARE UNNAMED FOR A MEASURED REASON. Writing a script's path into a tracked
+file makes `scripts_are_reached_2026-09-11.py` count it as REACHED, because a
+mention is all that scan can see. Naming them in this docstring un-orphaned one
+of them within a minute -- the 5th time in a day that prose ABOUT an orphan
+stopped it being one. The list of what is still parked lives in
+`experimental_notes/PARKED_FOR_THE_FOUNDER.md`, whose roll-call lines that scan
+already knows to ignore, and the test below reads it from the ratchet rather than
+repeating it.
 
 WHAT THIS ACTUALLY GUARDS. Both read or model archived experiment data, so they
 rot when the archive's shape changes — and a committed measurement that no longer
@@ -38,6 +55,11 @@ WIRED = [
      "distinct alarm events"),
     ("scripts/priority_starvation_simulation.py",
      "FAIL rate"),
+    # ADDED after asking WHICH processes the spawners run. This one's only
+    # subprocess calls are `git rev-parse --short HEAD` and `git status --short`,
+    # both read-only, and it has no write call at all -- so the "it spawns
+    # processes" objection that parked it does not survive the question.
+    ("scripts/inventory_2026_09_06.py", "programme inventory"),
 ]
 
 
@@ -57,7 +79,7 @@ class TestTheyStillRun:
                 f"in its docstring:\n{r.stdout[:600]}")
 
     def test_neither_changes_the_working_tree(self):
-        """The reason these 2 and not the other 4. An AST walk found no write
+        """The reason these 3 and not the other 3. An AST walk found no write
         call, no subprocess and no absolute path in either; this asserts the
         consequence rather than trusting the scan."""
         before = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
@@ -88,12 +110,21 @@ class TestTheWiringIsHonest:
             "a script this file executes still reads as unreached, which means "
             "the executing call above is not being seen as a reference")
 
-    def test_the_other_four_are_not_run_here(self):
-        """STATED, NOT IMPLIED. The 4 that write or spawn are deliberately absent,
-        and the founder's instruction against running the scripts directory as a
-        survey is the reason."""
+    def test_no_still_parked_script_is_named_here(self):
+        """STATED, NOT IMPLIED, and read from the ratchet rather than retyped.
+
+        A script still recorded as unreached must not appear in this file at all:
+        running it is unsafe, and NAMING it makes the reachability scan count it
+        as reached, which would quietly empty the ratchet by writing prose.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "sr", REPO / "scripts" / "scripts_are_reached_2026-09-11.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
         src = pathlib.Path(__file__).read_text(encoding="utf-8")
-        for name in ("inventory_2026_09_06", "quarantine_to_candidate",
-                     "readjudicate_pairs",
-                     "scope_remaining_adjudication_and_materiality"):
-            assert f"scripts/{name}.py\"" not in src.replace(WIRED[0][0], ""), name
+        named = [u for u in mod.UNREACHED if u in src]
+        assert not named, (
+            f"{named} are recorded as unreached and are named in this file, "
+            f"which both risks running them and makes the scan read them as "
+            f"reached")
