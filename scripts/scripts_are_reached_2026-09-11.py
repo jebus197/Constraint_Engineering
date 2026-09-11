@@ -6,8 +6,10 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED 2026-09-11: **111 of 119 scripts are reached -- 93.2773%, Wilson
-[87.2935%, 96.5544%], Clopper-Pearson [87.1830%, 97.0531%]**. The 8 that are not
+MEASURED 2026-09-11: **112 of 120 scripts are reached -- 93.3333%, Wilson
+[87.3949%, 96.5835%], Clopper-Pearson [87.2863%, 97.0781%]**, both intervals
+cross-checked by 2 tools (statsmodels against a 50-digit mpmath Wilson closed
+form; statsmodels `beta` against `scipy.stats.beta` for Clopper-Pearson). The 8 that are not
 are named in `UNREACHED` below.
 
 A FIRST PASS SAID 5, AND THE DIFFERENCE IS THE ARCHIVAL EXCLUSION. Counting
@@ -41,12 +43,45 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import re
 import subprocess
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
 #: Trees whose contents are ARCHIVAL COPIES rather than live references.
 ARCHIVAL = ("experimental_notes/evidence/",)
+
+#: Files that carry a ROLL-CALL of unreached scripts. Only the roll-call LINES
+#: are ignored in these files, never the whole file: the test genuinely runs this
+#: script, and excluding it wholesale made this script itself read as unreached.
+#:
+#: THIS INSTRUMENT INVALIDATED ITSELF BY BEING COMMITTED. `UNREACHED` below lists
+#: 8 script paths, and `unreached()` asks whether any tracked file mentions a
+#: script -- so the moment this file was committed, its own list declared all 8
+#: reached and the figure jumped from 111 of 119 to 120 of 120. A ratchet whose
+#: record of the orphans makes them non-orphans measures nothing at all, and the
+#: only reason it was caught within 8 minutes is that `--check` was re-run
+#: against the figure that had just been published.
+#:
+#: The same trap is in the parked note and in this module's own docstring, which
+#: quote the 8 paths so a reader knows which they are.
+#:
+#: THE FIRST FIX OVER-CORRECTED, and that is why the filter is line-wise. It
+#: excluded 3 WHOLE FILES, one of them the test -- which carries no roll-call
+#: line at all and genuinely runs this script. Throwing the file away threw away
+#: a real caller, and the count went to 111 of 120 with THIS script as the 9th
+#: orphan: the instrument reported itself unreached because the fix for it
+#: reading everything as reached had deleted its only caller. Ignoring the
+#: roll-call LINES leaves every other line in those files counting, which is
+#: what `_ROLL_CALL` does, and the count returns to 112 of 120.
+#:
+#: `test_every_self_referential_file_carries_a_roll_call` holds the list to files
+#: that actually have one, so a name cannot be added here to make an
+#: inconvenient orphan disappear.
+SELF_REFERENTIAL = (
+    "scripts/scripts_are_reached_2026-09-11.py",
+    "experimental_notes/PARKED_FOR_THE_FOUNDER.md",
+)
 
 #: Measured 2026-09-11. A RATCHET: it may fall, never rise. Raising it means a
 #: new script exists that nothing calls, nothing cites and no document names.
@@ -60,6 +95,11 @@ UNREACHED = (
     "scripts/scope_remaining_adjudication_and_materiality.py",
     "scripts/v2_vs_v3_runner_2026-09-10.py",
 )
+
+
+#: A line that is nothing but one script path: `"scripts/x.py",` or
+#: `    scripts/x.py` in a fenced list.
+_ROLL_CALL = re.compile(r'["\'`]?(scripts/[\w./-]+\.py)["\'`]?,?')
 
 
 def _tracked() -> list[str]:
@@ -84,9 +124,18 @@ def unreached() -> list[str]:
                 and f != "hooks/pre-commit":
             continue
         try:
-            bodies[f] = (REPO / f).read_text(encoding="utf-8", errors="replace")
+            text = (REPO / f).read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
+        if f in SELF_REFERENTIAL:
+            # Drop only the roll-call lines -- a line whose whole content is one
+            # script path, with optional quotes, comma or list marker. Everything
+            # else in the file, including a test that genuinely runs a script,
+            # still counts as reaching it.
+            text = "\n".join(
+                ln for ln in text.splitlines()
+                if not _ROLL_CALL.fullmatch(ln.strip()))
+        bodies[f] = text
     out = []
     for s in scripts:
         stem = pathlib.Path(s).name

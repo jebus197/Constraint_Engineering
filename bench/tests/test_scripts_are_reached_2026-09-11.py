@@ -6,8 +6,10 @@ a caller and executed by a test."* `test_additive_standard_2026-09-07.py`
 ratchets config fields nothing READS. Scripts had no equivalent, and the
 project's record holds 11 confirmed defects that were additions doing nothing.
 
-MEASURED 2026-09-11: **111 of 119 scripts are reached -- 93.2773%, Wilson
-[87.2935%, 96.5544%], Clopper-Pearson [87.1830%, 97.0531%]**.
+MEASURED 2026-09-11: **112 of 120 scripts are reached -- 93.3333%, Wilson
+[87.3949%, 96.5835%], Clopper-Pearson [87.2863%, 97.0781%]**, both intervals
+cross-checked by 2 tools (statsmodels against a 50-digit mpmath Wilson closed
+form; statsmodels `beta` against `scipy.stats.beta` for Clopper-Pearson).
 
 REACHED MEANS 3 THINGS, and a script can be legitimate with no caller at all:
 something CALLS it; a note CITES it as a figure's producer, which
@@ -121,3 +123,33 @@ class TestItRuns:
                            capture_output=True, text=True, timeout=300)
         assert r.returncode != 0
         assert "unrecognized arguments" in r.stderr
+
+
+class TestTheExclusionListCannotHide:
+    """`SELF_REFERENTIAL` is the one place an inconvenient orphan could be made
+    to vanish, so it is held to files that demonstrably carry a roll-call and to
+    a filter that drops lines rather than files."""
+
+    def test_every_self_referential_file_carries_a_roll_call(self, mod):
+        for rel in mod.SELF_REFERENTIAL:
+            body = (mod.REPO / rel).read_text(encoding="utf-8", errors="replace")
+            hits = [ln for ln in body.splitlines()
+                    if mod._ROLL_CALL.fullmatch(ln.strip())]
+            assert hits, (
+                f"{rel} is excluded as self-referential but carries 0 roll-call "
+                f"lines, so nothing in it was ever going to be ignored -- "
+                f"listing it only removes whatever REAL references it holds. "
+                f"That is how this script came to report itself unreached.")
+
+    def test_a_non_roll_call_mention_still_counts_as_reaching(self, mod):
+        """The test file names this script on a line that is not a bare path.
+        If that stopped counting, the instrument would orphan itself."""
+        assert "scripts/scripts_are_reached_2026-09-11.py" not in set(mod.unreached())
+
+    def test_the_filter_drops_lines_not_files(self, mod):
+        """Positive control: a roll-call line is ignored, a line with any other
+        content on it is not -- proven by feeding both forms to the matcher."""
+        assert mod._ROLL_CALL.fullmatch('"scripts/foo.py",')
+        assert mod._ROLL_CALL.fullmatch("scripts/foo.py")
+        assert not mod._ROLL_CALL.fullmatch('SCRIPT = REPO / "scripts/foo.py"')
+        assert not mod._ROLL_CALL.fullmatch("python3 scripts/foo.py --check")
