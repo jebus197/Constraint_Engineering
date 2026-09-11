@@ -34,3 +34,15 @@ So the entry is mostly supported, with one sub-claim that exists only as prose. 
 It does not say the work is undone. Every one of the 71 evidence files exists, and all of them pass — the full suite ran green in a fresh clone four times on 2026-09-11 with 7,247 passing and nothing failing. The gap is between what the tests establish and what the entries claim, which is a documentation-integrity problem rather than a broken-code problem.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+## Round 2 — the 13 entries round 1 never reached (2026-09-11 22:18 BST)
+
+Coverage is now complete: **84 of 84 DONE entries audited, 0 unaudited.**
+
+- Round 1: 24 upheld of 71 audited.
+- Round 2: 6 upheld of 13 audited — 3.3, 9.2, 9.3, 9.4, L2, P7. Severity: 5 touch one sub-claim, 1 (9.4) is a whole-claim flag.
+- **Combined: 30 of 84 = 35.7143%**, Wilson [26.2994%, 46.3787%], computed 3 ways (statsmodels, scipy+numpy closed form, mpmath at 30 decimal places) agreeing to 0.
+
+Raw returns: `round2_never_audited_13.json` (10 agents, unfiltered) and `round2_workflow_return.txt`.
+
+**A regex defect found while computing this, in the assistant's own hand.** The pattern `<!-- task: ([^|]+?) | state: DONE` swallowed 615 characters for entry M1, because M1's own prose quotes a task marker. That made M1 look both unaudited and phantom, and produced a "24 of 70" correction that was itself wrong. The bounded pattern `([A-Za-z0-9._]+)` resolves all 84 ids at a longest length of 4 characters. This is the recurring false-zero class again: a scanner that resolves one form of a thing and misreports the other.
