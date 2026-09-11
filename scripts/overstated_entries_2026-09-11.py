@@ -65,10 +65,40 @@ def blocks(by_id) -> dict:
     return out
 
 
+class NotAGitCheckout(RuntimeError):
+    """Raised when git cannot answer, so no tracked/untracked figure is possible."""
+
+
 def tracked(path: str) -> bool:
+    """Is `path` tracked? EXIT CODES ARE THE ANSWER, and 128 is not "no".
+
+    FOUND 2026-09-11 by the fable seat in panel round 12, and reproduced before
+    accepting. `git ls-files --error-unmatch` exits **0** for tracked, **1** for
+    untracked and **128** for "not a git repository" -- and this returned False
+    for all of 1 and 128 alike. In the panel's own sandbox, which carries no
+    `.git`, the script therefore reported
+
+        of V2's 11 named entries, 11 still fail a MECHANICAL check = 100.0000%
+        Wilson 95% : [74.1167%, 100.0000%]
+
+    -- three confidence intervals on a fabricated number, and the exact
+    inversion of the true answer. Any tarball, `git archive` export or worktree
+    reproduces it.
+
+    IT IS THE SAME DEFECT THE CC2 SEAT FOUND IN `orphan_figures` ONE ROUND
+    EARLIER, in a script written the same day, and the correct pattern was
+    already in the tree in `bench/archive_corpus.py`. Writing the repair once
+    did not stop the next script from repeating it.
+    """
     r = subprocess.run(["git", "ls-files", "--error-unmatch", path],
                        cwd=REPO, capture_output=True, text=True)
-    return r.returncode == 0
+    if r.returncode == 0:
+        return True
+    if r.returncode == 1:
+        return False
+    raise NotAGitCheckout(
+        f"`git ls-files` exited {r.returncode} for {path!r}: "
+        f"{(r.stderr or '').strip()[:120]}")
 
 
 def check_marker_claims(by_id) -> dict:
@@ -96,13 +126,26 @@ def check_evidence_is_tracked(by_id) -> list:
     return bad
 
 
-def check_figures_have_producers(by_id) -> list:
-    """The 1.1 / 5.1 / 6.2 / 6.5 / M1 claim, mechanised."""
+def check_figures_have_producers(by_id, blocks_by_id=None) -> list:
+    """The 1.1 / 5.1 / 6.2 / 6.5 / M1 claim, mechanised OVER THE BLOCK.
+
+    THIS SHIPPED WITH THE VERY POPULATION ERROR THIS FILE'S DOCSTRING SAYS WAS
+    "caught before it became the answer". It was caught in ONE of three affected
+    checks; this was one of the other two. Found 2026-09-11 by the fable seat,
+    which measured the difference: **21 entries carry a figure on their first
+    LINE, 47 carry one in their BLOCK.** The clearance issued for 1.1, 5.1, 6.2,
+    6.5 and M1 came from an instrument blind to more than half its population.
+
+    The conclusion survived -- no DONE entry is a figure-orphan either way --
+    and the instrument did not.
+    """
+    blocks_by_id = blocks_by_id if blocks_by_id is not None else blocks(by_id)
     orphans = []
     for ident, e in sorted(by_id.items()):
-        if not FIGURE.findall(e.text):
+        text = blocks_by_id.get(ident, e.text)
+        if not FIGURE.findall(text):
             continue
-        live = [s for s in SCRIPT.findall(e.text) if (REPO / s).is_file()]
+        live = [s for s in SCRIPT.findall(text) if (REPO / s).is_file()]
         if not live:
             orphans.append(ident)
     return orphans
@@ -137,7 +180,7 @@ def check_committed_names_a_tracked_artefact(by_id, blocks) -> list:
     return bad
 
 
-def check_self_contradiction(by_id) -> list:
+def check_self_contradiction(by_id, blocks_by_id=None) -> list:
     """The 8.1 claim: an entry whose body denies its own opening line.
 
     MECHANICAL ONLY WHERE IT CAN BE. A general contradiction check is not
@@ -145,10 +188,15 @@ def check_self_contradiction(by_id) -> list:
     whose opening declares DONE while its body carries an explicit NOT DONE,
     OPEN, or STILL marker, which is the specific shape the reviewer named.
     """
+    # OVER THE BLOCK, for the same reason as `check_figures_have_producers`:
+    # a contradiction between an opening line and a CONTINUATION paragraph is
+    # exactly the shape this looks for, and reading only the line cannot see it.
+    blocks_by_id = blocks_by_id if blocks_by_id is not None else blocks(by_id)
     hits = []
     for ident, e in sorted(by_id.items()):
-        head = e.text.split(".**")[0] if ".**" in e.text else e.text[:120]
-        body = e.text[len(head):]
+        text = blocks_by_id.get(ident, e.text)
+        head = text.split(".**")[0] if ".**" in text else text[:120]
+        body = text[len(head):]
         if re.search(r"\bDONE\b", head) and re.search(
                 r"\*\*(?:NOT DONE|STILL OPEN|OPEN)\b|\bis STILL\b", body):
             hits.append((ident, head[:80]))
@@ -156,6 +204,14 @@ def check_self_contradiction(by_id) -> list:
 
 
 def main() -> int:
+    # REFUSE OUTSIDE A GIT CHECKOUT rather than reporting 100% by construction.
+    probe = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"],
+                           cwd=REPO, capture_output=True, text=True)
+    if probe.returncode != 0:
+        print("REFUSING TO MEASURE: not a git repository, so every path would "
+              "count as untracked and the figure would read 100% by "
+              "construction, not by measurement.", file=sys.stderr)
+        return 2
     by_id = entries()
     print(f"entries parsed: {len(by_id)}\n")
 
@@ -172,7 +228,7 @@ def main() -> int:
         print("  none")
 
     print("\n--- entries carrying a figure with no live producing script ---")
-    orphans = check_figures_have_producers(by_id)
+    orphans = check_figures_have_producers(by_id, blocks(by_id))
     print(f"  {orphans or 'none'}")
 
     print("\n--- COMMITTED entries whose artefact this repository does not carry ---")
@@ -183,7 +239,7 @@ def main() -> int:
         print("  none")
 
     print("\n--- entries whose opening says DONE and whose body says otherwise ---")
-    contra = check_self_contradiction(by_id)
+    contra = check_self_contradiction(by_id, blocks(by_id))
     for ident, head in contra:
         print(f"  {ident}: {head}")
     if not contra:

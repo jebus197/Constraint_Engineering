@@ -87,12 +87,21 @@ def declared_fields(config_glob: str) -> dict:
     out: dict[str, set] = {}
 
     def walk(o, prefix=""):
+        # A LIST-VALUED KEY IS A LEAF TOO. Found 2026-09-11 by the fable seat in
+        # panel round 12: this recursed INTO a list and never recorded the key,
+        # so every list-valued setting was invisible to the default census --
+        # including `api_access`, the very key entry A18's "the arm is not lying
+        # to its reader" argument depends on. A census that cannot see a key can
+        # never report it unread, so the one direction that matters was closed.
         if isinstance(o, dict):
             for k, v in o.items():
+                out.setdefault(k, set()).add(prefix + k)
                 if isinstance(v, (dict, list)):
                     walk(v, f"{prefix}{k}.")
-                else:
-                    out.setdefault(k, set()).add(prefix + k)
+        elif isinstance(o, list):
+            for item in o:
+                if isinstance(item, (dict, list)):
+                    walk(item, prefix)
 
     for f in sorted(REPO.glob(config_glob)):
         try:
@@ -132,6 +141,9 @@ def main() -> int:
             print(f"  {f}: {len(sites)} reader(s)")
             for s in sites[:4]:
                 print(f"      {s}")
+            if len(sites) > 4:
+                print(f"      ... and {len(sites) - 4} further reader(s), "
+                      f"not shown")
 
     n = len(read) + len(unread)
     if n:

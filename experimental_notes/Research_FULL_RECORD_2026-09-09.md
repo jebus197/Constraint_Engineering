@@ -317,7 +317,7 @@ Yes — simplicity, sufficiency and additivity are 3 distinct properties in this
 
 | Property | Precise definition as the project uses it | Where enforced |
 |---|---|---|
-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11211` |
+| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11284` |
 | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
 | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
 

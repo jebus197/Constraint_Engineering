@@ -1103,11 +1103,34 @@ class TestGitStateNamesItsRefAndFailsLoudly:
 _DISCLOSURE_WORDS = ("more", "withheld", "capped", "not shown", "truncat")
 
 
+def _prints(node: ast.AST) -> bool:
+    """Does this loop body actually PRINT? Resolved, not assumed.
+
+    THE GUARD'S OWN MESSAGE SAYS "prints" AND IT NEVER CHECKED. It flagged any
+    `for x in expr[:N]` in a function carrying no disclosure word, whatever the
+    loop did. On 2026-09-11 that took the suite red for
+    `scripts/config_fields_are_read_2026-09-11.py:76`, where `for arg in
+    n.args[:2]` iterates the first 2 arguments of an AST call to see whether one
+    of them is a field NAME -- a bounded lookup that displays nothing.
+
+    Same shape as task A17 the same night: a guard matching a form where it
+    needed to resolve what the form feeds. A false positive here is not harmless
+    -- "the suite went red for a file nobody touched" is how a guard's output
+    starts being ignored.
+    """
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Call) and getattr(sub.func, "id", None) == "print":
+            return True
+    return False
+
+
 def _iterated_capped_slices(fn: ast.AST) -> list[tuple[int, str]]:
     iters: list[ast.AST] = []
     for node in ast.walk(fn):
         if isinstance(node, ast.For):
-            iters.append(node.iter)
+            # ONLY A LOOP THAT PRINTS. See `_prints`.
+            if _prints(node):
+                iters.append(node.iter)
         elif isinstance(node, ast.comprehension):
             iters.append(node.iter)
     out: list[tuple[int, str]] = []

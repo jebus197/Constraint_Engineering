@@ -118,15 +118,23 @@ def _load_dispatcher(tmp_path):
     logs = repo / "bench" / "logs" / "_toollog_probe"
     logs.mkdir(parents=True, exist_ok=True)
     (logs / "BRIEF.md").write_text("# probe\n", encoding="utf-8")
-    old_argv = _sys.argv[:]
-    _sys.argv = ["confer_maths_panel", "_toollog_probe"]
-    try:
-        spec = importlib.util.spec_from_file_location("_toollog_probe_mod", path)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod, logs
-    finally:
-        _sys.argv = old_argv
+    # THE BINDING MOVED OUT OF IMPORT TIME (task A22, 2026-09-11). This used to
+    # work by setting `sys.argv` and letting the module read it AS IT IMPORTED --
+    # which is precisely the import-time side effect A22 removed, so that
+    # anything could import the dispatcher at all. `resolve_brief()` is the
+    # binding now, and it is called explicitly here.
+    #
+    # WHAT THE MOVE COST, and it is worth recording: the first version of A22
+    # left the module-level `LOGS` as None and code reached it through a bare
+    # `LOGS / name`, producing `TypeError: unsupported operand type(s) for /:
+    # 'NoneType' and 'str'` -- a message that says nothing about what to do.
+    # This test and its sibling found it within the hour. Every such use now
+    # goes through `_logs_dir()`, which raises a sentence naming the remedy.
+    spec = importlib.util.spec_from_file_location("_toollog_probe_mod", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.resolve_brief(["confer_maths_panel", "_toollog_probe"])
+    return mod, logs
 
 
 def _cleanup(logs):

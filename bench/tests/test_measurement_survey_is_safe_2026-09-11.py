@@ -107,13 +107,26 @@ class TestTheSurveyWritesNothing:
         A classification is an argument; a clean `git status` afterwards is
         evidence. This is the exact failure the entry records, inverted.
         """
-        before = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                                capture_output=True, text=True).stdout
+        # THE PROBE MUST BE ABLE TO ANSWER. Found 2026-09-11 by the cc2 seat in
+        # panel round 12: `git status --porcelain` outside a work tree exits 128
+        # and prints NOTHING on stdout -- byte-identical to "the tree is clean".
+        # Comparing that empty string to itself, this guard could ONLY ever
+        # pass, and it is the guard for the incident where a survey overwrote a
+        # preserved archive. A control that cannot fail is not a control.
+        def _status():
+            r = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
+                               capture_output=True, text=True)
+            assert r.returncode == 0, (
+                f"git cannot report the tree's state here (exit "
+                f"{r.returncode}); this check would compare empty output with "
+                f"empty output and pass on anything")
+            return r.stdout
+
+        before = _status()
         r = subprocess.run([sys.executable, str(SCRIPT), "--run"], cwd=ROOT,
                            capture_output=True, text=True, timeout=3600)
         assert r.returncode == 0, r.stderr[-400:]
-        after = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                               capture_output=True, text=True).stdout
+        after = _status()
         assert before == after, (
             f"the measurement survey changed the tree:\n"
             f"before:\n{before}\nafter:\n{after}")

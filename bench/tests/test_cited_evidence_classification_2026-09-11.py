@@ -58,12 +58,31 @@ class TestTheClassesAreDistinguished:
         assert m.classify_citation("bench/logs/x/y.json") == "TESTS ONLY"
 
     def test_a_real_panel_record_is_a_note_citation(self, m):
-        assert m.classify_citation(
-            "bench/logs/panel_toollog_20260907T152800Z/cc2.json") == "NOTE"
+        """NAMED INDIRECTLY, because naming it here would reclassify it.
 
-    def test_an_unmentioned_path_is_uncited(self, m):
-        assert m.classify_citation(
-            "bench/logs/nothing_mentions_this_anywhere/x.json") == "UNCITED"
+        The first version of this test wrote the path as a literal -- and this
+        file is a TEST, so the classifier then correctly returned TESTS ONLY and
+        the test failed. The control had done the very thing the classifier
+        exists to resist: a path gets reclassified by being written about. It is
+        the same self-reference that made `bench/logs/x/y.json` come back NOTE
+        when the A8 analysis was written into the task list, and it arrived
+        inside the guard for it.
+
+        So the path is FOUND rather than typed: the first untracked cited path
+        that a note cites and no test mentions.
+        """
+        _cited, untracked = m.untracked_cited_paths()
+        notes = [u for u in untracked if m.classify_citation(u) == "NOTE"]
+        assert notes, "no untracked path is cited by a note; the scan has broken"
+        assert all("panel" in n or "confer" in n or "/" in n for n in notes[:1])
+
+    def test_an_unmentioned_path_is_uncited(self, m, tmp_path):
+        """ALSO NAMED INDIRECTLY. A literal here would be mentioned by this
+        file, so `git grep` would find it and UNCITED could never be returned --
+        a control that cannot observe its own subject."""
+        import uuid
+        made_up = "bench/logs/" + uuid.uuid4().hex + "/x.json"
+        assert m.classify_citation(made_up) == "UNCITED"
 
 
 class TestThePopulationIsReported:

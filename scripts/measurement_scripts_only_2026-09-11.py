@@ -46,6 +46,8 @@ SCRIPTS = REPO / "scripts"
 _WRITING_ATTRS = {
     "write_text", "write_bytes", "mkdir", "touch", "unlink", "rmdir",
     "rename", "replace", "chmod", "symlink_to", "hardlink_to",
+    # `truncate` empties a file and was absent (panel round 12, fable).
+    "truncate",
 }
 _WRITING_FUNCS = {
     "rmtree", "copy", "copy2", "copyfile", "copytree", "move", "remove",
@@ -56,6 +58,99 @@ _SPAWNING = {"run", "Popen", "call", "check_call", "check_output", "system",
              "spawnv", "spawnl", "execv"}
 
 
+def _open_is_a_write(call: ast.Call) -> str:
+    """A reason string if this `open` call can write, else "".
+
+    THE MODE IS AT A DIFFERENT INDEX IN EVERY FORM -- `open(p, "w")`,
+    `Path(p).open("w")`, `io.open(p, "w")`, `open(p, mode="w")` -- so every
+    argument is a candidate rather than a chosen one. An argument that is not a
+    string constant cannot be resolved, and unresolvable is a WRITE here,
+    because the failure this classifier prevents is asymmetric.
+    """
+    # THE RECEIVER CARRIES THE PATH IN THE METHOD FORM, so the mode is argument
+    # 0 there and argument 1 for the builtin. Getting this wrong let
+    # `Path("x").open("w")` through: its single argument looked like the PATH.
+    is_method = isinstance(call.func, ast.Attribute)
+    positional = list(call.args) if is_method else list(call.args)[1:]
+    keyword = [kw.value for kw in call.keywords if kw.arg in ("mode", "flags")]
+    candidates = positional + keyword
+    if not candidates:
+        return ""                       # `open(p)` with no mode reads
+    for arg in candidates:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            if any(c in arg.value for c in "wax+"):
+                return f"open(..., {arg.value!r})"
+        elif not isinstance(arg, ast.Constant):
+            return "open() with a mode this scan cannot resolve"
+    return ""
+
+
+def _imported_writers(tree: ast.AST) -> dict:
+    """{local name: "module.func"} for imported functions that WRITE.
+
+    THE HOLE THIS CLOSES, found 2026-09-11 by the cc2 seat in panel round 12:
+    `scripts/cdsfl_seal_logs.py` came back MEASUREMENT, and its default
+    invocation SEALS LOG DIRECTORIES -- it writes through `save_json`, imported
+    from `bench.verification_chain`. The classifier resolved calls inside one
+    file and could not see across an import boundary, so a write delegated to a
+    helper was invisible. That is the same resolve-versus-match shape as task
+    A17, at module scope.
+
+    ONE LEVEL DEEP, DELIBERATELY. A full call graph is a different program and
+    would be slower and less legible; one level catches the direct delegation
+    that actually occurs. Anything this cannot resolve stays an ACTION for the
+    reason the whole classifier is conservative: an ACTION misread as a
+    measurement is what overwrote a preserved archive.
+    """
+    out = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or not node.module:
+            continue
+        rel = node.module.replace(".", "/") + ".py"
+        mod = REPO / rel
+        if not mod.is_file():
+            continue
+        try:
+            mtree = ast.parse(mod.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, SyntaxError):
+            continue
+        defs = {n.name: n for n in mtree.body
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                  ast.ClassDef))}
+
+        def _writes(scope) -> str:
+            for sub in ast.walk(scope):
+                if isinstance(sub, ast.Call):
+                    a = getattr(sub.func, "attr", None)
+                    i = getattr(sub.func, "id", None)
+                    if a in _WRITING_ATTRS or (a or i) in _WRITING_FUNCS \
+                            or (a or i) in _SPAWNING:
+                        return f"{a or i}()"
+            return ""
+
+        for alias in node.names:
+            target = defs.get(alias.name)
+            if target is None:
+                continue
+            if isinstance(target, ast.ClassDef):
+                # AN IMPORTED CLASS WHOSE METHODS WRITE. `cdsfl_seal_logs.py`
+                # imports `VerificationChain` and calls `chain.save_json(...)`,
+                # and `save_json` is a METHOD -- invisible to a scan that looks
+                # only at module-level functions. Each writing method is
+                # registered under its own name, so a call to it here is caught
+                # without assuming every method of the class writes.
+                for meth in target.body:
+                    if isinstance(meth, (ast.FunctionDef, ast.AsyncFunctionDef)) \
+                            and _writes(meth):
+                        out[meth.name] = (f"{node.module}.{alias.name}."
+                                          f"{meth.name}")
+                continue
+            why = _writes(target)
+            if why:
+                out[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+    return out
+
+
 def classify(path: pathlib.Path) -> tuple[str, list[str]]:
     """("MEASUREMENT" | "ACTION", reasons). Unresolvable is ACTION."""
     try:
@@ -64,7 +159,13 @@ def classify(path: pathlib.Path) -> tuple[str, list[str]]:
         return "ACTION", [f"cannot parse: {type(exc).__name__}"]
 
     reasons: list[str] = []
+    writers = _imported_writers(tree)
     for n in ast.walk(tree):
+        if isinstance(n, ast.Call):
+            _called = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
+            if _called in writers:
+                reasons.append(f"line {n.lineno}: {_called}() writes, via "
+                               f"{writers[_called]}")
         if isinstance(n, ast.Call):
             attr = getattr(n.func, "attr", None)
             name = getattr(n.func, "id", None)
@@ -75,13 +176,23 @@ def classify(path: pathlib.Path) -> tuple[str, list[str]]:
             elif (attr or name) in _SPAWNING:
                 reasons.append(f"line {n.lineno}: spawns a process "
                                f"({attr or name}) -- cannot see what it does")
-            elif name == "open" and len(n.args) > 1:
-                mode = n.args[1]
-                if isinstance(mode, ast.Constant) and isinstance(mode.value, str) \
-                        and any(c in mode.value for c in "wax+"):
-                    reasons.append(f"line {n.lineno}: open(..., {mode.value!r})")
-                elif not isinstance(mode, ast.Constant):
-                    reasons.append(f"line {n.lineno}: open() with a computed mode")
+            elif (attr or name) == "open":
+                # EVERY `open`, BUILTIN OR METHOD. Found 2026-09-11 by the fable
+                # seat in panel round 12: this handled only the builtin with a
+                # positional second argument, so `Path("x").open("w")`,
+                # `io.open("x","w")`, `os.open(...)` and `open("x", mode="w")`
+                # all came back MEASUREMENT -- the asymmetric direction this
+                # classifier exists to prevent, since an ACTION misread as a
+                # measurement is what overwrote a preserved archive.
+                #
+                # The mode sits at a different index for each form, so EVERY
+                # argument is treated as a mode candidate, and anything that
+                # cannot be resolved is an ACTION. The cost is the cheap
+                # direction: a read-only `open("w_file.txt")` would be flagged,
+                # losing a survey row rather than a file.
+                verdict = _open_is_a_write(n)
+                if verdict:
+                    reasons.append(f"line {n.lineno}: {verdict}")
         elif isinstance(n, ast.With):
             for item in n.items:
                 c = item.context_expr

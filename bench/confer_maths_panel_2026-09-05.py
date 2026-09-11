@@ -113,6 +113,23 @@ BRIEF = None
 PROMPT = ""
 
 
+def _logs_dir():
+    """The run's log directory, or a legible error if the brief is unresolved.
+
+    A22 MOVED THE BINDING OUT OF IMPORT TIME, and this is the price: `LOGS` is
+    None until `resolve_brief()` runs, so code that used to find it already
+    bound now gets None. Reached through a bare `LOGS / name` that produced
+    `TypeError: unsupported operand type(s) for /: 'NoneType' and 'str'` -- a
+    message that says nothing about what to do. Two tests found it within the
+    hour; the diagnostic is the fix, not the binding.
+    """
+    if LOGS is None:
+        raise RuntimeError(
+            "the run directory is not resolved yet: call resolve_brief() "
+            "(main() does) before using anything that reads the log directory")
+    return LOGS
+
+
 def resolve_brief(argv=None) -> None:
     """Bind LOGS, BRIEF and PROMPT from the command line. Called by main()."""
     global LOGS, BRIEF, PROMPT
@@ -285,7 +302,7 @@ def dispatch(name, model_id, route):
             # text to stream-json, which is the ONLY format carrying tool_use
             # blocks. Pattern copied from confer_panel_2026-08-28.py:173, the 1
             # of 37 dispatchers that had it right.
-            _sink = LOGS / f"{name}.tools.json"
+            _sink = _logs_dir() / f"{name}.tools.json"
             # A STALE SINK WOULD BE READ AS THIS RUN'S (cc2, 2026-09-07). Two
             # dispatches into the same LOGS directory -- exactly what a
             # PANEL_ONLY re-dispatch does -- would otherwise report the earlier
@@ -334,7 +351,7 @@ def dispatch(name, model_id, route):
         # where the evidence matters most, inside the commit that repaired it.
         if not tool_log:
             try:
-                _s = LOGS / f"{name}.tools.json"
+                _s = _logs_dir() / f"{name}.tools.json"
                 if _s.is_file():
                     tool_log = json.loads(_s.read_text(encoding="utf-8")).get("calls", [])
             except (OSError, ValueError):
@@ -343,7 +360,7 @@ def dispatch(name, model_id, route):
                "error": f"{type(e).__name__}: {e}",
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": ""}
-    (LOGS / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
+    (_logs_dir() / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} "
           f"tools={out.get('n_tool_calls', 'native')} {out['elapsed_s']}s"
           + (f" ERR={out.get('error')}" if not out["ok"] else ""), flush=True)
@@ -459,23 +476,23 @@ def main() -> int:
             for rel, d in panel_sandbox.changes(_sb, _REPO).items():
                 proposals[f"{_n}:{rel}"] = d
         if proposals:
-            (LOGS / "seat_proposals.diff").write_text(
+            (_logs_dir() / "seat_proposals.diff").write_text(
                 "\n".join(f"### {rel}\n{d}" for rel, d in sorted(proposals.items())),
                 encoding="utf-8")
             print(f"    seats proposed edits to {len(proposals)} file(s) IN THE COPY "
-                  f"-> {LOGS / 'seat_proposals.diff'} (untested; not applied)")
+                  f"-> {_logs_dir() / 'seat_proposals.diff'} (untested; not applied)")
         # DETECTION for what a sandbox cannot prevent: a seat writing to an
         # absolute path it already knows. vault_keys.sh records that limit exactly.
         home_touched = panel_sandbox.control_plane_was_touched(home_baseline)
         if home_touched:
             print(f"    *** OPERATOR CONTROL PLANE MODIFIED DURING THE PANEL: "
                   f"{home_touched} ***")
-            (LOGS / "control_plane_touched.json").write_text(
+            (_logs_dir() / "control_plane_touched.json").write_text(
                 json.dumps(home_touched, indent=2), encoding="utf-8")
         touched = panel_sandbox.canonical_was_touched(baseline, _REPO)
         if touched:
             print(f"    *** CANONICAL TREE MODIFIED DURING THE PANEL: {touched} ***")
-            (LOGS / "canonical_touched.json").write_text(
+            (_logs_dir() / "canonical_touched.json").write_text(
                 json.dumps(touched, indent=2), encoding="utf-8")
             # TASK A5: SAY WHOSE DOING IT WAS, or say that it cannot be shown.
             # This alarm fired on 14 files in round 2, 8 in round 8 and 11 in
@@ -489,7 +506,7 @@ def main() -> int:
                 attrib = panel_sandbox.attribute_canonical_touch(
                     touched, LOGS, sandbox_root=list(sandboxes.values()),
                     repo_root=_REPO)
-                (LOGS / "canonical_attribution.json").write_text(
+                (_logs_dir() / "canonical_attribution.json").write_text(
                     json.dumps(attrib, indent=2), encoding="utf-8")
                 if attrib["_any_attributable"]:
                     print("    *** AND AT LEAST ONE IS ATTRIBUTABLE TO A SEAT. "

@@ -1278,6 +1278,21 @@ class RunnerConfig:
     # to the memory at run end. This is what `immune_memory_enabled` has meant
     # since 2026-07-28, and it is true in eleven shipped configs.
     immune_memory_enabled: bool = False
+    #: TASK A19, the founder's design point of 2026-09-10: "it should simply
+    #: mark a purely prose input as 'inadmissible', while still solving any
+    #: computationally reducible elements within that prose! This is STEM."
+    #:
+    #: With this ON, a prose target that carries fenced Python listings is
+    #: SCORED -- the gates see the extracted code, not the English -- and a
+    #: target with no listings still returns NO_SCORE, which is the "purely
+    #: prose" case he describes.
+    #:
+    #: DEFAULT OFF because it changes what reaches a verdict, and that is his
+    #: call. The 2 gate defects that justified the original short-circuit were
+    #: repaired on 2026-09-11 and measured: ruff 311 diagnostics over a whole
+    #: markdown against 4 over its listings; bandit a syntax error and NO
+    #: metrics before, e4 = 0.5 on a real HIGH after.
+    sk_score_prose_listings: bool = False
     # CONSUMPTION. The memory's blended prior SEEDS R_k(0) — the appendix §1.1
     # initial condition R_k(0) = π_k — per finding flaw class.
     #
@@ -10140,9 +10155,26 @@ def _run_effect_ruff(
     modified_source: str, baseline_violations: Optional[int],
     source_path: str = "",
 ) -> Tuple[Optional[float], str]:
-    """e3: Static analysis non-regression via ruff."""
+    """e3: Static analysis non-regression via ruff.
+
+    GATE THE CODE, NOT THE DOCUMENT (task A19, 2026-09-11). This wrote the WHOLE
+    modified target into a `.py` temp file, so on a prose target ruff
+    error-recovered over English and reported hundreds of phantom diagnostics --
+    the delta then measured how much prose the fix added. MEASURED on
+    `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`: **311 diagnostics over the whole
+    markdown against 4 over the fenced listings extracted from it.**
+
+    `_gateable_source` already existed and already did this for the HARD gates
+    g1 and g2, repaired on 2026-08-01 for the same reason. The effect gates were
+    never given it, so half the machinery was fixed and the other half went on
+    reading prose as Python. For a `.py` target it returns the source unchanged,
+    so this is a no-op there by construction.
+    """
     if baseline_violations is None:
         return None, "ruff baseline unavailable"
+    modified_source, _why = _gateable_source(modified_source, source_path)
+    if modified_source is None:
+        return None, "target carries no code; ruff not applicable"
     # Anchor temp file to source directory so ruff picks up pyproject.toml
     anchor_dir = _anchor_dir_for(source_path)
     with tempfile.NamedTemporaryFile(
@@ -10184,9 +10216,23 @@ def _run_effect_bandit(
 
     Scoring per Python encoding: -0.5 per new HIGH, -0.2 per new MEDIUM.
     baseline_findings is a dict with 'high' and 'medium' keys.
+
+    GATE THE CODE, NOT THE DOCUMENT (task A19, 2026-09-11). This wrote the WHOLE
+    modified target into a `.py` temp file. On a prose target bandit cannot parse
+    it, returns an empty result set, and therefore reports "0 HIGH / 0 MEDIUM"
+    forever -- at weight 2.0, the heaviest in the set. **It was structurally
+    incapable of failing**, which is worse than unavailable: an unavailable gate
+    is excluded from the weighted mean, and a gate that always passes drags the
+    mean up. Handed the extracted listings it can parse, so it can fail.
+
+    For a `.py` target `_gateable_source` returns the source unchanged, so this
+    is a no-op there by construction.
     """
     if baseline_findings is None:
         return None, "bandit baseline unavailable"
+    modified_source, _why = _gateable_source(modified_source, source_path)
+    if modified_source is None:
+        return None, "target carries no code; bandit not applicable"
     # Anchor temp file to source directory for config discovery
     anchor_dir = _anchor_dir_for(source_path)
     with tempfile.NamedTemporaryFile(
@@ -10324,6 +10370,7 @@ def compute_sk(
     baseline: Optional[Dict[str, Any]] = None,
     test_cmd: Optional[str] = None,
     declared_target_kind: Optional[str] = None,
+    score_prose_listings: bool = False,
 ) -> SkResult:
     """Full S_k computation pipeline for a proposed fix.
 
@@ -10356,7 +10403,33 @@ def compute_sk(
     """
     kind, kind_reason = resolve_target_kind(
         source_path, source, declared=declared_target_kind)
-    if kind != TARGET_KIND_PYTHON:
+    # THE FOUNDER'S DESIGN POINT, TASK A19, WIRED AND OFF BY DEFAULT.
+    #
+    # His words: "clearly it should simply mark a purely prose input as
+    # 'inadmissible', while still solving any computationally reducible elements
+    # within that prose! This is STEM."
+    #
+    # The short-circuit's 3 stated reasons were all about gates reading ENGLISH
+    # as Python. Two of the 3 are now false, because `_run_effect_ruff` and
+    # `_run_effect_bandit` were given `_gateable_source` on 2026-09-11 -- the
+    # same extractor the HARD gates got on 2026-08-01, which the effect gates
+    # were never handed. MEASURED:
+    #   ruff over a real design note: 311 diagnostics whole, 4 over the listings
+    #   bandit over a listing carrying `subprocess.call(cmd, shell=True)`:
+    #     BEFORE, a syntax error and NO metrics -- "0 HIGH/0 MEDIUM" forever,
+    #     at weight 2.0, structurally incapable of failing
+    #     AFTER, e4 = 0.5 on 1 HIGH. It can fail now.
+    # The third reason stands: `e2_regression` is still unavailable on prose.
+    #
+    # DEFAULT OFF, because this changes what reaches a verdict and that is the
+    # founder's call, not the assistant's. A prose target with NO fenced listing
+    # still returns NO_SCORE whatever the flag says -- there is nothing
+    # computationally reducible in it, which is exactly his "purely prose" case.
+    _reducible, _why_reducible = _gateable_source(source, source_path)
+    if kind != TARGET_KIND_PYTHON and score_prose_listings and _reducible:
+        kind_reason = (f"{kind_reason}; scored anyway because the target carries "
+                       f"reducible code ({_why_reducible})")
+    elif kind != TARGET_KIND_PYTHON:
         return SkResult(
             sk=0.0, A=0.0, E=0.0, tristate=SK_NO_SCORE,
             gate_details={
@@ -11411,6 +11484,7 @@ def _evaluate_sk_for_findings(
     nu_k_by_finding: Optional[Dict[str, float]] = None,
     nu_k_default: float = 0.0,
     rk0_prior: Optional[Callable[[int], float]] = None,
+    score_prose_listings: bool = False,
 ) -> Dict[str, Any]:
     """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
 
@@ -11452,6 +11526,9 @@ def _evaluate_sk_for_findings(
         sk_result = compute_sk(
             fix_text, source_code, source_path,
             baseline=baseline, test_cmd=test_cmd,
+            # TASK A19. Default False; a run turns it on deliberately. Read with
+            # getattr so an older config object cannot break this call.
+            score_prose_listings=score_prose_listings,
         )
         stats["evaluated"] += 1
 
@@ -13908,6 +13985,11 @@ def run_experiment(
                 nu_k_by_finding=ouroboros_rk_inputs.get("nu_k_by_finding"),
                 nu_k_default=ouroboros_rk_inputs.get("nu_k_mean", 0.0),
                 rk0_prior=rk0_prior,
+                # TASK A19. Read with getattr so an older config object cannot
+                # break this call; default False, so a run turns it on
+                # deliberately or not at all.
+                score_prose_listings=bool(
+                    getattr(cfg, "sk_score_prose_listings", False)),
             )
 
         # Exp 40 1D.3: compute per-model rho BEFORE the ITC loop so each

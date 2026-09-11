@@ -7,8 +7,20 @@ THE ENTRY SAID 25, ACROSS 9 RUNS, WITH `exp53_control_zero_live` ACCOUNTING FOR
   No predicate I could construct returns 25. The closest is severity >=
   CRITICAL_SEVERITY_THRESHOLD (0.7, read from the runner, not typed) AND
   `hil_escalated` AND no `falsifier_code`, which returns 22 -- and that predicate
-  reproduces the entry's OTHER family figure exactly, `exp55_v3_control` = 8, so
-  it is almost certainly the one that was meant.
+  reproduces the entry's OTHER family figure exactly, `exp55_v3_control` = 8.
+
+  "ALMOST CERTAINLY THE ONE THAT WAS MEANT" WAS TOO STRONG AND IS WITHDRAWN.
+  Found 2026-09-11 by the fable seat in panel round 12, which swept 7 candidate
+  predicates: dropping the severity filter ALSO reproduces exp55_v3_control = 8,
+  with a total of 32; a strict `> 0.7` also gives 8, with 20. So {20, 22, 32}
+  all pass the single anchor, the entry's unreproduced 25 sits inside that
+  range, and ONE family figure cannot identify a predicate. The number 22 is
+  quoted with its family from here on.
+
+  WHAT SURVIVES THE WIDENING, and it is the half that mattered: ANONYMOUS is 0
+  under EVERY candidate, including the widest set of 32 (12 merge deadlock, 11
+  irreducible, 9 stale contested). The conclusion was never at risk; the
+  identification was overstated.
 
   `exp53_control_zero_live` CONTRIBUTES 0 AND CANNOT CONTRIBUTE ANY. Its 2 runs
   hold no `*_report.json` at all: their findings live in `checkpoint.json` under
@@ -193,6 +205,13 @@ def main() -> int:
         print(f"    reference_runner_v3.py:{ln}  {text}")
     if not gaps:
         print("    none. Every escalation site leaves a marker this table reads.")
+
+    print("\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
+          "severity filter also\nreproduces exp55_v3_control = 8, with a total "
+          "of 32; a strict `> 0.7` gives 20. One\nfamily figure cannot identify "
+          "a predicate, so 22 is quoted with its family {20, 22, 32}.\nANONYMOUS "
+          "is 0 under every candidate, which is the half that carries the "
+          "finding.")
 
     print("\nTHE ENTRY'S 25 DOES NOT REPRODUCE and its exp53 attribution cannot: "
           "that run\nkeeps findings in checkpoint.json under `all_findings`, in a "
