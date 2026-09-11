@@ -123,6 +123,24 @@ The diagnosis was only possible because the harness stopped discarding its own o
 
 And the figure computed for it, 3 failures in 8 runs with a confidence interval running from 13.6844 to 69.4258 percent, was measuring which harness made each copy. Over a deterministic process that figure describes the 8 runs rather than the software. The per-run records are kept, because they are the evidence that identified the harness as the variable, but 37.5 percent is withdrawn as a statement about how often the test fails.
 
+## A Request For Help Destroyed A Record And Reported Success
+
+The worst single defect of the day, found last and by accident.
+
+Two scripts rebuild the complete verbatim record of a panel review from the raw model responses. Those responses live in a directory the project deliberately does not track, because it once held 353 megabytes. Neither script understood the request-for-help flag, so passing it did not print a description: it ran the script. In a fresh copy of the repository the raw responses are absent, so the rebuild wrote every model back as "no response file" and replaced a 55,814-byte verbatim record of a 5-model review with a 1,334-byte stub. It then reported success.
+
+This had been happening in every fresh-copy test run. The symptom that reached the test suite was a complaint that two records from August looked like summaries rather than records, which reads as a problem with the records and was a problem with a flag.
+
+It was found by keeping the throwaway copy after the run instead of deleting it, and asking the version-control system what had changed inside it. That is the second time in one day the fix was to stop an instrument throwing away its own evidence; the same harness had been discarding the diagnostic output that solved the intermittent failure described above.
+
+The morning's sweep of this exact hazard reported a clean result, and it was honest. Its population was the measurement scripts, and both offenders are action scripts. There are 122 scripts in the project; the 68 that sweep does not reach are precisely the ones where a flag that acts is destructive rather than merely impolite. The false result was in the choice of population rather than in the matching, which is the same defect one level further out than anyone was looking.
+
+Seven scripts both wrote something and ignored the flag, 5.7 percent of 122 with a 95 percent interval from 2.8 to 11.4 percent. All seven, plus the two record assemblers, now answer it, verified by running each one in a throwaway copy: all nine print a usage line, report success, and leave the copy untouched.
+
+The permanent check is deliberately a static one, and the reason is worth stating. Running every script in the project with that flag is exactly what must not be done: the standing record notes that 15 of 17 dispatch scripts once billed a live model call on any unrecognised argument, and spending money is one of the three things reserved to you. The executing proof was done once, by hand, in a copy that was thrown away.
+
+And the check written to catch this had the defect it was written to catch. Its first version asked whether the name of the help function appeared anywhere in the script's text, so deleting the real call left it satisfied, because the explanatory comment beside the call still contained the name. A guard reading its own comment about a function as evidence that the function is called. It now asks the parsed program whether the function is actually called.
+
 ## Two Things Recorded Honestly Rather Than Closed
 
 A test in the suite has now failed 3 times in 8 full-size runs, every time in a fresh copy of the repository, and passes in the maintainer's copy, in isolation, and in a partial run. Reading the source produced no mechanism, and inventing one would be exactly the habit this project exists to avoid. It reproduced this afternoon, and the harness discarded the diagnostic information rather than recording it; that is fixed, so the next occurrence will explain itself. The earlier figure in this report, 2 failures in 5 runs, was itself undercounted: the audit that produced it searched for failure lines anchored to the start of a line, and the archived logs are indented, so 2 real failures read as none.
