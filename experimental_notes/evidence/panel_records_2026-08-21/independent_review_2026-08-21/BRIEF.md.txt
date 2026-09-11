@@ -1,0 +1,105 @@
+# INDEPENDENT REVIEW — read only. Change nothing.
+
+You are a fresh pair of eyes. Another Claude instance (referred to as CC1) has spent
+roughly 48 hours making repairs to this project. The founder wants to know, before
+building anything further, whether that work can be trusted.
+
+**YOU MUST NOT MODIFY ANY FILE.** No edits, no commits, no fixes. Report only. If you
+believe something must change, say what and why; do not do it.
+
+**USE YOUR TOOLS.** You have Bash, Read, Grep and Glob. Do not reason from this brief.
+Run the commands. Check the claims. CC1's error rate over this period is material and
+is stated below precisely so you do not defer to it.
+
+Repository: `/Users/georgejackson/Developer_Projects/Constraint_Engineering`
+
+## CC1's error record over this window, stated so you discount appropriately
+
+Six of fifteen commits over three days were CC1 correcting its own prior claims. In the
+last 48 hours specifically it reported, and then had to withdraw:
+
+* that 37.7% of model corroboration blocks "did not show their working" — most of that
+  tier had shown it and CC1's own reader could not parse markdown;
+* that 32 files existed only on a branch and would be lost — a path-prefix artefact;
+* then that 1 file was missing — the same artefact;
+* then that 7 files were missing — six were renames, found on main by content hash;
+* that a defect was "dormant with zero measured effect" — it had called the wrong
+  function; re-measured, two runs carried the defect;
+* that a piece of work was "replay-validatable at zero cost" — it is not;
+* that prose targets decide better than code targets under counterfactual repair —
+  the breakdown shows 18 SAME and 0 DIFFERENT, a one-directional result.
+
+Most were caught by a second instance or by re-checking. Assume more remain.
+
+## What to read
+
+**Primary — the project's own analysis, which CC1's context search MISSED until prompted:**
+- `experimental_notes/Dedup_Historical_Brief_Addendum_2026-08-18.md` — section A is ~500
+  lines on the Bugzilla state machine as a duplicate-handling design.
+- `experimental_notes/Dedup_Historical_Brief_2026-08-17.md`
+
+**CC1's recent work — treat as claims, not evidence:**
+- `git log --since=2026-08-19 -p` — every repair, with CC1's reasoning in the messages.
+- `experimental_notes/Panel_Enforcement_Prose_FULL_RECORD_2026-08-19.md`
+- `experimental_notes/Panel_Stage1_Audit_FULL_RECORD_2026-08-18.md`
+- `experimental_notes/PRE_REGISTRATION_exp46_rerun_2026-08-20.md` (draft, unfrozen)
+
+**The founder's external consultation:**
+- `/Users/georgejackson/Developer_Projects/Responses/Detecting Duplicate STEM Papers Efficiently 2.md`
+  — a Google Gemini transcript. The founder's own assessment is that it drifted into
+  impracticality at the end. CC1 tested several of its claims and reported the central
+  premise refuted. Check that testing.
+
+**The specification and intent:**
+- `bench/directives/universal/cdsfl_topology_formal.md` (T3 specifies merge semantics)
+- `bench/directives/universal/cdsfl_operational.md` (the lifecycle models are shown)
+- `docs/MATHEMATICAL_APPENDIX.md`
+- `resources/ONBOARDING.md`
+
+## The three questions
+
+**Q1. DOES CC1's RECENT WORK TALLY WITH THE SPECIFICATION AND THE ORIGINAL INTENT?**
+Go through the commits since 2026-08-19. For each substantive change, say whether it
+moves the implementation toward or away from what the directives and the formal topology
+specify. Name anything CC1 changed that the spec did not ask for, and anything the spec
+requires that CC1 left undone or made worse. Two changes to look at hardest, because
+both alter behaviour rather than accounting:
+  (a) the removal of every model-vote path to MERGED, which leaves NO route to a merged
+      result at all — the founder's ruling was that tools should REPLACE voting, not
+      that the outcome should become unreachable;
+  (b) the priority change in the feedback channel, which deliberately overrides an
+      invariant the project's own tests recorded as intended.
+
+**Q2. HOW WOULD YOU RESOLVE THE BUGZILLA ISSUES?**
+Section A of the addendum documents a state machine whose duplicate arm is, in
+implementation, a delete with a pointer attached: DUPLICATE is never written by any
+code (0 of 2030 archived entries); MERGED folds nothing into the target; the model's
+stated justification for a merge is destroyed at write time; and EXTEND — which the
+prompt explicitly offers as the alternative to duplicating, and which models used 183
+times — is parsed, stored, displayed and read by nothing.
+
+The founder's position is that a merged outcome should be ADDITIVE: something that
+contributes to the betterment of the whole, letting different models contribute
+independently to one solution, with a tool demonstrating the contribution is real.
+
+CC1's latest position is that EXTEND is already that mechanism and needs a reader
+rather than a new design. Verify or refute that, then give your own answer. Consider
+whether Bugzilla's relationship fields (See Also, Depends On) map onto anything CDSFL
+needs, or whether importing them is reinvention.
+
+**Q3. HOW ACCURATE IS CC1's ACCOUNT OF WHAT WAS AGREED?**
+CC1 has repeatedly summarised founder rulings back to the founder. Check those summaries
+against the record — the directives, the notes, the commit messages, the panel records.
+Where CC1 has stated a ruling, is that what the record says was agreed? Name any place
+CC1 has drifted, over-extended a ruling, or attributed to the founder something the
+record does not support.
+
+## How to answer
+
+Lead with a verdict on whether this work can be trusted, and say plainly if it cannot.
+Then the three questions. Cite file and line for every claim, and say which command you
+ran. Where you disagree with CC1, say so directly — the founder has asked for
+independent judgement, not confirmation. If you find nothing wrong in an area, say that
+plainly rather than manufacturing a finding.
+
+Do not pad. Every word is read, so make every word carry weight.

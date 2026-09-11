@@ -1,0 +1,104 @@
+# PERTURBATION AS A GENERAL INSTRUMENT. Design review, read only. Change nothing.
+
+Repository: `/Users/georgejackson/Developer_Projects/Constraint_Engineering`
+You have Bash/Read/Grep/Glob. Use them. Check the measurements; do not accept them.
+
+## The founder's proposal
+
+He has been turning over an idea first raised for the specialist-cell exams — testing
+whether a cell computes a real answer or games the exam — and asks whether it
+generalises:
+
+> "Couldn't we use this more widely, given the machinery we already have, as a means of
+> dupe/sameness/novelty etc. detection, both so that we can detect this, and be able to
+> say for sure when models truly are computing any given outcome, or when they might
+> simply be being 'performative' or are gaming the CDSFL schema as a whole? We ideally
+> might be able to use this as a means of detecting genuine cognition and novelty?"
+
+He points at an interview describing the same paradigm independently. Verbatim from the
+transcript:
+
+> "one of the big problems with the AI evaluations is that the systems can kind of cheat
+> them… they can memorize your data… one of the keys to my approach is something that's
+> called the perturbation paradigm in which we perturb, meaning we disrupt the data. So
+> for example, if I ask you a simple word problem and you learn a particular answer, but
+> then on the test I sneakily change two words in the question and it flips the correct
+> answer. And if you've memorized the questions then you're going to get it wrong. But
+> if you've learned the reasoning… you're going to get it right… it's a more rigorous
+> way of testing for actual thinking than almost any of the AI labs are doing right now.
+> Almost all of the evaluations, almost all of the benchmarks, they just test for how
+> did they do on the test? They don't test for what happens when you flip the question."
+
+## What already exists here, measured today
+
+**The discrimination control is BUILT AND HAS NEVER RUN.**
+`reference_runner_v2.py:2117-2165` implements exactly this paradigm for falsifiers: run
+the same falsifier against a CORRECTED copy of the target, in which the claim under test
+has been fixed. A sound falsifier must go quiet. If it still fires, it was never testing
+that claim.
+
+It is careful work. It refuses to synthesise the corrected copy from the model's proposed
+fix (a bad indent makes the falsifier crash, the crash reads as "still fires", and a
+genuine defect is silently un-confirmed — two reviews killed that route on 2026-08-04).
+It distinguishes "fires on both" from "crashed". It proves its own apparatus first with a
+tripwire probe, a determinism probe and a baseline check, each failing to a distinct
+INDETERMINATE outcome rather than a verdict.
+
+MEASURED 2026-08-21: `discrimination_control_ask` and `discrimination_control_blocks` are
+**unset in all 14 forward configs**, and **zero archived reports mention it**. It has
+never executed.
+
+A known defeat is recorded at `:2972`: the access-versus-dependence hole — a falsifier can
+satisfy a file-access check by opening the target and discarding the contents, and it
+**fails GREEN**, reporting full coverage while discriminating nothing.
+
+**The method currently relied on for sameness is counterfactual repair** — apply one
+finding's fix, re-run both falsifiers, require both directions to agree. Measured over
+133 archived pairs, 252 directional attempts:
+
+    strict bidirectional verdict          33 of 133   (24.8%)
+    no applicable fix existed to apply    29.4% of attempts
+    the fix failed to cure its OWN falsifier  17.5% of attempts
+    cost                                  0.287 s/pair, no metered charge
+
+So roughly 47% of attempts fail because the PROPOSED FIX is missing or ineffective —
+a dependency perturbation would not have.
+
+## The questions
+
+**Q1. DOES IT GENERALISE TO SAMENESS?** Perturb the target at finding A's location; does
+finding B's falsifier change behaviour? If both respond to the same perturbation they
+depend on the same thing. Is that a sound identity test? It needs no proposed fix, which
+is the measured failure mode of the incumbent method. Name what it would get WRONG —
+specifically, two genuinely distinct defects that a single perturbation would move
+together, since that is the exact objection three panellists raised against counterfactual
+repair ("the project has replaced a text-similarity problem with a patch-equivalence
+problem").
+
+**Q2. DOES IT DETECT GAMING, AND WHAT IS ITS OWN DEFEAT?** The founder's larger question is
+whether this distinguishes genuine computation from performance. Given the recorded
+access-versus-dependence hole, what is the analogous defeat for a generalised
+perturbation control, and can it be closed or only detected? Be concrete about what a
+model optimising against this test would do.
+
+**Q3. NOVELTY.** Can perturbation measure novelty rather than sameness — is a finding that
+responds to a perturbation nothing else responds to, by that fact, novel? Or is this a
+category error?
+
+**Q4. COST AND SCOPE.** Perturbing a target and re-running falsifiers costs local compute
+and no metered charge. At what scale does it stop being free? Should it run per-pair, per
+round, or only at convergence? Note it cannot run on a target the runner may not modify.
+
+**Q5. SHOULD THE EXISTING CONTROL BE SWITCHED ON FOR exp46's RE-RUN?** It has never
+executed. `_ask` and `_blocks` are separate flags. What is the correct setting for a run
+whose purpose is validating repairs, and what would you predict it reports?
+
+## How to answer
+
+Commit to a recommendation. The founder's standing objection: "a system that can only
+find more problems than it fixes is of limited value to anyone."
+
+State your strongest falsification of your own answer. If the idea is wrong, say so
+plainly — he has explicitly asked not to be told something is good because he proposed it.
+
+Do not pad. Every word is read, so make every word carry weight.

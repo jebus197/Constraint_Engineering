@@ -1,0 +1,112 @@
+# Judge 5 fixes against the SIMPLEST SUFFICIENT standard. Declare sound, or supply a better fix.
+
+You are in a disposable COPY of the repository. That is already proven; do not test
+it by deleting things — a previous seat's directory was destroyed that way and it
+cost 900 seconds of its own work. Read and run freely.
+
+## THE STANDARD YOU ARE JUDGING AGAINST — read this before anything else
+
+The founder was explicit that "simplest sufficient" is a FORMAL term here, not a
+casual one, and that you must understand it before being asked to apply it. From
+the project's own record:
+
+  * Default to the simplest sufficient solution.
+  * **Before building a mechanism, state what would go wrong if it did not exist,
+    and check whether some cheaper property already prevents that.**
+  * **Prefer extending machinery that exists and is already trusted over inventing
+    a new component.**
+  * When several attempts at a solution all fail, treat that as evidence the
+    problem is MIS-FRAMED, not licence to escalate to a heavier tool.
+  * The origin case: a fix needed a "splitter" to answer "is this a NEW defect?".
+    The real requirement was "is this UNRESOLVED?" — trivial, already answered by
+    the registry. The hard question never needed answering.
+
+So for each fix below, answer three things:
+  (a) Is it SOUND — does it do what it claims, verified by execution?
+  (b) Is it SIMPLEST SUFFICIENT — or does a cheaper existing property already
+      achieve it? Name that property if so.
+  (c) If either answer is no, SUPPLY THE FIX. A finding without a repair is half
+      an answer here. If a fix is sound and minimal, say so in one line and move on.
+      Do not manufacture faults.
+
+Run things. Assertions about source text are not evidence in this project.
+Budget 30 minutes. Two well-executed judgements beat a survey.
+
+---
+
+## FIX 1 — the simulated seats now run Opus, not Sonnet
+
+`bench/tools/sim_dispatch_shim.py` (`make_shim`, `install`),
+`bench/tools/sim_panel_agents.py`, `bench/tools/run_simulated_experiment.py`
+(`--model`, default `opus`).
+
+Sonnet was a default in 2 signatures and a bare literal in a third file, with no
+rationale anywhere. Rationale for the change: a simulated run rehearses what the
+paid frontier panel will do, so a stand-in materially weaker than the seats it
+stands in for biases the rehearsal toward under-finding.
+
+**Attack:** is there a reason Sonnet was right that nobody wrote down — rate
+limits, context, cost on the Max plan, wall-clock? A 6-seat Opus panel at 1800 s
+per seat is a real load. If Opus is right, is `opus` the correct model string for
+the CLI, and does it resolve? Check by execution.
+
+## FIX 2 — the harness now enables severity calibration and the latent tagger
+
+`bench/tools/run_simulated_experiment.py`, RunnerConfig 24 -> 26 keyword args.
+
+**Attack:** does enabling BOTH actually cause the demotion path to execute, or is
+there a third gate nobody has found? Trace it. And is defaulting them ON correct,
+or should a rehearsal mirror the paid runs' config exactly — what do the shipped
+`bench/exp*_configs/*.json` set?
+
+## FIX 3 — round-0 escalation root cause (THE ONE I MOST WANT BROKEN)
+
+`bench/reference_runner_v3.py`, `_apply_routing`. A finding with neither
+`falsifier_code` nor `sk_evaluated` is now DEFERRED rather than stamped
+`irreducible_escalation`.
+
+Measured over 83 archived escalations: 33 carry no falsifier code, Wilson
+[29.9%, 50.5%]; 49 carry no S_k evaluation, Wilson [48.3%, 69.0%].
+
+**Stated limit, which I want you to test:** replaying the archive, the predicate
+defers 19 of 83 (22.9%, Wilson [15.2%, 33.0%]) and **NO archived run falls under
+the alarm bound of 2**. So it is necessary and NOT proven sufficient.
+
+**Attack:**
+ - Is deferral the right response, or does a deferred finding now block forever?
+   Trace what happens to it on subsequent rounds. Is there a path where it is
+   never re-attempted?
+ - Is `falsifier_code or sk_evaluated` the right predicate? Is there a cheaper
+   existing property that already distinguishes "assessed" from "not assessed"?
+ - Since it is not sufficient, what IS the remaining cause? If you can find why
+   the alarm would still fire, that is worth more than judging the fix.
+
+## FIX 4 — the corrected S* threshold is promoted from shadow to live
+
+`bench/reference_runner_v3.py`, `check_sk_threshold_corrected`, called where
+`check_sk_threshold` was. The shipped verdict is still recorded as
+`shipped_verdict_now_shadow`.
+
+Measured: over 1100 grid points the corrected gate is LOOSER at 0, Wilson
+[0.000%, 0.348%], stricter at 215. At sk=0.30 it rejects at 0.504931 where the
+shipped gate passed at 0.0.
+
+**Attack:** the fallback. When `sk_break_even` returns None the function falls back
+to the shipped gate. Is that the right choice, or does it reintroduce the
+permissive bias exactly where the mathematics is degenerate? Enumerate when None
+happens. Also: does anything downstream read `s_star` expecting the shipped value?
+
+## FIX 5 — the second key store, and a register
+
+`bench/vault_keys.sh` (`register`, extended scan patterns),
+`~/.config/cdsfl/scoring.env`.
+
+**Attack:** the `describe` case statement is a hardcoded mapping from filename
+shape to purpose. What happens to a key whose name matches nothing? Is
+"UNCLASSIFIED -- describe it here before sealing" strong enough, or should the
+seal REFUSE to proceed with an unclassified key? Argue it.
+
+---
+
+Report per fix: what you ran, sound or not, simplest-sufficient or not, and THE
+FIX if either is no. Nothing else.

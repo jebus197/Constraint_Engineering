@@ -1,0 +1,13 @@
+diff --git a/scripts/latent_control_audit.py b/scripts/latent_control_audit.py
+index 0a15c62..b683b3c 100644
+--- a/scripts/latent_control_audit.py
++++ b/scripts/latent_control_audit.py
+@@ -122,7 +122,7 @@ def _key_first_committed(key: str) -> int | None:
+              "--", "bench/reference_runner_v3.py", "bench/reference_runner_v2.py"],
+             cwd=str(REPO), capture_output=True, text=True, timeout=120)
+         stamps = [int(x) for x in out.stdout.split() if x.isdigit()]
+-        return min(stamps) if stamps else None
++        return max(stamps) if stamps else None
+     except Exception:                                     # noqa: BLE001
+         return None
+ 

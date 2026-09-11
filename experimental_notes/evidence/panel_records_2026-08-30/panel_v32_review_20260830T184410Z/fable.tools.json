@@ -1,0 +1,295 @@
+{
+  "model": "fable",
+  "elapsed_s": 697.9,
+  "tool_calls": 72,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/tools/*.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -40\", \"description\": \"Run full bench test suite in background\", \"timeout\": 600000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/tests/test_sim_seam_covers_every_dispatch_2026-08-30.py\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/tests/*2026-08-30*\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/tests/*sim*\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"lookup_alias_any|record_codiscovery|fix_efficacy_decision|base_model_label|NOT_PROBED_NO_FALSIFIER\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def dispatch_to_model|def _dispatch_single_model|def resolve_fn|def _arb_dispatch\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def dispatch_to_model\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"head_limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/tools/run_simulated_experiment.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def (lookup_alias_any|lookup_alias|record_codiscovery|fix_efficacy_decision|base_model_label)\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"NOT_PROBED_NO_FALSIFIER|base_model_label\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"head_limit\": 30}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for n in lookup_alias_any fix_efficacy_decision NOT_PROBED_NO_FALSIFIER; do echo \\\"== $n ==\\\"; grep -rn \\\"$n\\\" bench --include='*.py' | head -5; done; echo; git log --oneline -8; git status --short | head\", \"description\": \"Locate R2/R3 symbols and show recent git history\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git branch -a; git stash list; git log --all --oneline -5; git show --stat HEAD | head -30\", \"description\": \"Check branches, stashes, and HEAD commit contents\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"offset\": 1370, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | grep -i sim45; grep -n \\\"proposed_fix.*falsifier_code\\\\|falsifier_code.*proposed_fix\\\" bench/reference_runner_v2.py | head\", \"description\": \"Check sim run artefacts and fix-efficacy gate condition\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"record_codiscovery\\\\(\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-B\": 14, \"-A\": 4}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/reference_runner_v2.py\", \"offset\": 2755, \"limit\": 50}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/note_vagueness_lint.py /nonexistent_note.md; echo \\\"exit=$?\\\"; grep -c \\\"skip\\\" bench/tests/test_operational_scripts.py 2>/dev/null; grep -n \\\"skip\\\" bench/tests/test_runner_argv_guard.py 2>/dev/null | head -5\", \"description\": \"Test lint exit code on missing path; check skip counts in R5 test files\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f48x7gq9/repo/bench/runner_core.py\", \"offset\": 1190, \"limit\": 90}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 140,160p bench/reference_runner_v2.py; echo ---; grep -n \\\"subprocess\\\\|claude -p\\\\|requests\\\\.\\\\|openai\\\\|httpx\\\" bench/reference_runner_v2.py | head -30\", \"description\": \"Show runner imports and any direct model-transport calls\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport ast\\nsrc = open('bench/reference_runner_v2.py').read()\\ntree = ast.parse(src)\\n# find enclosing function for each dispatch_to_model call\\ncalls = []\\nclass V(ast.NodeVisitor):\\n    def __init__(self): self.stack=[]\\n    def visit_FunctionDef(self, n):\\n        self.stack.append(n.name); self.generic_visit(n); self.stack.pop()\\n    visit_AsyncFunctionDef = vis"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6540,6600p bench/reference_runner_v2.py\", \"description\": \"Inspect subprocess call at line 6573 context\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"merge_arbitration\\\\|from run_exp17_immune\\\\|import merge\\\" bench/reference_runner_v2.py | head; grep -n \\\"def dispatch\\\\b\\\\|def dispatch(\\\" bench/runner_core.py; grep -rn \\\"dispatch_to_model\\\\|def dispatch\\\" bench/merge_arbitration.py | head\", \"description\": \"Check merge_arbitration wiring and runner_core dispatch definitions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 260,310p bench/merge_arbitration.py; grep -n \\\"dispatch_to_model\\\\|import \\\" bench/merge_arbitration.py | head -20\", \"description\": \"Check merge_arbitration dispatch callback default\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sk_result\\\" bench/reference_runner_v2.py | head -20; echo ---; grep -n \\\"def .*specialist\\\\|specialist_knowledge\\\\|sk_enabled\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find sk_result producer and sk_enabled gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8820,8860p bench/reference_runner_v2.py; echo ===; sed -n 10620,10680p bench/reference_runner_v2.py\", \"description\": \"Read S_k invocation gate and the run_experiment sk call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_memory_20260830T161215Z/ | head -30; ls bench/cdsfl_core_formal.md 2>&1\", \"description\": \"List sim run artefacts; check directive file exists\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nprint(\\\"top keys:\\\", sorted(r.keys())[:40])\\nentries = (r.get('registry') or {}).get('entries', {})\\nprint(\\\"n entries:\\\", len(entries))\\ne = next(iter(entries.values()))\\nprint(\\\"entry keys:\\\", sorted(e.keys()))\\nimport collections\\nprint(\\\"statuses:\\\", collection"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, collections\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nentries = (r.get('registry') or {}).get('entries', {})\\nsk = [v.get('sk_result') for v in entries.values()]\\nprint(\\\"sk_result None count:\\\", sum(1 for s in sk if s is None))\\nnon = [s for s in sk if s is not None]\\nprint(\\\"non-None sample:\\\", json.dum"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"dispatch_to_model(\\\" bench/runner_core.py; grep -n \\\"falsifier\\\" bench/runner_core.py | head -20\", \"description\": \"Check internal dispatch_to_model use and falsifier parsing in runner_core\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4400,4470p bench/reference_runner_v2.py\", \"description\": \"Read resolve_fn and its exception handling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"```falsifier\\\\|FALSIFIER\\\\|falsifier block\\\\|write a falsifier\\\\|emit.*falsifier\\\" bench/reference_runner_v2.py | head -25\", \"description\": \"Find where the runner instructs models to emit falsifier blocks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1054,1135p bench/runner_core.py\", \"description\": \"Read falsifier extraction regex and attachment logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'FALSIFIER' bench/reference_runner_v2.py | head -30\", \"description\": \"Find falsifier instruction text in runner prompts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 336,395p bench/reference_runner_v2.py; grep -n \\\"_RUNNABLE_FALSIFIER_S2\\\\|_falsifier_suffix\\\\|def _round_directive\\\\|cdsfl_suffix\\\\|directive_suffix\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Read the runnable-falsifier instruction and where it enters the prompt\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 395,440p bench/reference_runner_v2.py; grep -n \\\"_gate_falsifier_directive(\\\" bench/reference_runner_v2.py\", \"description\": \"Read _gate_falsifier_directive and its call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6635,6700p bench/reference_runner_v2.py\", \"description\": \"Read _dispatch_single_model directive assembly\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _compose_for_model\\\" bench/reference_runner_v2.py; sed -n \\\"$(grep -n 'def _compose_for_model' bench/reference_runner_v2.py | cut -d: -f1),+40p\\\" bench/reference_runner_v2.py\", \"description\": \"Read _compose_for_model label handling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 - <<'EOF'\\nimport sys, pathlib\\nsys.path.insert(0, '.')\\nsys.path.insert(0, '..')\\nimport reference_runner_v2 as R\\nfor label in (\\\"CC2\\\", \\\"CC2-SIM\\\", \\\"Gemini-SIM\\\"):\\n    try:\\n        c = R._compose_for_model(label, \\\"round_robin\\\" if \\\"round_robin\\\" in R.INTERACTION_PATTERN_PRESETS else list(R.INTERACTION_PATTERN_PRESETS)[0], \\\"software\\\")\\n        t = c.rende"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'..')\\nimport reference_runner_v2 as R\\nprint(\\\"patterns:\\\", list(R.INTERACTION_PATTERN_PRESETS))\\nop = R._OPERATIONAL_DIRECTIVE_TEXT or \\\"\\\"\\nprint(\\\"operational directive len:\\\", len(op))\\nprint(\\\"S2 prose in operational:\\\", bool(R._S2_PROSE_RE.search(op)))\\nprint(\\\"'FALSIFICATION: This section is m"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'..')\\nimport reference_runner_v2 as R\\nprint(\\\"patterns:\\\", list(R.INTERACTION_PATTERN_PRESETS))\\nop = R._OPERATIONAL_DIRECTIVE_TEXT or \\\"\\\"\\nprint(\\\"operational directive len:\\\", len(op))\\nprint(\\\"S2 prose regex matches op:\\\", bool(R._S2_PROSE_RE.search(op)))\\ntry:\\n    c = R._compose_for_model(\\\"CC2\\\", list(R."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, collections\\nr = json.load(open('logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nentries = (r.get('registry') or {}).get('entries', {})\\nprint(\\\"escalated:\\\", sum(1 for v in entries.values() if v.get('escalated')))\\nprint(\\\"falsifier_verdicts:\\\", collections.Counter(v.get('falsifier_verdict') for v in entries.values()))\\nprint(\\\"severiti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"helper_t\\\\|HelperT\\\\|Helper T\\\\|b_cell\\\\|BCell\\\\|B-Cell\\\\|B Cell\\\" bench/reference_runner_v2.py | head -20; grep -n \\\"secondary_route_usage\\\" bench/reference_runner_v2.py | head\", \"description\": \"Locate Helper T, B Cell, secondary routing code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"round.*< 6\\\\|min_round\\\\|VERIFICATION_MIN\\\\|verification_start\\\" reference_runner_v2.py | head; grep -n \\\"secondary_route_usage\\\" reference_runner_v2.py | head; grep -n \\\"helper_t\\\\|HelperT\\\\|b_cell\\\\|BCELL\\\\|BCell\\\" reference_runner_v2.py | head -15\", \"description\": \"Find verification round gate, secondary routing, Helper T / B Cell wiring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5800,5830p reference_runner_v2.py; sed -n 6745,6790p reference_runner_v2.py\", \"description\": \"Read secondary routing mechanism and trigger condition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"helper_t\\\\|Helper T\\\\|HELPER_T\\\" --include='*.py' . | grep -v logs | head; grep -rln \\\"b_cell\\\\|B_CELL\\\\|BCell\\\" --include='*.py' . | grep -v logs | head\", \"description\": \"Find Helper T and B Cell modules bench-wide\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"helper_t\\\\|HelperT\\\" run_exp17_immune.py immune_agents.py 2>/dev/null | head -8; grep -n \\\"shadow_cells\\\" reference_runner_v2.py | head -8; python3 - <<'EOF'\\nimport json\\nr = json.load(open('logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nfor rd in r.get('rounds') or []:\\n    print(\\\"round\\\", rd.get('round'), \\\"shadow_cells:\\\", str(rd.get('shadow_cells'))[:1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 7138,7200p reference_runner_v2.py\", \"description\": \"Read shadow cells (Helper T / B Cell) entry conditions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, collections\\nr = json.load(open('logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nentries = (r.get('registry') or {}).get('entries', {})\\nvs = collections.Counter()\\nfor v in entries.values():\\n    for w in (v.get('verdicts') or {}).values() if isinstance(v.get('verdicts'), dict) else []:\\n        vs[str(w)[:40]] += 1\\nprint(\\\"verdicts fi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"class TestAFalsifierThatCarriesItsOwnFence\\\" -A 60 tests/test_prose_acceptance_stem.py | head -90\", \"description\": \"Read the fence-carrying falsifier test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest tests/test_prose_acceptance_stem.py::TestAFalsifierThatCarriesItsOwnFence -q 2>&1 | tail -5\", \"description\": \"Run the fence-transport test class\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-f48x7gq9-repo/6cb1c760-1f1d-4981-87a2-6e47f10a56d7/tasks/brz7maysp.output 2>/dev/null || echo \\\"suite still running\\\"\", \"description\": \"Check background test suite progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -B5 \\\"test_memory_ledger_total_matches\\\\|test_the_committed_ledger_matches\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-f48x7gq9-repo/6cb1c760-1f1d-4981-87a2-6e47f10a56d7/tasks/brz7maysp.output | grep -A3 \\\"Error\\\\|assert\\\" | head -20; git log --oneline --all -- logs/sim45_memory_20260830T161215Z/ | cat\", \"description\": \"Inspect f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest tests/test_documentation_drift_guards_2026-08-25.py::test_memory_ledger_total_matches_the_directory tests/test_falsifier_cannot_read_the_key.py::test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive -q 2>&1 | grep -E \\\"AssertionError|assert |Error\\\" | head -8; git show --stat c62d7f3 -- logs/sim45_memory_20260830T161215Z/ | tail -5; git diff HEAD --stat | "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs | grep -i \\\"exp45\\\" | head; python3 - <<'EOF'\\nfrom scipy.stats import fisher_exact\\nimport mpmath as mp\\nmp.mp.dps = 30\\n\\ndef hyper_p_two_sided(a,b,c,d):\\n    # exact two-sided Fisher via summing hypergeometric probs <= observed table prob\\n    n1, n2, m = a+b, c+d, a+c\\n    N = a+b+c+d\\n    def pr(x):\\n        return (mp.binomial(n1, x) * mp.binomial(n2, m-x)) / mp.binomial"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/exp45_memory_statistics_live_20260727T225640Z/ | head; python3 - <<'EOF'\\nimport json, glob, collections\\nfs = glob.glob('logs/exp45_memory_statistics_live_20260727T225640Z/*report*.json')\\nprint(fs)\\nif fs:\\n    r = json.load(open(fs[0]))\\n    e = (r.get('registry') or {}).get('entries', {})\\n    print(\\\"n:\\\", len(e))\\n    print(\\\"falsifier_code:\\\", sum(1 for v in e.values() "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"decomposed_dispatch\\\\|should_decompose_v2\\\\|from burst\\\\|import burst\\\" reference_runner_v2.py | head; grep -n \\\"def should_decompose_v2\\\" -A 25 *.py | head -40\", \"description\": \"Check the decomposed-dispatch bypass path and its trigger\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6428,6445p reference_runner_v2.py; grep -n \\\"DECOMPOSE_HARD_FLOOR_CHARS\\\\s*=\\\" reference_runner_v2.py runner_core.py 2>/dev/null\", \"description\": \"Read _multiturn_fallback failure handling and hard floor constant\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_itc_restart\\\\|def _itc\\\\|itc.*dispatch\\\\|dispatch.*itc\\\" reference_runner_v2.py | head -10; grep -rn \\\"dispatch_to_model\\\\|decomposed_dispatch\\\\|def dispatch\\\" run_exp17_immune.py immune_agents.py domain_immune.py 2>/dev/null | grep -v \\\"#\\\" | head\", \"description\": \"Check ITC restart and immune modules for independent dispatch paths\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 160,176p reference_runner_v2.py; python3 - <<'EOF'\\nimport ast\\nsrc=open('run_exp17_immune.py').read(); tree=ast.parse(src)\\nclass V(ast.NodeVisitor):\\n    def __init__(self): self.stack=[]\\n    def visit_FunctionDef(self,n):\\n        self.stack.append(n.name); self.generic_visit(n); self.stack.pop()\\n    visit_AsyncFunctionDef=visit_FunctionDef\\n    def visit_Call(self,n):\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport ast\\nsrc=open('run_exp17_immune.py').read(); tree=ast.parse(src)\\nfn=[n for n in ast.walk(tree) if isinstance(n,ast.FunctionDef) and n.name=='run_layer1_preflight'][0]\\ncalls={getattr(c.func,'id',getattr(c.func,'attr',None)) for c in ast.walk(fn) if isinstance(c,ast.Call)}\\nprint(sorted(x for x in calls if x))\\nEOF\", \"description\": \"Check run_layer1_preflight"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"decomposed\\\" logs/exp45_memory_statistics_live_20260727T225640Z/ 2>/dev/null | head -3; python3 - <<'EOF'\\nimport json, glob\\nn_dec = 0; n_tot = 0\\nfor f in glob.glob('logs/exp45_memory_statistics_live_20260727T225640Z/r*_*.json') + glob.glob('logs/exp45_memory_statistics_live_20260727T225640Z/round*_*.json'):\\n    try: d = json.load(open(f))\\n    except Exception: continue"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest tests/test_operational_scripts.py tests/test_runner_argv_guard.py -q -rs 2>&1 | tail -12\", \"description\": \"Show skip reasons in the two R5 test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"discrimination\\\" reference_runner_v2.py | head -12; grep -n \\\"def .*specialist\\\\|SPECIALIST\\\\|specialist\\\" reference_runner_v2.py | head -12\", \"description\": \"Locate discrimination control and B-Cell specialist gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"run_immune_pipeline\\\\|immune_result =\\\" reference_runner_v2.py | head; grep -n \\\"def run_immune_pipeline\\\" -A 15 immune_agents.py | sed -n 1,18p\", \"description\": \"Check immune pipeline invocation and signature\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nr = json.load(open('logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\ndup = 0; cross = 0\\nfor rd in r.get('rounds') or []:\\n    for f in rd.get('findings') or []:\\n        d = f.get('duplicate_of')\\n        if d:\\n            dup += 1\\n            # cross-model if the duplicate_of id doesn't carry this finding's model prefix\\n            i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\ns = json.load(open('logs/sim45_memory_20260830T161215Z/runner_state.json'))\\nprint(\\\"raw_counts:\\\", s.get('raw_counts'))\\nprint(\\\"novelty_counts:\\\", s.get('novelty_counts'))\\nr = json.load(open('logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nprint(\\\"rho_raw_counts:\\\", r.get('rho_raw_counts'))\\nEOF\", \"description\": \"Compare raw vs novel "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"date -Iseconds\", \"description\": \"Capture timestamp for the review report\"}"
+    }
+  ]
+}

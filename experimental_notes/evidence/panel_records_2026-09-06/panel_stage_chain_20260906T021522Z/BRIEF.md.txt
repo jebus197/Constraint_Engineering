@@ -1,0 +1,76 @@
+# The appendix says all 5 stages nest. One link does not. Is that right, and what should it say?
+
+## You are asked for a SOLUTION, not only a verdict
+
+The founder's standing instruction: propose the fix, do not merely find the fault.
+Use your shell — sympy, z3, mpmath, wolframscript. The named `sympy_verify` tools are NOT on
+your route; say so and use the shell. **Answer as yourself.** There are no assigned roles and
+both seats get the same questions. Disagreement is preserved as information, never smoothed.
+
+## The claim under test
+
+`docs/MATHEMATICAL_APPENDIX.md:165` states, as canon:
+
+> "The mathematical model evolved through five stages. **Each is a strict generalisation of the
+> previous** — the earlier model is a special case of the later one under simplifying assumptions."
+
+The 6 stages: (1) `C(n) = 1-(1-p)^n`; (2) `F_n = Σ w_k[1-Π(1-d_i p_ik)]`; (3)
+`R_n = Σ w_k (π_k m_k)/((1-π_k)+π_k m_k)` with `m_k = Π(1-q_ik)`; (4)
+`R_k(i) = R_k(i-1)(1-q)/(1-q R_k(i-1))`, `R_k(0)=π_k`; (5) three-phase with η, σ, ν;
+(6) `η = η_int(1 - c_ext(1-ν_k))`.
+
+## What CC1 measured (reproduce or refute it — `scripts/verify_five_stage_chain.py`)
+
+**4 of the 5 links hold.** 1→2 ✓ (F_n at d=1,K=1,uniform p IS C(n)). 3→4 ✓ and it is an
+*identity*: the recursion's closed form `1/(1+((1-π)/π)/(1-q)^n)` equals the batch posterior
+exactly, because one step multiplies the ODDS `(1-R)/R` by exactly `1/(1-q)`. 4→5 ✓ (three-phase
+at η=1, σ=1, ν=0 IS Stage 4). 5→6 ✓ (at c_ext=0).
+
+**Link 2→3 is not a generalisation.** F_n outputs COVERAGE; R_n outputs RESIDUAL RISK. Solving
+`π m/((1-π)+π m) = 1-m` for π gives `π = (1-m)/(1-m+m²)`, which DEPENDS ON m — so no constant
+prior makes R_n emit F_n's number, and R_n cannot output the thing it supposedly generalises.
+SymPy and Wolfram agree.
+
+**But the two are inter-derivable.** Writing risk in terms of coverage gives a Möbius transform
+with determinant `π(π-1)`, non-zero for π ∈ (0,1), inverse `C = (π-R)/(π-πR)`, round-trip
+residual exactly 0. At π=1/2 it is simply `R = (1-C)/(2-C)`. So the collapsed equation is C(n) in
+risk coordinates — the SAME information, a different coordinate system, not a different fact.
+
+**The collapse itself is CORRECT.** Stage 4 at π=0.5, d=1, q=p equals `(1-p)^n/(1+(1-p)^n)`
+exactly (SymPy, mpmath 40 dp, Wolfram).
+
+**Reduction is many-to-one.** F_n, D(n) and G_n are structurally distinct and all reduce to C(n),
+so "special → general" is not a derivation: from C(n) you cannot recover which parent produced it.
+
+## The questions
+
+**Q1.** Is the 2→3 analysis right? Attack it. Is there a reading under which R_n IS a strict
+generalisation of F_n — e.g. treating coverage as a degenerate prior, or a limit π→1 or π→0 — that
+CC1 missed? A limit that only works at a boundary point is not a generalisation; say so if so.
+
+**Q2.** What should `:165` say instead? It must stay short and true. Candidate: distinguish
+*nesting* (2 models, same output, one a parameter restriction of the other) from *recoordination*
+(2 models, different outputs, invertibly related) from *identity* (3→4). Propose exact wording.
+
+**Q3.** Does anything DOWNSTREAM depend on the false blanket claim? If any code, test or document
+relies on "R_n generalises F_n" the error is load-bearing rather than cosmetic. Name the artefacts.
+
+**Q4.** The founder's question in his own words: *"how can it be the case that we arrived at our
+final collapsed equation, if every more complex form before it could not be collapsed/reduced to
+this, vice versa? ... Wouldn't this imply that the collapsed version of our maths model itself is
+wrong?"* Answer it directly, in plain language, and say explicitly whether the collapsed model is
+sound. If you think CC1's reassurance is too comfortable, say that.
+
+**Q5.** What executable check would refute your own answer?
+
+## Context so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in STEM
+artefacts. Reduction is not decoration here — the founder calls it "the oil that keeps the engine
+turning", because the project's claim is that a richer review process degrades gracefully to a
+simpler one. A separate finding last night: `PAPER.md` asserted "every simpler model in this paper
+is a special case of G_n", and R_k(i) is not (pole at R=1/q, novelty floor ν, against a degree-3
+polynomial kernel). That correction is committed. This brief asks whether the APPENDIX carries the
+same over-broad shape one level up, and what the honest replacement is. The mathematical model has
+survived every attack in the project's life; the failures have always been mechanical or in the
+prose ABOUT the mathematics. Do not assume that pattern holds — test it.

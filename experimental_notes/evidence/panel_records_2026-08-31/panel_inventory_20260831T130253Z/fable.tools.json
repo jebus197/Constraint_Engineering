@@ -1,0 +1,343 @@
+{
+  "model": "fable",
+  "elapsed_s": 907.6,
+  "tool_calls": 84,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo && git -C /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo log --oneline -8\", \"description\": \"List repo root and recent commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -20\", \"description\": \"Run full bench test suite\", \"timeout\": 600000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"NOT_PROBED_NO_FALSIFIER\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"mechanical_fault|hil_escalated\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/macrophage_cell.py\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"NOT_PROBED_NO_FALSIFIER|fix_efficacy_decision|def .*fix_efficacy\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/fix_efficacy.py\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"fix_efficacy|NOT_PROBED_NO_FALSIFIER\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 2580, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/fix_efficacy.py\", \"offset\": 60, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 2900, \"limit\": 110}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/fix_efficacy.py\", \"offset\": 300, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/fix_efficacy.py\", \"offset\": 230, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 300, \"limit\": 70}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"sweep|post_convergence|post-convergence\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"-i\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 4900, \"limit\": 220}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nst = json.load(open(\\\"bench/logs/sim45_memory_20260830T235237Z/runner_state.json\\\"))\\nentries = st[\\\"registry\\\"][\\\"entries\\\"] if \\\"registry\\\" in st else st.get(\\\"entries\\\")\\nif entries is None:\\n    print(\\\"keys:\\\", list(st.keys())[:20]); raise SystemExit\\nprint(\\\"n entries:\\\", len(entries))\\nnp_nf, np_nf_with_fal, closed_flags = [], [], []\\nfor cid, e "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nst = json.load(open(\\\"bench/logs/sim45_memory_20260830T235237Z/runner_state.json\\\"))\\nentries = st[\\\"registry\\\"][\\\"entries\\\"] if \\\"registry\\\" in st else st[\\\"entries\\\"]\\nconfirmed = sorted(cid for cid,e in entries.items() if e[\\\"status\\\"]==\\\"CONFIRMED\\\")\\nswept = sorted(cid for cid,e in entries.items() if e.get(\\\"resolved_by_sweep\\\"))\\nprint(\\\"CONFIRMED"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_settle_confirmed_findings\\\\(|_post_convergence_sweep\\\\(|_update_finding_statuses\\\\(\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 11830, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 9370, \"limit\": 60}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"mechanical_fault\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 4}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 4030, \"limit\": 130}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nst = json.load(open(\\\"bench/logs/sim45_memory_20260830T235237Z/runner_state.json\\\"))\\nentries = st[\\\"registry\\\"][\\\"entries\\\"] if \\\"registry\\\" in st else st[\\\"entries\\\"]\\nfor cid in (\\\"C0013\\\",\\\"C0015\\\"):\\n    e = entries[cid]\\n    print(\\\"=\\\"*60)\\n    print(cid, \\\"status:\\\", e[\\\"status\\\"], \\\"verified:\\\", e.get(\\\"verified\\\"),\\n          \\\"last_status_cha"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"mechanical_fault\\\\|hil_escalated\\\" bench/reference_runner_v2.py bench/*.py | grep -v \\\"^\\\\S*:.*#\\\" | grep -E \\\"pop|= False|del \\\" ; echo \\\"---all set/read sites---\\\"; grep -n \\\"hil_escalated\\\" bench/reference_runner_v2.py | head -30\", \"description\": \"Find any clearing path for mechanical_fault or hil_escalated flags\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 4720, \"limit\": 70}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_apply_falsifier_gate|_disc_check_entry|run_discrimination_control|_routing_ladder|def _route_criticals|_route_criticals\\\\(\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _\\\" bench/reference_runner_v2.py | awk -F: '$1>3900 && $1<4800' ; echo ---; grep -n \\\"_disc_gate_entry\\\\|discrimination\\\" bench/reference_runner_v2.py | awk -F: '$1>10000' | head; echo ---; grep -n \\\"falsifier_gate\\\\|routing_pass\\\\|strong_writer\\\\|def .*routing\\\" bench/reference_runner_v2.py | awk -F: '$1>10300 && $1<11000' | head -20\", \"description\": \"Locate gate, discr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_apply_discrimination_control\\\\|_apply_routing\\\\|_update_finding_statuses\\\\|falsifier gate\\\\|_run_falsifier_gate\\\\|def _falsifier_gate\\\\|gate_pass\\\" bench/reference_runner_v2.py | awk -F: '$1>10200 && $1<11200'\", \"description\": \"Find call sites in main round loop\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 10600, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"hil_queue\\\\|hil_static\\\\|HIL queue\\\\|hil_items\\\\|escalated_findings\\\" bench/reference_runner_v2.py | head -20; echo ---; python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\ndef find(k,o,path=''):\\n    if isinstance(o,dict):\\n        for kk,v in o.items():\\n            if 'hil' in kk.lower() or 'escalat' in kk."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"hil_flags\\\" bench/reference_runner_v2.py | head; echo ---; grep -n -A 20 \\\"def.*hil_flags\\\\|hil_flags = \\\\|hil_flags\\\\.append\\\" bench/reference_runner_v2.py | head -50\", \"description\": \"Find hil_flags population logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nprint([k for k in r.keys()])\\n\\\" ; grep -n \\\"irreducible_q\\\\|static HIL queue\\\\|hil_static_queue\\\" bench/reference_runner_v2.py | head\", \"description\": \"List report top-level keys and static HIL queue code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '265,285p' .claude/CLAUDE.md; echo ===; grep -rn \\\"2026-08-08\\\" .claude/CLAUDE.md docs/ experimental_notes/ scripts/ bench/*.py 2>/dev/null | grep -i \\\"sim\\\\|suffix\\\\|label\\\" | head -10\", \"description\": \"Check project CLAUDE.md:275 and the 2026-08-08 SIM-suffix ruling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"\\\\-SIM\\\\b\\\" .claude/CLAUDE.md | head -5; grep -rln \\\"2026-08-08\\\" experimental_notes/ docs/ resources/ 2>/dev/null | head; echo \\\"---sim dispatch---\\\"; sed -n '200,260p' bench/run_simulated_experiment.py\", \"description\": \"Find 2026-08-08 ruling and how sim panellists are spawned\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name \\\"run_simulated_experiment.py\\\" -o -name \\\"sim_dispatch_shim.py\\\" | grep -v logs; echo ---; grep -rn \\\"SIM suffix\\\\|'-SIM'\\\\|\\\\\\\"-SIM\\\\\\\"\\\\|Codex-SIM\\\" resources/RECOVERY.md resources/ONBOARDING.md docs/REPRODUCING.md 2>/dev/null | head -8\", \"description\": \"Locate sim scripts and SIM-suffix ruling references\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/tools/run_simulated_experiment.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/macrophage_cell.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nst = json.load(open(\\\"bench/logs/sim45_memory_20260830T235237Z/runner_state.json\\\"))\\nentries = st[\\\"registry\\\"][\\\"entries\\\"] if \\\"registry\\\" in st else st[\\\"entries\\\"]\\nfor cid,e in entries.items():\\n    if e[\\\"status\\\"]==\\\"REFUTED\\\":\\n        print(cid, \\\"|\\\", (e.get(\\\"description\\\") or e.get(\\\"title\\\") or \\\"\\\")[:160].replace(\\\"\\\\n\\\",\\\" \\\"))\\n        "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --help 2>&1 | grep -iA2 \\\"setting\\\\|memory\\\\|config\\\\|claude-md\\\\|CLAUDE\\\" | head -40\", \"description\": \"List claude CLI flags relating to settings and memory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --help 2>&1 | grep -iB1 -A3 \\\"setting-sources\\\\|--add-dir\\\\|disallowed\\\\|no-user\\\" | head -30; echo ===; claude --help 2>&1 | grep -i \\\"bare\\\" \", \"description\": \"Check for setting-sources flag and bare mode details\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 120 claude -p \\\"Answer in one line each: (1) Do your loaded instructions contain a standing directive about labelling simulated agents (yes/no)? (2) Do they contain a directive about a 23:00-05:30 sleep window (yes/no)?\\\" --model haiku --output-format text --no-session-persistence --allowedTools \\\"\\\" 2>&1 | tail -5\", \"description\": \"Baseline: does a claude -p subagent inherit "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude -p \\\"Answer in one line each: (1) Do your loaded instructions contain a standing directive about labelling simulated agents (yes/no)? (2) Do they contain a directive about a 23:00-05:30 sleep window (yes/no)?\\\" --model haiku --output-format text --no-session-persistence --allowedTools \\\"\\\" 2>&1 | tail -5\", \"description\": \"Baseline: does a claude -p subagent inherit CLAUDE.md di"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude -p \\\"Answer in one line each: (1) Do your loaded instructions contain a standing directive about labelling simulated agents (yes/no)? (2) Do they contain a directive about a 23:00-05:30 sleep window (yes/no)?\\\" --model haiku --output-format text --no-session-persistence --allowedTools \\\"\\\" --setting-sources \\\"\\\" 2>&1 | tail -4\", \"description\": \"Test whether --setting-sources ''"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"MacrophageCell|_run_shadow_cells|macrophage\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"-i\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 7530, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_memory_20260830T235237Z/ | head -20; echo ---; python3 - <<'EOF'\\nimport json, glob\\nfor f in sorted(glob.glob(\\\"bench/logs/sim45_memory_20260830T235237Z/macrophage_shadow_r*.json\\\")):\\n    d = json.load(open(f))\\n    obs = d.get(\\\"observations\\\") or d\\n    print(f.split(\\\"/\\\")[-1])\\n    if isinstance(obs, dict): obs = obs.get(\\\"observations\\\", [])\\n    for o in ob"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd = json.load(open('bench/logs/sim45_memory_20260830T235237Z/macrophage_shadow_r00.json'))\\nprint(json.dumps(d, indent=1)[:1200])\\n\\\"\", \"description\": \"Inspect macrophage shadow log structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport numpy as np\\nfrom scipy import stats as sps\\nimport statsmodels.stats.proportion as smp\\n\\n# Reconstructed from the artefact (bench/logs/sim45_memory_20260830T235237Z/macrophage_shadow_r0*.json)\\nrounds = [\\n    {\\\"llm_classifier\\\":207.2341, \\\"parallel_verification\\\":89.1392, \\\"fix_evaluation\\\":13.5654, \\\"_median_all\\\":0.0022},\\n    {\\\"llm_classifier\\\":130.43"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --since=\\\"2026-08-29\\\" --until=\\\"2026-08-31 23:59\\\" --oneline --date=format:\\\"%m-%d %H:%M\\\" --pretty=\\\"%h %ad %s\\\" | head -30\", \"description\": \"List commits around the v3.1 and overnight runs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-z41z8k5l-repo/2a21885b-9b7b-4f84-920b-149e2b7b11f4/tasks/b07pwydh8.output\", \"description\": \"Read test suite result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff --stat a775a32..HEAD -- bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py bench/falsifier_verify.py bench/routing.py\", \"description\": \"Diff stat of real-run files since v3.1 converged run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep \\\"^FAILED\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-z41z8k5l-repo/2a21885b-9b7b-4f84-920b-149e2b7b11f4/tasks/b07pwydh8.output; grep -B2 \\\"SKIPPED\\\\|skipped\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-z41z8k5l-repo/2a21885b-9b7b-4f84-920b-149e2b7b11f4/tasks/b07pwydh8.output | he"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_sim_naming_and_integrity_directive.py::TestLiveArtefacts::test_no_bare_vendor_name_in_any_simulated_artefact bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts::test_the_committed_ledger_matches_bench_logs -q 2>&1 | grep -A 12 \\\"AssertionError\\\\|assert\\\" | head -50\", \"description\": \"Show failure detail for sim-naming an"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -1 -- bench/logs/immune_pipeline.log; git status --porcelain | head; echo ---; python3 -m pytest \\\"bench/tests/test_corrected_copy_wiring.py::TestTheArchiveIsUntouched::test_no_archived_reply_carries_the_label\\\" \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs::test_zero_archived_findings_would_newly_fail_to_close\\\" -q 2>&1 | grep -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -m3 -n \\\"ChatGPT_F005\\\\|Codex_F007\\\" bench/logs/immune_pipeline.log | head; echo ---; grep -rn \\\"immune_pipeline.log\\\" bench/*.py | head -5; echo ---; grep -rn \\\"def.*finding_id\\\\|_F{.*:03d}\\\\|_F%03d\\\\|f\\\\\\\"{.*}_F\\\\|split('_')\\\\|split(\\\\\\\"_\\\\\\\")\\\" bench/experiment_11_orchestrator.py | head -10\", \"description\": \"Trace bare vendor labels in immune_pipeline.log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"SIM\\\" bench/logs/immune_pipeline.log; grep -m2 \\\"2026-08-3\\\" bench/logs/immune_pipeline.log; awk '{print substr($1,1,10)}' bench/logs/immune_pipeline.log | sort -u | head; git log --oneline --all --follow --diff-filter=A -- bench/logs/immune_pipeline.log | tail -2\", \"description\": \"Check date mix and SIM entries in immune_pipeline.log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32..HEAD -- bench/runner_core.py | head -150\", \"description\": \"Diff runner_core.py since v3.1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32..HEAD -- bench/runner_core.py | sed -n '150,320p'\", \"description\": \"Rest of runner_core diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"enable_tools\\\" bench/reference_runner_v2.py bench/runner_core.py | grep -v \\\"^\\\\s*#\\\" | head -30\", \"description\": \"Map enable_tools threading across call sites\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 6880, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_single_model(\\\" bench/reference_runner_v2.py | head; echo ---; grep -n -B3 -A6 \\\"_dispatch_single_model(\\\\s*$\\\\|_dispatch_single_model(mc\\\" bench/reference_runner_v2.py | sed -n '1,60p'\", \"description\": \"Find callers of _dispatch_single_model and what they pass for enable_tools\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_single_model\\\" bench/reference_runner_v2.py; echo ===; git diff a775a32..HEAD -- bench/reference_runner_v2.py | grep -B5 -A10 \\\"enable_tools\\\" | head -80\", \"description\": \"All references to _dispatch_single_model and enable_tools diff hunks\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 7125, \"limit\": 30}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -A12 \\\"def _gate_falsifier_directive\\\" bench/reference_runner_v2.py | head -20; echo ===; grep -n -A8 \\\"def apply_falsifier_verdicts\\\" bench/reference_runner_v2.py | head -14\", \"description\": \"Check gate directive rewrite and gate execution gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def apply_falsifier_verdicts\\\" bench/reference_runner_v2.py; grep -n -A6 \\\"def apply_falsifier_verdicts\\\" bench/reference_runner_v2.py | grep -i \\\"gate_enabled\\\\|return\\\" | head; grep -n \\\"falsifier_gate_enabled\\\" bench/reference_runner_v2.py | head -12\", \"description\": \"Check whether gate execution still rides on falsifier_gate_enabled\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"description\\\\[:\\\\|desc\\\\[:\\\\|description\\\\\\\"\\\\]\\\\[:\\\" bench/reference_runner_v2.py | head -15; echo ===; sed -n '1565,1580p' bench/reference_runner_v2.py\", \"description\": \"Check prompt-side description truncation and registration cap\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11358,11370p' bench/reference_runner_v2.py; echo ===; grep -n \\\"e\\\\[\\\\\\\"description\\\\\\\"\\\\]\\\\|entry\\\\[\\\\\\\"description\\\\\\\"\\\\]\\\\|entry.get(\\\\\\\"description\\\\\\\")\\\" bench/reference_runner_v2.py | head -12\", \"description\": \"Context for the 500-char cap and prompt-side description reads\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/reference_runner_v2.py\", \"offset\": 4482, \"limit\": 95}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, \\\"bench\\\"); sys.path.insert(0, \\\".\\\")\\nfrom reference_runner_v2 import _extract_routing_falsifier as X\\n\\n# 1. self-fenced falsifier that PRINTS a fenced block (inner ``` line alone)\\nr1 = '''Here is my falsifier:\\n```python\\ndoc = open(\\\"t.md\\\").read()\\nsnippet = \\\"\\\"\\\"\\n```\\ninner\\n```\\n\\\"\\\"\\\"\\nassert snippet not in doc, \\\"FALSIFIED\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"function_calling\\\\|functionDeclarations\\\\|function_declarations\\\\|tools.*google\\\\|google.*tool\\\" bench/runner_core.py | head; grep -n \\\"def dispatch\\\\b\\\\|api == \\\\|_google\\\\|gemini\\\" bench/runner_core.py | head -20\", \"description\": \"Locate google-route tool loop\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"function_call\\\\|tool_loop\\\\|execute_python\\\" bench/*.py | head; echo ---; grep -rn \\\"google\\\" bench/live_dispatch_policy.py bench/runner_core.py 2>/dev/null | head -8\", \"description\": \"Find google-route dispatch and tool loop implementation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline a775a32..HEAD -- bench/decomposed_dispatch.py bench/launcher_core.py; echo ---; git diff a775a32..HEAD --stat -- bench/decomposed_dispatch.py bench/launcher_core.py; echo ---; grep -n \\\"google\\\\|gemini\\\" bench/decomposed_dispatch.py | head -12\", \"description\": \"Check whether Gemini tooling change is in decomposed_dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 11ad4a9 | head -25; echo ===; git show 8b73653 --stat | head -20\", \"description\": \"File lists of the Gemini-tooling commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 11ad4a9 --stat | tail -15; git show 8b73653 --stat | tail -12\", \"description\": \"File stats for both ruling commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32..HEAD -- bench/experiment_11_orchestrator.py | head -200\", \"description\": \"Diff of experiment_11_orchestrator since v3.1\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z41z8k5l/repo/bench/tools/gemini_tool_switch_test.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1093,1120p' bench/experiment_11_orchestrator.py; echo ===; sed -n '1300,1345p' bench/runner_core.py\", \"description\": \"Check Gemini client timeout config and dispatch watchdog\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1300,1360p' bench/runner_core.py\", \"description\": \"Read dispatch_to_model watchdog\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32..HEAD -- bench/falsifier_verify.py bench/routing.py | head -120; echo ===; grep -n \\\"FIX_EFFICACY_PER_ROUND_LIMIT\\\" bench/reference_runner_v2.py | head -3\", \"description\": \"Diffs of falsifier_verify and routing; probe cap value\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"FIX_EFFICACY_PER_ROUND_LIMIT\\\\s*=\\\" bench/reference_runner_v2.py; grep -rn \\\"CDSFL_CANONICAL_REPO\\\" scripts/ bench/tools/ 2>/dev/null | head -4\", \"description\": \"Probe cap value and canonical-repo env setter\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"DISC_OK\\\\|DISC_FAILED\\\\|DISC_ABSENT\\\\|DISC_ERROR\\\\|DISC_INDETERMINATE\\\\|DISCRIMINATES\\\" bench/reference_runner_v2.py | head -12\", \"description\": \"Discrimination outcome constants\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -iB1 \\\"skipped\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd_s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-z41z8k5l-repo/2a21885b-9b7b-4f84-920b-149e2b7b11f4/tasks/b07pwydh8.output 2>/dev/null | head; python3 -m pytest bench/tests -q -rs --collect-only 2>/dev/null | head -2; python3 -m pytest bench/tests -q -rs 2>/dev/null -k \\\"nothing\\\" | grep -i skip | head\", \"description\": "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"pytest.skip\\\\|skipif\\\" bench/tests/*.py | grep -iv \\\"def \\\\|#\\\" | awk -F: '{print $1}' | sort | uniq -c | sort -rn | head -6; echo ---; python3 -m pytest bench/tests/test_live_dispatch_policy.py bench/tests/test_wolfram_notes.py -q 2>/dev/null | tail -2\", \"description\": \"Probable skip sources\", \"timeout\": 120000}"
+    }
+  ]
+}

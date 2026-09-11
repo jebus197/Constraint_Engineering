@@ -1,0 +1,89 @@
+# Two proposed fixes to finding and verdict extraction — verify or refute
+
+You are reviewing two UNCOMMITTED changes in your working copy. They are in
+`git diff` (also saved as `_proposed.patch`). **Do not assume they are correct.**
+The founder's instruction is explicit: fixes are to be *verified or refuted* by
+this panel before they are adopted, and anything adopted must **enhance the
+effectiveness of the CDSFL schema rather than detract from it**.
+
+## Why this matters more than a parser bug
+
+An overnight simulated rehearsal of Experiment 45 converged at round 3 on the
+critical-quiescence gate with **zero CRITICAL findings in any round**
+(history `[0,0,0,0]`, 8 findings total). The gate flagged itself, verbatim:
+
+> VACUOUS CURVE ... the critical decay curve does not exist and
+> `gamma_critical=0.000` is undefined rather than low ... **REVIEW THIS RUN: a
+> clean target and a broken severity classifier look alike from here.**
+
+A convergence that happens because nothing was ever classified critical is not a
+result. The deliverable is an *honest* convergence, so the question behind both
+fixes is: **is the panel's work reaching the pipeline at all?**
+
+## Fix 1 — verdicts stated inside a field label (`reference_runner_v2.py`, `_VERDICT_RE`)
+
+Models write the verdict as the DESCRIPTION of a marker-format finding:
+
+```
+FINDING_ID: F001
+SEVERITY: 1.0
+DESCRIPTION: CONFIRM C0125
+FIND: EvidenceStore.verify_bundle() verifies the inclusion proof but never
+      checks the record matches the chain_hash bound to that proof.
+FOLLOW: a swapped payload verifies true.
+```
+
+`_VERDICT_RE` anchors at line start (tolerating bullets, numbering, bold,
+blockquotes) so the keyword after `DESCRIPTION: ` is **missed**. Separately,
+`parse_findings` DISCARDS the whole block because its description is a verdict
+("P3 fix (Exp 38)", `runner_core.py`). Both paths drop the same content, so the
+model's contribution disappears entirely.
+
+The change adds one optional alternative: `(?:[A-Z][A-Z_ ]{2,20}:[ \t]*)?`.
+
+**Measured across every real archived reply (2,414):** verdicts found rise from
+**6,070 to 6,804**, recovering **734 — 10.8% of all verdicts ever issued**,
+Wilson [10.07%, 11.55%]. By model: Gemini 368, Codex 177, ChatGPT 154,
+DeepSeek 29, CC2 6. Not one model's habit.
+
+**Questions for you.** Is the alternative too permissive — what real text would
+it wrongly promote to a verdict? Is recovering a verdict WITHOUT its FIND/FOLLOW
+evidence the right outcome, or should the block instead become a finding that
+carries the evidence? Note that simply un-skipping it in `parse_findings`
+produces `description='CONFIRM C0125'` and a `target_file` corrupted from patch
+code — I checked, and that is why I did not do it.
+
+## Fix 2 — findings written as markdown headings (`runner_core.py`, new arm 4b)
+
+Four of six agents in the rehearsal wrote `### F001 — <title>` with detail in
+prose beneath. Replies of 23,427 / 14,248 / 33,473 / 17,448 characters parsed to
+**zero findings**. One carried 19 F-ids, 3 severity fields and 14 code fences.
+
+They also got no fallback: two open `## Review:` (the exp43 C0040 heading guard)
+and two cite canonical `C####` ids (the registry-prose guard). Both guards are
+correct about the case they were built for.
+
+The new arm runs **only when the arms above found nothing**, skips a heading
+whose title is a verdict, and reads severity from the block body.
+
+**Measured.** Rehearsal round 0: **4 findings → 17**, all six agents now
+contributing. Real archive: exactly **1 of 2,401** replies uses this shape
+(0.04%, Wilson [0.01%, 0.24%]), so this is about rehearsal fidelity, not real
+yield. The exp43 C0040 reply still parses to **0** findings (it carries zero
+markdown F-headers).
+
+**Questions for you.** Does arm 4b weaken the guards that exist to stop a round
+summary registering as a finding? Severity defaults to 0.5 when the body states
+none — is that safe, given the gate keys on CRITICAL findings and a wrong
+default could manufacture or suppress criticals? Is `flaw_class=1` defensible?
+
+## What to do
+
+Work in your copy. Run the suite (`python3 -m pytest bench/tests/ -q`), re-parse
+real archived replies under `bench/logs/**/round_*.json`, and try to break both
+changes. **Run the command, then make the claim.**
+
+Return: for EACH fix, `VERIFIED` or `REFUTED`, the evidence, and if refuted the
+change you would make instead. Say plainly if you think either detracts from the
+schema. If you find an anomaly I have not named, that is more valuable than
+agreeing with me.

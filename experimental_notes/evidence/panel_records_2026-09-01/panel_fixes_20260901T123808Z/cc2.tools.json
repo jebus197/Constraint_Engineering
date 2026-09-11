@@ -1,0 +1,899 @@
+{
+  "model": "opus",
+  "elapsed_s": 1126.0,
+  "tool_calls": 223,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && pwd && git log --oneline -3 && ls\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && ls bench/ | head -50 && echo \\\"---\\\" && wc -l bench/reference_runner_v3.py 2>/dev/null || echo \\\"no v3\\\"\", \"description\": \"List bench dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -n \\\"auto_resolve_contested\\\" -A 60 bench/reference_runner_v3.py | head -100\", \"description\": \"Read auto_resolve_contested\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -n \\\"verdict_is_substantive\\\\|def call_claude_cli\\\\|accept\\\" bench/reference_runner_v3.py | head -60\", \"description\": \"Find accept predicate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -rn \\\"verdict_is_substantive\\\\|def call_claude_cli\\\" bench/*.py | head -20\", \"description\": \"Locate call_claude_cli\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -rn \\\"target_hash_event\\\\|target_integrity_events\\\" bench/*.py | head -20 && echo \\\"--- tests ---\\\" && ls bench/tests | grep \\\"2026-09-01\\\"\", \"description\": \"Locate target guard\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Rename breakage sweep\", \"prompt\": \"Working dir is a disposable copy of a repo. `bench/reference_runner_v2.py` was renamed to `bench/reference_runner_v3.py` in commit ce08914. Find anything the rename BROKE that the pytest suite would NOT catch.\\n\\nSpecifically search the whole repo (not just bench/) for remaining literal references to \\\"reference_runner_v2\\\" in: shell scripts (.sh"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---TOP LEVEL DIRS---\\\" && find . -maxdepth 2 -type d -not -path './.git/*' -not -name '.git' | sort\", \"description\": \"List repo structure\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"reference_runner_v2\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 0}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rg -c 'reference_runner_v2' --hidden -g '!.git/**' . 2>/dev/null | sort -t: -k2 -rn\", \"description\": \"Count v2 refs per file\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Derived-doc self-verification sweep\", \"prompt\": \"Working dir is a disposable copy of a repo (CDSFL research framework). I need a sweep for a specific DEFECT CLASS, described as follows:\\n\\nA generated/derived document (e.g. `EXPERIMENT_RUN_LEDGER.md`) claims \\\"every figure is derived from artefacts, never typed\\\". Its test verified it by comparing the document against its OWN GENE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== v2 file present? ===\\\" && ls -la bench/reference_runner_v2.py 2>&1; echo \\\"=== v3 file present? ===\\\" && ls -la bench/reference_runner_v3.py 2>&1; echo \\\"=== any file named *reference_runner* anywhere ===\\\" && find . -name '*reference_runner*' -not -path './.git/*' 2>/dev/null; echo \\\"=== symlinks ===\\\" && find . -type l -not -path './.git/*' 2>/dev/null | head -50; echo \\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---TREE---\\\" && find . -path ./.git -prune -o -type f -print | head -200\", \"description\": \"List repo structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnoE '[A-Za-z0-9_./-]+\\\\.py:[0-9]+' --include=*.md . | head -100\", \"description\": \"Grep md files for file:line citations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnoE '[A-Za-z0-9_./-]+\\\\.py:[0-9]+' --include='*.md' . 2>/dev/null | grep -v '^\\\\./\\\\.git' | head -200\", \"description\": \"Grep md files for py file:line citations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | head -100 && echo \\\"=== count ===\\\" && ls bench/tests/ | wc -l\", \"description\": \"List tests dir\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Never-run controls sweep\", \"prompt\": \"Working dir is a disposable copy of a repo (CDSFL research framework, python, bench/ is the main code dir, bench/tests/ has ~4700 tests, and there are archived run directories somewhere \\u2014 find them).\\n\\nQUESTION: which safety guards / controls / fail-safes in this codebase HAVE NEVER ACTUALLY FIRED OR EVEN BEEN REACHED in a real run? Thre"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== NO-IGNORE count, EXCLUDING experimental_notes and bench/logs ===\\\" && rg -c --no-ignore --hidden -g '!.git/**' -g '!experimental_notes/**' -g '!bench/logs/**' 'reference_runner_v2' . 2>/dev/null | sort\", \"description\": \"Full no-ignore grep excluding notes and logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== targeted: by extension/dir, no-ignore ===\\\" && rg -l --no-ignore --hidden -g '!.git/**' 'reference_runner_v2' -g '*.sh' -g '*.yml' -g '*.yaml' -g '*.toml' -g '*.json' -g '*.cfg' -g '*.ini' -g 'Makefile*' -g '*.mk' -g '*.py' . 2>/dev/null | sort\", \"description\": \"Grep v2 in code/config file types\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '760,900p' bench/experiment_11_orchestrator.py\", \"description\": \"Read verdict_is_substantive and call_claude_cli\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '620,700p' bench/reference_runner_v3.py && echo \\\"=== CALLSITE ===\\\" && sed -n '11230,11275p' bench/reference_runner_v3.py\", \"description\": \"Read target_hash_event and callsite\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---BENCH---\\\" && ls bench/ | head -100\", \"description\": \"List repo root and bench dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln 'write_text' --include='*.py' scripts bench/*.py bench/tests 2>/dev/null | head -60\", \"description\": \"Find scripts using write_text\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -type d -name '.git' -prune -o -type d -print | grep -v node_modules | head -80\", \"description\": \"List directory tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts && echo \\\"=== ledger files ===\\\" && find . -path ./.git -prune -o -iname '*LEDGER*' -print\", \"description\": \"List scripts and ledger files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/results/ | head -120 && echo \\\"---COUNT---\\\" && ls bench/results/ | wc -l\", \"description\": \"List bench/results contents\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/scripts/experiment_run_ledger.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/bench/tests/test_experiment_run_ledger_2026-08-26.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls configs/ && echo \\\"---\\\" && find configs -type f | head -60 && echo \\\"---BENCHCONFIGS---\\\" && ls bench/exp*configs/ 2>/dev/null | head -60\", \"description\": \"List configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && ls bench/cdsfl_registry 2>/dev/null | head; echo \\\"--- find run dirs ---\\\"; find . -type d -name \\\"*run*\\\" -maxdepth 4 2>/dev/null | head -20; echo \\\"--- grep archive ---\\\"; grep -rl \\\"target_integrity_events\\\" --include=*.json . 2>/dev/null | head; echo \\\"--- target_hashes ---\\\"; grep -rl \\\"target_hashes\\\" --include=*.json . 2>/dev/null | head\", \"description\": \"Find arch"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && git show ce08914 --stat | head -20; echo \\\"=== was target_hashes present pre-rename? ===\\\"; git show ce08914^:bench/reference_runner_v2.py 2>/dev/null | grep -n \\\"target_hashes\\\\|target_integrity_events\\\\|_TARGET_HASH_PREV\\\\|_prev_target_hash\\\" | head -20\", \"description\": \"Check pre-rename guard state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp*_configs/*.json 2>/dev/null | wc -l && echo \\\"---each---\\\" && for d in bench/exp*_configs; do echo \\\"$d: $(ls $d/*.json 2>/dev/null | wc -l)\\\"; done\", \"description\": \"Count experiment config JSONs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== .sh / Makefile / CI / toml hits (no-ignore, whole repo) ===\\\"\\nrg -n --no-ignore --hidden -g '!.git/**' 'reference_runner_v2' -g '*.sh' -g '*.bash' -g '*.zsh' -g 'Makefile*' -g 'makefile*' -g '*.mk' -g '*.yml' -g '*.yaml' -g '*.toml' -g '*.cfg' -g '*.ini' . 2>/dev/null || echo \\\"NO HITS\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name 'run_*.json' -o -name '*run_record*' -o -name 'results.json' -o -name 'run.json' 2>/dev/null | grep -v node_modules | head -40 && echo \\\"===DIRS with runs===\\\" && find . -type d -name 'exp*_runs' -o -type d -name 'runs' | head -20\", \"description\": \"Find run artefact files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in scripts/*.py; do n=$(grep -cE 'write_text|open\\\\(.*[\\\"'\\\"'\\\"']w' \\\"$f\\\"); c=$(grep -cE 'DERIVED|generated by|do not edit|--check' \\\"$f\\\"); echo \\\"$n $c $f\\\"; done | sort -rn\", \"description\": \"Score scripts by generator signals\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== commit ce08914 stat ===\\\"\\ngit show --stat ce08914 | head -60\\necho\\necho \\\"=== rename detection ===\\\"\\ngit show -M --name-status ce08914 | head -40\", \"description\": \"Inspect rename commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rlnE 'DERIVED|derived from|generated by|do not edit|GENERATED' --include='*.md' docs experimental_notes resources bench/*.md *.md 2>/dev/null | head -40\", \"description\": \"Find derived markdown docs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"target_hashes\\\" . 2>/dev/null | grep -v \\\"\\\\.py$\\\" | head -20; echo \\\"=== count json artefacts ===\\\"; find . -name \\\"*.json\\\" | wc -l; echo \\\"=== where are run results? ===\\\"; find . -name \\\"*result*.json\\\" -o -name \\\"*run*.json\\\" | head -20\", \"description\": \"Search archive for target_hashes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | wc -l && echo \\\"---\\\" && ls bench/logs/ | head -100\", \"description\": \"List bench/logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | wc -l && ls bench/logs | head -20 && echo \\\"=== sample dir ===\\\" && ls bench/logs/baseline_confer_run6_20260401 | head\", \"description\": \"Inspect run archive layout\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/*runs* bench/*archive* bench/results/* 2>/dev/null | head -40; echo \\\"=== find dirs containing summary json ===\\\"; find . -name '*summary*.json' | grep -v node_modules | head -30\", \"description\": \"Look for archive/run dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp55_v3_control_20260823T144624Z/ | head -30; echo \\\"=== sim45 ===\\\"; ls bench/logs/sim45_memory_20260901T040540Z/ | head -30\", \"description\": \"Inspect run dir contents\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln 'scripts' bench/tests/*.py | head -60\", \"description\": \"Tests referencing scripts dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rlnE '\\\\.md\\\"|\\\\.md\\\\x27|\\\\.md\\\\b' bench/tests/*.py | head -60\", \"description\": \"Tests referencing md files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -maxdepth 2 -name 'run_record.json' -o -maxdepth 2 -name 'reference_run*.json' -o -maxdepth 2 -name '*_result*.json' | head -20; echo \\\"=== all distinct filenames in log subdirs (top 40) ===\\\"; find bench/logs -maxdepth 2 -type f -name '*.json' -exec basename {} \\\\; | sort | uniq -c | sort -rn | head -40\", \"description\": \"Enumerate run artefact filenames\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== RUNNER_VERSION definitions/uses ===\\\"\\nrg -n --no-ignore -g '!.git/**' -g '!bench/logs/**' -g '!experimental_notes/**' 'RUNNER_VERSION' . 2>/dev/null | head -40\", \"description\": \"Find RUNNER_VERSION constant\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== v3 refs in .sh / Makefile / CI / toml / md (non-log, non-notes) ===\\\"\\nrg -n --no-ignore -g '!.git/**' -g '!bench/logs/**' -g '!experimental_notes/**' -g '!*.pyc' 'reference_runner_v3' . 2>/dev/null | wc -l\\necho \\\"--- by file ---\\\"\\nrg -c --no-ignore -g '!.git/**' -g '!bench/logs/**' -g "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== reports containing target_hashes ===\\\"; grep -rl \\\"target_hashes\\\" --include=\\\"*report.json\\\" bench/ logs/ 2>/dev/null | wc -l; echo \\\"=== reports containing target_integrity_events ===\\\"; grep -rl \\\"target_integrity_events\\\" --include=\\\"*report.json\\\" bench/ logs/ 2>/dev/null | wc -l; echo \\\"=== total *report.json ===\\\"; find bench logs -name \\\"*report.json\\\" "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob\\nfs=sorted(glob.glob('bench/logs/**/*report.json',recursive=True))+sorted(glob.glob('logs/**/*report.json',recursive=True))\\nn=0;with_h=0;rounds=0\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    n+=1\\n    th=d.get('target_hashes')\\n    if th: with_h+=1; rounds+=len(th)\\nprint('reports parsed:',n)\\nprint('wi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== scripts/instrument_inventory.py v3 refs ===\\\"\\nrg -n 'reference_runner' scripts/instrument_inventory.py\\necho\\necho \\\"=== does it read the JSON inventory? ===\\\"\\nrg -n 'instrument_inventory|json|Path\\\\(|open\\\\(|ROOT|__file__' scripts/instrument_inventory.py | head -40\", \"description\": \"In"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/cite.py <<'EOF'\\nimport re, pathlib, sys\\nREPO = pathlib.Path(\\\".\\\").resolve()\\npat = re.compile(r'([A-Za-z0-9_][A-Za-z0-9_./-]*\\\\.py):(\\\\d+)')\\nbad = []\\nseen=set()\\nfor md in REPO.rglob(\\\"*.md\\\"):\\n    if \\\".git\\\" in md.part"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/bench/tests/test_documentation_drift_guards_2026-08-25.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== writers of target_hashes ===\\\"; grep -rn \\\"target_hashes\\\" --include=*.py bench/ | grep -v tests/ ; echo; echo \\\"=== which runs, and when ===\\\"; python3 -c \\\"\\nimport json,glob,os\\nfor f in sorted(glob.glob('bench/logs/**/*report.json',recursive=True))+sorted(glob.glob('logs/**/*report.json',recursive=True)):\\n    try: d=json.load(open(f))\\n    except Exception"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== pytest.ini ===\\\"\\ncat pytest.ini\\necho\\necho \\\"=== does pytest collect scripts/ or experimental_notes/? ===\\\"\\npython3 -c \\\"\\nimport configparser\\n\\\" 2>/dev/null\\necho \\\"--- collect-only count for experimental_notes ---\\\"\\npython3 -m pytest --collect-only -q experimental_notes/unextracted"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && timeout 900 python3 -m pytest bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py bench/tests/test_a_holding_note_is_not_a_verdict_2026-09-01.py bench/tests/test_the_target_integrity_guard_actually_runs_2026-09-01.py -q 2>&1 | tail -15\", \"description\": \"Run the three new test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"dirs with round_*.json:\\\"; find . -name 'round_*.json' -not -path '*/node_modules/*' -exec dirname {} \\\\; | sort -u | wc -l\\necho \\\"dirs with checkpoint.json:\\\"; find . -name 'checkpoint.json' -exec dirname {} \\\\; | sort -u | wc -l\\necho \\\"dirs with runner_state.json:\\\"; find . -name 'runner_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/tests/test_claims_audit_2026-08-28.py bench/tests/test_results_doc_currency.py bench/tests/test_qc_reference_checker.py bench/tests/test_critical_prereg_citation.py bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py bench/tests/test_ledger_stamp_is_a_real_date_2026-08-26.py bench/tests/test_operational_scripts.py bench/tests/test_note_standard_v17_enforced"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/bench/tests/test_critical_prereg_citation.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nwc -l bench/reference_runner_v3.py 2>/dev/null || ls bench/reference_runner*\\necho \\\"=== A4 failsafe ===\\\"; grep -rn \\\"A4\\\" bench/*.py | grep -i \\\"fail\\\\|safe\\\\|guard\\\" | head -20\\necho \\\"=== target_integrity ===\\\"; grep -rn \\\"target_integrity\\\" bench/ --include=*.py | head -20\", \"description\": \"Fin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -m pytest bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py bench/tests/test_a_holding_note_is_not_a_verdict_2026-09-01.py bench/tests/test_the_target_integrity_guard_actually_runs_2026-09-01.py -q 2>&1 | tail -12\", \"description\": \"Run the three new test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rn \\\"target_integrity\\\" bench --include=\\\"*.py\\\" | head -20\", \"description\": \"Find target integrity guard\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== norecursedirs / testpaths in any config ===\\\"\\nrg -n 'testpaths|norecursedirs|collect_ignore' pytest.ini setup.cfg pyproject.toml tox.ini conftest.py bench/tests/conftest.py 2>/dev/null || echo \\\"NONE FOUND\\\"\\necho\\necho \\\"=== root conftest.py? ===\\\"\\nls -la conftest.py bench/conftest.py "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nls bench/*.py | wc -l; echo \\\"--- runner-ish modules ---\\\"; ls bench/*.py | xargs -n1 basename | tail -100\", \"description\": \"List bench python modules\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== resources/RECOVERY.md v3 refs ===\\\"\\nrg -n 'reference_runner_v3' resources/RECOVERY.md\\necho\\necho \\\"=== resources/ONBOARDING.md v3 refs ===\\\"\\nrg -n 'reference_runner_v3' resources/ONBOARDING.md\", \"description\": \"Inspect resources docs v3 refs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE '^[A-Z_]{3,}\\\\s*=\\\\s*(\\\\d+|\\\"|\\\\x27)' bench/tests/*.py | grep -vE '=\\\\s*(pathlib|Path|REPO|sys|os)' | head -80\", \"description\": \"Module-level literal constants in tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,os,statistics as st\\n# gather panel replies from archived round files\\nlens=[]\\nsub800=[]\\nimport re\\nfiles=glob.glob('bench/logs/**/*.json',recursive=True)+glob.glob('logs/**/*.json',recursive=True)\\ndef walk(o,path=''):\\n    if isinstance(o,dict):\\n        for k,v in o.items():\\n            if k in ('response','response_text','raw_respons"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE 'assert .*\\\\b(==|>=|<=)\\\\s*[0-9]+' bench/tests/test_results_doc_currency.py bench/tests/test_qc_reference_checker.py bench/tests/test_three_gaps_2026-08-23.py bench/tests/test_claims_audit_2026-08-28.py bench/tests/test_researcher_onboarding.py bench/tests/test_recovery_memory_doc_repairs.py bench/tests/test_operational_scripts.py | head -60\", \"description\": \"Numeric asserti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '600,680p' bench/reference_runner_v3.py\", \"description\": \"Read runner context around integrity guard note\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rln \\\"never fired\\\\|never actually\\\\|0 of 43\\\\|0 of 83\\\\|dead code\\\\|unreachable\\\" --include=\\\"*.md\\\" . | head -20\", \"description\": \"Find prior audit docs\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/bench/tests/test_scaling_spec_numbers_2026-08-26.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,re,sys\\nsys.path.insert(0,'.')\\nfrom bench.reference_runner_v3 import _VERDICT_RE\\nfrom bench.experiment_11_orchestrator import verdict_is_substantive\\nfiles=glob.glob('bench/logs/**/*.json',recursive=True)+glob.glob('logs/**/*.json',recursive=True)\\ndef walk(o):\\n    if isinstance(o,dict):\\n        for k,v in o.items():\\n            if k i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nhead -60 bench/logs/panel_fixes_20260901T123808Z/BRIEF.md\", \"description\": \"Read panel brief\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 -c \\\"\\nimport json,glob\\nf=sorted(glob.glob('bench/logs/*/round_00.json'))[0]\\nprint(f)\\nd=json.load(open(f))\\nprint(type(d))\\nprint(list(d.keys())[:60] if isinstance(d,dict) else len(d))\\n\\\"\", \"description\": \"Inspect a round artefact structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib,re,statistics\\nLOGS=pathlib.Path('bench/logs')\\nvals=[]\\nfor d in sorted(LOGS.iterdir()):\\n    if not (d.is_dir() and re.match(r'^exp\\\\d+[_-]',d.name)): continue\\n    rs=d/'runner_state.json'\\n    if not rs.is_file(): continue\\n    try: s=json.loads(rs.read_text())\\n    except Exception: continue\\n    vals+=[v for v in (s.get('rho_history') or []) if"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 - <<'EOF'\\n# Reproduce the pre-fix cross-run false alarm using the OLD logic, and confirm the new one is clean.\\nimport hashlib, tempfile, os\\nfrom pathlib import Path\\na=Path(tempfile.mkdtemp())/'A.py'; a.write_text('x=1')\\nb=Path(tempfile.mkdtemp())/'B.py'; b.write_text('y=2')\\n\\n# OLD: bare module global, no key, no per-run reset\\nG={}\\ndef old(p):\\n    d=hashl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== python code that builds a path to the runner (non-test, non-log) ===\\\"\\nrg -n --no-ignore -g '*.py' -g '!bench/logs/**' -g '!experimental_notes/**' 'reference_runner_v3' . 2>/dev/null | rg -i 'Path|open\\\\(|read_text|/|import|\\\\.py' | rg -v '^\\\\./bench/tests/' | head -60\", \"description\": \""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== instrument_inventory.json v2 paths (generated artifact) ===\\\"\\nrg -o --no-ignore 'bench/reference_runner_v[23]\\\\.py' experimental_notes/data/instrument_inventory.json | sort | uniq -c\\necho\\necho \\\"=== git log for that json ===\\\"\\ngit log --oneline -3 -- experimental_notes/data/instrument"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib,re,statistics\\nLOGS=pathlib.Path('bench/logs')\\nvals=[];dirs=0\\nfor d in sorted(LOGS.iterdir()):\\n    if not (d.is_dir() and re.match(r'^exp\\\\d+[_-]',d.name)): continue\\n    rs=d/'runner_state.json'\\n    if not rs.is_file(): continue\\n    try: s=json.loads(rs.read_text())\\n    except Exception: continue\\n    v=[x for x in (s.get('rho_history') or [])"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nmkdir -p /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad\\ncat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,sys\\nsys.path.insert(0,'.')\\nfrom bench.reference_runner_v3 import _VERDICT_RE\\nfiles=glob.glob('bench/logs/**/*.json',recursive=True)+glob.glob('logs/**/*.json',recursive=True)\\ndef walk(o):\\n    if isinstance(o,dict):\\n        for k,v in o.items():\\n            if k in ('response','response_text','raw_response','text','reply','output') an"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo/bench/tests/test_results_doc_currency.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== does the MAIN runner use accept=verdict_is_substantive? ===\\\"; grep -n \\\"call_claude_cli\\\" bench/reference_runner_v3.py | head -20; echo; echo \\\"=== all callers of call_claude_cli repo-wide ===\\\"; grep -rn \\\"call_claude_cli(\\\" --include=*.py . | grep -v \\\"def call_claude_cli\\\" | grep -v tests/ | head -20\", \"description\": \"Check accept wiring coverage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== test -f on every distinct path literal referencing the runner ===\\\"\\nrg -o --no-ignore -g '!bench/logs/**' -g '!experimental_notes/**' -g '!*.pyc' 'bench/reference_runner_v[0-9]*\\\\.py' . 2>/dev/null | sed 's/^.*://' | sort -u | while read p; do printf '%-40s ' \\\"$p\\\"; if [ -f \\\"$p\\\" ]; th"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"bench/logs dirs with round_*.json:\\\"; find bench/logs -maxdepth 2 -name 'round_*.json' -exec dirname {} \\\\; | sort -u | wc -l\\necho \\\"bench/logs dirs with checkpoint.json:\\\"; find bench/logs -maxdepth 2 -name 'checkpoint.json' -exec dirname {} \\\\; | sort -u | wc -l\\necho \\\"bench/logs dirs w/ "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE 'import (experiment_run_ledger|claims_audit|harness_defect_rate|competence_provenance|track_record_audit|instrument_inventory|supersession_check|replay_accounting|replay_rho|note_vagueness_lint|priority_starvation_simulation|build_experiment_report|similarity_operating_characteristic|target_independence_probe|fix_efficacy_sweep)' bench/tests/*.py scripts/*.py\", \"description\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rn \\\"83 archived\\\\|43 config\\\\|of 43\\\\|of 83\\\" bench/ --include=\\\"*.py\\\" | head -20\", \"description\": \"Find the 43/83 provenance in code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in scripts/claims_audit.py scripts/harness_defect_rate.py scripts/competence_provenance.py scripts/track_record_audit.py scripts/instrument_inventory.py scripts/replay_accounting.py scripts/replay_rho.py scripts/priority_starvation_simulation.py scripts/similarity_operating_characteristic.py scripts/note_vagueness_lint.py scripts/supersession_check.py; do echo \\\"=== $f ($(wc -l "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== run instrument_inventory.py (it REWRITES the json) - dry check via git diff after ===\\\"\\ncp experimental_notes/data/instrument_inventory.json /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== all call_claude_cli call sites ===\\\"; grep -rn \\\"call_claude_cli(\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v \\\"def call_claude_cli\\\" || grep -rn \\\"call_claude_cli(\\\" . --include=*.py; echo; echo \\\"=== how does the MAIN runner dispatch to models? ===\\\"; grep -n \\\"def call_model\\\\|def dispatch\\\\|call_openrouter\\\\|_call_model\\\\|subprocess.run\\\" bench/reference_r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '8770,8800p' bench/reference_runner_v3.py; echo \\\"=== ... 8880-8935 ===\\\"; sed -n '8885,8935p' bench/reference_runner_v3.py\", \"description\": \"Inspect main runner dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '1500,1535p' bench/experiment_11_orchestrator.py\", \"description\": \"Check orchestrator wrapper\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"A: bench/logs subdirs total:\\\"; find bench/logs -maxdepth 1 -type d | tail -n +2 | wc -l\\necho \\\"B: dirs with r0_*.json anywhere:\\\"; find . -name 'r[0-9]*_*.json' -exec dirname {} \\\\; | sort -u | wc -l\\necho \\\"C: dirs with completion_signal.json:\\\"; find . -name 'completion_signal.json' -exec"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re,pathlib\\nREPO=pathlib.Path('.').resolve()\\npat=re.compile(r'`?\\\\b((?:bench/|scripts/)?[A-Za-z0-9_][A-Za-z0-9_./-]*\\\\.py):(\\\\d+)')\\ntargets=[REPO/'docs',REPO/'resources',REPO/'README.md',REPO/'PAPER.md',REPO/'START_HERE.md',REPO/'.claude']\\nfiles=[]\\nfor t in targets:\\n    if t.is_dir(): files+= [p for p in t.rglob('*.md')]\\n    elif t.is_file(): files.appe"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngit checkout -- experimental_notes/data/instrument_inventory.json\\necho \\\"restored; git status:\\\"; git status --short\\necho\\necho \\\"=== the committed JSON asserts file_exists for the v2 path: ===\\\"\\npython3 -c \\\"\\nimport json\\nd=json.load(open('experimental_notes/data/instrument_inventory.json'))\\ni"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== enclosing function of line 1524 ===\\\"; awk 'NR<=1524 && /^def |^    def /{l=NR\\\": \\\"$0} END{}' bench/experiment_11_orchestrator.py; grep -n \\\"^def \\\\|^    def \\\" bench/experiment_11_orchestrator.py | awk -F: '$1<1524' | tail -3; echo; echo \\\"=== do other routes support accept? ===\\\"; grep -n \\\"def call_openrouter\\\\|def call_deepseek\\\\|def call_gemini\\\\|def call"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== hooks/ contents ===\\\"\\nfind hooks -type f | head -20\\necho\\necho \\\"=== .claude/ ===\\\"\\nfind .claude -type f | head -20\\necho\\necho \\\"=== runner refs in hooks/.claude ===\\\"\\nrg -n 'reference_runner' hooks .claude 2>/dev/null || echo \\\"none\\\"\\necho\\necho \\\"=== exp40_configs/40_gate.json run"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport inspect,sys; sys.path.insert(0,'.')\\nimport bench.experiment_11_orchestrator as O\\nfor n in ['call_claude_cli','call_openrouter','call_codex','call_gemini','call_deepseek','dispatch']:\\n    f=getattr(O,n,None)\\n    if f: print(n, ':', 'accept' in inspect.signature(f).parameters)\\n\\\"\", \"description\": \"Check accept param across routes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'def \\\\|py:\\\\|line\\\\b' scripts/cdsfl_qc.py | head -80; echo \\\"=== SIZE ===\\\"; wc -l scripts/cdsfl_qc.py\", \"description\": \"Inspect cdsfl_qc.py checks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,90p' bench/tests/test_qc_reference_checker.py\", \"description\": \"Read qc reference checker test header\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,collections\\n# Item 1 archive exposure: findings with >=3 CHALLENGE rows; how many REFUTED/CONTESTED with <3 distinct challengers\\ntot=0; exposed=0; ge3=0\\nfor f in glob.glob('bench/logs/**/*.json',recursive=True)+glob.glob('logs/**/*.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    def walk(o):\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -n 'result\\\\.setdefault(\\\"' bench/reference_runner_v3.py | head -60\\necho \\\"=== count ===\\\"; grep -c 'setdefault(\\\"' bench/reference_runner_v3.py\", \"description\": \"Grep result.setdefault in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -n 'result\\\\[\\\"[a-z_]*\\\"\\\\] *=\\\\|result\\\\.setdefault\\\\|round_record\\\\[\\\\|round_record\\\\.setdefault\\\\|record\\\\.setdefault' bench/reference_runner_v3.py | head -60\", \"description\": \"Grep result dict writes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p;150,350p' scripts/cdsfl_qc.py\", \"description\": \"Read qc staleness and test-consistency checks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== dynamically-built runner filenames ===\\\"\\nrg -n --no-ignore -g '*.py' -g '!bench/logs/**' 'reference_runner_v\\\\{|reference_runner_.*%s|f\\\"reference_runner|reference_runner\\\" *\\\\+' . 2>/dev/null || echo \\\"none\\\"\\necho\\necho \\\"=== sandbox blinding pathspec lists ===\\\"\\nrg -n --no-ignore -g "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== actual runner line count ===\\\"\\nwc -l bench/reference_runner_v3.py\\necho\\necho \\\"=== hardcoded line-count claims about the runner in live code ===\\\"\\nrg -n --no-ignore -g '*.py' -g '!bench/logs/**' -g '!experimental_notes/**' 'reference_runner_v3.py is [0-9,]+ lines|[0-9,]+ lines' bench/b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -rn \\\"reference_runner_v3.py:[0-9]*\\\" --include=\\\"*.md\\\" . 2>/dev/null | head -20; echo \\\"=== ledger header ===\\\"; head -20 bench/EXPERIMENT_RUN_LEDGER.md 2>/dev/null || find . -name \\\"EXPERIMENT_RUN_LEDGER.md\\\"\", \"description\": \"Find file:line citations in docs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'check\\\\|OUT\\\\|write_text\\\\|__main__' scripts/instrument_inventory.py | tail -30; echo \\\"=== harness_defect_rate ===\\\"; grep -n 'ledger\\\\|json\\\\|LEDGER\\\\|OUT' scripts/harness_defect_rate.py | head -30\", \"description\": \"Inspect instrument_inventory and harness_defect_rate outputs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la experimental_notes/data/ 2>/dev/null; echo \\\"=== docs derived ===\\\"; grep -rn 'DERIVED\\\\|generated by\\\\|do not edit\\\\|Regenerate' --include='*.md' -il docs experimental_notes resources | head; echo; grep -rn 'Regenerate\\\\|regenerate with\\\\|python3 scripts/' --include='*.md' docs resources experimental_notes | grep -i 'regenerat' | head -20\", \"description\": \"Find generated data "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -n 'json.dump\\\\|write_text' bench/reference_runner_v3.py | head -40\", \"description\": \"Find persistence sites in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '12290,12400p' bench/reference_runner_v3.py\", \"description\": \"Read end of run_experiment\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | sed -n '100,220p'\", \"description\": \"List remaining tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== sandbox construction / git archive / checkout pathspec ===\\\"\\nrg -rn --no-ignore -g '*.py' -g '!bench/logs/**' 'git archive|sparse|checkout-index|SANDBOX|sandbox_' bench/*.py bench/tools/*.py scripts/*.py 2>/dev/null | rg -i 'pathspec|archive|sparse|exclude|:\\\\(exclude\\\\)|checkout' | head"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== claims_audit.py runner grep check ===\\\"\\nsed -n '150,175p' scripts/claims_audit.py\", \"description\": \"Inspect claims_audit runner assertion\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 - <<'EOF'\\nimport linecache\\nf='bench/reference_runner_v3.py'\\nchecks=[(1059,'block[:200] parser fallback'),(1908,'falsifier gate'),(5787,'take_up_slack/routing'),\\n        (259,'max_open_crit_high default 5'),(454,'open_crit_high_count'),(464,'contested_count'),\\n        (829,'grace_period = 2'),(3510,'compute_rk_with_eta_channel / DEBUG_CHANNEL_CHECK'),\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE 'assert +(\\\"[^\\\"]*[0-9][^\\\"]*\\\"|\\\\x27[^\\\\x27]*[0-9][^\\\\x27]*\\\\x27) +in ' bench/tests/*.py | head -60\", \"description\": \"Find literal-number substring assertions in tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,130p' bench/tests/test_br2_keys_are_split_out_2026-08-27.py\", \"description\": \"Read br2 keys test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== all .sh files in repo ===\\\"\\nfind . -name '*.sh' -not -path './.git/*' 2>/dev/null\\necho\\necho \\\"=== runner refs in the sandbox script ===\\\"\\nrg -n 'reference_runner|runner' bench/tools/run_simulated_experiment_sandboxed.sh\\necho\\necho \\\"=== bash -n on all .sh ===\\\"\\nfind . -name '*.sh' -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== run claims_audit.py ===\\\"\\ntimeout 300 python3 scripts/claims_audit.py 2>&1 | tail -30\", \"description\": \"Run claims audit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== were these v2 before the rename? ===\\\"; git show ce08914^:resources/ONBOARDING.md | grep -c \\\"reference_runner_v2.py:\\\" ; git show ce08914^:resources/ONBOARDING.md | grep -o \\\"reference_runner_v2.py:3510\\\" | head -2; echo; echo \\\"=== after rename ===\\\"; grep -c \\\"reference_runner_v3.py:\\\" resources/ONBOARDING.md; echo; echo \\\"=== repo-wide file:line citations t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== where does the claimed content ACTUALLY live? ===\\\"; grep -n \\\"DEBUG_CHANNEL_CHECK\\\" bench/reference_runner_v3.py | head -3; echo \\\"--- max_open_crit_high default ---\\\"; grep -n \\\"max_open_crit_high\\\" bench/reference_runner_v3.py | head -3; echo \\\"--- def open_crit_high_count ---\\\"; grep -n \\\"def open_crit_high_count\\\\|def contested_count\\\" bench/reference_runn"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== claims_audit ===\\\"\\npython3 scripts/claims_audit.py 2>&1 | tail -25\", \"description\": \"Run claims audit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"--- max_open_crit_high in reference_runner_v3.py ---\\\"; grep -n 'max_open_crit_high' bench/reference_runner_v3.py | head -5\\necho \\\"--- compute_rk_with_eta_channel / DEBUG_CHANNEL_CHECK ---\\\"; grep -n 'compute_rk_with_eta_channel\\\\|DEBUG_CHANNEL_CHECK' bench/reference_runner_v3.py | head -10\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== what monitor/launch scripts grep for as the runner process ===\\\"\\nrg -n 'ps aux|pgrep|grep -E' bench/monitor.sh bench/detached_launch.sh bench/im_monitor.sh bench/monitor_exp38.sh bench/tools/repo_integrity_watch.sh bench/arc_sequencer.sh 2>/dev/null | head -20\\necho\\necho \\\"=== runner li"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ncat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/deadguard.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Find guard-written keys that appear in ZERO archived run artefacts.\\\"\\\"\\\"\\nimport ast"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -n \\\"def add_verdict\\\" -A 25 bench/reference_runner_v3.py | head -35\", \"description\": \"Check what model field records\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -n \\\"MODEL_ROSTER\\\" bench/reference_runner_v3.py | head -5; echo \\\"=== roster ===\\\"; sed -n '440,460p' bench/reference_runner_v3.py; echo \\\"=== do configs seat the same model twice? ===\\\"; ls configs/ 2>/dev/null | head; python3 -c \\\"\\nimport json,glob,collections\\nfor f in sorted(glob.glob('bench/exp*configs/*.json'))[:200]:\\n    try: d=json.load(open(f))\\n    excep"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== A) documented invocation: does bench/tests/ collect cleanly? ===\\\"\\npython3 -m pytest bench/tests/ -q --collect-only 2>&1 | tail -4\\necho\\necho \\\"=== B) bare pytest from repo root (no path arg) ===\\\"\\npython3 -m pytest -q --collect-only 2>&1 | tail -8\", \"description\": \"Compare collection "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== stale pyc: is it importable without source? ===\\\"\\nls -la bench/__pycache__/reference_runner_v2.cpython-313.pyc\\npython3 -c \\\"\\nimport importlib.util, sys\\nsys.path.insert(0,'bench')\\nprint('find_spec(reference_runner_v2) =', importlib.util.find_spec('reference_runner_v2'))\\n\\\"\\necho\\nech"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nls -la bench/reference_runner*.py bench/runner_core.py 2>/dev/null\\necho \\\"=== grep tests for line-number citations ===\\\"\\ngrep -rnE '\\\\.py:[0-9]+' bench/tests/*.py | head -40\", \"description\": \"Check runner files and test line citations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== newest archived run dirs (by name timestamp) ===\\\"\\nfind bench/logs bench/results logs -name 'round_*.json' -exec dirname {} \\\\; | sort -u | xargs -n1 basename | grep -oE '20[0-9]{6}T[0-9]{6}Z' | sort | tail -8\\necho \\\"=== newest by mtime ===\\\"\\nfind bench/logs -name 'round_*.json' -exec "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nfor L in 11251 12246 12254 12262 12291 12124 11988 12037 5912 3683 2620 2989 4897 11963; do\\n  printf \\\"%-6s \\\" \\\"$L\\\"\\n  git blame -L $L,$L --date=short -- bench/reference_runner_v3.py 2>/dev/null | head -1 | cut -c1-100\\ndone\", \"description\": \"Git blame the dead write sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,collections\\n# do any configs map two distinct panel LABELS to the same underlying model_id?\\nhits=0\\nfor f in sorted(glob.glob('bench/**/*config*.json',recursive=True))+sorted(glob.glob('configs/**/*.json',recursive=True)):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    def findmodels(o):\\n        if isinstance(o,dict)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"### 1. gamma-alt anchor (the known bug's anchor)\\\"; grep -n 'gamma-alt gate previously set only the result' bench/reference_runner_v3.py\\necho \\\"### line 11002 actual:\\\"; sed -n '11002p' bench/reference_runner_v3.py\\necho; echo \\\"### 2. test_stop_reason context\\\"; sed -n '1,40p' bench/tests/t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/ -q 2>&1 | tail -15\", \"description\": \"Run documented pytest suite\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '305,330p' bench/reference_runner_v3.py; echo \\\"=== any run mixing X and X-SIM? ===\\\"; python3 -c \\\"\\nimport json,glob,collections\\nfor f in glob.glob('bench/logs/**/*report.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    labs=set()\\n    def walk(o):\\n        if isinstance(o,dict):\\n            if 'verdict' in o and 'model"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== the two quarantined test files' v2 refs ===\\\"\\nrg -n 'reference_runner_v2' bench/logs/build_experiment_2026-08-22/QUARANTINE_T01_model_written/*.py\\necho\\necho \\\"=== TOML files in repo ===\\\"\\nfind . -name '*.toml' -not -path './.git/*' 2>/dev/null || true\\necho \\\"(none listed above = no t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"### committed ledger citation:\\\"; grep -n 'reference_runner_v3.py:' experimental_notes/EXPERIMENT_RUN_LEDGER.md\\necho; echo \\\"### other test citations ###\\\"\\nfor spec in \\\"bench/reference_runner_v3.py:3510\\\" \\\"bench/reference_runner_v3.py:9841\\\" \\\"bench/reference_runner_v3.py:8178\\\" \\\"bench/r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '11970,11995p;12025,12045p' bench/reference_runner_v3.py\", \"description\": \"Read HIL pause sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '12060,12130p' bench/reference_runner_v3.py\", \"description\": \"Read burst phase site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== docs/experimental_notes contents ===\\\"\\nls docs/experimental_notes | head\\necho\\necho \\\"=== EXPERIMENT_RUN_LEDGER location + runner refs ===\\\"\\nfind . -name 'EXPERIMENT_RUN_LEDGER*' -not -path './.git/*'\\nrg -n 'reference_runner_v[23]' $(find . -name 'EXPERIMENT_RUN_LEDGER.md' -not -path "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== model_id for Codex vs ChatGPT in configs ===\\\"; python3 -c \\\"\\nimport json,glob,collections\\nseen=collections.defaultdict(set)\\nfor f in glob.glob('bench/**/*.json',recursive=True)+glob.glob('configs/**/*.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    def walk(o):\\n        if isinstance(o,dict):\\n            if o.get("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"### 9841 claim: 'unset for code runs, where the panel legitimately'\\\"; grep -n 'unset for code runs' bench/reference_runner_v3.py\\necho; echo \\\"### 8178 claim: checkpoint corrupted handling\\\"; grep -n 'checkpoint' bench/reference_runner_v3.py | grep -in 'corrupt\\\\|unreadable\\\\|json' | head -5"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== the only non-notes/non-logs hit: .pytest_cache nodeids ===\\\"\\npython3 -c \\\"\\nimport json\\nd=json.load(open('.pytest_cache/v/cache/nodeids'))\\nprint([x for x in d if 'reference_runner_v2' in x])\\n\\\"\\necho\\necho \\\"=== is .pytest_cache gitignored? ===\\\"\\ngit check-ignore -v .pytest_cache/v/c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== configs that set hil_review / burst ===\\\"\\ngrep -rl 'hil_review\\\\|burst' bench/exp*_configs/ 2>/dev/null\\necho \\\"(none above = never set)\\\"\\necho\\necho \\\"=== union of ALL keys used across the 42 experiment configs ===\\\"\\npython3 -c \\\"\\nimport json,glob,collections\\nks=collections.Counter("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 90; tail -20 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\"\", \"description\": \"Check suite progress\"}"
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:Monitor\", \"max_results\": 1}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '30,200p' scripts/instrument_inventory.py\", \"description\": \"Read instrument_inventory table and verification\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && python3 -c \\\"\\nimport json,glob,collections\\nseen=collections.defaultdict(set)\\nfor f in glob.glob('bench/**/*.json',recursive=True)+glob.glob('configs/**/*.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    def walk(o):\\n        if isinstance(o,dict):\\n            if o.get('label') in ('Codex','ChatGPT','CC2') and 'model_id' in o:\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 -c \\\"\\nimport json,glob,collections\\nvals=collections.Counter(); hil=collections.Counter()\\nfor f in sorted(glob.glob('bench/exp*_configs/*.json')):\\n    d=json.load(open(f))\\n    vals[repr(d.get('burst_mode','<ABSENT>'))]+=1\\n    hil[repr(d.get('hil_review','<ABSENT>'))]+=1\\nprint('burst_mo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== where does hil_review come from? ===\\\"\\ngrep -n \\\"hil_review\\\" bench/reference_runner_v3.py | head -20\\necho \\\"=== burst_mode wiring ===\\\"\\ngrep -n \\\"burst_mode\\\\|burst_plan =\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Trace hil_review and burst_mode wiring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\" 2>&1\", \"description\": \"Check suite output so far\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rn '\\\"--check\\\"\\\\|--check' scripts/*.py bench/*.py 2>/dev/null | grep add_argument | head -20\\necho \\\"=== docs generated by cdsfl_sv ===\\\"\\ngrep -n 'write_text\\\\|def generate' scripts/cdsfl_sv.py | head -20\", \"description\": \"Find scripts with --check drift guards\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== JSON config keys pointing at a .py runner/target (exp*_configs, configs/) ===\\\"\\nrg -n --no-ignore '\\\"(runner|runner_path|test_article|target|target_file)\\\"\\\\s*:\\\\s*\\\"[^\\\"]*\\\\.py\\\"' bench/exp*_configs configs resources 2>/dev/null | head -30\\necho\\necho \\\"=== repo_integrity_watch.sh + sta"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '1,70p' bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py\", \"description\": \"Read memory index limits test header\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== canary_seeding imported anywhere outside its tests? ===\\\"; grep -rn \\\"canary_seeding\\\" --include=\\\"*.py\\\" bench/ | grep -v \\\"^bench/tests/\\\" | grep -v \\\"^bench/canary_seeding.py\\\"; echo \\\"(none above = wired to nothing)\\\"; echo; echo \\\"=== modules with tests but no production importer ===\\\"; python3 - <<'EOF'\\nimport glob,os,re,subprocess\\nmods=[os.path.basenam"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '1,121p' bench/tests/test_claims_audit_2026-08-28.py\", \"description\": \"Read claims audit test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== HIL partial reports ever written? ===\\\"\\nfind . -name '*_hil_r*.json' -o -name '*_hil_phase_*.json' | head; echo \\\"count: $(find . -name '*_hil_r*.json' -o -name '*_hil_phase_*.json' | wc -l)\\\"\\necho \\\"=== --hil-review ever used in any launcher/script/log? ===\\\"\\ngrep -rn -- \\\"--hil-revie"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '10264,10300p' bench/reference_runner_v3.py\", \"description\": \"Read burst plan gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== runner:154 (cited by sandbox script) ===\\\"\\nsed -n '154p' bench/reference_runner_v3.py\\necho \\\"=== runner:9836 (cited by repo_integrity_watch.sh: 'unset for code runs') ===\\\"\\nsed -n '9836p' bench/reference_runner_v3.py\\necho \\\"=== where 'unset for code runs' actually is ===\\\"\\nrg -n 'uns"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '28,210p' scripts/claims_audit.py\", \"description\": \"Read claims_audit registry\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && for m in score_exam text_safety canary_seeding; do echo \\\"--- $m: has __main__? ---\\\"; grep -c \\\"__main__\\\" bench/$m.py; grep -rn \\\"$m\\\" --include=\\\"*.sh\\\" --include=\\\"*.md\\\" . 2>/dev/null | grep -v experimental_notes | head -2; done\", \"description\": \"Check orphan modules for entry points\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== where was 'unset for code runs' BEFORE ce08914 (in v2)? ===\\\"\\ngit show ce08914^:bench/reference_runner_v2.py | grep -n 'unset for code runs'\\necho \\\"=== and AFTER (v3 at ce08914)? ===\\\"\\ngit show ce08914:bench/reference_runner_v3.py | grep -n 'unset for code runs'\\necho\\necho \\\"=== was r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/claims_audit.py; echo \\\"EXIT=$?\\\"; echo \\\"=== ledger check ===\\\"; python3 scripts/experiment_run_ledger.py --check; echo \\\"EXIT=$?\\\"\", \"description\": \"Run claims audit and ledger drift check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && grep -rn \\\"A4\\\" bench/reference_runner_v3.py | grep -i \\\"fail\\\\|safe\\\" | head -5; echo \\\"=== text_safety importers ===\\\"; grep -rn \\\"text_safety\\\" --include=\\\"*.py\\\" bench/ | grep -v tests/ | head -3; echo \\\"=== unconditional-telemetry guards: candidate general check ===\\\"; grep -c \\\"result.setdefault(\\\" bench/reference_runner_v3.py\", \"description\": \"Check A4 and telemetr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 scripts/experiment_run_ledger.py > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/fresh.md 2>&1\\ndiff experimental_notes/EXPERIMENT_RUN_LEDGER.md /private/tmp/claude-501/-private-var-f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -12 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\" 2>&1; echo \\\"---\\\"; ls -la \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\"\", \"descri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== runner HIL partial reports: *_hil_r<NN>.json / *_hil_phase_<N>.json ===\\\"\\nfind . \\\\( -regex '.*_hil_r[0-9][0-9]\\\\.json' -o -regex '.*_hil_phase_[0-9]+\\\\.json' \\\\) -print | wc -l\\necho \\\"=== burst: any artefact with the burst_phases KEY or BURST_ convergence_reason ===\\\"\\ngrep -rl '\\\"burs"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== TRACKED files containing reference_runner_v2, grouped by top dir ===\\\"\\ngit grep -l 'reference_runner_v2' HEAD -- . 2>/dev/null | sed 's|^HEAD:||' | awk -F/ '{print $1\\\"/\\\"$2}' | sort | uniq -c | sort -rn\\necho\\necho \\\"=== are the 3 breaking test files tracked? ===\\\"\\nfor f in experimenta"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"### generator docstring line 26:\\\"; sed -n '26,27p' scripts/experiment_run_ledger.py\\necho; echo \\\"### fresh ledger key figures:\\\"; grep -nE 'monotonic|EMPTY reason|of those|non-empty|produced a report' /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-pan"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until [ -s \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\" ]; do sleep 5; done; echo \\\"SUITE DONE\\\"\", \"description\": \"Wait for suite to finish\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '145,160p' bench/tests/test_channel_boundary.py\\necho \\\"=== gamma-alt / two-sided gate: doc claims 2833-3035 ===\\\"\\nsed -n '2833p;3035p' bench/reference_runner_v3.py\\necho \\\"=== immune_agents 5400-5428 K/L/M shadow audit; real? ===\\\"\\ngrep -n 'shadow_audit\\\\|K/L/M\\\\|klm' bench/immune_agents.p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== in a FRESH CLONE (tracked files only), which .py files break on import? ===\\\"\\ngit grep -l 'reference_runner_v2' HEAD -- '*.py' | sed 's|^HEAD:||'\\necho\\necho \\\"=== git-tracked bench/logs hits are all data files? extensions: ===\\\"\\ngit grep -l 'reference_runner_v2' HEAD -- 'bench/logs/*' "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nawk 'NR>=125 && NR<=200 {printf \\\"%d: %s\\\\n\\\", NR, $0}' bench/experiment_11_orchestrator.py | grep -nE 'ModelConfig|label='\", \"description\": \"Check ModelConfig labels and lines\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== the tracked broken test file: header + import ===\\\"\\nsed -n '1,40p' experimental_notes/unextracted_sandbox_2026-08-30/test_repair_loop_wiring_2026-08-30.py\\necho\\necho \\\"=== README of that sandbox dir ===\\\"\\ncat experimental_notes/unextracted_sandbox_2026-08-30/README.md\", \"description\": "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rl '\\\"hil_status\\\"' bench/logs bench/results logs 2>/dev/null\\necho \\\"--- context ---\\\"\\ngrep -rho '.\\\\{80\\\\}\\\"hil_status\\\".\\\\{80\\\\}' bench/logs bench/results logs 2>/dev/null | head -3\", \"description\": \"Inspect the one hil_status hit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -n 'def check_file_references' -A 40 scripts/cdsfl_utils.py | grep -nE 'line|:\\\\\\\\d|strip|LINE|split\\\\(\\\":\\\"\\\\)' | head -20\\necho \\\"---\\\"\\ngrep -n '#L\\\\|:\\\\\\\\\\\\\\\\d\\\\|line-number\\\\|line number' scripts/cdsfl_utils.py | head -20\", \"description\": \"Confirm reference checker ignores line numbers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nP=experimental_notes/unextracted_sandbox_2026-08-30/tracked_changes.patch\\necho \\\"=== apply ONLY the runner hunk, at HEAD ===\\\"\\ngit apply --check --include='bench/reference_runner_v2.py' \\\"$P\\\" 2>&1\\necho \\\"rc=$?\\\"\\necho\\necho \\\"=== same hunk, against the pre-rename tree (ce08914^) ===\\\"\\ngit stash"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"### conftest claim: immune_agents.py:5048 catches bare Exception\\\"; sed -n '545,556p' bench/tests/conftest.py\\necho \\\"--- nearest 'except Exception' in immune_agents.py to 5048:\\\"; grep -n 'except Exception' bench/immune_agents.py | awk -F: '{d=$1-5048; if(d<0)d=-d; print d, $1, $2}' | sort -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad\\nR=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nP=experimental_notes/unextracted_sandbox_2026-08-30/tracked_changes.patch\\necho \\\"=== 3-way apply at PRE-rename tree (ce08914^) ===\\\"\\ncd \\\"$S"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -n 'runner_state.json' bench/reference_runner_v3.py | head -10\\necho \\\"--- around each: look for json decode guard ---\\\"\\ngrep -n 'JSONDecodeError\\\\|corrupt' bench/reference_runner_v3.py | head -10\", \"description\": \"Locate runner_state loader corruption handling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngit worktree remove --force /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/pre 2>&1\\necho \\\"worktrees now:\\\"; git worktree list\\necho \\\"git status:\\\"; git status --short\", \"description\": \"Clea"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -12 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\" 2>&1\", \"description\": \"Check suite result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la /private/tmp/cdsfl_review_89557/bench/reference_runner_v2.py 2>&1\\necho \\\"--- does the sandbox worktree still exist? ---\\\"\\nls -d /private/tmp/cdsfl_review_89557 2>&1\\necho \\\"--- suite output so far ---\\\"\\nwc -c \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until [ -s \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/tasks/bhjm163lu.output\\\" ]; do sleep 10; done; echo \\\"=== SUITE RESULT ===\\\"; tail -12 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== generator's own docstring ===\\\"; sed -n '20,30p' scripts/experiment_run_ledger.py; echo; echo \\\"=== third copy in a test ===\\\"; sed -n '18,24p' bench/tests/test_stop_reason_is_recorded_2026-08-26.py; echo; echo \\\"=== true location of the anchor comment ===\\\"; grep -n \\\"gamma-alt gate previously set only the result\\\" bench/reference_runner_v3.py\", \"description\":"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== vacuous assert ===\\\"; sed -n '40,48p' bench/tests/test_claims_audit_2026-08-28.py; echo; echo \\\"=== structural root: line numbers deliberately unchecked ===\\\"; sed -n '440,455p' scripts/cdsfl_utils.py\", \"description\": \"Verify vacuous assert and QC suppression\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '35,42p' experimental_notes/Scaling_Spec_GlobalMind_2026-08-26.md; echo \\\"=== re-derive using the test's own loop ===\\\"; python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nimport bench.tests.test_scaling_spec_numbers_2026_08_26 as t\\n\\\" 2>/dev/null || python3 - <<'EOF'\\nimport json,glob,statistics as st\\ndirs=set(); obs=[]\\nfor f in glob.glob('bench/logs/**/*.json'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ngrep -rl '\\\"hil_status\\\"' bench/logs bench/results logs 2>/dev/null | head -5\", \"description\": \"List files containing hil_status\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '5880,5925p' bench/reference_runner_v3.py\", \"description\": \"Read severity calibration site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '2600,2630p' bench/reference_runner_v3.py; echo \\\"=== pre_contest ===\\\"; sed -n '2965,3000p' bench/reference_runner_v3.py\", \"description\": \"Read g7 and pre_contest sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '5925,5975p' bench/reference_runner_v3.py\\necho \\\"=== call sites of _apply_severity_calibration ===\\\"\\ngrep -n \\\"_apply_severity_calibration\\\\|severity_calibration_enabled\\\" bench/reference_runner_v3.py | head\", \"description\": \"Check severity calibration gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ncat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/orphans.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"bench/*.py modules that have tests but are imported by nothing outside tests.\\\"\\\"\\\"\\nim"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ncat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/deadflags.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"RunnerConfig fields that default OFF, gate code, and no config ever turns on.\\\"\\\"\\\"\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== CLI flags in runner argparse ===\\\"\\ngrep -n 'add_argument' bench/reference_runner_v3.py | grep -iE 'routing|latent|severity|stall|discrim|hierarch|immune|hil|resume' \\necho \\\"=== all add_argument (names only) ===\\\"\\ngrep -o 'add_argument(\\\"--[a-z0-9-]*\\\"' bench/reference_runner_v3.py | so"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nfor k in stall_gamma_termination_enabled routing_enabled latent_tagger_enabled hierarchical_novelty_convergence immune_memory_consume_rk0 severity_calibration_enabled discrimination_control_ask; do\\n  printf \\\"%-40s cfg-json-hits=%s  archive-hits=%s\\\\n\\\" \\\"$k\\\" \\\\\\n    \\\"$(grep -rl \\\"\\\\\\\"$k\\\\\\\"\\\" be"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 -m pytest \\\"bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py::TestTheReportSaysWhereThePanelCouldReach::test_the_sandbox_flag_distinguishes_the_two_cases\\\" \\\"bench/tests/test_documentation_drift_guards_2026-08-25.py::test_declared_desktop_mirror_matches_its_canonical_copy\\\" \\\"bench"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 scripts/experiment_run_ledger.py > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/led.md 2>&1\\ndiff experimental_notes/EXPERIMENT_RUN_LEDGER.md /private/tmp/claude-501/-private-var-fol"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== live prompt string claims 10,510 lines; actual: ===\\\"\\nwc -l < bench/reference_runner_v3.py\\necho \\\"=== was that claim already stale pre-rename? ===\\\"\\ngit show ce08914^:bench/build_experiment_run.py | sed -n '104p'\\ngit show ce08914^:bench/reference_runner_v2.py | wc -l\\necho \\\"=== final"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== are these 8 ever SET in any non-test .py (launchers etc)? ===\\\"\\nfor k in discrimination_control_ask discrimination_control_blocks hierarchical_novelty_convergence immune_memory_consume_rk0 latent_tagger_enabled routing_enabled severity_calibration_enabled stall_gamma_termination_enabled;"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== stall gate wiring ===\\\"; grep -n \\\"stall_gamma_termination_enabled\\\\|_evaluate_stall\\\\|stall_gamma\\\" bench/reference_runner_v3.py | head -20\\necho \\\"=== latent_tagger / routing wiring ===\\\"; grep -n \\\"latent_tagger\\\\|routing_enabled\\\\|from routing\\\\|import routing\\\" bench/reference_runner"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== take_up_slack_enabled in configs ===\\\"\\ngrep -rn \\\"take_up_slack_enabled\\\" bench/exp*_configs/*.json\\necho \\\"=== archive evidence of routing firing ===\\\"\\ngrep -rl \\\"take_up_slack\\\\|routing_duplicate_of\\\\|routing_enabled\\\" bench/logs --include=\\\"*.json\\\" 2>/dev/null | head -5\\necho \\\"=== "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 - <<'EOF'\\nimport ast\\nSRC=\\\"bench/reference_runner_v3.py\\\"\\ntree=ast.parse(open(SRC,encoding=\\\"utf-8\\\").read(),SRC)\\n# find alias remaps of the form: if \\\"OLD\\\" in d and \\\"NEW\\\" not in d: d={**d,\\\"NEW\\\":d[\\\"OLD\\\"]}\\nal=[]\\nfor n in ast.walk(tree):\\n    if isinstance(n,ast.Dict):\\n        fo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== hierarchical_crit_series_is_gating values across archive ===\\\"\\ngrep -rho '\\\"hierarchical_crit_series_is_gating\\\": *[a-z]*' bench/logs bench/results 2>/dev/null | sort | uniq -c\\necho \\\"=== location_crit_series_is_gating (comparator, known-live flag) ===\\\"\\ngrep -rho '\\\"location_crit_seri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== derived artifact asserting a nonexistent file exists ===\\\"; python3 -c \\\"\\nimport json,os\\nd=json.load(open('experimental_notes/data/instrument_inventory.json'))\\ndef walk(o):\\n    if isinstance(o,dict):\\n        if 'file' in o and 'file_exists' in o: yield o\\n        for v in o.values(): yield from walk(v)\\n    elif isinstance(o,list):\\n        for i in o: yie"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== does the archived recovery patch still apply? ===\\\"; git apply -3 --check experimental_notes/unextracted_sandbox_2026-08-30/tracked_changes.patch 2>&1 | head -5; echo \\\"rc=$?\\\"; echo; echo \\\"=== the file it targets ===\\\"; grep -n \\\"^--- \\\\|^+++ \\\" experimental_notes/unextracted_sandbox_2026-08-30/tracked_changes.patch | head -6\", \"description\": \"Verify archived"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"chars claimed 527,304; actual:\\\"; wc -c < bench/reference_runner_v3.py; echo; echo \\\"=== the 3 reported failures ===\\\"; python3 -m pytest bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py -q 2>&1 | tail -6\", \"description\": \"Verify char count and one failure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && ls -la .git | head -2; echo \\\"--- is .git a file (worktree)? ---\\\"; test -f .git && echo \\\"YES: .git is a FILE -> disposable-copy artifact\\\" || echo \\\"NO: .git is a dir\\\"\", \"description\": \"Check worktree nature of sandbox\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== canary_seeding tests ===\\\"\\npython3 -m pytest bench/tests -q -k canary --collect-only 2>/dev/null | tail -3\\necho \\\"=== tests for the dead flags (count) ===\\\"\\nfor k in severity_calibration_enabled latent_tagger_enabled stall_gamma_termination_enabled immune_memory_consume_rk0 hierarchica"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 -m pytest bench/tests/test_severity_calibration.py bench/tests/test_latent_tagger.py bench/tests/test_latent_tagger_evaluation.py bench/tests/test_hierarchical_novelty.py bench/tests/test_immune_memory_consumption.py bench/tests/test_discrimination_control.py bench/tests/test_stopping_compon"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && sed -n '115,132p' bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py; echo \\\"=== does sim confinement use git worktree? ===\\\"; grep -rn \\\"worktree\\\" bench/tools/run_simulated_experiment_sandboxed.sh 2>/dev/null | head -5\", \"description\": \"Check worktree assumption vs Q1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\ncat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-kzr-4xhe-repo/647163a6-cea5-41cd-84f8-4c053c4ab7ca/scratchpad/never_fired_audit.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"never_fired_audit.py \\u2014 find guards/controls that have never fired in a r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== age of each never-observed persisted key (git blame of write site) ===\\\"\\nfor pair in \\\"4897:_error_route_pending\\\" \\\"12124:burst_phases\\\" \\\"5914:calibration_reason\\\" \\\"3683:corrected_copy_rejected\\\" \\\"12262:critical_boundary_census\\\" \\\"2620:g7_kept_distinct_round\\\" \\\"12246:gamma_threshol"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== text_safety usage ===\\\"; grep -rn \\\"text_safety\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v __pycache__ | head\\necho \\\"=== cost_ledger usage ===\\\"; grep -rn \\\"cost_ledger\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" . 2>/dev/null | grep -v __pycache__ | head\", \"description\": \"Check text_safet"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== does run_phase2/run_round_robin import CostLedger? ===\\\"\\ngrep -n \\\"CostLedger\\\\|import cost_ledger\\\\|from cost_ledger\\\" bench/run_phase2.py bench/run_round_robin.py | head\\necho \\\"=== CostLedger class surface ===\\\"; grep -n \\\"^class\\\\|^def\\\\|UNMETERED_ROUTES\\\" bench/cost_ledger.py | head"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== UNMETERED_ROUTES anywhere outside bench/cost_ledger.py + tests? ===\\\"\\ngrep -rn \\\"UNMETERED_ROUTES\\\" --include=\\\"*.py\\\" . | grep -v __pycache__\\necho\\necho \\\"=== does the archive cost_ledger.json carry module-only fields? ===\\\"\\npython3 -c \\\"\\nimport json\\nfor p in ['bench/results/round_r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"=== A4: unverified_critical presence across archive ===\\\"\\ngrep -rl '\\\"unverified_critical\\\"' bench/logs bench/results 2>/dev/null | wc -l\\necho \\\"=== does my check A catch it? (is it in 'written' set) ===\\\"\\ngrep -n 'unverified_critical' bench/reference_runner_v3.py | head -6\\necho\\necho \\\"="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\npython3 - <<'EOF'\\nimport json,os,collections\\nroots=[\\\"bench/logs\\\",\\\"bench/results\\\",\\\"logs\\\"]\\nrundirs=set()\\nfor r in roots:\\n    for dp,_,fn in os.walk(r):\\n        if any(f.startswith(\\\"round_\\\") and f.endswith(\\\".json\\\") for f in fn): rundirs.add(dp)\\nvals=collections.defaultdict(collections."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nfor k in source_diversity pipeline_modified corroboration_present retarget_substitutions; do\\n  echo \\\"=== $k ===\\\"\\n  grep -rn \\\"\\\\\\\"$k\\\\\\\"\\\\|'$k'\\\" --include=\\\"*.py\\\" bench/*.py 2>/dev/null | grep -v __pycache__ | head -4\\ndone\", \"description\": \"Trace always-constant keys to source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\nsed -n '11238,11258p' bench/reference_runner_v3.py\\necho \\\"=== target_hashes (unconditional sibling) presence ===\\\"\\ngrep -rl '\\\"target_hashes\\\"' bench/logs bench/results 2>/dev/null | wc -l\", \"description\": \"Verify sibling-witness discriminator\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kzr_4xhe/repo\\necho \\\"target_hashes: run-dirs carrying it:\\\"; grep -rl '\\\"target_hashes\\\"' bench/logs bench/results 2>/dev/null | xargs -n1 dirname | sort -u | wc -l\\necho \\\"target_integrity_events: run-dirs:\\\"; grep -rl '\\\"target_integrity_events\\\"' bench/logs bench/results 2>/dev/null | wc -l\", \"description\": \"G"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== cost_ledger: module vs production shadow ===\\\"; grep -rn \\\"UNMETERED_ROUTES\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v __pycache__; echo \\\"--- inline CostLedger definitions in production ---\\\"; grep -rn \\\"class CostLedger\\\" --include=\\\"*.py\\\" . | grep -v __pycache__; echo \\\"--- what schema did archived ledgers actually write? ---\\\"; for f in $(find bench/resu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== gating flag comparison ===\\\"; grep -rho '\\\"hierarchical_crit_series_is_gating\\\": *[a-z]*' bench/logs bench/results 2>/dev/null | sort | uniq -c; grep -rho '\\\"location_crit_series_is_gating\\\": *[a-z]*' bench/logs bench/results 2>/dev/null | sort | uniq -c; echo; echo \\\"=== burst never planned ===\\\"; grep -rl '\\\"burst_phases\\\"' bench/logs bench/results logs 2>/de"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && echo \\\"=== the tested module's totals() schema ===\\\"; grep -n \\\"def totals\\\" -A 12 bench/cost_ledger.py; echo \\\"=== does the production shadow meter claude_cli? ===\\\"; sed -n '200,235p' bench/run_round_robin.py | grep -n \\\"route\\\\|metered\\\\|claude_cli\\\\|def add\\\\|def record\\\" | head\", \"description\": \"Verify cost ledger schema divergence\"}"
+    }
+  ]
+}

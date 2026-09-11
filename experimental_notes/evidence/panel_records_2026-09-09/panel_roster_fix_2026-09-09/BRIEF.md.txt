@@ -1,0 +1,56 @@
+# Did today's roster-confinement repair actually close the leak, and did it break anything it was not meant to touch?
+
+## The question
+
+`_apply_routing` and `_post_convergence_sweep` in `bench/reference_runner_v3.py` both iterated `exp_config.models`, the full orchestrator roster, instead of the models the running arm declared in `cfg.models`. A new helper `_declared_models(exp_config, cfg)` now filters the roster, and both call sites use it. The founder has, on the strength of that repair, ruled routing and the post-convergence sweep ON in all 3 arms of `bench/exp56_configs/`.
+
+**Your question: is that repair correct, complete, and safe enough to justify turning both mechanisms on?**
+
+## What you are reviewing
+
+- `bench/reference_runner_v3.py` — the new `_declared_models` helper and its 2 call sites.
+- `bench/routing.py` — `rank_falsifier_writers`, which the helper feeds.
+- `bench/tests/test_declared_models_roster_2026-09-09.py` — the new guards.
+- `bench/tests/test_d9_d11_configs_valid_2026-09-05.py` — 3 pre-existing guards that were re-aimed rather than deleted.
+- `bench/exp56_configs/*.json` — the 3 configs whose flags were flipped.
+
+## Use the harness
+
+RUN things. Do not describe them. Import the runner, call `_declared_models` with constructed rosters, drive `_post_convergence_sweep` with a stub in place of `dispatch_to_model` and count the seats reached. Report the command you ran and the output you saw.
+
+Use the mathematical model as an instrument, not as background. Specifically:
+
+- **Severity and S_k**: the ladder exists to resolve un-confirmed criticals. Does confining the roster change which findings can reach a resolving seat, and therefore change S_k's input distribution?
+- **gamma**: routing resolutions feed the critical series. If confinement reduces the seats available, does gamma's decay shape change, and would a run that previously converged still converge?
+- **rho**: the cross-architecture correlation is measured across seats. A 1-seat arm has no cross-architecture signal at all. State what rho can and cannot mean under confinement.
+
+Measured, for your reference and to be checked rather than trusted: across 7 deduplicated simulated runs the ladder took 69 findings and absorbed 53 of them — 76.8%, Wilson [65.6%, 85.2%] — with 9 reaching the human. If the repair damages that, it is not worth having.
+
+## Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a runnable falsifier that you have EXECUTED is a hypothesis. For every defect you raise, supply the falsifier, run it, and report its output.
+
+## What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+Specific things worth attacking, since a reviewer told where to look is more useful than one told to look everywhere:
+
+1. The `-SIM` suffix normalisation. In a simulated run the roster is `CC2-SIM` while a config may declare `CC2`. Is the normalisation correct in both directions, and is there a label shape that defeats it?
+2. The empty case. If an arm declares seats the roster does not carry, `_declared_models` returns an empty list and logs. Is returning empty right, or should it refuse the run outright?
+3. The re-aimed guards. Three pre-existing tests were changed because the defect they pinned is gone. Were they re-aimed honestly, or weakened to make a change pass?
+4. Whether anything else in the runner still reads `exp_config.models` where it should read the declared subset. 2 sites were found. Are there more?
+
+## Output
+
+Return, as named fields:
+
+- **verdict** — is the repair correct, complete and safe to enable? One of CONFIRMED, REFUTED, UNCERTAIN.
+- **reasoning** — the derivation, not the conclusion.
+- **falsifier** — the code you wrote, and the output you got when you ran it.
+- **disagreement** — your strongest objection to this brief's own framing.
+- **model_use** — where gamma, rho, S_k or severity bore on your answer, with values.
+
+## Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. Diminishing returns is this project's own criterion, and a clean verdict backed by derivation is as useful as a finding.

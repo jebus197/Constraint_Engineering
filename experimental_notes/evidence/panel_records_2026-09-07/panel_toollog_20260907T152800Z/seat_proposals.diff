@@ -1,0 +1,217 @@
+### .mypy_cache/3.13/cache.db
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/.mypy_cache/3.13/cache.db and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/.mypy_cache/3.13/cache.db differ
+
+### .pytest_cache/v/cache/nodeids
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.pytest_cache/v/cache/nodeids	2026-09-07 15:31:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/.pytest_cache/v/cache/nodeids	2026-09-07 15:35:13
+@@ -827,13 +827,6 @@
+   "bench/tests/test_contested_count_v2.py::TestSignatureStability::test_return_type_is_int",
+   "bench/tests/test_contested_count_v2.py::TestSignatureStability::test_signature_default_is_two",
+   "bench/tests/test_contested_count_v2.py::TestSignatureStability::test_signature_takes_current_round_and_grace_period",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_a_DELETED_hook_is_caught",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_a_NEW_hook_script_is_caught",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_a_file_CREATED_where_one_was_absent_is_caught",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_a_file_absent_at_both_ends_is_not_reported",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_a_modified_settings_file_is_caught",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_an_APPENDED_hook_is_caught",
+-  "bench/tests/test_control_plane_containment_2026-09-07.py::test_an_unchanged_control_plane_reports_nothing",
+   "bench/tests/test_convergence_location.py::TestMarkdownTargets::test_claim_ids_and_headings_extracted",
+   "bench/tests/test_convergence_location.py::TestMarkdownTargets::test_markdown_finding_locations_match",
+   "bench/tests/test_convergence_location.py::TestMarkdownTargets::test_python_targets_unchanged",
+@@ -4565,9 +4558,6 @@
+   "bench/tests/test_starvation_floor.py::TestStarvationRaisesTheAlarm::test_it_fires_at_any_size_above_the_minimum[7-7]",
+   "bench/tests/test_starvation_floor.py::TestStarvationRaisesTheAlarm::test_the_archived_pattern_now_fires",
+   "bench/tests/test_starvation_floor.py::TestStarvationRaisesTheAlarm::test_total_removal_fires_even_when_mixed",
+-  "bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py::test_stated_count_equals_the_measured_archive",
+-  "bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py::test_stated_interval_belongs_to_the_stated_count",
+-  "bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py::test_the_scanner_cannot_catch_this_and_admits_it",
+   "bench/tests/test_static_queue_closure.py::TestQueueSizeStillDecidesTheAlarm::test_alarm_fires_above_the_bound_and_not_at_it",
+   "bench/tests/test_static_queue_closure.py::TestQueueSizeStillDecidesTheAlarm::test_alarm_respects_a_configured_bound",
+   "bench/tests/test_static_queue_closure.py::TestQueueSizeStillDecidesTheAlarm::test_small_queue_still_converges",
+
+### .ruff_cache/0.15.9/16898699716693546243
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/.ruff_cache/0.15.9/16898699716693546243 and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/.ruff_cache/0.15.9/16898699716693546243 differ
+
+### bench/__pycache__/panel_sandbox.cpython-313.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/__pycache__/panel_sandbox.cpython-313.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/__pycache__/panel_sandbox.cpython-313.pyc differ
+
+### bench/__pycache__/reference_runner_v3.cpython-313.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/__pycache__/reference_runner_v3.cpython-313.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/__pycache__/reference_runner_v3.cpython-313.pyc differ
+
+### bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-07 15:31:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-07 15:27:18
+@@ -247,12 +247,6 @@
+     # and unwired -- the project's most repeated failure shape.
+     global _PANEL_SANDBOX_CWD
+     baseline = panel_sandbox.fingerprint(_REPO)
+-    # THE CONTROL PLANE IS OUTSIDE THE REPO AND WAS UNWATCHED (2026-09-07).
+-    # A seat wrote to the operator's real ~/.claude/settings.json at 15:04:45
+-    # and `canonical_was_touched` did not fire, because it digests the repo's
+-    # tracked files and $HOME is not among them. That write appended a hook --
+-    # code that then runs on every turn of every unrelated session.
+-    home_baseline = panel_sandbox.control_plane_fingerprint()
+     sandbox = panel_sandbox.build(_REPO)
+     _PANEL_SANDBOX_CWD = str(sandbox)      # workers read this and set their own TLS
+     print(f"    seats confined to a copy: {sandbox}")
+@@ -277,12 +271,6 @@
+                   f"-> {LOGS / 'seat_proposals.diff'} (untested; not applied)")
+         # DETECTION for what a sandbox cannot prevent: a seat writing to an
+         # absolute path it already knows. vault_keys.sh records that limit exactly.
+-        home_touched = panel_sandbox.control_plane_was_touched(home_baseline)
+-        if home_touched:
+-            print(f"    *** OPERATOR CONTROL PLANE MODIFIED DURING THE PANEL: "
+-                  f"{home_touched} ***")
+-            (LOGS / "control_plane_touched.json").write_text(
+-                json.dumps(home_touched, indent=2), encoding="utf-8")
+         touched = panel_sandbox.canonical_was_touched(baseline, _REPO)
+         if touched:
+             print(f"    *** CANONICAL TREE MODIFIED DURING THE PANEL: {touched} ***")
+
+### bench/panel_sandbox.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/panel_sandbox.py	2026-09-07 15:30:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/panel_sandbox.py	2026-09-07 02:16:39
+@@ -232,81 +232,6 @@
+     return _tracked_digest(repo)
+ 
+ 
+-# THE CONTROL PLANE LIVES OUTSIDE THE REPO, AND NOTHING WATCHED IT.
+-#
+-# 2026-09-07, 15:04:45: a seat running under this sandbox wrote to the operator's
+-# REAL ~/.claude/settings.json. `canonical_was_touched` did not fire and could
+-# not have -- it digests the repo's tracked files, and $HOME is not among them.
+-# The write happened to be benign (it appended a hook entry and removed nothing),
+-# which is luck, not containment.
+-#
+-# These paths are not ordinary files. ~/.claude/settings.json names HOOKS, which
+-# are commands executed on every turn of every session; ~/.claude/hooks/ holds
+-# their code; ~/.claude/CLAUDE.md is the directive set every model is handed; the
+-# memory directory is the record those directives are built from. A seat editing
+-# any of them changes the behaviour of the operator's other sessions, silently
+-# and after the panel has ended.
+-#
+-# DETECTION, NOT PREVENTION, AND DELIBERATELY SO. The obvious prevention is to
+-# rewrite HOME for the seat process. This project already ran that experiment
+-# from the other end: `--bare` was added to confine the CLI, and because it also
+-# skips keychain reads it selected an auth mode this account does not have, so
+-# every headless dispatch returned "Not logged in" (experiment_11_orchestrator,
+-# 2026-07-29). Moving HOME would break OAuth the same way. The layered position
+-# taken everywhere else applies here too: the pointer stays reachable, the use
+-# is detected. See `canonical_was_touched`, whose docstring states the same
+-# limit for the repo half.
+-_CONTROL_PLANE = (
+-    ".claude/settings.json",
+-    ".claude/settings.local.json",
+-    ".claude/CLAUDE.md",
+-)
+-_CONTROL_PLANE_GLOBS = (
+-    ".claude/hooks/*.py",
+-    ".claude/projects/-Users-georgejackson-Developer-Projects/memory/*.md",
+-)
+-
+-
+-def control_plane_fingerprint(home: "Path | None" = None) -> Dict[str, str]:
+-    """Digest the operator files a seat could reach by absolute path.
+-
+-    Missing files are recorded as absent rather than skipped, so a seat CREATING
+-    one is caught. That was the hole in the repo-side check until it started
+-    reporting "CREATED".
+-    """
+-    base = Path(home) if home else Path.home()
+-    out: Dict[str, str] = {}
+-    paths = [base / rel for rel in _CONTROL_PLANE]
+-    for pat in _CONTROL_PLANE_GLOBS:
+-        paths.extend(sorted(base.glob(pat)))
+-    for path in paths:
+-        rel = str(path.relative_to(base))
+-        try:
+-            out[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+-        except (OSError, ValueError):
+-            out[rel] = "ABSENT"
+-    return out
+-
+-
+-def control_plane_was_touched(
+-    before: Dict[str, str], home: "Path | None" = None
+-) -> Dict[str, str]:
+-    """What changed in the operator's control plane while the panel ran."""
+-    after = control_plane_fingerprint(home)
+-    touched: Dict[str, str] = {}
+-    for rel, sha in after.items():
+-        if rel not in before:
+-            touched[rel] = "CREATED"
+-        elif before[rel] != sha:
+-            touched[rel] = "CREATED" if before[rel] == "ABSENT" else "modified"
+-    for rel, sha in before.items():
+-        if rel not in after:
+-            touched[rel] = "deleted"
+-        elif after[rel] == "ABSENT" and sha != "ABSENT":
+-            touched[rel] = "deleted"
+-    return {k: v for k, v in touched.items() if v != "ABSENT"}
+-
+-
+ def teardown(sandbox: Path) -> None:
+     """Remove a sandbox. REFUSES to remove the system temp root itself.
+ 
+
+### bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-07 15:35:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/reference_runner_v3.py	2026-09-07 15:17:32
+@@ -10637,28 +10637,6 @@
+     exact Clopper-Pearson gives 99.8841% and 99.9034%). [99.88%, 100.00%] is
+     precisely what 3181 yields, so the claim was DERIVED from the wrong count.
+     A count and its interval must be corrected together or the pair still lies.
+-
+-    A DISSENT THAT IS RECORDED, NOT RESOLVED. The cc2 seat of 2026-09-04, in a
+-    dispatch with 224 logged tool calls, measured this population at 3601 and
+-    reported "my independent count and the delegated one agree to the digit",
+-    plus 3523 by a structured walk it described as counting threshold checks.
+-    That is 215 below the figure here and it is NOT reproduced. 5 explanations
+-    were tested and all 5 failed: the archive did not grow (every one of the
+-    3816 records sits in a file last modified before that seat ran), there is no
+-    formatting variant (the separator is a single space in 3816 of 3816 cases,
+-    and a raw-text regex, a `grep -oh | wc -l`, a structure-aware JSON walk and
+-    scripts/measure_sk_threshold_gate_fire_rate.py all return 3816), `grep -c`
+-    line-counting does not undercount here (lines and occurrences are both
+-    3816), the sandbox secret-scrub removes no file containing a gate record (0),
+-    and panel_* directories hold 0 records so excluding them changes nothing.
+-
+-    THE LOAD-BEARING CLAIM DOES NOT DEPEND ON WHICH IS RIGHT. `passes_threshold`
+-    reads false 0 times by every method and every corpus tried, and cc2 called
+-    the direction confirmed while disputing only the magnitude. The gate has
+-    never rejected a fix whether the denominator is 3601 or 3816; the interval
+-    moves, the finding does not. The count is pinned to a live re-measurement by
+-    bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py, so if
+-    3816 is ever wrong the test says so rather than this prose being believed.
+     """
+     shipped_passes, shipped_s_star = check_sk_threshold(sk, nu_b, nu_f, q, R, s_floor)
+     true_floor = sk_break_even(nu_b=nu_b, nu_f=nu_f, q=q, R=R)
+
+### bench/tests/__pycache__/test_sk_break_even_2026-09-06.cpython-313-pytest-9.0.3.pyc
+Binary files /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/__pycache__/test_sk_break_even_2026-09-06.cpython-313-pytest-9.0.3.pyc and /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench/tests/__pycache__/test_sk_break_even_2026-09-06.cpython-313-pytest-9.0.3.pyc differ
+
+### experimental_notes/Final_Report_2026-09-05.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Final_Report_2026-09-05.md	2026-09-07 15:29:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/experimental_notes/Final_Report_2026-09-05.md	2026-09-05 13:58:32
+@@ -28,7 +28,7 @@
+ | | What it is | State |
+ |---|---|---|
+ | `hil_review` | A **run-pause switch** — stops after each round for review | Never set in a config. **Not unreachable**: `--hil-review` is a CLI flag, and the runner prints *"Resume with `--resume --hil-review`"* |
+-| `hil_escalated` / queue | Findings **routed to a person** when no tool can settle them | **Always worked.** **90 escalated of 6,929 = 1.30%**, Wilson [1.06%, 1.59%]; **41 irreducible** of 6,929 = 0.59%, Wilson [0.44%, 0.80%]; **together 131 of 6,929 = 1.89%**, Wilson [1.60%, 2.24%]. (CORRECTED 2026-09-07: this read "90 escalated + 41 irreducible across 6,929 findings = 1.30%, Wilson [1.06%, 1.59%]". 90 + 41 = 131, which is 1.89%, not 1.30% -- the percentage and the interval were 90's alone, carried across a sum that changed the numerator. All 3 figures are given now so the reader can take whichever the claim needs.) |
++| `hil_escalated` / queue | Findings **routed to a person** when no tool can settle them | **Always worked.** 90 escalated + 41 irreducible across 6,929 findings = **1.30%**, Wilson [1.06%, 1.59%] |
+ 
+ Your remark that *"a minor issue like reviewing a paused run"* was being oversold was exactly right.
+ 
+
+### experimental_notes/TODAY_2026-09-05.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/TODAY_2026-09-05.md	2026-09-07 15:29:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/experimental_notes/TODAY_2026-09-05.md	2026-09-05 15:52:36
+@@ -52,7 +52,7 @@
+ 
+ ## Part 2 — two questions I owed you
+ 
+-**"How can HIL review have never worked when we spent months on the HIL queue?"** — Both true; your memory is right. `hil_review` is a **run-pause switch**, never set in a config, and **not unreachable** (`--hil-review` is a CLI flag the runner prints when it pauses). The **escalation queue** is separate and always worked: **90 escalated of 6,929 = 1.30%**, Wilson [1.06%, 1.59%]; **41 irreducible** of 6,929 = 0.59%, Wilson [0.44%, 0.80%]; **together 131 of 6,929 = 1.89%**, Wilson [1.60%, 2.24%] *(corrected 2026-09-07: 90 + 41 = 131 = 1.89%, not 1.30%; the stated percentage and interval were 90's alone)*. I conflated a convenience with a control.
++**"How can HIL review have never worked when we spent months on the HIL queue?"** — Both true; your memory is right. `hil_review` is a **run-pause switch**, never set in a config, and **not unreachable** (`--hil-review` is a CLI flag the runner prints when it pauses). The **escalation queue** is separate and always worked: **90 + 41 of 6,929 = 1.30%**, Wilson [1.06%, 1.59%]. I conflated a convenience with a control.
+ 
+ **"Was the model refuted, or my test of it?"** — My test. 3 of 15 assertions subtracted an expression from itself and would pass with the model replaced by **42**. The model survived. Two pieces of appendix *prose* were refuted, both corrected.
+ 

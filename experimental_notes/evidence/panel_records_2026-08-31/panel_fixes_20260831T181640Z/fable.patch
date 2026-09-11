@@ -1,0 +1,1287 @@
+diff --git a/bench/cc2_manager.py b/bench/cc2_manager.py
+index 19a4e3d..43459fb 100644
+--- a/bench/cc2_manager.py
++++ b/bench/cc2_manager.py
+@@ -129,6 +129,11 @@ def _dispatch_cli(
+         "--output-format", "text",
+         "--no-session-persistence",
+         "--max-turns", str(max_turns),
++        # THE SAME ISOLATION AS call_claude_cli AND THE SIM SHIM (2026-08-31).
++        # Without it this spawn inherits ~/.claude/CLAUDE.md and the project
++        # .claude/CLAUDE.md -- measured 71.2% of briefing chars on the panel
++        # route -- so the model reads the operator's private instructions.
++        "--setting-sources", "",
+     ]
+     if allowed_tools:
+         cmd.extend(["--allowedTools", ",".join(allowed_tools)])
+diff --git a/bench/falsifier_verify.py b/bench/falsifier_verify.py
+index bd64964..b871c8b 100644
+--- a/bench/falsifier_verify.py
++++ b/bench/falsifier_verify.py
+@@ -396,8 +396,18 @@ def _allow_roots(repo_root: str | None, allow_paths: tuple[str, ...] | list[str]
+     # one run this project had to discard, because a model wrote a falsifier
+     # that opened the scoring key. This does not touch that.
+     #
+-    # A model-authored falsifier cannot reach this: the value is read by the
+-    # PARENT process that scans the source, and the falsifier runs as a child.
++    # A model-authored falsifier cannot SET this: the value is read from the
++    # parent's environment, and the child's environment is scrubbed. But the
++    # value DOES reach the child -- ``_observer_source`` calls this function
++    # to bake the runtime allowlist into the observer, so when the dispatcher
++    # sets it, the canonical tree becomes READABLE at runtime, not merely
++    # nameable in source. (An earlier revision of this comment claimed the
++    # child was out of reach; measured 2026-08-31, that was false.) What keeps
++    # the boundary closed after the discarded run is not this comment's old
++    # claim but ``_denied``'s ordering: the protected set is checked BEFORE
++    # the allowlist, so key material stays refused even inside an allowed
++    # root. Measured: a protected path under the canonical root is denied
++    # while its ordinary siblings are allowed.
+     _canon = os.environ.get("CDSFL_CANONICAL_REPO", "").strip()
+     if _canon and os.path.isdir(_canon):
+         roots.append(os.path.normpath(_canon))
+diff --git a/bench/immune_agents.py b/bench/immune_agents.py
+index a66b715..b99ab8e 100644
+--- a/bench/immune_agents.py
++++ b/bench/immune_agents.py
+@@ -835,6 +835,9 @@ def cytotoxic_t_cell(
+     try:
+         cmd = [
+             _get_claude_cli(), "-p", prompt,
++            # Same isolation as call_claude_cli (2026-08-31): classifier and
++            # specialist spawns must not inherit operator/project config.
++            "--setting-sources", "",
+             "--allowedTools", "Read,Grep,Glob",
+             "--max-turns", "4",
+         ]
+@@ -3415,6 +3418,44 @@ if not _shadow_log.handlers:
+     _shadow_log.addHandler(_shadow_fh)
+ 
+ 
++def redirect_shadow_log(dir_path: str) -> str:
++    """Point the immune pipeline's shadow log at ``dir_path`` from now on.
++
++    WHY THIS EXISTS (2026-08-31). The pytest diversion above solved the 2026-07-31
++    contamination for TEST runs only. A SIMULATED experiment is neither pytest nor
++    a real panel, so the v3.1/v3.2 simulated runs appended 174 ``-SIM`` lines
++    (measured: log lines 51887-52162, 2026-08-30T17:21:29 to 2026-08-31T02:02:37)
++    to the ARCHIVAL bench/logs/immune_pipeline.log, interleaving simulated and
++    real records in the one file the archive keeps them apart to protect.
++
++    A simulated harness calls this with its own run directory right after
++    creating it. The archival default is untouched for real experiments; the
++    env override and the pytest diversion behave exactly as before. Idempotent;
++    returns the path now being written.
++    """
++    import os as _os2
++    _os2.makedirs(dir_path, exist_ok=True)
++    target = _os2.path.join(dir_path, "immune_pipeline.log")
++    for h in list(_shadow_log.handlers):
++        if isinstance(h, _logging.FileHandler):
++            if _os2.path.abspath(getattr(h, "baseFilename", "")) == _os2.path.abspath(target):
++                return target  # already there
++            _shadow_log.removeHandler(h)
++            try:
++                h.close()
++            except Exception:  # noqa: BLE001 -- a close failure must not lose the redirect
++                pass
++    fh = _logging.FileHandler(target, encoding="utf-8")
++    fh.setLevel(_logging.INFO)
++    fh.setFormatter(_logging.Formatter(
++        "%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"))
++    _shadow_log.addHandler(fh)
++    # Children spawned by this run (decomposed dispatch etc.) import their own
++    # copy of this module; the env override above is how THEY find the same file.
++    _os2.environ["CDSFL_SHADOW_LOG_DIR"] = dir_path
++    return target
++
++
+ # ── 0. SKIN BARRIER — deterministic pre-filter ───────────────────────────────
+ #
+ # Runs BEFORE the pipeline. Checks whether a finding's code citations
+@@ -3739,6 +3780,9 @@ def cytotoxic_t_cell_v2(
+     try:
+         cmd = [
+             _get_claude_cli(), "-p", prompt,
++            # Same isolation as call_claude_cli (2026-08-31): classifier and
++            # specialist spawns must not inherit operator/project config.
++            "--setting-sources", "",
+             "--allowedTools", "Read,Grep,Glob",
+             "--max-turns", "6",
+         ]
+@@ -4965,6 +5009,9 @@ def typed_llm_classifier(
+             )
+             cmd = [
+                 _get_claude_cli(), "-p", prompt,
++                # Same isolation as call_claude_cli (2026-08-31): classifier and
++                # specialist spawns must not inherit operator/project config.
++                "--setting-sources", "",
+                 "--model", _CLASSIFIER_MODEL,
+                 "--output-format", "text",
+                 "--max-turns", "1",
+@@ -5216,6 +5263,9 @@ def _active_llm_classify(
+     )
+     cmd = [
+         cli, "-p", prompt,
++        # Same isolation as call_claude_cli (2026-08-31): classifier and
++        # specialist spawns must not inherit operator/project config.
++        "--setting-sources", "",
+         "--model", _CLASSIFIER_MODEL,
+         "--output-format", "text",
+         "--max-turns", "1",
+diff --git a/bench/macrophage_cell.py b/bench/macrophage_cell.py
+index 1ea0296..a4773c8 100644
+--- a/bench/macrophage_cell.py
++++ b/bench/macrophage_cell.py
+@@ -142,6 +142,32 @@ class MacrophageCell:
+         self._observation_counter += 1
+         return f"macro_{self._observation_counter:04d}"
+ 
++    def rehydrate_timings(self, per_round_timings: List[Dict[str, float]]) -> int:
++        """Rebuild timing baselines from archived per-round timing dicts.
++
++        WHY (2026-08-31, measured). This cell is a module-level singleton and
++        does not survive checkpoint-resume, so every resume silently zeroed the
++        per-stage baselines the 2026-08-31 timing fix depends on -- and, worse,
++        the fix itself removed the only archive of raw stage timings: before
++        it, the noisy alarms recorded every model-stage's time each round
++        (which is the only reason the 3.0x factor could be validated against
++        real runs at all -- 62 stage-rounds, max real ratio 1.9x); after it, a
++        quiet round recorded nothing. The runner now writes `stage_timings`
++        into each macrophage_shadow_r*.json and hands them back here on
++        construction. History-only: no observations are re-raised.
++
++        Returns the number of rounds rehydrated."""
++        n = 0
++        for t in per_round_timings:
++            if isinstance(t, dict) and t:
++                self._round_history.append({
++                    "observation_count": 0, "anomaly_count": 0,
++                    "verdict_count": 0, "timestamp": 0.0,
++                    "rehydrated": True, "timings": dict(t),
++                })
++                n += 1
++        return n
++
+     def observe(
+         self,
+         verdicts: List[Any],
+diff --git a/bench/reference_runner_v2.py b/bench/reference_runner_v2.py
+index 3171222..e2e3011 100644
+--- a/bench/reference_runner_v2.py
++++ b/bench/reference_runner_v2.py
+@@ -178,6 +178,7 @@ from runner_core import (
+     source_env,
+     build_model_specs,
+     parse_findings,
++    _bounded_description,
+     dispatch_to_model,
+     format_findings_for_context,
+     INITIAL_FINGERPRINTS,
+@@ -4543,8 +4544,24 @@ def _extract_routing_falsifier(text: str) -> str:
+     # The two requirements only conflict per-block, not per-reply. So: take the
+     # strict reading of the WHOLE reply first, and only if it produces no
+     # runnable candidate at all, re-read permissively. A self-fenced falsifier
+-    # is strict-readable, so it never reaches the fallback; a reply whose
+-    # closers are malformed is not, so it does.
++    # whose inner backticks sit MID-LINE (the regex-literal shape both stem
++    # fixtures use) is strict-readable, so it never reaches the fallback; a
++    # reply whose closers are malformed is not, so it does.
++    #
++    # THIRD PASS (2026-08-31): a falsifier that quotes a fenced listing in a
++    # triple-quoted string puts a BARE fence line inside its own body. The
++    # strict pass closes on that inner line and yields an unparseable
++    # fragment; the loose pass closes even earlier. Both return nothing, and
++    # nothing reads as "ladder exhausted" -- the silent loss this function
++    # exists to prevent, in the exact prose shape the round-1 comment called
++    # safe. So when BOTH existing passes yield no runnable candidate,
++    # enumerate every (opener line, closer line) fence pair and keep the
++    # bodies that pass the same ``_runnable`` test. Runnability is the
++    # disambiguator: a body truncated at an inner fence has an unterminated
++    # string and cannot parse, so only the true extent survives. Latest
++    # closer wins (the prompt says give the final falsifier last); on a tie
++    # the widest span wins, so a complete block beats its own tail. Strictly
++    # widening: this pass runs only where today's code returns "".
+     def _runnable(raw: str) -> bool:
+         block = (raw or "").strip()
+         if not block:
+@@ -4570,6 +4587,21 @@ def _extract_routing_falsifier(text: str) -> str:
+     if not cand:
+         cand = [b.strip() for b in _re.findall(_LOOSE, text or "", _re.S)
+                 if _runnable(b)]
++    if not cand:
++        # Exhaustive fence-pair recovery -- see THIRD PASS above.
++        lines = (text or "").splitlines(keepends=True)
++        fence_rows = [k for k, ln in enumerate(lines)
++                      if ln.strip().startswith("```")]
++        best_key, best_body = None, ""
++        for a_pos, a in enumerate(fence_rows):
++            for b in fence_rows[a_pos + 1:]:
++                body = "".join(lines[a + 1:b]).strip()
++                if _runnable(body):
++                    key = (b, b - a)  # latest closer, then widest span
++                    if best_key is None or key > best_key:
++                        best_key, best_body = key, body
++        if best_key is not None:
++            return best_body
+     return cand[-1] if cand else ""
+ 
+ 
+@@ -4978,6 +5010,74 @@ def _settle_confirmed_findings(registry, round_idx):
+     return settled
+ 
+ 
++def _post_sweep_fix_efficacy_drain(registry, cfg):
++    """Re-probe fix-efficacy records the sweep made stale, to completion.
++
++    THE STALENESS, measured on the v3.2 run (2026-08-31): 15 entries recorded
++    NOT_PROBED_NO_FALSIFIER during the rounds; the post-convergence sweep then
++    attached runner-verified falsifiers to 11 of them -- the identical set --
++    and nothing ever re-asked the question the record says could not be asked.
++    A single extra pass would probe only FIX_EFFICACY_PER_ROUND_LIMIT (5) of
++    the 11, because the cap bounds wall-clock PER ROUND, which is the right
++    bound mid-run and the wrong one for a one-time epilogue over a known
++    backlog (0.255 s per probe measured over 313 archived findings).
++
++    The cap is NOT removed: each pass respects it, and passes repeat until one
++    makes no probe. Bounded by the backlog itself; the backstop can only fire
++    on a logic error. The decision function is the same instrument the rounds
++    use, so the artefact records the same vocabulary for why a probe did or
++    did not run."""
++    stats = {"stale": 0, "probed": 0, "passes": 0, "outcomes": {}}
++    try:
++        from fix_efficacy import probe as _fe_probe, NO_FALSIFIER as _fe_nf
++    except Exception as _fe_imp:                              # noqa: BLE001
++        stats["error"] = f"fix_efficacy unavailable: {_fe_imp}"
++        return stats
++    stale = [cid for cid, e in registry.entries.items()
++             if (e.get("fix_efficacy") or {}).get("outcome") == _fe_nf
++             and (e.get("falsifier_code") or "").strip()
++             and not e.get("fix_efficacy_attempted")]
++    stats["stale"] = len(stale)
++    if not stale:
++        return stats
++    while stats["passes"] <= len(registry.entries) + 1:
++        stats["passes"] += 1
++        calls = 0
++        for cid in stale:
++            e = registry.entries[cid]
++            if fix_efficacy_decision(e, calls) != "PROBE":
++                continue
++            e["fix_efficacy_attempted"] = True
++            calls += 1
++            try:
++                _fe_target = (e.get("target_file")
++                              or (cfg.test_article if cfg else None))
++                if not _fe_target:
++                    continue
++                _fe_rel = str(_fe_target)
++                if _fe_rel.startswith(str(REPO_ROOT)):
++                    _fe_rel = str(Path(_fe_rel).relative_to(REPO_ROOT))
++                if not (REPO_ROOT / _fe_rel).is_file():
++                    continue
++                _fe = _fe_probe(
++                    {"falsifier_code": e.get("falsifier_code") or "",
++                     "proposed_fix": e.get("proposed_fix") or ""},
++                    _fe_rel, repo_root=REPO_ROOT, timeout=20)
++                e["fix_efficacy"] = {
++                    "outcome": _fe.outcome, "detail": _fe.detail[:300],
++                    "probed_post_sweep": True}
++                stats["probed"] += 1
++                stats["outcomes"][_fe.outcome] = (
++                    stats["outcomes"].get(_fe.outcome, 0) + 1)
++                _log(f"  post-sweep fix-efficacy {cid}: {_fe.outcome}")
++            except Exception as _fe_exc:                      # noqa: BLE001
++                _log(f"  post-sweep fix-efficacy error for {cid}: "
++                     f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
++        if calls == 0:
++            break
++    return stats
++
++
+ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None):
+     """Bounded epilogue: panel clears residual non-terminal findings AFTER the
+     convergence verdict is recorded. Guards (founder malady-proofing,
+@@ -5064,6 +5164,18 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
+                     e["falsifier_verdict"] = "CONFIRMED"
+                     e["verified"] = True
+                     e["resolved_by_sweep"] = mc.label if hasattr(mc, "label") else str(mc)
++                    # SAME CLEAR-LIST AS THE ROUTING SUCCESS SITE (2026-08-31).
++                    # This is the OTHER place a fresh runner-verified falsifier
++                    # replaces the instrument, and it cleared nothing: a
++                    # NON_DISCRIMINATING or ladder-exhausted stamp minted
++                    # against the OLD falsifier survived the new one -- the
++                    # exact lie the founder's mechanical_fault ruling closed at
++                    # the routing site. The archived C0015 (CLOSED,
++                    # hil_escalated=True) is this class, live in the record.
++                    e["irreducible_escalation"] = False
++                    e["hil_escalated"] = False
++                    e.pop("hil_reason", None)
++                    e["mechanical_fault"] = False
+                     registry.resolve(cid, "CONFIRMED", round_idx)
+                     stats["cleared"] += 1
+                     _handled.add(cid)
+@@ -6908,6 +7020,7 @@ def _dispatch_single_model(
+     cdsfl_text: str, full_code: str, round_idx: int,
+     pattern_name: str, domain: str, logs_dir: Path,
+     enable_tools: bool = True,
++    falsifier_gate_on: Optional[bool] = None,
+ ) -> Tuple[List[Finding], Optional[str]]:
+     # enable_tools DEFAULTS ON (founder ruling 2026-08-30). It was GATED and
+     # defaulted OFF, forwarded from cfg.falsifier_gate_enabled, so any gate-off
+@@ -6915,6 +7028,17 @@ def _dispatch_single_model(
+     # assert, unable to run anything, i.e. able only to vote. The standing
+     # directive is TOOLS DECIDE, NOT VOTES, and the ruling extends it to "all
+     # models under all conditions ... without exception".
++    #
++    # falsifier_gate_on IS A SEPARATE FLAG (2026-08-31). Before the ruling both
++    # concerns rode cfg.falsifier_gate_enabled through the ONE enable_tools
++    # parameter; hardwiring tools ON therefore hardwired the SS2 rewrite ON too,
++    # so a gate-off ablation arm received the runnable-falsifier SS2 mid-arc --
++    # a changed prompt in the arm whose defining variable is the gate being
++    # off. The ruling covered tool use, not the rewrite. Callers forward
++    # cfg.falsifier_gate_enabled; None preserves the pre-split coupling for any
++    # caller not yet updated (fails toward yesterday's behaviour, loudly here).
++    if falsifier_gate_on is None:
++        falsifier_gate_on = enable_tools
+     try:
+         # Resolve the SIM suffix: `CC2-SIM` must compose as CC2, or a simulated
+         # panellist silently loses its per-model directive.
+@@ -6954,11 +7078,11 @@ def _dispatch_single_model(
+     # stated rather than silent (CC2, 2026-08-30): with ask=True and the gate
+     # OFF, no ask is emitted, which is the same placebo shape the wire was
+     # written to remove.
+-    if not enable_tools and bool(_ASK_CORRECTED_COPY.get("on")):
++    if not falsifier_gate_on and bool(_ASK_CORRECTED_COPY.get("on")):
+         _log("  discrimination_control_ask=True but falsifier_gate_enabled=False "
+              "— the corrected-copy ask rides on the gate's §2 rewrite, so NO ask "
+              "is being made this round.")
+-    if enable_tools:
++    if falsifier_gate_on:
+         # The flag is resolved FIRST so the assignment and its read share a
+         # line: test_omission_precedes_every_use_of_the_prompt asserts that the
+         # only pre-omission reads of `model_cdsfl` are assembly steps, and a
+@@ -7170,7 +7294,12 @@ def _dispatch_round_star(
+                 # gate off a panellist had NO execute_python loop and could only
+                 # assert. A model that cannot run anything can only vote, which
+                 # is the thing this project exists not to do.
++                #
++                # The SS2 rewrite does NOT ride this flag any more; it follows
++                # the falsifier gate it belongs to (next argument, 2026-08-31),
++                # so a gate-off ablation arm keeps its unrewritten prompt.
+                 True,
++                falsifier_gate_on=cfg.falsifier_gate_enabled,
+             )] = mc.label
+ 
+         for future in as_completed(future_to_label):
+@@ -7263,7 +7392,12 @@ def _dispatch_round_relay(
+                 # gate off a panellist had NO execute_python loop and could only
+                 # assert. A model that cannot run anything can only vote, which
+                 # is the thing this project exists not to do.
++                #
++                # The SS2 rewrite does NOT ride this flag any more; it follows
++                # the falsifier gate it belongs to (next argument, 2026-08-31),
++                # so a gate-off ablation arm keeps its unrewritten prompt.
+                 True,
++                falsifier_gate_on=cfg.falsifier_gate_enabled,
+             )] = mc.label
+ 
+         for future in as_completed(future_to_label):
+@@ -7503,6 +7637,24 @@ def _run_shadow_cells(
+                 _shadow_macrophage = MacrophageCell(
+                     mode=MacrophageMode.PATROL, shadow=True,
+                 )
++                # CHECKPOINT-RESUME REHYDRATION (2026-08-31): the singleton's
++                # baselines died with the process, so the first post-resume
++                # rounds were blind. Prior rounds' raw timings are in the
++                # shadow files (written below); hand them back.
++                if logs_dir:
++                    _mac_prior = []
++                    try:
++                        for _mf in sorted(Path(logs_dir).glob(
++                                "macrophage_shadow_r*.json")):
++                            _md = json.loads(_mf.read_text(encoding="utf-8"))
++                            if isinstance(_md.get("stage_timings"), dict):
++                                _mac_prior.append(_md["stage_timings"])
++                    except Exception:  # noqa: BLE001 -- rehydration is best-effort
++                        _mac_prior = []
++                    if _mac_prior:
++                        _n = _shadow_macrophage.rehydrate_timings(_mac_prior)
++                        _log(f"  macrophage: rehydrated timing baselines from "
++                             f"{_n} archived round(s)")
+ 
+             # Extract verdicts from immune result. Exp 40 fix 1B.1:
+             # previously the Macrophage saw 0 verdicts across all 6 rounds
+@@ -7640,6 +7792,13 @@ def _run_shadow_cells(
+                         "anomaly_count": macro_summary.anomaly_count,
+                         "pipeline_modified": macro_summary.pipeline_modified,
+                         "verdicts_received": len(all_verdicts),
++                        # RAW TIMINGS, unconditionally (2026-08-31). The old
++                        # noisy detector archived every model-stage time as a
++                        # side effect of its alarms; the fixed one records
++                        # nothing on a quiet round, which silently destroyed
++                        # both the audit trail its 3.0x factor was validated
++                        # against and any possibility of resume rehydration.
++                        "stage_timings": dict(timings or {}),
+                         "observations": [
+                             obs.to_dict() for obs in macro_summary.observations
+                         ],
+@@ -11382,13 +11541,20 @@ def run_experiment(
+         # Gemini 3.1 Pro + Codex 5.3 confer (13 April 2026): round report was
+         # counts-only, making HIL review of intermediate rounds impossible.
+         # Now includes per-finding summaries with provenance.
++        #
++        # 2026-08-31: this record used to cut description[:500] SILENTLY -- the
++        # second such cut, missed by the truncation sweep because it lives in
++        # the round-report writer, not the parser. It is the record the HIL
++        # reads, so the reviewer of an intermediate round saw least of exactly
++        # the findings the round said most about. Same remedy as the sweep:
++        # the registration bound (2000), and any cut declares itself.
+         round_findings_detail = [
+             {
+                 "finding_id": f.finding_id,
+                 "model_id": f.model_id,
+                 "flaw_class": f.flaw_class,
+                 "severity": f.severity,
+-                "description": f.description[:500],
++                "description": _bounded_description(f.description),
+                 "verified": f.verified,
+                 "escalated": f.escalated,
+                 "origin_type": getattr(f, "origin_type", ""),
+@@ -11918,6 +12084,45 @@ def run_experiment(
+             except Exception as _ps_exc:  # noqa: BLE001
+                 _log(f"  WARNING: post-sweep persistence failed ({_ps_exc})")
+ 
++            # POST-SWEEP BOOKKEEPING (2026-08-31). The sweep attaches
++            # runner-verified falsifiers, which invalidates two records written
++            # earlier in the run: NOT_PROBED_NO_FALSIFIER fix-efficacy stamps
++            # (the falsifier the record says is missing now exists -- 11 of 15
++            # on the v3.2 run, the identical set the sweep cleared) and the
++            # settle pass (it runs BEFORE the sweep, so sweep-cleared findings
++            # end CONFIRMED+verified, the exact state it exists to close --
++            # same 11). Both passes below are bookkeeping over state already
++            # decided by tools: no dispatch, no verdict changes beyond the
++            # settle transition the per-round path would have applied had
++            # there been a next round. Strictly after the verdict, like the
++            # sweep itself, so convergence is untouchable from here.
++            try:
++                _fe_drain = _post_sweep_fix_efficacy_drain(registry, cfg)
++                if _fe_drain.get("stale"):
++                    result["post_sweep_fix_efficacy"] = _fe_drain
++                _resettled = _settle_confirmed_findings(registry, round_idx)
++                if _resettled:
++                    result.setdefault("post_convergence_settled", [])
++                    result["post_convergence_settled"] += [
++                        c for c in _resettled
++                        if c not in result["post_convergence_settled"]]
++                if _fe_drain.get("probed") or _resettled:
++                    result["registry"] = registry.to_dict()
++                    try:
++                        _rs = (json.loads(_rs_path.read_text(encoding="utf-8"))
++                               if _rs_path.exists() else {})
++                        _rs["registry"] = result["registry"]
++                        _rs_path.write_text(
++                            json.dumps(_rs, indent=2, default=str),
++                            encoding="utf-8")
++                        _log(f"  post-sweep bookkeeping persisted "
++                             f"({_fe_drain.get('probed', 0)} probe(s), "
++                             f"{len(_resettled)} re-settled)")
++                    except Exception as _pb_exc:  # noqa: BLE001
++                        _log(f"  WARNING: bookkeeping persistence failed ({_pb_exc})")
++            except Exception as _bk_exc:  # noqa: BLE001 — never lose a run to tidying
++                _log(f"  WARNING: post-sweep bookkeeping failed ({_bk_exc})")
++
+     # IMMUNE MEMORY recording (2026-07-28, staged wiring): learn this run's
+     # per-flaw-class confirmed/rejected outcome. Advisory-only, never touches
+     # verdicts or the gate; failure never kills the report.
+diff --git a/bench/tests/test_corrected_copy_wiring.py b/bench/tests/test_corrected_copy_wiring.py
+index 3b0b6e5..38442cb 100644
+--- a/bench/tests/test_corrected_copy_wiring.py
++++ b/bench/tests/test_corrected_copy_wiring.py
+@@ -277,6 +277,28 @@ class TestTheArchiveIsUntouched:
+     """`p-pass`: the claim "no verdict changed anywhere" is only worth what the
+     measurement behind it is worth, so it is measured against the real archive."""
+ 
++    @staticmethod
++    def _v3_era(run_dir):
++        """The SAME principled boundary test_no_archived_finding_carries_a_
++        corrected_copy already uses: version first, name second (2026-08-30).
++        A v3-era run carries corrected copies BY DESIGN -- that is the feature
++        working, not the wiring reaching backwards into the record. The three
++        guards below asserted "never happened" over the WHOLE archive; the v3.2
++        simulated run then falsified those claims by design (8 labelled
++        replies, 11 moved outcomes, measured 2026-08-31). Re-measured, the
++        claims hold exactly on the pre-v3 archive, which is what they were
++        always about."""
++        state = run_dir / "runner_state.json"
++        try:
++            v = json.loads(state.read_text(encoding="utf-8",
++                                           errors="replace")).get("runner_version")
++        except Exception:  # noqa: BLE001 -- unreadable state: fail CLOSED (pre-v3)
++            v = None
++        if isinstance(v, str) and re.match(r"v[3-9]", v):
++            return True
++        m = re.match(r"exp(\d+)", run_dir.name)
++        return bool(m and int(m.group(1)) >= 55)
++
+     @staticmethod
+     def _archived_responses():
+         """(path, model_id, response_text) for every archived model reply."""
+@@ -305,7 +327,7 @@ class TestTheArchiveIsUntouched:
+         can move — which is the strongest available form of "nothing changed"."""
+         hits = [(str(f.relative_to(REPO)), model)
+                 for f, model, text in self._archived_responses()
+-                if "CORRECTED_COPY" in text]
++                if "CORRECTED_COPY" in text and not self._v3_era(f.parent)]
+         assert hits == [], (
+             f"{len(hits)} archived replies already contain the label; the "
+             f"no-op claim must be re-measured before this is enabled: {hits[:5]}")
+@@ -316,6 +338,8 @@ class TestTheArchiveIsUntouched:
+         matched prose would show up here and nowhere else."""
+         offered = 0
+         for _f, _model, text in self._archived_responses():
++            if self._v3_era(_f.parent):
++                continue      # v3-era replies carry copies by design
+             offered += len(_extract_corrected_copies(text))
+         assert offered == 0, (
+             f"the extractor found {offered} corrected passages in archived "
+@@ -372,7 +396,8 @@ class TestTheArchiveIsUntouched:
+         runs = findings = moved = 0
+         details = []
+         for f in sorted((REPO / "bench" / "logs").rglob("runner_state.json")):
+-
++            if self._v3_era(f.parent):
++                continue      # a v3-era run's outcomes move by design
+             try:
+                 data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+             except Exception:  # noqa: BLE001
+diff --git a/bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py b/bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py
+index bf0ce53..b0be5c6 100644
+--- a/bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py
++++ b/bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py
+@@ -94,3 +94,25 @@ class TestTheHelperItself:
+ 
+     def test_one_over_the_limit_is_marked(self):
+         assert "TRUNCATED" in _bounded_description("x" * (_DESCRIPTION_LIMIT + 1))
++
++
++class TestTheRoundReportRecordIsNotCutEither:
++    """The SECOND 500-char cut (2026-08-31): round_findings_detail -- the
++    per-round record that exists so the HIL can review intermediate rounds --
++    truncated description[:500] silently. The sweep fixed the parser and the
++    registry cap and missed this writer."""
++
++    def test_the_writer_uses_the_bounded_helper(self):
++        src = (pathlib.Path(__file__).resolve().parents[1]
++               / "reference_runner_v2.py").read_text(encoding="utf-8")
++        block = src.split("round_findings_detail = [", 1)[1][:600]
++        assert "_bounded_description(f.description)" in block, (
++            "the HIL round record has gone back to a silent cut")
++        assert 'f.description[:500]' not in block
++
++    def test_a_900_char_description_survives_the_record_whole(self):
++        assert len(_bounded_description("X" * 900)) == 900
++
++    def test_an_over_limit_description_declares_its_cut_in_the_record(self):
++        out = _bounded_description("X" * 3000)
++        assert "TRUNCATED" in out and len(out) >= _DESCRIPTION_LIMIT
+diff --git a/bench/tests/test_discrimination_control.py b/bench/tests/test_discrimination_control.py
+index 97431e4..b524afa 100644
+--- a/bench/tests/test_discrimination_control.py
++++ b/bench/tests/test_discrimination_control.py
+@@ -759,8 +759,23 @@ class TestTheArchiveSaysHowAggressiveThisIs:
+         # not the rule reaching backwards. The exclusion is exp55-and-later, the
+         # same v3 boundary the runner's version banner sets, NOT "whatever is
+         # failing". The claim and its denominator over pre-v3 runs are unchanged.
++        # VERSION FIRST, NAME SECOND (2026-08-31) -- the same repair the
++        # corrected-copy guard received on 2026-08-30 for the same reason: the
++        # name rule fails CLOSED on anything not called exp<N>, so the v3.2 run
++        # in sim45_memory_* was filed as pre-v3 archive and its 18 legitimate
++        # corrected copies read as promotion cost. They are the feature working.
++        def _v3_era(run_dir):
++            try:
++                _v = json.loads((run_dir / "runner_state.json").read_text(
++                    encoding="utf-8", errors="replace")).get("runner_version")
++            except Exception:  # noqa: BLE001 -- unreadable: fail CLOSED (pre-v3)
++                _v = None
++            if isinstance(_v, str) and re.match(r"v[3-9]", _v):
++                return True
++            return bool(re.match(r"exp(5[5-9]|[6-9]\d)", run_dir.name))
++
+         rows = [(f, cid, e) for f, cid, e in self._archived_confirmed()
+-                if not re.match(r"exp(5[5-9]|[6-9]\d)", pathlib.Path(f).parent.name)]
++                if not _v3_era(pathlib.Path(f).parent)]
+         with_copy = [(f, cid) for f, cid, e in rows
+                      if (e.get("corrected_copy") or "").strip()]
+         assert with_copy == [], (
+diff --git a/bench/tests/test_falsifier_cannot_read_the_key.py b/bench/tests/test_falsifier_cannot_read_the_key.py
+index 4107e83..c1e096b 100644
+--- a/bench/tests/test_falsifier_cannot_read_the_key.py
++++ b/bench/tests/test_falsifier_cannot_read_the_key.py
+@@ -551,3 +551,38 @@ def test_the_real_repository_is_allowed_even_under_a_shadow_root(tmp_path):
+     # The key location is still refused under the same shadow root.
+     assert scan_falsifier_source(
+         "open('/Users/nobody/keys/x_answer_key.json')", repo_root=str(shadow))
++
++
++def test_canonical_repo_widening_reaches_the_child_but_not_the_key(tmp_path, monkeypatch):
++    """The :401 comment used to claim CDSFL_CANONICAL_REPO 'cannot reach' a
++    model-authored falsifier. Measured 2026-08-31: false -- _observer_source
++    calls _allow_roots, so the value is baked into the CHILD's runtime
++    allowlist. The boundary holds anyway because _denied checks the protected
++    set BEFORE the allowlist. This test pins both measured facts so the
++    comment can never drift back to describing a mechanism that isn't there."""
++    import ast as _ast
++    import hashlib
++    import os
++    import re as _re
++    import bench.falsifier_verify as fv
++
++    canon = tmp_path / "canonical"
++    canon.mkdir()
++    monkeypatch.setenv("CDSFL_CANONICAL_REPO", str(canon))
++    src = fv._observer_source(str(tmp_path / "trace"), os.getcwd())
++    cfg = _ast.literal_eval(_re.search(r"_CFG = (\{.*?\})\n", src, _re.S).group(1))
++    canon_real = os.path.realpath(str(canon))
++    assert canon_real in cfg["allow"], (
++        "the widening no longer reaches the child allowlist -- if that is a "
++        "deliberate change, update the comment at _allow_roots too")
++
++    key = os.path.join(canon_real, "scoring_key.json")
++    cfg["protected"] = sorted(set(cfg["protected"]) |
++                              {hashlib.sha256(key.encode()).hexdigest()})
++    ns = {"_CFG": cfg, "os": os}
++    for fn in ("_under", "_protected", "_denied"):
++        m = _re.search(r"(def %s\(.*?)(?=\ndef |\nsys\.addaudithook)" % fn,
++                       fv._OBSERVER_SOURCE, _re.S)
++        exec(m.group(1), ns)  # noqa: S102 -- the observer's own code, verbatim
++    assert ns["_denied"](key), "protected-before-allow ordering has broken"
++    assert not ns["_denied"](os.path.join(canon_real, "README.md"))
+diff --git a/bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py b/bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py
+index 387f547..d259c3c 100644
+--- a/bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py
++++ b/bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py
+@@ -94,3 +94,38 @@ class TestTheSelfFencedFalsifierStillSurvives:
+             src = f.falsifier(f.doc_path)
+             kept = R._extract_routing_falsifier("```python\n" + src + "\n```\n")
+             assert kept.strip() == src.strip(), f"{f.key} was truncated in transport"
++
++
++class TestABareFenceLineInsideTheFalsifierBody:
++    """Round 3's gap (2026-08-31): the round-1 comment called the self-fenced
++    falsifier safe, but both stem fixtures carry their inner backticks MID-LINE
++    inside regex literals. A falsifier that quotes a fenced listing in a
++    triple-quoted string -- the natural shape for a claim about a document that
++    prints code -- puts a BARE fence line in its own body. The strict pass
++    truncated there into an unparseable fragment, the loose pass truncated
++    earlier, and the reply extracted as "": a silent 'ladder exhausted'.
++    Measured before the third pass: EXTRACTED-LEN 0."""
++
++    REPLY = ('Here is my final falsifier:\n\n'
++             '```python\n'
++             'doc = open("docs/GUIDE.md", encoding="utf-8").read()\n'
++             'snippet = """\n'
++             '```\n'
++             'pip install cdsfl\n'
++             '```\n'
++             '"""\n'
++             'assert snippet not in doc, "FALSIFIED: stale block present"\n'
++             '```\n\n'
++             'That is my last answer.\n')
++
++    def test_the_body_survives_intact_and_parses(self):
++        import ast
++        kept = R._extract_routing_falsifier(self.REPLY)
++        assert 'assert snippet not in doc' in kept, "silent ladder-exhausted"
++        assert 'pip install cdsfl' in kept, "inner listing was truncated away"
++        ast.parse(kept)
++
++    def test_the_inner_listing_is_not_extracted_alone(self):
++        kept = R._extract_routing_falsifier(self.REPLY)
++        assert not kept.startswith('pip install'), (
++            "the recovery pass grabbed the quoted listing, not the falsifier")
+diff --git a/bench/tests/test_macrophage_fallback.py b/bench/tests/test_macrophage_fallback.py
+index 438df11..fa5c730 100644
+--- a/bench/tests/test_macrophage_fallback.py
++++ b/bench/tests/test_macrophage_fallback.py
+@@ -147,3 +147,58 @@ class TestDiagnosticLogPath:
+                     finding_id=fid, verdict=verdict_str, confidence=0.5,
+                 ))
+         assert len(all_verdicts) == 0
++
++
++class TestTimingBaselinesSurviveResumeAndStayAuditable:
++    """Completions to the 2026-08-31 per-stage baseline fix, both measured:
++
++    (1) The old noisy detector archived every model-stage time AS ITS ALARMS;
++    the fixed one records nothing on a quiet round -- destroying the audit
++    trail its own 3.0x factor was validated against (62 real stage-rounds,
++    max ratio 1.9x, 0 would fire at 3x; median+5*MAD fires 3 of 62 on the
++    same data, so the multiplicative rule stands). The runner now writes
++    `stage_timings` unconditionally.
++
++    (2) The cell is a module-level singleton; resume zeroed its baselines.
++    `rehydrate_timings` rebuilds them from the archived dicts."""
++
++    def _cell(self):
++        from macrophage_cell import MacrophageCell, MacrophageMode
++        return MacrophageCell(mode=MacrophageMode.PATROL)
++
++    def _verdicts(self):
++        class V:
++            pass
++        out = []
++        for i in range(6):
++            v = V()
++            v.verdict = ["CONFIRMED", "REJECTED", "UNCERTAIN"][i % 3]
++            out.append(v)
++        return out
++
++    def test_a_rehydrated_cell_detects_on_its_first_live_round(self):
++        cell = self._cell()
++        assert cell.rehydrate_timings(
++            [{"s": 100.0}, {"s": 101.0}, {"s": 99.0}]) == 3
++        s = cell.observe(verdicts=self._verdicts(), timings={"s": 450.0})
++        spikes = [o for o in s.observations if o.category == "timing_spike"]
++        assert spikes and spikes[0].evidence["baseline"] == "own_prior_rounds"
++
++    def test_a_cold_cell_is_silent_on_a_sample_of_one(self):
++        cell = self._cell()
++        s = cell.observe(verdicts=self._verdicts(), timings={"s": 450.0})
++        assert not [o for o in s.observations if o.category == "timing_spike"]
++
++    def test_rehydration_ignores_junk_without_raising(self):
++        cell = self._cell()
++        assert cell.rehydrate_timings([None, {}, "x", {"s": 1.0}]) == 1
++
++    def test_the_runner_archives_raw_timings_unconditionally(self):
++        import pathlib
++        src = (pathlib.Path(__file__).resolve().parents[1]
++               / "reference_runner_v2.py").read_text(encoding="utf-8")
++        at = src.index('macro_log_path = logs_dir / f"macrophage_shadow_r')
++        block = src[at:at + 3000]   # the json.dumps follows the path assignment
++        assert '"stage_timings": dict(timings or {}),' in block, (
++            "the shadow file no longer records raw timings; the timing "
++            "detector is unauditable and resume rehydration has no source")
+diff --git a/bench/tests/test_sim_naming_and_integrity_directive.py b/bench/tests/test_sim_naming_and_integrity_directive.py
+index fe5d615..fd5cb6e 100644
+--- a/bench/tests/test_sim_naming_and_integrity_directive.py
++++ b/bench/tests/test_sim_naming_and_integrity_directive.py
+@@ -406,10 +406,73 @@ def scan_text(text: str, tokens: Iterable[str], artefact: str) -> List[Violation
+     return out
+ 
+ 
++PROVENANCE_SIDECAR_SUFFIX = ".PROVENANCE.jsonl"
++
++
++def _provenance_windows(path: Path) -> List[Tuple[int, int]] | None:
++    """Declared simulated line-windows for a MIXED archival log, or None.
++
++    THE MIXED-FILE CASE (2026-08-31). bench/logs/immune_pipeline.log is a REAL
++    archival log that simulated runs appended 174 ``-SIM`` lines to. Classifying
++    the whole file as simulated applied the -SIM naming rule to REAL lines from
++    real panels -- names that are correct provenance, not violations. Editing
++    the archive is against its own policy (the 2026-07-31 TestModel lines are
++    still in place for the same reason), so the separation lives in a sidecar:
++    ``<artefact>.PROVENANCE.jsonl`` declares which line ranges are simulated.
++
++    The sidecar does not weaken the guard; ``scan_mixed_log`` makes it
++    BIDIRECTIONAL: bare vendor names inside a declared window still fail, and a
++    structurally sim-marked line OUTSIDE every declared window fails too -- so
++    the contamination this machinery exists to catch re-reddens the guard the
++    moment it recurs, sidecar or no sidecar.
++    """
++    sidecar = path.with_name(path.name + PROVENANCE_SIDECAR_SUFFIX)
++    if not sidecar.is_file():
++        return None
++    windows: List[Tuple[int, int]] = []
++    try:
++        for line in sidecar.read_text(encoding="utf-8").splitlines():
++            if not line.strip():
++                continue
++            record = json.loads(line)
++            if record.get("artefact", "").rsplit("/", 1)[-1] != path.name:
++                continue
++            for w in record.get("simulated_windows", []):
++                lo, hi = w["lines"]
++                windows.append((int(lo), int(hi)))
++    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
++        return None      # an unreadable sidecar declares nothing
++    return windows or None
++
++
++def scan_mixed_log(relative_path: str, text: str, tokens: Iterable[str],
++                   windows: List[Tuple[int, int]]) -> List[Violation]:
++    out: List[Violation] = []
++    lines = text.splitlines()
++    for i, line in enumerate(lines, start=1):
++        inside = any(lo <= i <= hi for lo, hi in windows)
++        if inside:
++            out.extend(scan_text(line, tokens, f"{relative_path}:{i}"))
++        # NOT _CONTENT_MARK here: its `-SIM\b` arm misses `Fable-SIM_F009`
++        # (M and _ are both word chars, so there is no boundary), and that is
++        # the commonest shape a sim line takes in this log -- a finding ID.
++        # Measured: 174 of 174 contaminating lines match this arm.
++        elif re.search(r"[A-Za-z0-9]-SIM(?![A-Za-z])", line):
++            out.append(Violation(
++                f"{relative_path}:{i}", "outside declared provenance window",
++                line[:120],
++                "SIM-marked line not covered by the provenance sidecar"))
++    return out
++
++
+ def scan_artefact(path: Path, relative_path: str, data: bytes,
+                   tokens: Iterable[str]) -> List[Violation]:
+     out = scan_path(relative_path, tokens)
+     text = data.decode("utf-8", errors="replace")
++    windows = _provenance_windows(path)
++    if windows is not None:
++        out.extend(scan_mixed_log(relative_path, text, tokens, windows))
++        return out
+     suffix = path.suffix.lower()
+     if suffix == ".json":
+         try:
+@@ -853,3 +916,60 @@ class TestAReviewerQuotingSimLabelsIsNotASimulatedArtefact:
+             f = REPO_ROOT / rel
+             if f.is_file():
+                 assert content_marks_simulated(f.read_bytes()), rel
++
++
++class TestTheProvenanceSidecarDoesNotDisarmTheGuard:
++    """The mixed-log path must stay BIDIRECTIONAL: the sidecar explains the
++    existing contamination, it must not license new contamination."""
++
++    def _write(self, tmp_path, log_text, windows):
++        log = tmp_path / "immune_pipeline.log"
++        log.write_text(log_text, encoding="utf-8")
++        sidecar = tmp_path / ("immune_pipeline.log" + PROVENANCE_SIDECAR_SUFFIX)
++        sidecar.write_text(json.dumps({
++            "artefact": "bench/logs/immune_pipeline.log",
++            "simulated_windows": [{"lines": list(w)} for w in windows],
++        }) + "\n", encoding="utf-8")
++        return log
++
++    TOKENS = ("CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT", "Fable")
++
++    def test_real_lines_outside_the_window_are_not_violations(self, tmp_path):
++        log = self._write(tmp_path,
++                          "2026-04-11T06:27:01 INFO LLM classifier: ChatGPT_F005 ok\n"
++                          "2026-08-31T02:02:37 INFO lock: Fable-SIM_F002 done\n",
++                          [(2, 2)])
++        hits = scan_artefact(log, "immune_pipeline.log",
++                             log.read_bytes(), self.TOKENS)
++        assert hits == [], [h.render() for h in hits]
++
++    def test_a_sim_line_outside_every_window_still_fails(self, tmp_path):
++        log = self._write(tmp_path,
++                          "2026-09-01T00:00:00 INFO lock: Fable-SIM_F009 NEW\n",
++                          [(99, 99)])
++        hits = scan_artefact(log, "immune_pipeline.log",
++                             log.read_bytes(), self.TOKENS)
++        assert hits, "new contamination was licensed by an old sidecar"
++        assert hits[0].location == "outside declared provenance window"
++
++    def test_a_bare_vendor_label_inside_a_window_still_fails(self, tmp_path):
++        log = self._write(tmp_path,
++                          "2026-08-31T00:00:00 INFO dispatch model: Codex done\n",
++                          [(1, 1)])
++        hits = scan_artefact(log, "immune_pipeline.log",
++                             log.read_bytes(), self.TOKENS)
++        assert any(h.token == "Codex" for h in hits), (
++            "a simulated line with a bare vendor name passed inside the window")
++
++    def test_the_real_sidecar_matches_the_real_log(self):
++        """The shipped sidecar's window really covers every -SIM line."""
++        log = LOGS_DIR / "immune_pipeline.log"
++        sidecar = LOGS_DIR / ("immune_pipeline.log" + PROVENANCE_SIDECAR_SUFFIX)
++        if not (log.is_file() and sidecar.is_file()):
++            pytest.skip("archival log or sidecar absent")
++        windows = _provenance_windows(log)
++        assert windows, "sidecar present but declares no windows"
++        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
++        outside = [i for i, l in enumerate(lines, 1)
++                   if "-SIM" in l and not any(lo <= i <= hi for lo, hi in windows)]
++        assert outside == [], f"-SIM lines outside declared windows: {outside[:5]}"
+diff --git a/bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py b/bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py
+index af311c5..fe5b459 100644
+--- a/bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py
++++ b/bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py
+@@ -63,20 +63,41 @@ class TestTheRoundDispatchDoesNotGateOnTheFalsifierGate:
+     """The specific regression: tools used to ride on falsifier_gate_enabled."""
+ 
+     def test_round_dispatch_passes_true_not_the_gate(self):
++        # SHARPENED 2026-08-31. The original scan forbade the STRING
++        # "falsifier_gate_enabled" anywhere in the call, which conflated two
++        # different concerns riding one parameter. They are now separate
++        # parameters: enable_tools must be the literal True (the ruling), and
++        # cfg.falsifier_gate_enabled may appear ONLY as the falsifier_gate_on
++        # keyword (the SS2 rewrite belongs to the gate; a gate-off ablation
++        # arm must keep its unrewritten prompt). The invariant is finer, the
++        # intent is unchanged: tools do not ride the gate.
+         tree = ast.parse(RUNNER_SRC)
+         bad = []
++        checked = 0
+         for node in ast.walk(tree):
+             if not isinstance(node, ast.Call):
+                 continue
+-            src = ast.unparse(node)
+-            if "_dispatch_single_model" not in src:
++            src = ast.unparse(node.func)
++            if not src.endswith("pool.submit"):
+                 continue
+-            if "falsifier_gate_enabled" in src:
+-                bad.append(node.lineno)
++            args = [ast.unparse(a) for a in node.args]
++            if not args or args[0] != "_dispatch_single_model":
++                continue
++            checked += 1
++            positional_tail = args[1:]
++            if "cfg.falsifier_gate_enabled" in positional_tail:
++                bad.append((node.lineno, "gate forwarded positionally"))
++            if positional_tail[-1] != "True":
++                bad.append((node.lineno,
++                            f"enable_tools is {positional_tail[-1]!r}, not True"))
++            for kw in node.keywords:
++                if kw.arg != "falsifier_gate_on" and "falsifier_gate_enabled" in ast.unparse(kw.value):
++                    bad.append((node.lineno, f"gate rides keyword {kw.arg!r}"))
++        assert checked >= 2, "the round-dispatch submit sites have moved"
+         assert bad == [], (
+-            f"a round dispatch at line(s) {bad} still forwards "
+-            f"falsifier_gate_enabled as enable_tools, so a gate-off run would "
+-            f"dispatch a panel that can only vote"
++            f"round dispatch violation(s): {bad} -- either tools ride the "
++            f"falsifier gate again (a gate-off panel could only vote) or the "
++            f"SS2 rewrite lost its own flag"
+         )
+ 
+ 
+diff --git a/bench/tools/run_simulated_experiment.py b/bench/tools/run_simulated_experiment.py
+index 031d1bd..1aac479 100644
+--- a/bench/tools/run_simulated_experiment.py
++++ b/bench/tools/run_simulated_experiment.py
+@@ -88,6 +88,17 @@ def main() -> int:
+     logs = REPO / "bench" / "logs" / f"{args.name}_{stamp}"
+     logs.mkdir(parents=True, exist_ok=True)
+ 
++    # THE IMMUNE SHADOW LOG GOES WITH THE RUN, NOT INTO THE ARCHIVE
++    # (2026-08-31). The v3.1/v3.2 simulated runs appended 174 -SIM lines to the
++    # archival bench/logs/immune_pipeline.log because the pytest diversion in
++    # immune_agents covers tests only, and a simulated run is not a test run.
++    # Simulated and real pipeline records must never share a file; the sidecar
++    # bench/logs/immune_pipeline.log.PROVENANCE.jsonl records the lines that
++    # already do.
++    import immune_agents as _ia
++    _sim_immune_log = _ia.redirect_shadow_log(str(logs))
++    print(f"    immune shadow log -> {_sim_immune_log}", flush=True)
++
+     # Roles mirror the live panel: one player-manager, the rest players. The
+     # labels are the VENDOR labels because the runner keys on them; the shim maps
+     # each to its SIM- stand-in and the report records both.
+diff --git a/bench/tools/sim_panel_agents.py b/bench/tools/sim_panel_agents.py
+index d6b8ca2..8e4a57d 100644
+--- a/bench/tools/sim_panel_agents.py
++++ b/bench/tools/sim_panel_agents.py
+@@ -100,6 +100,9 @@ def _one_agent(label: str, target: str, timeout: int) -> list:
+         r = subprocess.run(
+             ["claude", "-p", prompt, "--model", "sonnet", "--output-format", "text",
+              "--no-session-persistence",
++             # Same isolation as the dispatch shim (2026-08-31): no inherited
++             # operator/project config in a panel agent's briefing.
++             "--setting-sources", "",
+              "--allowedTools", "Bash", "Read", "Grep", "Glob"],
+             capture_output=True, text=True, timeout=timeout,
+             cwd=str(REPO), stdin=subprocess.DEVNULL,
+diff --git a/experimental_notes/EXPERIMENT_RUN_LEDGER.md b/experimental_notes/EXPERIMENT_RUN_LEDGER.md
+index 19ff07b..612d3d6 100644
+--- a/experimental_notes/EXPERIMENT_RUN_LEDGER.md
++++ b/experimental_notes/EXPERIMENT_RUN_LEDGER.md
+@@ -59,8 +59,6 @@ would change nothing. What is actually wrong is stated in the two sections after
+ | 43 | 2026-08-23 14:46 | 55 | `v3_control` | 1 | INCOMPLETE | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 44 | 2026-08-23 15:39 | 55 | `v3_control` | 1 | INCOMPLETE | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-**12 aborted invocations** wrote an empty directory and are excluded above: exp32 2026-04-05 08:53, exp34 2026-04-05 22:15, exp35 2026-04-06 15:20, exp36 2026-04-08 07:21, exp37 2026-04-09 03:03, exp37 2026-04-09 03:04, exp38 2026-04-10 12:19, exp40 2026-05-14 02:00, exp42 2026-06-03 09:57, exp36 2026-08-07 04:32, exp35 2026-08-07 04:32, exp36 2026-08-07 05:31.
+-
+ ## Hole 1 — numbers that never ran
+ 
+ Experiments with a run directory: **[29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 53, 55]**.
+
+=== NEW FILE: bench/tests/test_gate_rewrite_decoupled_from_tools_2026-08-31.py ===
+"""The SS2 rewrite follows the falsifier gate, not the tools flag.
+
+THE COUPLING (measured 2026-08-31): the founder's 2026-08-30 ruling hardwired
+enable_tools=True at both round-loop call sites -- correctly, TOOLS DECIDE --
+but the SS2 prose->runnable rewrite rode the SAME parameter, so a gate-off
+ablation arm started receiving the runnable-falsifier SS2 mid-arc. The comment
+at the rewrite site still said "Gate-off => unchanged" while the code no longer
+implemented it. The ruling covered tool use, not the rewrite.
+
+These tests exercise the REAL _dispatch_single_model with dispatch stubbed at
+the seam, and diff the system prompt that actually leaves.
+"""
+import pathlib
+import re
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import reference_runner_v2 as R
+
+# A directive carrying the legacy SS2 prose block the rewrite targets.
+PROSE_S2 = ("FALSIFICATION: This section is mandatory. It must contain: "
+            "the specific condition that would disprove your claim. "
+            "Did you test it?")
+DIRECTIVE = f"PREAMBLE.\n{PROSE_S2}\nPOSTAMBLE."
+
+
+def _dispatch_and_capture(monkeypatch, tmp_path, gate_on):
+    captured = {}
+
+    def _stub_dispatch(mc, prompt, cdsfl, wall_clock_limit=0, enable_tools=False):
+        captured["system"] = cdsfl
+        captured["enable_tools"] = enable_tools
+        return "no findings", 0.1
+
+    monkeypatch.setattr(R, "dispatch_to_model", _stub_dispatch)
+    monkeypatch.setattr(R, "_compose_for_model",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("no composer")))
+    monkeypatch.setattr(R, "should_decompose_v2", lambda *a, **k: False)
+    mc = R.ModelConfig(label="CC2-SIM", model_id="sim", api="sim",
+                       role="player", system_prompt_path=None,
+                       timeout=5, max_retries=1)
+    R._dispatch_single_model(
+        mc, None, "the round prompt", DIRECTIVE, "code", 0,
+        "four_layer", "software", tmp_path,
+        True,                      # enable_tools: ALWAYS on (ruling 2026-08-30)
+        falsifier_gate_on=gate_on,  # the arm's own variable, decoupled
+    )
+    return captured
+
+
+def test_gate_on_rewrites_s2_and_keeps_tools(monkeypatch, tmp_path):
+    got = _dispatch_and_capture(monkeypatch, tmp_path, gate_on=True)
+    assert "RUNNABLE falsifier, NOT prose" in got["system"]
+    assert "Did you test it?" not in got["system"]
+    assert got["enable_tools"] is True
+
+
+def test_gate_off_keeps_the_prose_s2_and_STILL_keeps_tools(monkeypatch, tmp_path):
+    """The ablation arm's prompt is unchanged; the tools ruling still holds."""
+    got = _dispatch_and_capture(monkeypatch, tmp_path, gate_on=False)
+    assert PROSE_S2 in got["system"], "gate-off arm received a rewritten SS2"
+    assert "RUNNABLE falsifier, NOT prose" not in got["system"]
+    assert got["enable_tools"] is True, (
+        "decoupling the rewrite must not undo the tools ruling")
+
+
+def test_both_call_sites_forward_the_gate_flag():
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "reference_runner_v2.py").read_text(encoding="utf-8")
+    assert src.count(
+        "falsifier_gate_on=cfg.falsifier_gate_enabled,\n            )] = mc.label") == 2, (
+        "a round-loop call site stopped forwarding the gate flag; the rewrite "
+        "is riding enable_tools again")
+
+
+def test_an_unmigrated_caller_gets_yesterdays_coupling_not_a_crash():
+    """None => follow enable_tools: the pre-split behaviour, chosen so an
+    unupdated caller degrades to the known coupling rather than silently
+    changing arms."""
+    sig = R._dispatch_single_model.__defaults__
+    assert sig == (True, None)
+
+=== NEW FILE: bench/tests/test_no_spawn_inherits_operator_config_2026-08-31.py ===
+"""Every live `claude -p` spawn carries `--setting-sources ""`.
+
+MEASURED 2026-08-31, by execution: the same haiku probe, same --system-prompt,
+same --allowedTools --
+  with the flag:    sentinel intact, "NO" inherited config, Bash tool ran.
+  without the flag: the model quoted the operator's personal CLAUDE.md path,
+                    the working-hours directive, and the operational tracker.
+
+The 2026-08-31 fix covered call_claude_cli and the sim shim; this guard exists
+because the sweep then found FIVE MORE live spawn sites without it (cc2_manager,
+4x immune_agents, sim_panel_agents) -- an incomplete fix that read as complete.
+Legacy harnesses (run_benchmark, run_round_robin, interactive_smoke,
+smoke_test_*) are out of scope: they do not run in the current pipeline.
+"""
+import pathlib
+import re
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+
+LIVE = [
+    "bench/experiment_11_orchestrator.py",
+    "bench/cc2_manager.py",
+    "bench/immune_agents.py",
+    "bench/tools/sim_dispatch_shim.py",
+    "bench/tools/sim_panel_agents.py",
+]
+
+_SPAWN = re.compile(r'"-p"')
+
+
+def test_every_live_spawn_site_isolates_settings():
+    unguarded = []
+    for rel in LIVE:
+        src = (REPO / rel).read_text(encoding="utf-8")
+        for m in _SPAWN.finditer(src):
+            # 8000: call_claude_cli carries ~4.5 KB of load-bearing history
+            # comments between "-p" and the flag; the window must clear it.
+            window = src[m.start():m.start() + 8000]
+            if '"--setting-sources", "",' not in window.replace("'", '"'):
+                line = src[:m.start()].count("\n") + 1
+                unguarded.append(f"{rel}:{line}")
+    assert unguarded == [], (
+        f"claude -p spawn(s) without --setting-sources: {unguarded}. Each one "
+        f"briefs a model with the operator's private instructions.")
+
+
+def test_the_flag_never_uses_bare():
+    """--bare selects API-key auth this account does not have (2026-07-29:
+    'Not logged in' on every headless dispatch). The isolation flag must stay
+    --setting-sources, which keeps OAuth intact."""
+    for rel in LIVE:
+        src = (REPO / rel).read_text(encoding="utf-8")
+        for m in re.finditer(r'"--bare"', src):
+            line_start = src.rfind("\n", 0, m.start()) + 1
+            line = src[line_start:src.index("\n", m.start())]
+            assert line.lstrip().startswith("#"), (
+                f"{rel} passes --bare on a live spawn; that breaks OAuth auth")
+
+=== NEW FILE: bench/tests/test_post_sweep_bookkeeping_2026-08-31.py ===
+"""The sweep's aftermath is bookkept: stale fix-efficacy records re-probed to
+completion, and sweep-cleared CONFIRMED+verified findings settled.
+
+MEASURED ON THE v3.2 RUN (2026-08-31): 11 of 15 NOT_PROBED_NO_FALSIFIER
+records had a falsifier -- the identical 11 the sweep cleared -- and the same
+11 stood CONFIRMED+verified because _settle_confirmed_findings runs before the
+sweep and never after. Replayed with the drain: 11 of 11 probed (4 capped
+passes; outcomes 9 FIX_CURES_ITS_OWN_FALSIFIER, 2 INDETERMINATE_OTHER), 10 of
+11 re-settled to CLOSED, and the 11th (C0002) HELD OPEN by the settle's own
+unresolved-challenge guard -- which is that guard working, not failing.
+"""
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import reference_runner_v2 as R
+
+
+class _Cfg:
+    test_article = "bench/dm/_memory.py"
+
+
+def _entry(**kw):
+    e = {"status": "CONFIRMED", "verified": True, "verdicts": [],
+         "open_since_round": 0, "last_status_change_round": 0,
+         "severity": 0.8, "proposed_fix": "fix",
+         "falsifier_code": "assert False, 'FALSIFIED'",
+         "fix_efficacy": {"outcome": "NOT_PROBED_NO_FALSIFIER"}}
+    e.update(kw)
+    return e
+
+
+def _drain(reg, monkeypatch, outcome="FIX_CURES_ITS_OWN_FALSIFIER"):
+    import fix_efficacy as FE
+
+    class _R:
+        def __init__(self):
+            self.outcome, self.detail = outcome, "stubbed"
+    monkeypatch.setattr(FE, "probe", lambda *a, **k: _R())
+    return R._post_sweep_fix_efficacy_drain(reg, _Cfg())
+
+
+def test_the_drain_probes_past_the_per_round_cap(monkeypatch):
+    """11 stale entries, cap 5: one pass would probe 5; the drain probes 11,
+    respecting the cap per pass rather than deleting it."""
+    reg = R.FindingRegistry()
+    for i in range(11):
+        reg.entries[f"C{i:04d}"] = _entry()
+    stats = _drain(reg, monkeypatch)
+    assert stats["stale"] == 11 and stats["probed"] == 11
+    assert stats["passes"] >= 3, "the cap was bypassed, not iterated"
+    assert all(e["fix_efficacy"]["outcome"] != "NOT_PROBED_NO_FALSIFIER"
+               for e in reg.entries.values())
+    assert all(e["fix_efficacy"].get("probed_post_sweep")
+               for e in reg.entries.values())
+
+
+def test_a_record_with_no_falsifier_stays_honestly_unprobed(monkeypatch):
+    reg = R.FindingRegistry()
+    reg.entries["C0001"] = _entry(falsifier_code="")
+    stats = _drain(reg, monkeypatch)
+    assert stats == {"stale": 0, "probed": 0, "passes": 0, "outcomes": {}}
+    assert reg.entries["C0001"]["fix_efficacy"]["outcome"] == \
+        "NOT_PROBED_NO_FALSIFIER"
+
+
+def test_an_already_probed_record_is_not_reprobed(monkeypatch):
+    reg = R.FindingRegistry()
+    reg.entries["C0001"] = _entry(
+        fix_efficacy={"outcome": "FIX_CURES_ITS_OWN_FALSIFIER"})
+    stats = _drain(reg, monkeypatch)
+    assert stats["stale"] == 0 and stats["probed"] == 0
+
+
+def test_the_sweep_attachment_clears_the_stale_stamps():
+    """The C0015 class: a fresh runner-verified falsifier from the sweep must
+    clear mechanical_fault and the HIL/irreducible stamps, exactly as the
+    routing success site does (founder ruling 2026-08-31)."""
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "reference_runner_v2.py").read_text(encoding="utf-8")
+    at = src.index('e["resolved_by_sweep"]')
+    block = src[at:at + 1400]
+    for cleared in ('e["irreducible_escalation"] = False',
+                    'e["hil_escalated"] = False',
+                    'e.pop("hil_reason", None)',
+                    'e["mechanical_fault"] = False'):
+        assert cleared in block, f"sweep attachment no longer clears: {cleared}"
+
+
+def test_bookkeeping_runs_after_the_sweep_in_the_run_loop():
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "reference_runner_v2.py").read_text(encoding="utf-8")
+    sweep_at = src.index('result["post_convergence_sweep"] = _post_convergence_sweep(')
+    drain_at = src.index("_fe_drain = _post_sweep_fix_efficacy_drain(")
+    settle_calls = [i for i in range(len(src))
+                    if src.startswith("_settle_confirmed_findings(registry, round_idx)", i)]
+    assert drain_at > sweep_at, "the drain no longer follows the sweep"
+    assert any(i > sweep_at for i in settle_calls), (
+        "no settle pass follows the sweep; sweep-cleared findings will stand "
+        "CONFIRMED+verified again")
+
+
+def test_executed_a_sweep_clear_really_clears_the_stale_stamps(monkeypatch, tmp_path):
+    """Not a source scan: run the real _post_convergence_sweep with dispatch
+    and reverify stubbed at their seams, and watch the stamps drop."""
+    reg = R.FindingRegistry()
+    reg.entries["C0099"] = _entry(
+        status="UNCONFIRMED", verified=False,
+        falsifier_code="", severity=0.9,
+        mechanical_fault=True, hil_escalated=True,
+        irreducible_escalation=True, hil_reason="ladder exhausted (stale)")
+
+    reply = ("FALSIFIER: C0099\n```python\n"
+             "import x\nassert False, 'FALSIFIED'\n```\n")
+    monkeypatch.setattr(R, "dispatch_to_model",
+                        lambda mc, prompt, sysp, **kw: (reply, 0.1))
+    import bench.falsifier_verify as FV
+    monkeypatch.setattr(FV, "reverify_falsifier",
+                        lambda code, repo_root=None, **kw: "CONFIRMED")
+
+    class _MC:
+        label = "CC2-SIM"
+
+    class _Exp:
+        models = [_MC()]
+
+    class _SweepCfg:
+        post_convergence_sweep_rounds = 1
+        test_article = "bench/dm/_memory.py"
+
+    stats = R._post_convergence_sweep(reg, _Exp(), _SweepCfg(), 3,
+                                      repo_root=str(tmp_path))
+    e = reg.entries["C0099"]
+    assert stats["cleared"] == 1
+    assert e["status"] == "CONFIRMED" and e["verified"] is True
+    assert e["mechanical_fault"] is False, "the stale fault stamp survived"
+    assert e["hil_escalated"] is False and e["irreducible_escalation"] is False
+    assert "hil_reason" not in e

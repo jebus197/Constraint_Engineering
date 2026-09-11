@@ -1,0 +1,62 @@
+# Second pass: will the next simulated run exercise the schema end to end?
+
+You reviewed this repository earlier today. **Your findings were applied.** This
+brief asks you to check the result and to find what is still missing.
+
+**Read this first, because it invalidated the last review.** The panel harness
+created your sandbox with `git worktree add ... HEAD`, so you were given the
+COMMITTED tree and none of the caller's uncommitted work — twelve modified and
+untracked files. Fable correctly found four of five claimed repairs absent and
+reasonably concluded the brief described work that was planned rather than done.
+That was the harness's fault, not the reviewer's. The harness now carries the
+uncommitted diff and untracked files into the sandbox and prints what it
+carried. **Everything below is committed at `8879c34`. Verify that, first.**
+
+## What you found, and what was done with it
+
+| your finding | disposition |
+|---|---|
+| sim harness `system_prompt_path` → `bench/cdsfl_core_formal.md`, which does not exist; `is_file()` turned it into a silent `None`, so the panel got NO directive | **fixed** — correct path, and now FATAL rather than silent |
+| `_error_route_pending` set only inside the sub-critical branch, so the transport-dead guard never covered a CRITICAL; `irreducible_escalation` then removes it from `unverified_critical_count` — a run could converge because the network failed | **fixed** — hoisted above the severity branch; pinned structurally and empirically |
+| `test_article` absolute; `_build_discrimination_overlay` rejects absolute paths, so the control could never fire in simulation | **fixed** — harness passes a repo-relative target |
+| `_compose_for_model` fell back silently to `cdsfl_text=""`, so a model with no composer entry ran on an EMPTY system prompt | **fixed** — loud, and `CC2-SIM` now resolves to CC2's composition. Fable still has no `.toml`; its fields are tuning choices I declined to invent |
+| `discrimination_control_ask`: 1 write, 0 reads | **not deleted** — that flag is where a founder ruling would land. It can no longer be set silently |
+| `decomposed_dispatch` is a ninth dispatch path bypassing the seam | **pinned as a KNOWN gap**, not claimed covered |
+| `verification_min_round=6` vs `--rounds 4` — verification skipped in all four rounds | **fixed** — harness default is now 7 rounds |
+| shadow cells need `_macrophage`/`_ouroboros`; `test_cmd` unset so `e2_regression` was null | **fixed** — macrophage enabled, `test_cmd` set. `_ouroboros` deliberately NOT enabled: it reaches arXiv and Semantic Scholar and a simulated run should not depend on an external service |
+| `sk_result` is 19/19 ADMISSIBLE, not 0/19 (my audit read `.get("status")` where the key is `tristate`) | **accepted; the audit was wrong** |
+| "the falsification core was silent" is the wrong reading — the core ran, recorded 8 UNTOOLABLE and raised NO SURVIVALS; the SUPPLY was silent | **accepted; framing corrected** |
+
+Also repaired, from the first pass: the simulation seam moved to the primitive
+`dispatch_to_model` (nine call sites, previously one patched); `lookup_alias_any`
+so cross-model co-discovery can record at all; `fix_efficacy_decision` recording
+`NOT_PROBED_NO_FALSIFIER`; and two guards that were themselves defective — the
+naming guard was flagging the REAL `cc2.tools.json` because a reviewer had
+grepped for `CC2-SIM`, and the overlay-leak test globbed the shared system temp
+directory so any concurrent process failed it.
+
+Runner is now **v3.2**.
+
+## What to do
+
+**Falsify it. Do not confirm it.** In priority order:
+
+1. **Verify the claims in that table against this tree.** Any that are not
+   actually true, say so with the command. The last review's most valuable
+   output was exactly this.
+2. **Run the next simulated experiment's configuration in your head, or on
+   disk, and predict what will STILL be silent.** The harness is
+   `bench/tools/run_simulated_experiment.py`; the seam is
+   `bench/tools/sim_dispatch_shim.py`. I want the list of things that will not
+   fire on the next run and why — before it runs, not after.
+3. **Is the transport-dead repair correct?** It is the most consequential
+   change here. Check that hoisting the flag does not alter the sub-critical
+   one-attempt semantics or the `error_routed` path.
+4. **What did we BOTH miss?** The first pass found a defect I had not seen and
+   I found defects neither of you named. Assume the same is true again.
+5. **Bench Run 2 readiness.** Name anything in this tree that would fail on a
+   large external target but cannot fail at exp45 scale. `decomposed_dispatch`
+   is one known example; find others.
+
+Run the suite (`python3 -m pytest bench/tests -q`, ~4.5 min; expect
+4493 passed, 7 skipped). Where you disagree, show the command.

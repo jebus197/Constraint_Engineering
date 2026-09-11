@@ -1,0 +1,79 @@
+# 3 convergence-path fixes shipped today with no independent review. Break them.
+
+## Time budget — read this first
+
+A previous version of this brief carried 6 fixes and BOTH SEATS TIMED OUT at 900s having
+produced nothing. This one carries 3. **Be economical: target roughly 10 tool calls, not 40.**
+Prefer one decisive check over three confirmatory ones. If you run short, answer on what you
+verified and mark the rest UNVERIFIED rather than asserting it — an honest partial beats a
+timeout, and a timeout returns nothing at all.
+
+Use your shell (sympy, z3, numpy, scipy, statsmodels, pytest, git). The named `sympy_verify`
+tools are NOT on your route. **Answer as yourself**; no assigned roles, both seats get this same
+brief, and disagreement is preserved rather than smoothed. Everything is committed at HEAD on
+main, suite green at 5251 passed.
+
+## Why you are being asked
+
+The founder's standing rule is that findings are verified with the panel. That happened for the
+FINDINGS today. It did not happen for the FIXES: all 3 below were found, written, tested and
+committed by CC1 alone in one sitting. The founder caught the gap.
+
+## Fix 1 — A4 no longer gates on severity  (`reference_runner_v3.py`, `unverified_critical_count`)
+
+Founder ruling: "there are no votes in CDSFL." The convergence fail-safe read `severity >= 0.7`,
+where severity is a float the SOURCE MODEL assigns. It now blocks unless a falsifier returned one
+of `{CONFIRMED, REFUTED, CLOSED}` — `(not falsifier_code) or verdict not in that set` counts as
+blocking.
+
+CC1's safety claim, which is the thing to attack: replayed over 87 archived reports carrying an
+entries block, the new rule blocks MORE in 36.8%, identically in 63.2%, and FEWER in **0 of 87**,
+Wilson [0.0%, 4.2%] — therefore convergence can only get harder and a false convergence is
+impossible.
+
+**Attack it.** Is 87 the right population, or does it exclude the runs where it matters? Is there a
+live path where the new rule blocks LESS — consider `irreducible_escalation`, terminal statuses,
+and entries where `falsifier_verdict` is set but `falsifier_code` is absent. Does anything else
+read `unverified_critical_count`?
+
+## Fix 2 — `sk_break_even` and `sk_threshold_shadow`  (same file)
+
+The shipped S* is not the break-even of the shipped `nu_eff`: solving `compute_rk(R,q,s) == R` for
+s is a QUADRATIC, the shipped form is a ratio, and they coincide only on the surface `nu_b == q*R`.
+`sk_break_even` solves the quadratic, returns **None** (never 0.0) when no root lies in [0,1], and
+picks `min` of the roots that do. Coefficients were validated against `scipy.optimize.brentq` at
+1005 points with 0 mismatches. It is RECORDED beside the shipped verdict and decides nothing.
+
+**Attack it.** Are the coefficients right — re-derive them. Is `min` the correct root selection, or
+is there a parameter region where it picks the wrong one? Is the degenerate `a ≈ 0` branch handled?
+Can any consumer mishandle `None`?
+
+## Fix 3 — non-finite inputs now fail safe  (`compute_rk`)
+
+`min(1.0, nan)` returns 1.0 because every NaN comparison is False, so a NaN fix-efficacy scored as
+a PERFECT fix: `compute_rk(0.5,0.5,nan)` and `compute_rk(0.5,0.5,inf)` both returned
+0.3666666666666667. Non-finite now maps to the conservative end per parameter: `R_old -> 1.0`,
+`q -> 0.0`, `sk -> 0.0`.
+
+**Attack it.** Is "conservative" correct PER PARAMETER, or does forcing `R_old` to 1.0 have a
+perverse consequence somewhere? Should it raise instead of coercing? Does any legitimate caller
+pass non-finite values today?
+
+## The questions
+
+**Q1.** For each of the 3: does it do what it claims, and can you break it? Name the check you ran.
+**Q2.** Which is most likely to produce a WRONG RESULT rather than a crash? Wrong results are this
+project's expensive failure; crashes are cheap.
+**Q3.** CC1 both found and fixed all 3 alone in one sitting. What does that structurally risk
+missing? Answer structurally, not politely.
+**Q4.** Propose the runnable repair for anything you break.
+**Q5.** What would refute your own review?
+
+## Context so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in STEM
+artefacts; biological names are analogy only. The model has survived every attack in the project's
+life — failures have always been mechanical or in the prose ABOUT the mathematics. 4 numbers were
+checked today and did NOT reproduce, and acting on 2 of them would have made things worse, so treat
+every figure here, including CC1's, as a claim to test rather than a premise. A simulated
+full-harness run is next; a fault found now is far cheaper than one found during it.

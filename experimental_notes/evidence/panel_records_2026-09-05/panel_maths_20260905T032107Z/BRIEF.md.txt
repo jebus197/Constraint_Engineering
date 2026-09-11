@@ -1,0 +1,127 @@
+# PANEL BRIEF — DOES THE MATHEMATICAL MODEL NEED NEW MATHEMATICS?
+
+Six seats. You have Bash, Read, Grep and Glob, and the repository is at
+`/Users/georgejackson/Developer_Projects/Constraint_Engineering`. **Execute. Where
+you assert a mathematical result, derive it.** You are READ ONLY: report, do not modify.
+
+---
+
+## 0. TWO DISCLOSURES, BECAUSE THEY AFFECT HOW YOU SHOULD READ THIS
+
+**This brief was written by a party with a measured error rate, and you should price that in.**
+Of 8 measurements put to a panel on 2026-09-03, 3 could not be reproduced and 1 was
+wrong on both halves. Of 8 put to a panel on 2026-09-04, 1 was false and it was the
+load-bearing one. Of 6 fixes put to a panel this session, **2 survived first review
+unchanged — 33%, Wilson 95% CI [0.097, 0.700]**. Assume the same rate here. Check
+everything you can check.
+
+**The panel you are on is less diverse than its seat count suggests.** The Codex and
+ChatGPT seats currently share model weights, API route and system prompt. The designed
+contrast — Codex carrying OpenAI's own agent prompt, ChatGPT bare — was lost when the
+Codex seat moved to OpenRouter to eliminate a 45-to-80-minute-per-round fallback.
+Measured today: **5 of 8 differentiating dimensions survive** (phenotype transform,
+capability fingerprint, delivery parameters, context budget, temperature); 3 do not. If
+your answer depends on independence between those two seats, say so.
+
+---
+
+## 1. THE QUESTION
+
+The founder asks: **does the project's mathematical model already encode the
+distinction between "simplicity" and "sufficiency", or is new mathematics required?**
+
+His constraint, verbatim in substance: the mathematical model is the one thing that has
+stood the test of time throughout this project, so it must be treated with caution —
+but that does not mean it cannot be disproved or improved, **provided any change stays
+within the bounds of normal comprehension and itself meets the standards for simplicity
+and sufficiency it would encode.**
+
+**This is not a yes/no question and should not be answered as one.** New mathematics and
+new process machinery are independent axes. All four outcomes are live: neither, one,
+the other, or both. A prior panel established that presenting composable layers as
+alternatives is a recurring failure here.
+
+---
+
+## 2. WHAT THE DISTINCTION IS, AND THE STATE OF THE EVIDENCE
+
+**Two properties share the word "simple".** *Cost simplicity* is a small artefact — few
+lines, low blast radius. *Compressive simplicity* is a short statement with wide reach,
+small because it captured the structure rather than because something was dropped. The
+founder's position is that the second is what the project should aim for, and that in
+that regime simplicity and sufficiency do not compete.
+
+**The proposed criterion.** A simplification is admissible iff the simpler form S and
+the fuller form F agree across a scope D declared **before either was proposed**
+(residual empty), or the residual is named, bounded, and filed as its own claim with its
+own test. Establishable by proof or exhaustive enumeration. **Sampling can refute a
+simplification but can never admit one.**
+
+**What is already verified, and you can re-run all of it.**
+`bench/tests/test_appendix_reduction_properties_2026-09-05.py` executes 30 tests over
+the appendix's own reduction claims. Every test asserts both that the residual is zero
+under the stated condition AND that it is non-zero for a wrong model, so none is
+vacuously true. The unified equation's own collapse — recursion reproduces the batch
+posterior with m = prod(1 - q_j) — holds and fails for a wrong update.
+
+**Two defects were found in the appendix while doing this. Both are pinned as tests
+rather than patched, because amending the mathematics is the founder's decision:**
+- L38 claims a coupling bound is required "to ensure all state probabilities remain
+  non-negative. (Verified by SymPy, March 2026.)" **This is false.** Every state weight
+  is a product of non-negative factors times an exponential, and exp(x) > 0 for all real
+  x. Verified at 1000, three orders past the bound; a second reviewer reproduced it at
+  36 times the bound independently.
+- The G_n reduction table row "K=1, d=1, uniform p -> C(n)" omits its necessary
+  condition n_H = 0.
+
+**A prior panel's position, which you may disagree with.** Two reviewers on 2026-09-04
+held that a reduction property is a theorem ABOUT the equation, not a term IN it, and
+that folding it in would make the equation piecewise — the opposite of collapse. One
+went further and proposed a rule rather than a definition: **reductions must be
+discharged, not sampled.** Where a symbolic or exhaustive proof is available it must be
+attempted first, and a sampled agreement may be recorded as REFUTED or UNDISCHARGED,
+never CONFIRMED. Neither is a vote; both are tool-decided.
+
+---
+
+## 3. THE QUESTIONS
+
+**Q1. Does the existing model already encode the distinction?** Read
+`docs/MATHEMATICAL_APPENDIX.md` sections 1.1 and 7.1 and the reduction statements
+throughout. The claim to test is that the appendix's re-injection term nu and its
+break-even nu* already express the trade, with sufficiency as the benefit side and
+simplicity as the cost side. **Derive your answer.** If the encoding is real but
+incomplete, say exactly what is missing.
+
+**Q2. Is new mathematics warranted, and would it survive the founder's constraint?**
+If you propose a new term, an operator or a metric, you must show: what it buys that
+the existing form does not; that it does not make the equation piecewise; and that the
+result remains comprehensible to a competent reader who is not its author. **A proposal
+that fails the comprehensibility test is a refutation of itself.** "No new mathematics"
+is a permitted and possibly correct answer.
+
+**Q3. Does the model meet its own standard?** The criterion says a simplification is
+admissible when the residual is empty over a declared scope, or the residual is named
+and filed. **Apply that to the mathematical model itself.** Its central collapse is
+verified. Are there simplifications inside the model whose residual is neither empty nor
+named? Name them.
+
+**Q4. The rule, not the definition.** Should "reductions must be discharged, not
+sampled" be adopted as an asymmetry in the verdict vocabulary — sampled agreement may
+record REFUTED or UNDISCHARGED, never CONFIRMED? State the cost as well as the benefit.
+What does it forbid that is currently permitted and useful?
+
+**Q5. The two appendix defects.** Independently of the above: is the L38 refutation
+correct? If the coupling bound is not needed for non-negativity, **what is it for?** A
+constraint with a false justification may still have a true purpose, and naming it is
+more useful than deleting it. Same question for the G_n table row.
+
+**Q6. What did this brief get wrong?** Given the error rate disclosed in section 0, the
+most valuable thing you can return may be a defect in the framing rather than an answer
+to the question as posed.
+
+---
+
+**For every question, state what you would accept as evidence that you are wrong.**
+Where you propose a change, propose a FIX and not merely a problem — this project has
+recorded that a review process which returns only problems is of limited value. Do not pad.

@@ -1,0 +1,19 @@
+=== Stage 1 audit panel review (pr) — 5 models ===
+  prompt 46,459 chars, system 1,550 chars
+  approx 11,614 input tokens per model, 58,073 total
+[14:38:13]   [openrouter:google/gemini-3.1-pro-preview] done (50.5s, 8274 chars)
+  [ge] ok=True chars=8274 51.4s
+[14:38:47]   [openrouter:openai/gpt-5.5] done (84.9s, 13171 chars)
+  [cgpt] ok=True chars=13171 85.8s
+[14:38:53]   [openrouter:openai/gpt-5.5] done (90.7s, 14550 chars)
+  [cx] ok=True chars=14550 91.7s
+[14:42:21]   [claude-cli:opus] attempt 1 failed (300.1s): claude CLI timed out after 300.1s
+[14:42:21]   [claude-cli:opus] retry 2/3
+[14:43:10]   [deepseek:deepseek-v4-pro] done (347.7s, 9972 chars content, 63814 chars reasoning)
+  [ds] ok=True chars=9972 348.6s
+[14:47:21]   [claude-cli:opus] attempt 2 failed (300.0s): claude CLI timed out after 300.0s
+[14:47:21]   [claude-cli:opus] retry 3/3
+[14:52:21]   [claude-cli:opus] attempt 3 failed (300.0s): claude CLI timed out after 300.0s
+  [cc2] ok=False chars=0 900.1s ERR=RuntimeError: Claude CLI call failed after 3 attempts for opus. Last error: claude CLI timed out after 300.0s
+
+  4/5 responded. Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/confer_stage1_audit_2026-08-18

@@ -1,0 +1,231 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 11002,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/exp56_configs/*.json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/reference_runner_v3.py bench/exp56_configs/*.json bench/tests/test_declared_models_roster_2026-09-09.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py bench/tests/test_d9_d11_configs_valid_2026-09-05.py scripts/roster_disjointness_2026-09-09.py 2>&1\", \"description\": \"Count lines in artefa"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_declared_models|_runner_config_models_default|irreducible_queue_count|build_irreducible_queue_alarm|_check_gamma_alt_convergence|CRITICAL_SEVERITY_THRESHOLD|rank_falsifier_writers|_verification_step|irreducible_escalation|routing_deferred|HALTED_IRREDUCIBLE_QUEUE_ALARM\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 5136, \"limit\": 140}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 2060, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 5380, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6110, \"limit\": 100}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6286, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 13130, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6406, \"limit\": 100}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/exp56_configs/d9_single_model_with_agents.json\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 5288, \"limit\": 95}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 5500, \"limit\": 135}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 9207, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"novel_critical_history\\\\|novel_crit\\\\b\\\\|settled\\\" bench/reference_runner_v3.py | head -50; echo ---; grep -n \\\"def rank_falsifier_writers\\\\|rungs_tried\\\\|def route\\\\b\\\\|tried\\\" bench/routing.py | head -30\", \"description\": \"Locate novel-critical series construction and routing helpers\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6860, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 7150, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 13400, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 13720, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 1995, \"limit\": 72}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/routing.py\", \"offset\": 60, \"limit\": 160}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python -m pytest bench/tests/test_declared_models_roster_2026-09-09.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py -q 2>&1 | tail -15\", \"description\": \"Run the three new 2026-09-09 tests\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_declared_models_roster_2026-09-09.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which python3 && python3 --version && python3 -m pytest bench/tests/test_declared_models_roster_2026-09-09.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py -q 2>&1 | tail -8\", \"description\": \"Run the three new tests with python3\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_declared_models_roster_2026-09-09.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py -q -p no:cacheprovider 2>&1 | grep -E \\\"passed|failed|error|PASSED|FAILED|ERROR\\\" | head -5\", \"description\": \"Run three new tests, show summary line\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_d9_d11_configs_valid_2026-09-05.py -q -p no:cacheprovider 2>&1 | grep -E \\\"passed|failed|error\\\" | head -3; python3 scripts/roster_disjointness_2026-09-09.py 2>&1 | tail -12\", \"description\": \"Run config validation test and disjointness script\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 9286, \"limit\": 85}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def resolve\\\\b\\\\|exhausted_round_threshold\\\" bench/reference_runner_v3.py | head; grep -n \\\"_FALSIFIER_RESOLVED_VERDICTS\\\\s*=\\\" bench/reference_runner_v3.py\", \"description\": \"Locate registry.resolve, exhausted threshold, resolved-verdict set\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 1782, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfor f in [\\\"bench/exp56_configs/d9_multi_model_panel.json\\\",\\\"bench/exp56_configs/d11_seat_contrast_diversity_arm.json\\\",\\\"bench/exp56_configs/d9_single_model_with_agents.json\\\"]:\\n    d = json.load(open(f))\\n    print(\\\"==\\\", f)\\n    print(\\\"models:\\\", d[\\\"models\\\"])\\n    print(\\\"_verification_note:\\\", d.get(\\\"_verification_note\\\",\\\"(none)\\\")[:400])\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfor f in [\\\"bench/exp56_configs/d9_multi_model_panel.json\\\",\\\"bench/exp56_configs/d11_seat_contrast_diversity_arm.json\\\"]:\\n    d = json.load(open(f))\\n    print(\\\"==\\\", f)\\n    print(d[\\\"_verification_note\\\"][300:])\\n    print()\\na=json.load(open(\\\"bench/exp56_configs/d9_single_model_with_agents.json\\\"))[\\\"_verification_note\\\"]\\nb=json.load(open(\\\"benc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '13494,13742p' bench/reference_runner_v3.py | grep -n \\\"break\\\\|sys.exit\\\\|return\\\" | head; echo ---; grep -n \\\"def .*rho\\\\|rho_current\\\\s*=\\\\|novelty_rate\\\\|def compute_rho\\\\|_rho\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Check for early exits between gamma-alt and alarm; locate rho computation\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/tmp/cdsfl_r2_falsifier.py\", \"content\": \"# FALSIFIER: round-2 panel \\u2014 exp56 roster confinement, empty-ladder deferral,\\n# alarm boundary, gamma-absorber question. Imports the REAL modules.\\n# Prints FALSIFIED on any demonstrated defect; exits cleanly if claims hold.\\nimport sys, types\\nfrom pathlib import Path\\nREPO = Path(\\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000g"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k8zypybl/scratch/cdsfl_r2_falsifier.py\", \"content\": \"# FALSIFIER: round-2 panel \\u2014 exp56 roster confinement, empty-ladder deferral,\\n# alarm boundary, gamma-absorber question. Imports the REAL modules.\\n# Prints FALSIFIED on any demonstrated defect; exits cleanly if claims hold.\\nimport sys, types\\nfrom pathlib"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k8zypybl/repo/_panel_r2_falsifier.py\", \"content\": \"# FALSIFIER: round-2 panel \\u2014 exp56 roster confinement, empty-ladder deferral,\\n# alarm boundary, gamma-absorber question. Imports the REAL modules.\\n# Prints FALSIFIED on any demonstrated defect; exits cleanly if claims hold.\\n# Scratch file in the staged pane"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\n# FALSIFIER: round-2 panel. Imports the REAL modules; FALSIFIED on demonstrated defect.\\nimport sys, types, tempfile\\nfrom pathlib import Path\\nREPO = Path.cwd()\\nsys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / \\\"bench\\\"))\\nimport bench.reference_runner_v3 as rr\\nfrom bench.reference_runner_v3 import (\\n    FindingRegistry, RunnerConfig, CRITICAL_SEVE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys, types\\nfrom pathlib import Path\\nREPO = Path.cwd(); sys.path.insert(0, str(REPO))\\nfrom bench.reference_runner_v3 import RunnerConfig, _verification_step\\nreg = types.SimpleNamespace(entries={\\\"C0001\\\": {\\n    \\\"status\\\": \\\"OPEN\\\", \\\"severity\\\": 0.9, \\\"description\\\": \\\"x\\\", \\\"verdicts\\\": []}})\\ncV = RunnerConfig(test_article=\\\"x\\\"); cV.verification_min"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"MUT=$(mktemp -d)/repo && mkdir -p $MUT && cp -R . $MUT/ 2>/dev/null; cd $MUT && echo \\\"copy at $MUT\\\" && grep -c 'rungs_tried\\\", 0) == 0' bench/reference_runner_v3.py\", \"description\": \"Copy repo to disposable mutation sandbox\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp.YWEJ3Nbx6j/repo\\n# MUTATION 1: revert empty-ladder deferral (empty ladder treated as dead transport again)\\nsed -i '' 's/if getattr(result, \\\"rungs_tried\\\", 0) == 0:/if False:  # MUTATION1/' $M/bench/reference_runner_v3.py\\ngrep -n \\\"MUTATION1\\\" $M/bench/reference_runner_v3.py | head -1\\ncd $M && python3 -m pytest bench/tests/test"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp.YWEJ3Nbx6j/repo\\ncp bench/reference_runner_v3.py $M/bench/reference_runner_v3.py\\n# MUTATION 2: revert roster confinement in _apply_routing\\nsed -i '' 's/    _roster = _declared_models(exp_config, cfg)/    _roster = list(exp_config.models)  # MUTATION2/' $M/bench/reference_runner_v3.py\\ngrep -n \\\"MUTATION2\\\" $M/bench/reference_run"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp.YWEJ3Nbx6j/repo\\ncp bench/reference_runner_v3.py $M/bench/reference_runner_v3.py\\n# MUTATION 3: drop routing_deferred from the queue COUNTER only\\ncd $M && python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\"); s = p.read_text()\\nold = '''            if (e.get(\\\"irreducible_escalation\\\") or e.get("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys, json, types\\nfrom pathlib import Path\\nsys.path.insert(0, str(Path.cwd()))\\nimport bench.reference_runner_v3 as rr\\n# (a) Arm B's declaration vs the stale hardcoded default: byte-equal?\\ndefault = rr._runner_config_models_default()\\narmB = json.load(open(\\\"bench/exp56_configs/d9_multi_model_panel.json\\\"))[\\\"models\\\"]\\nprint(\\\"default:\\\", default)\\nprin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"PANEL MISMATCH\\\" bench/reference_runner_v3.py | head -5; python3 - <<'EOF'\\nimport sys; sys.path.insert(0, \\\".\\\")\\nfrom bench import launcher_core\\nec = launcher_core.load_experiment_config()\\nprint(\\\"live orchestrator roster:\\\", [m.label for m in ec.models])\\nEOF\", \"description\": \"Check PANEL MISMATCH handling and live roster labels\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11595, \"limit\": 45}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"models\\\" bench/launcher_core.py | head -30; echo ===; grep -rn \\\"load_experiment_config\\\\|exp_config.models\\\" bench/detached_launch.sh bench/launch_experiment*.py 2>/dev/null | head -10\", \"description\": \"Find where launcher restricts the dispatched roster\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/launcher_core.py\", \"offset\": 100, \"limit\": 120}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"for mc in\\\\|for model_config in\\\\|for m in exp_config\\\" bench/reference_runner_v3.py | sed -n '1,40p'\", \"description\": \"Find all roster iteration sites in the runner\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11925, \"limit\": 45}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11470, \"limit\": 30}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 8460, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp.YWEJ3Nbx6j/repo\\ncp bench/reference_runner_v3.py $M/bench/reference_runner_v3.py   # restore runner\\ncd $M && python3 - <<'EOF'\\nimport json, sys, types\\nfrom pathlib import Path\\nsys.path.insert(0, \\\".\\\")\\nimport bench.reference_runner_v3 as rr\\n# FIX UNDER TEST: reorder arm B's models so list-equality with the stale default brea"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rm -rf /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/tmp.YWEJ3Nbx6j && echo \\\"mutation sandbox removed\\\"\", \"description\": \"Remove disposable mutation sandbox\"}"
+    }
+  ],
+  "n_tool_calls": 55,
+  "elapsed_s": 811.0,
+  "response": "# Round-2 verdict \u2014 exp56 roster confinement\n\n## `verdict`: **CONFIRMED** (with 1 conditional finding and 1 sub-threshold finding)\n\nThe corrected work does what it claims. Every claim I could reach was driven through the real machinery and none was falsified. The one defect I found is in a **config**, not in the corrected code, and is conditional on a roster change before launch.\n\n## `reasoning`\n\nGrounded in execution, not description:\n\n1. **Finding 2's fix (empty ladder \u2192 deferral \u2192 alarm) works end-to-end.** Ran the real `_apply_routing` with a stubbed dispatcher on a 1-seat arm with 3 escalated criticals: 0 dispatches, all 3 stamped `routing_deferred`, `irreducible_queue_count()==3`, `build_irreducible_queue_alarm` returns an alarm object with **evidence for all 3** (the sim45 empty-bundle regression stays closed: collector == counter, verified at the boundary too). At exactly the bound (2) the alarm is `None`. Premise executed: `rank_falsifier_writers(['CC2'], exclude=('CC2',)) == []`.\n2. **Severity boundary:** sev = 0.7 exactly is counted by both counter and collector; 0.6999 by neither. Terminal `CONFIRMED` leaves the queue.\n3. **The gamma question the brief says nobody asked \u2014 answered by execution: routing CANNOT flatten the gate.** Routing's only status write is `registry.resolve(cid, \"CONFIRMED\")`; `_NON_NOVEL_TERMINAL_STATUSES = {MERGED, DUPLICATE, UNCONFIRMED, REFUTED}` does **not** contain CONFIRMED/CLOSED, so an absorbed critical still counts at its **discovery** round in both the settled series (gamma side) and the location-keyed series (count side). Executed: 3 criticals discovered rounds 3\u20135 and instantly routed-CONFIRMED give `crit=[0,0,0,1,1,1]` and `_check_gamma_alt_convergence` **refuses** (`novel_crit_recent=[1,1,1]`) even at `gamma_critical=0.99`; the same 3 discovered at round 0 converge. Routing changes *resolution*, never *discovery attribution* \u2014 the decay curve measures the latter. Deferred entries keep status OPEN (visible to the series). Routing's DUPLICATE path withholds the merge (no-voting), so it removes nothing from the series either. The one path that *does* remove a critical from the series \u2014 CC2v REJECT \u2192 UNCONFIRMED \u2014 is not routing, and the A4 blocker counts it (executed: deferred UNCONFIRMED critical counted; only `irreducible_escalation` is excluded, the fail-safe direction).\n4. **Ordering:** within the round loop, gamma-alt is assessed at ~13482 but the alarm builder at 13742 runs before every convergence action, sets `converged=False` and breaks \u2014 no `break`/`return` exists between them (grepped 13494\u201313742). The 6380 docstring's \"never reaches this check with an over-bound queue\" is imprecise (it is reached, same round) but behaviourally safe.\n5. **rho:** mechanically unchanged by enabling routing. Its inputs are `novelty_counts`/`raw_counts`, appended from the panel review parse at lines 12826\u201312828 before `_apply_routing` touches the registry; routing writes flags/verdicts only. Second-order movement via next-round prompt context (confirmed list, feedback sections) is possible and is the panel mechanism working as designed, not an accounting artefact.\n6. **Shipped tests:** 24/24 pass (three 2026-09-09 files), 74/74 pass (`test_d9_d11_configs_valid`), `scripts/roster_disjointness_2026-09-09.py` reproduces 0/60 disjoint, Wilson [0.0%, 6.0%], both libraries agreeing.\n7. **Test strength demonstrated by mutation** (in a disposable copy, since removed): (M1) revert deferral branch to `if False:` \u2192 3 tests red; (M2) `_roster = list(exp_config.models)` \u2192 wiring test red; (M3) drop `routing_deferred` from the counter \u2192 2 tests red. All three mutations verified applied by grep before running.\n8. **C-A refusal: I attacked it and it held.** Executed against the 3 real configs and a 5-seat roster: filtering leaves CC2v reachable in A (`['CC2']`) and B, removes it from C (`['Codex','ChatGPT']`) alone \u2014 a constant converted into a 1-of-3 confound. `_verification_step` (read at 9207\u20139329) genuinely does not dispatch to the roster; it selects the single CC2 seat and returns `{'skipped': True, 'reason': 'CC2 config not found'}` when absent (executed with an OPEN finding present, so the skip is the CC2 branch, not the empty-registry branch). The refusal is right. My sharpest counter \u2014 CC2v dispatches an *undeclared vendor* inside arm C, the same class as the merge-arbitration leak that config switched off \u2014 fails on the difference that matters: arbitration/routing/sweep vary panel work by arm; CC2v is identical harness in all 3 arms, its CONFIRM/REJECT never enters the primary metric (falsifier-gate CONFIRMED only, per the frozen pre-registration), and filtering it *creates* the asymmetry it purports to remove. Also frozen 2026-09-05 with CC2v in place; filtering now would be post-freeze tuning.\n\n## `findings`\n\n**Finding 1 \u2014 Arm B's declaration is byte-equal to the stale hardcoded default, so the 5-seat arm is classified as \"no declaration made\".** Conditional-material.\n- **file/line:** `bench/exp56_configs/d9_multi_model_panel.json` line 12 (`\"models\"`), interacting with `bench/reference_runner_v3.py:5217` (`declared == list(_runner_config_models_default())`).\n- **what is wrong:** Executed: `armB == default \u2192 True`. Today this is harmless (live orchestrator roster, executed via `load_experiment_config()`, is the same 5 labels \u2014 the filter would be a no-op either way). But if a 6th seat joins the orchestrator default before launch \u2014 the exact \"before Fable joined\" drift the project has hit, per its own record, 7 times \u2014 routing and the sweep in arm B silently widen to 6 seats (executed: `_declared_models` returns all 6) while the frozen pre-registration says \"B = 5 seats, 4 vendors\", and the main review dispatch stays at 5 (separate exact-match confinement at line 8470). PANEL MISMATCH (11614\u201311623) is log-only. The runner docstring names this KNOWN LIMIT; a known limit sitting on a frozen arm is still an exposure.\n- **fix (config layer, zero behaviour change today):** in `d9_multi_model_panel.json`, reorder to `[\"CC2\", \"Codex\", \"Gemini\", \"ChatGPT\", \"DeepSeek\"]` (same set; list-equality with the default breaks, so the declaration binds). Caveat: the file is frozen pre-registration \u2014 needs founder sign-off; the set and semantics are unchanged. Alternative not touching frozen files: a launch-guard test pinning `{m.label for m in load_experiment_config().models}` to the 5 declared labels.\n- **executed falsifier:** applied the reorder in a disposable copy; `_declared_models` vs 6-seat roster (Fable added) returned only the 5 (`Fable` excluded); vs today's 5-seat roster, identical behaviour; then `pytest` over all 4 relevant test files: **98 passed**. Output above.\n\n**Finding 2 \u2014 `_verification_note` false self-reference in 2 of 3 configs.** Below threshold (documentation).\n- **file/line:** `d9_single_model_with_agents.json` line 101 and `d9_multi_model_panel.json` (`_verification_note`), byte-identical (executed: `A==B==C: True`) to the d11 file's, so arms A and B state that filtering would \"remove it from **this contrast arm** alone\" \u2014 false in those two files; filtering *keeps* CC2v there. No behaviour rides on the key.\n- **fix:** old text `remove it from this contrast arm alone` \u2192 new text `remove it from the contrast arm (d11_seat_contrast_diversity_arm) alone` in all 3 files.\n\n**Observation (below threshold):** main review dispatch confines by exact label (`mc.label in set(cfg.models)`, 8470\u20138472) with no `-SIM` normalisation and no fallback \u2014 divergent semantics from `_declared_models`. A sim rehearsal of an exp56 arm config (bare names vs `-SIM` roster) yields `eligible == []` and `ThreadPoolExecutor(max_workers=0)` raises `ValueError` \u2014 loud, not silent, hence below threshold; worth a line in the runner comment.\n\n## `falsifier` / `falsifier_result`\n\nPrimary falsifier: the 19-check script shown in full in the transcript (`python3 - <<'PYEOF' \u2026`), importing the real `bench.reference_runner_v3` and `bench.routing`. Result: **`ALL CHECKS PASSED - no claim falsified`** (19/19 PASS lines above). Supporting runs: the CC2-absent re-check (`{'skipped': True, 'reason': 'CC2 config not found'}`), 3 mutations (all caught red), the arm-B fix falsifier (Fable excluded, 98 tests green), and commands `python3 -m pytest \u2026 -q` / `python3 scripts/roster_disjointness_2026-09-09.py` with outputs as shown.\n\n## `refutation_condition`\n\n- **My CONFIRMED verdict falls** if anyone exhibits a registry state where a critical discovered inside the zero-streak window is absent from `location_keyed_novelty_series`/`_settled_novelty_series` *because of a status routing wrote* \u2014 i.e. a routing code path that writes MERGED/DUPLICATE/UNCONFIRMED/REFUTED onto an entry. I found none; one concrete example refutes me.\n- **My defence of the C-A refusal falls** on a measurement showing CC2v's verdicts leak into the primary metric \u2014 e.g. an archived run where a finding's falsifier-gate CONFIRMED count changed because of a CC2v CONFIRM/REJECT rather than a runner falsifier re-run. It also falls if any exp56 arm config is shown to set a `verification_*` key (none does today).\n- **My Finding 1 falls** if the orchestrator roster is contractually pinned to these 5 labels through exp56's launch by something stronger than the log-only PANEL MISMATCH \u2014 show me that pin and the finding drops to documentation.\n\n## `strongest_disagreement`\n\nThe brief frames the gamma question as an open hazard (\"can a run now converge on a flattened gamma that flattened because findings were routed away\"). The framing presumes routing removes findings from the decay series. It does not, structurally: both series key on `open_since_round` and strip only four statuses, none of which routing writes. The genuine series-removal channel in this codebase is **CC2v REJECT \u2192 UNCONFIRMED** (`_verification_step`, line 9310) \u2014 a *model-prose* verdict resolving a finding out of the novelty series, guarded only by the A4 counter and the `exhausted` release valve at round 8. If the panel wants to worry about an absorber corrupting the decay curve, that is the mechanism to audit \u2014 and it sits inside the very step whose unfiltered roster the C-A refusal (correctly) protected. Second disagreement: the brief says the round-1 observation C-A was \"CONFIRMED, prescription REFUSED\" \u2014 on my measurement even the observation is only half-right, since `exp_config.models` at that call site is not \"the roster unfiltered\" in any operative sense; it is a one-seat lookup table.\n\n## `passes_run`\n\n**4.** Pass 1: read all artefacts + shipped tests + script (green). Pass 2: 19-check falsifier + 3 mutations (all claims held; all mutations caught). Pass 3: residual surface \u2014 found Finding 1 (fix built, falsified, regression-tested) and Finding 2. Pass 4: sufficiency check over the remaining instruments named in the brief (severity boundary, rho, ordering) \u2014 no new above-threshold findings. Terminated on a quiet pass with no specific unexamined mechanism left to name."
+}

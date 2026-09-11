@@ -1,0 +1,93 @@
+# The model encodes reach in two places. The runner realises it in neither. Propose the fix.
+
+## Read this first: you are being asked for SOLUTIONS, not findings
+
+The founder's standing instruction: "the purpose of these panel reviews is not just to find
+problems, but to propose fixes." A verdict that only diagnoses is a failed answer here.
+Return runnable, tested proposals. Use your shell: sympy, z3, numpy, mpmath, wolframscript.
+The named `sympy_verify` tools are NOT on your route; say so and use the shell.
+
+**Answer as yourself.** A previous round put per-seat instructions in one shared brief and a
+seat adopted the other seat's role and mislabelled its own output. There are no assigned
+roles here. Both of you get the same questions.
+
+## What was established, by tool, and is not in dispute
+
+A proposal to replace `ν` with `ν_eff = ν/|D|` was refuted twice over, and both refutations
+are Wolfram-verified. It stays refuted. Do not re-argue it. The two decisive kills:
+
+* **Gate escape is closed-form.** `ν/D ≤ ν*` is *exactly* `D ≥ ν/ν*` (z3: `unsat` on any
+  divergence). Wolfram `Reduce[ForAll[{ν,t}, … Exists[D, D≥1 ∧ ν/D ≤ t]]]` returns **True**:
+  admissibility is always purchasable by declaration.
+* **Category error.** `ν` is a probability; `ν/|D|` is not the probability of anything. It
+  corrupts the substrate ceiling: with a fix that breaks something *with certainty*,
+  declaring `|D|=1000` drops the model floor to **0.3007** where the truth is **1.0**.
+
+Also established: all 5 of the appendix's reductions are **regular** limits (value at the
+point equals the limit approaching it; SymPy and Wolfram agree), so this is the well-behaved
+case in Batterman's sense — no singular limits, no asymptotic borderland.
+
+## THE FINDING YOU ARE ASKED TO SOLVE
+
+Two seats independently defended the model by locating reach in it. Both were right about
+the *model* and wrong about the *runner*.
+
+**Home 1 — `ν`.** `MATHEMATICAL_APPENDIX.md:208` defines it reach-sensitively: *"Localised
+one-line changes have low ν. Changes to shared interfaces have higher ν."*
+**But `ν` is never computed.** `reference_runner_v3.py:9417` and `:9499` carry
+`nu_b: float = 0.05, nu_f: float = 0.20` as literal defaults, and no code writes a
+per-finding `ν` from blast radius. Every experiment from 37 to 49 ran on those constants.
+
+**Home 2 — `σ`.** `∂ν*/∂σ = qR(1−qR)/(1+qR(σ−1))²`, strictly positive (Wolfram), so `ν*`
+rises with `σ`. At `q=0.21, R=0.3` a fix with `σ=1` gets **937×** the risk budget of one with
+`σ=0.001`. **But `σ` is `sk_result.sk`**, and `compute_sk` (`:9237`) takes exactly
+`fix_text, source, source_path, baseline, test_cmd, declared_target_kind`. **No input carries
+reach.** `S_k` is the product of `g1_ast`, `g2_compile`, `e2_regression`, `e3_ruff`,
+`e4_bandit` — it measures whether a fix *parses, compiles, passes tests, lints and scans
+clean*. A fix resolving 1 of 1000 sites scores identically to one resolving all 1000.
+
+So the mathematics encodes reach twice and the implementation realises it zero times, and
+nothing anywhere reports the gap. `bench/input_complexity.py` exists and appears to have no
+caller.
+
+## The questions
+
+**Q1. Which home is correct — `ν`, `σ`, both, or neither?** Derive it. `ν` is
+re-injection risk (does the fix BREAK something new); `σ` is fix efficacy (does the fix
+RESOLVE the flaw). Reach plausibly belongs to both but with opposite signs. Settle it from
+the model's own semantics, not from preference.
+
+**Q2. Propose the concrete implementation.** Runnable. Where does the number come from —
+AST diff size, call-graph fan-out, number of SEARCH/REPLACE blocks, files touched, declared
+class size? It must be MEASURED from the fix and the target, never declared by a model, or
+it inherits the `ν_eff` gate escape. Name the function, its inputs, and its range.
+
+**Q3. What breaks if you wire it?** Every archived run used constants. Turning on a computed
+`ν` changes `R_k` and therefore convergence for every future run and breaks comparability
+with all 49 completed experiments. Is that acceptable, and how is it managed — shadow mode,
+a flag, a recalibration? The queue alarm halts runs at a bound of 2; would a computed `ν`
+make halts more or less likely?
+
+**Q4. What is the cheapest honest interim?** If wiring it is too large a change to make
+tonight, what is the smallest step that stops the gap being SILENT? This project's repeated
+failure is not the defect but that nothing reports it.
+
+**Q5. What would refute your proposal?** Name the executable check.
+
+## Constraints
+
+* **TOOLS DECIDE, NOT VOTES.** Derive, execute, quote real output.
+* **NO COMPELLED CONVERGENCE.** Disagreement is information.
+* Do not pad. The founder has ADHD and reads every word.
+* If you believe the correct answer is "change nothing", say so and show why the gap is
+  harmless — that is a legitimate verdict and it needs the same evidence.
+
+## Context so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in
+STEM artefacts. Biological names are analogy only. The mathematical model has survived every
+attack in the project's life; the failures have always been mechanical, and this looks like
+another mechanical one. The founder is explicitly neutral on outcomes: "we should go with
+what gives us the demonstrably superior results", balanced against "the need to not be overly
+rash". A simulated full-harness run is planned next to shake out recent fixes, so a proposal
+that can be exercised in shadow during that run is worth more than one that cannot.

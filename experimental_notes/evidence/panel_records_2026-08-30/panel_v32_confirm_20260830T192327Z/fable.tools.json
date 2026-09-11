@@ -1,0 +1,291 @@
+{
+  "model": "fable",
+  "elapsed_s": 717.6,
+  "tool_calls": 71,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -3 && git status --short | head -20\", \"description\": \"Verify commit 8879c34 and working tree state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tools/ && wc -l bench/tools/run_simulated_experiment.py bench/tools/sim_dispatch_shim.py 2>/dev/null\", \"description\": \"List bench/tools and size the harness files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -15\", \"description\": \"Run full bench test suite\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/tools/run_simulated_experiment.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l reference_runner_v2.py bench/reference_runner_v2.py 2>/dev/null; grep -n \\\"RUNNER_VERSION\\\" reference_runner_v2.py bench/reference_runner_v2.py 2>/dev/null | head -5\", \"description\": \"Locate reference_runner_v2.py and its version\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_error_route_pending|error_routed|irreducible_escalation\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo\", \"glob\": \"*.py\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_error_route_pending\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 8}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"offset\": 4440, \"limit\": 150}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"offset\": 4610, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def dispatch_to_model\\\" bench/reference_runner_v2.py && grep -n \\\"dispatch_to_model(\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find dispatch_to_model definition and call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"verification_min_round\\\\|def _verification_step\\\\|unverified_critical_count\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Locate verification gating and critical count\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"import reference_runner_v2\\\\|from reference_runner_v2\\\\|bench.reference_runner_v2\\\\|from bench import reference_runner\\\" --include=\\\"*.py\\\" bench/ scripts/ 2>/dev/null | grep -v tests | head -20\", \"description\": \"Check for dual-module import of the runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def dispatch_to_model\\\" --include=\\\"*.py\\\" . | head -5; grep -n \\\"dispatch_to_model\\\" bench/reference_runner_v2.py | head -25\", \"description\": \"Find dispatch_to_model definition and runner references\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"dispatch_to_model\\\" --include=\\\"*.py\\\" bench/ scripts/ --exclude-dir=tests | grep -v \\\"reference_runner_v2.py\\\\|runner_core.py\\\\|sim_dispatch_shim\\\\|run_simulated_experiment\\\" | head -20\", \"description\": \"Who else imports/calls dispatch_to_model\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/runner_core.py\", \"offset\": 1209, \"limit\": 90}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_compose_for_model\\\\|discrimination_control_ask\\\" bench/reference_runner_v2.py | head; sed -n '175,190p' bench/reference_runner_v2.py\", \"description\": \"Find composer function and discrimination flag references\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"offset\": 7692, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def base_model_label\\\" bench/reference_runner_v2.py bench/runner_core.py 2>/dev/null\", \"description\": \"Find base_model_label\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"offset\": 6512, \"limit\": 130}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"__DISPATCH_FAILED__\\\" bench/reference_runner_v2.py bench/runner_core.py | head -20\", \"description\": \"Where the dispatch-failure sentinel is produced/consumed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '330,367p' bench/reference_runner_v2.py; grep -n \\\"COMPOSER_MODEL_MAP\\\" bench/reference_runner_v2.py | head -5\", \"description\": \"Read base_model_label and find COMPOSER_MODEL_MAP\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/reference_runner_v2.py\", \"offset\": 6760, \"limit\": 100}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def run_experiment\\\\|system_prompt_path\\\" bench/reference_runner_v2.py | head -15; grep -n \\\"system_prompt_path\\\" bench/runner_core.py | head -10\", \"description\": \"run_experiment signature and system_prompt_path uses\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"budget_limit\\\" bench/reference_runner_v2.py bench/runner_core.py | head -15\", \"description\": \"budget_limit semantics\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"system_prompt_path\\\" --include=\\\"*.py\\\" bench/ | grep -v tests | head -20; grep -n \\\"class ModelConfig\\\" bench/runner_core.py\", \"description\": \"All system_prompt_path references and ModelConfig\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"class ModelConfig\\\\|ModelConfig = \\\\|^ModelConfig\\\" --include=\\\"*.py\\\" bench/*.py | head; grep -rn \\\"system_prompt_path\\\" bench/experiment_11_orchestrator.py | sed -n '1,3p'; grep -n \\\"def run_experiment\\\" bench/experiment_11_orchestrator.py\", \"description\": \"Find ModelConfig class definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"ModelConfig\\\\|ExperimentConfig\\\" bench/runner_core.py | head -10; python3 -c \\\"\\nimport sys, pathlib\\nrepo = pathlib.Path('.').resolve()\\nsys.path[:0] = [str(repo), str(repo/'bench')]\\nimport reference_runner_v2 as R\\nimport inspect\\nprint('ModelConfig from:', R.ModelConfig.__module__)\\nprint(inspect.signature(R.run_experiment))\\nprint([f for f in R.ModelConfig.__dataclass_f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=9492 && NR<=11200 && (/cdsfl_text/ || /system_prompt/ || /_compose_for_model/ || /read_text/)' bench/reference_runner_v2.py | head -30; grep -n \\\"cdsfl_text\\\" bench/reference_runner_v2.py | awk -F: '$1>9492 && $1<11200' | head -20\", \"description\": \"How run_experiment consumes cdsfl_text and system_prompt_path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/cdsfl_registry/ | head; grep -n \\\"cdsfl_core_formal\\\\|def compose\\\\b\\\\|rendered_text\\\" bench/cdsfl_registry/composer.py | head -15\", \"description\": \"Composer structure and core directive loading\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys, pathlib\\nrepo = pathlib.Path('.').resolve(); sys.path[:0]=[str(repo), str(repo/'bench')]\\nimport reference_runner_v2 as R\\nfor lbl in ['CC2-SIM','DeepSeek-SIM','ChatGPT-SIM','Gemini-SIM','Codex-SIM','Fable-SIM']:\\n    try:\\n        c = R._compose_for_model(R.base_model_label(lbl), 'critique', 'software')\\n        t = c.rendered_text\\n        print(f'{lbl}: {"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"interaction_pattern\\\\|pattern_name\\\" bench/reference_runner_v2.py | awk -F: '$1>700 && $1<800 || $1>10200 && $1<10500' | head; grep -n \\\"interaction_pattern: str\\\" bench/reference_runner_v2.py\", \"description\": \"Find the default interaction pattern\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"interaction_pattern\\\" bench/reference_runner_v2.py | head -10\", \"description\": \"interaction pattern references\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"pattern_name\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Where pattern_name originates\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_single_model(\\\" bench/reference_runner_v2.py | head; grep -n \\\"INTERACTION_PATTERN_PRESETS\\\\b\\\" bench/reference_runner_v2.py | head -5\", \"description\": \"Callers of _dispatch_single_model\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_single_model\\\" bench/reference_runner_v2.py; grep -n \\\"cfg.pattern\\\\|pattern=\\\\|\\\\.pattern\\\\b\\\" bench/reference_runner_v2.py | awk -F: '$1>6900 && $1<7200' | head\", \"description\": \"All references to _dispatch_single_model and pattern flow\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"pattern\\\" bench/reference_runner_v2.py | awk -F: '$1>740 && $1<780' ; python3 -c \\\"\\nimport sys, pathlib\\nrepo = pathlib.Path('.').resolve(); sys.path[:0]=[str(repo), str(repo/'bench')]\\nimport reference_runner_v2 as R\\ncfg = R.RunnerConfig(experiment_name='x', models=['CC2-SIM'], test_article='bench/dm/_memory.py')\\nprint('pattern default:', cfg.pattern, '| domain default:'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CONVERGENCE_EXCLUDED_MODELS\\\" bench/reference_runner_v2.py bench/runner_core.py | head; grep -n \\\"base_model_label(\\\" bench/reference_runner_v2.py | wc -l; grep -n \\\"_verification_step(\\\" bench/reference_runner_v2.py\", \"description\": \"Vendor-keyed exclusions and verification call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"MODEL_SPECS\\\\[\\\" bench/reference_runner_v2.py bench/runner_core.py | head; grep -n \\\"def build_model_specs\\\" -A 20 bench/runner_core.py | head -25\", \"description\": \"MODEL_SPECS population and lookups\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CONVERGENCE_EXCLUDED\\\" bench/reference_runner_v2.py bench/runner_core.py | grep -v \\\"^.*:27:\\\\|^.*:184:\\\"; grep -rn \\\"CONVERGENCE_EXCLUDED_MODELS\\\" --include=\\\"*.py\\\" bench/ | grep -v tests | grep -v \\\":27:\\\\|:184:\\\\|:86:\\\"\", \"description\": \"Where the DeepSeek exclusion is consumed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"for round_idx in\\\\|converged_at\\\\|break\\\\b\\\\|_verification_step(\\\\|_apply_routing(\\\\|_run_shadow_cells(\\\\|_check_gamma_alt_convergence\\\\|convergence_reason\\\" bench/reference_runner_v2.py | awk -F: '$1>10200 && $1<11150' | head -40\", \"description\": \"Round loop skeleton: ordering of verification vs convergence\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10225,10250p' bench/reference_runner_v2.py; sed -n '11095,11145p' bench/reference_runner_v2.py\", \"description\": \"Round loop start and convergence break logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"if converged\\\" bench/reference_runner_v2.py | awk -F: '$1>11000'; sed -n '11150,11185p' bench/reference_runner_v2.py\", \"description\": \"What happens when converged=True\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"verification_min_round\\\" bench/ --include=\\\"*.json\\\" --include=\\\"*.py\\\" | grep -v \\\"reference_runner_v2\\\\|tests\\\" | head; ls bench/exp4*_configs 2>/dev/null | head\", \"description\": \"verification_min_round in configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ 2>/dev/null | grep -i \\\"exp45\\\\|sim45\\\" | head; find bench -name \\\"*.json\\\" -path \\\"*45*\\\" 2>/dev/null | head\", \"description\": \"Find exp45 artifacts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\ncfg = json.load(open('bench/exp45_configs/45_memory_statistics_live.json'))\\nfor k in ('max_rounds','verification_min_round','post_convergence_sweep_rounds','extension_cap','test_article','domain'):\\n    print(k, '=', cfg.get(k, '(absent)'))\\n\\\" ; ls bench/logs/exp45_memory_statistics_live_20260727T225640Z/ | grep -i report\", \"description\": \"exp45 config va"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\nprint('converged_at:', r.get('converged_at'))\\nprint('reason:', str(r.get('convergence_reason'))[:100])\\nents = (r.get('registry') or {}).get('entries', {})\\nprint('entries:', len(ents))\\nprint('verified:', sum(1 for e in ents.values() i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"verified\\\"\\\\] = True\\\\|e\\\\[\\\"verified\\\"\\\\] = True\\\\|entry\\\\[\\\"verified\\\"\\\\] = True' bench/reference_runner_v2.py | head\", \"description\": \"All setters of verified=True\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '9525,9545p' bench/reference_runner_v2.py; grep -n \\\"error_routed\\\" bench/reference_runner_v2.py; grep -n \\\"lookup_alias_any\\\\|NOT_PROBED_NO_FALSIFIER\\\" bench/reference_runner_v2.py | head -8\", \"description\": \"discrimination flag loudness, error_routed consumers, alias lookup\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uze1p5oo/repo/bench/tests/test_transport_dead_guard_covers_criticals_2026-08-30.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10540,10560p' bench/reference_runner_v2.py; grep -n \\\"def _run_shadow_cells\\\" bench/reference_runner_v2.py; grep -n \\\"_macrophage\\\" bench/reference_runner_v2.py | head\", \"description\": \"Routing call site guard and macrophage wiring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def route\\\" bench/routing.py; sed -n \\\"$(grep -n 'def route' bench/routing.py | cut -d: -f1),+40p\\\" bench/routing.py\", \"description\": \"route() body: can it raise\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"DEFAULT_FALSIFIER_STRENGTH\\\\|def rank_falsifier_writers\\\" bench/routing.py; sed -n \\\"$(grep -n 'def rank_falsifier_writers' bench/routing.py | cut -d: -f1),+30p\\\" bench/routing.py\", \"description\": \"rank_falsifier_writers and strength order\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-uze1p5oo-repo/1423b989-a3bf-49ab-aa42-ebdc656f0ae4/tasks/btu1wzbwm.output\", \"description\": \"Test suite result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts::test_the_committed_ledger_matches_bench_logs bench/tests/test_falsifier_cannot_read_the_key.py::test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive -q 2>&1 | grep -A 12 \\\"FAILED\\\\|Error\\\\|assert\\\" | head -50\", \"description\": \"Inspect first two failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def scan_falsifier_source\\\" bench/ --include=\\\"*.py\\\" | head -3; git log --oneline -3 -- \\\"$(grep -rln 'def scan_falsifier_source' bench/*.py | head -1)\\\"; git log --oneline -2 -- experimental_notes/EXPERIMENT_RUN_LEDGER.md; git ls-files | grep -c \\\"sim45_memory_20260830\\\"; git log --oneline -1 -- bench/logs/sim45_memory_20260830T161215Z 2>/dev/null | head -2\", \"description"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_operational_scripts.py::TestUsageTextAdvertisesOnlyImplementedFlags::test_help_builds_and_lists_every_advertised_flag[apply_v3.py]\\\" -q 2>&1 | tail -15\", \"description\": \"Inspect operational-scripts failure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -3 -- bench/tests/test_falsifier_cannot_read_the_key.py; git merge-base --is-ancestor f9d4f5b HEAD && echo \\\"f9d4f5b IS ancestor of HEAD\\\"; sed -n '672,740p' bench/falsifier_verify.py\", \"description\": \"Test history and guard rules\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json, re, sys\\nsys.path.insert(0,'bench')\\nd = json.load(open('bench/logs/exp44_evidence_locationkey_live_20260727T002705Z/exp44_evidence_locationkey_live_report.json'))\\ncode = d['registry']['entries']['C0001']['falsifier_code']\\nprint([l for l in code.splitlines() if '/Users/' in l][:3])\\nfrom falsifier_verify import scan_falsifier_source\\nprint(scan_falsifier_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"reference_runner\\\" bench/routing.py bench/falsifier_verify.py 2>/dev/null; sed -n '7315,7345p' bench/reference_runner_v2.py; grep -rn \\\"import\\\\|dispatch\\\" bench/cells/macrophage*.py 2>/dev/null | grep -i \\\"requests\\\\|http\\\\|dispatch\\\\|subprocess\\\\|urllib\\\" | head; ls bench/cells/ 2>/dev/null | head\", \"description\": \"Double-import check and macrophage externality\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10755,10800p' bench/reference_runner_v2.py\", \"description\": \"Shadow cell call site: what immune_result is passed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"immune_result\\\" bench/reference_runner_v2.py | awk -F: '$1>10200 && $1<10770'; grep -n \\\"immune_enabled\\\\|run_immune\\\" bench/reference_runner_v2.py | awk -F: '$1>10200 && $1<10770' | head\", \"description\": \"Where immune_result originates in the round\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _routing_resolve_prompt\\\" bench/reference_runner_v2.py; sed -n \\\"$(grep -n 'def _routing_resolve_prompt' bench/reference_runner_v2.py | cut -d: -f1),+40p\\\" bench/reference_runner_v2.py | grep -n \\\"target_src\\\\|\\\\[:\\\\|LIMIT\\\\|trunc\\\" \", \"description\": \"Does the routing prompt truncate the target\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nents = (r.get('registry') or {}).get('entries', {})\\nprint('v3.1 sim: entries', len(ents),\\n      '| falsifier_code', sum(1 for e in ents.values() if e.get('falsifier_code')),\\n      '| verified', sum(1 for e in ents.values() if e.get('verified')),\\n      '| runner_ver"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nks = [k for k in r.keys() if 'sk' in k.lower() or 'solution' in k.lower()]\\nprint(ks)\\nfor k in ks:\\n    v = r[k]\\n    if isinstance(v, list) and v:\\n        print(k, len(v), 'sample tristate:', v[0].get('tristate') if isinstance(v[0], dict) else v[0])\\n        from co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nprint(sorted(r.keys()))\\\" | tr ',' '\\\\n' | grep -i \\\"s_k\\\\|sk\\\\|tristate\\\\|admis\\\" \", \"description\": \"Find the S_k section key\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nr = json.load(open('bench/logs/sim45_memory_20260830T161215Z/sim45_memory_report.json'))\\nprint(sorted(r.keys()))\\n\\\"; grep -rl \\\"tristate\\\" bench/logs/sim45_memory_20260830T161215Z/ | head -3\", \"description\": \"Report top-level keys and tristate location\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport numpy as np\\nfrom scipy import stats\\nimport mpmath as mp\\nfrom statsmodels.stats.proportion import proportion_confint\\n\\n# Claim 1 (shim docstring): 23/39 vs 0/19 falsifier_code, Fisher p = 6.0e-06\\nodds, p = stats.fisher_exact([[23,16],[0,19]], alternative='two-sided')\\n# cross-check: exact hypergeometric two-sided via mpmath\\ndef hyp_p(k, K=23, n1=39, n2=19):\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"cc2.tools.json\\\\|CC2-SIM\\\" bench/tests/*.py | head -5; grep -rn \\\"tempfile.gettempdir\\\\|/tmp\\\\|TemporaryDirectory\\\\|glob\\\" bench/tests/test_overlay*leak*.py 2>/dev/null | head -8; ls bench/tests/ | grep -i \\\"overlay\\\\|naming\\\\|leak\\\" | head\", \"description\": \"Locate repaired guard tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_overlay_does_not_leak_git_2026-08-30.py bench/tests/test_sim_naming_and_integrity_directive.py bench/tests/test_transport_dead_guard_covers_criticals_2026-08-30.py bench/tests/test_sim_label_does_not_disable_the_runner_2026-08-30.py -q 2>&1 | tail -3\", \"description\": \"Run the four repaired-guard test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"system_prompt_path\\\" bench/reference_runner_v2.py bench/runner_core.py; echo \\\"---\\\"; grep -rn \\\"def run_preflight\\\" bench/reference_runner_v2.py | head -2\", \"description\": \"Pin the dead-field claim with exact counts\"}"
+    }
+  ]
+}

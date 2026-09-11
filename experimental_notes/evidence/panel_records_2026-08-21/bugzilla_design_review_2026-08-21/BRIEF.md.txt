@@ -1,0 +1,99 @@
+# THE BUGZILLA QUESTION. Design review, read only.
+
+This question has been put to seven model reviews over four days and none has answered
+it. Not because they refused — because none was given the material. The founder's
+diagnosis is that a reviewer needs the full historical context, and that is correct.
+
+**You have it now.** `experimental_notes/Bugzilla_Verbatim_Compendium_2026-08-21.md`
+is 76,501 characters of primary source assembled for exactly this: the formal merge
+contract, the lifecycle every model is shown each round, a 500-line measured analysis
+of what the implementation actually does, the founder's own words, an external model's
+proposals, five panellists' partial answers, and what Bugzilla itself does.
+
+**READ IT FIRST.** Then use Bash/Read/Grep to check anything in it you doubt. It
+contains measurements; reproduce the ones your answer depends on.
+
+**CHANGE NOTHING.** Report only.
+
+Repository: `/Users/georgejackson/Developer_Projects/Constraint_Engineering`
+
+## The state of play, so you do not spend time establishing it
+
+- `DUPLICATE` has never been written by any code. Zero across 2030 archived entries.
+- `EXTEND` — the additive alternative the prompt explicitly offers instead of filing a
+  duplicate — was used 183 times and there is no `"EXTEND"` literal in the runner
+  outside the parser.
+- As of 2026-08-21 **no code path writes MERGED at all.** Every vote-based route was
+  removed on the founder's ruling that "there will be no voting in CDSFL... truth
+  should always be deterministic and be decided via tools". The tool intended to
+  replace them (counterfactual repair: apply one finding's fix, re-run both
+  falsifiers, require both directions to agree; 0.287 s/pair, no metered cost) is
+  built but not connected.
+- So both halves of the question are currently unimplemented. Nothing needs undoing.
+
+## What the founder is asking for. These are his words and they are the brief.
+
+> "We just need a definitive status for each issue, how they are marked as
+> confirmed/unconfirmed, merged, dupes, resolved, or whatever, and to do this in a way
+> that Bugzilla doesn't simply become a 'ledger' of what we did (although that is
+> clearly also necessary), but also a way of gathering and assessing fixes and how they
+> should be applied to improve/add to a better solution to any given problem, but to do
+> so in a way that is both applicable to software development and STEM more generally."
+
+And, separately:
+
+> "intelligence is still almost certainly required to be able to gauge when that
+> 'contributory element to the betterment of the whole' is real or not? Only when this
+> can be demonstrated programatically by the system, can a result then be considered to
+> be 'merged'? It gives different models the opportunity to contribute independently,
+> to a singular overall solution, whatever that solution might be?"
+
+## The five questions
+
+**Q1. THE STATUS SET.** Give the definitive list of statuses a finding can hold, and for
+each: what it means, what transitions into it, what transitions out, and — the part
+that matters most — **what evidence is required, and whether a model may assert it or
+only a tool may establish it.** Say explicitly where a human reviewer is the only
+possible arbiter. Note that `OPEN → CONFIRMED` currently fires on counting two
+independent model verifications, which is a vote by the founder's definition; say
+whether that should change, and distinguish voting on IDENTITY ("these are the same")
+from voting on EXISTENCE ("I also observe this") if you think the distinction holds.
+
+**Q2. LEDGER VERSUS INSTRUMENT.** The founder's core objection is that this must not be
+merely a record of what happened. How does a finding's status, and the accumulated
+duplicates and extensions attached to it, actually **improve the next answer**? Be
+concrete. If your answer is that duplicate counts inform priority, say what consumes
+that signal and when.
+
+**Q3. SOFTWARE AND STEM IN ONE SCHEMA.** Every prior panel broke the Bugzilla analogy at
+the same joint: a software bug is a defect in an artefact the maintainer controls; a
+STEM claim can be wrong about the world. Does one status set serve both, or do you need
+a discriminator? Consider specifically the state nobody has: **the finding was right and
+the target was wrong.**
+
+**Q4. BUILD SO THE INTERFACE IS TRIVIAL LATER.** The discussion-board layer is deferred
+by founder ruling — expensive, and unnecessary to prove the theory. But work done now
+should make it trivial to add. **What must be true of the data model today** so that a
+future interface is a read-only view rather than an archaeology exercise? CC1's answer
+is that every status change must carry its reason, its adjudicator and its timestamp at
+the moment it happens, since the registry stores status and round but not why or who.
+Attack or extend that.
+
+**Q5. HUMAN AND MACHINE COMPREHENSIBLE, SIMULTANEOUSLY.** A requirement stated repeatedly
+and never addressed. The same record must be readable by a researcher and consumable by
+the runner. What does that constrain? Is there a real tension, or is it satisfied by
+keeping a typed payload beside a natural-language rendering?
+
+## How to answer
+
+**Commit to a recommendation.** The founder's standing objection: "a system that can only
+find more problems than it fixes is of limited value to anyone." Name what to build
+first, what to defer, and what to drop.
+
+Weight by cost. Work validated by replaying the existing archive is effectively free; a
+live experiment run is not; a UI build is expensive and deferred.
+
+State your strongest falsification of your own answer. If you think a question is
+malformed, say so and why. Cite file and line for anything you check.
+
+Do not pad. Every word is read, so make every word carry weight.

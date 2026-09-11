@@ -1,0 +1,96 @@
+# Panel review, round 2 of the scale question — and my last brief was impossible
+
+## First: what went wrong last time was mine, and it is fixed
+
+**I asked you to do work the harness cannot fit.** The previous brief asked each
+of you to implement cross-model dedup AND run two short simulated experiments,
+inside a 40-minute dispatch. Measured: a simulated run takes **69.6 min on
+average**, 95% CI [48.3, 90.9], and **10 of 11 archived runs exceed the entire
+dispatch budget on their own** (90.9%, Wilson [62.3%, 98.4%]). One run is 1.74×
+the budget; two are 3.48×. You both timed out. That was my error, not yours.
+
+**And then my own substance gate destroyed the work one of you did.** Fable
+wrote **77,219 bytes across 12 files** and closed with a 126-character note. The
+acceptance predicate rejected the note, retried, and recorded the dispatch as
+`ok=False, chars=0`. The patch survived only because extraction runs in a
+`finally`. Across 25 archived dispatches, 2 are recorded as failed while
+carrying a substantive patch — 8.0%, Wilson [2.2%, 25.0%], 78,926 bytes.
+
+**Both are now fixed, and the second fix changes what you should do here:**
+
+> **If you run short of budget, write your work into the sandbox and say so in
+> one line. A short reply is now ACCEPTED when substantive work sits beside it.**
+> `accept_reply_or_work` counts your tracked diff and your untracked files. You
+> will not be penalised for summarising briefly. Empty is still empty.
+
+**No experiments in this dispatch.** Standing rule now: the harness runs
+experiments, the panel reads artefacts. Do not start a simulated run.
+
+## Second: the last brief worked, and I want to say why
+
+Fable's rescued patch contained the first recommendation in this project's
+history that arrived with a **fix-validation measurement** rather than only
+defect evidence. I reproduced its central claim independently and it holds
+exactly:
+
+| seat (same weights, `openai/gpt-5.5`) | falsifier-carrying findings | Wilson 95% |
+|---|---|---|
+| ChatGPT (bare OpenRouter) | 57/330 = 17.3% | [13.6%, 21.7%] |
+| Codex (`codex_exec`) | 76/293 = 25.9% | [21.3%, 31.2%] |
+
+z-test p = 0.0084; Fisher exact p = 0.0107, OR 1.68; chi-square p = 0.0112.
+**Same weights, two instruction conditions, a real +8.7 point difference.** That
+is the empirical foundation for single-model operation and it is exactly the
+kind of evidence I should have been asking for all along.
+
+**Keep doing that. "SOUND" remains a first-class verdict.**
+
+---
+
+## The questions
+
+Answer what you can. **Partial is fine — say what you did not reach.**
+
+**Q1. The rescued patch.** Fable, this is yours; CC2, review it as an outsider.
+It is at the repo path given below, 12 files, +616 lines. I will run and test
+every line before adopting any of it.
+- Does it do what its comments claim?
+- `rungs_with_conditions` and `INSTRUCTION_CONDITIONS` — is escalating across
+  instruction conditions sound when there is one model, or does it merely
+  re-ask the same distribution in different words?
+- Its second claim, that "30 of 64 co-discovery groups contain only one of the
+  two seats", rests on co-discovery — and we have established that co-discovery
+  is barely recorded (2 of 2,050 findings). **Does that claim survive?**
+
+**Q2. The reductio, and what to record.** External prior art says our scaling
+question is largely solved — Chao & Jost (2012) give marginal yield as the
+coverage deficit, estimable from the sample by Good-Turing; Rasmussen & Starr
+(1979) and Dalal & Mallows (1988) give the stopping rule. Every estimator
+consumes two numbers: findings seen by one reviewer, and by two.
+
+With S=2050, Q1=2048, Q2=2, m=5: Chao2 bias-corrected = **561,017**, incidence
+jackknife = **3,688**, completeness **0.24–0.37%**. Two estimators from one
+family differing by 152×.
+
+- Is that a broken matcher, or is the finding space genuinely near-unbounded?
+- **Design the minimum recording change**: the occasion × finding incidence
+  matrix, occasion = (model, prompt-role, seed, round). What exactly should be
+  recorded, where, and what does it cost per round?
+- How would you MEASURE matcher precision and recall here, cheaply?
+
+**Q3. Reuse what already exists.** The founder's point, and it is a good one:
+this schema already has machinery for stopping models being overwhelmed —
+`DECOMPOSE_HARD_FLOOR_CHARS` at 80K, `decomposed_dispatch.py`, the registry
+windowing in `build_summary` that shows full detail for active findings and
+compact for settled ones, and budget extension. **Can that machinery be reused
+for panel review itself, and for the allocator?** Be concrete about which
+component maps to which problem.
+
+**Q4. Sound or not: is this runner ready for a real experiment?** No real run
+has ever used a v3.x runner — 0 of 20. Suite is 4,847 passing. The last
+simulated run converged at round 4 with `gamma_critical` 0.953, zero VACUOUS,
+and found all 5 seeded plants. **If it is ready, say so plainly.** If not, name
+the smallest set of things that would make it ready — with a measurement for
+each showing the fix works.
+
+The rescued patch: `/private/tmp/claude-501/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3/scratchpad/fable_scale_review.patch`

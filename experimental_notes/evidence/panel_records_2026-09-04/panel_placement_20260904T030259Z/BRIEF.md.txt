@@ -1,0 +1,107 @@
+# PANEL BRIEF — WHERE THE REDUCTION WORK BELONGS, AND THE RUBRIC/PROXY CONFLICT
+
+Bash, Read, Grep, Glob. Your working directory is a disposable copy. **Run the commands.**
+The author's error rate on unverified claims this week is high: of 8 measurements put to
+the last panel, 3 could not be reproduced and 1 was wrong on both halves. Assume the same
+rate here and check before agreeing.
+
+**Anti-overwhelm, deliberately.** This brief gives you the whole decision surface in
+Section 1 and then asks 4 questions. It does not ask you to audit the repository. The
+founder's constraint is explicit and binding: **we are not adding complexity. We are
+deciding where an existing property is named and how an existing conflict is resolved.**
+A recommendation of "change nothing, write one sentence" is a full answer.
+
+---
+
+## SECTION 1 — THE TWO MATTERS, WITH THE MEASUREMENTS
+
+### Matter A — the rubric and its numeric proxy disagree, and nothing reports it
+
+`CRITICAL_SEVERITY_THRESHOLD = 0.7` is not a free parameter. The work queue records it as
+the **operational proxy** for a consequence-based rubric pre-registered and frozen at
+`bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`, **which is authoritative
+where rubric and number disagree.** Moving 0.7 requires a new dated pre-registration.
+
+Measured 2026-09-02 (runway 0C.8): across 286 archived findings in the [0.65, 0.75) band,
+the numeric proxy and the 5-clause rubric agree on **141 of 259 judgeable cases — 54.4%,
+Wilson [48.4%, 60.4%]**. Not reader noise: 2 independent blind readers agreed with each
+other on 86 of 93 (92.5%, Cohen's kappa 0.837 [0.721, 0.953]) while each agreed with the
+number about 55% of the time. Of findings exactly on the threshold, the rubric calls
+**67.0%** critical, [57.7%, 75.1%].
+
+The pre-registration requires each run to report (i) the count of findings where rubric and
+numeric disagree and (ii) the verdict's sensitivity to that disagreement. **(ii) is built**
+(`boundary_band_sensitivity`). **(i) has never been built** — the runner says so itself:
+"needs a per-finding rubric classifier and is not wired here." The specified remedy — where
+they disagree on a verdict-relevant finding, the rubric governs and the adjudication is
+logged — does not exist. The pre-registration also states a machine **cannot** adjudicate
+those 5 clauses: a model or the human must.
+
+So on the findings where the gate is actually decided, the run is governed by the number
+while a frozen document says the rubric governs, and nothing reports the gap.
+
+### Matter B — where the reduction work belongs
+
+Proposed: a simplification is admissible iff the simpler form S and the fuller form F agree
+across a scope D **declared before either was proposed** (residual Δ = ∅), or Δ is named,
+bounded, and filed as its own claim with its own test. Established by **proof** or
+**exhaustive enumeration**; a confidence interval applies only where D was sampled.
+Consequence: **sampling can refute a simplification but can never admit one.**
+
+Three verified data points, all reproducible:
+1. The appendix §1.1 already contains a section titled **"Reduction Property"**: under
+   K=1, d=1, all p_ik=p, π=0.5, the unified equation collapses to
+   `R_n = (1-p)^n / (1 + (1-p)^n)`. Verified: unrolling the recursive form matches the
+   closed form with residual exactly 0 for n=1..8, **and the induction step is exactly 0**,
+   so it holds for all n by proof. mpmath 30dp agrees to 1e-32.
+2. The appendix contains **28** such statements (author previously said 29 — wrong).
+   `bench/tests/test_channel_boundary.py:148-176` already grid-asserts one to 1e-9, so
+   "zero are tested" was also wrong.
+3. The absorb-guard case has a **non-empty** residual and fails the criterion.
+
+**The founder's question, verbatim in substance:** the mathematical appendix is already
+vast. If this is recorded there and nothing else is done, it may be buried alongside
+mathematics that skilled mathematicians struggle to follow, and become decoration. But if
+no machinery is built to test or deploy it, what is the point of it at all? Should it be a
+separate prominent entry, or should it form part of the unified/collapsed equation itself?
+**And if it did, would the equation keep the very simplicity this work is about, or be
+pushed beyond comprehension and credibility?**
+
+Context the founder supplied: the mathematical model has survived every assault so far and
+has not been disproven; the founder's position is neutral and explicitly "go with what
+gives demonstrably superior results"; and this work was derived to make the assistant's
+output more reliable, which is the use case that matters.
+
+Relevant measured constraint: inter-architecture correlation **rho = 0.564 across 289
+observations**, 95% CI [0.480, 0.638]. A 6th architecture adds **3.51%** of what the 1st
+contributes (5.24% at the optimistic end). Panel size is not the scaling axis.
+
+---
+
+## SECTION 2 — THE QUESTIONS
+
+**Q1. Matter A, going forward.** How should the rubric/proxy conflict be resolved for
+future runs? Options include: build the per-finding classifier and the adjudication log;
+amend the pre-registration so the number governs and record why; report the disagreement
+count without changing the verdict; or something you propose. Say which, and say what you
+would accept as evidence you are wrong. Note the pre-registration says a machine cannot
+adjudicate the 5 clauses — if your answer needs adjudication, say **who** does it.
+
+**Q2. Matter A, the past data.** The disagreement exists in archived runs. What, concretely,
+should be recorded in the documentation about runs already completed, without re-opening
+verdicts that are already published?
+
+**Q3. Matter B, placement.** Where does the reduction work belong: a named definition in the
+appendix, a term inside the unified equation, an acceptance-policy sentence, the directives,
+or nowhere? Answer the founder's question directly — would folding it into the unified
+equation preserve or destroy that equation's simplicity? **You are permitted, and expected
+where true, to say the reasoning is sound and that nothing should be built.**
+
+**Q4. Making it work rather than decorating.** The founder's sharpest point: if we record it
+and build nothing, what is the point? Given the stopping criterion this project applies —
+would the absence of a piece of machinery waste bench compute? — name the **smallest** thing
+that would make this operational for the assistant's own reliability, or say plainly that
+recording it is sufficient and why that is not decoration.
+
+Where a question has a decision consequence, state what you would accept if wrong.
+Do not pad. Do not audit beyond what the questions need.

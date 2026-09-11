@@ -1,0 +1,66 @@
+# PANEL BRIEF — THE APPENDIX REDUCTION TESTS
+
+Bash, Read, Grep, Glob. Disposable copy carrying uncommitted work. **Execute.**
+
+**Calibration.** Of 8 measurements this author put to the 2026-09-03 panel, 3 were
+unreproducible and 1 wrong on both halves. Of 8 put to the 2026-09-04 panel, 1 was
+false and load-bearing. Assume the same rate. **You are expected to declare the work
+SOUND where it is** — this panel is not scored on finding faults, and a clean verdict
+backed by execution is as useful as a refutation.
+
+Short brief, 4 questions. Do not audit beyond what they need.
+
+---
+
+## WHAT WAS BUILT, AND WHY
+
+Both of you raised this on 2026-09-04. `docs/MATHEMATICAL_APPENDIX.md` carries **32**
+statements that something was "SymPy verified" or "SymPy + Wolfram cross-validated",
+and **18** statements of the form "X reduces to Y under condition Z". Exactly **1**
+test file in `bench/tests/` imports sympy, and it tests a calibrator, not an appendix
+identity. The model's verification lived in prose.
+
+`bench/tests/test_appendix_reduction_properties_2026-09-05.py` (commit `d7b3285`) adds
+**15 tests over 13 of the 18 statements**, each checked SYMBOLICALLY for all values of
+the free symbols rather than at sampled points.
+
+**5 statements are deliberately excluded** and the file says so: "each stage is a
+strict generalisation" (L157), "every simpler model is a special case of G_n" (L684),
+the Duane / inverse-square-root relationship (L828), and the Bayesian provenance note
+(L1991). Held to be architectural or historical claims rather than equations.
+
+**Claimed P-pass result:** each of the 13 identities was re-evaluated AWAY from its
+stated condition. All 13 give exactly 0 at the condition and NON-ZERO off it, so none
+is vacuously true. **0 vacuous tests.**
+
+**One methodological correction acted on**, from cc2's 2026-09-04 report: the unified
+equation's closed form had been verified with n=1..8 plus an induction step plus
+mpmath at 30 dp. Substituting m = (1-p)^n into the appendix's own posterior gives it
+in one line for all n and all p. The elaborate check was weaker than the theorem
+deserved. The test now does it the short way.
+
+---
+
+## QUESTIONS
+
+**Q1. Are the 13 identities CORRECT as stated?** Re-derive each against the appendix
+text, not against the test. An identity that is true but does not match what the
+appendix claims is a worse failure than one that is false, because it looks verified.
+Name any that do not correspond to their cited line.
+
+**Q2. Is the P-pass sound, and is it sufficient?** The claim is that non-zero-off-
+condition proves each test discriminates. Is that the right discrimination test for a
+symbolic identity, or is there a failure mode it misses — an identity that is
+non-vacuous under substitution but still asserts nothing useful about the model?
+
+**Q3. Are the 5 exclusions justified?** Specifically: is the Duane / inverse-square-
+root relationship at L828 genuinely untestable, or is it an identity in disguise? If
+any of the 5 IS testable, that is the most useful thing you can return.
+
+**Q4. Did the author miss any reduction statement?** The enumeration used a regex over
+"reduces to | collapses to | special case | vanish", excluding table rows. Name any
+reduction-shaped claim in the appendix that regex would not catch. Also: the appendix
+claims 32 SymPy verifications — do any of those 32 assert something NOT covered by the
+18 reduction statements and NOT now tested?
+
+State what you would accept as evidence you are wrong. Do not pad.

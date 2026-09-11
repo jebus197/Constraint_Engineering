@@ -1,0 +1,391 @@
+{
+  "model": "opus",
+  "elapsed_s": 865.7,
+  "tool_calls": 96,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -3 && echo \\\"---STATUS---\\\" && git status --short | head -40 && echo \\\"---HEAD---\\\" && git rev-parse HEAD\", \"description\": \"Verify tree state and HEAD commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tools/ && echo \\\"---\\\" && wc -l bench/tools/run_simulated_experiment.py bench/tools/sim_dispatch_shim.py 2>&1\", \"description\": \"List tools dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -30\", \"description\": \"Run full test suite\", \"timeout\": 600000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/tools/run_simulated_experiment.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/directives/universal/cdsfl_core_formal.md && echo \\\"EXISTS\\\" && grep -n \\\"_error_route_pending\\\" bench/reference_runner_v2.py reference_runner_v2.py 2>/dev/null | head -40\", \"description\": \"Check directive path and error_route_pending\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && grep -n \\\"^def dispatch_to_model\\\\|^    def dispatch_to_model\\\" reference_runner_v2.py; echo \\\"---SIG---\\\"; python3 - <<'EOF'\\nimport ast,sys\\nsrc=open('reference_runner_v2.py').read()\\nt=ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and n.name=='dispatch_to_model':\\n        print('line',n.lineno)\\n        print(ast.unpa"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 - <<'EOF'\\nimport ast\\nsrc=open('reference_runner_v2.py').read()\\nt=ast.parse(src)\\n# find all call sites of dispatch_to_model\\nclass V(ast.NodeVisitor):\\n    def __init__(self): self.stack=[]; self.hits=[]\\n    def visit_FunctionDef(self,n):\\n        self.stack.append(n.name); self.generic_visit(n); self.stack.pop()\\n    visit_AsyncFunctionDef=visit_FunctionDef\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo && grep -rn \\\"def dispatch_to_model\\\" --include=*.py . | head\", \"description\": \"Find dispatch_to_model definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"dispatch_to_model\\\" --include=*.py bench/*.py | head -40\", \"description\": \"Find dispatch_to_model references\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def dispatch_to_model\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model\", \"path\": \"bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport ast, pathlib\\nsrc=pathlib.Path('bench/runner_core.py').read_text()\\nt=ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n,ast.FunctionDef) and n.name=='dispatch_to_model':\\n        print('DEF line',n.lineno)\\n        print('args:',ast.unparse(n.args))\\n        print('returns:',ast.unparse(n.returns) if n.returns else None)\\nPY\\necho \\\"===== call sites i"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model|_dispatch_single_model\", \"glob\": \"**/*.py\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model\", \"path\": \"bench/dm/_failure_handler.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 6}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"dispatch_to_model\", \"path\": \"bench/merge_arbitration.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 6}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_dispatch_single_model|dispatch_to_model\", \"path\": \"bench/dm/_failure_handler.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"requests.post\\\\|openrouter\\\\|OPENROUTER\\\\|\\\\\\\"claude\\\\\\\", \\\\\\\"-p\\\\\\\"\\\\|'claude', '-p'\\\\|api.anthropic\\\\|api.deepseek\\\" bench/runner_core.py bench/reference_runner_v2.py | head -30\", \"description\": \"Find raw network/model call paths\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/runner_core.py\", \"offset\": 1180, \"limit\": 120}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"decomposed_dispatch\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"decomposed|_decompos\", \"path\": \"bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"decomposed|^def dispatch|CLAUDE_CLI|claude_cli\", \"path\": \"bench/runner_core.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 6805, \"limit\": 110}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 262, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom decomposed_dispatch import _should_decompose\\nimport inspect\\nprint(inspect.getsource(_should_decompose)[:3000])\\nPY\", \"description\": \"Read _should_decompose source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, inspect\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(\\\"_should_decompose from:\\\", R._should_decompose.__module__, R._should_decompose.__code__.co_filename, R._should_decompose.__code__.co_firstlineno)\\nprint(inspect.getsource(R._should_decompose))\\nPY\", \"d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c bench/directives/universal/cdsfl_core_formal.md bench/dm/_memory.py\\necho \\\"--- fingerprint cache ---\\\"\\npython3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import _load_fingerprint_cache\\nfps=_load_fingerprint_cache()\\nprint(\\\"fingerprint ke"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, json\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import _load_fingerprint_cache, _FINGERPRINT_CACHE_PATH if False else _load_fingerprint_cache\\nfps=_load_fingerprint_cache()\\nfor k in sorted(fps):\\n    if k.endswith(\\\"-SIM\\\"):\\n        pri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_load_fingerprint_cache\\\\|fingerprint_cache\\\\|FINGERPRINT\\\" bench/run_exp17_immune.py | head -20\", \"description\": \"Find fingerprint cache path\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/run_exp17_immune.py\", \"offset\": 394, \"limit\": 36}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/fingerprints/ | head -20; echo \\\"=== SIM files ===\\\"; for f in bench/fingerprints/*SIM*.json; do echo \\\"--- $f\\\"; python3 -c \\\"\\nimport json,sys\\nd=json.load(open('$f'))\\nprint('model_id',d.get('model_id'))\\no=d.get('observed',{})\\nprint({k:v for k,v in o.items() if 'chars' in k or 'prompt' in k})\\n\\\"; done; echo \\\"=== git status of fingerprints ===\\\"; git log --oneline -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, inspect\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(inspect.getsource(R._compose_for_model))\\nPY\", \"description\": \"Read _compose_for_model\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(\\\"COMPOSER_MODEL_MAP:\\\", R.COMPOSER_MODEL_MAP)\\nfor lbl in (\\\"CC2-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Fable-SIM\\\",\\\"Gemini-SIM\\\",\\\"Codex-SIM\\\",\\\"ChatGPT-SIM\\\"):\\n    try:\\n        c = R._compose_for_model(lbl, \\\"SEQUENTIAL_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nimport dataclasses\\nd=R.RunnerConfig(experiment_name=\\\"x\\\", models=[\\\"CC2\\\"])\\nprint(\\\"default pattern:\\\", getattr(d,\\\"interaction_pattern\\\",None), \\\"| domain:\\\", getattr(d,\\\"domain\\\",None))\\nprint()\\nfor lbl in (\\\"CC2"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_compose_for_model\", \"path\": \"bench/reference_runner_v2.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 3}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 6760, \"limit\": 48}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfor lbl in (\\\"CC2-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Fable-SIM\\\",\\\"Gemini-SIM\\\",\\\"Codex-SIM\\\",\\\"ChatGPT-SIM\\\"):\\n    b=R.base_model_label(lbl)\\n    try:\\n        c=R._compose_for_model(b,None,\\\"software\\\")\\n        print(f\\\"{lbl"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"system_prompt_path\", \"glob\": \"bench/*.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, inspect\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nd=R.RunnerConfig(experiment_name=\\\"x\\\", models=[\\\"CC2\\\"])\\nfor f in (\\\"pattern\\\",\\\"domain\\\",\\\"test_article\\\"):\\n    print(f, \\\"=\\\", repr(getattr(d,f,\\\"<absent>\\\")))\\nprint()\\nprint(\\\"run_experiment signature:\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\n\\ncore = (REPO/'bench/directives/universal/cdsfl_core_formal.md').read_text()\\nprint(\\\"core directive chars:\\\", len(core))\\n# distinctive probe lines from the core directive\\nprobes=[l.strip() for l in core.splitlines("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>/dev/null\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import DynamicManager\\n\\n# Build the manager the way run_experiment does (line ~9764 config)\\nimport inspect\\nsrc=inspect.getsource(R.run_experiment)\\ni=src.find('pre_decompose_models'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>/dev/null\\nimport sys, pathlib\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import DynamicManager, DynamicManagementConfig\\n\\ndmc = DynamicManagementConfig(pre_decompose_models=set(), no_exclusion_mode=True)\\ndmc.max_rounds = 7\\nmgr = DynamicManager(dmc)\\n\\nop"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, warnings\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import DynamicManager, DynamicManagementConfig\\ndmc = DynamicManagementConfig(pre_decompose_models=set(), no_exclusion_mode=True)\\ndmc.max_rounds = 7"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, warnings, inspect\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nfrom dm._manager import DynamicManager\\nprint(inspect.signature(DynamicManager.__init__))\\nPY\", \"description\": \"DynamicManager signature\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, warnings\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfrom run_exp17_immune import DynamicManager, DynamicManagementConfig\\nLB=[\\\"CC2-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Gemini-SIM\\\",\\\"Codex-SIM\\\",\\\"Fable-SIM\\\"]\\ndmc = D"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, warnings, types\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nmgr = types.SimpleNamespace(config=types.SimpleNamespace(pre_decompose_models=set()))\\nop = len(R._OPERATIONAL_DIRECTIVE_TEXT or \\\"\\\")\\nprint(f\\\"operational directi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, inspect, warnings\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(inspect.getsource(R._multiturn_fallback))\\nPY\", \"description\": \"Read _multiturn_fallback\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport ast, pathlib\\nsrc=pathlib.Path('bench/decomposed_dispatch.py').read_text()\\nt=ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n,ast.FunctionDef) and n.name=='decomposed_dispatch':\\n        print('lineno',n.lineno)\\n        body=ast.unparse(n)\\n        # print first 90 lines of body\\n        print(\\\"\\\\n\\\".join(body.splitlines()[:70]))\\nPY\", \"descriptio"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 4540, \"limit\": 100}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"error_routed\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"bench/**/*.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 4639, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, warnings\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(\\\"ROUTABLE_INSTRUMENT_FAULTS =\\\", R.ROUTABLE_INSTRUMENT_FAULTS)\\nprint(\\\"CRITICAL_SEVERITY_THRESHOLD =\\\", R.CRITICAL_SEVERITY_THRESHOLD)\\nprint(\\\"'CONFIRMED' in faul"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'e\\\\[\\\"severity\\\"\\\\]\\\\|\\\\[\\\"severity\\\"\\\\] =\\\\|severity\\\"\\\\] =' bench/reference_runner_v2.py | head -20; echo \\\"=== registry severity mutation ===\\\"; grep -rn \\\"severity\\\" bench/dm/_memory.py | head -20\", \"description\": \"Check whether severity is mutated on registry entries\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/reference_runner_v2.py\", \"offset\": 5455, \"limit\": 50}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -20 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-j4x5s-m2-repo/14b0a754-ceef-46f0-b2d5-94b62cd74ee9/tasks/bo40pcsqo.output 2>/dev/null || echo \\\"still running\\\"\", \"description\": \"Check test suite progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"verification_min_round\\\" bench/reference_runner_v2.py | head -20; echo \\\"=== context ===\\\"; grep -n \\\"verification_min_round\\\" -A6 -B6 bench/reference_runner_v2.py | sed -n '1,60p'\", \"description\": \"Check verification_min_round usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"discrimination_control_ask\\\" -r bench/ --include=\\\"*.py\\\" | head; echo \\\"=== earliest_stop / convergence rounds ===\\\"; python3 -c \\\"\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nd=R.RunnerConfig(experiment_name='x',models=['CC2'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"earliest_stop_round\\\\|rho_earliest_round\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find earliest_stop_round usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp45* bench/exp45_configs/ 2>/dev/null; find bench -name \\\"*45*\\\" -name \\\"*.json\\\" | head\", \"description\": \"Find exp45 config for comparison\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/exp45_configs/45_memory_statistics_live.json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib, json, warnings, dataclasses\\nwarnings.filterwarnings(\\\"ignore\\\")\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO), str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\n\\nreal = json.loads((REPO/'bench/exp45_configs/45_memory_statistics_live.json').read_text())\\n\\n# EXACTLY what run_simulated_experiment.py builds\\nsim ="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -15 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-j4x5s-m2-repo/14b0a754-ceef-46f0-b2d5-94b62cd74ee9/tasks/bo40pcsqo.output\", \"description\": \"Read test suite result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,pathlib,inspect,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\ns=inspect.getsource(R._check_gamma_alt_convergence)\\nprint(s[:2600])\\nPY\", \"description\": \"Read the two-sided gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts::test_the_committed_ledger_matches_bench_logs\\\" \\\"bench/tests/test_falsifier_cannot_read_the_key.py::test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive\\\" -q 2>&1 | tail -45\", \"description\": \"Inspect first two failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,pathlib,inspect,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\ns=inspect.getsource(R._check_gamma_alt_convergence)\\n# print only executable body (after docstring)\\nimport ast\\nt=ast.parse(s)\\nfn=t.body[0]\\nbody=fn.body[1:] if isins"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_operational_scripts.py::TestUsageTextAdvertisesOnlyImplementedFlags\\\" -q 2>&1 | tail -30\", \"description\": \"Inspect operational scripts failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash list; git worktree list 2>/dev/null; echo \\\"---\\\"; git log --oneline -6\", \"description\": \"Check worktree/stash state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git check-ignore -v bench/logs/build_experiment_2026-08-22 2>&1; echo \\\"--- tracked log dirs ---\\\"; git ls-files bench/logs | sed 's#/[^/]*$##' | sort -u | wc -l; echo \\\"--- on-disk log dirs ---\\\"; ls bench/logs | wc -l; echo \\\"--- is the specific dir tracked? ---\\\"; git ls-files bench/logs/build_experiment_2026-08-22 | head -3; ls bench/logs/build_experiment_2026-08-22 2>&1 | head -3"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for d in exp42_composer_takeupslack_20260607T154745Z exp44_evidence_locationkey_live_20260727T002705Z exp46_stage6_locationkey_live_20260728T103151Z exp47_divergence_locationkey_live_20260728T230026Z exp49_engineering_exam_live_20260729T062320Z exp48_chemistry_exam_live_20260729T044134Z; do\\n  n=$(git ls-files \\\"bench/logs/$d\\\" | grep -c \\\"_report.json\\\")\\n  echo \\\"$d : tracked _repor"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== guard + test history ===\\\"; git log --oneline -3 -- bench/tests/test_falsifier_cannot_read_the_key.py; echo \\\"---\\\"; grep -rn \\\"def scan_falsifier_source\\\" --include=*.py . | head -2\", \"description\": \"History of the falsifier guard test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts::test_the_committed_ledger_matches_bench_logs\\\" -q 2>&1 | grep -E \\\"^E \\\" | head -25\", \"description\": \"Ledger test failure detail\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/experiment_run_ledger.py > /tmp/led.md 2>/dev/null && diff <(cat experimental_notes/EXPERIMENT_RUN_LEDGER.md) /tmp/led.md | head -30; echo \\\"=== are the differing dirs tracked? ===\\\"\", \"description\": \"Diff regenerated ledger against committed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/logs/*20260823T1446* bench/logs/*20260823T1539* 2>&1 | head; echo \\\"--- contents ---\\\"; ls bench/logs/*20260823T1446*/ 2>&1 | head; echo \\\"--- is completion_signal tracked anywhere? ---\\\"; git ls-files bench/logs | grep -c completion_signal; ls bench/logs/*/completion_signal.json 2>/dev/null | wc -l\", \"description\": \"Check missing completion signals\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git ls-files bench/logs/exp55_v3_control_20260823T144624Z bench/logs/exp55_v3_control_20260823T153955Z; echo \\\"=== dirs the committed ledger names as empty, present on disk? ===\\\"; for d in exp32_endocrine_20260405T0853 exp42_composer_20260603T0957; do ls -d bench/logs/*${d}* 2>&1|head -1; done\", \"description\": \"Are the exp55 completion signals tracked?\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, subprocess, pathlib, sys\\nsys.path.insert(0,'bench/tests'); sys.path.insert(0,'.')\\nsys.path.insert(0,'bench')\\n# import the guard the test uses\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"t\\\",\\\"bench/tests/test_falsifier_cannot_read_the_key.py\\\")\\nm=importlib.util.module_from_spec(spec)\\ntry: spec.loader.exec_module(m)\\nexcept "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, importlib.util, sys\\nsys.path.insert(0,'bench')\\nspec=importlib.util.spec_from_file_location(\\\"t\\\",\\\"bench/tests/test_falsifier_cannot_read_the_key.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nd=json.loads(pathlib.Path(\\\"bench/logs/exp49_engineering_exam_live_20260729T062320Z/exp49_engineering_exam_live_report.json"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"outside the declared target\\\" -B30 bench/tests/test_falsifier_cannot_read_the_key.py | head -60\", \"description\": \"Find the guard rule for outside-target paths\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"outside the declared target\\\" bench/ --include=*.py 2>/dev/null | grep -v tests/ | head; grep -rn \\\"outside the declared target\\\" bench/*.py bench/dm/*.py bench/cdsfl_registry/*.py 2>/dev/null | head\", \"description\": \"Locate the guard implementation\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_j4x5s_m2/repo/bench/falsifier_verify.py\", \"offset\": 680, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, sys, subprocess\\nsys.path.insert(0,'bench')\\nfrom falsifier_verify import scan_falsifier_source\\nimport inspect\\nprint(inspect.signature(scan_falsifier_source))\\nREAL = pathlib.Path(\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\")\\ntracked=[p for p in subprocess.run([\\\"git\\\",\\\"ls-files\\\",\\\"bench/logs\\\"],capture_output=True,tex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, sys, subprocess, collections\\nsys.path.insert(0,'bench')\\nfrom falsifier_verify import scan_falsifier_source\\nREAL=pathlib.Path(\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\")\\ntracked=[p for p in subprocess.run([\\\"git\\\",\\\"ls-files\\\",\\\"bench/logs\\\"],capture_output=True,text=True).stdout.split() if p.endswith(\\\"_report.json\\\")"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_verification_step(\\\\|_post_convergence_sweep(\\\\|_arb_dispatch\\\\|post_convergence_sweep_rounds\\\\|merge_arbitration_enabled\\\" bench/reference_runner_v2.py | grep -v \\\"^7692\\\\|^4886\\\" | head -20\\necho \\\"=== round loop indexing ===\\\"\\ngrep -n \\\"for round_idx in range\\\\|round_idx = \\\\|range(cfg.max_rounds\\\" bench/reference_runner_v2.py | head -10\", \"description\": \"Check seam-pat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10225,10240p' bench/reference_runner_v2.py; echo \\\"=== start_round / loop_cap ===\\\"; grep -n \\\"start_round =\\\\|loop_cap =\\\" bench/reference_runner_v2.py | head\", \"description\": \"Determine round loop bounds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/logs/sim45* 2>/dev/null | tail -3; f=$(ls -d bench/logs/sim45*/ 2>/dev/null | tail -1); echo \\\"DIR=$f\\\"; python3 -c \\\"\\nimport json,glob\\nfor p in sorted(glob.glob('bench/logs/sim45*/*_report.json'))[-2:]:\\n    d=json.load(open(p))\\n    print(p)\\n    print('  runner_version',d.get('runner_version'),'converged_at',d.get('converged_at'))\\n    print('  reason',(d.get('converg"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,glob\\nd=json.load(open(sorted(glob.glob('bench/logs/sim45*/*_report.json'))[-1]))\\nfor k in ('gamma_critical_history','gamma_history','novel_critical_history','novel_findings_history'):\\n    print(k,'=',d.get(k))\\nPY\\necho \\\"=== gamma_critical computation ===\\\"\\ngrep -n \\\"gamma_critical\\\" bench/reference_runner_v2.py | grep -i \\\"estimate\\\\|= _\\\\|compute\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nd=R.RunnerConfig(experiment_name='x',models=['CC2'])\\nprint(\\\"min_rounds_for_gamma =\\\", d.min_rounds_for_gamma)\\nprint()\\nfor hist in ([],[0],[0,0],[0,0,0],[0,0,0,0],[0,0,0,0,0"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"enable_tools=cfg.falsifier_gate_enabled\\\\|enable_tools=_gate\\\\|_dispatch_single_model(\\\" bench/reference_runner_v2.py | head -12; echo \\\"=== _gate_falsifier_directive ===\\\"; python3 -c \\\"\\nimport sys,pathlib,warnings,inspect; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_run"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_single_model\\\" bench/reference_runner_v2.py | head; echo \\\"=== call site context ===\\\"; grep -n \\\"_dispatch_single_model,\\\" -B4 -A8 bench/reference_runner_v2.py | head -40\", \"description\": \"Find _dispatch_single_model call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nop=R._OPERATIONAL_DIRECTIVE_TEXT or \\\"\\\"\\nfor lbl in (\\\"CC2-SIM\\\",\\\"Fable-SIM\\\"):\\n    b=R.base_model_label(lbl)\\n    try: comp=R._compose_for_model(b,\\\"fff\\\",\\\"software\\\").ren"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(R._runnable_falsifier_s2(False))\\nPY\", \"description\": \"Print the runnable-falsifier instruction the models receive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>&1 | tail -20\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nfor form,val in ((\\\"repo-relative\\\",\\\"bench/dm/_memory.py\\\"),(\\\"absolute\\\",str(REPO/\\\"bench/dm/_memory.py\\\"))):\\n    try:\\n        ov=R._build_discrimination_ov"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>&1 | tail -20\\nimport sys,pathlib,warnings,inspect; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nprint(inspect.signature(R._build_discrimination_overlay))\\nsrc=(REPO/\\\"bench/dm/_memory.py\\\").read_text()\\nfor form,val in ((\\\"repo-relative\\\",\\\"bench/d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>&1 | tail -12\\nimport sys,pathlib,warnings; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\nsrc=(REPO/\\\"bench/dm/_memory.py\\\").read_text()\\nfor form,val in ((\\\"repo-relative (v3.2)\\\",\\\"bench/dm/_memory.py\\\"),\\n                 (\\\"absolute (v3.1)\\\",str("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY' 2>&1 | tail -14\\nimport sys,pathlib,warnings,inspect; warnings.filterwarnings('ignore')\\nREPO=pathlib.Path('.').resolve()\\nfor p in (str(REPO),str(REPO/'bench')): sys.path.insert(0,p)\\nimport reference_runner_v2 as R\\ns=inspect.getsource(R._run_shadow_cells)\\nimport re\\n# what sections does it look for?\\nprint(\\\"sections referenced:\\\", sorted(set(re.findall(r'[\\\"\\\\']("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"cdsfl_text\\\" bench/reference_runner_v2.py | sed -n '1,40p' | grep -n \\\"cdsfl_text =\\\" ; echo \\\"--- assignments to cdsfl_text ---\\\"; grep -n \\\"^\\\\s*cdsfl_text\\\\s*=\\\\|cdsfl_text=cdsfl_text\\\\|_dispatch_round_star(\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Trace cdsfl_text from run_experiment to dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10414,10422p' bench/reference_runner_v2.py; echo \\\"--- line 11972 is in which function? ---\\\"; python3 -c \\\"\\nimport ast\\nt=ast.parse(open('bench/reference_runner_v2.py').read())\\nfor n in ast.walk(t):\\n    if isinstance(n,ast.FunctionDef) and n.lineno<11972<=(n.end_lineno or 0):\\n        print(n.name, n.lineno, n.end_lineno)\\n\\\"\", \"description\": \"Confirm cdsfl_text plumbing\"}"
+    }
+  ]
+}

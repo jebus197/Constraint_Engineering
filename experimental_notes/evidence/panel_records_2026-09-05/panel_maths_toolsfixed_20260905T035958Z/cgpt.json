@@ -1,0 +1,101 @@
+{
+  "model": "cgpt",
+  "route": "openrouter",
+  "ok": true,
+  "chars": 12852,
+  "tool_calls": [
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((R*(1-q)/(1-q*R)), R - q*R*(1-R)/(1-q*R))\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.907}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((pi*(1-q1)/(1-q1*pi))*(1-q2)/(1-q2*(pi*(1-q1)/(1-q1*pi))), pi*(1-q1)*(1-q2)/((1-pi)+pi*(1-q1)*(1-q2)))\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 1.014}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((beta/eta)*(n/eta)**(beta-1)).subs(beta, 1/2), 1/(2*sqrt(eta)*sqrt(n))\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: UNVERIFIABLE: Equality.__new__() missing 1 required positional argument: 'rhs'\", \"tool\": \"sympy\", \"elapsed_s\": 0.892}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((lambda_ + nu*Delta).subs(nu, 0), lambda_)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.876}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(w*(1-(1-CM)*(1-CH*(1-rho))).subs(CH, 0), w*CM)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.862}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(((beta/eta)*(n/eta)**(beta-1)).subs(beta, 1/2), 1/(2*sqrt(eta)*sqrt(n)))\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: SIMPLIFIED: Eq(1/(2*sqrt(eta)*sqrt(n)), 1/(2*eta*sqrt(n/eta)))\", \"tool\": \"sympy\", \"elapsed_s\": 0.918}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((q1*q2*exp(psi)).subs(psi, -log(q1)-log(q2)), 1)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.775}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(w*(1-(1-CM)*(1-CH*(1-rho))).subs(rho, 1), w*CM)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.766}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(w*(1-(1-CM)*(1-CH*(1-rho))).subs(rho, 0), w*(1-(1-CM)*(1-CH)))\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.751}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((pi*m)/((1-pi)+pi*m), pi) when m=1\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)\", \"tool\": \"sympy\", \"elapsed_s\": 0.757}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(((pi*m)/((1-pi)+pi*m)).subs(m, 1), pi)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.855}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(((pi*m)/((1-pi)+pi*m)).subs(m, 0), 0)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.873}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((1-(1-CM)*(1-CH*(1-rho))) - CM, CH*(1-rho)*(1-CM))\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.944}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(exp(x) > 0, True)\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: SIMPLIFIED: Eq(exp(x) > 0, True)\", \"tool\": \"sympy\", \"elapsed_s\": 0.924}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((w*(1-(1-CM)*(1-CH*(1-rho)))).subs({rho:0, CH:1-(1-pH)**nH}), w*(1-(1-CM)*(1-(1-(1-pH)**nH))))\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.891}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq(diff((beta/eta)*(n/eta)**(beta-1), n), beta*(beta-1)*(n/eta)**(beta-1)/n/eta)\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: UNVERIFIABLE: can't multiply sequence by non-int of type 'Symbol'\", \"tool\": \"sympy\", \"elapsed_s\": 0.802}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((diff((beta/eta)*(n/eta)**(beta-1), n)).subs(beta, 1/2), -1/(4*eta*sqrt(n/eta)*n))\"}",
+      "result": "{\"verdict\": \"UNCERTAIN\", \"confidence\": 0.3, \"evidence\": \"SymPy: UNVERIFIABLE: can't multiply sequence by non-int of type 'Symbol'\", \"tool\": \"sympy\", \"elapsed_s\": 0.768}"
+    },
+    {
+      "name": "sympy_verify",
+      "arguments": "{\"claim\":\"Eq((q1*q2*exp(-log(1-q1)-log(1-q2))).subs({q1:9/10,q2:9/10}), 81)\"}",
+      "result": "{\"verdict\": \"CONFIRMED\", \"confidence\": 0.95, \"evidence\": \"SymPy: VERIFIED_TRUE\", \"tool\": \"sympy\", \"elapsed_s\": 0.768}"
+    }
+  ],
+  "n_tool_calls": 18,
+  "elapsed_s": 91.0,
+  "response": "## Verdict\n\nThe existing model **partly encodes** the simplicity/sufficiency distinction, but not in the form the question needs.\n\n- It already encodes an **operational tradeoff**: adoption/fix magnitude can buy sufficiency, but can also re-inject faults through `\u03bd \u00b7 \u0394`.\n- It does **not** yet encode the proposed admissibility criterion for simplification: \u201cS and F agree on predeclared D, or residual is named/bounded/filed.\u201d\n- I would not add a new term to the central equations. I would add a **discharge rule/process requirement** for reduction claims. That is new machinery, not new core mathematics.\n\nMy strongest falsification of the brief: the brief repeats that the G\u2099 table row needs `n_H = 0` as a \u201cnecessary\u201d condition. That is too strong. `n_H = 0` is sufficient for removing the human term, but not logically necessary; `\u03c1_MH = 1` also removes it. SymPy confirmed:\n\n- `Eq(w*(1-(1-CM)*(1-CH*(1-rho))).subs(CH, 0), w*CM)` \u2192 **CONFIRMED**\n- `Eq(w*(1-(1-CM)*(1-CH*(1-rho))).subs(rho, 1), w*CM)` \u2192 **CONFIRMED**\n\nSo the fix should not say only \u201cadd `n_H = 0`\u201d; it should say exactly which residual term is being killed.\n\n---\n\n## Q1. Does the existing model already encode the distinction?\n\n### Derivation\n\nIn \u00a77.1 the extended Duane intensity is:\n\n\\[\n\\lambda_{\\text{ext}}(n)\n=\n\\lambda_{\\text{Duane}}(n) + \\nu \\Delta_{n-1}\n\\]\n\nwhere:\n\n\\[\n\\lambda_{\\text{Duane}}(n)\n=\n(\\beta/\\eta)(n/\\eta)^{\\beta-1}\n\\]\n\nand `\u03bd \u00b7 \u0394_{n-1}` is the re-injection term.\n\nThe stated divergence condition is:\n\n\\[\n\\nu \\Delta_{n-1} > |d\\lambda_{\\text{Duane}}/dn|\n\\]\n\nThat is already a break-even condition:\n\n- benefit side: expected convergence / defect-exhaustion from the Duane decay;\n- cost side: new fault generation from adopted structural change.\n\nThe reduction claim \u201cwhen `\u03bd = 0`, `\u03bb_ext = \u03bb`\u201d is real. I discharged it:\n\n`Eq((lambda_ + nu*Delta).subs(nu, 0), lambda_)` \u2192 **CONFIRMED**\n\nSo the existing model already says: a change is not good merely because it is smaller or adopted; it must not re-inject more error than the convergence it buys.\n\n### But this is incomplete\n\nThis encodes **cost simplicity** reasonably well: small localized changes have low `\u0394` and probably low `\u03bd`; broad structural changes have higher destabilization risk.\n\nIt does **not** encode **compressive simplicity**: a short form is admissible because it captures the same structure over a declared domain. That property lives in the reduction theorems, not in `\u03bd`.\n\nThe proposed criterion is about the residual:\n\n\\[\nr = F - S\n\\]\n\nA simplification is admissible iff:\n\n\\[\nr|_D = 0\n\\]\n\nover a predeclared domain `D`, or else the residual is explicitly named, bounded, and filed as its own claim.\n\nThe current model has many reduction statements, but the admissibility rule is not itself a term in the equations. It is a proof obligation about them.\n\n**Answer:** the model already encodes the operational sufficiency/cost trade through `\u03bd \u00b7 \u0394` and the break-even condition, but it does not fully encode the simplification admissibility criterion. What is missing is not another risk term; it is a mandatory discharge status for every reduction claim.\n\n**Evidence I am wrong:** a derivation showing that the existing appendix already defines a formal residual/admissibility relation for reductions, not merely individual reduction properties.\n\n---\n\n## Q2. Is new mathematics warranted?\n\n### My answer\n\nNo new central mathematics is warranted.\n\nDo not add another term to `R_n`, `G_n`, or `\u03bb_ext` merely to represent \u201csimplicity.\u201d That would risk confusing:\n\n- model dynamics: detection, residual risk, re-injection;\n- meta-theory: whether a reduced form is admissible.\n\nThose are different layers.\n\n### Proposed fix\n\nAdd a review rule, not a model term:\n\n> A reduction claim `F \u2192 S under D` may be marked CONFIRMED only if a symbolic proof or exhaustive enumeration discharges `F - S = 0` over the declared domain `D`. If not discharged, sampled agreement may mark only UNDISCHARGED. A counterexample marks REFUTED. If residual is nonzero, the residual must be named, bounded, and filed as its own claim.\n\nThis buys something the equations do not: it prevents prose such as \u201cSymPy verified\u201d from substituting for executable evidence.\n\nIt does not make the equation piecewise because it is not inserted into the equation. It is a verdict rule for claims about equations.\n\nIt is comprehensible: competent readers can understand \u201cprove equality over the scope, or name the residual.\u201d\n\n**Evidence I am wrong:** a case where putting the admissibility relation inside the central equation predicts something operationally important that the external discharge rule cannot express.\n\n---\n\n## Q3. Does the model meet its own standard?\n\nPartly.\n\nThe central recursive collapse is sound. I checked the two-pass case:\n\n\\[\nR_1 = \\frac{\\pi(1-q_1)}{1-q_1\\pi}\n\\]\n\nthen:\n\n\\[\nR_2\n=\n\\frac{R_1(1-q_2)}{1-q_2R_1}\n\\]\n\nequals the batch posterior:\n\n\\[\n\\frac{\\pi(1-q_1)(1-q_2)}\n{(1-\\pi)+\\pi(1-q_1)(1-q_2)}\n\\]\n\nTool result:\n\n`Eq((pi*(1-q1)/(1-q1*pi))*(1-q2)/(1-q2*(pi*(1-q1)/(1-q1*pi))), pi*(1-q1)*(1-q2)/((1-pi)+pi*(1-q1)*(1-q2)))` \u2192 **CONFIRMED**\n\nThe marginal-gain identity is also sound:\n\n\\[\n\\Delta R\n=\nR -\n\\frac{R(1-q)}{1-qR}\n=\n\\frac{qR(1-R)}{1-qR}\n\\]\n\nTool result:\n\n`Eq((R*(1-q)/(1-q*R)), R - q*R*(1-R)/(1-q*R))` \u2192 **CONFIRMED**\n\n### Residuals not yet properly named\n\n1. **The L38 coupling bound.**  \n   The bound is justified as needed for non-negativity. That residual is not merely unnamed; the justification is false.\n\n2. **The G\u2099 reduction row.**  \n   The row \u201c`K=1, d=1, uniform p -> C(n)`\u201d is underspecified. The actual residual from the human stream is:\n\n\\[\nG - wC_M = w C_H(1-\\rho)(1-C_M)\n\\]\n\nI discharged the core identity:\n\n`Eq((1-(1-CM)*(1-CH*(1-rho))) - CM, CH*(1-rho)*(1-CM))` \u2192 **CONFIRMED**\n\nSo the simplification is admissible only when that residual is zero, e.g.:\n\n- `C_H = 0`, which corresponds to no effective human contribution, including `n_H = 0`;\n- or `\u03c1 = 1`, full priming;\n- or `C_M = 1`, saturated machine coverage.\n\nThe table should name the residual or state the exact condition.\n\n3. **The broad sentence \u201cEvery simpler model in the white paper and this appendix is a special case of G\u2099.\u201d**  \n   From the appended source, `G\u2099` is a combined detection formula. It does not obviously subsume the Bayesian posterior `R_n` or the Duane intensity model. If the intended scope is \u201cevery simpler detection-coverage model,\u201d say that. As written, the scope is too broad.\n\n**Evidence I am wrong:** executable reductions showing `G\u2099` specializes to the Bayesian residual-risk model and to the Duane model, not merely to coverage models.\n\n---\n\n## Q4. Should \u201creductions must be discharged, not sampled\u201d be adopted?\n\nYes.\n\n### Benefit\n\nIt restores the CDSFL principle: tools decide, not agreement or prose.\n\nSampling can refute universal claims, but it cannot admit them. If:\n\n\\[\nF(x) = S(x)\n\\]\n\nis claimed over a domain `D`, checking 100 points does not prove the equality over `D`; one counterexample disproves it.\n\nThis rule would have prevented the earlier vacuous tests described in the pinned test file: substitution-tautology tests can pass even for garbage update functions.\n\n### Cost\n\nIt forbids some currently useful practices from being called CONFIRMED:\n\n- Monte Carlo agreement;\n- numerical examples;\n- representative parameter sweeps;\n- empirical fit claims such as \u201cDuane fits 17/18 runs better by AICc,\u201d unless the data and computation are available and rerun.\n\nThose remain useful as calibration, smoke tests, or refutation attempts. They just cannot certify reduction theorems.\n\n### Fix\n\nAdopt asymmetric verdict vocabulary:\n\n- **CONFIRMED:** proof, exhaustive enumeration, or executable symbolic discharge.\n- **REFUTED:** counterexample, whether sampled or symbolic.\n- **UNDISCHARGED:** sampled agreement only, unavailable proof, missing data, or prose-only verification.\n\n**Evidence I am wrong:** a class of reduction claims where symbolic/exhaustive discharge is impossible, sampling is the only available method, and marking them UNDISCHARGED would materially harm decisions more than false confirmations do.\n\n---\n\n## Q5. The two appendix defects\n\n### L38 coupling bound\n\nThe refutation is correct.\n\nThe Ising branch defines unnormalized state weight:\n\n\\[\nw(x)\n=\n\\prod_i q_i^{x_i}(1-q_i)^{1-x_i}\n\\cdot\n\\exp\\left(\\sum_{i<j}\\psi_{ij}x_ix_j\\right)\n\\]\n\nEach Bernoulli factor is non-negative for `q_i \u2208 [0,1]`. The exponential factor is positive for real coupling. Therefore weights are non-negative without the stated coupling bound. With partition function:\n\n\\[\nP(x)=w(x)/Z\n\\]\n\nand `Z` is the sum of non-negative weights, so normalization handles `P(x) \u2264 1`.\n\nThe stated bound is therefore not needed for non-negativity.\n\nI also checked the related unnormalized all-ones correction. If the model lacked `Z` and one wanted the all-ones unnormalized weight not to exceed 1, the condition would be:\n\n\\[\n\\prod_i q_i \\exp(\\Psi) \\le 1\n\\]\n\nso:\n\n\\[\n\\Psi \\le -\\sum_i \\log q_i\n\\]\n\nnot:\n\n\\[\n-\\sum_i \\log(1-q_i)\n\\]\n\nTool result:\n\n`Eq((q1*q2*exp(psi)).subs(psi, -log(q1)-log(q2)), 1)` \u2192 **CONFIRMED**\n\nAnd at `q1=q2=0.9`, the appendix\u2019s stated bound gives an unnormalized all-ones weight of 81:\n\n`Eq((q1*q2*exp(-log(1-q1)-log(1-q2))).subs({q1:9/10,q2:9/10}), 81)` \u2192 **CONFIRMED**\n\n### What is the bound for?\n\nNot probability validity.\n\nPossible real purposes:\n\n1. **Numerical conditioning:** large positive coupling makes `exp(\u03a8)` overflow in floating-point computation.\n2. **Regularization:** it prevents the correlated model from collapsing into near-deterministic all-fail states.\n3. **Model-selection discipline:** it prevents a loosely calibrated correlation parameter from swamping baseline miss probabilities.\n\n### Fix\n\nReplace the L38 sentence with something like:\n\n> The coupling bound is not required for non-negativity; normalization already guarantees valid probabilities. If retained, the bound should be documented as a numerical-conditioning or regularization constraint, with its chosen threshold justified separately.\n\nIf the intended purpose is unnormalized probability control, the formula should be rederived and will not be the one currently written.\n\n**Evidence I am wrong:** a derivation showing a state weight becomes negative without the bound, or showing that the exact stated bound follows from a stated numerical-conditioning or regularization criterion.\n\n---\n\n### G\u2099 reduction row\n\nThe defect is real, but the brief overstates it.\n\nFor one class:\n\n\\[\nG = w[1-(1-C_M)(1-C_H(1-\\rho))]\n\\]\n\nSubtract machine-only coverage:\n\n\\[\nG - wC_M\n=\nwC_H(1-\\rho)(1-C_M)\n\\]\n\nTool result for the unweighted residual form:\n\n`Eq((1-(1-CM)*(1-CH*(1-rho))) - CM, CH*(1-rho)*(1-CM))` \u2192 **CONFIRMED**\n\nSo the row \u201c`K=1, d=1, uniform p -> C(n)`\u201d omits necessary residual-killing conditions. But `n_H = 0` is not the only way. The residual is zero when:\n\n\\[\nC_H(1-\\rho)(1-C_M)=0\n\\]\n\nSo admissible cases include:\n\n- no effective human coverage: `C_H = 0`;\n- full priming: `\u03c1 = 1`;\n- complete machine coverage: `C_M = 1`.\n\nIf the intended reduction is specifically to the original machine-only corroboration model, then `n_H = 0` is the cleanest condition.\n\n### Fix\n\nReplace the table row with two rows:\n\n| Condition | Reduction |\n|---|---|\n| `K=1, w=1, d_M=1, uniform machine p, C_H=0` | `C(n_M)` |\n| `K=1, w=1, d_M=d_H=1, uniform p, \u03c1=0` | `C(n_M+n_H)` |\n\nAnd add a note:\n\n\\[\n\\text{human residual} = C_H(1-\\rho)(1-C_M)\n\\]\n\n**Evidence I am wrong:** a derivation showing the current table row implies `C_H(1-\\rho)(1-C_M)=0` without adding any extra condition.\n\n---\n\n## Q6. What did the brief get wrong?\n\nThe main framing defect is treating `n_H = 0` as necessary rather than as one sufficient condition.\n\nThe exact residual is:\n\n\\[\nC_H(1-\\rho)(1-C_M)\n\\]\n\nSo the condition should be stated in terms of that residual, not only as `n_H = 0`.\n\nSecond, the brief\u2019s \u201c30 tests over the appendix\u2019s own reduction claims\u201d is downstream of a known counting dispute in the appended test file. The source itself says the true count is \u201cat least 21\u201d reduction statements after regex misses; the brief\u2019s count may be accurate for the current test file, but it should not be treated as complete coverage of every mathematical claim in the appendix.\n\nThird, the question risks collapsing two axes again:\n\n- whether the equations model operational tradeoffs;\n- whether the review process admits simplifications correctly.\n\nThose are independent. My answer is:\n\n| Axis | Verdict |\n|---|---|\n| New central mathematics | No |\n| New/repaired process machinery | Yes |\n| Existing operational tradeoff encoding | Yes, partially |\n| Existing compressive-simplicity admissibility encoding | No |\n\n**Evidence I am wrong:** a complete manifest mapping every appendix reduction claim to an executable proof test, including the G\u2099 table rows, L38, and broad \u201cspecial case\u201d statements, with no residual left unnamed."
+}

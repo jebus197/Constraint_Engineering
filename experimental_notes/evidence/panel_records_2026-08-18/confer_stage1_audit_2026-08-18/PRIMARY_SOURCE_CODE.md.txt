@@ -1,0 +1,216 @@
+PRIMARY SOURCE PACK — raw code and raw measurements. No interpretation.
+Generated 2026-08-18 12:44 BST at HEAD f4df176.
+
+
+## A. WHAT THE CONVERGENCE GATE FEEDS TO THE GAMMA ESTIMATOR
+
+### _check_gamma_alt_convergence — the two-sided gate
+### bench/reference_runner_v2.py:4381-4396
+```python
+ 4381      if round_idx < cfg.gamma_alt_earliest_round:
+ 4382          return False, (f"hardened-gate too early (round {round_idx} < "
+ 4383                         f"{cfg.gamma_alt_earliest_round})"), telem
+ 4384  
+ 4385      all_s, crit_s = _settled_novelty_series(registry, round_idx)
+ 4386      g_all = _estimate_gamma(all_s)
+ 4387      g_crit = _estimate_gamma(crit_s)
+ 4388      cum_crit = sum(crit_s)
+ 4389      theta = cfg.gamma_alt_threshold
+ 4390      W = cfg.gamma_alt_consecutive_zero_crit
+ 4391      zero_crit_ok = (len(crit_s) >= W and all(c == 0 for c in crit_s[-W:]))
+ 4392      telem.update(gamma_all_settled=round(g_all, 4),
+ 4393                   gamma_crit_settled=round(g_crit, 4),
+ 4394                   cum_critical=cum_crit, zero_crit_ok=zero_crit_ok)
+ 4395  
+ 4396      # Sparsity fallback — critical pool too small for a stable slope.
+```
+
+## B. THE FUNCTION THE GATE CALLS, AND ITS EXCLUSION LOGIC
+
+### _settled_novelty_series — rebuilt from the registry on EVERY call
+### bench/reference_runner_v2.py:4336-4361
+```python
+ 4336      def _ord(e):
+ 4337          r = e.get("open_since_round")
+ 4338          return (r if r is not None else 1_000_000, str(e.get("canonical_id", "")))
+ 4339  
+ 4340      seen: set = set()
+ 4341      unlocated_buckets: List[Tuple[str, Any]] = []
+ 4342      series = [0] * (max_round + 1)
+ 4343      for e in sorted(vals, key=_ord):
+ 4344          r = e.get("open_since_round")
+ 4345          if r is None or r < 0 or r > max_round:
+ 4346              continue
+ 4347          if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+ 4348              continue
+ 4349          if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+ 4350              continue
+ 4351          desc = e.get("description", "") or ""
+ 4352          locs = finding_locations(desc, symbols)
+ 4353          key = (set(locs) if locs
+ 4354                 else {_unlocated_novelty_key(desc, unlocated_buckets)})
+ 4355          if key - seen:
+ 4356              series[r] += 1
+ 4357          seen |= key
+ 4358      return series
+ 4359  
+ 4360  
+ 4361  def _check_hardened_convergence(
+```
+
+## C. THE SET IT EXCLUDES
+
+### _NON_NOVEL_TERMINAL_STATUSES
+### bench/reference_runner_v2.py:4176-4183
+```python
+ 4176  # F4: post-reconciliation statuses that are NOT genuine novelty —
+ 4177  # stripped before γ sees them (mirrors the runner's existing per-round
+ 4178  # γ-input correction and bench/exp40_gamma_findings_audit.py).
+ 4179  _NON_NOVEL_TERMINAL_STATUSES = {
+ 4180      "MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",
+ 4181  }
+ 4182  
+ 4183  
+```
+
+## D. THE VARIABLE THAT WAS REPAIRED, AND ITS IN-ROUND CORRECTION
+
+### novelty_counts[-1] rewritten — current round only (pre-repair behaviour)
+### bench/reference_runner_v2.py:8996-9014
+```python
+ 8996          # with the reconciliation pipeline's view of novelty.
+ 8997          _NON_NOVEL_TERMINAL = {
+ 8998              "MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",
+ 8999          }
+ 9000          post_reconciliation_novel = sum(
+ 9001              1 for e in registry.entries.values()
+ 9002              if e.get("open_since_round") == round_idx
+ 9003              and e.get("status") not in _NON_NOVEL_TERMINAL
+ 9004          )
+ 9005          pre_reconciliation_novel = novelty_counts[-1] if novelty_counts else 0
+ 9006          if pre_reconciliation_novel != post_reconciliation_novel:
+ 9007              _log(
+ 9008                  f"  γ-input correction: novel pre-reconciliation="
+ 9009                  f"{pre_reconciliation_novel}, "
+ 9010                  f"post-reconciliation={post_reconciliation_novel} "
+ 9011                  f"(replacing in novelty_counts)"
+ 9012              )
+ 9013              novelty_counts[-1] = post_reconciliation_novel
+ 9014  
+```
+
+## E. THE REPAIR COMMITTED AS dcbc91b
+
+### retroactive whole-series recompute
+### bench/reference_runner_v2.py:9016-9046
+```python
+ 9016          #
+ 9017          # The correction above rewrites novelty_counts[-1] — THIS round only. A
+ 9018          # finding registered in round 3 and merged in round 7 therefore stayed
+ 9019          # counted as novel in round 3's entry of the γ input, permanently.
+ 9020          #
+ 9021          # MEASURED on the archive: of 287 MERGED entries carrying round data, 236
+ 9022          # (82%) were merged in a LATER round than the one they opened in. So the
+ 9023          # in-round correction reached 18% of merges and missed the rest.
+ 9024          #
+ 9025          # `cdsfl_topology_formal.md:210-215` states the requirement as a MUST: the
+ 9026          # Duane input series is "canonical novel findings (post-deduplication,
+ 9027          # post-alias-resolution), NOT raw parsed findings. Using raw findings
+ 9028          # inflates the series with rediscoveries and cross-model echoes." A series
+ 9029          # corrected only in its final position is not post-deduplication; it is
+ 9030          # post-deduplication in one round and pre-deduplication in every other.
+ 9031          #
+ 9032          # Recomputing the whole series is the correct reading and not merely the
+ 9033          # tidier one: a finding later found to be a duplicate WAS NEVER NOVEL. The
+ 9034          # round it arrived in should not carry it once that is known. γ measures a
+ 9035          # decay curve over cumulative novel findings, so leaving stale counts in
+ 9036          # earlier rounds flattens the curve with findings that turned out to be
+ 9037          # rediscoveries — the exact inflation the spec names.
+ 9038          for _r in range(len(novelty_counts)):
+ 9039              novelty_counts[_r] = sum(
+ 9040                  1 for e in registry.entries.values()
+ 9041                  if e.get("open_since_round") == _r
+ 9042                  and e.get("status") not in _NON_NOVEL_TERMINAL
+ 9043              )
+ 9044  
+ 9045          # Persist round
+ 9046          round_elapsed = time.monotonic() - round_start
+```
+
+## F. EVERY REFERENCE TO novelty_counts IN THE RUNNER (grep, unfiltered)
+```
+1597:def _estimate_gamma(novelty_counts: List[int], min_rounds: int = 3) -> float:
+1598:    n = len(novelty_counts)
+1603:    for c in novelty_counts:
+1657:    novelty_counts: List[int],
+1666:    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0
+1670:            rho_values.append(novelty_counts[i] / raw_counts[i])
+8244:    novelty_counts: List[int] = []
+8337:            novelty_counts = ckpt_data.get("novelty_counts", [])
+8915:        novelty_counts.append(novel_this_round)
+8935:        rho_current, rho_avg, rho_churn = _compute_rho(novelty_counts, raw_counts, cfg)
+8985:        # Previously novelty_counts[-1] was the pre-reconciliation raw
+9005:        pre_reconciliation_novel = novelty_counts[-1] if novelty_counts else 0
+9011:                f"(replacing in novelty_counts)"
+9013:            novelty_counts[-1] = post_reconciliation_novel
+9017:        # The correction above rewrites novelty_counts[-1] — THIS round only. A
+9038:        for _r in range(len(novelty_counts)):
+9039:            novelty_counts[_r] = sum(
+9060:            novelty_counts=novelty_counts,
+9342:            if novelty_counts:
+9343:                novelty_counts[-1] = _settled_all[round_idx]
+9528:            "novelty_counts": novelty_counts,
+9803:                    novelty_counts.clear()
+9838:                    novelty_counts.clear()
+
+```
+
+## G. rho CONFIGURATION
+
+### RunnerConfig rho fields
+### bench/reference_runner_v2.py:477-480
+```python
+  477      # Convergence tuning
+  478      rho_threshold: float = 0.25
+  479      rho_rolling_window: int = 3
+  480      consecutive_rounds_required: int = 2
+```
+
+### rho_earliest_round
+### bench/reference_runner_v2.py:556-558
+```python
+  556      windowed_context_max_chars: int = 6000
+  557      rho_earliest_round: int = 12
+  558      stall_window: int = 3
+```
+
+## H. _compute_rho
+
+### _compute_rho
+### bench/reference_runner_v2.py:1656-1679
+```python
+ 1656  def _compute_rho(
+ 1657      novelty_counts: List[int],
+ 1658      raw_counts: List[int],
+ 1659      cfg: RunnerConfig,
+ 1660  ) -> Tuple[float, float, bool]:
+ 1661      """A2 fix: discovery efficiency rho with configurable threshold."""
+ 1662      if not raw_counts:
+ 1663          return 0.0, 0.0, False
+ 1664      # Bug 1 fix: compute rolling average even when current round has zero raw.
+ 1665      # A zero-raw round should drive the average DOWN, not freeze it.
+ 1666      rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0
+ 1667      rho_values = []
+ 1668      for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):
+ 1669          if raw_counts[i] > 0:
+ 1670              rho_values.append(novelty_counts[i] / raw_counts[i])
+ 1671          else:
+ 1672              rho_values.append(0.0)
+ 1673      rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0
+ 1674      # Bug 4 fix: len(raw_counts) is 1-based (one entry per completed round).
+ 1675      # Using len-1 compared against a 1-based threshold delays churn by one round.
+ 1676      round_number = len(raw_counts)
+ 1677      churn = rho_avg < cfg.rho_threshold and round_number >= cfg.rho_earliest_round
+ 1678      return rho_current, rho_avg, churn
+ 1679  
+```

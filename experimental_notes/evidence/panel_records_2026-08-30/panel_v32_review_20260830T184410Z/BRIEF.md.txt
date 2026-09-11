@@ -1,0 +1,116 @@
+# Review brief: is the next simulated run actually going to exercise the schema?
+
+You are reviewing repairs made on 2026-08-30 to CDSFL's reference runner
+(`bench/reference_runner_v2.py`, ~11,800 lines) and to its simulation harness
+(`bench/tools/`). Your working tree is a disposable copy. Run things.
+
+## What happened, in order
+
+A **simulated** experiment was run: the real `run_experiment()` driving all its
+real machinery, with six Claude subagents standing in for the six paid panel
+models so the run costs nothing. Panel members are named `CC2-SIM`,
+`DeepSeek-SIM`, `ChatGPT-SIM`, `Gemini-SIM`, `Codex-SIM`, `Fable-SIM`. No paid
+dispatch occurred.
+
+Artefacts: `bench/logs/sim45_memory_20260830T161215Z/`.
+
+It converged at round 3 on the two-sided gate — the same round, gate and reason
+as the real experiment 45 on the same target (`bench/dm/_memory.py`).
+
+**Then an audit of 28 machinery items against the run artefacts found this:**
+
+| class | n | meaning |
+|---|---|---|
+| fired and changed a decision | 17 | |
+| ran, produced nothing | 6 | falsifier gate, routing ladder, Helper T, B Cell, novelty divergence, rho |
+| wired but unreachable | 1 | fix-efficacy probe, 0 of 19 entries |
+| never ran | 3 | discrimination control, specialist knowledge, secondary routing |
+| deliberately off | 1 | post-convergence sweep |
+
+Against the REAL exp45 on the same target:
+
+| property | real exp45 | simulated |
+|---|---|---|
+| entries carrying `falsifier_code` | 23/39 | **0/19** |
+| entries with `sk_result` | 29/39 | **0/19** |
+| entries with a verified fix | 24/39 | **0/19** |
+| terminal statuses reached | CLOSED 15, CONFIRMED 13, REFUTED 3 | none of those |
+
+scipy Fisher exact p = 6.0e-06, 4.2e-08, 2.2e-06 respectively.
+
+So the run converged **on model agreement alone**, with the falsification core
+silent for its entire duration. Same output number, different causal path.
+
+## Root cause found, and the repairs made
+
+**R1 — the simulation seam was one of nine.** The shim patched
+`_dispatch_single_model`. Nine functions in the runner dispatch to a model:
+`_apply_routing`, `_post_convergence_sweep`, `_inround_reask`,
+`_dispatch_single_model`, `_verification_step`, `run_preflight`,
+`run_experiment`, `resolve_fn`, `_arb_dispatch`. The other eight went to real,
+unconfigured models. The costliest was `resolve_fn` — the routing ladder's
+FALSIFIER WRITER — whose call raised, was swallowed by a bare `except` returning
+`""`, and logged "routing: 0 resolved by strong writer" in all four rounds.
+Repair: the shim now patches the primitive `dispatch_to_model`.
+Pinned by `bench/tests/test_sim_seam_covers_every_dispatch_2026-08-30.py`.
+
+**R2 — co-discovery could never fire for the case it exists for.**
+`record_codiscovery` (added 2026-08-23 to close a measured defect: 566 findings,
+exactly 1.00 `source_aliases` each, zero cross-model co-discovery) resolved with
+`lookup_alias(<the DUPLICATE's model>, <the ORIGINAL's finding_id>)`. In a
+cross-model duplicate those belong to different models, so the lookup always
+missed. Measured on the run: 17 `duplicate_of` records, every one a
+foreign-model finding ID, `source_aliases` still exactly 1 on all 19 entries.
+Repair: `lookup_alias_any()` resolves by finding ID, refusing ambiguity.
+Pinned by `test_codiscovery_resolves_cross_model_2026-08-30.py`.
+
+**R3 — the fix-efficacy probe was gated on a field nothing populates.** It
+required `proposed_fix` AND `falsifier_code`; 19 of 19 entries had a fix and 0
+had a falsifier, so it reached nothing and left NO TRACE of why. Repair:
+`fix_efficacy_decision()` admits on `proposed_fix` alone and records a
+`NOT_PROBED_NO_FALSIFIER` outcome, without consuming the per-round cap and
+without marking the entry attempted.
+Pinned by `test_fix_efficacy_records_why_it_did_not_run_2026-08-30.py`.
+
+**R4 — vendor-keyed logic vs the `-SIM` naming rule.** Two sites compared
+`mc.label == "CC2"`; one is the verification stage, which otherwise returns
+`{"skipped": True}` silently. `base_model_label()` resolves the suffix.
+
+**R5 — test skips.** 34 skipped tests were audited. 27 removed: 24 in
+`test_operational_scripts.py` (the skip dropped an import proof and an
+unknown-flag proof), 3 in `test_runner_argv_guard.py` (a blanket skip for
+argparse runners that asserted nothing; now an ordering assertion that
+`parse_args()` is reached before anything costly). A real defect fell out:
+`scripts/note_vagueness_lint.py` exited 0 on a missing path, so a typo'd
+filename reported "0 findings" and read as a clean note.
+
+## What we want from you
+
+**Falsify this. Do not confirm it.** Specifically:
+
+1. **Is R1 complete?** Is `dispatch_to_model` genuinely the only way this runner
+   reaches a model? Find any path that bypasses it. A tenth seam would silently
+   reproduce the whole failure.
+2. **The 6 "ran, produced nothing" items.** For each, decide from the code
+   whether it produced nothing because (a) the upstream was empty and it
+   behaved correctly, (b) it is misconfigured, or (c) it is broken. Propose a
+   fix only where one is warranted. `p-pass-anti-nitpick` applies: do not
+   generate findings for their own sake.
+3. **The 3 "never ran" items** — discrimination control, specialist knowledge
+   (`sk_result` is None on all 19 entries although `sk_enabled=True`), and
+   secondary routing (`secondary_route_usage` empty in BOTH the simulated run
+   AND the real exp45). Why? Is any of them load-bearing for Bench Run 2?
+4. **Will the next simulated run now exercise the schema end to end?** With R1
+   in place, routing, verification, the sweep and re-ask all reach a simulated
+   agent for the first time. Predict what will still be silent, and say what
+   would have to change for it not to be.
+5. **`bench/tests/test_prose_acceptance_stem.py::TestAFalsifierThatCarriesItsOwnFence`**
+   documents an OPEN, unrepaired defect: a falsifier whose own source contains
+   three backticks cannot cross the reply channel intact, and the loss is
+   silent. With R1 making the routing writer live for the first time in
+   simulation, does this now bite? Is the transport repair worth making before
+   Bench Run 2?
+
+Run the tests. `python3 -m pytest bench/tests -q` takes about 4.5 minutes.
+Where you disagree with anything asserted above, say so and show the command
+that shows it.

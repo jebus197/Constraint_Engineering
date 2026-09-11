@@ -1,0 +1,80 @@
+# 3 containment and detection fixes shipped with no independent review. Break them.
+
+## Time budget — read first
+
+An earlier brief carried 6 fixes and BOTH SEATS TIMED OUT at 900s producing nothing. This carries 3.
+**Be economical: target ~10 tool calls, not 40.** One decisive check beats three confirmatory ones.
+If you run short, answer on what you verified and mark the rest UNVERIFIED — an honest partial beats
+a timeout, which returns nothing.
+
+Use your shell (pytest, git, python, ruff). The named `sympy_verify` tools are NOT on your route.
+**Answer as yourself**; both seats get this brief, disagreement is preserved. Everything is committed
+at HEAD on main; suite green at 5257 passed, 0 failed.
+
+## ⚠ ONE THING TO KNOW ABOUT YOUR OWN TOOLS
+
+During the previous panel a seat WROTE DIRECTLY INTO THIS LIVE REPOSITORY and then described its own
+edit as the pre-existing state of the world. The change was correct and has been committed with the
+panel credited — but the founder's ruling is that panel seats must not write to the canonical tree,
+and the confinement is not yet built. **So: read, run, and propose. Do not edit the repository.** If
+you would change a file, quote the patch in your answer instead. Say so explicitly if you write
+anything, including scratch files, and where.
+
+## Fix 1 — the falsifier sandbox was not a sandbox (`_build_discrimination_overlay`)
+
+It mirrored every sibling as an ABSOLUTE SYMLINK. Symlinks are transparent to writes, so a falsifier
+opening a sibling path for writing modified the REAL repository — reproduced: one `open(link,"w")`
+and the real file changed. The old docstring said `rmtree` does not follow symlinks, which is true
+and about DELETION only, which is what made it look safe. It now uses `cp -Rc` (APFS clone), measured
+at 2.77 s for 683 MB / 15837 files, and RAISES rather than degrading when cloning fails
+(`CDSFL_ALLOW_UNCONTAINED_OVERLAY=1` is the deliberate escape hatch).
+
+**Attack it.** Does the clone leak anything the symlinks did not? `.env` sits in the tree and is
+readable either way — is there now a WRITE path that matters? Is removing `.git` sufficient? What
+happens on a non-APFS volume, when TMPDIR is a different filesystem, or under CI? Is 2.77 s per
+finding affordable given the control runs per finding? Did CC1 measure the right quantity?
+
+## Fix 2 — 2 copies of the maths-routing pattern disagreed (`verification_utils._MATH_PATTERN`)
+
+Whether a finding routed for mathematical checking depended on WHICH MODULE ASKED: `immune_agents`
+carried 7 alternatives (`log`, `exp`, `bound`, `threshold`, `inequality`, `formula`, `equation`) that
+`verification_utils` lacked. Measured over 8709 distinct archived descriptions: they disagreed on 40,
+0.46%, Wilson [0.34%, 0.62%], and in 100% of those `immune_agents` routed as MATH and the other did
+not. Unified on the BROADER form, on the reasoning that a false positive costs a wasted check and a
+false negative costs an unchecked mathematical claim.
+
+**Attack it.** Does broadening mis-route ordinary prose into mathematical verification, and what does
+that cost in a real run? Is duplicating the definition in 2 files — now merely agreeing rather than
+shared — the right structure, or should one import the other? Is "broader is safer" actually true
+here, or does it dilute the specialist routing signal?
+
+## Fix 3 — the vault status check reported VAULTED with 29 plaintext answer keys on disk
+
+It matched only `*answer_key*.json` — which matches 0 of the 29 real files — and excluded
+`Developer_Projects`, the directory they live in. `bench/arc_sequencer.sh:50` halts an entire
+experiment arc unless that line reads `^VAULTED`, so it was a false all-clear on the gate protecting
+BR2's unrun exam keys. Now matches `*_KEY.json`, `*_KEY.md`, `*GROUND_TRUTH.json`, `*planted*.json`
+and `*answer_key*.json` at depth 5, excluding only `.git` and the known stores. A second latent fault
+was also fixed: with an empty `CDSFL_LEGACY_STORES` the script exited SILENTLY under `set -e`.
+
+**Attack it.** Are the patterns sufficient, or is there a naming convention still missed? Is depth 5
+enough? Can the known-store exclusion be abused to hide a key? Does it now produce FALSE POSITIVES
+that would get it switched off — the exact failure mode that killed the queue alarm twice? Are the
+7 hermetic tests testing the script or the machine?
+
+## The questions
+
+**Q1.** For each of the 3: does it do what it claims, and can you break it? Name the check you ran.
+**Q2.** Which is most likely to produce a WRONG RESULT rather than a crash?
+**Q3.** CC1 found AND fixed all 3 alone in one sitting. What does that structurally risk missing?
+**Q4.** Propose the SIMPLEST SUFFICIENT repair for anything you break — the founder uses that phrase
+deliberately: the smallest change that addresses the root cause, not the most thorough one.
+**Q5.** What would refute your own review?
+
+## Context so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in STEM
+artefacts; biological names are analogy only. Yesterday and today, 4 quoted figures were checked and
+did NOT reproduce, and acting on 2 of them would have made things worse — so treat every number here,
+including CC1's, as a claim to test rather than a premise. A simulated full-harness run is next; a
+fault found now is far cheaper than one found during it.

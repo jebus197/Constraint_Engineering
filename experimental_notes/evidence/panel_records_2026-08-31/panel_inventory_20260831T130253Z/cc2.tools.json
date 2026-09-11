@@ -1,0 +1,1303 @@
+{
+  "model": "opus",
+  "elapsed_s": 1605.4,
+  "tool_calls": 324,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -8 && git status --short | head -30\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 -m pytest bench/tests -q 2>&1 | tail -30\", \"description\": \"Run full test suite in background-ish\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q > /tmp/pytest_full.log 2>&1; echo \\\"EXIT=$?\\\"; tail -20 /tmp/pytest_full.log\", \"description\": \"Run full pytest suite in background\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat HEAD | head -40 && echo \\\"--- diff stat vs v3.1 ---\\\" && git log --oneline -25\", \"description\": \"Inspect recent commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ && echo \\\"---\\\" && find . -name \\\"reference_runner_v2.py\\\" -o -name \\\"macrophage_cell.py\\\" -o -name \\\"run_simulated_experiment.py\\\" -o -name \\\"runner_core.py\\\" -o -name \\\"sim_dispatch_shim.py\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/ 2>/dev/null | tail -20 && echo \\\"--- recent artefacts ---\\\" && find . -name \\\"*.json\\\" -newermt \\\"2026-08-30\\\" 2>/dev/null | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/results/ 2>/dev/null | tail -25; echo \\\"=== logs ===\\\"; ls -lat bench/logs/ 2>/dev/null | head -25\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/reference_runner_v2.py bench/runner_core.py bench/experiment_11_orchestrator.py bench/macrophage_cell.py bench/fix_efficacy.py bench/falsifier_verify.py bench/routing.py bench/tools/run_simulated_experiment.py bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/sim45_memory_20260830T235237Z/ | head -60\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/macrophage_cell.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/logs/sim45_memory_20260830T235237Z/macrophage_shadow_r00.json; echo \\\"=== r01 ===\\\"; cat bench/logs/sim45_memory_20260830T235237Z/macrophage_shadow_r01.json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"Macrophage\\\\|macrophage\\\" bench/reference_runner_v2.py | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/logs/sim45_memory_20260830T235237Z && python3 -c \\\"\\nimport json,glob\\nrows=[]\\nfor f in sorted(glob.glob('macrophage_shadow_r*.json')):\\n    d=json.load(open(f))\\n    for o in d['observations']:\\n        rows.append((d['round_idx'],o['category'],o['evidence'].get('stage'),o['evidence'].get('time'),o['evidence'].get('median'),o['severity']))\\nfor r in rows: print(r)\\nprint('t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 7480,7600p bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo && sed -n '7540,7600p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/round_00.json'))\\nprint(type(d), list(d.keys())[:40] if isinstance(d,dict) else len(d))\\n\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"timings\\\\b\\\" bench/reference_runner_v2.py | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"timings\\\\[\\\" bench/*.py | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 /tmp/pytest_full.log 2>/dev/null; echo \\\"---\\\"; grep -n \\\"fix_efficacy\\\\|NOT_PROBED_NO_FALSIFIER\\\" bench/reference_runner_v2.py | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/fix_efficacy.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff --stat a775a32 HEAD -- bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py bench/falsifier_verify.py bench/routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '300,360p' bench/fix_efficacy.py\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Audit enable_tools default flip\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are auditing a DISPOSABLE COPY of a research repo at /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo (cwd). Break things freely; nothing persists.\\n\\nGROUND RULE: TOOLS DECIDE, NOT ASSERTIONS. Run the command, then make the claim. Quote exact file:line and exact "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -3 && echo \\\"---DIFFSTAT---\\\" && git diff --stat a775a32 HEAD -- bench/\", \"description\": \"Show git log and diffstat\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"enable_tools\\\" --include=*.py --include=*.json --include=*.toml --include=*.md . | grep -v \\\"\\\\.git/\\\" | sort\", \"description\": \"Grep enable_tools across repo\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"enable_tools\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 0}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Audit truncation + falsifier extractor\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are auditing a DISPOSABLE COPY of a research repo at /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo (cwd). Break things freely; nothing persists.\\n\\nGROUND RULE: TOOLS DECIDE, NOT ASSERTIONS. Run the command, then make the claim. Quote exact file:line and"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline a775a32..HEAD | cat && echo \\\"---STAT---\\\" && git diff --stat a775a32 HEAD | cat\", \"description\": \"Show commits and diffstat since baseline\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/exp*_configs configs 2>&1 | head -20; echo \\\"---COUNT JSON---\\\"; ls bench/exp*_configs/*.json configs/*.json 2>/dev/null | wc -l; echo \\\"---GREP gate in json---\\\"; grep -rln \\\"falsifier_gate_enabled\\\" bench/exp*_configs configs 2>/dev/null | head -40\", \"description\": \"Check config dirs exist\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/runner_core.py | cat\", \"description\": \"Diff runner_core.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob\\nfor f in sorted(glob.glob('bench/exp*_configs/*.json'))+sorted(glob.glob('configs/**/*.json',recursive=True)):\\n    try: d=json.load(open(f))\\n    except Exception as e: print('PARSEFAIL',f,e); continue\\n    if not isinstance(d,dict): continue\\n    if 'falsifier_gate_enabled' in d:\\n        print(('FALSE ' if d['falsifier_gate_enabled'] is False else '"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Sweep 656-line diff for regressions\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are auditing a DISPOSABLE COPY of a research repo at /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo (cwd). Break things freely; nothing persists.\\n\\nGROUND RULE: TOOLS DECIDE, NOT ASSERTIONS. Run the command, then make the claim. Quote exact file:line and ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"\\\\[:200\\\\]\\\\|\\\\[:500\\\\]\\\\|\\\\[:2000\\\\]\\\\|_bounded_description\\\\|_DESCRIPTION_LIMIT\\\\|TRUNCATED\\\" bench/*.py | head -60\", \"description\": \"Grep truncation sites in bench\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def fix_efficacy_decision\\\" -A 60 bench/reference_runner_v2.py | head -80\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2900,3000p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== raw false occurrences anywhere ===\\\"; grep -rn \\\"falsifier_gate_enabled\\\" bench/exp*_configs configs 2>/dev/null | grep -i \\\"false\\\"; echo \\\"(exit $?)\\\"; echo; echo \\\"=== total configs vs those carrying the key ===\\\"; ls bench/exp*_configs/*.json | wc -l; echo \\\"=== configs LACKING the key ===\\\"; for f in bench/exp*_configs/*.json; do grep -q falsifier_gate_enabled \\\"$f\\\" |"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline a775a32..HEAD | cat && echo \\\"---STAT---\\\" && git diff --stat a775a32 HEAD -- bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py bench/falsifier_verify.py bench/routing.py | cat\", \"description\": \"Get commit log and diffstat\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"description\\\" bench/reference_runner_v2.py | grep -n \\\"\\\\[:\\\\|truncat\\\\|TRUNCAT\\\\|limit\\\\|2000\\\\|500\\\\|200\\\" \", \"description\": \"Grep description truncation in reference_runner_v2\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py bench/runner_core.py bench/experiment_11_orchestrator.py bench/routing.py bench/falsifier_verify.py | grep -n -E \\\"^(diff|@@|[-+].*enable_tools|[-+].*falsifier_gate_enabled)\\\" | head -80\", \"description\": \"Diff hunks touching enable_tools\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py | grep -n \\\"^[-+].*\\\\(descri\\\\|truncat\\\\|TRUNCAT\\\\|\\\\[:2000\\\\]\\\\|\\\\[:500\\\\]\\\\|\\\\[:200\\\\]\\\\)\\\" | head -60\", \"description\": \"Find description-related diff lines in reference_runner_v2\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/routing.py bench/falsifier_verify.py | cat\", \"description\": \"Diff routing and falsifier_verify\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys\\nsys.path.insert(0,'bench')\\np='bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'\\nd=json.load(open(p))\\nprint(type(d), list(d.keys())[:60] if isinstance(d,dict) else len(d))\\nEOF\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sweep\\\" bench/reference_runner_v2.py | head -50\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py | sed -n '769,805p'\", \"description\": \"Show round dispatch star/relay hunks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py | sed -n '1,260p'\", \"description\": \"Read first part of reference_runner_v2 diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys, collections\\nsys.path.insert(0,'bench')\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nreg=d['registry']\\nprint('registry type', type(reg), list(reg.keys())[:10] if isinstance(reg,dict) else '')\\nEOF\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"block\\\\[:\\\\|response\\\\[:\\\\|_bounded_description\\\" bench/reference_runner_v2.py bench/runner_core.py\", \"description\": \"Locate fallback truncation call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py bench/runner_core.py bench/experiment_11_orchestrator.py bench/routing.py bench/falsifier_verify.py > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/d.txt; sed -n '769,805p' /private/tmp/claude-501/-private-var-folders-cc-scp"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/runner_core.py | cat\", \"description\": \"Diff runner_core\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys, collections\\nsys.path.insert(0,'bench')\\nfrom fix_efficacy import NO_FALSIFIER\\nfrom reference_runner_v2 import fix_efficacy_decision, FIX_EFFICACY_PER_ROUND_LIMIT\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nprint('n entries', len(ents), 'per-round limit', FIX_EFFICACY_PER_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1400,1540p' bench/experiment_11_orchestrator.py\", \"description\": \"Read dispatch() provider branching\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1560,1590p' bench/reference_runner_v2.py; echo \\\"=== schema ===\\\"; ls bench/cdsfl_finding_schema.json 2>&1; python3 -c \\\"\\nimport json;d=json.load(open('bench/cdsfl_finding_schema.json'));print(json.dumps(d,indent=1)[:3000])\\\" 2>&1 | head -80\", \"description\": \"Check registration cap line and finding schema\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py | cat\", \"description\": \"Diff reference_runner_v2\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def .*\\\\(similar\\\\|dedup\\\\|duplicate\\\\|fingerprint\\\\|hash\\\\|canonical\\\\)\\\" bench/reference_runner_v2.py bench/runner_core.py | head -40\", \"description\": \"Find dedup/similarity/hash/canonical functions\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/.claude/projects/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/tool-results/bnsglm3lq.txt\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"similarity\\\\|_jaccard\\\\|difflib\\\\|SequenceMatcher\\\\|is_duplicate\\\\|duplicate_of\\\" bench/reference_runner_v2.py | head -50\", \"description\": \"Find similarity/dup logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4560,4620p' bench/reference_runner_v2.py\", \"description\": \"Read _routing_similarity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1085,1150p' /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/d.txt\", \"description\": \"Show call_gemini diff hunk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"FIX_EFFICACY_PER_ROUND_LIMIT\\\" bench/*.py bench/tests/*.py | head; echo \\\"=== reset site ===\\\"; sed -n '2580,2600p' bench/reference_runner_v2.py; echo \\\"=== enclosing def ===\\\"; awk 'NR<=2600 && /^def |^    def /{l=NR\\\": \\\"$0} END{}' bench/reference_runner_v2.py >/dev/null; python3 -c \\\"\\nimport re\\nsrc=open('bench/reference_runner_v2.py').read().splitlines()\\nfor i in range"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11830,11900p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def signature_similarity\\\\|def stem_signature\\\" bench/convergence_location.py; echo ---; sed -n '1,90p' bench/routing.py\", \"description\": \"Read signature functions and routing head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk '/^def call_gemini/,/^def [a-z_]+\\\\(/' bench/experiment_11_orchestrator.py | head -90\", \"description\": \"Read call_gemini source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^def \\\\|^    return\\\\|tools\\\" bench/experiment_11_orchestrator.py | awk -F: '$1>1080 && $1<1310' | head -60\", \"description\": \"Locate call_gemini boundaries and tools usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/experiment_11_orchestrator.py | cat\", \"description\": \"Diff orchestrator\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"sqlite\\\\|CREATE TABLE\\\\|VARCHAR\\\\|maxLength\\\" bench/*.py bench/*.json 2>/dev/null | head -20; echo \\\"=== maxLength anywhere ===\\\"; grep -rn \\\"maxLength\\\" bench/ --include=*.json --include=*.py | head\", \"description\": \"Check for DB field widths and schema maxLength\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1082,1145p' bench/experiment_11_orchestrator.py\", \"description\": \"Read call_gemini fully\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"maxLength\\\" bench/ | head; echo \\\"exit=$?\\\"\", \"description\": \"grep maxLength across bench\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1240,1300p' bench/experiment_11_orchestrator.py\", \"description\": \"Read call_deepseek tools override\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, collections\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nprint(collections.Counter(e['status'] for e in ents.values()))\\nfor cid in ('C0013','C0015'):\\n    e=ents[cid]\\n    print('\\\\n===',cid, e['status'])\\n    for k in ('mechanical_fault','hil_escalated','verified','falsifier_co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"discrimination_control_blocks\\\" --include=*.py --include=*.json --include=*.toml --include=*.md . | head -40\", \"description\": \"Find discrimination_control_blocks definition\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"discrimination_control_blocks|discrimination_control_ask\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4956,5010p' bench/reference_runner_v2.py; echo \\\"=== residual selection ===\\\"; grep -n \\\"_residual\\\\|def _residuals\\\\|residuals =\\\" bench/reference_runner_v2.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _settle_confirmed_findings\\\" -A 60 bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== _ds_repair uses ===\\\"; grep -n \\\"_ds_repair\\\" bench/experiment_11_orchestrator.py; echo; echo \\\"=== max_tool_iters defaults ===\\\"; grep -n \\\"max_tool_iters\\\" bench/experiment_11_orchestrator.py; echo; echo \\\"=== tool loop defs ===\\\"; grep -n \\\"def _run_openai_tool_loop\\\\|def _run_gemini_tool_loop\\\\|def default_tool_executor\\\\|EXECUTE_PYTHON_TOOL =\\\" bench/experiment_11_orch"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py\", \"description\": \"Read the new truncation test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '472,510p' bench/experiment_11_orchestrator.py; echo \\\"=== ds_repair site 1340-1360 ===\\\"; sed -n '1340,1360p' bench/experiment_11_orchestrator.py\", \"description\": \"Read openai tool loop and ds_repair site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import sys; sys.path.insert(0,'bench'); import reference_runner_v2 as R; print(R.RUNNER_VERSION); print(R.REPO_ROOT)\\\"\", \"description\": \"Import runner module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0, str(pathlib.Path('bench').resolve()))\\nsys.path.insert(0, str(pathlib.Path('.').resolve()))\\nfrom runner_core import parse_findings, _bounded_description, _DESCRIPTION_LIMIT\\nprint(\\\"LIMIT =\\\", _DESCRIPTION_LIMIT)\\nHEAD = \\\"FINDING_ID: M_F001\\\\nSEVERITY: 0.6\\\\nFLAW_CLASS: 2\\\\nABSTRACTION_INDEX: 0.5\\\\n\\\"\\nfor name, txt in [\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nprint(\\\"root:\\\", R.REPO_ROOT)\\nfor t in [\\\"bench/runner_core.py\\\", \\\"/tmp/external_article.py\\\", \\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/runner_core.py\\\", \\\"\\\"]:\\n    try:\\n        print(repr(t), \\\"->\\\", repr(R.repo_relative_target(t)))\\n    except Exception as e:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== _falsifier_format_repair makes an API call? ===\\\"; grep -n \\\"def _falsifier_format_repair\\\" -A 25 bench/decomposed_dispatch.py | grep -n \\\"chat.completions.create\\\\|client\\\\.\\\\|def \\\\|return\\\" | head -20; echo; echo \\\"=== _dispatch_single_model signature ===\\\"; sed -n '6875,6900p' bench/reference_runner_v2.py\", \"description\": \"Check repair call and dispatch signature order\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys\\nsys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nfor cid in ('C0013','C0015'):\\n    e=ents[cid]\\n    vs=e.get('verdicts',[])\\n    confirms=[v for v in vs if v.get('verdict')=='CONFIRM']\\n    chal=[v for v in vs if v.get('verdict"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5010,5110p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=1490 && NR<=1580' bench/reference_runner_v2.py | grep -n \\\"def \\\\|description\\\" ; echo \\\"=== enclosing def ===\\\"; awk 'NR<=1572 && /^    def |^def /{l=NR\\\": \\\"$0} END{}{}' bench/reference_runner_v2.py; python3 - <<'PY'\\nimport re\\nlines=open('bench/reference_runner_v2.py').read().split('\\\\n')\\nfor i in range(1571,0,-1):\\n    if re.match(r'^\\\\s{0,4}def ', lines[i-1]):\\n       "
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"test_article\\\\s*=\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"falsifier_gate_enabled\\\" bench/reference_runner_v2.py | head -20; echo \\\"=== config loader ===\\\"; grep -n \\\"def load_config\\\\|def _load_config\\\\|class ExperimentConfig\\\" bench/reference_runner_v2.py bench/runner_core.py | head\", \"description\": \"Find gate field and config loader\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0, str(pathlib.Path('bench').resolve()))\\nfrom runner_core import parse_findings\\nf = parse_findings(\\\"M\\\", 0, \\\"W\\\"*5000)[0]\\nd = f.description\\nstored = d[:2000]              # exactly reference_runner_v2.py:1572\\nprint(\\\"parsed len   :\\\", len(d))\\nprint(\\\"marker in parsed :\\\", \\\"[...TRUNCATED\\\" in d)\\nprint(\\\"stored len   :\\\", "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12120,12175p bench/reference_runner_v2.py\", \"description\": \"Read runner CLI section\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '820,845p' bench/reference_runner_v2.py; echo \\\"=== class/loader names ===\\\"; grep -n \\\"^class \\\\|def from_json\\\\|def from_dict\\\\|_config_from\\\\|json.load\\\" bench/reference_runner_v2.py | awk -F: '$1>700 && $1<1000'\", \"description\": \"Read config dataclass and loader\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 9660,9715p bench/reference_runner_v2.py\", \"description\": \"Read run_experiment startup\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"mechanical_fault\\\\|hil_escalated\\\" bench/*.py bench/tests/*.py | head -40; echo \\\"=== CRITICAL_SEVERITY_THRESHOLD ===\\\"; grep -n \\\"^CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0, str(pathlib.Path('bench').resolve()))\\nsys.path.insert(0, str(pathlib.Path('.').resolve()))\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"rr2\\\", \\\"bench/reference_runner_v2.py\\\")\\n# heavy import; try\\ntry:\\n    import bench.reference_runner_v2 as rr2\\nexcept Exception as e:\\n    print(\\\"import via pack"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4740,4790p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4090,4160p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1400,1530p bench/experiment_11_orchestrator.py\", \"description\": \"Read dispatch function\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0, str(pathlib.Path('bench').resolve()))\\nsys.path.insert(0, str(pathlib.Path('.').resolve()))\\nfrom bench.reference_runner_v2 import _routing_similarity\\nfrom bench.convergence_location import stem_signature, signature_similarity\\n\\nCORE = (\\\"The parser drops the DESCRIPTION field when the model omits the label, \\\"\\n        \\\"so "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1084,1200p bench/experiment_11_orchestrator.py\", \"description\": \"Read call_gemini\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -3 /tmp/pytest_full.log; echo \\\"=== call order in round loop ===\\\"; grep -n \\\"_update_finding_statuses\\\\|_run_discrimination\\\\|discrimination_control\\\\|_falsifier_gate\\\\|falsifier_gate\\\" bench/reference_runner_v2.py | sed -n '1,60p'\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/resolve_enable_tools.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Print the RESOLVED enable_tools value for representative configs.\\n\\nOld behaviour (a775a32): round dispatch forwarded\\n    getattr(cfg, \\\"falsifier_gate_enabled\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/resolve_enable_tools.py 2>&1 | tail -60\", \"description\": \"Run the enable_tools resolution script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4204,4300p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '455,495p' bench/convergence_location.py\", \"description\": \"Read stem_signature and signature_similarity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"class CircuitBreakerTripped\\\" -A 25 bench/experiment_11_orchestrator.py | head -40; echo \\\"=== deepseek tool loop deadline ===\\\"; grep -n \\\"_run_openai_tool_loop\\\" -A 60 bench/experiment_11_orchestrator.py | sed -n 1,90p\", \"description\": \"Inspect CircuitBreakerTripped and openai tool loop\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nfor k,v in R.MODEL_ROSTER.items():\\n    api=getattr(v,'api',None) or (v.get('api') if isinstance(v,dict) else None)\\n    mid=getattr(v,'model_id',None) or (v.get('model_id') if isinstance(v,dict) else None)\\n    sec=getattr(v,'secondary_api',None) or (v.get('secondary_api') if isinstance(v,dict) el"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5765,5800p' bench/reference_runner_v2.py\", \"description\": \"Read the unlocated-merge site using signature_similarity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,json; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nfor k,v in R.MODEL_ROSTER.items():\\n    print(k, '->', v)\\n\\\" 2>&1 | head -20\", \"description\": \"Dump raw MODEL_ROSTER\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'api=\\\"claude_cli\\\"\\\\|api=\\\"openrouter\\\"\\\\|api=\\\"deepseek\\\"\\\\|api=\\\"google\\\"\\\\|api=\\\"codex_exec\\\"\\\\|api='\\\"'\\\"'' bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py | head -30\", \"description\": \"Find where api strings are assigned\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re\\nsrc=open('bench/reference_runner_v2.py').read().split('\\\\n')\\nfor i in range(5765,0,-1):\\n    if re.match(r'^def |^    def ', src[i-1]):\\n        print(\\\"line\\\",i,\\\":\\\",src[i-1]); break\\nPY\\ngrep -n \\\"_UNLOCATED_MERGE_THRESHOLD\\\\s*=\\\\|_UNLOCATED_KEY_PREFIX\\\\s*=\\\" bench/reference_runner_v2.py\", \"description\": \"Find bucket function name and thresholds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as O\\ntry:\\n    raise O.CircuitBreakerTripped(\\\"gemini:x returned empty text on the tool path\\\")\\nexcept Exception as e:\\n    print(\\\"RAISED:\\\", type(e).__name__, \\\":\\\", e)\\nEOF\", \"description\": \"Demonstrate CircuitBreakerTripped arity bug\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '125,200p' bench/experiment_11_orchestrator.py\", \"description\": \"Read model config definitions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'get(\\\"verified\\\")\\\\|\\\\[\\\"verified\\\"\\\\]\\\\|verified=' bench/reference_runner_v2.py | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'verified' bench/cdsfl_registry/*.py 2>/dev/null | head -20; echo \\\"=== gate/convergence consumers ===\\\"; sed -n '5940,6045p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0, str(pathlib.Path('bench').resolve()))\\nsys.path.insert(0, str(pathlib.Path('.').resolve()))\\nfrom bench.reference_runner_v2 import _unlocated_novelty_key\\n\\nPREFIX = (\\\"The runner fails to preserve context between rounds and the effect is \\\"\\n          \\\"visible in the aggregate report where entries appear inconsistent. \\\")*2\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def open_crit_high_count\\\" -A 30 bench/reference_runner_v2.py bench/*.py 2>/dev/null | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, types, time\\nsys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as O\\n\\nCALLS = {\\\"n\\\": 0}\\n\\n# ---- fake google.genai ----\\nclass _Part:\\n    def __init__(self, text=None): self.text = text\\n    @staticmethod\\n    def from_function_response(name, response): return _Part(text=\\\"fr\\\")\\nclass _Content:\\n    def __init__(self, role=None, parts=No"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff --stat a775a32 HEAD -- bench/tests/test_generic_location_bucket.py; echo \\\"exit=$? (empty=unchanged)\\\"; grep -c \\\"\\\" bench/tests/test_generic_location_bucket.py; grep -rn \\\"_unlocated_novelty_key\\\\|_routing_similarity\\\" bench/tests/ | head -20\", \"description\": \"Check test coverage for bucket/similarity functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5,112p' /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/d.txt\", \"description\": \"Show call_claude_cli and call_codex diff hunks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show a775a32:bench/reference_runner_v2.py | grep -n \\\"description\\\\\\\": finding.description\\\" ; echo \\\"=== old context ===\\\"; git show a775a32:bench/reference_runner_v2.py | sed -n '1420,1440p'\", \"description\": \"Check old registration description cap\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -3 /tmp/pytest_full.log; echo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom reference_runner_v2 import FindingRegistry\\nr=FindingRegistry()\\nfor st in (\\\"OPEN\\\",\\\"CONFIRMED\\\",\\\"CLOSED\\\",\\\"CONTESTED\\\",\\\"CORROBORATED\\\",\\\"WITHHELD\\\",\\\"REFUTED\\\",\\\"UNCONFIRMED\\\"):\\n    r.entries[st]={\\\"status\\\":st,\\\"severity\\\":0.9,\\\"verdicts\\\":[]}\\nprint(\\\"op"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, types\\nsys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as O\\nCALLS={\\\"n\\\":0}\\nclass _Part:\\n    def __init__(self, text=None, function_call=None):\\n        self.text=text; self.function_call=function_call\\n    @staticmethod\\n    def from_function_response(name,response): return _Part(text=\\\"fr\\\")\\nclass _FC:\\n    name=\\\"execute_python\\\"; ar"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '540,600p' bench/experiment_11_orchestrator.py\", \"description\": \"Read openai tool loop tail for round-trip count\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"get(\\\\\\\"description\\\\\\\"\\\\|\\\\['description'\\\\]\\\\|\\\\[\\\\\\\"description\\\\\\\"\\\\]\\\\|\\\\.description\\\" bench/reference_runner_v2.py | grep -v \\\"\\\\[:[0-9]\\\" | head -40\", \"description\": \"Find unsliced description consumers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2390,2425p' bench/reference_runner_v2.py; echo \\\"=== 4215 ===\\\"; sed -n '4210,4232p' bench/reference_runner_v2.py\", \"description\": \"Inspect unsliced description prompt sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_PHASE1_GATE_TOKENS\\\\s*=\\\\|_PHASE1_MAX_TOKENS\\\\s*=\\\" bench/decomposed_dispatch.py; echo \\\"=== _gate_turn_budget ===\\\"; sed -n '264,270p' bench/decomposed_dispatch.py; echo \\\"=== override text (first 12 lines) ===\\\"; sed -n '61,80p' bench/decomposed_dispatch.py\", \"description\": \"Get token budget constants and override text\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"description\\\" bench/merge_arbitration.py | head -20\", \"description\": \"Check merge_arbitration prompt slicing\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, types, os\\nsys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as O\\nCALLS={\\\"n\\\":0}\\nclass _Part:\\n    def __init__(self, text=None, function_call=None):\\n        self.text=text; self.function_call=function_call\\n    @staticmethod\\n    def from_function_response(name,response): return _Part(text=\\\"fr\\\")\\nclass _FC: name=\\\"execute_python\\\"; arg"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"desc_truncate\\\" bench/merge_arbitration.py\", \"description\": \"Find desc_truncate default\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 -m pytest bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py -q 2>&1 | tail -25\", \"description\": \"Run the tools-enabled test file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py -q 2>&1 | tail -30\", \"description\": \"Run tools-enabled test file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_error_route_pending\\\\|irreducible_escalation\\\\|error_routed\\\" bench/reference_runner_v2.py | head -50\", \"description\": \"Locate error_route_pending usages\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfor f in ('checkpoint.json','experiment_chain.json','runner_state.json'):\\n    p='bench/logs/sim45_memory_20260830T235237Z/'+f\\n    try: d=json.load(open(p))\\n    except Exception as e: print(f,'ERR',e); continue\\n    s=json.dumps(d)\\n    print(f, 'has stage_timings:', 'stage_timings' in s, '| has llm_classifier:', 'llm_classifier' in s, '| has skin_bar"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4655,4790p bench/reference_runner_v2.py\", \"description\": \"Read _apply_routing body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/checkpoint.json'))\\ndef walk(o,path=''):\\n    if isinstance(o,dict):\\n        if 'stage_timings' in o: yield path, o['stage_timings']\\n        for k,v in o.items(): yield from walk(v,path+'/'+str(k))\\n    elif isinstance(o,list):\\n        for i,v in enumerate(o): yield from walk(v,path+f'[{i}]')"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5835,5850p' bench/reference_runner_v2.py; echo \\\"=== 11410 ===\\\"; sed -n '11405,11425p' bench/reference_runner_v2.py; echo \\\"=== 4420 ===\\\"; sed -n '4418,4430p' bench/reference_runner_v2.py\", \"description\": \"Inspect remaining unsliced description consumers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,90p' bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py\", \"description\": \"Read the no-enable_tools-False assertion scope\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _build_divergence_record\\\" -A 30 bench/reference_runner_v2.py | head -45\", \"description\": \"Inspect _build_divergence_record\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== decomposed_dispatch call sites ===\\\"; grep -rn \\\"decomposed_dispatch(\\\" bench/*.py bench/tools/*.py | grep -v \\\"^bench/decomposed_dispatch.py\\\" | head; echo; echo \\\"=== sim shim 120-145 ===\\\"; sed -n '120,150p' bench/tools/sim_dispatch_shim.py\", \"description\": \"Check decomposed_dispatch callers and sim shim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_build_divergence_record\\\" bench/*.py | head; echo ---; grep -rn \\\"def build_divergence_record\\\" -A 25 bench/divergence*.py 2>/dev/null | head -40\", \"description\": \"Locate divergence record builder\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1800,1850p bench/reference_runner_v2.py\", \"description\": \"Read unverified_critical_count\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11396,11404p' bench/reference_runner_v2.py; grep -rn \\\"def build_divergence_record\\\" bench/ | head\", \"description\": \"Find build_divergence_record source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/routing.py\", \"description\": \"Show routing.py diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=4560 && NR<=4640' bench/reference_runner_v2.py | grep -n \\\"def _apply_routing\\\" ; grep -n \\\"def _apply_routing\\\" bench/reference_runner_v2.py; sed -n 4592,4640p bench/reference_runner_v2.py\", \"description\": \"Find _apply_routing early returns\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== enable_tools in routing.py / falsifier_verify.py ? ===\\\"; grep -c \\\"enable_tools\\\" bench/routing.py bench/falsifier_verify.py; echo; echo \\\"=== falsifier_verify diff ===\\\"; git diff a775a32 HEAD -- bench/falsifier_verify.py | head -40\", \"description\": \"Confirm no enable_tools in routing/falsifier_verify\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"description\\\" bench/dm/_divergence.py | head -20\", \"description\": \"Check divergence module description use\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport numpy as np, json\\nfrom scipy import stats\\nimport statsmodels.api as sm\\n\\nR = [\\n {\\\"skin_barrier\\\":0.0017,\\\"dendritic_v1\\\":0.0012,\\\"dendritic\\\":0.003,\\\"llm_classifier\\\":207.2341,\\\"layer2_llm_active\\\":0.0,\\\"parallel_verification\\\":89.1392,\\\"formalisation\\\":0.0022,\\\"helper_t\\\":0.0004,\\\"helper_t_v2\\\":0.0001,\\\"reconciliation_gate\\\":0.0008,\\\"regulatory_t\\\":0.00"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1545,1560p' bench/reference_runner_v2.py; echo \\\"=== source_hash ===\\\"; grep -rn \\\"source_hash\\\" bench/runner_core.py | head\", \"description\": \"Check canonical id derivation and source_hash\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 1800 python3 -m pytest bench/tests/ -q -x --timeout=300 2>&1 | tail -30\", \"description\": \"Run full test suite\", \"timeout\": 1800000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/ -q -p no:randomly 2>&1 | tail -40\", \"description\": \"Run full test suite\", \"timeout\": 2400000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for n in 4288 6271 9466; do echo \\\"--- line $n ---\\\"; sed -n \\\"${n}p\\\" bench/reference_runner_v2.py; done\", \"description\": \"Check stale line references cited in register comment\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_extract_routing_falsifier\\\" bench/*.py bench/tests/*.py\", \"description\": \"Locate _extract_routing_falsifier\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4482,4575p' bench/reference_runner_v2.py\", \"description\": \"Read current _extract_routing_falsifier in full\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/probe_routes.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Execute dispatch() once per provider string with the network stubbed.\\n\\nRecords whether each route (a) raises TypeError on the tools kwarg,\\n(b) actually receives a non-"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show a775a32:bench/reference_runner_v2.py | grep -n -A 60 \\\"^def _extract_routing_falsifier\\\" | tail -25\", \"description\": \"Show baseline _extract_routing_falsifier body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/probe_routes.py 2>&1 | tail -20\", \"description\": \"Run provider route probe\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad\\ngit show a775a32:bench/reference_runner_v2.py > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/old_rr2.py\\npython3"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== call_claude_cli: allowedTools ===\\\"; grep -n \\\"allowedTools\\\\|--allowed\\\\|permission-mode\\\\|dangerously\\\" bench/experiment_11_orchestrator.py | head; echo; echo \\\"=== call_codex: cmd construction ===\\\"; sed -n '/^def call_codex/,/^def _openai_tools_to_gemini/p' bench/experiment_11_orchestrator.py | grep -n \\\"cmd\\\\|sandbox\\\\|exec\\\\|approval\\\" | head -20\", \"description\": \"Che"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport numpy as np\\nfrom scipy import stats\\nR = [\\n {\\\"skin_barrier\\\":0.0017,\\\"dendritic_v1\\\":0.0012,\\\"dendritic\\\":0.003,\\\"llm_classifier\\\":207.2341,\\\"layer2_llm_active\\\":0.0,\\\"parallel_verification\\\":89.1392,\\\"formalisation\\\":0.0022,\\\"helper_t\\\":0.0004,\\\"helper_t_v2\\\":0.0001,\\\"reconciliation_gate\\\":0.0008,\\\"regulatory_t\\\":0.0083,\\\"fix_evaluation\\\":13.5654},\\n {\\\"s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '600,640p' bench/experiment_11_orchestrator.py; echo \\\"=== call_openrouter wall cap / timeout ===\\\"; sed -n '/^def call_openrouter/,/^def call_codex/p' bench/experiment_11_orchestrator.py | grep -n \\\"per_attempt_wall_cap\\\\|timeout\\\\|max_retries\\\\|tool_loop\\\\|backoff\\\" | head -20\", \"description\": \"Read forced-final block and openrouter timeout handling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad && cat > adv.py <<'PY'\\nimport sys, pathlib, textwrap, json\\nsys.path.insert(0, '/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo')\\nsys.path.insert(0, '/private/var/folders/cc/scptwd_s4cgclnjn59"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport numpy as np, math\\nfrom scipy import stats\\nimport statsmodels.api as sm\\nR = [\\n {\\\"skin_barrier\\\":0.0017,\\\"dendritic_v1\\\":0.0012,\\\"dendritic\\\":0.003,\\\"llm_classifier\\\":207.2341,\\\"layer2_llm_active\\\":0.0,\\\"parallel_verification\\\":89.1392,\\\"formalisation\\\":0.0022,\\\"helper_t\\\":0.0004,\\\"helper_t_v2\\\":0.0001,\\\"reconciliation_gate\\\":0.0008,\\\"regulatory_t\\\":0.0083"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,100p' bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py\", \"description\": \"Read the fence-extraction test file\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/count_roundtrips.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"MEASURE the number of API round trips per dispatch in the tool loop.\\n\\nDrives _run_openai_tool_loop with a fake OpenAI client and counts real\\ncreate() invocations. "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad/count_roundtrips.py 2>&1 | tail -20\", \"description\": \"Measure tool loop round trips\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py -q 2>&1 | tail -5\\necho \\\"=== is there ANY test with two distinct-bodied blocks / last-closer-bad? ===\\\"\\ngrep -rn \\\"second and final\\\\|last bad\\\\|second bad\\\\|last block\\\\|final falsifier\\\" bench/tests/*.py | head\", \"description\": \"Run the fence test and grep for last-block-bad coverage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '705,725p' bench/tests/test_prose_acceptance_stem.py; echo \\\"=== 365-380 of test_prose_prompt_and_falsifier ===\\\"; sed -n '360,380p' bench/tests/test_prose_prompt_and_falsifier.py\", \"description\": \"Inspect last-block-wins tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== per_attempt_wall_cap sites ===\\\"; grep -n \\\"per_attempt_wall_cap\\\" bench/experiment_11_orchestrator.py; echo; echo \\\"=== which function each is in ===\\\"; python3 -c \\\"\\nimport ast,sys\\nsrc=open('bench/experiment_11_orchestrator.py').read()\\nt=ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n,(ast.FunctionDef,)):\\n        seg=ast.get_source_segment(src,n) or ''\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4645,4700p' bench/reference_runner_v2.py\", \"description\": \"Read the routing rung consumer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1286,1360p' bench/runner_core.py\", \"description\": \"Read dispatch_to_model watchdog\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/routing.py | cat\", \"description\": \"Diff routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -3 /tmp/pytest_full.log; echo; python3 - <<'EOF'\\nimport sympy as sp, mpmath as mp, numpy as np, math\\nt,m,K = sp.symbols('t m K', positive=True)\\nsev = sp.log(t/m)/sp.log(K)\\nprint(\\\"=== SymPy: properties of sev = ln(t/m)/ln(K) ===\\\")\\nprint(\\\" sev at t=m      :\\\", sp.simplify(sev.subs(t,m)))\\nprint(\\\" sev at t=K*m    :\\\", sp.simplify(sev.subs(t,K*m)))\\nprint(\\\" d(sev)/dt       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tools/gemini_tool_switch_test.py\", \"description\": \"Read the Gemini tool switch test script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '6960,6995p' bench/reference_runner_v2.py\", \"description\": \"Check which dispatch path the runner uses\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/experiment_11_orchestrator.py | cat\", \"description\": \"Diff the orchestrator (google route + tools)\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -E \\\"^(FAILED|ERROR)\\\" /tmp/pytest_full.log; echo \\\"=== skipped ===\\\"; grep -c \\\"SKIPPED\\\" /tmp/pytest_full.log; grep -n \\\"s\\\\b\\\" /tmp/pytest_full.log | head -0; python3 -m pytest bench/tests -q -rs 2>/dev/null | grep -i \\\"^SKIPPED\\\" | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/ -q -x --timeout=300 -k \\\"tool or dispatch or route or sim_seam or money or free_window\\\" 2>&1 | tail -20\", \"description\": \"Run dispatch and tool related tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"EXECUTE_PYTHON_TOOL\\\" -A 30 bench/experiment_11_orchestrator.py | head -45\", \"description\": \"Read EXECUTE_PYTHON_TOOL schema\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"_run_gemini_tool_loop\\\\|_openai_tools_to_gemini\\\\|call_gemini\\\" bench/tests/ 2>/dev/null; echo \\\"--- count ---\\\"; grep -rn \\\"_run_gemini_tool_loop\\\\|_openai_tools_to_gemini\\\" bench/tests/ --include=*.py | wc -l; echo \\\"--- call_gemini refs in tests ---\\\"; grep -rn \\\"call_gemini\\\" bench/tests/ --include=*.py\", \"description\": \"Grep tests for the Gemini tool loop\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_run_gemini_tool_loop\\\\|_openai_tools_to_gemini\\\\|call_gemini\\\" bench/tests/*.py\", \"description\": \"Grep tests, py files only\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '100,150p' bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py\", \"description\": \"Read the Gemini tool tests in full\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad && cat > gem.py <<'PY'\\nimport sys, types\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo')\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1089,1175p' bench/experiment_11_orchestrator.py\", \"description\": \"Read call_gemini retry/except structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"class CircuitBreakerTripped\\\" -A 20 bench/*.py | head -30\", \"description\": \"Find CircuitBreakerTripped definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nfrom bench.experiment_11_orchestrator import CircuitBreakerTripped\\ntry:\\n    raise CircuitBreakerTripped(\\\"gemini:gemini-3.1-pro-preview returned empty text on the tool path\\\")\\nexcept CircuitBreakerTripped as e:\\n    print(\\\"raised as CircuitBreakerTripped:\\\", e)\\nexcept TypeError as e:\\n    print(\\\"Ty"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad && cat > cb.py <<'PY'\\nimport sys, types, os\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cfz5p7he/repo')\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cd"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/reference_runner_v2.py bench/runner_core.py bench/experiment_11_orchestrator.py; do echo \\\"### $f\\\"; echo \\\"  BEFORE (a775a32):\\\"; git show a775a32:$f 2>/dev/null | grep -n \\\"enable_tools: bool =\\\\|enable_tools=False)\\\\|enable_tools=True)\\\\|falsifier_gate_enabled\\\\\\\", False),\\\" | head; echo \\\"  AFTER (HEAD):\\\"; grep -n \\\"enable_tools: bool =\\\\|enable_tools=False)\\\\|enab"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/scratchpad && cat >> gem.py <<'PY'\\n\\n# 11. inspect what actually lands in the history for the 20k case\\nclass Cap(FakeModels):\\n    def generate_content(self, model=None, contents=None, config=None):\\n        self.last = list(contents)\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== NEW site rrv2:4644 context ===\\\"; sed -n '4636,4652p' bench/reference_runner_v2.py; echo; echo \\\"=== STALE DOCSTRINGS (say default OFF, actually True) ===\\\"; grep -n \\\"GATED, default OFF\\\\|Default False =>\\\\|Default-off\\\\|default OFF\\\" bench/runner_core.py bench/experiment_11_orchestrator.py bench/reference_runner_v2.py | head\", \"description\": \"Check new routing site and st"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _run_openai_tool_loop\\\" -A 45 bench/experiment_11_orchestrator.py | grep -n \\\"20000\\\\|\\\\[:.*\\\\]\\\\|TRUNCAT\\\" | head\", \"description\": \"Compare openai tool loop truncation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_run_openai_tool_loop\\\\|def default_tool_executor\\\" bench/*.py | head; echo ---; grep -rn \\\"20000\\\\|20_000\\\" bench/experiment_11_orchestrator.py bench/openrouter_tools.py 2>/dev/null | head\", \"description\": \"Find the openai loop and other 20k caps\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -E \\\"^FAILED\\\" /tmp/pytest_full.log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '472,540p' bench/experiment_11_orchestrator.py; echo \\\"=== default_tool_executor ===\\\"; sed -n '391,420p' bench/experiment_11_orchestrator.py\", \"description\": \"Read the OpenAI tool loop for comparison\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '540,600p' bench/experiment_11_orchestrator.py\", \"description\": \"Read rest of OpenAI tool loop\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs::test_zero_archived_findings_would_newly_fail_to_close\\\" \\\"bench/tests/test_sim_naming_and_integrity_directive.py::TestLiveArtefacts::test_no_bare_vendor_name_in_any_simulated_artefact\\\" -q 2>&1 | tail -60\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '600,650p' bench/experiment_11_orchestrator.py\", \"description\": \"Read openai max_iters exhaustion path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs::test_zero_archived_findings_would_newly_fail_to_close\\\" -q 2>&1 | head -60\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git ls-files --error-unmatch bench/logs/immune_pipeline.log 2>&1 | head -2; echo \\\"---\\\"; git status --short bench/logs/ | head -5; echo \\\"--- is logs gitignored? ---\\\"; git check-ignore -v bench/logs/immune_pipeline.log; echo \\\"--- mtime ---\\\"; ls -la bench/logs/immune_pipeline.log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== tests referencing the OpenAI loop ===\\\"; grep -rln \\\"_run_openai_tool_loop\\\" bench/tests/*.py\\necho; echo \\\"=== tests that CALL (not just hasattr) the gemini loop ===\\\"; grep -rn \\\"_run_gemini_tool_loop(\\\" bench/tests/*.py; echo \\\"(none above = zero invocations)\\\"\\necho; echo \\\"=== tests mentioning gemini + tool ===\\\"; grep -rln \\\"gemini\\\" bench/tests/*.py | head\", \"descrip"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CircuitBreakerTripped\\\" bench/tests/test_circuitbreaker_pickle_safety.py | head -20; echo \\\"=== does any test assert the 4-arg contract ===\\\"; grep -rn \\\"missing 2 required\\\\|condition, model, phase\\\\|CircuitBreakerTripped(\\\" bench/tests/*.py | head\", \"description\": \"Check circuit breaker construction test coverage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport ast, pathlib\\nbad=[]\\nfor p in pathlib.Path('bench').rglob('*.py'):\\n    try: t=ast.parse(p.read_text(encoding='utf-8', errors='replace'))\\n    except Exception: continue\\n    for n in ast.walk(t):\\n        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id==\\\"CircuitBreakerTripped\\\":\\n            if len(n.args) < 3 and not n.keywords:\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, collections\\nroot=pathlib.Path('bench/logs')\\ntot=collections.Counter(); byrun=collections.Counter()\\nexamples=[]\\nfor p in sorted(root.glob('*/runner_state.json'))+sorted(root.glob('*/*report.json')):\\n    try: d=json.load(open(p))\\n    except Exception: continue\\n    ents=(d.get('registry') or {}).get('entries') or {}\\n    for cid,e in ents.i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re\\nsrc = open('bench/reference_runner_v2.py').read().split('\\\\n')\\nfor i in range(4418,0,-1):\\n    if re.match(r'^def ', src[i-1]):\\n        print(\\\"routing prompt builder:\\\", i, src[i-1]); break\\nPY\\ngrep -rn \\\"description'\\\\]\\\\[:\\\\|description\\\\\\\")\\\\[:\\\\|description\\\\\\\") or \\\\\\\"\\\\\\\")\\\\[:\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Identify p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom bench.reference_runner_v2 import _routing_resolve_prompt\\nimport inspect\\nprint(inspect.signature(_routing_resolve_prompt))\\nfor n in (200, 500, 2000):\\n    p = _routing_resolve_prompt({\\\"id\\\":\\\"C0001\\\",\\\"description\\\":\\\"D\\\"*n}, \\\"t.py\\\", \\\"src\\\", None)\\n    print(f\\\"stored description {n:5"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, collections\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport scipy.stats as st\\nroot=pathlib.Path('bench/logs')\\nseen={}\\nfor p in sorted(root.glob('*/*.json')):\\n    if p.name not in ('runner_state.json',) and not p.name.endswith('report.json'): continue\\n    try: d=json.load(open(p))\\n    except Exception: continue\\n    fo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 - <<'PY'\\nimport json, pathlib, collections\\nlens=collections.Counter(); total=0\\nfor p in pathlib.Path('bench').rglob('runner_state.json'):\\n    try: d=json.loads(p.read_text())\\n    except Exception: continue\\n    ents = d.get('registry',{}).get('entries') or d.get('entries') or {}\\n    if isinstance(ents, dict): ents=ents.values()\\n    for e in ents:\\n        if"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"max_tool_iters\\\" bench/runner_core.py | head; echo \\\"--- wall_limit ---\\\"; sed -n '6968,6998p' bench/reference_runner_v2.py; echo \\\"--- deepseek tools=None ---\\\"; sed -n '1255,1275p' bench/runner_core.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nlens=collections.Counter(); total=0; files=0\\nfor p in pathlib.Path('bench').rglob('runner_state.json'):\\n    files+=1\\n    try: d=json.loads(p.read_text())\\n    except Exception: continue\\n    ents = d.get('registry',{}).get('entries') or d.get('entries') or {}\\n    if isinstance(ents, dict): ents=ents.values()\\n    for e in ents:\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"max_tool_iters\\\\|_ds_repair\\\\|tools = None\\\\|wall_clock_limit\\\" bench/experiment_11_orchestrator.py | head -20; echo \\\"=== deepseek ctx ===\\\"; sed -n '1250,1275p' bench/experiment_11_orchestrator.py; echo \\\"=== openrouter wall cap? ===\\\"; grep -n \\\"def call_openrouter\\\" -A 25 bench/experiment_11_orchestrator.py | grep -n \\\"timeout\\\\|deadline\\\\|monotonic\\\\|wall\\\" \"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py bench/tests/test_fence_extraction_survives_every_shape_2026-08-30.py bench/tests/test_circuitbreaker_pickle_safety.py -q 2>&1 | tail -6\", \"description\": \"Run the targeted test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"timeout\\\" bench/exp45_configs/*.json | head -5; echo \\\"=== ModelConfig timeout default ===\\\"; grep -n \\\"timeout\\\" bench/experiment_11_orchestrator.py | grep -i \\\"class\\\\|: int = \\\\|timeout:\\\" | head -10\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"claude -p\\\\|claude\\\\\\\", \\\\\\\"-p\\\\|allowedTools\\\\|CLAUDE.md\\\\|settings\\\\|--print\\\\|subprocess\\\" bench/tools/run_simulated_experiment.py bench/tools/sim_dispatch_shim.py | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '58,96p' bench/tests/test_descriptions_are_not_silently_cut_2026-08-31.py\", \"description\": \"Read rest of the truncation test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '120,200p' bench/tools/sim_dispatch_shim.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --help 2>&1 | grep -iE \\\"setting|config|append-system|system-prompt|strict|no-.*config|dangerously\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --help 2>&1 | sed -n '1,200p' | grep -B2 -A6 -- \\\"--setting-sources\\\\|--system-prompt\\\\b\\\\|--add-dir\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_bounded_description(block)\\\\|_bounded_description(response)\\\\|_DESCRIPTION_LIMIT = \\\\|def _bounded_description\\\" bench/runner_core.py; echo ---; grep -n \\\"str(result)\\\\[:20000\\\\]\\\\|raise CircuitBreakerTripped($\\\" bench/experiment_11_orchestrator.py | head; echo ---; sed -n '1131,1135p' bench/experiment_11_orchestrator.py; echo \\\"--- gemini loop lines ---\\\"; grep -n \\\"def _r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --help 2>&1 | grep -B12 \\\"Skills still resolve\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && mkdir -p bare_probe && cd /tmp/bare_probe && echo \\\"--- A: default (inherits user config) ---\\\" && claude -p \\\"Answer with ONE word only. Does your instruction context contain the exact token p-pass-wildcard ? Reply YES or NO.\\\" --model sonnet --output-format text --allowedTools \\\"\\\" 2>&1 | tail -3\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/bare_probe && echo \\\"=== B: --setting-sources project ===\\\" && claude -p \\\"Answer with ONE word only. Does your instruction context contain the exact token p-pass-wildcard ? Reply YES or NO.\\\" --model sonnet --output-format text --allowedTools \\\"\\\" --setting-sources project 2>&1 | tail -3; echo \\\"=== C: --bare ===\\\"; claude -p \\\"Answer with ONE word only. Does your instruction"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '268,282p' .claude/CLAUDE.md; echo \\\"=== grep for the two rules ===\\\"; grep -rn \\\"SIM-A\\\\|-SIM\\\\b\\\\|2026-08-05\\\\|2026-08-08\\\" .claude/CLAUDE.md | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude -p \\\"Answer with ONE word only, YES or NO. Does your instruction context contain the exact string 'CDSFL Project'?\\\" --model sonnet --output-format text --allowedTools \\\"\\\" --setting-sources project 2>&1 | tail -3\", \"timeout\": 240000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_corrected_copy_wiring.py::TestTheArchiveIsUntouched bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts -q 2>&1 | grep -E \\\"^E |assert|Error\\\" | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def skin_barrier\\\" -A 45 bench/immune_agents.py | head -60\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:randomly \\\"bench/tests/test_corrected_copy_wiring.py::TestTheArchiveIsUntouched\\\" \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs\\\" 2>&1 | grep -v \\\"^bench/tests\\\" | head -80\", \"description\": \"Detail on archive test failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom bench.immune_agents import skin_barrier_check\\nfrom bench.reference_runner_v2 import parse_findings\\nimport inspect\\n# Build findings the way the runner does, then push through the barrier.\\nreply = \\\"\\\"\\\"\\nFINDING 1\\nSEVERITY: 0.6\\nDESCRIPTION: Labelling the simulated agents CC2-SIM violates the p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --diff-filter=A -- 'bench/logs/sim45_memory_20260830T235237Z*' | cat; echo \\\"---\\\"; git diff --stat a775a32 HEAD -- bench/logs | tail -5; echo \\\"--- were these tests passing at a775a32? ---\\\"; git stash list | cat\", \"description\": \"Check when sim logs were added\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1128,1140p' bench/experiment_11_orchestrator.py; echo \\\"=== class sig ===\\\"; sed -n '223,232p' bench/experiment_11_orchestrator.py; echo \\\"=== live check ===\\\"; python3 -c \\\"\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom bench.experiment_11_orchestrator import CircuitBreakerTripped as C\\ntry:\\n    raise C('gemini returned empty text on the tool path')\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"skin_barrier_check\\\" bench/immune_agents.py | head; echo \\\"=== caller ===\\\"; sed -n '5660,5675p' bench/immune_agents.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git worktree add /private/tmp/claude-501/base a775a32 2>&1 | tail -3\", \"description\": \"Create baseline worktree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nfor cid in ('C0021','C0022','C0023'):\\n    e=d['registry']['entries'][cid]\\n    print(f\\\"--- {cid} status={e['status']} sev={e.get('severity')} source={e.get('source_model')}\\\")\\n    print(\\\"   desc:\\\", (e.get('description') or '')[:260].replace('\\\\n',' '))\\nEOF\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom reference_runner_v2 import _extract_routing_falsifier as new\\nreply = \\\"\\\"\\\"Here is my first attempt.\\n\\n```python\\nimport a\\nassert a.x, 'first'\\n```\\n\\nSuperseded. FINAL falsifier:\\n\\n```python\\nimport b\\nassert b.y, 'second and final'\\n``` done\\n\\\"\\\"\\\"\\nprint(\\\"NEW strict->permissive picks:\\\\n\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/base && python3 -m pytest -q -p no:randomly \\\"bench/tests/test_corrected_copy_wiring.py::TestTheArchiveIsUntouched\\\" \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs\\\" \\\"bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts\\\" \\\"bench/tests/test_sim_naming_and_integrity_directive.py::TestLiveArtef"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show a775a32:bench/reference_runner_v2.py > /tmp/old_rr.py 2>/dev/null && python3 - <<'EOF'\\nimport re, ast, sys\\nsrc=open('/tmp/old_rr.py').read()\\n# pull out the old function + its helper _runnable by exec'ing just those defs\\ntree=ast.parse(src)\\nwant={'_extract_routing_falsifier','_runnable','_looks_runnable'}\\nns={'re':re,'ast':ast}\\nfound=[]\\nfor n in tree.body:\\n    if isin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom runner_core import parse_findings, _DESCRIPTION_LIMIT\\nprint(\\\"_DESCRIPTION_LIMIT =\\\", _DESCRIPTION_LIMIT)\\nfs = parse_findings(\\\"M\\\", 0, \\\"W\\\"*5000)\\nd = fs[0].description\\nprint(\\\"parsed len:\\\", len(d), \\\"| marker present:\\\", \\\"TRUNCATED\\\" in d)\\nstored = d[:2000]   # exactly what reference_runne"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:randomly \\\"bench/tests/test_discrimination_control.py::TestTheArchiveSaysHowAggressiveThisIs\\\" 2>&1 | sed -n 1,120p\", \"description\": \"Detail on discrimination archive test\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_ASK_CORRECTED_COPY\\\" bench/reference_runner_v2.py; echo \\\"===\\\"; grep -n \\\"def _gate_falsifier_directive\\\" -A 8 bench/reference_runner_v2.py | head -20\", \"description\": \"Inspect ask global and gate directive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys, time, pathlib\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nstale=['C0002','C0003','C0004','C0006','C0007','C0009','C0010','C0011','C0017','C0018','C0020']\\nfrom fix_efficacy import probe, REPO_ROOT\\ntgt='bench/dm/_memory.py"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 7120,7145p bench/reference_runner_v2.py; echo \\\"=== 7215-7240 ===\\\"; sed -n 7215,7240p bench/reference_runner_v2.py\", \"description\": \"Check executor type for dispatch rounds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"falsifier_gate_enabled\\\" bench/ scripts/ --include=\\\"*.py\\\" --include=\\\"*.json\\\" | grep -v \\\"^bench/tests/\\\" | head -40\", \"description\": \"Find falsifier_gate_enabled usages outside tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, hashlib, sys\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\n# how does the runner compute falsifier_sha?\\nimport reference_runner_v2 as R, inspect, re\\nsrc=inspect.getsource(R.run_discrimination_control)\\nm=re.search(r'falsifier_s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/exp*_configs/*.json bench/configs/*.json; do [ -f \\\"$f\\\" ] || continue; v=$(python3 -c \\\"import json,sys;d=json.load(open('$f'));print(d.get('falsifier_gate_enabled','ABSENT'))\\\" 2>/dev/null); echo \\\"$v  $f\\\"; done | sort | head -50\", \"description\": \"Survey falsifier_gate_enabled across configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4015,4090p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, os\\nrows=[]\\nfor f in glob.glob('bench/**/*.json', recursive=True):\\n    if '/logs/' in f or '/archive' in f: continue\\n    try:\\n        d=json.load(open(f))\\n    except Exception: continue\\n    if isinstance(d,dict) and ('test_article' in d or 'experiment_name' in d):\\n        rows.append((str(d.get('falsifier_gate_enabled','ABSENT')), str(d.get"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"dispatch_to_model(\\\\|dispatch(\\\" bench/*.py bench/**/*.py 2>/dev/null | grep -v \\\"def dispatch\\\" | grep -v tests | head -40\", \"description\": \"Find dispatch call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for L in 5007 6730 7035 7899 9546; do echo \\\"=== $L ===\\\"; sed -n \\\"$((L-3)),$((L+10))p\\\" bench/reference_runner_v2.py; done\", \"description\": \"Inspect dispatch_to_model call sites lacking enable_tools\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\ne=d['registry']['entries']['C0013']\\nfor k in ('resolved_by_routing','escalated','irreducible_escalation','hil_escalated','mechanical_fault','falsifier_verdict','verified','status','hil_reason'):\\n    v=e.get(k)\\n    print(f\\\"  {k:24s} = {str(v)[:110]}\\\")\\nprint(\\\"\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4755,4772p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"secondary_api\\\\|secondary_model_id\\\\|api=\\\\\\\"google\\\\\\\"\\\\|api='google'\\\\|ModelConfig(\\\" bench/experiment_11_orchestrator.py | sed -n 1,60p\", \"description\": \"Find model config routes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6650,6690p bench/reference_runner_v2.py; echo \\\"=== decomposed_dispatch sig ===\\\"; sed -n 1231,1270p bench/decomposed_dispatch.py; echo \\\"=== enable_tools in decomposed_dispatch ===\\\"; grep -n \\\"enable_tools\\\" bench/decomposed_dispatch.py | head -20\", \"description\": \"Inspect decomposed_dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_apply_falsifier_gate(\\\\|_apply_routing(\\\\|_update_finding_statuses(\\\" bench/reference_runner_v2.py | sed -n '1,20p'\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10670,10700p' bench/reference_runner_v2.py; echo \\\"=== where is the gate called? ===\\\"; grep -n \\\"_apply_falsifier_gate\\\\|falsifier_gate(\\\" bench/reference_runner_v2.py | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"resolved_by_routing\\\" bench/tests/ | head; echo \\\"--- any test that routing-attached falsifiers reach the control? ---\\\"; grep -rn \\\"resolved_by_routing\\\" bench/tests/*.py | grep -i \\\"disc\\\\|mechanical\\\" | head; echo \\\"--- tests naming mechanical_fault + routing ---\\\"; grep -rln \\\"mechanical_fault\\\" bench/tests/*.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '140,175p' bench/tests/test_disc_failure_routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '175,215p' bench/tests/test_disc_failure_routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport runner_core as RC\\nprint(\\\"Fable spec:\\\", RC.MODEL_SPECS.get(\\\"Fable\\\"))\\nprint(\\\"_spec_key('Fable-SIM') ->\\\", RC._spec_key(\\\"Fable-SIM\\\"))\\nprint(\\\"_spec_key('CC2') ->\\\", RC._spec_key(\\\"CC2\\\"))\\nclass MC:\\n    label=\\\"Fable\\\"; api=\\\"claude_cli\\\"; model_id=\\\"fable\\\"; max_tokens=1; timeout=1\\n    max_retries=1; backoff_b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/test_stale_mech.py <<'PY'\\n\\\"\\\"\\\"Does a routing success clear the mechanical_fault stamp left by the OLD falsifier?\\\"\\\"\\\"\\nimport sys, pathlib\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nsys.path.insert(0, 'bench/tests')\\nfrom unittest import mock\\nimport reference_runner_v2 as rr\\nfrom test_disc_failure_routing import (_entry, _exp_config, STRONG_REPLY,\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '700,730p' bench/experiment_11_orchestrator.py; echo \\\"=== does call_openrouter bound the whole loop? ===\\\"; awk 'NR>=650 && NR<=760' bench/experiment_11_orchestrator.py | grep -n \\\"ThreadPoolExecutor\\\\|\\\\.result(timeout\\\\|monotonic\\\\|deadline\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity=min(1.0, t / (median_t \\\\* 10))\\\\|median_t = sorted\\\\|TIMING_SPIKE_FACTOR: float\\\\|_round_history.append\\\" bench/macrophage_cell.py; echo \\\"---\\\"; grep -n \\\"e\\\\[\\\\\\\"verified\\\\\\\"\\\\] = True\\\" bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-cfz5p7he-repo/593f3f11-3d8f-4cef-ac4d-b55c0db46575/tasks/bhwyfw6ma.output\", \"description\": \"Check background output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pkill -f \\\"spawn_main\\\" 2>/dev/null; sed -n 6975,7035p bench/reference_runner_v2.py\", \"description\": \"Check ValueError handling around dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _apply_discrimination_control\\\" -A 45 bench/reference_runner_v2.py | sed -n 1,60p\", \"description\": \"Read _apply_discrimination_control head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4060,4150p bench/reference_runner_v2.py\", \"description\": \"Read rest of discrimination control\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\n\\ndef build(flag):\\n    reg = R.FindingRegistry()\\n    e = {\\\"status\\\":\\\"CONFIRMED\\\",\\\"verdicts\\\":[],\\\"open_since_round\\\":0,\\n         \\\"last_status_change_round\\\":0,\\\"severity\\\":0.9,\\n         \\\"falsifier_code\\\":\\\"assert True\\\",\\\"corrected_copy\\\":\\\"x = 1\\\\n\\\",\\n         \\\"description\\\":\\\"d\\\",\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\n\\nR.run_discrimination_control = lambda entry, repo_root=None, target_rel=\\\"\\\": {\\n    \\\"outcome\\\": R.DISC_FAILED, \\\"detail\\\": \\\"forced NON_DISCRIMINATING\\\",\\n    \\\"falsifier_sha\\\": \\\"a\\\", \\\"corrected_sha\\\": \\\"b\\\",\\n    \\\"baseline_verdict\\\": \\\"CONFIRMED\\\", \\\"corrected_verdict\\\": \\\"CONFIRMED\\\",\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/tmp/claude-501/disc_test.py <<'EOF'\\nimport sys, os\\nsys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bench'))\\nEOF\\ncp /private/tmp/claude-501/disc_test.py /private/tmp/claude-501/base/disc_test.py\\ncat >> /private/tmp/claude-501/base/disc_test.py <<'PY'\\nsys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nR.run_discrimination_contr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"corrected_copy\\\\\\\"\\\\]\\\\s*=\\\\|\\\\\\\"corrected_copy\\\\\\\"\\\\] =\\\\|_corrected_copy_from_proposed_fix\\\\|def _accept_corrected_copy\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find where corrected_copy is set\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 3540,3580p bench/reference_runner_v2.py; echo \\\"=== callers ===\\\"; grep -n \\\"_accept_corrected_copy(\\\\|_ingest_corrected_copies\\\\|def _ingest\\\" bench/reference_runner_v2.py | head\", \"description\": \"Trace corrected_copy ingestion\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10670,10700p bench/reference_runner_v2.py; echo \\\"=== 3770-3800 ===\\\"; sed -n 3765,3800p bench/reference_runner_v2.py\", \"description\": \"Check ingest call site and proposed-fix derivation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport runner_core as RC\\n# a reply that fails to parse -> the response[:500] / _bounded_description fallback\\nresp = \\\"The code is fine. \\\" * 400   # ~7200 chars, no finding markers\\nfs = RC.parse_findings(\\\"CC2\\\", 1, resp)\\nprint(\\\"findings:\\\", len(fs))\\nfor f in fs:\\n    print(\\\" desc len:\\\", len(f.description), \\\"| tail:\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def .*similarity\\\\|jaccard\\\\|_semantic_dup\\\\|def triage\\\" bench/*.py | grep -v test | head -20\", \"description\": \"Find similarity/dedup functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"is_duplicate\\\\|duplicate_of\\\" bench/runner_core.py | head -20; echo \\\"=== triage ===\\\"; grep -rn \\\"def triage_finding\\\\|def triage\\\\|TriageResult\\\" bench/*.py | grep -v test | head\", \"description\": \"Find triage/dedup path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"is_duplicate\\\" bench/ --include=*.py | grep -v tests | head -20\", \"description\": \"Find is_duplicate producers\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"is_duplicate\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"!tests/**\", \"head_limit\": 25}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4390,4430p bench/immune_agents.py; echo \\\"=== 3120-3140 ===\\\"; sed -n 3120,3140p bench/immune_agents.py\", \"description\": \"Inspect NK cell dedup similarity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _finding_similarity\\\" -A 40 bench/immune_agents.py | head -50\", \"description\": \"Read _finding_similarity\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_finding_similarity\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"*.py\", \"head_limit\": 15}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _finding_similarity\\\" -A 45 bench/dm/_convergence.py\", \"description\": \"Read the real similarity function\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport inspect,sys; sys.path.insert(0,'.')\\nfrom bench.dm._convergence import _finding_similarity as f\\nprint(inspect.getsourcefile(f)); print(inspect.getsource(f))\\\"\", \"description\": \"Get similarity source via inspect\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport runner_core as RC\\nfrom bench.dm._similarity import jaccard_similarity\\n\\ncommon = \\\"The memory module leaks handles when the cache evicts. \\\" * 10   # ~540 chars\\na = common + \\\" \\\" + \\\"alpha beta gamma delta epsilon zeta eta theta \\\" * 40\\nb = common + \\\" \\\" + \\\"omega psi chi phi upsilon tau si"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"tau_sim\\\\s*[:=]\\\\|SEMANTIC_NOVELTY_THRESHOLD\\\\s*=\\\\|SIMILARITY_THRESHOLD\\\\s*=\\\" bench/*.py bench/dm/*.py | grep -v tests | head -15\", \"description\": \"Find dedup thresholds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.dm import _similarity as S\\nm = S._get_embedding_model()\\nprint('embedding model:', m)\\n\\\" 2>&1 | tail -3; python3 -c \\\"import sentence_transformers\\\" 2>&1 | tail -1\\necho \\\"--- immune_agents NK real call ---\\\"\\npython3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport runner_core as RC\\nfrom"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/base && python3 - <<'EOF' 2>&1 | tail -3\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport runner_core as RC\\nfrom bench.dm._convergence import _finding_similarity\\ncommon = \\\"The memory module leaks handles when the cache evicts. \\\" * 10\\na = common + \\\" \\\" + \\\"alpha beta gamma delta epsilon zeta eta theta \\\" * 40\\nb = common + \\\" \\\" +"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF' 2>&1 | tail -8\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.dm._similarity import jaccard_similarity, embedding_similarity\\nfrom bench.runner_core import Finding\\ndef mk(mid, d): return Finding(finding_id=mid+\\\"_F001\\\", model_id=mid, round_idx=1,\\n        flaw_class=1, severity=0.3, abstraction_index=0.3, description=d,\\n        verified=False, origin_type=\\\"model"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers as rank\\nimport inspect\\nprint(inspect.signature(rank))\\ncases = [\\n  ([\\\"CC2\\\",\\\"Codex\\\",\\\"Gemini\\\",\\\"DeepSeek\\\",\\\"ChatGPT\\\"], ()),\\n  ([\\\"ChatGPT\\\",\\\"Gemini\\\",\\\"CC2\\\"], (\\\"CC2\\\",)),\\n  ([\\\"CC2\\\",\\\"CC2\\\",\\\"Gemini\\\"], ()),           # duplicate label\\n  ([\\\"CC2-SIM\\\",\\\"Gemini-SIM\\\","
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CDSFL_CANONICAL_REPO\\\" --include=* . 2>/dev/null | grep -v \\\"^./.git/\\\" | head -20; echo \\\"=== _extract_routing_falsifier callers ===\\\"; grep -n \\\"_extract_routing_falsifier\\\" bench/reference_runner_v2.py\", \"description\": \"Find CDSFL_CANONICAL_REPO setters\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CDSFL_CANONICAL_REPO\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 20}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 355,440p bench/falsifier_verify.py; echo \\\"=== callers ===\\\"; grep -n \\\"_allow_roots\\\" bench/falsifier_verify.py\", \"description\": \"Read _allow_roots and callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 630,660p bench/falsifier_verify.py; echo \\\"=== 710-735 ===\\\"; sed -n 710,740p bench/falsifier_verify.py\", \"description\": \"Check how allow roots are consumed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, os, tempfile; sys.path.insert(0,'.')\\nimport bench.falsifier_verify as FV\\nsecret = tempfile.mkdtemp(prefix=\\\"canon_\\\")\\nopen(os.path.join(secret,\\\"scoring_key.json\\\"),\\\"w\\\").write('{\\\"answer\\\":42}')\\nos.environ.pop(\\\"CDSFL_CANONICAL_REPO\\\", None)\\nprint(\\\"WITHOUT env:\\\", FV._allow_roots(None))\\nos.environ[\\\"CDSFL_CANONICAL_REPO\\\"] = secret\\nroots = FV._"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 620,632p bench/falsifier_verify.py\", \"description\": \"Get the observer render function name\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, os, tempfile; sys.path.insert(0,'.')\\nimport bench.falsifier_verify as FV\\nsecret = tempfile.mkdtemp(prefix=\\\"canon_\\\")\\nos.environ[\\\"CDSFL_CANONICAL_REPO\\\"] = secret\\nsrc = FV._observer_source(\\\"/tmp/trace\\\", str(FV.REPO_ROOT))\\nreal = os.path.realpath(secret)\\nprint(\\\"secret dir       :\\\", real)\\nprint(\\\"in CHILD observer allowlist:\\\", real in src)\\n# "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, os, tempfile; sys.path.insert(0,'.')\\nimport bench.falsifier_verify as FV\\nsecret = tempfile.mkdtemp(prefix=\\\"canon_\\\")\\nreal = os.path.realpath(secret)\\ncode = f\\\"data = open('{real}/answers.json').read()\\\\n\\\"\\nos.environ.pop(\\\"CDSFL_CANONICAL_REPO\\\", None)\\nprint(\\\"scan WITHOUT env :\\\", FV.scan_falsifier_source(code, repo_root=str(FV.REPO_ROOT)))\\nos.e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, os, tempfile; sys.path.insert(0,'.')\\nimport bench.falsifier_verify as FV\\nhome = os.path.expanduser(\\\"~\\\")\\nsecret = os.path.join(home, \\\"canon_probe_tmp\\\")\\nos.makedirs(secret, exist_ok=True)\\ncode = f\\\"data = open('{secret}/answers.json').read()\\\\n\\\"\\nos.environ.pop(\\\"CDSFL_CANONICAL_REPO\\\", None)\\nprint(\\\"scan WITHOUT env :\\\", FV.scan_falsifier_sourc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def record_codiscovery\\\" -A 30 bench/reference_runner_v2.py | head -40; echo \\\"=== source_aliases consumers ===\\\"; grep -n \\\"source_aliases\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Inspect record_codiscovery and source_aliases use\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1530,1548p bench/reference_runner_v2.py; echo \\\"=== 9225-9250 ===\\\"; sed -n 9222,9255p bench/reference_runner_v2.py\", \"description\": \"Check record_codiscovery body and alias consumer at 9233\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"c_ext = \\\\|c_ext=\\\\|nu_k_by_finding = \\\\|nu_k_by_finding=\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find c_ext / nu_k_by_finding sources\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10930,10965p bench/reference_runner_v2.py; echo \\\"=== ouroboros config flags ===\\\"; python3 -c \\\"\\nimport json,glob\\nfor f in ['bench/exp45_configs/45_memory_statistics_live.json','bench/exp55_configs/55_v3_control.json']:\\n    d=json.load(open(f)); print(f, {k:v for k,v in d.items() if 'ouro' in k or 'shadow' in k})\\\"\", \"description\": \"Check ouroboros enablement in real config"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_dispatch_worker\\\" bench/runner_core.py; echo \\\"=== resume reader ===\\\"; grep -n \\\"runner_state.json\\\" bench/reference_runner_v2.py | head; echo \\\"=== keys read on resume ===\\\"; grep -n \\\"_ckpt_data\\\\|json.loads(ckpt\\\\|ckpt.*read_text\\\" bench/reference_runner_v2.py | head\", \"description\": \"Check dispatch_worker callers and resume\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1320,1340p bench/runner_core.py; echo \\\"=== 11880-11900 ===\\\"; sed -n 11878,11900p bench/reference_runner_v2.py\", \"description\": \"Check worker spawn and post-sweep persist\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport ast\\nsrc = open('bench/reference_runner_v2.py').read()\\nt = ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n, ast.Call) and getattr(n.func,'id','')=='_multiturn_fallback':\\n        print(\\\"line\\\", n.lineno, \\\"positional args:\\\", len(n.args),\\n              \\\"kwargs:\\\", [k.arg for k in n.keywords])\\nEOF\", \"description\": \"AST check of _multiturn_fallb"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6950,6975p bench/reference_runner_v2.py; echo \\\"=== baseline same region ===\\\"; cd /private/tmp/claude-501/base && python3 - <<'EOF'\\nimport ast\\nsrc = open('bench/reference_runner_v2.py').read()\\nt = ast.parse(src)\\nfor n in ast.walk(t):\\n    if isinstance(n, ast.Call) and getattr(n.func,'id','')=='_multiturn_fallback':\\n        print(\\\"BASE line\\\", n.lineno, \\\"pos:\\\", len(n.a"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nfor lab in [\\\"CC2\\\",\\\"Gemini\\\",\\\"Codex\\\",\\\"DeepSeek\\\",\\\"ChatGPT\\\",\\\"Fable\\\",\\\"CC2-SIM\\\",\\\"Gemini-SIM\\\",\\\"\\\",\\\"SIM\\\"]:\\n    print(f\\\"{lab!r:14s} base={R.base_model_label(lab)!r:12s} describe={R.describe_model(lab)!r}\\\")\\nEOF\", \"description\": \"Test base_model_label/describe_model both branches\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"fix_efficacy\\\" bench/reference_runner_v2.py bench/fix_efficacy.py | grep -v \\\"^bench/reference_runner_v2.py:29[0-9][0-9]\\\" | head -30; echo \\\"=== NO_FALSIFIER const ===\\\"; grep -n \\\"NO_FALSIFIER\\\" bench/fix_efficacy.py | head\", \"description\": \"Trace fix_efficacy consumers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 9375,9420p bench/reference_runner_v2.py\", \"description\": \"Read fix_efficacy consumers at 9390/9405\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff check bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py bench/falsifier_verify.py bench/routing.py 2>&1 | tail -30\", \"description\": \"Lint the changed files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff check --output-format=concise bench/reference_runner_v2.py bench/experiment_11_orchestrator.py bench/runner_core.py bench/routing.py bench/falsifier_verify.py 2>&1 | grep -viE \\\"E402|E501\\\" | head -40\", \"description\": \"Filter lint to substantive issues\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff a775a32 HEAD -- bench/reference_runner_v2.py bench/runner_core.py | grep -nE \\\"^[+-]\\\" | grep -viE \\\"^[+-]{3}\\\" | grep -iE \\\"gamma|converg|two_sided|zero_new|consecutive|kappa|rho\\\" | head -20\", \"description\": \"Check diff for gamma/convergence edits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\n# strict/loose two-pass extractor: both branches\\ngood = \\\"text\\\\n```python\\\\nassert 1 == 2, 'FALSIFIED'\\\\n```\\\\n\\\"\\nmalformed = \\\"```python\\\\nassert 1==2\\\\n``` -- run that.\\\\n```python\\\\nimport os\\\\nassert False\\\\n```\\\\n\\\"\\nselffenced = \\\"```python\\\\nprint('```')\\\\nassert False\\\\n```\\\\n\\\"\\nfor"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nimport reference_runner_v2 as R\\nc=R.RunnerConfig(test_article='x.py')\\nprint('routing_enabled', c.routing_enabled)\\nprint('falsifier_gate_enabled', c.falsifier_gate_enabled)\\nprint('discrimination_control_ask', c.discrimination_control_ask)\\nprint('discrimination_control_blocks', c.discrimination_control_blocks)\\n\\\"; git worktree"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== BASELINE a775a32: was the un-confirm unconditional? ===\\\" && git show a775a32:bench/reference_runner_v2.py | grep -n \\\"UNCONFIRMED\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1793,1830p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show a775a32:bench/reference_runner_v2.py > /tmp/base_rr.py && grep -n \\\"DISC_FAILED\\\" -A 22 /tmp/base_rr.py | sed -n '1,60p'\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"unverified_critical_count\\\" bench/reference_runner_v2.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '3924,3936p' /tmp/base_rr.py; echo \\\"=== HEAD equivalent (4135-4143) ===\\\"; sed -n '4134,4144p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11222,11250p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib, tempfile, shutil\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nfrom unittest import mock\\nimport reference_runner_v2 as R\\n\\ndef probe(blocks):\\n    reg = R.FindingRegistry()\\n    reg.entries[\\\"C0001\\\"] = {\\n        \\\"id\\\":\\\"C0001\\\",\\\"status\\\":\\\"CONFIRMED\\\",\\\"severity\\\":0.9,\\\"verdicts\\\":[],\\n        \\\"falsifier_code\\\":\\\"assert False\\\",\\\"c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"discrimination_control_blocks\\\" bench/exp*_configs/ configs/ 2>/dev/null | head; echo \\\"(empty above = no config sets it)\\\"; echo \\\"=== is _supply_corrected_copies_from_fixes unconditional? ===\\\"; sed -n '10681,10692p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport z3, sympy as sp\\n# ---- z3: encode the A4 blocker for one DISC_FAILED critical ----\\n# status_unconfirmed <=> the un-confirm ran ; blocker <=> unverified_critical_count>0\\nblocks, irreducible, crit = z3.Bools('blocks irreducible crit')\\nbase_unconf = crit                                  # baseline: unconditional un-confirm\\nhead_unconf = z3.And(crit, blocks)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '395,410p' bench/falsifier_verify.py; echo \\\"=== consumers ===\\\"; grep -n \\\"_allow_roots\\\" bench/falsifier_verify.py; echo \\\"=== the child cfg ===\\\"; sed -n '636,648p' bench/falsifier_verify.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CDSFL_CANONICAL_REPO\\\" bench/ scripts/ 2>/dev/null | grep -v Binary | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, sys, tempfile, json, re\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport falsifier_verify as FV\\nprobe = tempfile.mkdtemp(prefix=\\\"canon_probe_\\\")\\nopen(os.path.join(probe,\\\"answers.json\\\"),\\\"w\\\").write('{\\\"key\\\":\\\"secret\\\"}')\\n\\ndef child_allowlist():\\n    src = FV._observer_source(repo_root=str(FV.REPO_ROOT) if hasattr(FV,'REPO_ROOT') else '."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, sys, tempfile, json, re, inspect\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport falsifier_verify as FV\\nprint(inspect.signature(FV._observer_source))\\nprobe = tempfile.mkdtemp(prefix=\\\"canon_probe_\\\")\\nopen(os.path.join(probe,\\\"answers.json\\\"),\\\"w\\\").write('{\\\"key\\\":\\\"secret\\\"}')\\ndef child_allow():\\n    src = FV._observer_source(\\\".\\\", (), \\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, sys, tempfile, json, re\\nsys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport falsifier_verify as FV\\nprobe = tempfile.mkdtemp(prefix=\\\"canon_probe_\\\")\\nopen(os.path.join(probe,\\\"answers.json\\\"),\\\"w\\\").write('{\\\"key\\\":\\\"secret\\\"}')\\ndef child_allow():\\n    src = FV._observer_source(\\\"/tmp/trace.json\\\", \\\".\\\", (), ())\\n    m = re.search(r\\\"'allow':\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '9232,9248p' bench/reference_runner_v2.py; echo \\\"=== lookup_alias_any ===\\\"; sed -n '1739,1762p' bench/reference_runner_v2.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, collections\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport scipy.stats as st\\nseen={}\\nfor p in sorted(pathlib.Path('bench/logs').glob('*/*.json')):\\n    if p.name!='runner_state.json' and not p.name.endswith('report.json'): continue\\n    try: d=json.load(open(p))\\n    except Exception: continue\\n    for cid,e in ((d.get('"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport scipy.stats as st\\nd=json.load(open('bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nn=len(ents); k=sum(1 for e in ents.values() if (e.get('corrected_copy') or '').strip())\\nlo,hi=proportion_confint(k,n,method='wilson'); ex=st.binomte"
+    }
+  ]
+}

@@ -44,16 +44,40 @@ REPO = Path(__file__).resolve().parents[1]
 SOURCE = REPO / "bench" / "logs"
 DEST_ROOT = REPO / "experimental_notes" / "evidence"
 
-#: A round directory, and the date in its name if it carries one.
-_ROUND = re.compile(r"^panel_round\d+[_T]?")
 _DATE = re.compile(r"(20\d\d-\d\d-\d\d)")
+_COMPACT_DATE = re.compile(r"(20\d{6})T\d{6}Z")
+
+#: A directory holds review output if it carries a seat reply or a brief.
+#: SELECTED BY CONTENT, NOT BY NAME, and the first version was not.
+#:
+#: It matched `^panel_round\d+`, which is the naming convention adopted on
+#: 2026-09-10. Measured 2026-09-11 immediately afterwards: **78 directories under
+#: bench/logs hold a seat reply or a BRIEF.md, totalling 9.98 MB, and that regex
+#: matched 12.** The other 66 carry every review run before the convention --
+#: `confer_stage1_audit_2026-08-18`, `panel_verify_20260904T203042Z`,
+#: `severity_review_2_20260907`, `track_record_pr_2026-08-22` and the rest --
+#: so the script reported "12 of 12 preserved, 100.0000%" while 85% of the
+#: project's external review output remained recoverable by no commit.
+#:
+#: It is the session's recurring defect once more: a scanner that resolves 1
+#: form of a thing and reports a false zero for the other. The cure is the same
+#: one `bench/repo_paths.project_names()` uses for a checkout's identity --
+#: decide from what the thing IS, not from what it happens to be called.
+SEAT_FILES = ("cc2.json", "fable.json", "cx.json", "cgpt.json", "ds.json",
+              "ge.json")
+BRIEF_FILES = ("BRIEF.md",)
+
+
+def holds_review_output(d: Path) -> bool:
+    if not d.is_dir():
+        return False
+    return any((d / n).is_file() for n in SEAT_FILES + BRIEF_FILES)
 
 
 def rounds() -> list[Path]:
     if not SOURCE.is_dir():
         return []
-    return sorted(p for p in SOURCE.iterdir()
-                  if p.is_dir() and _ROUND.match(p.name))
+    return sorted(p for p in SOURCE.iterdir() if holds_review_output(p))
 
 
 def dest_for(round_dir: Path) -> Path:
@@ -67,6 +91,13 @@ def dest_for(round_dir: Path) -> Path:
     m = _DATE.search(round_dir.name)
     if m:
         date = m.group(1)
+    elif _COMPACT_DATE.search(round_dir.name):
+        # `panel_verify_20260904T203042Z` carries its date without separators.
+        # Roughly 30 of the 78 directories use this form, and falling back to a
+        # modification time for them would file a 2026-09-04 review under
+        # whatever day the disk was last touched.
+        c = _COMPACT_DATE.search(round_dir.name).group(1)
+        date = f"{c[0:4]}-{c[4:6]}-{c[6:8]}"
     else:
         import datetime as dt
         stamp = max((f.stat().st_mtime for f in round_dir.iterdir()), default=0)

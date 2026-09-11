@@ -1,0 +1,196 @@
+# Panel review: is this project's track record sound, or is the work to date unreliable?
+
+You are one of five panellists. There is no synthesis step that forces agreement.
+Disagreement is kept as information. Give an independent verdict.
+
+## The question, stated neutrally
+
+CDSFL is a research framework that uses structured Popperian falsification and a
+multi-model panel to find defects in STEM artefacts. Its founding principle is
+TOOLS DECIDE, NOT VOTES: a finding is confirmed when the runner independently
+re-executes a model-supplied falsifier and observes the designed failure, never by
+model agreement.
+
+Over the last five days an assistant (CC1) audited the harness and found a series
+of defects. Eleven of CC1's own claims were withdrawn in that window after being
+checked. The founder now asks whether the cumulative record means the work to date
+is unreliable.
+
+Two hypotheses are on the table. They are stated here with equal weight and you
+are not being asked to prefer either.
+
+**H-BUILD.** The defects are the ordinary residue of a system that was still being
+built. A component cannot be faulted for running imperfectly before it is
+finished. Under this hypothesis the finding of defects is evidence the build is
+progressing, not evidence the results are void.
+
+**H-VOID.** The defects are not build residue. Conclusions were drawn from
+components that were broken at the time, and presented with confidence
+disproportionate to their state. Under this hypothesis some or all of the recorded
+results should be treated as unreliable.
+
+A third possibility, which you should consider on its merits: **both are partly
+true, with the split falling somewhere specific that the data can locate.**
+
+## The measurements. All were taken tonight, 2026-08-22, offline, from the archive
+
+Every figure below is reproducible from `bench/logs/*/*_report.json` in the
+repository at `/Users/georgejackson/Developer_Projects/Constraint_Engineering`.
+The scripts are named where they exist. Reproduce what matters to your verdict.
+
+### M1. Correction rate over the project's life, from commit messages
+
+611 commits, 12 March to 22 August 2026. Commits whose message matches a
+correction/withdrawal/retraction pattern:
+
+| month | commits | corrections | rate |
+|---|---|---|---|
+| 2026-03 | 238 | 2 | 0.8% |
+| 2026-04 | 207 | 11 | 5.3% |
+| 2026-05 | 51 | 2 | 3.9% |
+| 2026-06 | 40 | 5 | 12.5% |
+| 2026-07 | 34 | 4 | 11.8% |
+| 2026-08 | 41 | 10 | 24.4% |
+| TOTAL | 611 | 34 | 5.6% |
+
+The rate is RISING, not falling. Note the confound: the mix of work changed from
+building to auditing, and total commit volume fell roughly six-fold.
+
+### M2. Does the archive reproduce itself?
+
+`scripts/replay_accounting.py --verify` replays each archived run's
+location-keyed critical series from the stored registry and compares it to the
+series recorded at run time. Result tonight: **8 of 8 runs reproduce EXACTLY**
+(exp42 through exp49).
+
+### M3. How much of the archive can show what decided it?
+
+2,247 registry entries across 27 distinct runs. 1,652 are in a terminal status
+(CLOSED / CONFIRMED / MERGED / REFUTED). Of those, 454 (27.5%) carry a recorded
+`falsifier_verdict` — the runner's own re-execution result — and 1,198 (72.5%)
+do not.
+
+That aggregate is a MIXTURE of two eras, and the split is nearly total:
+
+| era | runs | entries | with falsifier code | terminal | backed by a recorded tool verdict |
+|---|---|---|---|---|---|
+| exp42 onward (from 2026-06) | 11 | 566 | 465 (82.2%) | 532 | **454 (85.3%)** |
+| exp34-41 (to 2026-05) | 16 | 1464 | 0 (0.0%) | 910 | **0 (0.0%)** |
+
+Modern era by status: CLOSED 419/430 = **97.4%** backed; REFUTED 14/18 = 77.8%;
+CONFIRMED 19/71 = 26.8%; MERGED 2/13 = 15.4%.
+
+### M4. When did the falsifier mechanism exist?
+
+`git log -S'falsifier_verdict'` first hits **2026-06-03**, commit `4fba6cc`,
+message: *"Falsifier gate: runner-decided verdicts replace the CONFIRM/CHALLENGE
+vote (gated, default-off)"*. Every 0.0%-backed run predates that commit.
+
+### M5. In the modern arc, does the recorded STATUS track the recorded TOOL VERDICT?
+
+474 modern entries carry a tool verdict. Contingency table:
+
+| tool verdict | CLOSED | CONFIRMED | MERGED | REFUTED | UNCONFIRMED | total |
+|---|---|---|---|---|---|---|
+| CONFIRMED | 417 | 19 | 1 | 0 | 0 | 437 |
+| ERROR | 2 | 0 | 0 | 2 | 11 | 15 |
+| REFUTED | 0 | 0 | 1 | 12 | 0 | 13 |
+| UNTOOLABLE | 0 | 0 | 0 | 0 | 9 | 9 |
+
+Tool said CONFIRMED, status became CLOSED or CONFIRMED: 436/437 = 99.8%.
+Tool said REFUTED, status became REFUTED: 12/13 = 92.3%.
+
+### M6. When the tool verdict and the model majority DISAGREE, which prevails?
+
+227 modern entries carry both a tool verdict and model votes. In 201 the two agree.
+In 26 they disagree. Outcome of those 26:
+
+- **the tool verdict prevails: 25**
+- **the model majority prevails: 0**
+- neither: 1 (exp46 C0014 — tool ERRORED, one model voted CONFIRM, status became
+  REFUTED, i.e. more conservative than either party wanted)
+
+Sign test, entry level: 25/25, p = 2.98e-08. The 26 disagreements are spread over
+8 distinct runs; in 7 of the 8 the tool prevailed in every disagreement, run-level
+sign test p = 0.0078.
+
+Assumption-free restatement, requiring no mapping of what each side "wanted":
+**of 16 findings where the model majority voted CONFIRM and the falsifier ERRORED
+or was UNTOOLABLE, the number that reached CONFIRMED or CLOSED is ZERO** (binomial
+p = 3.05e-05 against a vote-decided null).
+
+### M7. A defect found while taking these measurements
+
+24 modern entries have a falsifier verdict of ERROR or UNTOOLABLE. Four of them
+nonetheless carry a terminal status:
+
+| run | id | tool | status | severity | `verified` flag |
+|---|---|---|---|---|---|
+| exp42_composer | C0046 | ERROR | CLOSED | 0.85 | True |
+| exp47_divergence | C0055 | ERROR | CLOSED | 0.62 | True |
+| exp46_stage6 | C0014 | ERROR | REFUTED | 0.35 | False |
+| exp48_chemistry | C0037 | ERROR | REFUTED | 0.45 | False |
+
+The two CLOSED cases carry `verified=True`, so an independent fix-verification path
+plausibly closed them. The two REFUTED cases carry `verified=False`: a falsifier
+that did not run wrote REFUTED, killing a finding on no evidence. 2 of 24.
+
+### M8. Defects found and repaired in the last five days, for context
+
+The 97%-removal defect in the deduplication similarity function (one line of
+arithmetic, mis-mapping cosine similarity; measured 98.0% -> 21.4% flagged after
+repair). Six code paths that could write MERGED on model agreement rather than on a
+tool decision (all six now withhold instead). A compliance reader that could not
+parse markdown. A detection-probability channel in the mathematical model that has
+run on hardcoded constants (`d=1.0, p=1.0`) for its entire life. Description
+truncation across the archive. An anchorless-anchor wildcard in the outcome tier.
+
+Where re-derivation was possible it was done, and it is recorded that: the tier-3
+repair changed 3 of 318 labelled pairs and moved no convergence conclusion; the
+truncation repairs moved the convergence round in 2 of 6 runs, both in the
+conservative direction, and no run converged earlier than recorded.
+
+### M9. A control run tonight
+
+A null-perturbation control was built and run on the archive: change something in
+the target that the finding does not accuse, and a sound falsifier must NOT change
+its verdict. Two perturbations — an appended comment, and renaming an unaccused
+module-level function with an alias left behind so behaviour is preserved. Result:
+397 findings tested, 360 fired on the unmodified file, **0 flipped on either
+perturbation** (the rename was possible for 304 of them). The complementary
+control — repair the claim, the falsifier must go quiet — has never been run.
+
+## What CC1's position currently is, offered so you can attack it
+
+CC1's reading of the above is that the honest verdict is neither H-BUILD nor
+H-VOID but a dated split: results from before 3 June 2026 cannot demonstrate on
+their own record that they were tool-decided, because the recording mechanism did
+not exist; results from 3 June onward can, and do, at 85.3%. CC1 further holds
+that M6 is direct positive evidence that the founding principle operated in
+practice rather than merely in policy.
+
+CC1 also notes that it stated on 21 August, and repeated on 22 August, that "the
+founding principle is currently unauditable on its own record" — a claim taken
+from a reviewer and never checked against the archive. M5 and M6 refute it for the
+modern arc. That is the twelfth withdrawn CC1 claim of the week.
+
+## What you are asked for
+
+1. **Your verdict on the question.** H-BUILD, H-VOID, or a specific split. Say
+   what would change your mind.
+2. **Attack M6 specifically.** It is the load-bearing measurement. CC1's own
+   objections so far: the disagreements cluster (16 of 26 in one run); the
+   mapping from a vote label to a "wanted status" is CC1's construction; and 26
+   disagreements out of 227 is a low disagreement rate, which could mean the
+   votes and the tool are not independent. What else is wrong with it?
+3. **Is the rising correction rate in M1 a warning sign or an artefact of the work
+   changing from building to auditing?** Propose a measurement that would
+   distinguish those.
+4. **What is the single next step?** CC1's current candidates, in no order: wire
+   counterfactual repair to the merge site (no code path writes MERGED until it
+   lands); build a typed transition log recording the deciding mechanism for every
+   status change; fix M7; run the complementary discrimination control; start the
+   remaining live experiments. Name ONE and say why it dominates.
+5. **State your strongest falsification of your own answer.**
+
+Do not pad. Every word is read, so make every word carry weight.

@@ -1,0 +1,159 @@
+PRIMARY SOURCE — MEASUREMENTS. Re-derived 2026-08-18 12:44 BST at HEAD f4df176.
+Each table names the function that produced it. No interpretation is included.
+
+## M1. Does the runner's OWN _settled_novelty_series reproduce each run's
+##     OWN archived gamma_critical_history? (If yes, the gate input was already
+##     post-deduplication in every round.)
+
+run     settled critical series                  recomputed  archived  match
+exp42   [13, 5, 3, 1, 2, 2, 5, 4, 0, 3, 2, 1]        0.5314    0.4943 DIFFERS
+exp42   [14, 3]                                      0.0000    0.0000  MATCH
+exp42   [20, 4, 8, 3, 4, 1, 0]                       0.6068    0.6068  MATCH
+exp42   [15, 10, 6, 3, 1, 0, 1, 0, 2, 1, 1, 0, 4     0.6372    0.6372  MATCH
+exp43   [5, 2, 3, 3, 1, 0, 0, 0, 0, 0, 0, 1, 3,      0.5659    0.5659  MATCH
+exp44   [8, 5, 7, 6, 0, 3, 2, 1, 0, 0, 1, 1, 0]      0.4532    0.4532  MATCH
+exp45   [7, 4, 0, 1]                                 0.6213    0.6213  MATCH
+exp46   [4, 2, 3, 2, 1, 0]                           0.3357    0.3357  MATCH
+exp47   [9, 4, 3, 2, 3, 5, 4, 4, 2]                  0.3601    0.3668 DIFFERS
+exp48   [25, 4, 1, 0, 1, 0]                          0.8847    0.8847  MATCH
+exp49   [22, 3, 2, 2, 1, 0, 0]                       0.8293    0.8293  MATCH
+
+## M2. rho, archived vs recomputed post-deduplication.
+##     numerator = registry entries opened in round r whose status is NOT in
+##     {MERGED,DUPLICATE,UNCONFIRMED,REFUTED}; denominator = the run's own
+##     archived findings_count. rho_threshold=0.25, window=3, earliest_round=12.
+
+run     rounds rho_avg archived rho_avg recomputed     delta reaches R12
+exp42       12           0.4266             0.2817   -0.1449        True
+exp42        2           0.7273             0.5808   -0.1465       False
+exp42        7           0.4036             0.4036   -0.0000       False
+exp42       16           0.4185             0.4185   +0.0000        True
+exp43       14           0.2870             0.2870   +0.0000        True
+exp44       13           0.3444             0.3444   +0.0000        True
+exp45        4           0.9246             0.6126   -0.3120       False
+exp46        6           0.3009             0.2176   -0.0833       False
+exp47        9           0.4719             0.6872   +0.2153       False
+exp48        6           0.3056             0.1944   -0.1112       False
+exp49        7           0.4444             0.4444   +0.0000       False
+
+## M3. exp47 report completeness.
+  converged_at = 13   total_rounds = 14
+  len(rounds) = 9   round indices = [5, 6, 7, 8, 9, 10, 11, 12, 13]
+  len(gamma_critical_history) = 9
+  len(location_crit_shadow_history) = 14
+  raw per-round response files present on disk: ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13']
+
+## M4. Convergence verdicts, read from each run's own archived report.
+
+run      converged  at round  convergence_reason (first 55 chars)
+exp44         True        12  STATE_CONVERGED at round 12 (3 consecutive passes): All
+exp45         True         3  CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_c
+exp46         True         5  CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_c
+exp47         True        13  CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_c
+exp48         True         5  STATE_CONVERGED at round 5 (3 consecutive passes): All 
+exp49         True         6  STATE_CONVERGED at round 6 (3 consecutive passes): All 
+
+## M5. MERGED semantics — alias map cardinality across every archived registry.
+  registries with an alias_map: 28
+  registries where NO canonical entry has more than 1 alias: 28
+  maximum aliases held by any single canonical entry, anywhere: 1
+
+
+## M6. IMMUNE PIPELINE REMOVAL RATE, from the pipeline's own append-only log
+##     (bench/logs/immune_pipeline.log, 5.8 MB, parsed for 'removal rate N/M' lines).
+##     August rows are EXCLUDED: they are today's unit-test runs, not experiments.
+
+month     log lines  removed  handled  removal rate
+2026-04         140     1351     1400         96.5%
+2026-05          81      801      813         98.5%
+2026-06          45      439      450         97.6%
+2026-07          54      451      469         96.2%
+TOTAL                   3042     3132         97.1%
+
+
+## M7. WHERE THE IMMUNE PIPELINE SITS. Line numbers in reference_runner_v2.py.
+
+  8899   cid = registry.register(f, f.model_id)          <-- REGISTRY WRITE
+  9092   immune_result = brain.run_immune_pipeline(...)  <-- IMMUNE PIPELINE RUNS
+
+  Registration happens FIRST. The immune pipeline runs AFTER and has exactly two
+  consumers, established by ast walk over every reference to `immune_result`:
+
+    _build_feedback_for_next_round()   (:9150)  -- LIVE. Renders NK-cell
+        duplicate verdicts into the NEXT round's prompt. Source at :5757-5765:
+        for triaged in immune_result.triaged:
+            if triaged.is_duplicate and triaged.duplicate_of:
+                duplicate_pairs.append((finding_id, duplicate_of, similarity))
+
+    _run_shadow_cells()                (:9163)  -- documented "zero verdict effect"
+
+  The immune pipeline NEVER writes to the finding registry. It does not set
+  MERGED, does not gate registration, and does not feed the convergence gate.
+  Its only live effect is on what models are told at the start of the next round.
+
+
+## M8. WHAT registry.resolve() DOES ON A MERGE (the complete body, verbatim)
+
+    self.entries[canonical_id]["status"] = status
+    self.entries[canonical_id]["last_status_change_round"] = round_idx
+    if merged_into:
+        self.entries[canonical_id]["merged_into"] = merged_into
+
+  Three writes, all to the DUPLICATE. Nothing whatsoever is written to the
+  TARGET. Measured: 287 of 287 entries with status==MERGED carry a merged_into
+  pointer; none is orphaned. The duplicate's RECORD survives. Its VOTE does not:
+  MERGED is in _NON_NOVEL_TERMINAL_STATUSES, so it is excluded from every count,
+  series and gate.
+
+
+## M9. RETROACTIVE BUGZILLA-STYLE DUPE COUNT, computed from stored merged_into
+##     pointers across exp42-49 (direct and indirect, chains followed).
+
+  findings carrying a merge pointer, exp42-49:              13
+  distinct canonical entries they land on:                  11
+  those entries currently told anything about it:            0
+  highest corroboration anywhere: exp49 C0008, 3 duplicates, severity 0.7, CLOSED
+
+  Across ALL archived registries (not just exp42-49): 287 merge pointers.
+
+## M10. POST-PANEL VERIFICATION (CC1, 2026-08-18 15:0x BST)
+
+CC2 located the cause of the 97% removal rate. Independently reproduced by CC1 on
+exp46's 27 archived findings, 351 pairs, embedding backend, HF_HUB_OFFLINE=1:
+
+  raw cosine   min 0.150   median 0.484   max 0.867   NEGATIVE VALUES: 0 of 351
+
+  CURRENT MAP  cos01 = (cos_sim + 1.0) / 2.0        [_similarity.py:183]
+    no class match   min 0.460  med 0.594   flagged  97.4%   (n=272)
+    class match      min 0.541  med 0.652   flagged 100.0%   (n=79)
+    ALL PAIRS                               flagged  98.0%
+
+  CLAMPED MAP  cos01 = max(0.0, cos_sim)
+    no class match   min 0.120  med 0.388   flagged  15.8%
+    class match      min 0.222  med 0.444   flagged  40.5%
+    ALL PAIRS                               flagged  21.4%
+
+  97.4% measured vs 97.1% logged over four months (M6). The mechanism is reproduced.
+  tau_sim = 0.50 (immune_agents.py:3075) was calibrated for the JACCARD backend,
+  whose floor is 0. The embedding backend's live range starts at 0.46 after the
+  affine map and the BETA blend, so the threshold sits 0.04 above the floor. With a
+  flaw-class match the floor is 0.541, ABOVE tau_sim: any two findings sharing a
+  flaw class are duplicates BY CONSTRUCTION.
+
+## M11. GATE-INPUT STALENESS — CC1's EARLIER MEASUREMENT WAS WRONG
+
+CC1 first reported frozen == settled on all six runs, concluding the defect was
+dormant. That used convergence_location.location_only_series. The RUNNER calls
+reference_runner_v2._location_keyed_critical_series — a different function with a
+different signature. Re-measured with the runner's own function:
+
+  exp44  recorded  [4,2,2,1,0,2,0,1,0,0,0,0,0]
+         resettled [4,2,3,1,0,2,1,1,0,0,0,0,0]   DIFFERS at rounds 2, 6
+  exp45  SAME    exp46  SAME
+  exp47  recorded  [5,3,1,0,1,1,0,0,1,0,0,0,0,0]
+         resettled [6,3,1,1,1,1,0,1,2,0,1,0,0,0]  DIFFERS at rounds 0,3,7,8,10
+
+  Reproduces CC2's independent measurement exactly, including the differing rounds.
+  Direction is PERMISSIVE: exp44 under-counts criticals by 2, exp47 by 5. The gate
+  saw fewer criticals than the settled registry holds.
+  No archived verdict changes: both gate windows are [0,0,0] recorded and resettled.

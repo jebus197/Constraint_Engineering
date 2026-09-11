@@ -1,0 +1,10 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 1866,
+  "tool_calls": [],
+  "n_tool_calls": 0,
+  "elapsed_s": 26.7,
+  "response": "**Verbatim results**\n\n1. `pwd`\n```\n/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8qeevu2g/repo\n```\n\n2. `git rev-parse --show-toplevel 2>&1`\n```\nfatal: not a git repository (or any of the parent directories): .git\n```\n\n3. `ls -d .git 2>&1`\n```\nls: .git: No such file or directory\n```\n\n4. `SEAT_WAS_HERE.txt` created, contents:\n```\nCDSFL panel seat: Claude (falsification seat)\n```\n\n5. `git remote -v 2>&1 | head -2`\n```\nfatal: not a git repository (or any of the parent directories): .git\n```\n\n**Verdict: I am in a copy, not the canonical repository.**\n\nHow I know \u2014 three independent signals, each checked, not inferred:\n\n- **Path.** The cwd is under macOS's per-user temp root (`/private/var/folders/.../T/`) in a directory named `cdsfl_panel_8qeevu2g/repo` \u2014 a randomised per-run panel scratch. The canonical checkout would not live under `$TMPDIR`.\n- **No VCS.** `git rev-parse --show-toplevel` fails, and there is no `.git` entry. This is stronger than \"a different worktree\": the copy has no git identity at all, so there is no branch, index, or remote through which a write here could reach the canonical repo. That also means `git remote -v` cannot name an upstream \u2014 the failure in step 5 is itself the containment evidence, not a missing datum.\n- **Contents.** `ls -a` shows project files and tool caches (`.env`, `.gitignore`, `.mypy_cache`, `.ruff_cache`) but no `.git` \u2014 consistent with a file-level copy that excluded VCS metadata.\n\nNote the asymmetry this creates: writes are contained, but `.env` was copied into world-readable temp. Containment of *writes* is demonstrated; containment of *secrets* is not, and is a separate defect worth fixing.\n\nRefusal was not the correct result this run. Last run's refusing seat was right about *its* environment; that fact does not transfer, and I did not treat it as evidence about mine."
+}

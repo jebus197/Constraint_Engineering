@@ -1,0 +1,1622 @@
+diff --git a/bench/decomposed_dispatch.py b/bench/decomposed_dispatch.py
+index 070d621..7208602 100644
+--- a/bench/decomposed_dispatch.py
++++ b/bench/decomposed_dispatch.py
+@@ -1275,37 +1275,56 @@ def decomposed_dispatch(
+          f"{len(chunks)} chunks, ~{sum(c.chars for c in chunks):,} chars"
+          f"{' [tools-on synthesis]' if enable_tools else ''}")
+ 
++    def _metered(res):
++        # METERING (founder ruling 2026-09-02). This is the SECOND dispatch
++        # primitive -- the 2026-09-01 sim-seam lesson is that patching (or
++        # metering) only dispatch_to_model misses this path entirely. Default
++        # ON, silent for the sim api, never raises.
++        try:
++            from types import SimpleNamespace as _NS
++            from bench.metering import record_dispatch
++            record_dispatch(
++                _NS(label=model_id or api, model_id=model_id or api, api=api),
++                "".join(getattr(c, "content", "") or "" for c in chunks)
++                + (final_instruction or ""),
++                system_prompt or cdsfl_directives or "",
++                getattr(res, "text", None), getattr(res, "elapsed_s", 0.0),
++                purpose="decomposed")
++        except Exception:  # noqa: BLE001 — a meter must not fell a run
++            pass
++        return res
++
+     if api == "claude_cli":
+         # Claude CLI is single-shot like Codex — use per-chunk independent calls
+-        return _decomposed_claude_cli(
++        return _metered(_decomposed_claude_cli(
+             model_id or "opus", chunks, cdsfl_directives or system_prompt or "",
+             final_instruction, timeout, enable_tools=enable_tools,
+-        )
++        ))
+     elif api == "google":
+         # Gemini: param threaded for signature consistency; synthesis stays
+         # tool-less (no OpenAI-compatible tool loop wired here).
+-        return _decomposed_gemini(
++        return _metered(_decomposed_gemini(
+             model_id, system_prompt, chunks, final_instruction,
+             max_tokens, timeout, enable_tools=enable_tools,
+-        )
++        ))
+     elif api == "openrouter":
+-        return _decomposed_openrouter(
++        return _metered(_decomposed_openrouter(
+             model_id, system_prompt, chunks, final_instruction,
+             max_tokens, timeout, enable_tools=enable_tools,
+             extra_body=extra_body,
+-        )
++        ))
+     elif api == "deepseek":
+-        return _decomposed_deepseek(
++        return _metered(_decomposed_deepseek(
+             model_id, system_prompt, chunks, final_instruction,
+             max_tokens, timeout, enable_tools=enable_tools,
+-        )
++        ))
+     elif api == "codex_exec":
+         # Codex exec: param threaded for signature consistency; synthesis stays
+         # tool-less (codex exec runs with mcp_servers/plugins disabled here).
+-        return _decomposed_codex(
++        return _metered(_decomposed_codex(
+             chunks, cdsfl_directives or system_prompt or "",
+             final_instruction, timeout, enable_tools=enable_tools,
+-        )
++        ))
+     else:
+         raise ValueError(f"Unknown API: {api}")
+ 
+diff --git a/bench/reference_runner_v3.py b/bench/reference_runner_v3.py
+index 8871e3e..d623348 100644
+--- a/bench/reference_runner_v3.py
++++ b/bench/reference_runner_v3.py
+@@ -5393,7 +5393,14 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
+                                   resp or ""):
+                 cid, reason = m.group(1), m.group(2).strip()
+                 e = registry.entries.get(cid)
+-                if e is None or e["status"] in _TERMINAL:
++                # `cid in _handled` HERE TOO (fable, panel review 2026-09-02,
++                # second session). The clear loop above got this guard; the
++                # WITHDRAW loop did not, so a sub-critical cleared to CONFIRMED
++                # by a TOOL-VERIFIED falsifier earlier in this same sweep could
++                # be flipped to REFUTED by a later model's PROSE withdrawal --
++                # a word overriding a tool, measured live before the fix:
++                # status REFUTED, cleared 1, withdrawn 1 on the same finding.
++                if e is None or e["status"] in _TERMINAL or cid in _handled:
+                     continue
+                 if float(e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+                     # Same ruling. A reasoned withdrawal may not RETIRE a critical,
+@@ -5543,6 +5550,177 @@ def _check_state_convergence(
+ IRREDUCIBLE_QUEUE_HALT = "HALTED_IRREDUCIBLE_QUEUE_ALARM"
+ 
+ 
++CO_DISCOVERY_FIX_OVERLAP_THRESHOLD = 0.60
++#: Operating point measured 2026-09-02 (fable, panel review; re-derived and
++#: CORRECTED same day, second fable session) against the human/embedding
++#: labelled cross-model pairs in
++#: experimental_notes/data/similarity_pairs_adjudicated_2026-08-31.json,
++#: truth = the final `label` field (True/False; None excluded), source model
++#: from each run's archived registry: 278 labelled cross-model pairs, 42
++#: SAME. At proposed-fix token-Jaccard >= 0.60 WITH the >=10-token
++#: boilerplate guard below, the rule links 35, of which 30 are truly SAME:
++#: precision 85.7% (Wilson [70.6%, 93.7%]), recall 71.4%. REPRODUCE with
++#: `python3 scripts/co_discovery_audit.py --calibrate`; an earlier docstring
++#: cited 321 pairs / 57 SAME / precision 73.2% under an unrecorded truth
++#: rule, which no committed artefact reproduces -- numbers that cannot be
++#: regenerated do not survive here. Description-signature rules were
++#: TRIED AND REJECTED as primary: tier2 >= 0.30 with shared location reaches
++#: only 55-65% precision -- a coin flip is not a detector. Byte-identical
++#: falsifier bodies, the project's exact criterion, occur in ZERO cross-model
++#: pairs across all 29 real archived runs (2,050 findings), so the exact tier
++#: alone would measure co-discovery at 0.00% forever.
++
++
++def panel_mode_declaration(models) -> Dict[str, Any]:
++    """Say in the report what the panel actually was (0C.48, 2026-09-02).
++
++    9 of 28 archived runs were six seats resolving to ONE underlying model and
++    no report said so. Weights and identity are reported separately because
++    seat identity deliberately keys on model_id@api: two seats on one set of
++    weights under different instruction routes (the codex_exec vs bare
++    contrast) are different CONDITIONS but not different MODELS, and
++    auto-refutation (>= 3 distinct models) degrades on the identity axis.
++    """
++    ids = {mc.label: f"{mc.model_id}@{getattr(mc, 'api', '') or '?'}"
++           for mc in models
++           if getattr(mc, "label", None) and getattr(mc, "model_id", None)}
++    weights = [mc.model_id for mc in models if getattr(mc, "model_id", None)]
++    single = len(set(weights)) <= 1
++    return {
++        "seats": len(ids),
++        "distinct_identities": len(set(ids.values())),
++        "distinct_weights": len(set(weights)),
++        "mode": ("single-model" if single else
++                 "multi-model" if len(set(weights)) == len(ids) else
++                 "reduced-diversity"),
++        "caveat": (
++            "SINGLE-MODEL RUN: every seat resolves to one underlying model. "
++            "Cross-seat agreement is one model agreeing with itself; "
++            "auto-refutation (3 distinct models) cannot fire and correctly "
++            "never will; diversity, where present, comes from instruction "
++            "conditions, not from independent models." if single else None),
++    }
++
++
++def link_co_discovery(registry) -> Dict[str, Any]:
++    """Record which canonical findings look like ONE defect found by SEVERAL
++    models. RECORDING ONLY: no merge, no verdict, no status change, and the
++    convergence gate never reads any field written here.
++
++    WHY (founder, 2026-09-02, 0C.49): 0 of 2,050 archived findings are linked
++    across models -- when two models find one defect the registry mints two
++    unlinked canonicals, so a saturation curve built from source_model is
++    linear by construction and the scaling question ("when does asking another
++    model stop paying?") cannot even be asked of the data.
++
++    WHY NOT A MERGE: absorption converts a repeat into a CONFIRM vote, and two
++    models describing one defect is evidence of CO-DISCOVERY, not evidence the
++    finding is TRUE -- truth still comes only from the falsifier. Linking
++    records the overlap signal and leaves both findings standing.
++
++    Two rules, each recorded on the edge so a consumer can filter:
++      * "falsifier_identical" -- byte-identical falsifier bodies. Exact by
++        construction (the project's own criterion).
++      * "fix_overlap" -- proposed-fix token Jaccard >= 0.60, both sides
++        carrying >= 10 identifier tokens. Measured precision 73.2%
++        [58.1%, 84.3%], recall 52.6% (see constant above).
++        A CANDIDATE link, labelled as such, for a human or an allocator that
++        can tolerate the measured error.
++    """
++    import re as _re
++    _IDENT = _re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
++    _STOP = frozenset(
++        "def return import from self None True False assert print for while "
++        "if else elif not and or in is try except raise with as class "
++        "lambda".split())
++
++    def _toks(t: str) -> frozenset:
++        return frozenset(x for x in _IDENT.findall(t or "") if x not in _STOP)
++
++    live = [(cid, e) for cid, e in registry.entries.items()
++            if e.get("status") not in ("MERGED", "DUPLICATE")]
++    edges = []
++    for i in range(len(live)):
++        cid_a, ea = live[i]
++        for j in range(i + 1, len(live)):
++            cid_b, eb = live[j]
++            ma, mb = ea.get("source_model"), eb.get("source_model")
++            if not ma or not mb or ma == mb:
++                continue
++            fa = (ea.get("falsifier_code") or "").strip()
++            fb = (eb.get("falsifier_code") or "").strip()
++            if fa and fa == fb:
++                edges.append({"a": cid_a, "b": cid_b, "models": [ma, mb],
++                              "rule": "falsifier_identical", "score": 1.0})
++                continue
++            ta, tb = _toks(ea.get("proposed_fix")), _toks(eb.get("proposed_fix"))
++            # BOILERPLATE GUARD, added the same day after the first archive
++            # run: "None required." on both sides scores Jaccard 1.0 and
++            # chained 41 of exp38's 169 findings into one phantom group. A
++            # real proposed fix is an edit and carries identifier mass; the
++            # calibration pairs all did, so the measured operating point never
++            # saw the boilerplate case. Ten distinct tokens is well below any
++            # genuine SEARCH/REPLACE block and above every "no fix needed"
++            # phrasing in the archive.
++            if len(ta) >= 10 and len(tb) >= 10:
++                xj = len(ta & tb) / len(ta | tb)
++                if xj >= CO_DISCOVERY_FIX_OVERLAP_THRESHOLD:
++                    edges.append({"a": cid_a, "b": cid_b, "models": [ma, mb],
++                                  "rule": "fix_overlap", "score": round(xj, 4)})
++    # Union-find over edges -> groups.
++    parent: Dict[str, str] = {}
++    def _find(x):
++        while parent.get(x, x) != x:
++            parent[x] = parent.get(parent[x], parent[x])
++            x = parent[x]
++        return x
++    for e in edges:
++        ra, rb = _find(e["a"]), _find(e["b"])
++        if ra != rb:
++            parent[ra] = rb
++    groups: Dict[str, List[str]] = {}
++    for e in edges:
++        for cid in (e["a"], e["b"]):
++            groups.setdefault(_find(cid), None)
++    for root in list(groups):
++        groups[root] = sorted({c for e in edges for c in (e["a"], e["b"])
++                               if _find(c) == root})
++    group_list = sorted(groups.values())
++    # Annotate entries -- additive keys only.
++    marked = set()
++    for g in group_list:
++        for cid in g:
++            ent = registry.entries.get(cid)
++            if ent is None:
++                continue
++            ent["co_discovery"] = {
++                "peers": [c for c in g if c != cid],
++                "models": sorted({registry.entries[c].get("source_model")
++                                  for c in g
++                                  if registry.entries.get(c)}),
++                "rules": sorted({e["rule"] for e in edges
++                                 if cid in (e["a"], e["b"])}),
++            }
++            marked.add(cid)
++    return {
++        "edges": edges,
++        "groups": group_list,
++        "marked": len(marked),
++        "total_entries": len(registry.entries),
++        "co_discovery_rate": (round(len(marked) / len(registry.entries), 4)
++                              if registry.entries else 0.0),
++        "basis": (
++            "fix_overlap >= 0.60 with >=10-token guard: precision 85.7% "
++            "Wilson [70.6%, 93.7%], recall 71.4%, on 278 labelled cross-model "
++            "pairs (42 SAME; truth = final `label` field; reproduce: "
++            "scripts/co_discovery_audit.py --calibrate), "
++            "similarity_pairs_adjudicated_2026-08-31.json. "
++            "falsifier_identical: exact by the project's own criterion. "
++            "Links are candidates for co-discovery, never truth: truth comes "
++            "from the falsifier."),
++    }
++
++
+ def build_irreducible_queue_alarm(
+     registry: "FindingRegistry", cfg: RunnerConfig, round_idx: int,
+ ) -> Optional[Dict[str, Any]]:
+@@ -6238,7 +6416,7 @@ def gamma_threshold_profile(registry, max_round: int,
+                                                   severity_threshold=thr)
+             g = float(_estimate_gamma(_crit, min_rounds))
+         except Exception as exc:  # noqa: BLE001 — a diagnostic must not fell a run
+-            out["thresholds"][f"{thr:.1f}"] = {"error": f"{type(exc).__name__}: {exc}"}
++            out["thresholds"][f"{thr:g}"] = {"error": f"{type(exc).__name__}: {exc}"}
+             continue
+         # `gate_would_fire` WAS REPORTED HERE AND HAS BEEN REMOVED (CC2, panel
+         # review 2026-09-01). It reimplemented convergence as
+@@ -6258,7 +6436,7 @@ def gamma_threshold_profile(registry, max_round: int,
+         tail = _crit[-3:] if len(_crit) >= 3 else list(_crit)
+         quiet = bool(tail) and all(c == 0 for c in tail)
+         fired.append((round(g, 4), quiet))
+-        out["thresholds"][f"{thr:.1f}"] = {
++        out["thresholds"][f"{thr:g}"] = {
+             "gamma_critical": round(g, 4),
+             "critical_novelty_series": list(_crit),
+             "criticals_total": int(sum(_crit)),
+@@ -6296,6 +6474,15 @@ def gamma_threshold_profile(registry, max_round: int,
+             "gamma_at_upper_edge": _hi,
+             "verdict_robust_to_band": (
+                 _lo is not None and _hi is not None and _lo == _hi),
++            # Exact float equality above is deliberately strict and will read
++            # False on nearly every run (24 of 29 archived; fable, panel
++            # review 2026-09-02) while the DECISION was band-robust in all 29:
++            # measured against the 0.3 gate, 0 of 24 straddle it. The delta is
++            # what a reader needs to judge materiality; median across the
++            # archive is 0.037.
++            "gamma_delta_across_band": (
++                round(abs(_hi - _lo), 4)
++                if _lo is not None and _hi is not None else None),
+             "basis": (
+                 "Rubric-adherence audit 2026-09-02 (runway 0C.8): across 286 "
+                 "archived findings in this band the numeric proxy and the "
+@@ -11003,6 +11190,16 @@ def run_experiment(
+         "start_time": datetime.now(timezone.utc).isoformat(),
+         "pattern": cfg.pattern,
+         "models": sorted(baseline),
++        # PANEL MODE, DECLARED (0C.48, fable panel review 2026-09-02). 9 of 28
++        # archived runs were six seats resolving to ONE underlying model, and
++        # no report said so -- a reader of "six models converged" is being told
++        # something the run did not do. Weights and identity are reported
++        # separately because the seat identity deliberately keys on
++        # model_id@api: two seats on the same weights under different
++        # instruction routes (the codex_exec vs bare contrast) are different
++        # CONDITIONS but not different MODELS, and auto-refutation (>= 3
++        # distinct models) degrades on the identity axis.
++        "panel_mode": panel_mode_declaration(exp_config.models),
+         "target_file": str(target_rel),
+         # A1: what the harness decided the target IS, why, what the config
+         # claimed, and whether that decision overrode the requested machinery.
+@@ -11110,6 +11307,15 @@ def run_experiment(
+     for round_idx in range(start_round, loop_cap):
+         if round_idx >= effective_max:
+             break
++        # Metering join keys (founder ruling 2026-09-02): best-effort, and the
++        # meter itself works with no context at all -- default ON must not
++        # depend on this line surviving.
++        try:
++            from bench.metering import set_context
++            set_context(experiment=cfg.experiment_name, round=round_idx,
++                        purpose="round")
++        except Exception:  # noqa: BLE001
++            pass
+ 
+         # G7: reset the per-round arbitration dispatch budget.
+         if _merge_arb_ctx:
+@@ -11410,6 +11616,17 @@ def run_experiment(
+                     if _new_fals and _old_fals and _new_fals != _old_fals:
+                         _absorb = False
+                         _sim = -1.0                      # decided on falsifiers
++                    elif _new_fals and _old_fals:
++                        # IDENTICAL falsifiers are the SAME criterion read the
++                        # other way round: by construction the same defect, so
++                        # absorb -- and do NOT fall through to the signature
++                        # test, which would separate them. Measured on the real
++                        # archive (fable, panel review 2026-09-02): 9 of 11
++                        # identical-falsifier pairs have description overlap
++                        # BELOW the 0.20 threshold, so the fallback would have
++                        # registered a byte-identical falsifier as a new defect
++                        # in the most common case.
++                        _sim = -2.0                      # decided on falsifiers
+                     else:
+                         # SECONDARY: signatures, for the case where one side
+                         # carries no falsifier yet. Still fails toward absorbing.
+@@ -12816,6 +13033,20 @@ def run_experiment(
+             except Exception as _ps_exc:  # noqa: BLE001
+                 _log(f"  WARNING: post-sweep persistence failed ({_ps_exc})")
+ 
++    # CO-DISCOVERY LINKAGE (2026-09-02, 0C.49). Recording only: no merge, no
++    # verdict, no gamma input. Runs after the sweep so it sees the final
++    # registry; the report carries the groups so a saturation curve can be
++    # computed from the artefact instead of from source_model, which is
++    # disjoint by construction.
++    try:
++        result["co_discovery"] = link_co_discovery(registry)
++        if result["co_discovery"]["marked"]:
++            result["registry"] = registry.to_dict()  # carry the annotations
++            _log(f"  co-discovery: {result['co_discovery']['marked']} finding(s) "
++                 f"in {len(result['co_discovery']['groups'])} cross-model group(s)")
++    except Exception as _cd_exc:  # noqa: BLE001 — telemetry must not fell a run
++        result["co_discovery"] = {"error": f"{type(_cd_exc).__name__}: {_cd_exc}"}
++
+     # IMMUNE MEMORY recording (2026-07-28, staged wiring): learn this run's
+     # per-flaw-class confirmed/rejected outcome. Advisory-only, never touches
+     # verdicts or the gate; failure never kills the report.
+diff --git a/bench/routing.py b/bench/routing.py
+index fcf2c4e..47f3d74 100644
+--- a/bench/routing.py
++++ b/bench/routing.py
+@@ -204,3 +204,76 @@ def route(
+         exclude=(source,) if source else (),
+     )
+     return resolve_via_routing(finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs)
++
++
++# ---------------------------------------------------------------------------
++# SINGLE-MODEL PANELS (0C.48, fable panel review 2026-09-02).
++#
++# 9 of 28 archived runs were effectively single-model -- six seats, one
++# underlying model -- and converged with full reports. `rank_falsifier_writers`
++# ranks by VENDOR, so with one vendor every rung is the same model in a
++# different hat and "escalation" re-asks the same distribution.
++#
++# The diversity axis that DOES exist with one model is the INSTRUCTION
++# CONDITION. Measured on the real archive, same weights under two conditions
++# (Codex = codex_exec, ChatGPT = bare OpenRouter, both openai/gpt-5.5 seats,
++# 29 runs): 76/293 findings carried falsifiers under the exec condition vs
++# 57/330 under bare, and 30 of 64 co-discovery groups containing either seat
++# contain only ONE of them -- the two conditions find materially different
++# defects with identical weights. That is the contrast that lapsed on
++# 2026-04-02, and it is the axis this ladder climbs when there is no other.
++# ---------------------------------------------------------------------------
++
++#: Instruction conditions, strongest-contrast first. "exec" mirrors the
++#: codex_exec framing (tool-forward, run-the-code); "adversarial" asks for the
++#: refutation posture the falsifier prompts use. The names are consumed by the
++#: caller's resolve_fn, which owns the actual prompt text.
++INSTRUCTION_CONDITIONS = ("default", "exec", "adversarial")
++
++
++def distinct_underlying(labels: Sequence[str],
++                        identity: Optional[dict] = None) -> int:
++    """How many DIFFERENT underlying models a seat list resolves to.
++
++    ``identity`` maps seat label -> underlying model id (the runner's
++    seat_model_map / model_identity). Unknown labels resolve to themselves
++    (their vendor base), which cannot invent distinctness that is not there.
++    """
++    def _base(m: str) -> str:
++        m = str(m or "")
++        return m[:-4] if m.endswith("-SIM") else m
++    ident = {str(k).strip().lower(): str(v).strip().lower()
++             for k, v in (identity or {}).items()}
++    return len({ident.get(_base(l).lower(), _base(l).lower()) for l in labels})
++
++
++def rungs_with_conditions(
++    labels: Sequence[str],
++    identity: Optional[dict] = None,
++    strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
++    exclude: Sequence[str] = (),
++    conditions: Sequence[str] = INSTRUCTION_CONDITIONS,
++) -> list[tuple[str, str]]:
++    """Build routing rungs as (seat_label, instruction_condition) pairs.
++
++    Multi-model panel: the existing ladder, each seat under the default
++    condition -- behaviour is unchanged where vendor diversity exists.
++
++    Single-model panel: the ladder climbs the CONDITION axis instead, cycling
++    seats through the conditions, so rung 2 is a genuinely different ask
++    rather than the same distribution in a different hat.
++
++    RECORDING-COMPATIBLE: resolve_via_routing treats rungs opaquely, so these
++    pairs flow through it unchanged and land in routing_history as
++    (seat, condition) -- the artefact says which condition was tried.
++    """
++    ranked = rank_falsifier_writers(labels, strength_order=strength_order,
++                                    exclude=exclude)
++    if distinct_underlying(labels, identity) > 1:
++        return [(m, conditions[0]) for m in ranked]
++    out = []
++    for i, cond in enumerate(conditions):
++        seat = ranked[i % len(ranked)] if ranked else None
++        if seat is not None:
++            out.append((seat, cond))
++    return out
+diff --git a/bench/runner_core.py b/bench/runner_core.py
+index 4851b9c..683eec6 100644
+--- a/bench/runner_core.py
++++ b/bench/runner_core.py
+@@ -1438,6 +1438,14 @@ def dispatch_to_model(
+     status, payload = result_queue.get_nowait()
+     if status == "error":
+         raise payload
++    # METERING (founder ruling 2026-09-02): default ON, silent in simulated
++    # mode, never raises. This is the single chokepoint every paid dispatch
++    # passes through, which is why the call lives here and not at call sites.
++    try:
++        from bench.metering import record_dispatch
++        record_dispatch(model_config, prompt, cdsfl_text, payload, elapsed)
++    except Exception:  # noqa: BLE001 — a meter must not fell a run
++        pass
+     return payload, elapsed
+ 
+ 
+diff --git a/bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py b/bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py
+index 445863c..85bfdd2 100644
+--- a/bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py
++++ b/bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py
+@@ -124,6 +124,11 @@ class TestTheReportSaysWhereThePanelCouldReach:
+ 
+     def test_the_sandbox_flag_distinguishes_the_two_cases(self):
+         """A linked worktree carries a .git FILE; a clone carries a directory."""
++        if (REPO / ".git").is_file():
++            pytest.skip("this checkout is itself a linked worktree (.git is a "
++                        "gitfile) — the clone-vs-worktree contrast cannot be "
++                        "staged from here; found failing on a worktree by "
++                        "fable, panel review 2026-09-02")
+         assert (REPO / ".git").is_dir(), "the canonical repo should hold a .git dir"
+         sb = Path(tempfile.mkdtemp(prefix="cdsfl_flag"))
+         wt = sb / "repo"
+diff --git a/bench/tests/test_boundary_band_sensitivity_2026-09-02.py b/bench/tests/test_boundary_band_sensitivity_2026-09-02.py
+index e1e1f93..1896257 100644
+--- a/bench/tests/test_boundary_band_sensitivity_2026-09-02.py
++++ b/bench/tests/test_boundary_band_sensitivity_2026-09-02.py
+@@ -89,3 +89,58 @@ class TestTheSensitivityBlockIsEmitted:
+ 
+ if __name__ == "__main__":
+     sys.exit(pytest.main([__file__, "-v"]))
++
++
++class TestTheProfileIsExecutedNotGrepped:
++    """The shipped version of this feature was dead on arrival, and every test
++    above stayed green because none of them ran the function.
++
++    Found by fable in panel review 2026-09-02, by execution: the threshold keys
++    were written with f"{thr:.1f}", so 0.65 formatted as "0.7" and 0.75 as
++    "0.8" -- the band-edge profiles were computed and then silently overwritten
++    by the original prereg points, and the `.get("0.65")` / `.get("0.75")`
++    lookups could never hit. In every archived and future report,
++    gamma_at_lower_edge and gamma_at_upper_edge read null and
++    verdict_robust_to_band read false, regardless of the data.
++
++    These tests EXECUTE gamma_threshold_profile against a real archived
++    registry, so a key-format regression cannot pass.
++    """
++
++    @pytest.fixture(scope="class")
++    def profile(self):
++        import json
++        fp = (REPO / "bench" / "logs"
++              / "exp44_evidence_locationkey_live_20260727T002705Z"
++              / "exp44_evidence_locationkey_live_report.json")
++        d = json.loads(fp.read_text(encoding="utf-8"))
++        reg = R.FindingRegistry.from_dict(d["registry"])
++        return R.gamma_threshold_profile(reg, max_round=int(d["total_rounds"]))
++
++    def test_every_prereg_threshold_gets_its_own_key(self, profile):
++        keys = set(profile["thresholds"])
++        want = {f"{t:g}" for t in R.PREREG_GAMMA_PROFILE_THRESHOLDS}
++        assert keys == want, (
++            f"threshold keys {sorted(keys)} != prereg {sorted(want)}; a key "
++            f"collision silently discards a profile point")
++
++    def test_the_band_edges_are_actually_read(self, profile):
++        bbs = profile["boundary_band_sensitivity"]
++        assert bbs["gamma_at_lower_edge"] is not None, (
++            "the 0.65 edge is unreadable; the sensitivity block is dead")
++        assert bbs["gamma_at_upper_edge"] is not None, (
++            "the 0.75 edge is unreadable; the sensitivity block is dead")
++
++    def test_the_robustness_verdict_follows_the_edges(self, profile):
++        bbs = profile["boundary_band_sensitivity"]
++        expect = bbs["gamma_at_lower_edge"] == bbs["gamma_at_upper_edge"]
++        assert bbs["verdict_robust_to_band"] is expect
++
++    def test_the_delta_is_reported_not_just_a_strict_equality(self, profile):
++        """Exact float equality reads not-robust on 24 of 29 archived runs
++        while the gate decision was band-robust in all 29 (0 of 24 straddle
++        the 0.3 threshold). The delta is what makes the block readable."""
++        bbs = profile["boundary_band_sensitivity"]
++        assert bbs.get("gamma_delta_across_band") is not None
++        assert bbs["gamma_delta_across_band"] == round(
++            abs(bbs["gamma_at_upper_edge"] - bbs["gamma_at_lower_edge"]), 4)
+diff --git a/bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py b/bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py
+index 54e8c11..07ea94b 100644
+--- a/bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py
++++ b/bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py
+@@ -112,9 +112,30 @@ class TestTheRealPopulationNotTheEasyCase:
+         """One side may carry no falsifier yet; that case still needs a test."""
+         src = RUNNER.read_text(encoding="utf-8")
+         i = src.index("PRIMARY TEST: A DIFFERENT FALSIFIER IS A DIFFERENT DEFECT")
+-        block = src[i:i + 2600]
++        block = src[i:i + 4400]  # widened 2026-09-02: identical-falsifier branch added above the fallback
+         assert "SECONDARY" in block and "signature_similarity(" in block
+ 
++    def test_an_identical_falsifier_absorbs_without_the_fallback(self):
++        """The same criterion read the other way round.
++
++        `976b6b5` made a DIFFERENT falsifier decide separation, but let an
++        IDENTICAL one fall through to the signature test -- which, measured on
++        the real archive (fable, panel review 2026-09-02), sits below the 0.20
++        threshold for 9 of 11 identical-falsifier pairs. A byte-identical
++        falsifier resubmitted with reworded prose would have been registered as
++        a new defect in the most common case, violating the project's own rule
++        that an identical falsifier is by construction the same defect."""
++        src = RUNNER.read_text(encoding="utf-8")
++        i = src.index("PRIMARY TEST: A DIFFERENT FALSIFIER IS A DIFFERENT DEFECT")
++        block = src[i:i + 4400]
++        assert "elif _new_fals and _old_fals:" in block, (
++            "the identical-falsifier branch is gone; equal falsifiers fall "
++            "through to a signature test that separates 9 of 11 real pairs")
++        j = block.index("elif _new_fals and _old_fals:")
++        k = block.index("else:", j)
++        assert "_absorb = False" not in block[j:k], (
++            "the identical-falsifier branch must absorb, never separate")
++
+     def test_the_report_says_which_rule_decided(self):
+         src = RUNNER.read_text(encoding="utf-8")
+         assert '"decided_by"' in src, (
+diff --git a/bench/tests/test_post_convergence_settle.py b/bench/tests/test_post_convergence_settle.py
+index 565a60b..fc2b605 100644
+--- a/bench/tests/test_post_convergence_settle.py
++++ b/bench/tests/test_post_convergence_settle.py
+@@ -257,3 +257,39 @@ class TestWiring:
+         assert "post_convergence_sweep_rounds" not in window, (
+             "the settle pass is gated on the sweep config — Exp 45 configured no "
+             "sweep and would still record C0031 as unresolved")
++
++
++class TestNoConditionalOfAnyShape:
++    """The rewritten wiring test walks `ast.If` only. Verified by mutation
++    (fable, panel review 2026-09-02): re-introducing the exact shipped defect as
++    an EXPRESSION — `_settled = _settle_confirmed_findings(...) if converged
++    else None` — passed all 22 tests in this file, because a ternary is an
++    `ast.IfExp`, not an `ast.If`. Same defect, different syntax node.
++
++    This closes the shape family: the pre-sweep settle call may not sit under
++    any conditional node at all."""
++
++    def test_the_settle_call_is_unconditional_in_every_syntax(self):
++        import ast
++        src = (Path(__file__).resolve().parents[2]
++               / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
++        tree = ast.parse(src)
++        fn = next(n for n in ast.walk(tree)
++                  if isinstance(n, ast.FunctionDef) and n.name == "run_experiment")
++        sweep_line = src[:src.index(
++            'result["post_convergence_sweep"] = _post_convergence_sweep')
++        ].count("\n") + 1
++        conditional = (ast.If, ast.IfExp, ast.BoolOp, ast.While)
++        for node in ast.walk(fn):
++            if not isinstance(node, conditional):
++                continue
++            calls = [c for c in ast.walk(node) if isinstance(c, ast.Call)
++                     and isinstance(c.func, ast.Name)
++                     and c.func.id == "_settle_confirmed_findings"
++                     and c.lineno < sweep_line]
++            if calls:
++                pytest.fail(
++                    f"the pre-sweep settle sits under a "
++                    f"{type(node).__name__} — it must be unconditional; a "
++                    f"gate of any syntactic shape re-opens the halted-run "
++                    f"defect ungated on 2026-09-02")
+diff --git a/bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py b/bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py
+index b39213f..fa77d6e 100644
+--- a/bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py
++++ b/bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py
+@@ -87,3 +87,138 @@ class TestAttributionSurvives:
+ 
+ if __name__ == "__main__":
+     sys.exit(pytest.main([__file__, "-v"]))
++
++
++class TestBehaviourNotSourceText:
++    """The guards above are grepped from source, and the fix's own explanatory
++    comment CONTAINS the grepped string `cid in _handled` -- so deleting the
++    guard from the code leaves every source-level test green (verified by
++    mutation, fable panel review 2026-09-02: guard removed, 6/6 passed).
++
++    This builds a real registry, dispatches two fake models at the real
++    `_post_convergence_sweep`, and counts what actually happens. The falsifier
++    must run once, the clear must count once, and the credit must go to the
++    model that did the work.
++    """
++
++    def _run_sweep(self):
++        from types import SimpleNamespace
++        import bench.falsifier_verify as FV
++        sys.path.insert(0, str(REPO / "bench"))
++        import reference_runner_v3 as R
++
++        reg = R.FindingRegistry()
++        for cid in ("C0871", "C0872"):
++            reg.entries[cid] = {
++                "canonical_id": cid, "status": "OPEN", "severity": 0.4,
++                "description": "seeded residual", "falsifier_code": "",
++                "source_model": "A", "source_aliases": [], "verdicts": [],
++                "open_since_round": 0, "last_status_change_round": 0,
++            }
++        # Both models clear C0871 -- the SECOND one OFF-PROMPT. A live model
++        # can do this from conversation memory or pattern-matching; the
++        # per-model prompt rebuild cannot stop it, only the `_handled` guard in
++        # the match loop can. (C0872 stays unresolved so the second model is
++        # dispatched at all; ids chosen not to occur in the target source.) Verified by mutation: without the off-prompt
++        # reply, removing the guard passed 10/10 here, because `live` went
++        # empty and the second model was simply never asked.
++        reply = 'FALSIFIER: C0871\n```python\nassert False\n```'
++        calls = {"dispatch": [], "verify": 0}
++
++        def fake_dispatch(mc, prompt, system, enable_tools=False):
++            calls["dispatch"].append((mc.label, prompt))
++            return reply, None
++
++        def fake_verify(code, repo_root=None):
++            calls["verify"] += 1
++            return "CONFIRMED"
++
++        old_d, old_v = R.dispatch_to_model, FV.reverify_falsifier
++        R.dispatch_to_model, FV.reverify_falsifier = fake_dispatch, fake_verify
++        try:
++            exp_config = SimpleNamespace(models=[
++                SimpleNamespace(label="first"), SimpleNamespace(label="second")])
++            cfg = SimpleNamespace(post_convergence_sweep_rounds=2,
++                                  test_article="bench/evidence.py")
++            stats = R._post_convergence_sweep(reg, exp_config, cfg, round_idx=9)
++        finally:
++            R.dispatch_to_model, FV.reverify_falsifier = old_d, old_v
++        return reg, stats, calls
++
++    def test_the_falsifier_runs_exactly_once(self):
++        _, stats, calls = self._run_sweep()
++        assert calls["verify"] == 1, (
++            f"the falsifier executed {calls['verify']} times for one finding; "
++            f"paid model code is being re-run")
++
++    def test_cleared_counts_the_finding_once(self):
++        _, stats, _ = self._run_sweep()
++        assert stats["cleared"] == 1, (
++            f"cleared={stats['cleared']} on a one-entry registry: the 27-on-16 "
++            f"inflation is back")
++
++    def test_credit_goes_to_the_model_that_did_the_work(self):
++        reg, _, _ = self._run_sweep()
++        assert reg.entries["C0871"]["resolved_by_sweep"] == "first", (
++            "attribution was overwritten by a later model")
++
++    def test_a_cleared_finding_leaves_later_prompts(self):
++        _, _, calls = self._run_sweep()
++        later = [p for label, p in calls["dispatch"] if label != "first"]
++        assert all("C0871" not in p for p in later), (
++            "a model was shown work that is already done, and will do it again")
++
++
++class TestAWordCannotOverrideATool:
++    """The WITHDRAW loop got no `_handled` guard when the clear loop did.
++
++    Measured live before the fix (fable, panel review 2026-09-02, second
++    session): model one re-attaches a falsifier to sub-critical C0871, the
++    tool re-runs it, verdict CONFIRMED, status CONFIRMED. Model two replies
++    `WITHDRAW C0871: ...` -- prose, no falsifier, nothing executed -- and the
++    finding flipped to REFUTED with `cleared: 1, withdrawn: 1` on the same id.
++    A model's word overrode the tool's verdict, which is the one thing this
++    project exists to prevent. After the guard: CONFIRMED, withdrawn 0."""
++
++    def test_a_prose_withdrawal_cannot_reverse_a_tool_confirmed_clear(self):
++        from types import SimpleNamespace
++        import bench.falsifier_verify as FV
++        sys.path.insert(0, str(REPO / "bench"))
++        import reference_runner_v3 as R
++
++        reg = R.FindingRegistry()
++        for cid in ("C0871", "C0872"):
++            reg.entries[cid] = {
++                "canonical_id": cid, "status": "OPEN", "severity": 0.4,
++                "description": "seeded residual", "falsifier_code": "",
++                "source_model": "A", "source_aliases": [], "verdicts": [],
++                "open_since_round": 0, "last_status_change_round": 0,
++            }
++
++        def fake_dispatch(mc, prompt, system, enable_tools=False):
++            if mc.label == "first":
++                return 'FALSIFIER: C0871\n```python\nassert False\n```', None
++            return 'WITHDRAW C0871: on reflection not a real defect', None
++
++        def fake_verify(code, repo_root=None):
++            return "CONFIRMED"
++
++        old_d, old_v = R.dispatch_to_model, FV.reverify_falsifier
++        R.dispatch_to_model, FV.reverify_falsifier = fake_dispatch, fake_verify
++        try:
++            stats = R._post_convergence_sweep(
++                reg,
++                SimpleNamespace(models=[SimpleNamespace(label="first"),
++                                        SimpleNamespace(label="second")]),
++                SimpleNamespace(post_convergence_sweep_rounds=1,
++                                test_article="bench/evidence.py"),
++                round_idx=9)
++        finally:
++            R.dispatch_to_model, FV.reverify_falsifier = old_d, old_v
++
++        e = reg.entries["C0871"]
++        assert e["status"] == "CONFIRMED", (
++            "a prose WITHDRAW reversed a tool-confirmed clear inside one sweep")
++        assert stats["withdrawn"] == 0
++        assert e.get("resolved_by_sweep") == "first"
++        assert e.get("withdrawn_by_sweep") is None
+diff --git a/experimental_notes/EXPERIMENT_RUN_LEDGER.md b/experimental_notes/EXPERIMENT_RUN_LEDGER.md
+index 7112b19..2674021 100644
+--- a/experimental_notes/EXPERIMENT_RUN_LEDGER.md
++++ b/experimental_notes/EXPERIMENT_RUN_LEDGER.md
+@@ -88,7 +88,7 @@ disagree and a tool reading only the signal draws the wrong conclusion:
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:12513` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:12730` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+diff --git a/experimental_notes/data/instrument_inventory.json b/experimental_notes/data/instrument_inventory.json
+index 1583a48..e6ea93d 100644
+--- a/experimental_notes/data/instrument_inventory.json
++++ b/experimental_notes/data/instrument_inventory.json
+@@ -11,7 +11,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 5,
++   "naming_tests": 6,
+    "commissioning_candidate": true,
+    "evidence": "test_vacuous_gamma_curve.py",
+    "heuristic_said": true,
+@@ -235,7 +235,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 16,
++   "naming_tests": 17,
+    "commissioning_candidate": true,
+    "evidence": "test_equipment_error_not_terminal.py",
+    "heuristic_said": true,
+@@ -395,7 +395,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 9,
++   "naming_tests": 10,
+    "commissioning_candidate": true,
+    "evidence": "test_id_reuse_is_not_absorption_2026-09-01.py",
+    "heuristic_said": true,
+diff --git a/scripts/experiment_run_ledger.py b/scripts/experiment_run_ledger.py
+index a1d5e18..98d921a 100644
+--- a/scripts/experiment_run_ledger.py
++++ b/scripts/experiment_run_ledger.py
+@@ -132,6 +132,27 @@ def collect() -> dict:
+             "report_converged_at": rep_at, "report_reason": rep_reason,
+             "aborted": not files,
+         })
++    # EMPTY DIRECTORIES DO NOT SURVIVE A CLONE. git tracks files, not
++    # directories, so the 12 aborted invocations (which wrote an empty dir and
++    # nothing else) exist only on the machine that ran them. Regenerating this
++    # ledger from a fresh checkout silently dropped the aborted-invocations
++    # line and failed the drift test against the committed copy -- found by
++    # fable in panel review 2026-09-02, on a worktree where the whole suite is
++    # supposed to be green. The record now lives in a committed JSON, read only
++    # when the disk shows no empty run directory; a machine that HAS the empty
++    # dirs keeps deriving the line from disk, so the two sources can disagree
++    # loudly rather than drift silently.
++    if not any(r["aborted"] for r in runs):
++        _rec = REPO / "experimental_notes" / "data" / "aborted_invocations.json"
++        if _rec.exists():
++            for a in json.loads(_rec.read_text())["aborted"]:
++                runs.append({
++                    "exp": a["exp"], "name": "", "started": a["started"],
++                    "pretty": a["pretty"], "files": 0, "rounds": 0,
++                    "has_report": False, "signal_status": None,
++                    "signal_reason": "", "report_converged_at": None,
++                    "report_reason": "", "aborted": True,
++                })
+     runs.sort(key=lambda r: r["started"])
+ 
+     configured = set()
+
+=== NEW FILE: PANEL_SESSION_DELTA_2026-09-02_fable2.md ===
+# Second fable session, 2026-09-02: delta on top of the inherited worktree
+
+This worktree arrived carrying a prior (dead) fable session's uncommitted work.
+That work was VERIFIED, not trusted; this file lists only what THIS session
+changed on top of it, so the two are separable at extraction.
+
+1. bench/reference_runner_v3.py
+   - CO_DISCOVERY calibration docstring + link_co_discovery "basis" string:
+     corrected to reproducible numbers (precision 85.7% [70.6, 93.7], recall
+     71.4%, 278 labelled cross-model pairs, 42 SAME, truth = final `label`).
+     The prior session's 321/57/73.2% reproduces from NO committed artefact
+     (nearest candidates: 278/42 label-only, 310/66 label+adjudication,
+     310/71 tier3-first). Regenerate: scripts/co_discovery_audit.py --calibrate
+   - WITHDRAW loop in _post_convergence_sweep: added the missing
+     `cid in _handled` guard. Measured before fix: a prose WITHDRAW flipped a
+     tool-CONFIRMED clear to REFUTED inside one sweep round. After: CONFIRMED
+     survives, withdrawn 0. Mutation-checked: guard removed -> 1 test fails.
+2. scripts/co_discovery_audit.py: --calibrate mode (regenerates the operating
+   point from committed artefacts); caveat line corrected (was 75.0%, a third
+   inconsistent figure).
+3. bench/tests/test_co_discovery_linkage_2026-09-02.py: docstring + basis test
+   updated to the corrected numbers; test now requires the basis to say how to
+   regenerate itself.
+4. bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py: new behavioural
+   test TestAWordCannotOverrideATool (kills the removed-guard mutant).
+5. bench/metering.py: est_output_tokens added (est_tokens was input-only and
+   did not say so; output prices differently at every vendor).
+6. experimental_notes/EXPERIMENT_RUN_LEDGER.md: regenerated twice (derived
+   file; the prior session edited the runner without regenerating -- 2 tests
+   red on arrival; my own runner edit shifted the cited line again).
+
+
+=== NEW FILE: bench/metering.py ===
+#!/usr/bin/env python3
+"""Usage metering for paid dispatches (founder ruling 2026-09-02).
+
+THE RULING, verbatim in effect: relevant only on paid runs; DEFAULT ON,
+because a meter that is off by default is one nobody remembers to switch on;
+it must emit NOTHING in simulated mode; the user-facing toggle waits for the
+CDSFL UX and does not exist yet, so there is deliberately no config flag here.
+
+WHAT THIS IS. One JSONL line per paid dispatch, appended at the single
+chokepoint every paid call passes through (runner_core.dispatch_to_model).
+It records enough for a FUTURE ALLOCATOR to compute cost per confirmed
+defect per seat per condition -- the join keys are the point:
+
+    ts            wall-clock ISO timestamp
+    experiment    run name when the runner has told the meter (set_context)
+    round         round index when known
+    purpose       "round" | "routing" | "sweep" | ... (caller-declared)
+    seat          panel label as dispatched
+    identity      model_id@api -- the same identity key the registry uses,
+                  so metering rows join to seat_model_map and panel_mode
+    finding_id    set for routing rungs, so cost joins to the finding and
+                  from there to co_discovery groups and falsifier verdicts
+    condition     instruction condition when routing supplies one (0C.48)
+    prompt_chars / system_chars / response_chars
+    est_tokens    chars / 3.5 -- the runner's own conservative estimate; a
+                  provider-reported usage field should REPLACE this when the
+                  dispatch layer exposes one (record actuals, not estimates)
+    elapsed_s
+
+WHAT THIS IS NOT. Not a cost gate, not an allocator, not a toggle. It never
+raises: a meter must not fell a run.
+
+Token estimates are labelled estimates. Turning them into money needs a price
+table, which changes monthly and belongs to the UX layer, not here.
+"""
+from __future__ import annotations
+
+import json
+import os
+import pathlib
+import threading
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
+_REPO = pathlib.Path(__file__).resolve().parent.parent
+_LOCK = threading.Lock()
+_CONTEXT: Dict[str, Any] = {}
+
+
+def set_context(**kw) -> None:
+    """Runner-supplied join keys (experiment name, round, purpose...).
+
+    Optional by design: metering works with no context at all, so the default
+    really is ON rather than on-when-someone-remembered."""
+    with _LOCK:
+        _CONTEXT.update({k: v for k, v in kw.items() if v is not None})
+
+
+def _sink() -> pathlib.Path:
+    p = os.environ.get("CDSFL_METER_PATH")
+    if p:
+        return pathlib.Path(p)
+    return (_REPO / "logs" / "metering"
+            / f"usage_{datetime.now(timezone.utc):%Y%m}.jsonl")
+
+
+def is_simulated_dispatch(model_config) -> bool:
+    """True when this dispatch is a rehearsal, which must not be metered.
+
+    Keyed on the authoritative signals, not on text: the ``sim`` api and the
+    mandatory ``-SIM`` label suffix (founder ruling 2026-08-08)."""
+    api = str(getattr(model_config, "api", "") or "").strip().lower()
+    label = str(getattr(model_config, "label", "") or "").strip()
+    return api == "sim" or label.upper().endswith("-SIM")
+
+
+def record_dispatch(model_config, prompt: str, cdsfl_text: str,
+                    response: Optional[str], elapsed_s: float,
+                    purpose: Optional[str] = None,
+                    finding_id: Optional[str] = None,
+                    condition: Optional[str] = None) -> None:
+    """Append one usage line. Silent in simulated mode; never raises."""
+    try:
+        if is_simulated_dispatch(model_config):
+            return
+        chars = len(prompt or "") + len(cdsfl_text or "")
+        row = {
+            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            **{k: _CONTEXT.get(k) for k in ("experiment", "round", "purpose")},
+            "seat": getattr(model_config, "label", None),
+            "identity": (f"{getattr(model_config, 'model_id', '?')}@"
+                         f"{getattr(model_config, 'api', '') or '?'}"),
+            "prompt_chars": len(prompt or ""),
+            "system_chars": len(cdsfl_text or ""),
+            "response_chars": len(response or ""),
+            "est_tokens": round(chars / 3.5),
+            # INPUT-side estimate only (prompt+system). Output tokens price
+            # differently at every vendor, so they are estimated separately
+            # rather than folded into one number that maps to no price line.
+            "est_output_tokens": round(len(response or "") / 3.5),
+            "est_tokens_basis": "chars/3.5, input-side (prompt+system); "
+                                "est_output_tokens is the response estimate; "
+                                "replace both with provider usage when exposed",
+            "elapsed_s": round(float(elapsed_s), 3),
+        }
+        if purpose:
+            row["purpose"] = purpose
+        if finding_id:
+            row["finding_id"] = finding_id
+        if condition:
+            row["condition"] = condition
+        sink = _sink()
+        sink.parent.mkdir(parents=True, exist_ok=True)
+        with _LOCK, sink.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+    except Exception:  # noqa: BLE001 — a meter must not fell a run
+        pass
+
+
+=== NEW FILE: bench/tests/test_co_discovery_linkage_2026-09-02.py ===
+"""Co-discovery is recorded, never voted (0C.49, fable panel review 2026-09-02).
+
+0 of 2,050 archived findings are linked across models; when two models find
+one defect the registry mints two unlinked canonicals, so a saturation curve
+from source_model is linear by construction. link_co_discovery records the
+overlap signal. THE CONSTRAINT, from the founder verbatim: "it must not become
+a vote. Two models describing one defect is evidence of co-discovery, not
+evidence the finding is true."
+
+Operating point (re-derived 2026-09-02 against
+similarity_pairs_adjudicated_2026-08-31; truth = final `label` field;
+regenerate: scripts/co_discovery_audit.py --calibrate): 278 labelled
+cross-model pairs, 42 SAME; fix-token Jaccard >= 0.60 with a >= 10-token
+boilerplate guard links 35, 30 truly SAME -- precision 85.7%
+Wilson [70.6%, 93.7%], recall 71.4%. On the real archive the linkage moves
+recorded co-discovery from 0/2050 (0.00%) to 336/2050 (16.39% [14.85%,
+18.06%]) in 100 groups. The boilerplate guard exists because "None required."
+on both sides scores Jaccard 1.0 and chained 41 of exp38's 169 findings into
+one phantom group on the first archive run.
+"""
+import copy
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "bench"))
+
+import reference_runner_v3 as R  # noqa: E402
+
+FIX_A = ("<<<< SEARCH bench/evidence.py\nneeds_verify = self._verified is None\n"
+         "==== REPLACE\nneeds_verify = self._verified is None or "
+         "self._verifier_key != verifier_key(verifier)\n"
+         "self._verify_message = compose_message(verifier, needs_verify)\n>>>>")
+FIX_B = ("<<<< SEARCH bench/evidence.py\nneeds_verify = self._verified is None\n"
+         "==== REPLACE\nneeds_verify = (self._verified is None or "
+         "self._verifier_key != verifier_key(verifier))\n"
+         "self._verify_message = compose_message(verifier, needs_verify)\n>>>>")
+FIX_C = ("<<<< SEARCH bench/dm/_memory.py\nif exp_id in self._seen:\n"
+         "==== REPLACE\nif exp_id.strip() in self._seen:\n>>>>")
+
+
+def _reg(entries):
+    reg = R.FindingRegistry()
+    for cid, model, fals, fix in entries:
+        reg.entries[cid] = {
+            "canonical_id": cid, "source_model": model, "status": "OPEN",
+            "severity": 0.8, "description": f"defect described by {model}",
+            "falsifier_code": fals, "proposed_fix": fix, "verdicts": [],
+            "source_aliases": [], "open_since_round": 0,
+            "last_status_change_round": 0,
+        }
+    return reg
+
+
+class TestTheRules:
+    def test_identical_falsifiers_link_across_models(self):
+        reg = _reg([("C0001", "A", "assert broken()", ""),
+                    ("C0002", "B", "assert broken()", "")])
+        out = R.link_co_discovery(reg)
+        assert out["groups"] == [["C0001", "C0002"]]
+        assert out["edges"][0]["rule"] == "falsifier_identical"
+
+    def test_high_fix_overlap_links_across_models(self):
+        reg = _reg([("C0001", "A", "", FIX_A), ("C0002", "B", "", FIX_B)])
+        out = R.link_co_discovery(reg)
+        assert out["marked"] == 2
+        assert out["edges"][0]["rule"] == "fix_overlap"
+
+    def test_different_defects_do_not_link(self):
+        reg = _reg([("C0001", "A", "", FIX_A), ("C0002", "B", "", FIX_C)])
+        assert R.link_co_discovery(reg)["marked"] == 0
+
+    def test_same_model_repeats_do_not_link(self):
+        """Same-model duplication is the absorb guard's job, not this one's."""
+        reg = _reg([("C0001", "A", "assert broken()", FIX_A),
+                    ("C0002", "A", "assert broken()", FIX_A)])
+        assert R.link_co_discovery(reg)["marked"] == 0
+
+    def test_boilerplate_fixes_do_not_link(self):
+        """'None required.' on both sides is Jaccard 1.0 and chained 41 of
+        exp38's 169 findings into one phantom group before the guard."""
+        reg = _reg([("C0001", "A", "", "None required."),
+                    ("C0002", "B", "", "None required.")])
+        assert R.link_co_discovery(reg)["marked"] == 0
+
+
+class TestItIsNotAVote:
+    """Linkage must change no verdict, no status, and no gate input."""
+
+    def test_status_verdicts_and_severity_are_untouched(self):
+        reg = _reg([("C0001", "A", "assert broken()", FIX_A),
+                    ("C0002", "B", "assert broken()", FIX_B)])
+        before = {cid: (e["status"], copy.deepcopy(e["verdicts"]), e["severity"])
+                  for cid, e in reg.entries.items()}
+        R.link_co_discovery(reg)
+        after = {cid: (e["status"], e["verdicts"], e["severity"])
+                 for cid, e in reg.entries.items()}
+        assert before == after
+
+    def test_only_the_co_discovery_key_is_added(self):
+        reg = _reg([("C0001", "A", "assert x()", ""), ("C0002", "B", "assert x()", "")])
+        keys_before = {cid: set(e) for cid, e in reg.entries.items()}
+        R.link_co_discovery(reg)
+        for cid, e in reg.entries.items():
+            assert set(e) - keys_before[cid] <= {"co_discovery"}
+
+    def test_the_gate_never_reads_the_written_fields(self):
+        """No convergence/gamma code path may consume co_discovery. Source
+        scan: the only readers allowed are the linker itself, the report
+        epilogue, and tests."""
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        for fn in ("_settled_novelty_series", "_estimate_gamma",
+                   "gamma_threshold_profile"):
+            i = src.index(f"def {fn}")
+            j = src.index("\ndef ", i + 5)
+            assert "co_discovery" not in src[i:j], (
+                f"{fn} reads co_discovery: agreement is leaking into the gate")
+
+
+class TestTheMeasurementIsReproducible:
+    def test_the_operating_point_is_documented_on_the_edge_source(self):
+        out = R.link_co_discovery(_reg([("C0001", "A", "assert x()", ""),
+                                        ("C0002", "B", "assert x()", "")]))
+        # 85.7/70.6/93.7 regenerate from `co_discovery_audit.py --calibrate`
+        # (truth = final `label`); the earlier 73.2 figure was not reproducible
+        # from any committed artefact and was corrected 2026-09-02.
+        assert "85.7" in out["basis"] and "candidates" in out["basis"]
+        assert "--calibrate" in out["basis"], (
+            "the basis must say how to regenerate its own numbers")
+
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-v"]))
+
+
+=== NEW FILE: bench/tests/test_metering_2026-09-02.py ===
+"""The meter: default ON for paid dispatches, silent in simulated mode.
+
+Founder ruling 2026-09-02: metering is relevant only on paid runs; DEFAULT ON
+because a meter that is off by default never gets switched on; it emits
+nothing in simulated mode; the toggle waits for the UX and deliberately does
+not exist yet. Nothing metered before this file's date.
+"""
+import json
+import sys
+from pathlib import Path
+from types import SimpleNamespace as NS
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "bench"))
+
+import bench.metering as M  # noqa: E402
+
+
+@pytest.fixture
+def sink(tmp_path, monkeypatch):
+    p = tmp_path / "usage.jsonl"
+    monkeypatch.setenv("CDSFL_METER_PATH", str(p))
+    return p
+
+
+def _paid(label="Gemini"):
+    return NS(label=label, model_id="gemini-3-pro", api="openrouter")
+
+
+class TestDefaultOn:
+    def test_a_paid_dispatch_writes_one_line(self, sink):
+        M.record_dispatch(_paid(), "p" * 70, "s" * 35, "r" * 10, 1.25,
+                          purpose="routing", finding_id="C0001",
+                          condition="exec")
+        rows = [json.loads(l) for l in sink.read_text().splitlines()]
+        assert len(rows) == 1
+        r = rows[0]
+        assert r["seat"] == "Gemini"
+        assert r["identity"] == "gemini-3-pro@openrouter"
+        assert r["prompt_chars"] == 70 and r["system_chars"] == 35
+        assert r["est_tokens"] == round(105 / 3.5)
+        assert (r["purpose"], r["finding_id"], r["condition"]) == (
+            "routing", "C0001", "exec")
+
+    def test_no_flag_is_consulted(self):
+        """Default ON means there is nothing to forget to switch on: the
+        module reads no config and no enable flag exists to be off."""
+        src = (REPO / "bench" / "metering.py").read_text(encoding="utf-8")
+        for word in ("metering_enabled", "meter_enabled", "METER_ON"):
+            assert word not in src
+
+
+class TestSilentInSimulatedMode:
+    def test_sim_api_writes_nothing(self, sink):
+        M.record_dispatch(NS(label="CC2", model_id="sim", api="sim"),
+                          "p", "s", "r", 0.1)
+        assert not sink.exists()
+
+    def test_sim_label_writes_nothing(self, sink):
+        M.record_dispatch(NS(label="Gemini-SIM", model_id="x", api="openrouter"),
+                          "p", "s", "r", 0.1)
+        assert not sink.exists()
+
+
+class TestItCannotFellARun:
+    def test_an_unwritable_sink_is_swallowed(self, monkeypatch):
+        monkeypatch.setenv("CDSFL_METER_PATH", "/dev/null/nope/usage.jsonl")
+        M.record_dispatch(_paid(), "p", "s", "r", 0.1)  # must not raise
+
+    def test_a_broken_model_config_is_swallowed(self, sink):
+        M.record_dispatch(object(), None, None, None, "not-a-float")
+
+
+class TestTheChokepointIsWired:
+    def test_dispatch_to_model_calls_the_meter(self):
+        src = (REPO / "bench" / "runner_core.py").read_text(encoding="utf-8")
+        i = src.index("def dispatch_to_model")
+        j = src.index("\ndef ", i + 10)
+        assert "record_dispatch(model_config, prompt, cdsfl_text" in src[i:j], (
+            "the meter is no longer wired at the one chokepoint every paid "
+            "dispatch passes through")
+
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-v"]))
+
+
+class TestTheSecondPrimitiveIsMetered:
+    """The 2026-09-01 sim-seam lesson: `_multiturn_fallback` bypasses
+    dispatch_to_model and calls decomposed_dispatch, which owns its own API
+    table. A meter wired only at the first primitive undercounts every
+    LARGE-target dispatch."""
+
+    def test_decomposed_dispatch_writes_a_line(self, sink, monkeypatch):
+        import bench.decomposed_dispatch as DD
+        res = DD.DecomposedResult(text="synthesis", model_id="gpt-5.5",
+                                  api="openrouter", chunks_delivered=1,
+                                  total_chars_delivered=10, elapsed_s=2.0)
+        monkeypatch.setattr(DD, "_decomposed_openrouter",
+                            lambda *a, **k: res)
+        out = DD.decomposed_dispatch(
+            "openrouter", "gpt-5.5", "sys", 
+            [DD.DecomposedChunk(content="chunk text")],
+            "finish")
+        assert out.text == "synthesis"
+        rows = [json.loads(l) for l in sink.read_text().splitlines()]
+        assert len(rows) == 1 and rows[0]["purpose"] == "decomposed"
+        assert rows[0]["identity"] == "gpt-5.5@openrouter"
+
+
+=== NEW FILE: bench/tests/test_single_model_mode_2026-09-02.py ===
+"""Single-model panels: declare the mode, and climb the axis that exists.
+
+0C.48 (founder + fable panel review 2026-09-02). 9 of 28 archived runs were
+six seats resolving to one underlying model, converged, and no report said
+so. Two designs were both tested through the real routing ladder
+(scripts/single_model_mode_experiment.py, deterministic, rates grounded in
+the archive's codex_exec-vs-bare contrast): on identical dispatch budgets
+(73), declare-only resolved 7/40 while condition-reallocation resolved 13/40
+-- rung 2 spent re-asking the same distribution is a rung wasted. On a
+multi-model panel the reallocating rung builder is byte-identical to the
+existing ladder.
+"""
+import sys
+from pathlib import Path
+from types import SimpleNamespace as NS
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "bench"))
+
+import reference_runner_v3 as R  # noqa: E402
+from bench.routing import (  # noqa: E402
+    INSTRUCTION_CONDITIONS, rank_falsifier_writers, rungs_with_conditions)
+
+
+def _seats(n=6, one_model=True):
+    return [NS(label=f"S{i}", model_id=("m" if one_model else f"m{i}"), api="x")
+            for i in range(n)]
+
+
+class TestTheModeIsDeclared:
+    def test_single_model_is_named_and_caveated(self):
+        pm = R.panel_mode_declaration(_seats(one_model=True))
+        assert pm["mode"] == "single-model"
+        assert pm["distinct_weights"] == 1 and pm["seats"] == 6
+        assert "auto-refutation" in pm["caveat"]
+
+    def test_multi_model_carries_no_caveat(self):
+        pm = R.panel_mode_declaration(_seats(one_model=False))
+        assert pm["mode"] == "multi-model" and pm["caveat"] is None
+
+    def test_same_weights_two_routes_is_reduced_diversity_not_single(self):
+        """The codex_exec-vs-bare contrast: one set of weights, two
+        instruction conditions. That is reduced diversity, not one voice."""
+        ms = [NS(label="Codex", model_id="gpt", api="codex_exec"),
+              NS(label="ChatGPT", model_id="gpt", api="openrouter"),
+              NS(label="Gemini", model_id="gem", api="openrouter")]
+        pm = R.panel_mode_declaration(ms)
+        assert pm["mode"] == "reduced-diversity"
+        assert pm["distinct_weights"] == 2 and pm["distinct_identities"] == 3
+
+    def test_the_report_carries_the_block(self):
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        assert '"panel_mode": panel_mode_declaration(exp_config.models),' in src
+
+
+class TestReallocationClimbsTheConditionAxis:
+    IDENTITY_ONE = {f"S{i}": "m@x" for i in range(6)}
+
+    def test_single_model_rungs_vary_the_condition(self):
+        rungs = rungs_with_conditions([f"S{i}" for i in range(6)],
+                                      self.IDENTITY_ONE, exclude=("S0",))
+        conds = [c for _, c in rungs]
+        assert conds == list(INSTRUCTION_CONDITIONS), (
+            "with one model, the ladder must climb instruction conditions -- "
+            "the only diversity axis that exists")
+
+    def test_multi_model_rungs_are_unchanged(self):
+        """Safety property: where vendor diversity exists, (b) IS (a)."""
+        labels = ["Codex", "Gemini", "DeepSeek"]
+        ident = {"Codex": "a@x", "Gemini": "b@x", "DeepSeek": "c@x"}
+        assert (rungs_with_conditions(labels, ident) ==
+                [(m, "default") for m in rank_falsifier_writers(labels)])
+
+    def test_the_condition_lands_in_the_routing_record(self):
+        """resolve_via_routing treats rungs opaquely, so (seat, condition)
+        pairs flow into model_used and thence routing_history -- the artefact
+        says which condition was tried."""
+        from bench.routing import resolve_via_routing
+        rungs = [("S1", "default"), ("S2", "exec")]
+        r = resolve_via_routing({"finding_id": "F1"}, rungs,
+                                lambda rung, f: "code",
+                                lambda code: "REFUTED", max_rungs=2)
+        assert r.model_used == ("S2", "exec") and r.rungs_tried == 2
+
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-v"]))
+
+
+=== NEW FILE: experimental_notes/data/aborted_invocations.json ===
+{
+ "_provenance": "Aborted invocations write an EMPTY run directory, and git does not track empty directories -- so on any fresh clone or worktree these 12 are invisible on disk and the regenerated ledger silently dropped the line, failing test_experiment_run_ledger against the committed copy. Recorded 2026-09-02 (fable panel review) from the committed ledger itself, in its exact order (two entries tie at 2026-08-07 04:32; the on-disk seconds that broke the tie are unrecoverable, so order here is load-bearing). experiment_run_ledger.py reads this file only when it finds no empty run directory on disk.",
+ "aborted": [
+  {
+   "exp": 32,
+   "pretty": "2026-04-05 08:53",
+   "started": "20260405T085300Z"
+  },
+  {
+   "exp": 34,
+   "pretty": "2026-04-05 22:15",
+   "started": "20260405T221500Z"
+  },
+  {
+   "exp": 35,
+   "pretty": "2026-04-06 15:20",
+   "started": "20260406T152000Z"
+  },
+  {
+   "exp": 36,
+   "pretty": "2026-04-08 07:21",
+   "started": "20260408T072100Z"
+  },
+  {
+   "exp": 37,
+   "pretty": "2026-04-09 03:03",
+   "started": "20260409T030300Z"
+  },
+  {
+   "exp": 37,
+   "pretty": "2026-04-09 03:04",
+   "started": "20260409T030400Z"
+  },
+  {
+   "exp": 38,
+   "pretty": "2026-04-10 12:19",
+   "started": "20260410T121900Z"
+  },
+  {
+   "exp": 40,
+   "pretty": "2026-05-14 02:00",
+   "started": "20260514T020000Z"
+  },
+  {
+   "exp": 42,
+   "pretty": "2026-06-03 09:57",
+   "started": "20260603T095700Z"
+  },
+  {
+   "exp": 36,
+   "pretty": "2026-08-07 04:32",
+   "started": "20260807T043200Z"
+  },
+  {
+   "exp": 35,
+   "pretty": "2026-08-07 04:32",
+   "started": "20260807T043200Z"
+  },
+  {
+   "exp": 36,
+   "pretty": "2026-08-07 05:31",
+   "started": "20260807T053100Z"
+  }
+ ]
+}
+
+
+=== NEW FILE: scripts/co_discovery_audit.py ===
+#!/usr/bin/env python3
+"""Co-discovery over the real archive: recorded vs detectable (0C.49).
+
+BEFORE (the schema as minted): a finding is "raised by more than one model"
+only if its source_aliases carry another model's alias. Measured over all 29
+real runs / 2,050 findings: ZERO. (The two entries the runway note counted are
+`Model:Model_Fnnn` same-model aliases in a colon format, not co-discovery.)
+
+AFTER: link_co_discovery() over the same registries. Rules and operating
+points are documented on the function; links are candidates, never truth.
+"""
+import json, math, pathlib, sys
+REPO = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "bench"))
+from scripts.latent_control_audit import _is_simulated  # noqa: E402
+import reference_runner_v3 as R  # noqa: E402
+
+
+def wilson(k, n, z=1.959964):
+    if not n: return (0.0, 0.0)
+    p = k / n; den = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / den
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
+    return 100 * (c - h), 100 * (c + h)
+
+
+def real_reports():
+    for fp in sorted((REPO / "bench" / "logs").rglob("*report*.json")):
+        try:
+            d = json.loads(fp.read_text(errors="ignore"))
+        except Exception:
+            continue
+        if not isinstance(d, dict) or _is_simulated(d, fp):
+            continue
+        reg = d.get("registry")
+        if isinstance(reg, dict) and reg.get("entries"):
+            yield fp, d, reg
+
+
+def main():
+    total = marked = 0; groups = 0; before = 0
+    by_rule = {}
+    rows = []
+    for fp, d, reg_dict in real_reports():
+        models = [m if isinstance(m, str) else m.get("name", "")
+                  for m in (d.get("models") or [])]
+        reg = R.FindingRegistry.from_dict(reg_dict)
+        n = len(reg.entries)
+        # BEFORE: cross-model aliases as recorded.
+        for e in reg.entries.values():
+            ms = {e.get("source_model")} | {
+                next((m for m in models if a == m or a.startswith(m + "_")), None)
+                for a in (e.get("source_aliases") or [])}
+            ms.discard(None)
+            if len(ms) > 1:
+                before += 1
+        out = R.link_co_discovery(reg)
+        total += n; marked += out["marked"]; groups += len(out["groups"])
+        for e in out["edges"]:
+            by_rule[e["rule"]] = by_rule.get(e["rule"], 0) + 1
+        if out["marked"]:
+            rows.append((fp.parent.name, n, out["marked"], len(out["groups"])))
+    lo, hi = wilson(before, total)
+    print(f"BEFORE  recorded co-discovery: {before}/{total} "
+          f"= {100*before/total:.2f}%  Wilson [{lo:.2f}%, {hi:.2f}%]")
+    lo, hi = wilson(marked, total)
+    print(f"AFTER   linked co-discovery:   {marked}/{total} "
+          f"= {100*marked/total:.2f}%  Wilson [{lo:.2f}%, {hi:.2f}%] "
+          f"in {groups} groups")
+    print(f"edges by rule: {by_rule}")
+    print("caveat: fix_overlap precision 85.7% [70.6%, 93.7%], recall 71.4% "
+          "(run --calibrate to regenerate) -- links are candidates, not truth")
+    for r in sorted(rows, key=lambda x: -x[2]):
+        print(f"  {r[0]}: {r[2]}/{r[1]} findings in {r[3]} group(s)")
+
+
+def calibrate():
+    """Re-derive the fix_overlap operating point from committed artefacts.
+
+    Truth = the final `label` field of similarity_pairs_adjudicated_2026-08-31
+    (True/False; None = unlabelled, excluded). Cross-model membership and
+    proposed-fix text come from each run's archived registry. Every number in
+    the CO_DISCOVERY_FIX_OVERLAP_THRESHOLD docstring regenerates from here --
+    if this output and that docstring ever disagree, the docstring is stale.
+    """
+    import re
+    pairs_doc = json.loads((REPO / "experimental_notes" / "data" /
+                            "similarity_pairs_adjudicated_2026-08-31.json").read_text())
+    ent = {}
+    for fp, d, reg in real_reports():
+        run = fp.parent.name.split("_")[0]
+        for cid, e in reg["entries"].items():
+            ent.setdefault((run, cid), e)
+    _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
+    _STOP = frozenset(
+        "def return import from self None True False assert print for while "
+        "if else elif not and or in is try except raise with as class "
+        "lambda".split())
+    def toks(t):
+        return frozenset(x for x in _IDENT.findall(t or "") if x not in _STOP)
+    thr = R.CO_DISCOVERY_FIX_OVERLAP_THRESHOLD
+    n = same = links = tp = fn = 0
+    for r in pairs_doc["pairs"]:
+        a, b = ent.get((r["run"], r["a"])), ent.get((r["run"], r["b"]))
+        if not a or not b or r["label"] is None: continue
+        if a.get("source_model") == b.get("source_model"): continue
+        n += 1; same += bool(r["label"])
+        ta, tb = toks(a.get("proposed_fix")), toks(b.get("proposed_fix"))
+        fires = len(ta) >= 10 and len(tb) >= 10 and len(ta & tb) / len(ta | tb) >= thr
+        if fires:
+            links += 1; tp += bool(r["label"])
+        elif r["label"]:
+            fn += 1
+    lo, hi = wilson(tp, links)
+    print(f"calibration (truth = final `label`): {n} labelled cross-model "
+          f"pairs, {same} SAME")
+    print(f"fix_overlap >= {thr} with >=10-token guard: links {links}, "
+          f"TP {tp}, precision {100*tp/links:.1f}% [{lo:.1f}%, {hi:.1f}%], "
+          f"recall {100*tp/(tp+fn):.1f}%")
+
+
+if __name__ == "__main__":
+    _unknown = [a for a in sys.argv[1:] if a != "--calibrate"]
+    if _unknown:
+        sys.exit(f"unknown argument(s): {_unknown}; the only flag is --calibrate")
+    calibrate() if "--calibrate" in sys.argv else main()
+
+
+=== NEW FILE: scripts/single_model_mode_experiment.py ===
+#!/usr/bin/env python3
+"""Q2 (0C.48): single-model panels -- (a) declare-and-caveat vs (b)
+declare-and-reallocate, run through the REAL routing ladder.
+
+SIMULATED, and says so. The panel is scripted, not a model. What is taken
+from measurement: same weights under two instruction conditions produce
+falsifiers at different rates on different findings (archive, 29 runs:
+codex_exec 76/293 = 25.9% vs bare 57/330 = 17.3%; 30 of 64 co-discovery
+groups containing either seat contain only one). What is assumed,
+conservatively: a deterministic model re-asked under the SAME condition gives
+the SAME answer (real models have temperature, so design (a) is somewhat less
+bleak than this floor).
+
+Both designs run on identical findings with identical per-condition
+behaviour; only the rung construction differs -- which is exactly the design
+question. Tools decide: a rung resolves only when the scripted falsifier is
+CONFIRMED by the (scripted) verifier, never because seats agree.
+"""
+import sys, pathlib
+REPO = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
+from bench.routing import (rank_falsifier_writers, resolve_via_routing,
+                           rungs_with_conditions)
+
+SEATS = ["Seat1", "Seat2", "Seat3", "Seat4", "Seat5", "Seat6"]
+IDENTITY = {s: "one-model@one-api" for s in SEATS}
+N = 40
+
+# Per-condition success sets, disjoint-ish, rates matched to the archive
+# measurement (bare ~17%, exec ~26%; adversarial given bare's rate on a
+# shifted set because it is unmeasured).
+def falsifier_works(idx, condition):
+    if condition == "default":      # bare: 7/40 = 17.5%
+        return idx % 6 == 0
+    if condition == "exec":         # 10/40 = 25%
+        return idx % 4 == 0
+    if condition == "adversarial":  # 6/40 = 15%
+        return idx % 6 == 3
+    return False
+
+def run(design):
+    dispatches = 0; resolved = 0; conditions_tried = set()
+    for i in range(N):
+        finding = {"finding_id": f"F{i:03d}", "source_model": "Seat1"}
+        if design == "a":
+            rungs = [(m, "default") for m in rank_falsifier_writers(
+                SEATS, exclude=("Seat1",))]
+        else:
+            rungs = rungs_with_conditions(SEATS, IDENTITY, exclude=("Seat1",))
+        def resolve_fn(rung, f):
+            nonlocal dispatches
+            dispatches += 1
+            seat, cond = rung
+            conditions_tried.add(cond)
+            return f"falsifier::{i}::{cond}" if falsifier_works(i, cond) else ""
+        def reverify_fn(code):
+            _, idx, cond = code.split("::")
+            return "CONFIRMED" if falsifier_works(int(idx), cond) else "REFUTED"
+        r = resolve_via_routing(finding, rungs, resolve_fn, reverify_fn, max_rungs=2)
+        resolved += bool(r.resolved)
+    return dict(design=design, resolved=resolved, hil=N - resolved,
+                dispatches=dispatches, conditions=sorted(conditions_tried))
+
+for d in ("a", "b"):
+    r = run(d)
+    print(f"design ({r['design']}): resolved {r['resolved']}/{N}, "
+          f"to-HIL {r['hil']}, dispatches {r['dispatches']}, "
+          f"conditions tried {r['conditions']}")
+
+# Control: multi-model panel -- (b) must be byte-identical to (a).
+ID2 = {s: f"model-{k}@api" for k, s in enumerate(SEATS)}
+ra = [(m, "default") for m in rank_falsifier_writers(SEATS, exclude=("Seat1",))]
+rb = rungs_with_conditions(SEATS, ID2, exclude=("Seat1",))
+print("multi-model control, (b) rungs == (a) rungs:", ra == rb)

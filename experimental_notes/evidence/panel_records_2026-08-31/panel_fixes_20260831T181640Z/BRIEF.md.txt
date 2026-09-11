@@ -1,0 +1,93 @@
+# Test these fixes. Then give me YOUR fix for what is still open — tool-verified, not described.
+
+**The founder's criticism of the last round applies to you and to me equally:**
+
+> *"The models identified problems, but given the full specification of the schema
+> and in the full knowledge of what we are attempting to achieve, they didn't
+> provide any tool verified fixes, or you forgot to ask them, as you often do?"*
+
+So this brief asks for **fixes you have executed**, not fixes you have described.
+
+## The standard every fix must meet (founder, 2026-08-31)
+
+> *"All fixes should clearly be additive, in that they add meaningfully to the
+> reliability and accuracy of the schema as a whole. They should not include
+> suggestions to disable, or remove features simply because they might currently
+> not be working as intended. Nothing that is done should be potentially
+> detrimental to the functionality, accuracy, or reliability of the harness as a
+> whole. The only time removal of features should be considered is when either I
+> or the models can suggest/invent a better solution to any given problem, so
+> that that existing feature/mechanical element is then rendered redundant."*
+
+And the architectural ruling that reshaped this round:
+
+> *"Only genuinely computationally irreducible issues, or those that meet the
+> previously long established HIL escalation criteria should be considered
+> potentially 'blocking', but even then they should not block convergence,
+> because functionally the HIL in CDSFL is just regarded as another (albeit
+> slower) computational node in the system."*
+
+**HIL does not gate convergence.** Any fix that makes it do so is wrong.
+
+## Three fixes already made — attack them
+
+**Fix A — directive inheritance.** `--setting-sources ""` added to the simulated
+shim AND to `call_claude_cli`, which is how CC2 and Fable reach a **paid** run.
+Measured before: 66,533 of 93,442 briefing characters (71.2%) were inherited
+operator/project config, and `--system-prompt` does not displace it. Verified by
+execution: the probe that answered YES now answers NO.
+*Test:* does the CDSFL directive still arrive intact? Does anything the panel
+legitimately needs (MCP servers, permissions) break? Is there a better flag?
+
+**Fix B — the stale `mechanical_fault` stamp.** The last round's proposal was to
+block the close on that flag. **That was wrong** — nothing anywhere clears the
+flag, so it strands findings permanently, and on the v3.2 run C0013's close was
+legitimate: `NON_DISCRIMINATING` is already in `ROUTABLE_INSTRUMENT_FAULTS`, it
+WAS routed to Codex-SIM, and a fresh runner-verified falsifier came back. The
+flag was describing an instrument no longer attached. So the fix is one line at
+the routing-success clear site, beside the existing `irreducible_escalation` and
+`hil_escalated` clears.
+*Test:* is that sufficient? Are there other paths that attach a replacement
+falsifier without clearing it (the post-convergence sweep attaches falsifiers
+too)? Does the artefact now tell the truth in every path?
+
+**Fix C — the macrophage baseline.** Each stage is now compared against its own
+prior median instead of the round's cross-stage median. Replay of last night's
+timings: 0 alarms where the shipped detector produced 10. Injected 4x and 6x its
+own median: detected, severity 0.40 and 0.60 — discriminating again, where all 92
+real-experiment alarms had severity exactly 1.00.
+*Test:* run it. Is the 3x factor right for this pipeline? Does the singleton's
+loss of history across checkpoint-resume matter more than I claimed? Is there a
+better statistic than a running median (MAD, EWMA)?
+
+## Still open — give me your fix, executed
+
+1. **Fix-efficacy staleness.** 11 of 15 `NOT_PROBED_NO_FALSIFIER` records have a
+   falsifier; that set is identical to the 11 the post-convergence sweep cleared.
+   One extra pass probes only 5 because of `FIX_EFFICACY_PER_ROUND_LIMIT`. The
+   sweep also leaves findings CONFIRMED+verified that `_settle_confirmed_findings`
+   exists to close, and that pass runs *before* the sweep and never after.
+2. **`_extract_routing_falsifier`** fails on a falsifier containing a bare
+   code-fence line — the exact prose shape its own docstring calls safe. Returns
+   nothing, which reads as an exhausted ladder.
+3. **A second 500-character cut** at the per-round HIL-review record, missed in
+   the truncation sweep.
+4. **`bench/logs/immune_pipeline.log`** is a 5.8 MB append-only file dating to
+   2026-04-11 that the simulated run appended 174 lines to, so simulated and real
+   records are now indistinguishable in one file.
+5. **Four archive-invariant guards are red** because the run falsified claims of
+   the form "this has never happened" — it now has, by design. They must be
+   re-measured, not deleted.
+6. **`enable_tools` also switches the §2 directive rewrite**, so gate-off ablation
+   arms now receive a changed prompt mid-arc. The founder's ruling covered tool
+   use, not the rewrite.
+7. **A comment in `falsifier_verify.py`** claims a model-authored falsifier
+   "cannot reach" the widened allowlist. `_allow_roots` is also called at :642 to
+   build the child's runtime allowlist, so the comment misdescribes its own
+   function next to the permission boundary closed after the discarded run.
+
+For each: **write the fix, run it, and show the command output.** If my framing
+of the defect is wrong, say so — that has happened twice this round already.
+
+Suite before you start: expect 5 failures, all from item 5. `python3 -m pytest
+bench/tests -q` takes ~5.5 min.

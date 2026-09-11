@@ -1,0 +1,92 @@
+# 6 behaviour-changing fixes shipped today with NO independent review. Attack them.
+
+## What this is, and why you are being asked
+
+The founder's standing instruction is that findings are verified with the panel. That was honoured
+for the FINDINGS today. It was not honoured for the FIXES. Every change below was found, written,
+tested and committed by CC1 alone in one sitting. The founder caught the gap and asked for this.
+
+**You are asked for SOLUTIONS, not only faults.** A verdict that only diagnoses is a failed answer.
+Use your shell — sympy, z3, numpy, scipy, statsmodels, mpmath, wolframscript, pytest, ruff, and the
+repo itself. The named `sympy_verify` tools are NOT on your route; say so and use the shell.
+**Answer as yourself.** No assigned roles; both seats get the same brief. Disagreement is preserved
+as information, never smoothed toward consensus.
+
+**The whole tree is at HEAD on main and every change is committed**, so `git show` and `git diff`
+work, the test suite runs (`python3 -m pytest bench/tests/ -q`), and you can execute anything.
+Suite is green at 5251 passed, 0 failed.
+
+## The 6 fixes, most dangerous first
+
+**1. A4 no longer gates on severity (`reference_runner_v3.py`, `unverified_critical_count`).**
+Founder ruling: "there are no votes in CDSFL." The gate read `severity >= 0.7`, a float the SOURCE
+MODEL assigns. It now blocks unless a falsifier returned one of `{CONFIRMED, REFUTED, CLOSED}`.
+CC1's safety argument: replayed over 87 archived reports the new rule blocks MORE in 36.8%,
+identically in 63.2%, FEWER in 0 of 87, Wilson [0.0%, 4.2%] — so convergence can only get harder.
+**Attack that.** Is the replay population the right one? Is there a live path where the new rule
+blocks LESS? Does `irreducible_escalation` interact with it badly? This is convergence machinery.
+
+**2. The overlay now clones instead of symlinking (`_build_discrimination_overlay`).**
+The old overlay symlinked every sibling, and symlinks are transparent to writes, so a falsifier
+writing to a sibling modified the REAL repo (reproduced). It now uses `cp -Rc` (APFS clone),
+measured at 2.77 s for 683 MB / 15837 files, and RAISES if cloning fails rather than degrading.
+**Attack that.** Does the clone leak anything the symlink form did not — `.env` is in the tree and
+is readable by a falsifier either way, but is there now a WRITE path that matters? Is `.git`
+removal sufficient? What happens on a non-APFS volume, in CI, or when /tmp is a different
+filesystem? Is the 2.77 s per finding acceptable, and did CC1 measure the right thing?
+
+**3. Non-finite inputs now fail safe (`compute_rk`).**
+`min(1.0, nan)` returns 1.0 because every NaN comparison is False, so a NaN fix-efficacy scored as a
+PERFECT fix — `compute_rk(0.5,0.5,nan)` and `compute_rk(0.5,0.5,inf)` both returned
+0.3666666666666667. Non-finite now maps to the conservative end: `R_old -> 1.0`, `q -> 0.0`,
+`sk -> 0.0`. **Attack that.** Is "conservative" right per-parameter, or does mapping `R_old` to 1.0
+have a perverse effect anywhere? Should it raise instead? Does any legitimate caller pass non-finite?
+
+**4. The S\* shadow (`sk_break_even`, `sk_threshold_shadow`).**
+The shipped threshold is not the break-even of the shipped `nu_eff`: the true condition is a
+QUADRATIC and the shipped form is a ratio, coinciding only on `nu_b == q*R`. `sk_break_even` solves
+the quadratic; coefficients validated against `scipy.optimize.brentq` at 1005 points with 0
+mismatches; returns `None` rather than 0.0 when no root lies in [0,1]. Recorded beside every verdict,
+deciding nothing. **Attack that.** Are the coefficients right? Is root selection (`min` of those in
+[0,1]) correct, or can the wrong root be picked? Is `None` handled safely by every consumer?
+
+**5. The maths-routing pattern was unified (`verification_utils._MATH_PATTERN`).**
+2 live copies differed by 7 alternatives, so whether a finding routed for mathematical checking
+depended on which module asked — 40 of 8709 archived descriptions, 0.46%, Wilson [0.34%, 0.62%],
+and in 100% of those `immune_agents` routed as MATH and `verification_utils` did not. Unified on the
+BROADER form. **Attack that.** Does broadening mis-route prose findings into mathematical
+verification, and what does that cost? Should they instead share one definition rather than 2 copies
+that now merely happen to agree?
+
+**6. The vault status scan (`bench/vault_keys.sh`).**
+It reported VAULTED while 29 plaintext answer keys sat on disk: it matched only `*answer_key*.json`
+(0 of 29 real files) and excluded `Developer_Projects`, where they live. `bench/arc_sequencer.sh:50`
+halts an entire arc on that line, so it was a false all-clear on the gate that protects unrun exams.
+**Attack that.** Are the new patterns sufficient, or is there a 3rd naming convention? Is depth 5
+enough? Can the `known`-store exclusion be abused to hide a key? Does it now produce false positives
+that would get it switched off — the failure mode that killed the queue alarm twice?
+
+## The questions
+
+**Q1.** For EACH of the 6: does the fix do what it claims, and can you break it? Name the executable
+check you ran. Rank them by residual risk.
+
+**Q2.** Which of the 6 is most likely to cause a WRONG RESULT rather than a crash? Wrong results are
+this project's expensive failure; crashes are cheap.
+
+**Q3.** CC1 wrote all 6 in one sitting, having also found all 6. What did a single author plausibly
+miss that 2 authors would not? Answer structurally, not politely.
+
+**Q4.** Propose the concrete repair for anything you break. Runnable.
+
+**Q5.** What would refute your own review?
+
+## Context so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in STEM
+artefacts. Biological names in the codebase are analogy only. The mathematical model has survived
+every attack in the project's life; the failures have always been mechanical, or in the prose ABOUT
+the mathematics. 4 numbers were checked today and did NOT reproduce, and acting on 2 of them would
+have made things worse — so treat any figure in this brief, including CC1's, as a claim to test
+rather than a premise. A simulated full-harness run is planned next; a fault you find now is far
+cheaper than one found during it.

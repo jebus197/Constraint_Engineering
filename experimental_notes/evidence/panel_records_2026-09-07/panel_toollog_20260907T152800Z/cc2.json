@@ -1,0 +1,143 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10780,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(pwd)\\\" && pwd && git log --oneline -5 2>/dev/null | head -20 && echo \\\"---STATUS---\\\" && git status --short | head -30\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(pwd)\\\" && grep -n \\\"s_star reads\\\" -r bench/reference_runner_v3.py | head -20\", \"description\": \"Find the docstring claim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10570,10680p' bench/reference_runner_v3.py\", \"description\": \"Read docstring around line 10616\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10800,10840p' bench/reference_runner_v3.py && echo \\\"=== measure script ===\\\" && cat scripts/measure_sk_threshold_gate_fire_rate.py\", \"description\": \"Read second mention + measure script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 scripts/measure_sk_threshold_gate_fire_rate.py 2>&1 | tail -30\", \"description\": \"Run committed measure script\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"--- logs dirs ---\\\" && ls bench/logs | head -20 && echo \\\"count json in bench/logs:\\\" && find bench/logs -name '*.json' | wc -l && echo \\\"count ALL json repo:\\\" && find . -name '*.json' | wc -l\", \"description\": \"Survey archive layout\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/measure_sk_threshold_gate_fire_rate.py 2>&1 | tail -30\", \"description\": \"Run committed measure script\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"json under logs/: $(find logs -name '*.json' | wc -l)\\\" && echo \\\"json bench/logs: $(find bench/logs -name '*.json' | wc -l)\\\" && echo \\\"json bench/: $(find bench -name '*.json' | wc -l)\\\" && echo \\\"top-level logs tree:\\\" && ls logs | head\", \"description\": \"Count json per tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/mine_sstar.py <<'EOF'\\nimport json, os\\nfrom pathlib import Path\\nfrom collections import Counter\\n\\ndef walk(o, key):\\n    if isinstance(o, dict):\\n        if key in o: yield o\\n        for v in o.values(): yield from walk(v, key)\\n    elif isinstance(o, list):\\n        for v in o: yield from walk(v, key)\\n\\nfor root in [\\\"bench/logs\\\", \\\"logs\\\", \\\"bench\\\", \\\".\\\"]:\\n    n_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/wilson_interval_consistency.py bench/confer_maths_panel_2026-09-05.py 2>&1; echo \\\"=== wilson script ===\\\"; cat scripts/wilson_interval_consistency.py\", \"description\": \"Read wilson checker\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/probe.py <<'EOF'\\nimport json\\nfrom pathlib import Path\\nfrom collections import Counter\\ndef walk(o,key,path=\\\"\\\"):\\n    if isinstance(o,dict):\\n        if key in o: yield path,o\\n        for k,v in o.items(): yield from walk(v,key,path+\\\"/\\\"+str(k))\\n    elif isinstance(o,list):\\n        for i,v in enumerate(o): yield from walk(v,key,path+f\\\"[{i}]\\\")\\nbyfile=Counter(); by"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/wilson_interval_consistency.py 2>&1 | tail -40; echo \\\"EXIT=$?\\\"\", \"description\": \"Run wilson consistency checker\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== dynamic_management.py candidates ===\\\"; find . -name 'dynamic_management.py' -exec wc -l {} \\\\; 2>/dev/null; echo \\\"=== ONBOARDING.md:2070 ===\\\"; sed -n '2065,2075p' resources/ONBOARDING.md 2>/dev/null || find . -name ONBOARDING.md\", \"description\": \"Check the 3181 provenance claim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/wt && cat > /tmp/wt/halffix_A.md <<'EOF'\\ns_star reads 0.0 in 3816 of 3816 archived records, Wilson [99.88%, 100.00%].\\nEOF\\ncat > /tmp/wt/halffix_B.md <<'EOF'\\ns_star reads 0.0 in 3181 of 3181 archived records, Wilson [99.90%, 100.00%].\\nEOF\\necho \\\"### HALF-FIX A (count corrected, interval stale) -- the case the docstring says it CATCHES:\\\"\\npython3 scripts/wilson_inte"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/where78.py <<'EOF'\\nimport json\\nfrom pathlib import Path\\nfrom collections import Counter\\ndef walk(o,key):\\n    if isinstance(o,dict):\\n        if key in o: yield o\\n        for v in o.values(): yield from walk(v,key)\\n    elif isinstance(o,list):\\n        for v in o: yield from walk(v,key)\\nc=Counter()\\nfor p in sorted(Path(\\\"bench\\\").rglob(\\\"*.json\\\")):\\n    if p.parts["
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== dispatch() in confer_maths_panel ===\\\"; grep -n \\\"tool_log\\\\|set_tool_log_sink\\\\|n_tool_calls\\\\|stream-json\\\\|def dispatch\\\\|deepseek\\\\|openrouter\\\\|claude_cli\\\" bench/confer_maths_panel_2026-09-05.py | head -60\", \"description\": \"Locate tool_log machinery\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '105,232p' bench/confer_maths_panel_2026-09-05.py\", \"description\": \"Read dispatch() in full\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"all files bench/logs: $(find bench/logs -type f | wc -l)\\\"; echo \\\"all files bench: $(find bench -type f | wc -l)\\\"; echo \\\"json bench/logs+quarantine: $(find bench/logs bench/logs_quarantine -name '*.json' 2>/dev/null | wc -l)\\\"; echo \\\"all files bench/logs+quar: $(find bench/logs bench/logs_quarantine -type f 2>/dev/null | wc -l)\\\"; echo \\\"=== sink impl ===\\\"; sed -n '310,375"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' bench/confer_maths_panel_2026-09-05.py\", \"description\": \"Find LOGS path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def call_claude_cli\\\" -A 90 bench/experiment_11_orchestrator.py | head -120\", \"description\": \"Read call_claude_cli\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"P=$$; echo \\\"my shell pid=$P\\\"; for i in 1 2 3 4 5 6; do\\n  PP=$(ps -o ppid= -p $P 2>/dev/null | tr -d ' '); [ -z \\\"$PP\\\" ] && break\\n  echo \\\"--- ancestor $i (pid $PP) ---\\\"\\n  ps -o command= -p $PP 2>/dev/null | cut -c1-600\\n  P=$PP\\ndone\", \"description\": \"Inspect own process ancestry for stream-json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '966,1080p' bench/experiment_11_orchestrator.py\", \"description\": \"Read rest of call_claude_cli incl sink write\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && cat > /tmp/repro_retry.py <<'PY'\\nimport sys, json, types, subprocess, pathlib\\nsys.path.insert(0,\\\".\\\")\\nimport experiment_11_orchestrator as O\\n\\n# two attempts: attempt 1 makes 3 tool calls but returns a HOLDING NOTE (rejected),\\n# attempt 2 makes 1 tool call and returns real work.\\ndef mk(ncalls, final):\\n    lines=[]\\n    for i in range(ncalls):\\n        lines.append("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && grep -n \\\"def call_deepseek\\\" -A 55 experiment_11_orchestrator.py | grep -n \\\"tools\\\\|tool_calls\\\\|content\\\\|return\\\\|choices\\\" | head -30\", \"description\": \"Check deepseek tool handling\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def accept_reply_or_work\\\" -A 40 bench/experiment_11_orchestrator.py | head -50\", \"description\": \"Read accept_reply_or_work\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def call_deepseek\\\" -A 60 bench/experiment_11_orchestrator.py | tail -45\", \"description\": \"Read call_deepseek body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo && pwd && grep -n \\\"def accept_reply_or_work\\\" -A 35 bench/experiment_11_orchestrator.py | head -45\", \"description\": \"Reset cwd, read accept_reply_or_work\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def call_deepseek\\\" -A 58 bench/experiment_11_orchestrator.py | tail -46\", \"description\": \"Read call_deepseek body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo/bench && cat > /tmp/r2.py <<'PY'\\nimport sys, json, pathlib\\nsys.path.insert(0,\\\".\\\")\\nimport experiment_11_orchestrator as O\\ndef mk(n, final):\\n    L=[json.dumps({\\\"type\\\":\\\"assistant\\\",\\\"message\\\":{\\\"content\\\":[\\n        {\\\"type\\\":\\\"tool_use\\\",\\\"name\\\":\\\"Bash\\\",\\\"input\\\":{\\\"command\\\":f\\\"c{i}\\\"}}]}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_22dcjsvi/repo && python3 -c \\\"\\nfrom decimal import Decimal,getcontext\\ngetcontext().prec=40\\nz2=Decimal('1.959963984540054')**2\\nfor n in (3181,3816,3894):\\n    lo=Decimal(n)/(Decimal(n)+z2)\\n    print(f'n={n}: Wilson lo = {lo*100:.6f}%  -> 2dp {round(lo*100,2)}%')\\nprint('z^2 =',z2)\\n\\\"\", \"description\": \"Derive "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/adv && cat > /tmp/adv/a.md <<'EOF'\\nCASE 1 innocuous bridge number. A WRONG interval, deliberately:\\nThe gate passed 3816 of 3816 records across 70 files, Wilson 95% CI [12.34%, 56.78%].\\n\\nCASE 2 gap just over 60 chars. A WRONG interval, deliberately:\\nWe observed 100 of 200 events, and after the usual caveats about sampling, Wilson CI [1.00%, 2.00%].\\n\\nCASE 3 interval"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re\\nfrom pathlib import Path\\npats={\\n 'any \\\"s_star\\\" key'      : re.compile(r'\\\"s_star\\\"\\\\s*:'),\\n '\\\"s_star\\\": 0.0 (float)' : re.compile(r'\\\"s_star\\\"\\\\s*:\\\\s*0\\\\.0(?![0-9])'),\\n '\\\"s_star\\\": \\\"0\\\" (string)': re.compile(r'\\\"s_star\\\"\\\\s*:\\\\s*\\\"0\\\"'),\\n 'zero either encoding'  : re.compile(r'\\\"s_star\\\"\\\\s*:\\\\s*(?:0\\\\.0(?![0-9])|\\\"0\\\"|0(?![.0-9]))'),\\n}\\ntot={k"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -i \\\"stated_gate\\\\|2026-09-07\\\" ; echo \\\"--- run pinning test if present ---\\\"; python3 -m pytest bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py -q 2>&1 | tail -15\", \"description\": \"Run the pinning test\", \"timeout\": 600000}"
+    }
+  ],
+  "n_tool_calls": 33,
+  "elapsed_s": 368.4,
+  "response": "All three changes are now measured. Writing up.\n\n---\n\n# Seat verdict \u2014 cc2 (opus)\n\nWorking copy: `/private/var/.../cdsfl_panel_22dcjsvi/repo`. Panel run `panel_toollog_20260907T152800Z`.\n\n---\n\n## Change 1 \u2014 the corrected count: **DEFECTIVE** (right number, false record)\n\n**3816 is the right number for the claim as intended.** But the docstring's supporting evidence is wrong in four places, and one of them inverts the story it tells.\n\nI walked `bench/logs` myself with an independent structure-aware walker, then re-measured by raw regex on both encodings:\n\n```\nany \"s_star\" key           3816\n\"s_star\": 0.0 (float)      3181\n\"s_star\": \"0\" (string)      635\nzero either encoding       3816\n```\n\n**3181 is not a paste error. It is a reproducible measurement of this archive.** It is exactly the number of records whose `s_star` is the literal float `0.0`. The other 635 are genuine gate records from the `sim45_*` families, which stringify every numeric:\n\n```json\n\"sk\": \"0.9345\", \"s_star\": \"0\", \"passes_threshold\": true, \"R_old\": \"0.5\"\n```\n\nThe docstring asserts 3181 \"is the line count of `dynamic_management.py`, the Experiment 12 artefact\". `bench/dynamic_management.py` is **78 lines**; the 3181 exists only as March-2026 prose in `ONBOARDING.md:2070`. That a stray line count would coincide *to the digit* with a real statistic of the very field under discussion is not credible. The likelier history: 3181 was a correct measurement under a strict-literal predicate, and the \"transcription\" narrative was constructed to explain it away \u2014 then used to record that a seat \"was RIGHT\" and CC1 \"was wrong\". **The record now contains a fabricated causal story that forecloses the real one.**\n\nThree further defects:\n\n- **\"every one reading 0.0\" is false.** 635 read `\"0\"`. The distinction is the whole reason both numbers exist.\n- **\"the committed `measure_sk_threshold_gate_fire_rate.py`\" cannot corroborate this claim.** That script never reads `s_star` \u2014 it counts `passes_threshold`. Route 3 of \"3 independent routes\" measures a different field. (It happens to agree at 3816 because the fields co-occur exactly \u2014 I verified `both=3816, s_star_only=0, pt_only=0` \u2014 but agreement by coincidence is not corroboration.)\n- **\"7351 archived files\" matches nothing.** `bench/logs` holds 6661 JSON files (7129 files of all types); repo-wide JSON is 7608. Adding `bench/logs_quarantine` gives 6674/7144.\n\n**Archive definition:** defensible. The 78 gate records outside `bench/logs` are all in `bench/logs_quarantine/sim45_memory_20260830T153011Z/` \u2014 correctly excluded. But the docstring never says quarantine is excluded, and repo-wide the count is 3894.\n\n**Interval: correct.** Derived rather than asserted \u2014 at k=n, `p=1`, so `h = z\u00b7\u221a(z\u00b2/4n\u00b2) = z\u00b2/2n`, and `lo = (1 + z\u00b2/2n \u2212 z\u00b2/2n)/(1 + z\u00b2/n) = n/(n+z\u00b2)`, `hi = 1`. At 40 dp:\n\n```\nn=3181: 99.879383%  -> 99.88%\nn=3816: 99.899434%  -> 99.90%\n```\n\nBoth stated intervals match their stated counts.\n\n**Fix:** replace the provenance paragraph with the measurement, not a story: *\"`s_star` is zero in 3816 of 3816 gate records in `bench/logs` (quarantine excluded): 3181 as float `0.0`, 635 as the string `\"0\"` in the `sim45_*` archives. The prior 3181 was the float-only count, not a transcription error.\"* Drop the `measure_...` script as a route for this claim or extend it to read `s_star`. Correct 7351 \u2192 6661.\n\n---\n\n## Change 2 \u2014 the checker: **DEFECTIVE**\n\nIt runs clean on the repo (1372 files, 0 disagreements, 4 loose \u2014 all four genuinely loose, no false positives found). But:\n\n**1. Its headline capability claim is false.** The docstring: *\"Fixing 3181 -> 3816 while leaving [99.88%, 100.00%] is caught here, and that half-fix was a live risk in the very commit that corrected the count.\"* It is not caught:\n\n```\n### HALF-FIX A (count corrected, interval stale)\n1 interval(s) wider than computed -- valid but loose:\n  states [99.88%, 100.0%], computed [99.8994%, 100.0000%] for 3816 of 3816\nEvery stated interval agrees with the count beside it.\nEXIT=0\n```\n\nThe file contradicts itself 130 lines later, admitting the half-fix \"lands here\u2026 not worth failing a suite over\". **This is not an occasional miss \u2014 it is structural.** At k=n, `lo(n) = n/(n+z\u00b2)` is strictly increasing in n. So for *every* upward correction at k=n, the stale interval is necessarily wider, hence necessarily routed to `loose`, hence never fails. The one defect class the tool was built for is the one class it can never catch. Only the reverse half-fix (interval corrected, count stale) is caught \u2014 I confirmed EXIT=1 on that.\n\n**2. The cited complementary instrument does not exist.**\n\n```\n$ python3 -m pytest bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py\nERROR: file or directory not found\n```\n\nThe docstring's \"2 instruments are COMPLEMENTARY\" rests on a test that was never committed. So `3816` is pinned by **nothing** and can rot silently \u2014 precisely the failure this change set exists to prevent. Under the additive standard this is the canonical shape: an entry point wired to no caller.\n\n**3. The pairing rules are trivially defeated.** Five deliberately-wrong intervals; four survived:\n\n```\nCASE 1 innocuous bridge number  ... 3816 of 3816 across 70 files, Wilson 95% CI [12.34%, 56.78%]  -> MISSED\nCASE 2 gap 61+ chars                                                                              -> MISSED\nCASE 3 interval stated before the count                                                           -> MISSED\nCASE 4 \"n = 200 and k = 100\"                                                                      -> MISSED\nCASE 5 control                                                                                    -> caught\n```\n\nCase 1 is the serious one. `_bridge_carries_another_statistic` treats *any* unrecognised number as another statistic claiming the interval. \"across 70 files\" \u2014 where 70 is the real file count from this very archive (`files carrying the field: 70`) \u2014 silently disarms the check. The natural sentence a CDSFL author would write about this archive defeats the tool.\n\n**4. Is \"wider is not a defect\" sound?** As a principle, yes: outward rounding weakens a claim. As implemented here, no \u2014 because it is the *only* thing standing between the tool and its stated purpose, and (see 1) it swallows that entire class by construction.\n\n**Fix:** (a) delete the false \"is caught here\" sentence; (b) when `k == n`, invert `n/(n+z\u00b2)` and fail if the stated `n` falls outside the band the bound implies \u2014 `_n_that_fits` already computes this, it is just never consulted on the loose path; (c) commit the missing pinning test; (d) restrict the bridge rule to numbers adjacent to a statistic-name token, or whitelist bare integers \u2264 n.\n\n---\n\n## Change 3 \u2014 the tool-call counter: **SOUND IN MECHANISM, DEFECTIVE IN COMPLETENESS**\n\n**The fix works, and I am the proof.** Reading my own process ancestry:\n\n```\n--- ancestor 1 (pid 93407) ---\n/opt/homebrew/bin/claude -p --model opus --output-format stream-json --verbose ...\n--- ancestor 2 ---\nPython bench/confer_maths_panel_2026-09-05.py panel_toollog_20260907T152800Z\n```\n\n`--output-format stream-json` is emitted *only* when `_get_tool_log_sink()` is truthy (`experiment_11_orchestrator.py:949`). It reached my worker thread, so the thread-local is correct as used: `set_tool_log_sink` is called inside `dispatch`, which *is* the pool worker, and `call_claude_cli` runs `subprocess.run` on that same thread. No nested executor. `try/finally` cleanup is per-thread. **Safe.** Format switch is benign \u2014 `_parse_stream_json` extracts `result` as final text, and the seat record's `chars` is unaffected.\n\n**But \"every tool call is recorded\" is still false, now by a different route.** The sink is written *inside the retry loop, before the `accept` check*, and `write_text` truncates. A rejected attempt's tool calls are destroyed by the next attempt. Executed repro (stubbed subprocess, attempt 1 rejected with 7 calls, attempt 2 accepted with 2):\n\n```\nattempts: 2 | TRUE tool calls across dispatch: 7+2 = 9\nsink records n_tool_calls = 2 <-- what reaches the seat JSON\nLOST: 7\n```\n\nThis is not hypothetical: `accept_reply_or_work` exists *because* seats produce work then a short note, and the file's own comments record both seats hitting the wall and retrying. The seat whose first attempt did the most tool work is the one most likely to be rejected and have that work erased. `max_retries=2` bounds it to one lost attempt.\n\nSecond, smaller: on the exception path `dispatch` builds `out` with no `tool_calls`/`n_tool_calls` keys, so the log prints `tools=native` for a failed CLI seat \u2014 indistinguishable from a route that genuinely has no counter. Third: `if _sink.is_file()` has no freshness guard, so a re-run into an existing `LOGS` dir would read a previous run's sink as this run's.\n\n**deepseek:** the docstring is honest and I confirm it \u2014 but understated. `call_deepseek` *does* run a full OpenAI tool-call loop when `tools` is passed (`experiment_11_orchestrator.py:1355`); it executes tools and simply returns text. The calls exist inside that loop and are discarded at the return. So this is not a structural impossibility, it is one unreturned variable \u2014 and the docstring's framing (\"returns only text, so \u2026 structurally 0\") makes a five-line fix sound like a design limit.\n\n**Fix:** accumulate rather than truncate \u2014 hoist a `_all_calls = []` above the attempt loop, `_all_calls.extend(_calls)` per attempt, write that; or write to `{name}.tools.attempt{n}.json` and sum. Add `\"tool_calls\": [], \"n_tool_calls\": 0` to the exception-path `out`. Unlink `_sink` before dispatch. For deepseek, return `{\"text\":\u2026, \"tool_calls\":[\u2026]}` from the tool-loop branch.\n\n---\n\n## Summary\n\n| | Verdict | Core defect |\n|---|---|---|\n| 1 | **Defective** | Number right, interval right (derived); provenance story is false \u2014 3181 is a reproducible float-only count, not a paste; 2 of 3 cited routes don't measure `s_star`; file count 7351 matches nothing |\n| 2 | **Defective** | Cannot catch the half-fix it names as its purpose, *by construction* at k=n; cited pinning test does not exist; one stray integer in the bridge disarms it |\n| 3 | **Sound mechanism, incomplete** | Verified live on my own process; retries truncate the sink and silently discard a rejected attempt's tool calls |\n\n**Where I disagree with the brief:** it frames Change 1 as a settled correction of a paste error. The arithmetic says otherwise \u2014 both 3181 and 3816 are true measurements of different predicates, and the record now asserts a provenance it cannot support while adjudicating a disagreement between seats on that basis. That is the more serious defect of the three, because it is the one that writes a falsehood into the project's memory of how it corrects itself."
+}

@@ -1,0 +1,61 @@
+# Panel brief — 3 changes made 2026-09-07. Find what is wrong with them.
+
+You are a reviewing seat. You are working in a WRITABLE COPY of the repository,
+not the live tree; your cwd is that copy. Bash, Read, Grep and Glob are
+available. **Run commands. Do not reason from the source text alone** — this
+project's standing rule `execute-do-not-grep` holds that a check asserting on
+source text proves only that the source describes itself consistently.
+
+Your task is to find what is WRONG, not to confirm what is right. If a change is
+sound, say so briefly and move on; spend your effort on the ones that are not.
+
+## Change 1 — a corrected count
+
+`bench/reference_runner_v3.py`, in `sk_threshold_shadow`'s docstring, read
+"s_star reads 0.0 in 3181 of 3181 archived records, Wilson [99.88%, 100.00%]".
+It now reads "3816 of 3816 ... Wilson [99.90%, 100.00%]".
+
+The justification given: 3816 is confirmed by a JSON walk over archived files, a
+raw-text regex, and `scripts/measure_sk_threshold_gate_fire_rate.py`; and 3181
+is the line count of the Experiment 12 artefact, pasted in error.
+
+Questions: is 3816 actually right? Re-measure it yourself, by a method of your
+own choosing. Does the archive definition used (which files, which nesting)
+match what the sentence claims? Is the new Wilson interval correct?
+
+## Change 2 — a new checker
+
+`scripts/wilson_interval_consistency.py` scans the repo for a stated count and a
+stated interval side by side and reports pairs that disagree arithmetically.
+
+It CANNOT catch the Change 1 defect, and says so: [99.88%, 100.00%] is exactly
+right for 3181 of 3181, so that sentence was internally consistent and merely
+described the wrong archive.
+
+Questions: run it. Does it produce false positives or false negatives on this
+repo? Its pairing rules (an explicit CI marker within 60 characters; no other
+statistic's value in between) were derived from a handful of cases — construct
+inputs that defeat them. Is the "wider than computed is not a defect" rule
+sound, or does it hide real errors?
+
+## Change 3 — a tool-call counter that was 0 by construction
+
+`bench/confer_maths_panel_2026-09-05.py`, in `dispatch()`: `tool_log` was
+initialised to `[]` and only ever reassigned on the `openrouter` branch, so
+`n_tool_calls` read 0 for the `claude_cli` seats on every panel, while the
+function docstring claimed every seat's tool calls were recorded and checkable.
+It now sets `set_tool_log_sink` around the call and reads the sink back.
+
+Questions: does the fix actually work — is `n_tool_calls` in YOUR OWN seat
+record non-zero after this run? (That is a direct test of the change, and you
+are the instrument.) Does setting the sink change anything else about the
+dispatch that matters, given it also switches the CLI output format to
+stream-json? Is the thread-local safe as used here? What about the `deepseek`
+branch, which the docstring now admits is still unrecorded?
+
+## Output
+
+For each change: VERDICT (sound / defective / uncertain), the evidence you ran
+to reach it, and a specific fix for anything defective. Quote the commands you
+ran and their real output. Disagreement is information — do not smooth toward
+agreement with the reasoning above.

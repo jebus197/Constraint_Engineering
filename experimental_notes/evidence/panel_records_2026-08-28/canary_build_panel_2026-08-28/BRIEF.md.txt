@@ -1,0 +1,72 @@
+# Canary seeding — independent build review
+
+You are reviewing a NEW module built tonight: `bench/canary_seeding.py`, with tests in
+`bench/tests/test_canary_seeding_2026-08-28.py`. Read both in full before answering.
+
+## Where it came from
+
+The fable reviewer proposed this on 2026-08-27 (its Note 5, route B). The founder ruled:
+"Build it, test it, implement it in its own independent 3 model panel review." This is that
+review. You are reviewing a build, not a proposal.
+
+## What problem it claims to solve
+
+The runner's two-sided convergence gate certifies a run as converged when the critical-severity
+novelty slope has flattened AND K consecutive rounds add no new critical findings. Both halves
+read the same evidence: what the reviewing models said. Neither can distinguish
+
+    "the panel went quiet because the document is clean"      -> converged
+    "the panel went quiet because the panel stopped looking"  -> exhausted
+
+Canary seeding is meant to supply that discriminator: seed defects of known type and location,
+and measure whether the panel still kills them. Method is mutation testing (DeMillo, Lipton and
+Sayward 1978) pointed at reviewers rather than at a test suite. p_hat = catches / k.
+
+## Hard constraints this project operates under — violating any is a finding
+
+1. **Keys and planted defects live OUTSIDE the repository.** Unencrypted study copies may be
+   published only AFTER an experiment has run. exp48 had to be EXCLUDED from the corpus because
+   the harness re-ran a falsifier that opened the scoring key.
+2. **No model voting.** Findings are confirmed programmatically or by a human, never by models
+   agreeing. If any part of this design smuggles a vote back in, say so.
+3. **A simulated agent never carries a vendor name.**
+4. Goodhart guards must be designed in, not retrofitted. Fable's own words on the proposal:
+   "diverse generators, blinding, held-out defect classes -- a contaminated p_hat is false
+   calibration."
+
+## The questions
+
+**Q1. Is the safety guard real?** `load_catalogue` refuses any path inside the repository.
+Try to defeat it. Symlinks, `..` traversal, a relative path, a path that resolves inside the
+repo only after expansion, a catalogue passed as a dict rather than a path. If you can get
+answer-key material read from, or written into, the tracked tree, that is the finding.
+
+**Q2. Are the three Goodhart guards actually load-bearing, or decorative?**
+   (a) p_hat computed on held-out canaries only;
+   (b) a held-out set drawn from a single generator is refused;
+   (c) blinding is checked -- the seeded text must not contain the canary id, the generator
+       name, the ground-truth summary, or the words canary/seeded/mutant.
+   For each: can you construct a case that SHOULD be refused and is not? Run it.
+
+**Q3. Is the measurement sound?** `catches()` takes an injected verifier and scores NOTHING
+when none is supplied. `detection_rate` divides by the held-out count. Is p_hat = catches/k the
+right estimator here, given the panel has multiple models and multiple rounds? What does it do
+when a canary is unkillable, when two models find the same canary, or when a model finds a
+canary by accident while looking for something else? Is there a denominator error?
+
+**Q4. What is missing before this could be wired to the gate?** The module deliberately does
+NOT decide anything -- whether a missed canary should BLOCK convergence is reserved as a founder
+ruling. Assume that ruling comes back "yes, block". What would have to exist first? Be concrete
+and name files.
+
+**Q5. Should this be built at all?** Argue the strongest case AGAINST canary seeding. Does it
+measure what it claims? Could a panel learn to spot seeded defects by their texture rather than
+their content, and would this design detect that happening? Is there a cheaper instrument that
+answers the same question?
+
+## Rules
+
+- Run the tests. Break things. Every verdict must be something you ran, not something you read.
+- You are in a throwaway git worktree. Nothing you write escapes. Do not try to push.
+- Report what you could NOT check, and why. That section is not optional.
+- Disagreement is information here. Do not converge toward the other reviewer or toward me.

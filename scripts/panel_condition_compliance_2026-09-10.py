@@ -33,7 +33,6 @@ from __future__ import annotations
 import json
 import pathlib
 import re
-import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LOGS = REPO / "bench" / "logs"
@@ -43,10 +42,54 @@ CACHE = re.compile(r"__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|\.pyc$
 #: A round is one directory holding at least 1 seat reply.
 SEATS = ("cc2", "fable", "cx", "cgpt", "ds")
 
+#: Seats that cost money, per this project's own routing table: `cx` and `cgpt`
+#: ride OpenRouter and `ds` is DeepSeek direct. Used ONLY as the fallback when a
+#: reply records no route, never in place of a route the file actually carries.
+PAID_SEATS = ("cx", "cgpt", "ds")
+
 
 def rounds() -> list[pathlib.Path]:
-    return sorted(d for d in LOGS.glob("panel_*")
-                  if d.is_dir() and any((d / f"{s}.json").is_file() for s in SEATS))
+    """Every directory holding review output, selected by CONTENT.
+
+    IT GLOBBED `panel_*` AND CALLED THE RESULT "every round", and the figure
+    that carried was a COST one. Measured 2026-09-11: `panel_*` matches 46
+    directories; 78 hold a seat reply or a BRIEF.md. The other 32 are the
+    `confer_*`, `severity_*`, `track_record_*`, `bugzilla_*`, `independent_*`,
+    `perturbation_*`, `canary_*`, `convergence_*`, `repair_loop_*` and `pr_*`
+    reviews -- and 12 of them hold PAID replies. So the line
+    "paid seat replies across every round: 10" was a statement about 46 of 78
+    directories, and the archive-wide figure is **30 across 16 directories**.
+    The CONCLUSION is unchanged -- the latest is 2026-09-05 and 0 of the 29
+    directories dated after it hold one -- but a cost-control number quoted as
+    covering everything while covering 59% of it is the class this project
+    refuses, and cost is the category the founder reserves to himself.
+
+    The predicate is IMPORTED rather than reimplemented: 2 definitions of
+    "a review record" is the shape `execute-do-not-grep` names, and this file
+    and the mirror would drift apart the moment a new naming convention landed.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mirror_records", REPO / "scripts" / "mirror_panel_records_2026-09-11.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return sorted(d for d in LOGS.iterdir() if mod.holds_review_output(d))
+
+
+_D_DASH = re.compile(r"(20\d\d-\d\d-\d\d)")
+_D_COMPACT = re.compile(r"(20\d{6})T\d{6}Z")
+
+
+def _round_date(d: pathlib.Path) -> str | None:
+    """The run's date from its own directory name, both conventions."""
+    m = _D_DASH.search(d.name)
+    if m:
+        return m.group(1)
+    c = _D_COMPACT.search(d.name)
+    if c:
+        g = c.group(1)
+        return f"{g[0:4]}-{g[4:6]}-{g[6:8]}"
+    return None
 
 
 def source_files(d: pathlib.Path) -> list[str]:
@@ -86,6 +129,7 @@ def main() -> int:
     tool_ok = disagree_ok = seatn = 0
     delivered = []
     paid = 0
+    paid_unknown_route = 0
     for d in rs:
         calls = 0
         n = 0
@@ -99,8 +143,29 @@ def main() -> int:
             except Exception:
                 continue
             n += 1
-            if j.get("route") and j["route"] != "claude_cli":
-                paid += 1
+            # AN ABSENT ROUTE IS UNKNOWN, NOT FREE.
+            #
+            # This read `j.get("route") and j["route"] != "claude_cli"`, so a
+            # reply with no route field counted as free. Measured 2026-09-11
+            # over every paid-named seat file in the archive: **20 of 30 record
+            # no route at all -- 66.6667%, Wilson [48.7801%, 80.7695%],
+            # Clopper-Pearson [47.1880%, 82.7126%]** -- every one of them a
+            # `confer_*` or `track_record_pr_*` run from the older harness,
+            # which did not write the field. They are paid: this project's own
+            # routing table makes `cx` and `cgpt` OpenRouter and `ds` DeepSeek
+            # direct. So the cost figure read 10 where the archive holds 30.
+            #
+            # A missing field read as the SAFE value is a false zero pointing
+            # the wrong way, and the wrong way here is spending. Task A5 already
+            # settled the principle for the containment alarm: an unrecognised
+            # case counts as the dangerous one, because under-reporting is worse
+            # than over-reporting. Seat identity is the fallback, and the 2
+            # populations are reported separately so neither hides the other.
+            if j.get("route"):
+                if j["route"] != "claude_cli":
+                    paid += 1
+            elif s in PAID_SEATS:
+                paid_unknown_route += 1
             c = int(j.get("n_tool_calls") or 0)
             calls += c
             tool_ok += c > 0
@@ -113,11 +178,11 @@ def main() -> int:
             delivered.append((d.name, src))
         print(f"  {d.name:38s} {n:5d} {calls:11d} {len(src):10d} {dis:9d}")
 
-    print(f"\nP3 — seats USED the harness (recorded tool calls > 0):")
+    print("\nP3 — seats USED the harness (recorded tool calls > 0):")
     rep("seat replies with at least 1 recorded tool call", tool_ok, seatn)
-    print(f"\nP5 — no compelled convergence (each seat returns its own disagreement):")
+    print("\nP5 — no compelled convergence (each seat returns its own disagreement):")
     rep("seat replies carrying a strongest_disagreement", disagree_ok, seatn)
-    print(f"\nP4 — seats DELIVERED a fix as a file, not as prose:")
+    print("\nP4 — seats DELIVERED a fix as a file, not as prose:")
     rep("rounds that returned at least 1 source file", len(delivered), len(rs))
     _SHOW = 6
     for name, src in delivered:
@@ -129,7 +194,25 @@ def main() -> int:
             # reads as the whole set.
             print(f"          ... {len(src) - _SHOW} more not shown")
 
-    print(f"\nCOST CONTROL — paid seat replies across every round: {paid}")
+    # BOTH FIGURES, SO NEITHER CAN BE QUOTED ALONE. The archive-wide count is
+    # the honest total; the post-ruling count is what the ruling is about. The
+    # first version printed only a total, over a population that was not "every
+    # round", and called it "across every round".
+    _RULING_CUT = "2026-09-05"
+    after = [d for d in rs if (_round_date(d) or "") > _RULING_CUT]
+    paid_after = sum(
+        1 for d in after for x in PAID_SEATS if (d / f"{x}.json").is_file())
+    total_paid = paid + paid_unknown_route
+    print(f"\nCOST CONTROL — paid seat replies, WHOLE ARCHIVE: {total_paid} "
+          f"across {len(rs)} review directories")
+    print(f"               of which the reply itself records a paid route: {paid}")
+    print(f"               and {paid_unknown_route} record NO route and are "
+          f"counted paid by seat identity")
+    print(f"COST CONTROL — paid seat replies AFTER {_RULING_CUT}: {paid_after} "
+          f"across {len(after)} directories")
+    if not paid_after:
+        print("               (the latest paid dispatch is on or before "
+              f"{_RULING_CUT}; every round since is free-seat)")
     return 0
 
 

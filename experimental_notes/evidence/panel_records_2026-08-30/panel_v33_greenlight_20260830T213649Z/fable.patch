@@ -1,0 +1,45 @@
+
+=== NEW FILE: bench/tests/test_zz_panel3_falsifiers.py ===
+"""Third-pass panel falsifiers. TEMPORARY - not part of the suite."""
+import socket
+import subprocess
+
+import pytest
+
+import conftest as cft
+
+
+@pytest.mark.free_network
+def test_curl_reaches_paid_host_inside_free_window():
+    p = subprocess.run(
+        ["curl", "-sS", "-o", "/dev/null", "-w", "%{http_code}",
+         "--max-time", "20", "https://openrouter.ai/api/v1/models"],
+        capture_output=True, text=True)
+    print(f"BREACH-CHECK curl rc={p.returncode} http={p.stdout!r} err={p.stderr[:150]!r}")
+    assert p.returncode == 0, f"curl failed: {p.stderr[:200]}"
+    assert p.stdout and p.stdout[0] in "2345", "no HTTP response received"
+
+
+@pytest.mark.free_network
+def test_paid_host_reachable_by_raw_ip_inside_free_window():
+    r = subprocess.run(["dig", "+short", "openrouter.ai"],
+                       capture_output=True, text=True, timeout=20)
+    ips = [ln.strip() for ln in r.stdout.splitlines()
+           if ln.strip() and ln.strip()[0].isdigit()]
+    assert ips, f"dig gave no A record: {r.stdout!r} {r.stderr!r}"
+    s = socket.create_connection((ips[0], 443), timeout=10)
+    peer = s.getpeername()
+    s.close()
+    print(f"BREACH-CHECK raw-ip connected to {peer} (openrouter.ai)")
+
+
+def test_deny_list_misses_other_metered_hosts():
+    cft.set_free_window(True)
+    try:
+        allowed = {h: cft._free_allowed(h) for h in
+                   ("api.x.ai", "api.together.xyz", "api.fireworks.ai",
+                    "api.perplexity.ai", "bedrock-runtime.us-east-1.amazonaws.com")}
+    finally:
+        cft.set_free_window(False)
+    print("BREACH-CHECK metered-but-allowed:", allowed)
+    assert all(allowed.values())

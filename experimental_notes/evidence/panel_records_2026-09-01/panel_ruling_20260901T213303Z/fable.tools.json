@@ -1,0 +1,595 @@
+{
+  "model": "fable",
+  "elapsed_s": 1121.2,
+  "tool_calls": 147,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . log --oneline -5 && pwd && ls\", \"description\": \"Show recent commits and directory listing\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show --stat 295c72c | head -50\", \"description\": \"Show files changed in latest commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . log --oneline --all | head -30 && git -C . show b8a2a05 --stat | head -20 && git -C . show bb8d54b --stat | head -20\", \"description\": \"Locate provenance commits b8a2a05 and bb8d54b\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show b8a2a05 -- experimental_notes/RUNWAY_to_BR2_2026-08-18.md | head -100\", \"description\": \"Show the runway diff from b8a2a05\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show bb8d54b --stat && git -C . show bb8d54b | head -200\", \"description\": \"Show full bb8d54b commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show 295c72c --stat | tail -30\", \"description\": \"List files changed in 295c72c\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def severity_demotion_notice|barred_when_simulated|permitted_when_simulated|readiness|PERMITTED\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 5840, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"0C.22\\\\|0C.28\\\\|0C.29\\\\|0C.30\\\\|0C.31\\\\|0C.25\\\" experimental_notes/RUNWAY_to_BR2_2026-08-18.md | head\", \"description\": \"Locate runway items 0C.22, 0C.28-31\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_latent_control_audit_2026-09-01.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"scripts/latent_control_audit.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show -s --format='%h %at %ai %s' ce08914 48d6254 bb8d54b c58b03e 295c72c 421d1fb 058b8bb 39a0186 && date -r 1788247153\", \"description\": \"Get commit timestamps around the baseline\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -40; echo ---; find bench/logs -type l | head; echo ---; ls bench/logs | wc -l\", \"description\": \"List run log directories and symlinks\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"0\\\\.00515|paired rounds|sign test\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"21/103|11/47|model_id, api|model_id@|@\\\\{api\\\\}|f\\\"\\\\{model_id\\\\}@\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Reproduce seat-contrast sign tests\", \"prompt\": \"You are working in a disposable copy of a research repo at /private/var/folders/cc/scptwd_s4cgclnjr5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo \\u2014 actually use the current working directory, which is the repo root (it contains bench/, experimental_notes/, scripts/). Do NOT modify anything outside it.\\n\\nTASK: Independently reproduc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af --stat && git show 556e0af | head -120\", \"description\": \"Show lapse commit stat and diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -80 && echo --- && ls bench/logs | wc -l\", \"description\": \"List bench/logs run directories\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/baseline_confer_run4_20260401 bench/logs/baseline_confer_20260331 bench/logs/c5_20260404T045659Z 2>/dev/null\", \"description\": \"List contents of sample run dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | sed -n '80,352p'\", \"description\": \"List remaining run directories\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Reproduce 0C.22 dedup figures\", \"prompt\": \"You are working in a disposable copy of a research repo; your working directory is the repo root (contains bench/, experimental_notes/, scripts/). Do not modify tracked files.\\n\\nTASK: Independently reproduce two figures from runway item 0C.22 (experimental_notes/RUNWAY_to_BR2_2026-08-18.md line ~733) and hunt for duplication paths the au"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '700,800p' experimental_notes/RUNWAY_to_BR2_2026-08-18.md\", \"description\": \"Read runway item 0C.29 context\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"0C\\\\.29\", \"path\": \"experimental_notes/RUNWAY_to_BR2_2026-08-18.md\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo show 39a0186 --stat && git -C /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo log -1 295c72c\", \"description\": \"Show commit stat and log message\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -5\", \"description\": \"Run the latent-control audit tests (baseline)\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"21/103|0C\\\\.22\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/experimental_notes/RUNWAY_to_BR2_2026-08-18.md\", \"offset\": 700, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/baseline_confer_run4_20260401/r0_blind_codex_20260401T050300Z.json'))\\nprint(type(d), list(d.keys()) if isinstance(d,dict) else len(d))\\nprint(json.dumps(d, indent=1)[:2000])\\n\\\"\", \"description\": \"Inspect per-round codex file schema\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/experiment_11 bench/logs/experiment_17 bench/logs/exp36_evidence_20260407T004931Z 2>/dev/null | head -60\", \"description\": \"List experiment dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo show 39a0186 --name-only --format=\", \"description\": \"List file added in session note commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/experiment_11 bench/logs/experiment_17 2>&1 | head -40; echo ===; python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json'))\\ndef walk(o,p='',depth=0):\\n    if depth>2: return\\n    if isinstance(o,dict):\\n        for k,v in list(o.items())[:30]:\\n            print(' '*depth+p+k, type(v).__name__, (len(v) if isinstance(v,"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"seat\\\\|21/103\\\\|11/47\\\\|registry\\\\|103\\\" \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/experimental_notes/Panel_Review_And_Two_Blinding_Failures_2026-09-01.md\\\" | head -40\", \"description\": \"Find seat/figure mentions in session note\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nd=json.load(open('bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json'))\\ndef walk(o,p='',depth=0):\\n    if depth>2: return\\n    if isinstance(o,dict):\\n        for k,v in list(o.items())[:40]:\\n            print('  '*depth+str(k), type(v).__name__, (len(v) if isinstance(v,(list,dict)) else v if isinstance(v,(int,float,str)) and len(str(v))<60 e"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/experimental_notes/Panel_Review_And_Two_Blinding_Failures_2026-09-01.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nd=json.load(open('bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json'))\\ne=d['registry']['entries']['C0001']\\nprint(json.dumps(e, indent=1)[:1500])\\nprint('---round per_model---')\\nr=d['rounds'][0]\\nprint(json.dumps(r['per_model'], indent=1)[:800])\\nprint('rounds kept:', [x['round'] for x in d['rounds']])\\nEOF\", \"description\": \"Inspect registry"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"distinct model|distinct_model|seat_label|distinct label|distinct seat\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo\", \"output_mode\": \"files_with_matches\", \"-i\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/scripts/ /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/bench | head -80\", \"description\": \"List scripts and bench directories\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -60; echo ---; grep -rl \\\"0C.29\\\\|sign test\\\\|sign_test\\\\|binomtest\\\" scripts/ bench/ --include=*.py 2>/dev/null | head\", \"description\": \"Look for existing analysis script\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jcu6g01r/repo/scripts/\", \"description\": \"List scripts directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"codex_route\\\\|0C\\\\.29\\\\|sign test\\\\|binomtest\\\\|paired rounds\\\" scripts bench --include='*.py' 2>/dev/null | head; echo ---; grep -rn \\\"0C.29\\\\|sign test\\\" experimental_notes/*.md | grep -v RUNWAY | head\", \"description\": \"Search for the original 0C.29 analysis script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"codex exec\\\\|codex_exec\\\" experimental_notes | head; echo ---; grep -rn \\\"356\\\\|479\\\" experimental_notes/*.md | head -20\", \"description\": \"Find notes describing 0C.29 methodology\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -60 && echo ---- && ls bench/logs | wc -l && echo ---- && find bench/logs -type l | xargs -I{} sh -c 'echo \\\"{} -> $(readlink {})\\\"'\", \"description\": \"List bench/logs and find symlinks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"codex exec\\\\|codex_exec\\\\|paired round\\\\|sign test\\\\|356\\\\|479\\\" experimental_notes/Overnight_Run_And_A_Parser_That_Drops_Findings_2026-09-01.md | head -20\", \"description\": \"Check session note for 0C.29 methodology\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/latent_control_audit.py /tmp/lca_orig.py && python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/latent_control_audit.py\\\")\\ns = p.read_text()\\nassert \\\"too_new = bool(first and newest and first > newest)\\\" in s\\np.write_text(s.replace(\\\"too_new = bool(first and newest and first > newest)\\\", \\\"too_new = False\\\"))\\nEOF\\npython3 -m pytest \\\"bench/tests/test_latent_co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, os, glob\\nfrom pathlib import Path\\nroot = Path(\\\"bench/logs\\\")\\nreg_files = []\\nfor p in root.rglob(\\\"*.json\\\"):\\n    try:\\n        d = json.loads(p.read_text())\\n    except Exception:\\n        continue\\n    if isinstance(d, dict) and \\\"registry\\\" in d:\\n        reg_files.append(p)\\nprint(\\\"json files with top-level 'registry':\\\", len(reg_files))\\ndirs"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for d in bench/logs/*/; do\\n  c=$(ls \\\"$d\\\" 2>/dev/null | grep -ci '^r.*codex.*\\\\.json'); g=$(ls \\\"$d\\\" 2>/dev/null | grep -ci '^r.*chatgpt.*\\\\.json')\\n  if [ \\\"$c\\\" -gt 0 ] || [ \\\"$g\\\" -gt 0 ]; then echo \\\"$d codex=$c chatgpt=$g\\\"; fi\\ndone\", \"description\": \"Find run dirs with per-round codex/chatgpt JSON files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --all --oneline --grep=\\\"openrouter\\\" -i | head; echo ---; git log --all --oneline --grep=\\\"codex_exec\\\" -i | head\", \"description\": \"Search commits mentioning openrouter/codex_exec\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp29_persistence_20260404T193154Z | head -30; echo ---; ls bench/logs/exp29_persistence_20260404T193154Z | grep -i codex | head -30\", \"description\": \"Check exp29 filename patterns\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp45_memory_statistics_live_20260727T225640Z bench/logs/exp36_evidence_20260407T004931Z && echo ---- && python3 - <<'EOF'\\nimport json\\nfrom pathlib import Path\\np = Path(\\\"bench/logs/exp45_memory_statistics_live_20260727T225640Z\\\")\\nfor f in sorted(p.glob(\\\"*.json\\\")):\\n    d = json.loads(f.read_text())\\n    print(f.name, \\\"keys:\\\", list(d.keys())[:15] if isinstance(d,"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/experiment_12 | head -30; echo ===; ls bench/logs/experiment_15 | head; echo ===; ls bench/logs/experiment_17 | grep -vi preflight | head -30; echo ===; ls bench/logs/baseline_confer_run6_20260401 | head -40\", \"description\": \"Inspect experiment_12/15/17 and run6 file naming\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/experiment_12; echo ---15---; ls bench/logs/experiment_15; echo ---17---; ls bench/logs/experiment_17 | grep -vi preflight; echo ---run6---; ls bench/logs/baseline_confer_run6_20260401\", \"description\": \"Full listing of pre-lapse run dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfrom pathlib import Path\\nd = json.loads(Path(\\\"bench/logs/exp45_memory_statistics_live_20260727T225640Z/runner_state.json\\\").read_text())\\nreg = d[\\\"registry\\\"]\\nprint(type(reg), list(reg.keys())[:5] if isinstance(reg, dict) else len(reg))\\nif isinstance(reg, dict):\\n    k = list(reg.keys())[0]\\n    e = reg[k]\\n    print(json.dumps(e, indent=1)[:1500])"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/lca_orig.py scripts/latent_control_audit.py && python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/latent_control_audit.py\\\")\\ns = p.read_text()\\np.write_text(s.replace(\\\"too_new = bool(first and newest and first > newest)\\\", \\\"too_new = True\\\"))\\nEOF\\npython3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -3; cp /tmp/lca_orig.py scr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfrom pathlib import Path\\np = Path(\\\"bench/logs/exp45_memory_statistics_live_20260727T225640Z\\\")\\nd = json.loads((p/\\\"runner_state.json\\\").read_text())\\nentries = d[\\\"registry\\\"][\\\"entries\\\"]\\nk, e = next(iter(entries.items()))\\nprint(\\\"entry keys:\\\", list(e.keys()))\\n# find one with verdicts\\nfor k,e in entries.items():\\n    if e.get(\\\"verdicts\\\"):\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"model_identity\\\\|model_id}@\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find identity map code in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10440,10480p' bench/reference_runner_v3.py && sed -n '2250,2290p' bench/reference_runner_v3.py\", \"description\": \"Read identity map construction and resolve_model\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob\\nfor f in ['bench/logs/baseline_confer_run6_20260401/r1_adaptive_codex_20260401T195715Z.json',\\n          'bench/logs/baseline_confer_run6_20260401/r1_adaptive_chatgpt_20260401T195748Z.json',\\n          'bench/logs/baseline_confer_run7_20260402/'+sorted(g.split('/')[-1] for g in glob.glob('bench/logs/baseline_confer_run7_20260402/*codex*'))[0],\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -l \\\"codex exec\\\\|codex_exec\\\" bench/logs/baseline_confer_run*/*.log 2>/dev/null; echo ---; grep -m3 -i \\\"openrouter\\\\|codex exec\\\\|codex_exec\\\" bench/logs/baseline_confer_run6_20260401/run6_live.log | head; echo ---run7---; ls bench/logs/baseline_confer_run7_20260402; echo ---; grep -m5 -i \\\"openrouter\\\\|codex\\\" bench/logs/baseline_confer_run7b_20260402/*.log 2>/dev/null | head\""
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/tally.py\", \"content\": \"\\\"\\\"\\\"Reproduce 0C.22: findings challenged by >=3 distinct seat LABELS vs <3 distinct MODELS.\\n\\nDefinition (from Panel_Review_And_Two_Blinding_Failures_2026-09-01.md and the\\ndocstring of TestSeatsAreNotMod"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/latent_control_audit.py\\\")\\ns = p.read_text()\\nassert \\\"return min(stamps) if stamps else None\\\" in s\\np.write_text(s.replace(\\\"return min(stamps) if stamps else None\\\", \\\"return max(stamps) if stamps else None\\\"))\\nEOF\\npython3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -3; cp /tmp/lca"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/baseline_confer_run7b_20260402 | head; echo ---; grep -rl \\\"openrouter\\\" bench/logs/baseline_confer_run7b_20260402 2>/dev/null | head -3; echo ---checkpoint7---; python3 -c \\\"\\nimport json\\nfor r in ['run7_20260402','run7b_20260402','run8_20260402','run6_20260401','run5_20260401']:\\n    try:\\n        d=json.load(open(f'bench/logs/baseline_confer_{r}/checkpoint.json'))\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/tally.py\\\" \\\"$PWD\\\"\", \"description\": \"Run the 0C.22 reproduction tally\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --format='%h %ad %s' --date=iso -8 556e0af | cat; echo ---; git log --format='%h %ad %s' --date=iso 556e0af..HEAD --reverse | head -5\", \"description\": \"Commits around the lapse\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af^:bench/run_baseline_confer.py | grep -n \\\"codex_exec\\\\|openrouter\\\\|\\\\\\\"Codex\\\\\\\"\\\\|'Codex'\\\\|ChatGPT\\\" | head -20; echo ===AFTER===; git show 556e0af:bench/run_baseline_confer.py | grep -n \\\"codex_exec\\\\|openrouter\\\\|\\\\\\\"Codex\\\\\\\"\\\\|'Codex'\\\\|ChatGPT\\\" | head -20\", \"description\": \"Compare codex route config before/after commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af^:bench/run_baseline_confer.py | grep -n -i \\\"codex\\\" | head -30; echo \\\"---AFTER---\\\"; git show 556e0af:bench/run_baseline_confer.py | grep -n -i \\\"codex.*api\\\\|api.*codex\\\\|codex_exec\\\\|openrouter\\\" | head -30\", \"description\": \"Find codex api assignment before and after\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af^:bench/model_registry.py 2>/dev/null | grep -n -B2 -A8 \\\"Codex\\\" | head -50; echo ---; git ls-tree 556e0af^ bench/ | grep -i \\\"registry\\\\|dispatch\\\\|model\\\" | head\", \"description\": \"Find model registry codex config pre-lapse\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af:bench/run_baseline_confer.py | sed -n '10,30p'; echo ---; git show 556e0af:bench/run_baseline_confer.py | grep -n -A6 \\\"MODELS *=\\\\|\\\\\\\"api\\\\\\\"\\\" | head -60\", \"description\": \"Post-commit model config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git grep -n \\\"codex_exec\\\" 556e0af -- bench | grep -v logs | grep -iv test | head -20; echo \\\"===PARENT===\\\"; git grep -n \\\"codex_exec\\\" 556e0af^ -- bench | grep -v logs | grep -iv test | head -20\", \"description\": \"Locate codex_exec references at and before lapse commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 556e0af:bench/experiment_11_orchestrator.py | sed -n '80,110p'; echo ---PARENT---; git show 556e0af^:bench/experiment_11_orchestrator.py | sed -n '80,100p'\", \"description\": \"See the switch in orchestrator config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport json, sys, hashlib\\nfrom pathlib import Path\\nROOT = Path(sys.argv[1]); LOGS = ROOT/\\\"bench\\\"/\\\"logs\\\"\\n\\ndef reg_of(p):\\n    try:\\n        d = json.loads(p.read_text())\\n    except Exception:\\n        return None\\n    return d.get(\\\"registry\\\") if isinstance(d, dict) else None\\n\\nfiles = [p for p in LOGS.rglob(\\\"*.json\\\") if reg_of(p) is not None]\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/latent_control_audit.py --json --as-of 1788247153 > /tmp/orig_asof.json 2>/dev/null\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/latent_control_audit.py\\\")\\ns = p.read_text()\\np.write_text(s.replace(\\\"return min(stamps) if stamps else None\\\", \\\"return max(stamps) if stamps else None\\\"))\\nEOF\\npython3 scripts/latent_control_audit.py --json --as-of 1788"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/ | grep -E \\\"^l\\\" | head; echo ---; file bench/logs/exp36_evidence_latest 2>/dev/null; echo ---; python3 -c \\\"\\nimport json,glob\\n# check findings_count availability + failure markers\\nimport collections\\nmissing=0; tot=0; nofc=[]\\nfor f in glob.glob('bench/logs/*/r*codex*.json')+glob.glob('bench/logs/*/blind*chatgpt*.json'):\\n    tot+=1\\n    try: d=json.load(open(f)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\na=json.load(open('bench/logs/baseline_confer_run6_20260401/round2_codex_20260401T211152Z.json'))\\nb=json.load(open('bench/logs/baseline_confer_run6_20260401/r2_adaptive_codex_20260401T211152Z.json'))\\nprint('dup keys:', sorted(a.keys()))\\nprint('meta:', a.get('metadata'))\\nprint('same response:', a.get('response')==b.get('response'))\\nprint('phase:', a.g"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, collections\\nc=collections.Counter()\\nfor f in glob.glob('bench/logs/*/round*_codex_*.json'):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    if isinstance(d,dict) and 'api' in d:\\n        run=f.split('/')[2]\\n        c[(run, d['api'])]+=1\\nfor k in sorted(c): print(k, c[k])\\nEOF\", \"description\": \"Tabulate actual codex API per r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport json, sys, hashlib\\nfrom pathlib import Path\\nfrom math import sqrt\\nROOT = Path(sys.argv[1]); LOGS = ROOT/\\\"bench\\\"/\\\"logs\\\"\\n\\ndef reg(p):\\n    try: d = json.loads(p.read_text())\\n    except Exception: return None\\n    r = d.get(\\\"registry\\\") if isinstance(d, dict) else None\\n    if isinstance(r, dict) and \\\"entries\\\" in r: return r[\\\"entries\\\"]\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln resume bench/logs --include=runner_state.json 2>/dev/null | head; echo ---; ls bench/logs | grep -iE \\\"resume|SIM|OUTAGE\\\"; echo ---; find bench/logs -name \\\"checkpoint.json\\\" | wc -l; find bench/logs -name \\\"*report*.json\\\" | awk -F/ '{print $(NF-1)}' | sort | uniq -c | awk '$1>1'\", \"description\": \"Grep resume markers, sim/outage dirs, multiple report files per dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -name \\\"*canary*\\\" -newer /dev/null 2>/dev/null | grep -i sim45 ; ls bench/logs | grep -i \\\"sim45\\\\|canary\\\"\", \"description\": \"Locate the sim45 canary run directories\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"compute_source_hash\\\\|provenance_complete\\\" bench/canary_seeding.py | head -20\", \"description\": \"Find the two missed seeded defects in the canary catalogue\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"compute_source_hash|provenance_complete\", \"output_mode\": \"files_with_matches\", \"head_limit\": 20}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_canary_20260901T145630Z_20260901T145631Z bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z\", \"description\": \"List canary run directory contents\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp33_endocrine_20260405T110345Z/ | grep -i report; ls bench/logs/exp47_divergence_locationkey_live_20260728T230026Z/ | grep -i report; ls bench/logs/experiment_12 | grep -i report; echo ---; python3 - \\\"$PWD\\\" <<'EOF'\\nimport json, sys, hashlib\\nfrom pathlib import Path\\nROOT=Path(sys.argv[1])\\nfor f in [\\\"bench/logs/exp33_endocrine_20260405T110345Z\\\",\\n          \\\"benc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"A=bench/logs/sim45_canary_20260901T145630Z_20260901T145631Z/sim45_canary_20260901T145630Z_report.json\\nB=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\nwc -l $A $B; shasum $A $B\\npython3 - \\\"$A\\\" \\\"$B\\\" <<'EOF'\\nimport json, sys\\na, b = (json.load(open(p)) for p in sys.argv[1:3])\\nprint(\\\"keys only in A:\\\", sorted(set(a)-set(b)))\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"B=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\npython3 - \\\"$B\\\" <<'EOF'\\nimport json, sys\\nr = json.load(open(sys.argv[1]))\\nprint(type(r.get(\\\"registry\\\")))\\nreg = r.get(\\\"registry\\\")\\nif isinstance(reg, list):\\n    print(\\\"list len\\\", len(reg), \\\"sample keys:\\\", sorted(reg[0])[:15] if reg else None)\\nprint(\\\"top keys:\\\", sorted"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - \\\"$PWD\\\" <<'EOF'\\nimport json, sys\\nfrom pathlib import Path\\nROOT=Path(sys.argv[1])\\n# registries outside bench/logs?\\nhits=[]\\nfor p in ROOT.rglob(\\\"*.json\\\"):\\n    if \\\"bench/logs\\\" in str(p) or \\\"/.git/\\\" in str(p): continue\\n    try:\\n        if p.stat().st_size > 50_000_000: continue\\n        d=json.loads(p.read_text())\\n    except Exception: continue\\n    if isinstanc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"B=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\npython3 - \\\"$B\\\" <<'EOF'\\nimport json, sys\\nr = json.load(open(sys.argv[1]))\\nreg = r[\\\"registry\\\"]\\nprint(\\\"registry entries:\\\", len(reg))\\nsevs, stats = [], {}\\nfor fid, e in reg.items():\\n    if not isinstance(e, dict): print(\\\"non-dict entry:\\\", fid, type(e)); continue\\n    s = e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"B=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\npython3 - \\\"$B\\\" <<'EOF'\\nimport json, sys\\nr = json.load(open(sys.argv[1]))\\nreg = r[\\\"registry\\\"]\\nprint(\\\"registry keys:\\\", list(reg.keys()))\\nfor k, v in reg.items():\\n    if isinstance(v, dict):\\n        print(k, \\\"->\\\", len(v), \\\"entries; sample:\\\", list(v)[:3])\\nEOF\", \"descrip"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"B=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\npython3 - \\\"$B\\\" <<'EOF'\\nimport json, sys\\nr = json.load(open(sys.argv[1]))\\nent = r[\\\"registry\\\"][\\\"entries\\\"]\\nsevs = {fid: float(e.get(\\\"severity\\\", -1)) for fid, e in ent.items()}\\nhi = {f: s for f, s in sevs.items() if s >= 0.70}\\nprint(\\\"n findings:\\\", len(ent), \\\"| n>=0.70:\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show 421d1fb --stat | head -30; grep -n \\\"sorted\\\\|>=\\\\|==\\\\|split\\\\|calibration\\\\|held\\\" bench/canary_seeding.py | head -40\", \"description\": \"See canary seeding wiring commit and module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_source_hash\\\\|def provenance_complete\\\" bench/dm/_memory.py\", \"description\": \"Locate target functions in _memory.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"kill|falsifier\", \"path\": \"bench/canary_seeding.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/repro_0c29.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Independent reproduction of runway item 0C.29 sign tests (Codex vs ChatGPT seats).\\n\\nMethod:\\n- Scan every top-level directory under bench/logs (symlinked dirs skipped).\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 150,215p bench/dm/_memory.py; echo ====; sed -n 350,400p bench/dm/_memory.py\", \"description\": \"Read the two target functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 270,310p bench/canary_seeding.py\", \"description\": \"Read the kill criterion definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/repro_0c29.py . 2>&1 | head -160\", \"description\": \"Run reproduction script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 355,400p bench/dm/_memory.py\", \"description\": \"Read compute_source_hash\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def load\\\" bench/dm/_memory.py && sed -n \\\"$(grep -n 'def load' bench/dm/_memory.py | head -1 | cut -d: -f1),+45p\\\" bench/dm/_memory.py\", \"description\": \"Read load() to check the route to excess ids\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, os\\n# which dirs have runner_state.json or a report with 'registry'\\nfor pat in ('bench/logs/*/runner_state.json',):\\n    for f in sorted(glob.glob(pat)):\\n        print('runner_state:', f.split('/')[2])\\nEOF\\necho ---reports---\\ngrep -l '\\\"registry\\\"' bench/logs/*/*report*.json 2>/dev/null | head -60\", \"description\": \"Find runner_state and registr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nd=json.load(open('bench/logs/baseline_confer_run6_20260401/baseline_confer_report.json'))\\nprint(list(d.keys()))\\ndef peek(o, k, n=400):\\n    import json as j\\n    print(k, ':', j.dumps(o.get(k))[:n])\\nfor k in list(d.keys()):\\n    v=d[k]\\n    print(k, type(v).__name__, len(v) if isinstance(v,(list,dict)) else v if not isinstance(v,str) else v[:60])\\nEOF"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, types, tempfile, os, sys\\n\\nclean_src = pathlib.Path(\\\"bench/dm/_memory.py\\\").read_text()\\n\\n# Seed 1: compute_source_hash loses its sorted()\\nassert \\\"for path in sorted(file_paths):\\\" in clean_src\\nseed1 = clean_src.replace(\\\"for path in sorted(file_paths):\\\", \\\"for path in file_paths:\\\")\\nassert seed1 != clean_src\\n\\n# Seed 2: provenance_complete "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, os\\nrows=[]\\nfor f in sorted(glob.glob('bench/logs/*/*.json')):\\n    if os.path.islink(os.path.dirname(f)): continue\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    if not isinstance(d,dict): continue\\n    r=d.get('rounds')\\n    if isinstance(r,list) and r and isinstance(r[0],dict) and 'per_model' in r[0]:\\n        pm_models=set"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, types, sys\\n\\nclean_src = pathlib.Path(\\\"bench/dm/_memory.py\\\").read_text()\\nseed1 = clean_src.replace(\\\"for path in sorted(file_paths):\\\", \\\"for path in file_paths:\\\")\\nseed2 = clean_src.replace(\\\"return len(self._experiment_ids) == self._experiment_count\\\",\\n                          \\\"return len(self._experiment_ids) >= self._experiment_count\\\")\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"0C.12\\\\|NOT admissible\\\\|standing ruling\\\\|STANDING RULING\\\\|barred\\\" bench/reference_runner_v3.py | head; echo ====; grep -rn \\\"barred_when_simulated\\\\|severity_derived_claims_admissible\\\" --include=\\\"*.py\\\" . | grep -v reference_runner_v3 | head\", \"description\": \"Find residual references to the withdrawn bar\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,60p bench/tests/test_simulated_severity_is_demoted_2026-09-01.py; grep -n \\\"def test\\\" bench/tests/test_simulated_severity_is_demoted_2026-09-01.py\", \"description\": \"Read the updated demotion test file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12360,12374p bench/reference_runner_v3.py; sed -n 62,140p bench/tests/test_simulated_severity_is_demoted_2026-09-01.py\", \"description\": \"Confirm the residual log line and read updated test assertions\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/grid_0c29.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Sensitivity grid: which methodology reproduces the claimed 0C.29 numbers?\\\"\\\"\\\"\\nimport json, os, re, sys\\nfrom collections import defaultdict\\nfrom scipy import stats\\n\\nLO"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-jcu6g01r-repo/bc4ed5fc-6470-40a8-824d-9242947777c9/scratchpad/grid_0c29.py\", \"description\": \"Run methodology sensitivity grid\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"B=bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_report.json\\npython3 - \\\"$B\\\" <<'EOF'\\nimport json, sys, re\\nr = json.load(open(sys.argv[1]))\\nent = r[\\\"registry\\\"][\\\"entries\\\"]\\nseed_pats = {\\n \\\"BETA_0/pi_mem\\\": r\\\"beta_0|pi_mem|prior.*1\\\\.0|exactly 1\\\",\\n \\\"_check_count -1\\\": r\\\"_check_count|negative|-1\\\",\\n \\\"blended_prior rho\\\": r\\\"blende"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nd=json.load(open('bench/logs/baseline_confer_run6_20260401/checkpoint.json'))\\naf=d['all_findings']\\nprint(type(af), len(af))\\nprint(json.dumps(af[0], indent=1)[:600])\\nimport collections\\nc=collections.Counter()\\nfor f in af: c[f.get('model') or f.get('source_model') or f.get('proposed_by')]+=1\\nprint(c)\\nrs=d.get('result_so_far')\\nprint('result_so_far "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, collections\\ndef flat(af):\\n    out=[]\\n    def rec(x):\\n        if isinstance(x,dict): out.append(x)\\n        elif isinstance(x,list):\\n            for y in x: rec(y)\\n    rec(af)\\n    return out\\nfor f in sorted(glob.glob('bench/logs/*/checkpoint.json')):\\n    d=json.load(open(f))\\n    run=f.split('/')[2]\\n    ks=list(d.keys())\\n    af=d.get('all"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10435,10500p bench/reference_runner_v3.py\", \"description\": \"Read the (model_id, api) identity code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib\\nfrom collections import Counter\\nvers = Counter(); witnesses = {}\\nfor fp in pathlib.Path(\\\"bench/logs\\\").glob(\\\"**/*.json\\\"):\\n    try: d = json.loads(fp.read_text(errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    if isinstance(d, dict) and (\\\"registry\\\" in d or \\\"converged_at\\\" in d or \\\"runner_version\\\" in d):\\n        sim = \\\"sim\\\" i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, os, re, sys\\nfrom collections import defaultdict\\nLOGS='bench/logs'\\nFID = re.compile(r'^\\\\s*(?:\\\\*+\\\\s*)?FINDING_ID\\\\s*[:=]\\\\s*(?:\\\\*+\\\\s*)?([A-Za-z0-9_\\\\-\\\\.]+)', re.M)\\nBOUNDARY='20260402T105157'\\nreps=[]\\nfor entry in sorted(os.listdir(LOGS)):\\n    p=os.path.join(LOGS,entry)\\n    if os.path.islink(p) or not os.path.isdir(p): continue\\n    for dp,_,fn"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"secondary_route_usage\\\\|secondary_api\\\\|secondary_model\\\\|failover\\\\|fallback_api\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find failover machinery in the runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 7500,7560p bench/reference_runner_v3.py\", \"description\": \"Read secondary-route dispatch to see if label survives failover\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/results 2>/dev/null | head -30; echo ---analysis---; ls bench/logs/analysis | head -30; echo ---; grep -rln \\\"sign\\\\|codex\\\" bench/logs/analysis 2>/dev/null | head\", \"description\": \"Check bench/results and analysis dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/results/round_robin | head; echo ---p2---; ls bench/results/round_robin_phase2 | head -20; echo ---31pro---; ls bench/results/round_robin_31pro | head\", \"description\": \"Inspect round_robin results dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"model_identity\\\" bench/reference_runner_v3.py | head; grep -rn \\\"model_identity\\\" bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py | head -5\", \"description\": \"See where model_identity is consumed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nd=json.load(open('bench/results/round_robin_phase2/ft-001_cdsfl_result.json'))\\ndef walk(o,depth=0):\\n    if depth>3: return\\n    if isinstance(o,dict):\\n        for k,v in list(o.items())[:25]:\\n            print('  '*depth+str(k), type(v).__name__, len(v) if isinstance(v,(list,dict)) else str(v)[:50])\\n            if isinstance(v,(list,dict)): walk(v,d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 2240,2300p bench/reference_runner_v3.py\", \"description\": \"Read the identity resolution in the tally\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . log --format='%h %ai %s' --since=2026-09-01T12:00 --until=2026-09-01T13:00; ls experimental_notes | grep -i \\\"2026-09-01\\\"; grep -rn \\\"0C.12\\\" experimental_notes/*2026-09-01* PRIVATE_NOTES.md 2>/dev/null | head\", \"description\": \"Search record for HIL approval between b8a2a05 and bb8d54b\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"0C.12\\\\|standing ruling\\\\|STANDING RULING\\\" experimental_notes/The_Threshold_Question_And_The_Panel_Verdict_2026-09-01.md experimental_notes/Panel_Review_And_Two_Blinding_Failures_2026-09-01.md 2>/dev/null | head -12\", \"description\": \"Check session notes for founder ratification of 0C.12\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nfrom scipy import stats\\n# find (k,n) with two-sided binomial p ~= 0.00515 (n<=78) and 0.378 (n<=205)\\nfor target,nmax,label in ((0.00515,78,'pre'),(0.378,205,'post')):\\n    hits=[]\\n    for n in range(5,nmax+1):\\n        for k in range(0,n//2+1):\\n            p=stats.binomtest(k,n,0.5).pvalue\\n            if abs(p-target)<target*0.02:\\n                hits.append((n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show 295c72c^:bench/tests/test_latent_control_audit_2026-09-01.py > /tmp/v2_test.py\\ngit -C . show 295c72c^:scripts/latent_control_audit.py > /tmp/v2_audit.py\\ngrep -n \\\"too_new\\\\|def test\\\\|as-of\\\\|as_of\\\" /tmp/v2_test.py /tmp/v2_audit.py | head -20\", \"description\": \"Extract v2 test and audit from parent commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, os\\nfrom collections import defaultdict\\ntot=defaultdict(int); rounds=0; wins=defaultdict(int); ties=0\\npairs=[]\\nfor base in ('bench/results/round_robin','bench/results/round_robin_phase2','bench/results/round_robin_31pro','bench/results/phase2'):\\n    for f in sorted(glob.glob(base+'/*_result.json')):\\n        try: d=json.load(open(f))\\n        e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 55,76p /tmp/v2_test.py\", \"description\": \"Read v2's age-control tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest /tmp/v2_test.py -q 2>&1 | tail -4\", \"description\": \"Run v1 tests against today's archive state\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, os\\nfrom collections import Counter\\nseen=set(); tot=Counter(); per_run={}\\nfor f in sorted(glob.glob('bench/logs/*/*.json')):\\n    dirn=f.split('/')[2]\\n    if os.path.islink(os.path.join('bench/logs',dirn)): continue\\n    base=os.path.basename(f)\\n    if 'report' not in base and base!='runner_state.json': continue\\n    try: d=json.load(open(f))\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/latent_control_audit.py --json 2>/dev/null | python3 -c \\\"import json,sys; d=json.load(sys.stdin); print('live TOO_NEW:', [r['key'] for r in d['rows'] if r['verdict']=='TOO_NEW']); print('baseline_mtime:', d['baseline_mtime'])\\\"\", \"description\": \"Confirm live TOO_NEW set is empty (v1 would be red)\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, glob, os, re\\nfrom collections import Counter, defaultdict\\nper_run={}\\nfor f in sorted(glob.glob('bench/logs/*/*.json')):\\n    dirn=f.split('/')[2]\\n    if os.path.islink(os.path.join('bench/logs',dirn)): continue\\n    base=os.path.basename(f)\\n    if 'report' not in base and base!='runner_state.json': continue\\n    try: d=json.load(open(f))\\n    except"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 2300,2340p bench/reference_runner_v3.py\", \"description\": \"Read the rest of auto_resolve_contested\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, os, re\\nfrom collections import defaultdict, Counter\\nLOGS='bench/logs'\\ndec=defaultdict(Counter)\\nempty=[]\\nfor entry in sorted(os.listdir(LOGS)):\\n    p=os.path.join(LOGS,entry)\\n    if os.path.islink(p) or not os.path.isdir(p): continue\\n    for dp,_,fns in os.walk(p):\\n        for fn in fns:\\n            if not fn.endswith('.json'): continue\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"0C.9\\\\b\\\\|0C.10\\\\|0C.7 \\\\|0C.8 \\\" experimental_notes/RUNWAY_to_BR2_2026-08-18.md | head; grep -c \\\"OPEN for real runs\\\" experimental_notes/RUNWAY_to_BR2_2026-08-18.md\", \"description\": \"Check open/closed status of 0C.7-0C.10\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -A3 -B1 \\\"codex\\\" bench/EXECUTION_PLAN_EXPERIMENT_11.md | head -30; git -C . show 556e0af --stat | head -15\", \"description\": \"Verify the designed route contrast and the lapse commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . show 556e0af | grep -n -i \\\"codex_exec\\\\|openrouter\\\" | head -10\", \"description\": \"Confirm the codex_exec\\u2192openrouter switch in 556e0af\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, os, pathlib\\ndef resolve(lbl):\\n    k = str(lbl or \\\"\\\").strip().lower()\\n    return \\\"openai\\\" if k in (\\\"codex\\\", \\\"chatgpt\\\") else k\\ndef findings(reg):\\n    ent = reg.get(\\\"entries\\\", reg) if isinstance(reg, dict) else {}\\n    for fid, e in ent.items():\\n        if isinstance(e, dict): yield fid, e\\nden = num = 0; files = 0\\nfor root, dirs, fs, in o"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json\\nfrom scipy import stats\\nruns=['run5_20260401','run6_20260401','run7b_20260402','run8_20260402','run9_20260403','run10_20260403','run11_20260404']\\ndata={}\\nfor r in runs:\\n    d=json.load(open(f'bench/logs/baseline_confer_{r}/baseline_confer_report.json'))\\n    pairs=[]\\n    for rd in d['rounds']:\\n        pm=rd.get('per_model') or {}\\n        pairs.app"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"held_out\\\\|held-out\\\\|calibration\\\" bench/logs/sim45_canary_20260901T145630Z_20260901T145632Z/sim45_canary_20260901T145630Z_finding_catalogue.jsonl 2>/dev/null | head -3; git -C . show 421d1fb --stat | tail -8; grep -rn \\\"catalogue\\\" bench/tools/*.py scripts/*.py 2>/dev/null | grep -i canary | head -5\", \"description\": \"Look for a committed record of the canary split assignm"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 << 'EOF'\\nimport json, os, re\\nfrom collections import defaultdict\\nfrom scipy import stats\\nLOGS='bench/logs'\\nFRE=re.compile(r'^\\\\s*(?:\\\\*+\\\\s*)?FINDING_ID\\\\s*[:=]',re.M)\\nBOUND='20260402T105157'\\ncells=defaultdict(list)\\napi_ev=defaultdict(set)\\nfor entry in sorted(os.listdir(LOGS)):\\n    p=os.path.join(LOGS,entry)\\n    if os.path.islink(p) or not os.path.isdir(p): continue"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_simulated_severity_is_demoted_2026-09-01.py bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py -q 2>&1 | tail -2\", \"description\": \"Run the demotion and tally test files\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/baseline_confer_run5_20260401 | head; ls bench/logs/baseline_confer_run5_20260401 | wc -l\", \"description\": \"Inspect a pre-lapse run directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\np = next(pathlib.Path(\\\"bench/logs/baseline_confer_run5_20260401\\\").glob(\\\"r0_blind_codex_*.json\\\"))\\nd = json.loads(p.read_text())\\nprint(type(d), list(d)[:12] if isinstance(d, dict) else len(d))\\nmd = d.get(\\\"metadata\\\") if isinstance(d, dict) else None\\nprint(\\\"metadata:\\\", md)\\nEOF\", \"description\": \"Check per-reply file schema for findi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '275,285p' experimental_notes/OUTSTANDING_QUEUE_to_BR2.md 2>/dev/null || ls experimental_notes | grep -i outstanding\", \"description\": \"Verify OUTSTANDING_QUEUE citation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\nfrom math import comb\\nLAPSE = \\\"20260402T151729\\\"  # 556e0af commit instant, UTC-naive compare on file timestamp\\nrows = {}\\nfor fp in pathlib.Path(\\\"bench/logs\\\").glob(\\\"**/r*_*.json\\\"):\\n    m = re.match(r\\\"r(\\\\d+)_(?:blind_|adaptive_)?([a-z0-9.-]+?)_(\\\\d{8}T\\\\d{6})Z?\\\\.json\\\", fp.name, re.I)\\n    if not m: continue\\n    rnd, label, ts ="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib\\nn = nv3 = 0\\nfor fp in pathlib.Path(\\\"bench/logs\\\").glob(\\\"**/*report*.json\\\"):\\n    if \\\"sim\\\" in fp.name.lower() or \\\"sim\\\" in fp.parent.name.lower(): continue\\n    try: d = json.loads(fp.read_text(errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    if not isinstance(d, dict) or \\\"registry\\\" not in d: continue\\n    n += 1\\n    rv = str(d"
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:TaskList,TaskOutput,Monitor\", \"max_results\": 3}"
+    },
+    {
+      "name": "TaskOutput",
+      "input_preview": "{\"task_id\": \"a31949f08f0098d5a\", \"block\": true, \"timeout\": 420000}"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+# PANEL BRIEF — round 2 on the exp56 roster confinement, after the round-1 findings were applied
+
+## SECTION 1 — The question
+
+**Does the corrected roster-confinement work now do what it claims, and what did applying round 1's findings break that nobody has looked at?**
+
+Round 1 of this panel reviewed `_declared_models` in `bench/reference_runner_v3.py` and returned 2 material findings plus 3 below threshold. All were verified independently before being applied, and 1 of the 2 material findings was REFUSED on measurement. The artefacts under review are:
+
+- `bench/reference_runner_v3.py` — `_declared_models` (roster confinement), `_runner_config_models_default`, the empty-ladder branch inside `_apply_routing`, and the annotated `_verification_step` call site
+- `bench/exp56_configs/*.json` — all 3 arm configs, whose `_routing_note`, `_sweep_note` and new `_verification_note` were rewritten
+- `bench/tests/test_declared_models_roster_2026-09-09.py`
+- `bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py`
+- `bench/tests/test_cc2v_is_held_constant_across_arms_2026-09-09.py`
+- `bench/tests/test_d9_d11_configs_valid_2026-09-05.py` — the re-aimed routing test CC2 criticised in round 1
+- `scripts/roster_disjointness_2026-09-09.py`
+
+**What round 1 found, and what happened to each finding.**
+
+1. **C-A, `_verification_step` receives the roster unfiltered.** Observation CONFIRMED, prescription REFUSED. That function does not dispatch to the roster: it selects the single seat whose base label is CC2 as a verifier and skips if absent. Measured against the 3 real arm configs, filtering keeps CC2v in the 1-seat and 5-seat arms and removes it from the contrast arm alone, converting a control held constant across arms into a confound in 1 of 3. **Attack this refusal.**
+2. **C-B, an empty routing ladder was misclassified as a dead transport.** CONFIRMED and fixed. In the 1-seat arm `rank_falsifier_writers(['CC2'], exclude=('CC2',))` returns 0 rungs, so the finding got neither `irreducible_escalation` nor `routing_deferred`, and `HALTED_IRREDUCIBLE_QUEUE_ALARM` could not fire in the arm whose pre-registration names that halt as its reportable outcome.
+3. **CC2's criticism that the re-aimed guard test called the helper rather than the caller.** CONFIRMED by mutation and fixed.
+
+**What the assistant broke and then repaired, which the panel did not find.** The first `_declared_models` read the hardcoded `RunnerConfig.models` default as an arm's declaration and returned EMPTY when nothing matched, dispatching to nobody in silence. It took `bench/tests/test_corrected_copy_wiring.py` red on 2 executing tests. Archive reach measured at 0 of 60 runs, Wilson [0.0%, 6.0%].
+
+## SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** A reply that reasons about these functions without having called them has not answered.
+
+Instruments that bear directly on this question, and what each is expected to say:
+
+- **`irreducible_queue_count` and `build_irreducible_queue_alarm`** — the load-bearing pair for finding 2. Drive them. The claim is that 3 deferred criticals against `max_irreducible_queue = 2` now produce an alarm object where before they produced `None`. Falsify it.
+- **`gamma` and the two-sided gate (`_check_gamma_alt_convergence`)** — routing is now ON in all 3 arms where it was OFF. Routing absorbs findings. **Does enabling an absorber change what the decay curve reports, and can a run now converge on a flattened gamma that flattened because findings were routed away rather than because the problem space was exhausted?** This is the question the assistant has NOT asked and it is the reason gamma is named here.
+- **`severity` and `CRITICAL_SEVERITY_THRESHOLD`** — the empty-ladder deferral is gated on severity. Check the boundary.
+- **`rho`** — if routing changes the novelty profile of what survives to later rounds, rho moves. Say whether it does.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.
+
+**Report the exact command you ran and the exact output you saw.** Where you propose changing a line, give the file, the line, the old text and the new text. Where you claim a test is weak, DEMONSTRATE it: mutate the source, assert the mutation applied, run the test, and report whether it went red. A mutation that fails to apply is indistinguishable from one that was not caught.
+
+**Work in a sandbox copy. Do not modify the canonical tree.**
+
+## SECTION 4 — What would refute you
+
+Before concluding, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+Specifically: if you attack the C-A refusal, state what measurement would show the refusal is right after all. If you defend it, state what would show it is wrong.
+
+## SECTION 5 — Output shape
+
+Return these fields:
+
+- `verdict` — one of CONFIRMED / REFUTED / PARTIAL for the claim that the corrected work does what it claims
+- `reasoning` — grounded in tool output you actually saw
+- `findings` — each with: file, line, severity, what is wrong, the fix, and the executed falsifier with its command and output
+- `falsifier` and `falsifier_result` — the code you ran and what it returned
+- `refutation_condition` — Section 4's answer
+- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's own framing, including the framing of the C-A refusal. Disagreement is preserved as information; do not converge toward the brief.
+- `passes_run` — how many
+
+## SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could cause real-world failure in a paid experimental run. Do not generate findings for their own sake and do not police style.

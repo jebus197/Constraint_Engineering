@@ -1,0 +1,1351 @@
+{
+  "model": "opus",
+  "elapsed_s": 2068.3,
+  "tool_calls": 336,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /mnt/user-data 2>/dev/null || true; pwd; ls\", \"description\": \"Locate working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~; find / -maxdepth 4 -name \\\"reference_runner_v3.py\\\" 2>/dev/null | head\", \"description\": \"Find the runner file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -5 && wc -l bench/reference_runner_v3.py scripts/latent_control_audit.py && ls bench/\", \"description\": \"Repo overview\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"irreducible_escalation\\\\|_post_convergence_sweep\\\\|irreducible\\\" bench/reference_runner_v3.py | head -80\", \"description\": \"Locate irreducible/sweep code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4900,5110p bench/reference_runner_v3.py\", \"description\": \"Read ladder exhaustion code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5219,5500p bench/reference_runner_v3.py\", \"description\": \"Read post-convergence sweep\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,120p bench/routing.py; echo ===; grep -n \\\"def route\\\\|def confirmed_duplicate\\\\|RoutingResult\\\\|ladder\\\\|MODEL_LADDER\\\\|def _extract_routing_falsifier\\\" bench/routing.py\", \"description\": \"Read routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4740,4905p bench/reference_runner_v3.py\", \"description\": \"Read routing resolve_fn/prompt\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 120,260p bench/routing.py\", \"description\": \"Read route()\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_routing_resolve_prompt\\\\|def _routing_system\\\\|def reverify_falsifier\\\" bench/reference_runner_v3.py bench/falsifier_verify.py\", \"description\": \"Find routing prompt funcs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1104,1200p bench/falsifier_verify.py; echo \\\"=== callers ===\\\"; grep -n \\\"reverify_falsifier\\\" bench/reference_runner_v3.py\", \"description\": \"reverify_falsifier signature and callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4612,4700p bench/reference_runner_v3.py\", \"description\": \"Read routing prompt\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\nprint(list(d.keys()))\\nprint(json.dumps(d.get('post_convergence_sweep'),indent=1)[:3000])\\n\\\"\", \"description\": \"Inspect run report\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/ && grep -rn \\\"SIM\\\\b\\\" bench/reference_runner_v3.py | grep -i \\\"def \\\\|simulat\\\" | head -30\", \"description\": \"List run dir and find sim dispatch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\nprint('sim',d['_simulated'],d.get('_sim_label_map'))\\nprint('halted',d['halted'],d['halted_at_round'],d['convergence_reason'])\\nsd=d['_sim_dispatches']\\nprint(type(sd), len(sd) if hasattr(sd,'__len__') else '')\\nprint(json.dum"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_sim_dispatches\\\\|_simulated\\\" bench/*.py bench/tests/*.py scripts/*.py 2>/dev/null | head -30\", \"description\": \"Find sim machinery\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\nfor i,x in enumerate(d['_sim_dispatches']): print(i,x['model'],x['seconds'],x['chars'])\\nprint('models:',d['models'])\\nprint('sweep_trigger',json.dumps(d.get('sweep_trigger'))[:800])\\nprint('post_sweep_reconciliation',json.dum"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tools/ | head -40; echo ===; sed -n 1,60p bench/tools/run_simulated_experiment.py 2>/dev/null\", \"description\": \"Sim launcher\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sweep\\\\|routing:\\\\|irreducible\\\\|rung\\\" bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/immune_pipeline.log | tail -60\", \"description\": \"Read run log for sweep/routing lines\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Verify id-reuse Jaccard threshold\", \"prompt\": \"Working dir: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo (disposable copy, break it freely).\\n\\nTask: VERIFY OR REFUTE a claimed fix in bench/reference_runner_v3.py around line 11209, in `lookup_alias` / the id-reuse absorption path.\\n\\nClaim: previously, a model re-using its own local finding id"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && wc -l bench/reference_runner_v3.py\", \"description\": \"List repo and check file size\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"id_reuse_registered|lookup_alias|_stem_signature|stem_signature\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 100}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 11180, \"limit\": 140}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Find surviving mutant in audit\", \"prompt\": \"Working dir: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo (DISPOSABLE copy \\u2014 edit files freely, nothing is kept).\\n\\nTask: find a mutation of `scripts/latent_control_audit.py` (266 lines) that SURVIVES the test suite. The author claims four previously-surviving mutants now die: `too_new = False`"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/convergence_location.py\", \"offset\": 440, \"limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/scripts/latent_control_audit.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_UNLOCATED_MERGE_THRESHOLD\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"latent_control_audit\\\" bench/tests scripts 2>/dev/null\", \"description\": \"Find files referencing the audit script\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 6100, \"limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 6240, \"limit\": 70}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/tests/test_latent_control_audit_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -20\", \"description\": \"Baseline test run\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Verify _is_simulated_report filter\", \"prompt\": \"Working dir: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo (disposable copy).\\n\\nTask: VERIFY OR REFUTE `_is_simulated_report` in scripts/latent_control_audit.py (or wherever it lives \\u2014 grep for it).\\n\\nClaim: the audit's simulated-run filter used to be a dead conditional and is now real; the"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_is_simulated_report\\\" --include=*.py . | head -50\", \"description\": \"Find the function\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"---\\\" && ls bench 2>/dev/null && echo \\\"--- logs\\\" && ls logs 2>/dev/null | head\", \"description\": \"List repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_is_simulated_report\\\" . 2>/dev/null | head -50\", \"description\": \"grep for function\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i latent; ls scripts/*audit* 2>/dev/null\", \"description\": \"find latent audit script\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Check seat identity lowercasing\", \"prompt\": \"Working dir: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo (disposable copy).\\n\\nTask: VERIFY OR REFUTE the claim \\\"Seat identity values are case-normalised, not just keys\\\" in the CDSFL runner. Find the change (grep for `seat`, `seat_identity`, `.lower()` near seat handling, in bench/reference_runne"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -8 && echo \\\"=== FILES ===\\\" && ls\", \"description\": \"List git log and repo root\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"seat_identity|seat_id|normalis|normaliz\", \"output_mode\": \"files_with_matches\", \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature, signature_similarity, WITHIN_LOCATION_THRESHOLD as T\\nprint('threshold', T)\\ndef sim(a,b):\\n    sa,sb=stem_signature(a),stem_signature(b)\\n    return sa,sb,signature_similarity(sa,sb)\\npairs=[\\n('SAME-1 long vs terse',\\n 'In \\\\`compute_source_hash\\\\` the file is read with \\\\`open("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ && echo \\\"=== routing.py ===\\\" && wc -l bench/routing.py bench/reference_runner_v3.py 2>/dev/null\", \"description\": \"List bench dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 38fc191 --stat && echo \\\"=== C986617 ===\\\" && git show c986617 --stat\", \"description\": \"Show commit stats\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Audit canary catalogue v2\", \"prompt\": \"Working dir: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo (disposable copy).\\n\\nTask: audit \\\"canary catalogue v2\\\" against its own stated fairness criteria. Find it: grep for `canary`, look at bench/canary_seeding.py, bench/exp45_configs, and any catalogue file (JSON/YAML/MD) naming plants like `MEM2-CUS"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 38fc191 -- bench/reference_runner_v3.py | head -200\", \"description\": \"Show runner diff from commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/routing.py\", \"description\": \"Read routing.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/scripts/latent_control_audit.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/logs/panel_ladder_20260901T231751Z/BRIEF.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---BENCH---\\\" && ls -la bench/ 2>/dev/null | head -50\", \"description\": \"List repo and bench contents\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline | head -40\", \"description\": \"Show git log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -20\", \"description\": \"Run full suite baseline in background\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/g.py <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature, signature_similarity\\nT = 0.20\\n\\ndef guard(new_desc, old_desc):\\n    \\\"\\\"\\\"Faithful replication of reference_runner_v3.p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2200,2300p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"description\": \"Read function context\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\nreg=d['registry']\\nprint(type(reg), list(reg)[:5] if isinstance(reg,dict) else len(reg))\\ne=reg['entries'] if isinstance(reg,dict) and 'entries' in reg else reg\\nfor cid,x in (e.items() if isinstance(e,dict) else []):\\n    pri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"MEM2-CUSUM\\\" . --include=* 2>/dev/null | head -30\", \"description\": \"Find MEM2-CUSUM references\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"model_identity|identity_of|def base_model_label|base_model_label\\\\(\", \"output_mode\": \"content\", \"-n\": true, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench\", \"head_limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp45_configs/ 2>/dev/null | head -40; echo \\\"---\\\"; ls -la bench/exp45_configs/ 2>/dev/null | head\", \"description\": \"List exp45_configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -name '*.json' | wc -l && echo \\\"--- dirs\\\" && ls bench/logs | head -80\", \"description\": \"count jsons in bench/logs\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"MEM2-CUSUM\", \"output_mode\": \"files_with_matches\", \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/_archive 2>/dev/null | head -40; echo \\\"=== bench/results\\\"; ls bench/results 2>/dev/null | head -40; echo \\\"=== logs_quarantine\\\"; ls bench/logs_quarantine 2>/dev/null | head -40\", \"description\": \"other archive dirs\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/exp45_configs/45_memory_statistics_live.json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"resolve_model\\\\|distinct_models\\\" bench/*.py bench/tests/*.py scripts/*.py 2>/dev/null\", \"description\": \"Find resolve_model callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '425,460p' bench/reference_runner_v3.py && echo \\\"=== 10495-10520 ===\\\" && sed -n '10495,10520p' bench/reference_runner_v3.py\", \"description\": \"Read base_model_label and identity map build\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/canary_seeding.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"MEM2-CUSUM\\\" experimental_notes/RUNWAY_to_BR2_2026-08-18.md | head -20\", \"description\": \"Show MEM2-CUSUM context\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"canary\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" --include=\\\"*.json\\\" --include=\\\"*.sh\\\" -il /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo | head -60\", \"description\": \"Find files mentioning canary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/PRIVATE_NOTES.md\", \"description\": \"Read PRIVATE_NOTES\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/g.py . && python3 -c \\\"\\nexec(open('g.py').read())\\n\\nsame = [\\n('S1 verbose-vs-terse, real repo defect',\\n 'Severity 0.85. In \\\\`_unlocated_novelty_key\\\\` at line 6287 the fallback path calls \\\\`stem_signature\\\\` on the descript"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2296,2340p' bench/reference_runner_v3.py; echo \\\"=== ROUTING CALLSITE ===\\\"; grep -rn \\\"rank_falsifier_writers\\\\|from bench.routing\\\\|import routing\\\\|routing.route\\\\|available_models\\\" bench/*.py | grep -v \\\"^bench/routing.py\\\" | head -30\", \"description\": \"Read tally consumer and routing call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad && cat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/classify.py <<'EOF'\\nimport json, pathlib, sys\\nsys.path.in"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/exp*_configs configs 2>/dev/null; echo \\\"=== COUNT ===\\\"; ls bench/exp*_configs/*.json configs/*.json 2>/dev/null | wc -l\", \"description\": \"List config dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4820,4880p' bench/reference_runner_v3.py\", \"description\": \"Read routing call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp55_configs/ configs/ | head -30; echo \\\"=== SAMPLE ===\\\"; find bench/exp*_configs configs -type f | head -5\", \"description\": \"Inspect config file layout\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"novelty_counts|_estimate_gamma|gamma_history|novel_critical_history\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/exp55_configs/55_v3_control.json'))\\nprint(list(d.keys()))\\nprint(json.dumps(d.get('models'), indent=1)[:1500])\\n\\\"\", \"description\": \"Inspect config JSON structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '90,145p' bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py; echo \\\"=== 200-235 ===\\\"; sed -n '200,235p' bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py\", \"description\": \"Read seat identity tests\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 2455, \"limit\": 55}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 11700, \"limit\": 130}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as m\\nprint('WITH filter:', m.audit(quiet=True)['reports'])\\nm._is_simulated_report = lambda fp: False\\nprint('WITHOUT filter (dead conditional behaviour):', m.audit(quiet=True)['reports'])\\n\\\"\", \"description\": \"Compute witness set before/after\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -8 -- scripts/latent_control_audit.py && echo \\\"=== prev version of _archive/_is_simulated\\\" && git log -p -3 --format='COMMIT %h %s' -- scripts/latent_control_audit.py | grep -n \\\"simulated\\\\|COMMIT\\\\|^[-+].*sim\\\" | head -60\", \"description\": \"git history of the audit script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"model_id=\\\\|api=\\\\|MODEL_ROSTER\\\\s*=\\\\|class ModelConfig\\\\|def _model_config\\\\|MODEL_TABLE\\\\|MODELS\\\\s*=\\\\|def build_model\\\" bench/reference_runner_v3.py | head -50\", \"description\": \"Find model config table\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_settled_novelty_series\\\" bench/reference_runner_v3.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -R .scratch .cdsfl_tmp 2>/dev/null | head -80\", \"description\": \"List scratch dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\nprint('target',d['target_file'],d['target_kind'])\\nprint(json.dumps(d['irreducible_queue_alarm'],indent=1)[:2500])\\n\\\"\", \"description\": \"Target kind and alarm bundle\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 11360, \"limit\": 90}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '300,330p' bench/reference_runner_v3.py; echo \\\"=== ModelConfig ===\\\"; grep -rn \\\"class ModelConfig\\\\|label:\\\\s*str\\\\|model_id:\\\\s*str\\\\|api:\\\\s*str\\\" bench/runner_core.py bench/launcher_core.py 2>/dev/null | head -20\", \"description\": \"Read MODEL_ROSTER and ModelConfig\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"ModelConfig(\\\" bench/*.py | head -20\", \"description\": \"Find ModelConfig instantiations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 93e49e0 && echo \\\"=====\\\" && git show --stat fdcb275\", \"description\": \"Show v2 catalogue commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5500,5560p bench/reference_runner_v3.py; echo \\\"=== sweep prompt tail ===\\\"; sed -n 5560,5620p bench/reference_runner_v3.py\", \"description\": \"Read sweep prompt rest\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"codex_exec\\\\|claude_cli\\\\|\\\\\\\"openrouter\\\\\\\"\\\\|'openrouter'\\\" bench/*.py | grep -i \\\"modelconfig\\\\|label\\\\|=\\\\s*{\\\" | head -20; echo \\\"=== BUILDER ===\\\"; grep -rn \\\"def .*models\\\\|_build_models\\\\|MODEL_SPECS\\\\|_MODEL_DEFS\\\\|def load_config\\\\|from_json\\\\|models=\\\\[\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find api values and model builder\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '175,200p' bench/reference_runner_v3.py; echo \\\"=== MODEL_SPECS DEF ===\\\"; grep -rn \\\"MODEL_SPECS\\\\s*=\\\" bench/*.py bench/*/*.py 2>/dev/null\", \"description\": \"Locate MODEL_SPECS definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"MEM2-\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" --include=\\\"*.json\\\" -l . | head -20\", \"description\": \"Find MEM2 plant ids\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tools/ && cat bench/vault_keys.sh 2>/dev/null | head -40\", \"description\": \"Look at tools and vault keys\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 6066, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '85,140p' bench/runner_core.py; echo \\\"=== build_model_specs ===\\\"; grep -n \\\"def build_model_specs\\\" -A 40 bench/runner_core.py | head -60\", \"description\": \"Read MODEL_SPECS and builder\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"routing_history\\\" bench/reference_runner_v3.py bench/*.py | head; echo \\\"=== sweep prompt body ===\\\"; awk 'NR>=5495 && NR<=5500' bench/reference_runner_v3.py; sed -n '/_nonce = _hashlib/,/^def _post_convergence/p' bench/reference_runner_v3.py | head -80\", \"description\": \"routing_history and sweep prompt body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location('rr','bench/reference_runner_v3.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\ng=m._estimate_gamma\\nbase=[8,6,4,3,2,1,1,0,0,0]\\nprint('base           ',base,'gamma=%.4f'%g(base))\\nfor k,extra in [('+1 dup in last 3 rounds',[0,0,0,0,0,0,0,1,1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"deepseek/\\\\|anthropic/\\\\|google/gemini\\\\|openai/gpt\\\" bench/*.py | grep -v tests | head -25\", \"description\": \"Find real model_id values\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/logs/panel_ladder_20260901T231751Z/BRIEF.md\", \"description\": \"Read panel ladder brief\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"MEM2-\\\" experimental_notes/RUNWAY_to_BR2_2026-08-18.md | head -30\", \"description\": \"MEM2 in runway\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport importlib\\nm=importlib.import_module('bench.reference_runner_v3')\\ng=m._estimate_gamma\\nbase=[8,6,4,3,2,1,1,0,0,0]\\nprint('base                    ',base,'gamma=%.4f'%g(base), m._interpret_gamma(g(base)))\\nfor k,extra in [('+1 dup last 3 rounds    ',[0,0,0,0,0,0,0,1,1,1]),\\n                ('+2 dup l"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/t_ladder.py <<'EOF'\\n\\\"\\\"\\\"Does the 'full routing ladder' reach every model? Run it.\\\"\\\"\\\"\\nfrom bench.routing import route, rank_falsifier_writers\\n\\nPANEL = ['CC2-SIM','ChatGPT-SIM','Codex-SIM','DeepSeek-SIM','Fable-SIM','Gemini-SIM']\\n\\nreached = []\\ndef resolve_fn(model, finding):\\n    reached.append(model)\\n    return \\\"\\\"            # every rung fails to produce a fal"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"max_rungs\\\" bench/ scripts/ configs/ --include=*.py --include=*.json | grep -v \\\"^bench/routing.py\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"catalogue\\\\|canary\\\" bench/tools/run_simulated_experiment_sandboxed.sh | head -40\", \"description\": \"Find catalogue path in sandbox script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"ModelConfig\\\\|class ExperimentConfig\\\" bench/run_exp17_immune.py bench/dynamic_management.py 2>/dev/null | head -20; echo \\\"=== SEARCH ALL ===\\\"; grep -rn \\\"def .*ModelConfig\\\\|^class ModelConfig\\\\|@dataclass\\\" -A3 bench/run_exp17_immune.py 2>/dev/null | grep -B1 -A3 \\\"ModelConfig\\\" | head -30\", \"description\": \"Find ExperimentConfig/ModelConfig definitions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find ~ -maxdepth 4 -iname \\\"*canar*\\\" 2>/dev/null | head -30; echo \\\"---TMP---\\\"; find /tmp /private/tmp /var/folders -maxdepth 6 -iname \\\"*canar*\\\" 2>/dev/null | head -30\", \"description\": \"Search filesystem for canary catalogue\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"class ModelConfig\\\" -A 25 $(grep -rl \\\"class ModelConfig\\\" bench/ --include=*.py | head -3) 2>/dev/null | head -60\", \"description\": \"Read ModelConfig dataclass\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 /tmp/t_ladder.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"max_rungs\\\" bench scripts configs 2>/dev/null | grep -v Binary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport importlib, inspect\\nm=importlib.import_module('bench.reference_runner_v3')\\nprint(inspect.getsource(m.FindingRegistry.register))\\n\\\" 2>&1 | head -60\\ngrep -n \\\"location_keyed_convergence\\\\|gamma_alt_consecutive_zero_crit\\\\|location_shadow_enabled\\\" bench/reference_runner_v3.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '125,195p' bench/experiment_11_orchestrator.py\", \"description\": \"Read live seat ModelConfig definitions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"location_keyed_convergence\\\" configs/ 2>/dev/null | head; echo ---; grep -n '\\\"MERGED\\\"\\\\|= \\\"DUPLICATE\\\"\\\\|status..\\\\] = \\\"MERGED\\\"\\\\|status\\\"\\\\] = ' bench/reference_runner_v3.py | head -30\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 2830, \"limit\": 50}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def .*reconcil\\\\|def run_immune_pipeline\\\\|def .*dedup\\\\|cross_model_dedup\\\\|def _resolve_merge_source\\\" bench/reference_runner_v3.py bench/*.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 295c72c:scripts/latent_control_audit.py | sed -n '110,140p'\", \"description\": \"Show old _archive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --all -5 && echo \\\"=== files added in c986617 under bench/logs\\\" && git show --stat --format=  c986617 | grep -c . && git show --name-only --format= c986617 | grep 'bench/logs' | head -40\", \"description\": \"what was added in HEAD commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/t_sweep.py <<'EOF'\\n\\\"\\\"\\\"Does _post_convergence_sweep count one finding once? Run it.\\\"\\\"\\\"\\nimport types, sys\\nimport bench.reference_runner_v3 as R\\n\\n# a registry stub with the fields the sweep touches\\nclass Reg:\\n    def __init__(s): s.entries = {}\\n    def resolve(s, cid, verdict, rnd): s.entries[cid][\\\"status\\\"] = verdict\\n\\nreg = Reg()\\nfor cid in (\\\"C0001\\\",\\\"C000"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --diff-filter=A --format='%h %s' -- 'bench/logs/sim*' | head -20; echo \\\"=== tracked sim report files\\\"; git ls-files 'bench/logs/sim*' | head -30; echo \\\"=== untracked?\\\"; git status --porcelain --untracked-files=all bench/logs | head\", \"description\": \"when sim dirs were committed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py\\\" -q 2>&1 | tail -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"0\\\\.20\\\\|_UNLOCATED_MERGE_THRESHOLD\\\\|WITHIN_LOCATION_THRESHOLD\\\" bench/tests/ | head -20\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/CDSFL_keys/canary_catalogue_memory_v2_2026-09-01.json\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/CDSFL_keys/canary_catalogue_memory_2026-09-01.json\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/dm/_memory.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git worktree add -f /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/wt3841 3841abf 2>&1 | tail -2\", \"description\": \"worktree at fix commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad && cat > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/scan.py <<'PY'\\n\\\"\\\"\\\"Collision scan: does .lower() collaps"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > sim.py <<'PYEOF'\\nimport sys; sys.path.insert(0,'.'); sys.path.insert(0,'bench')\\nimport importlib\\nm = importlib.import_module('bench.reference_runner_v3')\\nfrom bench.convergence_location import signature_similarity, stem_signature\\nT = m._UNLOCATED_MERGE_THRESHOLD\\n\\nFinding = m.Finding\\nimport dataclasses\\nprint(\\\"Finding fields:\\\", [f.name for f in dataclasses.fields(Findin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12540,12600p bench/reference_runner_v3.py; echo \\\"=== clear_stale ===\\\"; sed -n 400,432p bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"failed\\\\|failure\\\\|_sim_dispatches\\\\|except\\\" bench/tools/sim_dispatch_shim.py | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/wt3841 && python3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as m\\nprint('at 3841abf WITH filter:', m.audit(quiet=True)['reports'])\\nm._is_simulated_report = lambda fp: False\\nprint('at 3841abf W"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nexec(open('sim.py').read())\\ndef mk(model, fid, desc, sev, rnd):\\n    return Finding(finding_id=fid, model_id=model, round_idx=rnd, flaw_class=1,\\n                   severity=sev, abstraction_index=0.5, description=desc,\\n                   proposed_fix=\\\"\\\", target_file=\\\"t.py\\\")\\nprint()\\nD=[ 'Severity 0.85. In `_unlocated_novelty_key` at line 6287 the fallback "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn '\\\"models\\\"' bench/reference_runner_v3.py | head -5; echo ===; ls bench/exp45_configs configs 2>/dev/null | head -30; echo ===; grep -rln \\\"sim45_canary_v2\\\" bench configs 2>/dev/null | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO = pathlib.Path('.').resolve(); sys.path[:0] = [str(REPO), str(REPO/'bench')]\\nfrom bench.routing import rank_falsifier_writers, DEFAULT_FALSIFIER_STRENGTH\\nprint(\\\"strength_order:\\\", DEFAULT_FALSIFIER_STRENGTH)\\n\\nlive = [\\\"CC2\\\", \\\"Codex\\\", \\\"Gemini\\\", \\\"DeepSeek\\\", \\\"ChatGPT\\\"]\\nsim  = [l + \\\"-SIM\\\" for l in live]\\nlow  = [l.lower() for l "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== every consumer of resolve_model / distinct_models anywhere ===\\\" && grep -rn \\\"resolve_model\\\\|distinct_models\\\\|model_identity\\\" --include=*.py . | grep -v \\\"/logs/\\\" | grep -v \\\"reference_runner.py\\\\|run_confer_exp38\\\\|insect_brain\\\"\", \"description\": \"Exhaustive consumer trace\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs | head -30; echo ---; find . -name \\\"*.json\\\" -path \\\"*log*\\\" | head -10; echo ---; find . -name \\\"*registry*\\\" | head\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 5660, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"canary_v2\\\" bench/*.json bench/exp*_configs configs 2>/dev/null | head; find . -name \\\"*.json\\\" -newermt \\\"2026-08-30\\\" -path \\\"*config*\\\" 2>/dev/null | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"sim45\\\\|canary_v2\\\" --include=*.py --include=*.json --include=*.sh --include=*.md . 2>/dev/null | grep -v \\\"^./bench/logs\\\" | head -20\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"resolve_model|distinct_models|model_identity\", \"glob\": \"**/*.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/_archive | head -20; echo ---; find logs -name \\\"*.json\\\" | head -20; echo ---; du -sh logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== does any lowercased label reach a case-sensitive dict? check the 3 tables ===\\\" ; grep -n \\\"MODEL_SPECS.get\\\\|MODEL_ROSTER.get\\\\|CONVERGENCE_EXCLUDED_MODELS\\\\|DECOMPOSITION_CONTEXT_THRESHOLD\\\\|CONTEXT_CHAR_BUDGET_CEILING\\\\|INITIAL_FINGERPRINTS.get\\\\|cfg_by_label\\\" bench/reference_runner_v3.py bench/runner_core.py | head -25\", \"description\": \"Check case-sensitive table looku"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/exp45_configs/45_memory_statistics_live.json'))\\nfor k in ('models','panel','post_convergence_sweep_rounds','routing_enabled','max_irreducible_queue','test_article'):\\n    if k in d: print(k,'=',d[k])\\nprint('keys:',sorted(d))\\n\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"post_convergence_sweep_rounds\\\\|routing_enabled\\\" bench/tools/run_simulated_experiment.py bench/exp45_configs/*.json 2>/dev/null | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import xdist; print('xdist ok')\\\" 2>&1; du -sh . 2>/dev/null; du -sh .git bench/logs 2>/dev/null; ls bench/logs | head -5; ls bench/logs | wc -l\", \"description\": \"Check xdist and repo size\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' scripts/similarity_operating_characteristic.py; echo \\\"====\\\"; ls resources examples 2>/dev/null | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"REPORT\\\\|glob\\\\|reports\\\\|Path(\\\" scripts/similarity_operating_characteristic.py | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"routing_enabled\\\\|post_convergence_sweep_rounds\\\\|take_up_slack_enabled\\\" bench/reference_runner_v3.py | head -20; echo \\\"=== configs that set them ===\\\"; grep -rln \\\"routing_enabled\\\" bench/exp*_configs configs 2>/dev/null; echo \\\"--- sweep ---\\\"; grep -rln \\\"post_convergence_sweep_rounds\\\" bench/exp*_configs configs 2>/dev/null\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 150,230p bench/tools/run_simulated_experiment.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -30; echo ---; ls bench/logs/*_report.json 2>/dev/null | head; echo ---; find bench/logs -name \\\"*report*.json\\\" | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"take_up_slack_enabled\\\" bench/exp*_configs/*.json | head -20; echo \\\"=== VENDORS ===\\\"; grep -n \\\"VENDORS\\\" bench/tools/run_simulated_experiment.py | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob\\nfor f in sorted(glob.glob('bench/exp*_configs/*.json')):\\n    d=json.load(open(f))\\n    r=d.get('routing_enabled', d.get('take_up_slack_enabled'))\\n    s=d.get('post_convergence_sweep_rounds')\\n    if r is not None or s is not None:\\n        print(f\\\"{f:60s} routing={r!s:6s} sweep_rounds={s}\\\")\\nEOF\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la .git | head -3; cat .git 2>/dev/null | head -2; time python3 scripts/latent_control_audit.py --json > /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/base.json\", \"description\": \"Time a single audit run\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob\\np='bench/logs/exp44_evidence_locationkey_live_20260727T002705Z/exp44_evidence_locationkey_live_report.json'\\nd=json.load(open(p))\\nprint(list(d.keys()))\\nfor k in d:\\n    v=d[k]\\n    if isinstance(v,(list,dict)) and 'reg' in k.lower(): print(k, type(v), len(v))\\n\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/exp44_evidence_locationkey_live_20260727T002705Z/exp44_evidence_locationkey_live_report.json'\\nd=json.load(open(p))\\nr=d['registry']; print(list(r.keys()))\\ne=r.get('entries') or r\\nif isinstance(e,dict):\\n    k=list(e)[0]; print(k, json.dumps(e[k])[:800])\\n    print('n entries', len(e))\\nelif isinstance(e,list):\\n    print(len(e), json.dumps("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, pathlib\\nREPO = pathlib.Path('.').resolve(); sys.path[:0] = [str(REPO), str(REPO/'bench')]\\nimport reference_runner_v3 as R\\n\\nLIVE = {\\\"CC2\\\": \\\"opus@claude_cli\\\", \\\"Codex\\\": \\\"openai/gpt-5.5@openrouter\\\",\\n        \\\"ChatGPT\\\": \\\"openai/gpt-5.5@openrouter\\\",\\n        \\\"Gemini\\\": \\\"google/gemini-3.1-pro-preview@openrouter\\\",\\n        \\\"DeepSeek\\\": \\\"deeps"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as m\\na=m.audit(quiet=True)\\norig=m._is_simulated_report\\nm._is_simulated_report=lambda fp: False\\nb=m.audit(quiet=True)\\nva={r['key']:r['verdict'] for r in a['rows']}\\nvb={r['key']:r['verdict'] for r in b['rows']}\\nsa={r['key']:r['seen_in_reports'] for r in a['rows']}\\nsb={r['key']:r['seen_in_reports"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json, bench.reference_runner_v3 as R\\nd = json.load(open('bench/exp45_configs/45_memory_statistics_live.json'))\\ncfg = R.RunnerConfig.from_dict(d) if hasattr(R.RunnerConfig,'from_dict') else None\\nprint('from_dict?', cfg is not None)\\nif cfg is None:\\n    import inspect\\n    print([n for n,_ in inspect.getmembers(R.RunnerConfig) if 'dict' in n or"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1140,1160p bench/reference_runner_v3.py; sed -n 4965,4975p bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib,sys\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\nrs=0; rep=0; other=[]\\nfor fp in LOGS.glob('**/*.json'):\\n    if _is_simulated_report(fp): continue\\n    try: d=json.loads(fp.read_text(encoding='utf-8',errors='ignore'))\\n    except Exception: continue\\n    if isinstance(d,dict) and ('registry' in d or 'c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"seat\\\\|resolve_model\\\\|model_identity\\\\|base_model_label\\\\|rank_falsifier\\\" bench/tests | head -20\", \"description\": \"List seat-related tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport json, glob, itertools, statistics, sys\\nsys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature, signature_similarity\\nimport re\\nT=0.20\\nfiles=sorted(glob.glob('bench/logs/**/*report*.json', recursive=True))\\nsame_sims=[]; diff_sims=[]; nruns=0; empty=0; tot=0\\nfor fp in files:\\n    try: d=json.load(open(fp))\\n    except Exception: co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py bench/tests/test_sim_label_does_not_disable_the_runner_2026-08-30.py bench/tests/test_routing.py bench/tests/test_simulated_severity_is_demoted_2026-09-01.py bench/tests/test_take_up_slack.py -q 2>&1 | tail -20\", \"description\": \"Run seat and routing tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad\\\" && cat > \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/audit.py\\\" <<'PY'\\nimport json, re, sys, difflib, pat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json\\nfrom bench.reference_runner_v3 import _routing_similarity\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p)); ev=d['irreducible_queue_alarm']['evidence']\\nids=[x['canonical_id'] for x in ev]\\nprint(\\\"irreducible queue:\\\", ids)\\nfor x in ev:\\n    print(\\\"\\\\n---"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py bench/tests/test_sim_label_does_not_disable_the_runner_2026-08-30.py bench/tests/test_routing.py bench/tests/test_simulated_severity_is_demoted_2026-09-01.py -q 2>&1 | tail -20\", \"description\": \"Run seat and routing tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -5 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null || echo \\\"still running\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 -m pytest bench/tests -q -x --timeout=120 2>&1 | tail -15\", \"description\": \"Run full bench test suite\", \"timeout\": 920000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; mkdir -p $SP/w1 && cp -al /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/. $SP/w1/ 2>&1 | tail -3; cd $SP/w1 && git log --format=%at -1 2>&1 | head -3\", \"description\": \"Test hardlink repo copy"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q 2>&1 | tail -15\", \"description\": \"Run full bench test suite\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_combined_identity_rule.py bench/tests/test_generic_location_bucket.py bench/tests/test_gamma_alt_convergence.py bench/tests/test_two_sided_gate.py -q 2>&1 | tail -8\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport json, glob, itertools, statistics, re, sys\\nsys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature as S, signature_similarity as SS\\nT=0.20\\nfiles=[f for f in sorted(glob.glob('bench/logs/**/*report*.json', recursive=True))\\n       if re.search(r'exp4[2-7]', f)]\\nprint(\\\"modern location-keyed-era runs:\\\", len(files))\\nsame=[]; diff=[]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json\\nimport bench.reference_runner_v3 as R\\nfrom pathlib import Path\\nsrc = Path('bench/dm/_memory.py').read_text()\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\nE=d['registry']['entries']\\nf={\\\"id\\\":\\\"C0001\\\",\\\"description\\\":E['C0001']['description'],\\\"source_mod"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport json, glob, itertools, statistics, re, sys\\nsys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature as S, signature_similarity as SS\\nT=0.20\\nfiles=[f for f in sorted(glob.glob('bench/logs/**/*report*.json', recursive=True)) if re.search(r'exp4[2-7]', f)]\\nsame=[]; diff=[]; nm=0\\nfor fp in files:\\n    try: d=json.load(open(fp))\\n    ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sysctl -n hw.ncpu hw.physicalcpu; SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cp /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/scripts/latent_control_audit.py $SP/pristine.py; for i in 2 3 4 5 6; do mkdir -p $SP/w$i; cp -al /private/va"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def execute_python\\\" bench/falsifier_verify.py; sed -n \\\"$(grep -n 'def execute_python' bench/falsifier_verify.py | cut -d: -f1),+70p\\\" bench/falsifier_verify.py | grep -n \\\"cwd\\\\|PYTHONPATH\\\\|env\\\\|_scratch\\\\|root\\\" \"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"PYTHONPATH\\\" bench/falsifier_verify.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/audit.py\\\" <<'PY'\\nimport json, re, io, tokenize, pathlib, difflib\\nCATP=\\\"/Users/georgejackson/CDSFL_keys/canary_catalogue_memory_v2_2026-09-01.json\\\"\\nTGT=pathlib.Path(\\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport json, glob, itertools, re, sys\\nsys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature as S\\nfiles=sorted(glob.glob('bench/logs/**/*report*.json', recursive=True))\\ntot=0; pairs=0; either_empty=0\\nfor fp in files:\\n    try: d=json.load(open(fp))\\n    except Exception: continue\\n    reg=d.get('registry')\\n    if not isinstance(reg,dict"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rm -f sim.py g.py; git -C . status --short\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,glob,re\\nfor p in sorted(glob.glob(\\\"bench/logs/sim45_canary_v2_*/*report.json\\\")):\\n    d=json.load(open(p))\\n    print(\\\"=== \\\",p, list(d.keys())[:20])\\nPY\", \"description\": \"Inspect v2 run report keys\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,glob,re\\np=\\\"bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/sim45_canary_v2_20260901T214242Z_report.json\\\"\\nd=json.load(open(p))\\nfs=[]\\nfor r in d[\\\"rounds\\\"]:\\n    for f in r.get(\\\"findings\\\",[]) or []:\\n        fs.append((r.get(\\\"round\\\"),f))\\nprint(\\\"total findings\\\", len(fs))\\nfor rn,f in fs:\\n    desc=(f.get(\\\"description\\\") or \\\"\\\")\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null | tail -15\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"cleared\\\" bench/tests/*.py | grep -i sweep | head -20; echo \\\"=== sweep tests ===\\\"; grep -rln \\\"_post_convergence_sweep\\\" bench/tests | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,sys\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\nprint(\\\"=== SIM files: where does the first '-SIM' occur? (window is 4000) ===\\\")\\nfor fp in sorted(LOGS.glob('**/*.json')):\\n    if not _is_simulated_report(fp): continue\\n    t=fp.read_text(encoding='utf-8',errors='ignore')\\n    i=t.find('-SIM'); j=t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_estimate_gamma(\\\\|gamma_history.append\\\\|gamma_all_history\\\\|_check_gamma_gate(\\\\|_check_hardened_convergence(\\\" bench/reference_runner_v3.py | sed -n '1,40p'; echo ---; grep -n \\\"def register\\\" bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib,sys,re\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import LOGS\\nnames=sorted({p.parent.name for p in LOGS.glob('**/*.json')})\\nprint(\\\"total distinct report dirs:\\\",len(names))\\nprint(\\\"=== dir names matching the predicate ===\\\")\\nfor n in names:\\n    l=n.lower()\\n    if l.startswith('sim') or '_sim' in l or 'simulated' in l: print(\\\"  MA"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json,glob,os\\nrows=[]\\nfor f in glob.glob('bench/logs/**/*report*.json',recursive=True)+glob.glob('logs/**/*report*.json',recursive=True)+glob.glob('bench/results/**/*.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    if not isinstance(d,dict) or 'runner_version' not in d: continue\\n    sim = d.get('_simul"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/reference_runner_v3.py\", \"offset\": 11855, \"limit\": 20}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,re\\np=\\\"bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/sim45_canary_v2_20260901T214242Z_report.json\\\"\\nd=json.load(open(p))\\nPLANT={\\\"MEM2-PIMEM\\\":r\\\"BETA_0|pi_mem|ALPHA_0\\\",\\\"MEM2-COUNT\\\":r\\\"-1\\\\.0|_check_count|negative\\\",\\n\\\"MEM2-CUSUM\\\":r\\\"cusum\\\",\\\"MEM2-RESET\\\":r\\\"reset_drift|pop\\\\(flaw_class|drift_detected = False\\\",\\n\\\"MEM2-REINGEST\\\":"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json,glob,os\\nn=0; real=0\\nfor f in glob.glob('bench/logs/**/*.json',recursive=True)+glob.glob('logs/**/*.json',recursive=True):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    if not isinstance(d,dict) or 'convergence_reason' not in d: continue\\n    n+=1\\n    sim = d.get('_simulated') or any('-SIM' in str(m) for m in (d.get('"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib,sys,json\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\ndironly=[];contentonly=[];both=[]\\nfor fp in sorted(LOGS.glob('**/*.json')):\\n    n=fp.parent.name.lower()\\n    dm = n.startswith('sim') or '_sim' in n or 'simulated' in n\\n    cm = '-SIM' in fp.read_text(encoding='utf-8',errors='ignore')[:4000]\\n    i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,sys\\np='bench/logs/exp55_v3_control_20260823T153955Z/exp55_v3_control_report.json'\\nt=open(p,encoding='utf-8').read()\\nprint(\\\"LEN\\\",len(t))\\nprint(\\\"=== first 1200 chars ===\\\")\\nprint(t[:1200])\\nprint(\\\"\\\\n=== char 3800-4200 (window boundary) ===\\\")\\nprint(t[3800:4200])\\nd=json.loads(t)\\nprint(\\\"\\\\n=== top-level keys in order ===\\\")\\nprint(list(d.keys()"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,re\\np=\\\"bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/sim45_canary_v2_20260901T214242Z_report.json\\\"\\nd=json.load(open(p))\\ndescs=[f.get(\\\"description\\\") or \\\"\\\" for r in d[\\\"rounds\\\"] for f in (r.get(\\\"findings\\\") or [])]\\nQUOTE=re.compile(r\\\"docstring|documented as|the comment|comment says|module'?s own doc|module header|header'?s own|its"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json,glob\\nV3ONLY=['runner_version','irreducible_queue_alarm','sweep_trigger','post_sweep_reconciliation',\\n        'target_hashes','severity_admissibility','critical_boundary_census','panel_confinement',\\n        'merkle_chain','gamma_threshold_profile','novelty_rule_divergence','hierarchical_crit_series']\\nfor f in sorted(set(glob.glob('bench/l"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"split_difficulty_balance\\\\|difficulty\\\" bench/ scripts/ --include=\\\"*.py\\\" --include=\\\"*.sh\\\" | grep -v \\\"^bench/logs\\\" | head -20\", \"description\": \"Find difficulty field usage\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport math\\ndef wilson(k,n,z=1.96):\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d\\n    h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d\\n    return c-h,c+h\\nfor k,n,lab in [(17,22,\\\"v1 prose-citation\\\"),(14,16,\\\"v2 prose-citation\\\"),(3,3,\\\"v2 p_hat held_out\\\"),(4,5,\\\"v2 plants named\\\")]:\\n    lo,hi=wilson(k,n); print(f\\\"{lab:<26} {k}/{n} = {k/n:.1%}  Wilson [{lo:.1%}, {hi:.1%}]\\\")"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature as S, signature_similarity as SS\\nSAME=('pi_mem drops BETA_0 from the denominator so it returns exactly 1.0','the pi_mem denominator omits BETA_0 and can therefore reach 1.0')\\nDIFF=('pi_mem drops BETA_0 from the denominator so it returns exactly 1.0','compute_source_hash iterates "
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/mut.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Apply a mutation to a worker copy and run the audit's test file there.\\\"\\\"\\\"\\nimport json\\nimport pathlib\\nimport subprocess\\nimport sys\\nimport time\\n\\nSP = pathlib.Path(__file__"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,sys\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\nprint(\\\"=== REAL report-shaped files: does '-SIM' appear ANYWHERE? where does free text start? ===\\\")\\nn=0\\nfor fp in sorted(LOGS.glob('**/*.json')):\\n    if _is_simulated_report(fp): continue\\n    t=fp.read_text(encoding='utf-8',errors='ignore')\\n    try: d=j"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json\\nf='bench/logs/exp55_v3_control/exp55_v3_control_report.json'\\nimport glob\\nf=glob.glob('bench/logs/**/exp55_v3_control_report.json',recursive=True)[0]\\nd=json.load(open(f)); print(f)\\nprint('models',d.get('models'),'target',d.get('target_file'),d.get('target_kind'))\\nprint('halted',d.get('halted'),d.get('convergence_reason'),'rounds',d.get("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"split_difficulty_balance\\\" . 2>/dev/null | head; echo \\\"--- callers of canary_seeding ---\\\"; grep -rn \\\"canary_seeding\\\\|load_catalogue\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" . | grep -v \\\"^./bench/canary_seeding.py\\\" | head -20\", \"description\": \"Check callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '140,180p' bench/tools/run_simulated_experiment_sandboxed.sh\", \"description\": \"Read seeding wiring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.convergence_location import stem_signature as S, signature_similarity as SS\\nT=0.20\\ndef guard(new,old):\\n    a,s=True,1.0\\n    n,o=S(new),S(old)\\n    if n and o:\\n        s=SS(n,o)\\n        if s<T: a=False\\n    return ('ABSORB (2nd finding deleted)' if a else 'REGISTER'), s\\nnew='compute_source_hash iterates file_paths uns"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/batch.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Run a batch of mutations in parallel across worker copies.\\\"\\\"\\\"\\nimport json\\nimport pathlib\\nimport sys\\nfrom concurrent.futures import ThreadPoolExecutor\\n\\nSP = pathlib.Path"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfor p,off in [('bench/logs/exp41_convergence_20260522T021030Z/exp41_convergence_report.json',566328),\\n              ('bench/logs/exp41c_first_principles_20260522T194836Z/exp41c_first_principles_report.json',10579),\\n              ('bench/logs/exp41_convergence_20260522T021030Z/runner_state.json',155849)]:\\n    t=open(p,encoding='utf-8',errors='ignore').read()\\n    "
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/b1.json\", \"content\": \"[\\n {\\\"name\\\": \\\"CONTROL (pristine)\\\", \\\"old\\\": \\\"\\\", \\\"new\\\": \\\"\\\"},\\n {\\\"name\\\": \\\"A1 too_new = False\\\", \\\"old\\\": \\\"too_new = bool(first and newest and first > newest)\\\", \\\"new\\\": \\\"too_new = False\\\"},\\n {\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null | tail -12; echo \\\"---\\\"; PYTHONPATH=. python3 -c \\\"\\nimport json,glob\\nd=json.load(open(glob.glob('bench/logs/**/exp55_v3_control_report.json',recursive=True)[0]))\\nfor x in d['irreducible_queue_alarm']["
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cd $SP && time python3 batch.py b1.json 2>&1 | tail -80\", \"description\": \"Run batch 1: author's claimed-dead mutants\", \"timeout\": 1800000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re,sys,json\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\npat=re.compile(r'-[A-Z]{2,}')\\ntot=0;hit=0;examples={}\\nfor fp in sorted(LOGS.glob('**/*.json')):\\n    if _is_simulated_report(fp): continue\\n    t=fp.read_text(encoding='utf-8',errors='ignore')\\n    try: d=json.loads(t)\\n    except Exception: continue\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_apply_routing\\\" bench/reference_runner_v3.py; echo \\\"---\\\"; PYTHONPATH=. python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\nprint('secondary_route_usage', json.dumps(d.get('secondary_route_usage'))[:300])\\nr=d['rounds'][0]; print('round0 keys:', sorted(r.keys()))\\nprint("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"detection_rate\\\\|catches(\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" . | grep -v \\\"^./bench/canary_seeding.py\\\" | grep -v tests/ | head; echo \\\"=== manifest fields written by seed() ===\\\"; sed -n '239,241p' bench/canary_seeding.py; echo \\\"=== manifests on disk ===\\\"; ls -la ~/CDSFL_keys/ 2>/dev/null\", \"description\": \"Check scoring wiring and manifests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re,io\\np='bench/reference_runner_v3.py'\\ns=open(p).read()\\nold='''                cid, code = m.group(1), m.group(2).strip()\\n                e = registry.entries.get(cid)\\n                if e is None or e[\\\"status\\\"] in _TERMINAL or not code:\\n                    continue'''\\nnew='''                cid, code = m.group(1), m.group(2).strip()\\n                "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null | tail -8; echo \\\"[suite status above]\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,pathlib\\nCAT=json.load(open(\\\"/Users/georgejackson/CDSFL_keys/canary_catalogue_memory_v2_2026-09-01.json\\\"))\\nclean=pathlib.Path(\\\"bench/dm/_memory.py\\\").read_text()\\nby={c[\\\"id\\\"]:c for c in CAT[\\\"canaries\\\"]}\\nfor cid,N in ((\\\"MEM2-CUSUM\\\",12),(\\\"MEM2-RESET\\\",10)):\\n    c=by[cid]; s=clean.replace(c[\\\"find\\\"],c[\\\"replace\\\"],1)\\n    SL=s.split(\\\"\\\\n\\\"); i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\\-SIM\\\\|_simulated\\\\|SIM\\\"' bench/reference_runner_v3.py | head -40\", \"description\": \"how the runner emits SIM markers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nt=open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json',encoding='utf-8').read()\\nprint(t[:900])\\nprint('...')\\nprint('_simulated at', t.find('_simulated'))\\nimport json; d=json.loads(t); print(list(d.keys())[:45])\\n\\\"\", \"description\": \"head of sim report\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'irreducible_escalation\\\"\\\\] = \\\\|irreducible_escalation'\\\\''\\\\] = ' bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 90; tail -8 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null; echo \\\"[end]\\\"\", \"description\": \"Wait and check suite\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,re\\nd=json.load(open(\\\"bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/sim45_canary_v2_20260901T214242Z_report.json\\\"))\\nfs=[f for r in d[\\\"rounds\\\"] for f in (r.get(\\\"findings\\\") or [])]\\nsev=sorted((f.get(\\\"severity\\\") for f in fs))\\nprint(\\\"severities:\\\",sev)\\nprint(\\\"critical threshold hints:\\\", {k:v for k,v in d.get(\\\"convergence_config\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '25,50p;5850,5880p' bench/reference_runner_v3.py\", \"description\": \"read runner SIM docs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n \\\"$(grep -n 'def _settle_confirmed_findings' bench/reference_runner_v3.py | cut -d: -f1),+60p\\\" bench/reference_runner_v3.py | tail -35; echo \\\"=== caller ===\\\"; sed -n 12520,12545p bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nt=open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/runner_state.json',encoding='utf-8').read()\\nprint('LEN',len(t)); print(t[:700]); print('--- first -SIM at', t.find('-SIM'))\\n\\\"; echo \\\"=== severity_provenance present in reports? ===\\\"; grep -l 'severity_provenance' bench/logs/*/[a-z]*report.json 2>/dev/null | head\", \"description\": \"runner_state head"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nfor p in ['bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214245Z/runner_state.json','bench/logs/exp55_v3_control_20260823T153955Z/runner_state.json']:\\n    d=json.load(open(p,encoding='utf-8'))\\n    print(p); print('  keys:',list(d.keys())); print('  has models?', 'models' in d, ' has _simulated?','_simulated' in d, ' entries:',len(d.get('registry',{"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\nprint('converged/halted:', d['halted'], d['convergence_reason'])\\nprint('post_convergence_settled present:', 'post_convergence_settled' in d)\\nE=d['registry']['entries']\\nrouted=[c for c,e in E.items() if e.get('resolv"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"settle\\\" bench/tests/test_post_convergence_settle.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11243,11290p bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nfrom bench.convergence_location import stem_signature, signature_similarity\\nimport re, pathlib\\nt = pathlib.Path('bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py').read_text()\\n# pull the fixture strings the test calls SAME / DIFFERENT\\nfor m in re.finditer(r'^(SAME|DIFF|_SAME|_DIFF)\\\\w*\\\\s*=\\\\s*\\\\(?\\\\s*$|^(\\\\w*(?:SAME|DIFF)\\\\w*)\\\\s*=\\\\s*(\\\"."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"0.20\\\\|_overlap\\\\|def test_a_genuinely_different\\\\|DIFFERENT\\\\|description\\\" bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 34,70p bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib\\nz=[];s=[]\\nfor fp in pathlib.Path('bench/logs').glob('**/runner_state.json'):\\n    d=json.load(open(fp,encoding='utf-8'))\\n    n=len(d.get('registry',{}).get('entries',{}))\\n    if n==0: z.append(str(fp))\\n    if n<=2: s.append((n,str(fp)))\\nprint('runner_state.json with ZERO registry entries:',len(z))\\nfor x in z: print('   ',x)\\nprint('with <=2 en"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nfrom bench.convergence_location import stem_signature, signature_similarity\\nSAME = (\\\"pi_mem drops BETA_0 from the denominator so it returns exactly 1.0\\\",\\n        \\\"the pi_mem denominator omits BETA_0 and can therefore reach 1.0\\\")\\nDIFF = (\\\"pi_mem drops BETA_0 from the denominator so it returns exactly 1.0\\\",\\n        \\\"compute_source_hash iterates"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_id_reuse_is_not_absorption_2026-09-01.py -q 2>&1 | tail -5\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output; tail -6 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad\\npython3 - <<EOF\\nimport json,sys,pathlib,shutil\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report\\nimport latent_control_audit as m\\n\\nbase = pathlib.Path(\\\"$SP\\\")/\\\"cx\\\"\\nshutil.rmtree(base, i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\n# Does the ladder discard a falsifier a rung actually wrote, when the ladder exhausts?\\nimport inspect, bench.reference_runner_v3 as R\\nsrc = inspect.getsource(R._apply_routing)\\ntail = src[src.index('else:\\\\n            # Full routing ladder exhausted'):]\\nprint(tail[:900])\\nprint(\\\"\\\\n--- does the exhaustion branch persist result.falsifier_code / resu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"resume\\\\|checkpoint\\\" bench/reference_runner_v3.py | grep -i \\\"def \\\\|resume_from\\\\|load_checkpoint\\\\|--resume\\\" | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until [ -s /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output ]; do sleep 10; done; tail -6 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output\", \"descripti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad\\ncat > $SP/cx.py <<'PYEOF'\\nimport json,sys,pathlib,shutil\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/scripts')\\nfrom latent_control_audit import _is_simulated_report\\ni"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12177,12215p bench/reference_runner_v3.py; echo \\\"=== post-sweep persistence ===\\\"; sed -n 12600,12660p bench/reference_runner_v3.py | grep -n \\\"checkpoint\\\\|save\\\\|registry\\\" \"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"runner_state.json\\\\|def _save_checkpoint\\\\|def load_checkpoint\\\\|checkpoint.json\\\" bench/reference_runner_v3.py | head -20\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10600,10640p bench/reference_runner_v3.py; echo \\\"=== 11985 ===\\\"; sed -n 11985,12000p bench/reference_runner_v3.py; echo \\\"=== 12625 ===\\\"; sed -n 12625,12645p bench/reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad\\ncp -r $SP/cx/exp56_runner_selfaudit_live_20260910T101500Z $SP/cx/exp57_rehearsal_20260910T120000Z bench/logs/\\npython3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as m\\nprint('witness set WITH th"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json, types\\nfrom bench.reference_runner_v3 import FindingRegistry, build_irreducible_queue_alarm\\n\\np='bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'\\nd=json.load(open(p))\\ncfg = types.SimpleNamespace(max_irreducible_queue=2)\\n\\n# (1) what the run HALTED on, as frozen in the alarm bundl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -6 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null; echo \\\"[suite]\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 320,345p bench/dm/_memory.py; echo \\\"=== max/min occurrences ===\\\"; grep -n \\\"max(\\\\|min(\\\\|abs(\\\" bench/dm/_memory.py | head; echo \\\"=== header ===\\\"; sed -n 17,34p bench/dm/_memory.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"split_difficulty_balance\\\\|detection_rate\\\\|def catches\\\" . --exclude-dir=__pycache__ 2>/dev/null | head; echo \\\"=== C0016 ===\\\"; PYTHONPATH=. python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\ne=d['registry']['entries']['C0016']; print('sev',e['severity'],'src',e.get('s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -6 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null; echo \\\"[suite output above; bytes:]\\\"; wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"converged\\\\|halt\\\" bench/tests/test_post_convergence_settle.py | head; echo \\\"=== any test on settle-runs-on-halt? ===\\\"; grep -rln \\\"settle\\\" bench/tests | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"irreducible\\\" bench/tests/*.py | grep -i \\\"sweep\\\\|clear\\\\|resume\\\\|registry\\\" | head -10; echo \\\"---\\\"; ls bench/tests | grep -i \\\"irreduc\\\\|sweep\\\\|routing\\\" \"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 180,225p bench/tests/test_post_convergence_settle.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_post_convergence_settle.py bench/tests/test_static_queue_closure.py bench/tests/test_routing.py bench/tests/test_routing_wiring.py bench/tests/test_panel_briefing_and_sweep_trigger.py -q 2>&1 | tail -6\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/boz0sb8b0.output 2>/dev/null\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json\\nfrom bench.reference_runner_v3 import FindingRegistry, _settle_confirmed_findings\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\n# reconstruct the registry as it stood just BEFORE the sweep: undo the sweep's edits\\nE=json.loads(json.dumps(d['registry']))\\nfor "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output; ps aux | grep -c \\\"[p]ytest\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\n# Exactly which models the ladder can EVER reach, for the shipped 5-model real panel\\nfrom bench.routing import rank_falsifier_writers\\nREAL = ['CC2','ChatGPT','Codex','DeepSeek','Gemini']          # exp45/exp55 real panel\\nseen=set()\\nfor src in REAL:\\n    rungs = rank_falsifier_writers(REAL, exclude=(src,))[:2]\\n    seen |= set(rungs)\\n    print(f\\\"so"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i latent; echo \\\"---\\\"; grep -rln \\\"latent_control_audit\\\" bench/tests scripts 2>/dev/null\", \"description\": \"find tests\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bz84sdq6a.output\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/bench/tests/test_latent_control_audit_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"rung\\\" bench/reference_runner_v3.py | grep -i \\\"config\\\\|cfg\\\\.\\\" | head; PYTHONPATH=. python3 -c \\\"\\nimport bench.reference_runner_v3 as R\\nf={n for n in R.RunnerConfig.__dataclass_fields__}\\nprint('config fields mentioning rung/ladder/routing:', sorted(x for x in f if 'rung' in x or 'ladder' in x or 'rout' in x))\\n\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 240; wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output\", \"description\": \"Wait for background work\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in ad16b31fb22f33aef aa59d2468ec32616f a718277233e3553a0; do p=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/$f.output; echo \\\"$f: $(wc -c < $p 2>/dev/null) bytes\\\"; done\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport pathlib,time,json,sys\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\nms=[]\\nfor fp in LOGS.glob('**/*.json'):\\n    ms.append(int(fp.stat().st_mtime))\\nimport collections\\nprint('distinct mtimes across',len(ms),'archive json files:',len(set(ms)))\\nprint('min',time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(min(ms))),'max'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -20\", \"description\": \"run the audit tests\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp55_v3_control_20260823T144624Z/; grep -h \\\"routing\\\\|sweep\\\\|HIL\\\\|irreducible\\\" bench/logs/exp55_v3_control_20260823T144624Z/*.log 2>/dev/null | head -25\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json, types\\nfrom bench.reference_runner_v3 import FindingRegistry, build_irreducible_queue_alarm\\nrs=json.load(open('bench/logs/exp55_v3_control_20260823T144624Z/runner_state.json'))\\nprint(\\\"runner_state keys:\\\", [k for k in rs if k in ('registry','post_convergence_sweep','runner_version')])\\nprint(\\\"runner_version in state:\\\", rs.get('runner_v"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,json,time\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, LOGS\\nbest=(0,None); bestrep=(0,None); bestsim=(0,None)\\nfor fp in LOGS.glob('**/*.json'):\\n    m=int(fp.stat().st_mtime)\\n    sim=_is_simulated_report(fp)\\n    try: d=json.loads(fp.read_text(encoding='utf-8',errors='ignore'))\\n    except Exception: continue\\n    i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output; ps aux | grep \\\"[p]ytest\\\" | head -3\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bze44pfk8.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_is_simulated_report\\\" -A 30 scripts/latent_control_audit.py | head -45\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -15\", \"description\": \"run audit tests\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys,pathlib,json,tempfile,shutil\\nsys.path.insert(0,'/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hgdb_3t2/repo/scripts')\\nfrom latent_control_audit import _is_simulated_report\\ntmp=pathlib.Path(tempfile.mkdtemp())\\nnames=[\\\"exp58_simulation_fidelity_live_20260910T0000Z\\\",   # real run ABOUT simulation\\n       \\\"exp59_similarity_thre"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport pathlib, sys, json, tempfile, os\\nsys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report\\n\\ntd = pathlib.Path(tempfile.mkdtemp())\\ndef probe(dirname, payload, label):\\n    d = td/dirname; d.mkdir(parents=True, exist_ok=True)\\n    f = d/\\\"r_report.json\\\"; f.write_text(json.dumps(payload))\\n    print(f\\\"  {label:62s} ->"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 100; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output\", \"description\": \"wait for tests\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as m\\nPRE=1788247153\\na=m.audit(quiet=True,newest_override=PRE)\\nm._is_simulated_report=lambda fp: False\\nb=m.audit(quiet=True,newest_override=PRE)\\nva={r['key']:r['verdict'] for r in a['rows']}; vb={r['key']:r['verdict'] for r in b['rows']}\\nprint('--as-of PRE_CANARY_BASELINE, filtered vs unfiltered:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output 2>/dev/null; echo \\\"---\\\"; grep -c \\\"\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bvqt09bh7.output 2>/dev/"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 300; echo waited\", \"description\": \"Wait for remaining agents\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; python3 - <<'EOF'\\nimport json,collections\\nd=json.load(open('/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/base.json')"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\nE=d['registry']['entries']\\nimport collections\\nc=collections.Counter()\\nfor cid,e in E.items():\\n    keys=[k for k in e if 'disc' in k or 'corrected' in k]\\n    c[tuple(sorted(keys))]+=1\\nfor k,v in c.items(): pri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, json\\nsys.path.insert(0,'scripts')\\nimport latent_control_audit as A\\nsrc=A.RUNNER.read_text()\\nw=A._report_key_writes(src)\\nbase=json.load(open('/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/base.json'))\\ncounts={r[\\\"key\\\"]:r[\\\"seen_in_reports\\\"]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"discrimination_control_blocks\\\" bench/reference_runner_v3.py | head -8; echo \\\"---\\\"; PYTHONPATH=. python3 -c \\\"\\nimport bench.reference_runner_v3 as R, json\\nprint('default discrimination_control_blocks =', R.RunnerConfig().discrimination_control_blocks)\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.j"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b94i3ixra.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/sim45_canary_v2_20260901T214242Z_20260901T214244Z/sim45_canary_v2_20260901T214242Z_report.json'))\\nblob=json.dumps({k:v for k,v in d.items() if k!='registry'})\\nprint('NO_DISCRIMINATION appears outside the per-entry registry:', 'NO_DISCRIMINATION' in blob)\\nprint('any top-level discrimination summary key:', [k for k"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 180; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output\", \"description\": \"wait longer for tests\"}"
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:Monitor\", \"max_results\": 1}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 38fc191 --stat | head -20; echo \\\"=== seat lowercase ===\\\"; grep -n \\\"seat\\\" bench/reference_runner_v3.py | grep -i \\\"lower()\\\" | head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until [ -s /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output ]; do sleep 5; done; echo DONE\", \"description\": \"Wait for pytest output\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log -3 --format=\\\"%h %s\\\" ; git show c986617 --stat | tail -20; echo \\\"=== grep seat ===\\\"; grep -rn \\\"seat\\\" --include=\\\"*.py\\\" bench scripts 2>/dev/null | grep -i \\\"lower\\\\|normal\\\\|casefold\\\" | head\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/b2.json\", \"content\": \"[\\n {\\\"name\\\": \\\"C1 sibling window 40 -> 400\\\", \\\"old\\\": \\\"if any(abs(a - b) <= 40\\\", \\\"new\\\": \\\"if any(abs(a - b) <= 400\\\"},\\n {\\\"name\\\": \\\"C2 newest max -> min (default baseline)\\\", \\\"old\\\": \\\"newest = max("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def resolve_model\\\" bench scripts --include=*.py | head; sed -n 200,235p bench/tests/test_a_challenge_tally_counts_models_2026-09-01.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cd $SP && python3 batch.py b2.json 2>&1 | grep -E \\\"^===|passed|failed|FAILED\\\"\", \"description\": \"Run batch 2 mutations\", \"timeout\": 1800000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib\\nfor root in ['logs','bench/results','bench/logs_quarantine','bench/state','bench/eval']:\\n    p=pathlib.Path(root)\\n    if not p.exists(): print(root,'(missing)'); continue\\n    n=0; hits=[]\\n    for fp in p.glob('**/*.json'):\\n        n+=1\\n        try: d=json.loads(fp.read_text(encoding='utf-8',errors='ignore'))\\n        except Exception: continue"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport json, glob, collections, re\\nimport bench.reference_runner_v3 as R\\nimport inspect\\nprint(inspect.getsource(R.FindingRegistry.resolve_model))\\n# collision scan over every model_id/api pair in every real config\\nids=set()\\nfor f in glob.glob('bench/exp*_configs/*.json')+glob.glob('configs/*.json'):\\n    try: d=json.load(open(f))\\n    except Except"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b12lok7n3.output 2>/dev/null; echo \\\"--- pytest out ---\\\"; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b2w325tlp.output\", \""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q -p no:cacheprovider 2>&1 | tail -15\", \"description\": \"run audit tests foreground\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/bleq3i1r1.output; ls -la /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/ 2>/dev/null | tail -8\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2935,2995p' bench/reference_runner_v3.py\", \"description\": \"Read the raw-label model tally site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 180; tail -6 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b3zorcja3.output\", \"description\": \"Check background suite progress\", \"timeout\": 240000}"
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:Monitor\", \"max_results\": 1}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until grep -qE \\\"passed|failed|error\\\" /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b3zorcja3.output 2>/dev/null; do sleep 10; done; tail -12 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def add_verdict\\\" -A 30 bench/reference_runner_v3.py | head -40\", \"description\": \"Read add_verdict write path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections, itertools\\nREPO = pathlib.Path('.').resolve()\\nseen = collections.Counter()\\nfiles = 0\\nfor p in itertools.chain(REPO.glob(\\\"bench/logs/**/*.json\\\"), REPO.glob(\\\"logs/**/*.json\\\"),\\n                         REPO.glob(\\\"bench/results/**/*.json\\\")):\\n    try:\\n        d = json.loads(p.read_text(errors=\\\"replace\\\"))\\n    except Excepti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nREPO = pathlib.Path('.').resolve()\\nprint(\\\"=== labels declared in every v3 runner config (bench/exp*_configs/*.json) ===\\\")\\nallcfg=collections.Counter(); bad=[]\\nfor p in sorted(REPO.glob(\\\"bench/exp*_configs/*.json\\\")):\\n    d=json.loads(p.read_text())\\n    ms=d.get(\\\"models\\\") or []\\n    for m in ms: allcfg[m if isinstance(m,str"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '45,90p' bench/build_experiment_run.py\", \"description\": \"Read build_experiment_run label source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"P=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks; wc -c $P/bleq3i1r1.output; tail -12 $P/bleq3i1r1.output; echo \\\"[--- pytest procs ---]\\\"; ps -eo pid,etime,command | grep \\\"[b]ench/tests\\\" | head -3\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== does build_experiment_run reach the v3 routing ladder? ===\\\"; grep -n \\\"rank_falsifier_writers\\\\|from bench.routing\\\\|run_experiment\\\\|_apply_routing\\\\|reference_runner_v3\\\" bench/build_experiment_run.py || echo \\\"  NO reference to routing or run_experiment -- separate harness, its own LADDER list\\\"; echo; echo \\\"=== suite ===\\\"; tail -5 /private/tmp/claude-501/-private-var"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b3zorcja3.output; ps aux | grep -c \\\"[p]ytest\\\"\", \"description\": \"Check suite progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== MY working copy ===\\\"; git status --porcelain | head -20; echo \\\"(clean = no output)\\\"; echo; echo \\\"=== REAL repo \\u2014 am I the one dirtying it? ===\\\"; cd /Users/georgejackson/Developer_Projects/Constraint_Engineering 2>/dev/null && git status --porcelain | head -20 && git log --oneline -1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"until [ -s /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b3zorcja3.output ]; do sleep 15; done; tail -8 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/b3zorcja3.output\", \"descripti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"P=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks; wc -c $P/bleq3i1r1.output; cat $P/bleq3i1r1.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status --porcelain --ignored=no; echo \\\"[clean above = no untracked from me]\\\"; echo; python3 -m pytest \\\"bench/tests/test_documentation_drift_guards_2026-08-25.py::test_declared_desktop_mirror_matches_its_canonical_copy\\\" -q 2>&1 | grep -E \\\"assert|Desktop|Error|FAILED|passed|failed\\\" | head -12\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_experiment_run_ledger_2026-08-26.py::TestAgainstTheRealArtefacts::test_the_committed_ledger_matches_bench_logs\\\" -q 2>&1 | tail -25\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py::TestTheReportSaysWhereThePanelCouldReach::test_the_sandbox_flag_distinguishes_the_two_cases\\\" -q 2>&1 | tail -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/experiment_run_ledger.py 2>/dev/null | diff - experimental_notes/EXPERIMENT_RUN_LEDGER.md | head -20; echo \\\"[diff above]\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la .git | head -2; file .git; echo \\\"---\\\"; git log --oneline -1 -- experimental_notes/EXPERIMENT_RUN_LEDGER.md scripts/experiment_run_ledger.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln -E \\\"SILENT_BUT_RAN|AMBIGUOUS|TOO_NEW|baseline_mtime|aliases_applied|UNREACHABLE|latent_control\\\" bench/tests scripts bench/*.py 2>/dev/null\", \"description\": \"Find any other tests touching audit output keys\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git worktree remove --force /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad/wt3841 2>&1; git status --porcelain | head\", \"description\": \"cleanup worktree, confirm tree clean\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"latent_control_audit\\\" bench/tests scripts 2>/dev/null; echo \\\"---\\\"; python3 -m pytest $(grep -rln \\\"latent_control_audit\\\" bench/tests | tr '\\\\n' ' ') -q 2>&1 | tail -3\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,60p scripts/latent_control_audit.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; for w in w1 w2 w3 w4 w5; do (cd $SP/$w && python3 scripts/latent_control_audit.py --json > $SP/$w.json 2>/dev/null) & done; wait; python3 - <<'EOF'\\nimport json\\nSP=\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgcl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" -q 2>&1 | tail -8; echo \\\"=== collection ===\\\"; python3 -m pytest \\\"bench/tests/test_latent_control_audit_2026-09-01.py\\\" --collect-only -q 2>&1 | tail -6\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"too_new\\\\|newest\\\\|def _dating\\\\|def .*date\\\\|>=\\\\|> newest\\\" scripts/latent_control_audit.py | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; rm -f $SP/w6/scripts/latent_control_audit.py; cp $SP/pristine.py $SP/w6/scripts/latent_control_audit.py; (cd $SP/w1 && python3 -m pytest bench/tests -q -p no:cacheprovider > $SP/full_C1.txt 2>&1; echo \\\"C1 rc=$?\\\" >> $SP/full_C1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport sys, pathlib; sys.path.insert(0,'scripts')\\nfrom latent_control_audit import _is_simulated_report, _archive, LOGS\\nhits=[]\\nfor fp in LOGS.glob(\\\"**/*.json\\\"):\\n    if _is_simulated_report(fp):\\n        head=fp.read_text(errors=\\\"ignore\\\")[:4000]\\n        if fp.parent.name.lower().startswith(\\\"sim\\\") or \\\"_sim\\\" in fp.parent.name.lower(): continu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as A\\n# witness set WITH the filter\\nwith_f,_ = A._archive()\\n# and without: monkeypatch the predicate off\\norig = A._is_simulated_report\\nA._is_simulated_report = lambda fp: False\\nwithout_f,_ = A._archive()\\nA._is_simulated_report = orig\\nprint(f\\\"witness set WITHOUT filter: {len(wi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'scripts')\\nimport latent_control_audit as A\\ndef verdicts():\\n    out = A.audit(quiet=True)\\n    return {r[\\\"key\\\"]: r.get(\\\"verdict\\\") or r.get(\\\"status\\\") or r.get(\\\"class\\\") for r in out[\\\"rows\\\"]}, out\\nafter, oa = verdicts()\\norig = A._is_simulated_report\\nA._is_simulated_report = lambda fp: False\\nbefore, ob = verdic"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONPATH=. python3 - <<'EOF'\\nfrom bench.routing import rank_falsifier_writers as R, DEFAULT_FALSIFIER_STRENGTH\\nP=['CC2','Codex','Gemini','DeepSeek','ChatGPT']\\nfor name,labels in ((\\\"proper case\\\",P),(\\\"-SIM\\\",[x+'-SIM' for x in P]),\\n                    (\\\"lowercased\\\",[x.lower() for x in P]),\\n                    (\\\"lowercased -SIM\\\",[x.lower()+'-sim' for x in P])):\\n    r=R(lab"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ps -eo pid,etime,command | grep -c \\\"[m]utat\\\"; ls -la /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/tasks/ad16b31fb22f33aef.output 2>/dev/null || echo \\\"mutation agent: no output file yet\\\"\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cd $SP/w1 && python3 -m pytest bench/tests -q -p no:cacheprovider > $SP/full_C1.txt 2>&1; echo \\\"C1 rc=$?\\\" >> $SP/full_C1.txt\", \"description\": \"Full suite against C1 mutant\", \"timeout\": 600000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cd $SP/w6 && python3 -m pytest bench/tests -q -p no:cacheprovider > $SP/full_base.txt 2>&1; echo \\\"BASE rc=$?\\\" >> $SP/full_base.txt\", \"description\": \"Full suite baseline\", \"timeout\": 600000, \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; for i in 1 2 3; do (cd $SP/w1 && python3 scripts/latent_control_audit.py --json 2>/dev/null | python3 -c \\\"\\nimport json,sys\\nd=json.load(sys.stdin)\\nrows={r['key']:r for r in d['rows']}\\nt=rows['target_integrity_events']\\nprint"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; (cd $SP/w6 && python3 scripts/latent_control_audit.py > $SP/out_base.txt 2>&1); (cd $SP/w1 && python3 scripts/latent_control_audit.py > $SP/out_C1.txt 2>&1); (cd $SP/w4 && python3 scripts/latent_control_audit.py > $SP/out_C4.txt"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; tail -c 400 $SP/full_base.txt 2>/dev/null; echo \\\"--- C1:\\\"; tail -c 400 $SP/full_C1.txt 2>/dev/null\", \"description\": \"Check full suite progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; cd $SP && python3 - <<'EOF' > $SP/b3_out.txt 2>&1\\nimport json, pathlib, sys\\nfrom concurrent.futures import ThreadPoolExecutor\\nSP = pathlib.Path(\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"SP=/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-hgdb-3t2-repo/4035b31f-3662-4b97-86da-fb6a35b70acf/scratchpad; sleep 280; echo BASE:; tail -c 300 $SP/full_base.txt; echo; echo C1:; tail -c 300 $SP/full_C1.txt; echo; echo B3:; cat $SP/b3_out.txt 2>/dev/null\", \"description\": \"Wait and check progress\", \"timeout\": 400000}"
+    }
+  ]
+}

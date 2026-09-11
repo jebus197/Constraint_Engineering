@@ -1,0 +1,103 @@
+# What should we ACTUALLY DO? A decision brief, not an audit.
+
+## READ THIS FIRST — two things that stranded a reviewer last round
+
+1. **THIS DISPATCH IS SINGLE-SHOT.** You get one turn. There is no "I'll finalise
+   once the suite completes" — that reply is recorded as a non-answer and
+   discarded. Budget accordingly and **return a complete verdict**.
+2. **YOU DO NOT NEED TO RUN THE FULL SUITE.** Baseline, already measured on this
+   commit: **4,680 passed, 0 failed** (`python3 -m pytest bench/tests/ -q`, ~5–7
+   min). A reviewer last round spent its entire budget on it and reported
+   nothing. Run *targeted* tests if you need evidence; spend the budget on the
+   decision.
+
+The previous round's audit work is DONE and is summarised below as established
+fact. **Do not re-audit it. Decide what to do about it.** The founder's question,
+verbatim: *"in light of all your findings, what should we actually do about it?
+Do we need another (not-)clean target for the models to look at? What should this
+be if so? Would it make a difference to anything if we did?"*
+
+---
+
+## Established, verified, not up for re-litigation
+
+**The threshold.** `CRITICAL_SEVERITY_THRESHOLD = 0.7` was pre-registered
+2026-05-18 as the operational proxy for a five-clause **consequence** rubric
+("the rubric governs, the number encodes it"). The pre-registration exists
+because 0.7 was previously "an undocumented code convention... the single largest
+cooking vector". Its "both unanimous on this point" refers to *that* — not to the
+number. The 2026-05-17 confer **split** on the number: one reviewer called it
+"arbitrary... a fragile heuristic proxy", another "sound, not arbitrary".
+
+**The distribution** (6,865 real archived findings):
+- **401 (5.84%**, Wilson [5.31%, 6.42%]**) sit exactly on 0.70**
+- **72.1%** [71.0%, 73.1%] are quantised to a 0.05 step → severity is **ordinal**, ~20 rungs
+- No natural break at 0.70: scipy KDE minima 0.12/0.37/0.62; numpy histogram valleys 0.67 and 0.71
+- Moving 0.70→0.72 reclassifies **456 findings, 6.6%** of the archive
+
+**The calibration gap.** On code **byte-identical** between the pre-repair
+revision and HEAD (AST-verified), the real panel rated defects **0.72 / 0.80**;
+the simulated panel re-found them, executed working reproductions, and rated them
+**0.45 / 0.45 / 0.45 / 0.40**. Offset **−0.132** severity points (Mann-Whitney
+p=0.0006, Welch p=0.0012). One sim reviewer reproduced a July finding *exactly*
+and rated it 0.45 against 0.72 — "found the defect and proved it, priced it wrong".
+
+**The amplification.** A ~0.12 mean shift converts **mechanically** into a ~7.8×
+critical-count ratio, because the boundary sits on that 5.8% spike.
+
+**The target confound.** Target grew 317→489 lines in one commit (`043a0a8`,
+2026-08-15). **4 of 6** exp45 defect themes are fixed = **9 of 12** critical rows.
+Split of the 12→2 critical drop: **~75% target repair, ~25% under-rating, 0% dedup**.
+
+**Evidence provenance.** **88.4%** [80.4%, 93.4%] of scored discrimination-control
+records come from **simulated** runs. The mechanism carrying "tools decide, not
+votes" is presently evidenced overwhelmingly by simulation.
+
+**A power calculation I ran for you.** Offset 0.132, pooled sd 0.218 → Cohen's
+d = 0.606 → ~44 per arm for 80% power (statsmodels 43.8, scipy 42.8). **But the
+unit is a MODEL, not a finding**: 5–6 clusters per arm gives effective n ≈ 5–6.
+**A single paired run cannot calibrate this.**
+
+---
+
+## The prior recommendation, for you to stress-test
+
+One reviewer already proposed: (i) calibrate against the **frozen pre-repair
+revision** for a *paired* measurement, reporting the offset not the level;
+(ii) a **seeded target** from harvested real defects for recall; (iii) a
+never-reviewed module only alongside a real run; (iv) **not** rotation, which
+destroys the longitudinal axis; (v) report the severity **distribution**, not the
+count over 0.70; (vi) pre-register the comparison.
+
+**Attack it.** Where is it wrong, insufficient, or more expensive than it looks?
+
+---
+
+## The four questions. Answer these, concretely.
+
+**Q1. What do we actually DO — in priority order, with cost?** Not a list of
+considerations. An ordered plan: what first, what it costs in runs and wall-clock,
+what it buys, what we stop doing. Include "do nothing / accept the limit" as a
+serious candidate and say why it loses if it does.
+
+**Q2. Do we need another target, and should it be clean or NOT clean?** The
+founder's phrasing is "(not) clean" — deliberately. Argue the case. If a
+*deliberately dirty* target is right, what makes a good one, and how do we avoid
+measuring only defects we thought of? If the frozen revision is right, what
+exactly must be excluded from the sandbox to keep the blinding honest?
+
+**Q3. Would it make a difference to ANYTHING?** This is the question I am most
+likely to hand-wave. Given the power calculation above — effective n ≈ 5–6 model
+clusters against a required ~44 — **is a calibrated offset actually reachable in
+any realistic number of runs?** If not, say so plainly, and say what that implies:
+does the simulated panel get permanently demoted to machinery-validation only? Is
+that acceptable, or fatal to its purpose?
+
+**Q4. What does this mean for Bench Run 2?** Does anything here block it, change
+its design, or change what it can claim? Be specific about the go/no-go.
+
+---
+
+Return: a decision, an ordered plan with costs, and your honest confidence in
+each. Where you disagree with the other reviewer or with the brief, say so and
+show why — the one time you two disagreed, the minority was right.

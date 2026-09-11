@@ -1,0 +1,179 @@
+# WHAT THIS PANEL IS FOR
+
+CDSFL runs multi-model falsification experiments against STEM artefacts. The founder's
+goal is Bench Run 2 (BR2), the full-scale evaluation, and the remaining arc before it:
+experiments 50, 51, a four-cell factorial (52), and an integration capstone (54).
+
+A panel yesterday found the cause of a four-month defect. Today's work found three more
+things, all measured. This panel is asked to rule on FIXES, not to re-audit findings.
+
+Everything marked MEASURED was re-derived today against the archive. Where CC1 (the
+assistant) states a position, it is labelled as CC1's and you are asked to attack it.
+
+# MEASUREMENT 1 — THE ENFORCEMENT GAP
+
+The operational directive (`cdsfl_operational.md:76-79`) states:
+
+  "CORROBORATION: After falsifying your own claim, compute your residual risk using the
+   self-assessment equation below. You MUST show your working: state R_old, your
+   estimates for eta, d, p, S_k, nu_b, nu_f, and the resulting R_k."
+
+The runner recomputes R_k from the model's own stated parameters and compares
+(`_validate_rk_computation`, reference_runner_v2.py:7306). Its docstring, verbatim:
+
+  "Advisory only - logs discrepancies, never rejects findings."
+
+MEASURED today, over 385 corroboration blocks in the RAW round responses of exp44-49:
+
+    PASS (recomputes within 0.01)          90    23.4%
+    WARN (within 0.05)                     12     3.1%
+    FAIL (recomputed and WRONG, >0.05)    138    35.8%
+    SKIP (too few parameters to check)    145    37.7%
+
+So 35.8% of the time a model states a residual risk that does not follow from its own
+stated numbers, and 37.7% of the time it does not show enough working to check. Nothing
+is rejected. Ever.
+
+The founder's position: "CDSFL was designed from the outset to be tough to game. The
+models must formulate conclusions through the mathematical model AND tools, and
+demonstrate their workings, otherwise their solutions should be rejected and fed back
+to them or up the ladder to a more capable model. If elements are being ignored, that
+is a mechanical failing on our side, not the models'."
+
+**Q1. Is that diagnosis right, and what is the SIMPLEST SUFFICIENT enforcement?**
+Options include: reject the finding outright on FAIL; accept but zero its contribution;
+return it to the source model once for correction; escalate up the routing ladder; or
+something else. Consider the failure direction of each. Consider that at 35.8% FAIL and
+37.7% SKIP, hard rejection would discard roughly three quarters of all findings on the
+first round it is switched on. Say explicitly what you would do about that.
+
+# MEASUREMENT 2 — THE PROSE-TARGET WALL (the founder's explicit question)
+
+The three-phase model is:
+
+    Phase 1 detection:    R_det  = R_old * (1-q) / (1 - q*R_old),  q = eta*d*p
+    Phase 2 resolution:   R_base = sigma*R_det + (1-sigma)*R_old
+    Phase 3 re-injection: R_k    = R_base*(1-nu) + nu
+
+sigma = fix efficacy (does the fix resolve the flaw). nu = re-injection rate. The
+appendix defines nu as: "Localised one-line changes have low nu. Changes to shared
+interfaces have higher nu." That is a COMPLEXITY measure.
+
+VERIFIED WITH SYMPY TODAY. The break-even condition in the appendix,
+nu* = sigma*R*q / (1 - q*R*(1-sigma)), solves dR = 0 exactly; d(nu*)/d(sigma) > 0;
+sigma=0 gives nu*=0 and sigma=1 gives nu*=q*R. So sufficiency already earns complexity
+budget, and a fix that resolves nothing earns none.
+
+MEASURED: the CODE computes nu as
+    nu_eff = 1 - (1-nu_b)*(1 - (1-sk)*nu_f),  nu_b=0.05, nu_f=0.20
+Its only free variables are sigma and two CONSTANTS. It depends on nothing about the
+fix: not its size, not how many places it touches, not whether it moves a shared
+interface. The mathematics for "simplest sufficient solution" is already in the model;
+its input is a constant.
+
+THE WALL. On a PROSE target (a paper, not code) there is no AST, no test suite, and no
+compiler. `apply_sk_to_rk` already returns NO_SCORE for sigma on prose. The code comment
+at :7202-7215 records what happens when that is mishandled: with sk=0 the re-injection
+term is at its MAXIMUM, so risk is pushed UP by 0.12 per finding as a penalty for a fix
+nobody assessed, and on a prose target nothing can ever move it back down.
+
+nu will hit the same wall. BR2 and the exam experiments use prose/markdown targets.
+
+**Q2. What is the fix?** How should sigma and nu be obtained on a prose target where no
+compiler, AST or test suite exists? Note one measured surprise: counterfactual repair
+(apply a fix, re-run both falsifiers, require both directions to agree) decides 41.9%
+of pairs on MARKDOWN targets versus 16.7% on PYTHON targets - prose decides BETTER, the
+opposite of what the project's own notes assume. Does that change your answer?
+Is NO_SCORE with zero movement the right behaviour, or is there something better?
+
+**Q3. Should nu be measured from the fix artefact** (lines changed, distinct locations
+touched, whether a function signature or shared interface moves), and if so how would
+you calibrate it to [0,1] with 129 parseable archived fixes as the only data? What is
+the failure mode of getting this wrong? CC1's position: measure it, never show it to
+the generating model, and rely on nu sitting in Phase 3 (after resolution) so the
+ordering is enforced by the equation rather than by a prompt. Attack that.
+
+# MEASUREMENT 3 — THE BUGZILLA DEFICIT FOR STEM
+
+Yesterday all five panellists endorsed preserving duplicate records and all five
+independently broke the Bugzilla analogy at the same joint: a software bug is a defect
+in an artefact the maintainer controls, whereas a STEM claim can be wrong about the
+world. Bugzilla has no state for "the reported behaviour is correct and the
+SPECIFICATION is wrong."
+
+The founder has ruled the bulletin-board / discussion-forum layer OUT of scope - it is a
+UX build, expensive, and unnecessary to demonstrate the theory. It is marked as future
+work. Also dropped entirely: any notion of a model monitoring discussion boards and
+deriving its own theories.
+
+What remains on the table is narrow and structural:
+  (a) the missing epistemic state - a finding that was RIGHT about a target that was WRONG;
+  (b) keying claims on their structure rather than their location. The code documents the
+      limitation this addresses: location-only keying "cannot see a SECOND distinct defect
+      in an already-flagged function" (reference_runner_v2.py:4331).
+
+**Q4. What is the minimum change** to close (a) and (b) that is worth doing BEFORE BR2,
+and what should be deferred? Is a new status value sufficient for (a), or does it need
+more? For (b), is there anything cheaper than full schema enforcement that gets most of
+the benefit? Answer in terms of what BR2 needs to be publishable, not what a finished
+platform would want.
+
+# Q5 — THE RUNWAY QUESTION. The founder has asked this directly.
+
+Verbatim: "Sometimes I feel I hear you saying there isn't enough runway left to fully
+test/calibrate these fixes? But when I ask you about this, usually you refute this, and
+tell me not to worry and that it will be fine. So which is it exactly?"
+
+The facts, measured:
+  * Experiments 44-49 are COMPLETE and all converged, but every one ran while the
+    similarity function was flagging 97% of finding pairs as duplicates, which means
+    every model was told each round to withdraw its prior findings unless it could prove
+    them distinct. The convergence curves are curves of a suppressed process.
+  * Remaining budget: exp50 (physics, built, never run), exp51 (biology, built, never
+    run), exp52 (four factorial cells, built, never run), exp54 (capstone, NOT built).
+  * The founder funds this personally from borrowed money.
+  * A full re-run of exp44-49 is the single most expensive item available.
+  * CC1's position: one matched pair (re-run exp46, the narrowest convergence margin at
+    gamma_critical 0.3357 against a 0.30 threshold, only 6 rounds) plus exp50 as the
+    first clean run, gives a stronger design than six re-runs at a fraction of the cost.
+
+**Q5. Is the remaining experimental budget sufficient to validate these fixes to
+publication standard?** Answer yes or no, then say what the minimum sufficient design is.
+If the honest answer is that it is NOT sufficient, say so plainly - the founder has asked
+for a straight answer and a reassuring one is worse than useless. Name specifically what
+a hostile reviewer would demand that the current plan does not provide.
+
+# Q6 — LOOSE ENDS
+
+Name anything from Q1-Q5, or anything you can see in the source packs, that would block
+progression to exp50, exp51, exp52, the capstone and BR2 and that has not been named.
+If nothing, say so plainly rather than inventing something.
+
+# HOW TO ANSWER
+
+Commit to a recommendation. A verdict that only enumerates problems does not meet the
+brief - the founder's words: "a system that can only find more problems than it fixes is
+of limited value to anyone."
+
+Disagreement between panellists is preserved as information; no synthesis step will force
+convergence. State your strongest falsification of your OWN answer.
+
+Weight recommendations by cost. Work validated by replaying the existing archive is
+effectively free. A live experiment run is not.
+
+# CC1's OWN POSITION, for you to attack
+
+  1. The enforcement gap is real and is the highest-value fix available, because it is
+     the mechanism by which every other guarantee in the system is supposed to hold.
+  2. Hard rejection on FAIL is too blunt at a 73.5% failure rate; return-to-source once,
+     then escalate, is likelier to be the simplest SUFFICIENT enforcement.
+  3. nu should be measured from the fix artefact. R_k does not gate convergence (verified:
+     no convergence function references R_k, sigma or nu), so this is replay-validatable
+     at zero cost.
+  4. exp46 re-run plus exp50 is enough. CC1 is NOT confident about this and flags it as
+     the weakest of its four positions.
+
+CC1's error rate this week is material: six of fifteen commits over three days were
+corrections of its own prior claims, and today it twice reported a measurement that was
+wrong because it read the wrong field or called the wrong function. Both were caught by
+re-checking before reporting. Do not defer to positions 1-4.

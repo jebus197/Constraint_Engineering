@@ -1,0 +1,847 @@
+{
+  "model": "opus",
+  "elapsed_s": 1070.6,
+  "tool_calls": 210,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls -la && git log --oneline -15\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/jebus/cdsfl 2>/dev/null || true; git show --stat HEAD 2>/dev/null | head -50\", \"description\": \"Show HEAD stat\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat HEAD && echo \\\"=== DIFF ===\\\" && git show HEAD -- '*.py' | head -400\", \"description\": \"Show HEAD diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ && wc -l scripts/reference_runner_v2.py 2>/dev/null; find . -name 'CRITICAL_DEFINITION_PREREG*' -not -path './.git/*'\", \"description\": \"List scripts and find prereg\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import sys,scipy,numpy;print(sys.version);print(scipy.__version__,numpy.__version__)\\\" 2>&1 | head; echo \\\"---\\\"; ls bench/ | head -60; echo \\\"---\\\"; wc -l bench/reference_runner_v2.py\", \"description\": \"Check env and bench layout\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_settled_novelty_series\\\\|_estimate_gamma\\\\|CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v2.py | head -60\", \"description\": \"Find callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11380,11420p;11480,11560p' bench/reference_runner_v2.py\", \"description\": \"Read real gate code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_settled_novelty_series\\\\|gamma_threshold_profile\\\\|boundary_band_census\\\" --include=*.py . | grep -v \\\"bench/reference_runner_v2.py\\\" | head -30\", \"description\": \"Find external callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5640,5720p' bench/reference_runner_v2.py\", \"description\": \"Read gamma alt convergence\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_settled_novelty_series\\\\|gamma_threshold_profile\\\\|boundary_band_census\\\" . --glob '*.py' 2>/dev/null | grep -v reference_runner_v2 | head -20; echo \\\"=== tests ===\\\"; ls bench/tests 2>/dev/null | head; find . -path ./.git -prune -o -name 'test_*.py' -print 2>/dev/null | head -20\", \"description\": \"External callers and tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/cdsfl_registry 2>/dev/null | head; echo \\\"=== exp dirs ===\\\"; ls -d bench/exp* 2>/dev/null | head -40; echo \\\"=== archive ===\\\"; find . -path ./.git -prune -o -type d -name '*archive*' -print 2>/dev/null | head\", \"description\": \"Find archived findings\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def add_verdict\\\" -A 40 bench/reference_runner_v2.py | head -60\", \"description\": \"Read add_verdict\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/ ; echo \\\"--- _archive ---\\\"; ls logs/_archive | head -30; echo \\\"--- count reports ---\\\"; find logs -name '*.json' 2>/dev/null | wc -l; find . -path ./.git -prune -o -name 'exp45*' -print 2>/dev/null | head -20\", \"description\": \"Locate archived reports\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def auto_resolve_contested\\\" -A 70 bench/reference_runner_v2.py\", \"description\": \"Read auto_resolve_contested\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Verify severity distribution claim\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are verifying a specific empirical claim in the CDSFL repo at the current working directory (a disposable copy). RUN CODE. Do not reason from description.\\n\\nCLAIM TO VERIFY OR REFUTE:\\n\\\"No natural break at 0.70. 6,865 archived findings; scipy KDE minima at 0.12/0.37/0.62; numpy histogram vall"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---TOP LEVEL DIRS---\\\" && find . -path ./.git -prune -o -type d -print | head -60\", \"description\": \"List repo structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -path ./.git -prune -o -name '*report*.json' -print | head -50 && echo \\\"---COUNT---\\\" && find . -path ./.git -prune -o -name '*report*.json' -print | wc -l\", \"description\": \"Find report json files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/exp47_divergence_locationkey_live_20260728T230026Z/exp47_divergence_locationkey_live_report.json'\\nd=json.load(open(p))\\nprint(type(d))\\nprint(list(d.keys())[:50] if isinstance(d,dict) else len(d))\\n\\\"\", \"description\": \"Inspect report structure\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Verify real vs sim severity shift\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are verifying a specific empirical claim in the CDSFL repo at the current working directory (a disposable copy). RUN CODE. Do not reason from description.\\n\\nCLAIM TO VERIFY OR REFUTE:\\n\\\"The simulated panel rates 0.132 severity points lower than the real panel on the SAME defect (the source_has"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl '\\\"severity\\\"' --include='*.json' . | grep -v '^./.git' | wc -l && echo \\\"---dirs---\\\" && grep -rl '\\\"severity\\\"' --include='*.json' . | grep -v '^./.git' | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -40\", \"description\": \"Find json files with severity\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -40\", \"description\": \"List recent commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---\\\" && ls bench/logs 2>/dev/null | head -50\", \"description\": \"List repo root and bench logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --stat -1 d96b611 | head -60\", \"description\": \"Show d96b611 stat\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --stat -1 15a7094 | head -60 && echo \\\"=====418fa30\\\" && git log --stat -1 418fa30 | head -40\", \"description\": \"Show 15a7094 and 418fa30 stats\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Verify discrimination control\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are verifying a specific empirical claim in the CDSFL repo at the current working directory (a disposable copy). RUN CODE. Do not reason from description.\\n\\nCLAIM TO VERIFY OR REFUTE:\\n\\\"Of 11 falsifiers the discrimination control tested, only 4 discriminate (36.4%, Wilson 95% CI [15.2%, 64.6%]).\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat --name-only 15a7094 | tail -10 && echo \\\"=====\\\" && git show --stat --name-only 418fa30 | tail -5 && echo \\\"=====\\\" && git show --stat --name-only d96b611 | tail -5\", \"description\": \"Full file names for commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/exp47_divergence_locationkey_live_20260728T230026Z/exp47_divergence_locationkey_live_report.json'\\nd=json.load(open(p))\\nr=d['registry']\\nprint('registry type',type(r))\\nif isinstance(r,dict): print(list(r.keys())[:10])\\nimport itertools\\nif isinstance(r,dict):\\n    k=list(r.keys())[0]; print(json.dumps(r[k],indent=1)[:2000])\\nelse:\\n    print"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -100 && echo \\\"TOTAL:\\\" && ls bench/logs | wc -l\", \"description\": \"List logs dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"---GIT---\\\" && git log --oneline | head -20\", \"description\": \"List repo root and recent commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -ril \\\"discriminat\\\" . --exclude-dir=.git | head -60\", \"description\": \"Find files mentioning discrimination\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/ | grep -i -E \\\"sim45|exp45|45\\\" \", \"description\": \"Find exp45 and sim45 log dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat experimental_notes/Overnight_Panel_Loop_And_A_Vote_That_Deleted_Findings_2026-09-01.md\", \"description\": \"Read the d96b611 report\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"6865\\\\|6,865\\\\|natural break\\\" --include='*.md' --include='*.py' --include='*.json' --include='*.txt' . 2>/dev/null | grep -v '^./.git' | head -30\", \"description\": \"Search for claim origin\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/exp45_memory_statistics_live_20260727T225640Z/ && echo \\\"=====\\\" && ls -la bench/logs/sim45_memory_20260901T040540Z/ | head -40\", \"description\": \"List exp45 and sim45 run dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -40 && echo \\\"=== SIM/SANDBOX commits ===\\\" && git log --oneline --all | grep -i \\\"sandbox\\\\|simulat\\\\|confin\\\" | head -30\", \"description\": \"Git log and sandbox commits\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Gather Section 3 evidence\", \"subagent_type\": \"general-purpose\", \"prompt\": \"You are gathering hard evidence for an analysis in the CDSFL repo at the current working directory (a disposable copy). RUN CODE / RUN GIT. Do not reason from description.\\n\\nTHE QUESTION: A simulated (\\\"rehearsal\\\") panel run found only 2 critical findings against a target where an earlier REAL run (exp45)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_memory_20260901T040540Z/ | tail -45\", \"description\": \"List rest of sim45 dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name '*_memory.py' -not -path './.git/*' | head -50\", \"description\": \"Find memory.py target files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -ril \\\"source_hash\\\" --include=*.json bench/logs/ | head -30\", \"description\": \"Grep source_hash in bench logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"--- bench ---\\\" && ls bench/ 2>/dev/null | head -60\", \"description\": \"List repo root and bench\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\", \"description\": \"Read the pre-registration\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma_alt_threshold\\\\|gamma_alt_window\\\\|min_rounds_for_gamma\\\" bench/reference_runner_v2.py | head -20\", \"description\": \"Find gate config defaults\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"source_hash\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/logs\", \"output_mode\": \"count\", \"head_limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/scripts/ | grep -i discrim; echo \\\"---\\\"; ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/scripts/\", \"description\": \"List discrimination scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"discriminat\\\" --include=\\\"*.json\\\" --include=\\\"*.md\\\" . --exclude-dir=.git | head -40\", \"description\": \"Find json/md with discrimination\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp45_configs/ 2>/dev/null; echo \\\"=== registry ===\\\"; ls bench/cdsfl_registry/ 2>/dev/null; echo \\\"=== targets ===\\\"; ls bench/cdsfl_registry/targets/ 2>/dev/null\", \"description\": \"List exp45 configs and registry\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/*exp45* bench/*rehears* 2>/dev/null; echo \\\"=== find rehearsal ===\\\"; find . -iname '*rehears*' -not -path './.git/*' | head -40\", \"description\": \"Find exp45 and rehearsal artifacts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nprint(type(d), list(d.keys())[:60] if isinstance(d,dict) else len(d))\\n\\\"\", \"description\": \"Inspect exp45 report top-level keys\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5680,5790p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/reference_runner_v2.py\", \"description\": \"Read claim context in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp45_configs/45_memory_statistics_live.json\", \"description\": \"Read exp45 config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 48d6254 | head -40\", \"description\": \"Show F6 commit stat\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nfor p in ['bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json','bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json']:\\n    d=json.load(open(p))\\n    print('==',p)\\n    print('models',d.get('models'))\\n    print('target',d.get('target_file'))\\n    print('total_findings',d.get('total_findings'),'ro"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -25 && echo \\\"=== 043a0a8 ===\\\" && git show 043a0a8 --stat 2>&1 | head -40\", \"description\": \"Git log and show commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '775,800p;5600,5645p' bench/reference_runner_v2.py; echo \\\"=== hardened ===\\\"; grep -n \\\"def _check_hardened_convergence\\\" -A 45 bench/reference_runner_v2.py | head -60\", \"description\": \"Read gate config and hardened gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 -m pytest bench/tests -x -q -p no:randomly 2>&1 | tail -20\", \"description\": \"Run test suite\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/scripts/discrimination_control_archive.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\ne=d['registry']['entries']\\nprint(type(e), len(e))\\nif isinstance(e,dict):\\n    k=list(e)[0]; print(k); print(json.dumps(e[k],indent=1)[:3000])\\nelse:\\n    print(json.dumps(e[0],indent=1)[:3000])\\n\\\"\", \"description\": \"Inspect a registry en"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/scripts/discrimination_cross_probe.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 5844fb5 | head -30 && echo \\\"=== bfebb5a ===\\\" && git show --stat bfebb5a | head -40\", \"description\": \"Show confinement commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls .scratch && echo \\\"---\\\" && grep -rln \\\"gaussian_kde\\\\|6865\\\\|archived findings\\\" .scratch scripts bench/tools 2>/dev/null | head -20\", \"description\": \"Look for harvest script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --follow -- bench/dm/_memory.py\", \"description\": \"Git log follow target\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 043a0a8 --stat -- bench/dm/_memory.py && echo \\\"=== full stat lines for memory ===\\\" && git show 043a0a8 --numstat | grep -i memory\", \"description\": \"Stat for target at 043a0a8\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\ne=d['registry']['entries']['C0001']\\nfor k,v in e.items():\\n    s=json.dumps(v)\\n    print(k, '::', s[:200])\\n\\\"\", \"description\": \"Show all fields of C0001\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la experimental_notes/data/ | grep -i discrim; echo \\\"---ALL DATA---\\\"; ls experimental_notes/data/ | head -60\", \"description\": \"List discrimination data files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/round_00.json'))\\nprint(type(d), list(d.keys()) if isinstance(d,dict) else len(d))\\n\\\" \", \"description\": \"Inspect round_00 structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"36.4\\\\|36\\\\.4%\\\\|15\\\\.2\\\\|64\\\\.6\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" --include=\\\"*.json\\\" . --exclude-dir=.git | head -30\", \"description\": \"Search for the claim numbers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,collections\\nfiles=sorted(glob.glob('bench/**/*.json',recursive=True))\\nprint('total json under bench:',len(files))\\n# which have registry.entries with severity\\nhits=[]\\nfor f in files:\\n    try:\\n        d=json.load(open(f))\\n    except Exception:\\n        continue\\n    if isinstance(d,dict) and isinstance(d.get('registry'),dict) and isinstance"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/round_00.json'))\\nf=d['findings']\\nprint(len(f))\\nprint(json.dumps(f[0],indent=1)[:1500])\\nprint('KEYS', list(f[0].keys()))\\n\\\"\", \"description\": \"Inspect a round finding\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"before (043a0a8^):\\\" && git show 043a0a8^:bench/dm/_memory.py | wc -l && echo \\\"after (043a0a8):\\\" && git show 043a0a8:bench/dm/_memory.py | wc -l && echo \\\"HEAD:\\\" && git show HEAD:bench/dm/_memory.py | wc -l && echo \\\"worktree:\\\" && wc -l bench/dm/_memory.py && echo \\\"=== d7d87bb ===\\\" && git log -1 --format='%H %ad %s' --date=iso d7d87bb && git show d7d87bb:bench/dm/_memory."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --all --oneline --follow -- bench/dm/_memory.py | head -50 && echo \\\"=== branches ===\\\" && git branch -a\", \"description\": \"All-branch history of target\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q -p no:randomly 2>&1 | tail -25\", \"description\": \"Run full test suite\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11520,11600p' bench/reference_runner_v2.py\", \"description\": \"Read location-keyed gate override\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,collections\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nprint('n =',d['n'])\\nprint('generated', d['generated_utc_epoch'])\\nimport datetime; print(datetime.datetime.utcfromtimestamp(d['generated_utc_epoch']))\\nprint('TALLY:'); \\nfor k,v in sorted(d['tally'].items()): print('  ',k,v)\\nrows=d['rows']\\nprint()\\nprint('ROUTE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\ndef load(run):\\n    rows=[]\\n    for p in sorted(glob.glob(os.path.join(run,'round_*.json'))):\\n        d=json.load(open(p))\\n        for f in d['findings']:\\n            rows.append(f)\\n    return rows\\nreal=load('bench/logs/exp45_memory_statistics_live_20260727T225640Z')\\nsim=load('bench/logs/sim45_memory_20260901T040540Z')\\nfor name,rows i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --all --oneline -- bench/dm/_memory.py; echo \\\"=== count all refs ===\\\"; git rev-list --all --count -- bench/dm/_memory.py; echo \\\"=== dates ===\\\"; git log --all --format='%h %ad %s' --date=short -- bench/dm/_memory.py | cut -c1-120\", \"description\": \"All commits touching target, no follow\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --format='%h %ad %s' --date=iso -20 | cut -c1-130\", \"description\": \"Recent commit dates\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn -E \\\"0\\\\.132|0\\\\.609|0\\\\.477|0\\\\.0006|0\\\\.0012\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" --include=\\\"*.json\\\" . 2>/dev/null | grep -v \\\".git/\\\" | head -40\", \"description\": \"Grep for claim numbers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,collections\\nfor f in ['discrimination_cross_probe_never_quiet','discrimination_cross_probe_discriminating']:\\n    d=json.load(open('experimental_notes/data/%s.json'%f))\\n    print(f,'n=',d['n'],'tally=',d['tally'])\\n    print('  verdicts:',collections.Counter(r['verdict'] for r in d['rows']).most_common())\\n    print()\\n\\\"\\n\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,collections\\ntot=collections.Counter()\\npersev=collections.Counter()\\ndef walk(o,path,acc):\\n    if isinstance(o,dict):\\n        if 'severity' in o and isinstance(o.get('severity'),(int,float)):\\n            acc.append(path)\\n        for k,v in o.items(): walk(v,path+'.'+str(k),acc)\\n    elif isinstance(o,list):\\n        for i,v in enumerate(o): "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show HEAD -- bench/reference_runner_v2.py | grep -E '^@@|^\\\\+\\\\+\\\\+|^---' ; echo \\\"=== deletions (non-context) ===\\\"; git show HEAD -- bench/reference_runner_v2.py | grep -E '^-[^-]' \", \"description\": \"Enumerate all hunks and deletions\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/tests/test_discrimination_control.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 -c \\\"\\nimport reference_runner_v2 as R\\nprint('import ok')\\nimport inspect\\nprint(inspect.signature(R._estimate_gamma))\\nprint(inspect.signature(R._check_gamma_alt_convergence))\\nprint([n for n in dir(R) if 'Registry' in n])\\n\\\" 2>&1 | tail -20\", \"description\": \"Import module and inspect signatures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5700,5800p' bench/reference_runner_v2.py\", \"description\": \"Read runner comment block around claim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 15a7094 418fa30 d96b611 --format='%h %ad %s' --date=iso 2>&1 | head -80\", \"description\": \"Files in rehearsal commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -ipath '*exp45*' -not -path './.git/*' | head -60\", \"description\": \"Find exp45 artifacts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"0\\\\.132\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" --include=\\\"*.json\\\" --include=\\\"*.txt\\\" . 2>/dev/null | grep -v \\\"^./.git/\\\" | grep -vi \\\"raw_response\\\" | head -30\", \"description\": \"Grep 0.132 excluding raw responses\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 48d6254 | head -40 && echo \\\"=== msg\\\" && git log -1 --format=%B 48d6254\", \"description\": \"Show 48d6254\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat --name-only 15a7094 --format='' | cat; echo \\\"=== sim dirs ===\\\"; find . -ipath '*sim45*' -not -path './.git/*' | head -30\", \"description\": \"Rehearsal report paths\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nprint(type(d), list(d.keys())[:60] if isinstance(d,dict) else len(d))\\n\\\"\", \"description\": \"Inspect exp45 report keys\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,collections\\nREPO=pathlib.Path('.')\\ntally=collections.Counter()\\nper_run=collections.defaultdict(collections.Counter)\\nrows=[]\\nfor f in sorted(REPO.glob('bench/logs/**/*.json')):\\n    try: d=json.loads(f.read_text(encoding='utf-8',errors='replace'))\\n    except Exception: continue\\n    if not isinstance(d,dict): continue\\n    ents=(d.get('regis"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d bench/logs/sim45* bench/logs/*sim* 2>/dev/null | sort -u\", \"description\": \"List all sim run dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections\\ndef walk(o,path,acc):\\n    if isinstance(o,dict):\\n        if isinstance(o.get('severity'),(int,float)): acc.append((path,o))\\n        for k,v in o.items(): walk(v,path+'.'+str(k),acc)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,path+'[]',acc)\\n\\ndef count(files,label):\\n    n=0; byp=collections.Counter()\\n    for f in fil"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nfor k in ['experiment','models','target_file','converged_at','convergence_reason','total_findings','total_rounds','start_time','end_time','domain']:\\n    print(k,'=',d.get(k))\\nprint('registry keys:', list(d['registry'].keys())[:3"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"PREREG_BOUNDARY_BAND\\\\|boundary_band_census\\\" --include=\\\"*.py\\\" --include=\\\"*.md\\\" . | grep -v \\\"^./.git\\\" | head -20\", \"description\": \"Find boundary band usages\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la .scratch/ && find .scratch -type f | head -60\", \"description\": \"List scratch dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nents=d['registry']['entries']\\nprint('type',type(ents),'n',len(ents))\\nif isinstance(ents,dict):\\n    k=list(ents)[0]; print('sample key',k); print(json.dumps(ents[k],indent=1)[:2000])\\nelse:\\n    print(json.dumps(ents[0],indent=1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,collections\\nREPO=pathlib.Path('.')\\nuniq={}\\nfor f in sorted(REPO.glob('bench/logs/**/*.json')):\\n    try: d=json.loads(f.read_text(encoding='utf-8',errors='replace'))\\n    except Exception: continue\\n    if not isinstance(d,dict): continue\\n    ents=(d.get('registry') or {}).get('entries') or (d.get('entries') if isinstance(d.get('entries'),dic"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nents=d['registry']['entries']\\nprint(\\\"ALL fields:\\\", sorted({k for e in ents.values() for k in e}))\\nsev=[(k,e) for k,e in ents.items() if (e.get('severity') or 0)>=0.7]\\nprint(\\\"total entries\\\", len(ents), \\\"sev>=0.7:\\\", len(sev"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && git show HEAD~1:bench/reference_runner_v2.py > /tmp/rr_prev.py && grep -c \\\"gamma_threshold_profile\\\\|boundary_band_census\\\\|PREREG_GAMMA_PROFILE\\\" /tmp/rr_prev.py; echo \\\"---prev has none above? (0 expected)\\\"; grep -n \\\"_NON_NOVEL_TERMINAL_STATUSES = \\\" -A 10 reference_runner_v2.py\", \"description\": \"Confirm absent at HEAD~1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 - <<'EOF'\\nimport reference_runner_v2 as R\\nimport inspect\\nsrc = inspect.getsource(R.FindingRegistry.__init__)\\nprint(src[:800])\\nprint(\\\"=== entry shape: find register ===\\\")\\ns = inspect.getsource(R.FindingRegistry.register)\\nprint(s[:2500])\\nEOF\", \"description\": \"Inspect registry entry shape\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nruns=sorted(glob.glob('bench/logs/*/'))\\ntot=0\\nfor r in runs:\\n    rounds=sorted(glob.glob(r+'round_*.json'))\\n    if not rounds: continue\\n    n=0; sh=0\\n    for p in rounds:\\n        try: d=json.load(open(p))\\n        except Exception: continue\\n        fs=d.get('findings') or []\\n        n+=len(fs)\\n        sh+=sum(1 for f in fs if 'sourc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"11 falsifier\\\\|of 11\\\\|11 of\\\\|4 of 11\\\\|only 4\\\\|discriminat\\\" --include=\\\"*.md\\\" . --exclude-dir=.git | grep -i \\\"discriminat\\\" | head -50\", \"description\": \"Search markdown for discrimination claims\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,os,itertools\\ndef walk(o,path,acc):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and not isinstance(s,bool): acc.append((path,s))\\n        for k,v in o.items(): walk(v,path+'.'+str(k),acc)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,path+'[]',acc)\\n\\nallj=[f for f in glob.gl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os\\nfor run in ['bench/logs/exp45_memory_statistics_live_20260727T225640Z','bench/logs/sim45_memory_20260901T040540Z']:\\n    print('='*20, run)\\n    for p in sorted(glob.glob(run+'/round_*.json')):\\n        d=json.load(open(p))\\n        for f in d['findings']:\\n            print(f\\\"r{f['round_idx']} {f['model_id']:14s} sev={f['severity']:.2f} {f['fi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && git show HEAD~1:bench/reference_runner_v2.py > /tmp/rr_prev.py && echo \\\"prev-count: $(grep -c 'gamma_threshold_profile\\\\|boundary_band_census\\\\|PREREG_GAMMA_PROFILE\\\\|threshold_profile' /tmp/rr_prev.py)\\\"; echo \\\"prev grep 0.5 / 0.6 / 0.7 / 0.8 profile:\\\"; grep -n \\\"0.5, 0.6, 0.7, 0.8\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport reference_runner_v2 as R, inspect\\nprint(inspect.getsource(R.FindingRegistry.register)[:2000])\\nEOF\", \"description\": \"Inspect register\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import statsmodels; print('statsmodels',statsmodels.__version__)\\\" 2>&1 | tail -2; python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint as pc\\nfor c,n in [(4,11),(132,263),(14,360),(18,34),(4,11)]:\\n    lo,hi=pc(c,n,method='wilson')\\n    print(f'{c}/{n} = {c/n*100:.1f}%  Wilson95 [{lo*100:.1f}%, {hi*100:.1f}%]')\\n\\\" 2>&1 | tail -10\", \"description\": \""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; sed -n '5862,5895p' \\\"$R/bench/reference_runner_v2.py\\\"\", \"description\": \"Read settled series body\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\np='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nents=d['registry']['entries']\\nfor k,e in sorted(ents.items(), key=lambda x:-(x[1].get('severity') or 0)):\\n    s=e.get('severity') or 0\\n    if s<0.7: continue\\n    print('=====',k,'sev',s,'model',e.get('source_model'),'status',e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nfor run,rep in [('bench/logs/exp45_memory_statistics_live_20260727T225640Z','exp45_memory_statistics_live_report.json'),('bench/logs/sim45_memory_20260901T040540Z','sim45_memory_report.json')]:\\n    d=json.load(open(run+'/'+rep))\\n    ents=d['registry']['entries']\\n    print('==',run,'entries',len(ents))\\n    nv=0\\n    for cid,e in ents.items():\\n      "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,os,re\\ndef walk(o,path,acc):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and not isinstance(s,bool): acc.append((path,s))\\n        for k,v in o.items(): walk(v,path+'.'+str(k),acc)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,path+'[]',acc)\\nallj=[f for f in glob.glob('**/*."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\npat=re.compile(r'source_hash|expected_hash|compute_source_hash', re.I)\\nreal=[];sim=[]\\nfor r in sorted(glob.glob('bench/logs/*/')):\\n    base=os.path.basename(r.rstrip('/'))\\n    rounds=sorted(glob.glob(r+'round_*.json'))\\n    if not rounds: continue\\n    for p in rounds:\\n        try: d=json.load(open(p))\\n        except Exception: continue"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 scripts/discrimination_control_archive.py --limit 12 --runs exp45 --out /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/disc_rerun.json 2>&1 | tail -40\", \"description\": \"Run archive discrimination control offline on exp45\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport reference_runner_v2 as RR\\n\\nclass Reg:\\n    def __init__(self, entries): self.entries = entries\\n\\ndef mk(specs):\\n    \\\"\\\"\\\"specs: list of (severity, open_since_round, status)\\\"\\\"\\\"\\n    return {f\\\"C{i:04d}\\\": {\\\"canonical_id\\\": f\\\"C{i:04d}\\\", \\\"severity"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat -n bench/dm/_memory.py\", \"description\": \"Read current target source\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport glob,os,re,collections\\nrounds=[f for f in glob.glob('**/round_[0-9][0-9].json',recursive=True) if not f.startswith('.git/')]\\nprint('n round files:',len(rounds))\\ndirs=collections.Counter(os.path.dirname(f) for f in rounds)\\nprint('n dirs:',len(dirs))\\nfor d in sorted(dirs): print(dirs[d],d)\\nEOF\", \"description\": \"List round file dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,collections,hashlib\\nREPO=pathlib.Path('.')\\nrecs={}\\nfor f in sorted(REPO.glob('bench/logs/**/*.json')):\\n    try: d=json.loads(f.read_text(encoding='utf-8',errors='replace'))\\n    except Exception: continue\\n    if not isinstance(d,dict): continue\\n    ents=(d.get('registry') or {}).get('entries') or (d.get('entries') if isinstance(d.get('entri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --since=2026-07-01 -- bench/dm/_memory.py | head -20 && echo \\\"---lines now\\\" && wc -l bench/dm/_memory.py\", \"description\": \"History of target file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --format=\\\"%h %ad %s\\\" --date=short -- bench/dm/_memory.py | head -20\", \"description\": \"Full history of _memory.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/tasks/bxjpuaxbn.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff d7d87bb 043a0a8 --stat -- bench/dm/_memory.py && echo \\\"=== diff of load region\\\" && git diff d7d87bb 043a0a8 -- bench/dm/_memory.py | head -200\", \"description\": \"Diff _memory.py across versions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff d7d87bb 043a0a8 -- bench/dm/_memory.py | sed -n '200,320p'\", \"description\": \"Diff continued - load()\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/discrimination_control_archive.py --limit 12 --runs exp45 --out /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/disc_rerun.json 2>&1 | tail -40\", \"description\": \"Run archive discrimination control on exp45 subset\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' bench/logs/panel_inventory_20260831T130253Z/BRIEF.md\", \"description\": \"Read panel brief defect 2\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os\\nfor d in sorted(glob.glob('bench/logs/sim45_memory_*')):\\n    r=glob.glob(os.path.join(d,'*report.json'))\\n    print('###',d, 'files:',len(os.listdir(d)))\\n    for f in r:\\n        try:\\n            j=json.load(open(f))\\n        except Exception as e:\\n            print('  ERR',f,e); continue\\n        print('  ',os.path.basename(f),'| exp=',j.ge"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os\\nfor d in sorted(glob.glob('bench/logs/sim45_memory_*')):\\n    f=os.path.join(d,'sim45_memory_report.json')\\n    if not os.path.exists(f): continue\\n    j=json.load(open(f))\\n    ents=j['registry']['entries']\\n    crit=[(k,e['severity'],e.get('source_model')) for k,e in ents.items() if (e.get('severity') or 0)>=0.7]\\n    sevs=sorted((e.get('sever"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 418fa30 --name-only --format='' | cat; echo \\\"---\\\"; git show d96b611 --name-only --format='' | cat; echo \\\"=== ls notes recent ===\\\"; ls -t experimental_notes | head -20\", \"description\": \"Report file names\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport reference_runner_v2 as RR\\nclass Reg:\\n    def __init__(self, e): self.entries = e\\ndef mk(specs):\\n    return {f\\\"C{i:04d}\\\": {\\\"canonical_id\\\": f\\\"C{i:04d}\\\", \\\"severity\\\": s,\\n                          \\\"open_since_round\\\": r, \\\"status\\\": st}\\n         "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && find . -path ./.git -prune -o -name '*.json' -print 2>/dev/null | xargs grep -ln '\\\"open_since_round\\\"' 2>/dev/null | head -20\", \"description\": \"Find registries with open_since_round\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import scipy,numpy;print(scipy.__version__,numpy.__version__)\\\"\", \"description\": \"Check scipy\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '405,450p' bench/dm/_memory.py\", \"description\": \"Current load() head\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/verify_threshold.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Verify the '6,865 archived findings / no natural break at 0.70' claim.\\n\\nHarvest glob:  <repo>/**/round_[0-9][0-9].json   (all live under bench/logs/*/\\n            "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nf='bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'\\nj=json.load(open(f))\\nfor k in ['experiment','models','target_file','domain','converged_at','convergence_reason','total_findings','total_rounds','start_time','end_time']:\\n    print(k,'=',j.get(k))\\nprint()\\nents=j['registry']['entries']\\nfor k,e in sorted(ents.items(), key=lambda x:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/verify_threshold.py . 2>&1 | head -120\", \"description\": \"Run verification script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,collections,hashlib,itertools\\nREPO=pathlib.Path('.')\\nrecs={}\\nfor f in sorted(REPO.glob('bench/logs/**/*.json')):\\n    try: d=json.loads(f.read_text(encoding='utf-8',errors='replace'))\\n    except Exception: continue\\n    if not isinstance(d,dict): continue\\n    ents=(d.get('registry') or {}).get('entries') or (d.get('entries') if isinstance(d."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; ls -d \\\"$R\\\"/bench/logs/*exp45* \\\"$R\\\"/bench/logs/*sim45* 2>/dev/null; echo \\\"=== all report jsons ===\\\"; ls \\\"$R\\\"/bench/logs/ | wc -l; python3 - <<'EOF'\\nimport json,glob,os\\nfor p in sorted(glob.glob('/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/logs/*/*"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad\\\" && cat > \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/hunt.py\\\" <<'EOF'\\nimport json,glob,os,re,itertools\\n"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/tasks/bid4dmu53.output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nf='bench/logs/sim45_memory_20260830T235237Z/sim45_memory_report.json'\\nj=json.load(open(f))\\nprint('conv',j.get('converged_at'),j.get('convergence_reason')[:120])\\nprint('start',j.get('start_time'),'end',j.get('end_time'))\\nents=j['registry']['entries']\\nfor k,e in sorted(ents.items(), key=lambda x:-(x[1].get('severity') or 0)):\\n    print(f\\\"{k} sev={e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport json, sys\\nsys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\np='logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nd=json.load(open(p))\\nprint(\\\"top keys:\\\", sorted(k for k in d if 'gamma' in k or 'crit' i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat experimental_notes/Overnight_Panel_Loop_And_A_Vote_That_Deleted_Findings_2026-09-01.md\", \"description\": \"Read panel loop report\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport json, sys\\nsys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\nbase='logs/exp45_memory_statistics_live_20260727T225640Z/'\\nd=json.load(open(base+'exp45_memory_statistics_live_report.json'))\\nreg = RR.FindingRegistry.from_dict(d['registry']) if isinst"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nimport numpy as np\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p))\\n        out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z')\\nS=rounds('sim45_memory_20260901T040540Z')\\ncands={\\n 'load_ci': re."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,collections,itertools\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nrows=d['rows']\\nexps=sorted({r['exp'] for r in rows})\\nprint('%-8s %5s | RouteA scored/disc | RouteB scored/disc'%('exp','n'))\\nfor e in exps:\\n    s=[r for r in rows if r['exp']==e]\\n    a=collections.Counter(r['route_a'] for r in s); b=collections.C"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,numpy as np,collections,hashlib\\ndef walk(o,out):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and not isinstance(s,bool): out.append(float(s))\\n        for v in o.values(): walk(v,out)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,out)\\nfiles=sorted(f for f in glob.glob('**/round_[0-9"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"DISC_PASSED\\\\|DISC_FAILED\\\\|DISC_ERROR\\\\|DISC_NOT_INTERCEPTED\\\\|DISC_ABSENT\\\\|DISC_INDETERMINATE\\\\|DISC_BASELINE\\\\|DISC_NONDETERMINISTIC\\\\|DISC_COPY_UNCHANGED\\\\|discrimination_control_blocks\\\\|discrimination_control_ask\\\\|_apply_discrimination_control\\\\|def run_discrimination_control\\\\|mechanical_fault\\\" bench/reference_runner_v2.py | head -80\", \"description\": \"Locate discri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nimport numpy as np\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p))\\n        out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z')\\nS=rounds('sim45_memory_20260901T040540Z')\\npat=re.compile(r'source_"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/reference_runner_v2.py\", \"offset\": 4200, \"limit\": 75}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo/bench/reference_runner_v2.py\", \"offset\": 395, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport json\\nd=json.load(open('logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\nprint(\\\"convergence_reason:\\\\n \\\", d.get('convergence_reason'))\\nprint(\\\"\\\\nlocation_crit_shadow_history:\\\", d.get('location_crit_shadow"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; tail -5 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/tasks/bvws02shq.output 2>/dev/null || echo \\\"still running\\\"\", \"description\": \"Check test suite progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re,itertools\\nimport numpy as np\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nS=rounds('sim45_memory_20260901T040540Z')\\ntoks=['source_hash','expected_hash','stored_hash','load\\\\\\\\(\\\\\\\\)','\\\\\\\\.load\\\\\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, json, math, tempfile, os\\nsys.path.insert(0,'.')\\nfrom bench.dm._memory import ImmuneMemory, FlawClassRecord, MemoryIntegrityError\\n\\ndef t(name, fn):\\n    try:\\n        r = fn()\\n        print(f\\\"{name}: NO RAISE -> {r!r}\\\")\\n    except MemoryIntegrityError as e:\\n        print(f\\\"{name}: MemoryIntegrityError({e})\\\")\\n    except Exception as e:\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,numpy as np,collections\\ndef walkd(o,out):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and not isinstance(s,bool): out.append(o)\\n        for v in o.values(): walkd(v,out)\\n    elif isinstance(o,list):\\n        for v in o: walkd(v,out)\\nfiles=sorted(f for f in glob.glob('**/round_[0-9][0-9].json'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint as pc\\nlo,hi=pc(126,246,method='wilson'); print('126/246 = %.1f%% Wilson [%.1f%%, %.1f%%]'%(126/246*100,lo*100,hi*100))\\nlo,hi=pc(131,263,method='wilson'); print('131/263 = %.1f%% Wilson [%.1f%%, %.1f%%]'%(131/263*100,lo*100,hi*100))\\nlo,hi=pc(132,263,method='wilson'); print('132/263 DISCRIMINATES = %.1f%% Wils"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nimport numpy as np\\nfrom scipy import stats\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z')\\nS=rounds('sim45_memory_20260901T040540Z')\\nfor nam"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib\\nREPO=pathlib.Path('.')\\n# final artefact status for every NO_DISCRIMINATION finding\\nfor run in ['sim45_memory_20260830T235237Z','sim45_memory_20260901T040540Z']:\\n    d=REPO/'bench/logs'/run\\n    # find the final report\\n    for f in sorted(d.glob('*_report.json'))+sorted(d.glob('runner_state.json')):\\n        data=json.loads(f.read_text(encodi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/old/bench/dm\\ncd /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/old && git -C /private/var/folders/cc/scptwd_s4cgcl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport json,sys; sys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\nd=json.load(open('logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\nclass Reg: pass\\nreg=Reg(); reg.entries=d['registry'].get('entries', d['re"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/discrimination_control_archive.py --classify-route-a-failures 2>&1 | python3 -c \\\"\\nimport sys,json\\nd=json.load(sys.stdin)\\nprint('n classified:',d['n'])\\nfor k,v in sorted(d['counts'].items(),key=lambda x:-x[1]): print('  %-60s %d'%(k,v))\\n\\\"\", \"description\": \"Classify unscored Route-A failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re,itertools\\nimport numpy as np\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z')\\nS=rounds('sim45_memory_20260901T040540Z')\\ntoks=['source_hash','e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_discrimination_control.py -q 2>&1 | tail -15; echo \\\"=== default flags ===\\\"; python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.reference_runner_v2 import RunnerConfig\\nc=RunnerConfig()\\nprint('discrimination_control_blocks =',c.discrimination_control_blocks)\\nprint('discrimination_control_ask    =',c.discrimination_control_ask)\\n\\\"\", \"de"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nd='bench/logs/sim45_memory_20260901T040540Z'\\nj=json.load(open(os.path.join(d,'sim45_memory_report.json')))\\nents=j['registry']['entries']\\npats={\\n 'rho/pi_base unvalidated (exp45 C0021/C0008)': r'blended_prior',\\n 'hash collision / no separator (exp45 C0007)': r'(collision|separator|concatenat|length[- ]prefix|delimit)',\\n 'fresh instance s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,numpy as np,collections\\nfrom scipy.stats import gaussian_kde\\ndef walk(o,out):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and not isinstance(s,bool): out.append(float(s))\\n        for v in o.values(): walk(v,out)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,out)\\nfiles=sorted(f for"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for pat in compute_source_hash \\\"collision\\\" \\\"not a dict\\\" \\\"AttributeError\\\" \\\"p.exists\\\"; do echo \\\"### $pat\\\"; grep -ril \\\"$pat\\\" bench/logs/sim45_memory_20260901T040540Z/ | head -10; done\", \"description\": \"Grep rehearsal raw files for still-open theme keywords\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'))\\nfor k in ['experiment','topology','relay_mode','pattern','models','panel_confinement','simulated','start_time','end_time','convergence_config']:\\n    print(k,'=',json.dumps(d.get(k))[:400])\\nEOF\", \"description\": \"Sim report metadata\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls configs/ && grep -rln \\\"sim45\\\\|SIM\\\" configs/ | head\", \"description\": \"Look at configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\nprint(\\\"=== _estimate_gamma is HORIZON-DEPENDENT: same run, padded with rounds that never happened ===\\\")\\nbase=[7,4,0,1]\\nfor pad in range(0,8):\\n    s=base+[0]*pad\\n    print(f\\\"  series={s} "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -o -i -E '.{200}(hash collision|collision-prone|no path, length|boundary separator|concatenat).{200}' bench/logs/sim45_memory_20260901T040540Z/r*.json | head -20\", \"description\": \"Grep raw replies for hash collision defect\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nd='bench/logs/sim45_memory_20260901T040540Z'\\nn=0\\nfor f in sorted(glob.glob(os.path.join(d,'round_*.json'))):\\n    j=json.load(open(f))\\n    print('###',os.path.basename(f), type(j), list(j.keys())[:20] if isinstance(j,dict) else len(j))\\nEOF\", \"description\": \"Inspect round file structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\"; git log --oneline -8 --all -- bench/reference_runner_v2.py | head; echo \\\"=== search for per-reply verdict dedupe ===\\\"; grep -n \\\"dedup\\\\|seen_verdict\\\\|_seen\\\\b\\\\|already issued\\\\|per-reply\\\\|one verdict per\\\" bench/reference_runner_v2.py | grep -i \\\"verdict\\\\|dedup\\\" | head -20\", \"descr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'))\\nents=d['registry']['entries']\\nfor cid,e in sorted(ents.items()):\\n    print(cid, e['source_model'], e['severity'], e.get('status'), '|', (e['description'] or '').replace('\\\\n',' ')[:95])\\nEOF\", \"description\": \"Real registry summary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'))\\nents=d['registry']['entries']\\nfor cid,e in sorted(ents.items()):\\n    print(cid, e['source_model'], e['severity'], e.get('status'), '|', (e['description'] or '').replace('\\\\n',' ')[:95])\\nEOF\", \"description\": \"Sim registry summary\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\"; git show da3d422 --stat; echo \\\"=== DIFF ===\\\"; git show da3d422 -- bench/reference_runner_v2.py | head -120\", \"description\": \"Read the repair commit\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os\\nd='bench/logs/sim45_memory_20260901T040540Z'\\ntot=0\\nallf=[]\\nfor f in sorted(glob.glob(os.path.join(d,'round_*.json'))):\\n    j=json.load(open(f))\\n    fs=j['findings']\\n    print('###',os.path.basename(f),'finding_count',j['finding_count'],'len(findings)',len(fs))\\n    if fs and tot==0:\\n        print('  keys:',sorted(fs[0].keys()))\\n    for x"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,pathlib,collections\\nREPO=pathlib.Path('.')\\ntot=0; conf=0; withcode=0; runs=collections.Counter()\\nfor f in sorted(REPO.glob('bench/logs/**/*_report.json'))+sorted(REPO.glob('bench/logs/**/runner_state.json')):\\n    if '.errata' in str(f) or f.parent.name.endswith('_latest'): continue\\n    try: d=json.loads(f.read_text(encoding='utf-8',errors='replace')"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --all --oneline -S\\\"36.4\\\" | head; echo \\\"---grep 4/11---\\\"; grep -rn \\\"4 of 11\\\\|4/11\\\\|11 falsifiers\\\" . --exclude-dir=.git 2>/dev/null | head\", \"description\": \"Search git history for claim numbers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nd='bench/logs/sim45_memory_20260901T040540Z'\\nrows=[]\\nfor f in sorted(glob.glob(os.path.join(d,'round_*.json'))):\\n    j=json.load(open(f))\\n    for x in j['findings']:\\n        rows.append((j['round_idx'], x.get('model_id'), x.get('finding_id'), x.get('severity'),\\n                     (x.get('description') or '').replace('\\\\n',' ')))\\nrows"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'PY'\\nimport sys; sys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\n\\nreply = \\\"\\\"\\\"CHALLENGE C0125 the falsifier does not run\\nCHALLENGE C0125 the falsifier does not run\\nCHALLENGE C0125 the falsifier does not run\\\"\\\"\\\"\\n\\nprint(\\\"=== HEAD (with da3d422 repair)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\"; grep -n \\\"add_verdict\\\\|_parse_verdicts\\\" reference_runner_v2.py runner_core.py 2>/dev/null | grep -v \\\"def add_verdict\\\\|def _parse_verdicts\\\"\", \"description\": \"Find add_verdict call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint as pc\\nfor lbl,c,n in [('ArchiveRouteA DISCRIMINATES',132,263),('ArchiveRouteB DISCRIMINATES',14,360),\\n                ('Live control DISCRIMINATES (scored)',18,24),('Live control DISCRIMINATES (all recs)',18,38),\\n                ('CrossProbe never-quiet-on-anything',128,130),('CrossProbe specific',92,132)]:\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/sim45_memory_20260901T040540Z/ | head -30; echo \\\"=== config in run ===\\\"; find bench -name '*sim45*' -o -name '*simulat*' | grep -v logs | head -20\", \"description\": \"Find sim config and launcher\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nj=json.load(open('bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'))\\nfor k in ['convergence_config','relay_mode','pattern','topology','max_rounds','context_files','hil_flags']:\\n    print(k,'=',json.dumps(j.get(k))[:900])\\n\\\"\", \"description\": \"Rehearsal run config block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\"; sed -n '10905,10930p;10950,10975p' reference_runner_v2.py; echo \\\"=== auto_resolve_contested call sites ===\\\"; grep -n \\\"auto_resolve_contested\\\" reference_runner_v2.py\", \"description\": \"Check reachability of same-round repeats\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -100 bench/tools/simulated_bench.py\", \"description\": \"Read simulated bench header\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -80 bench/tools/run_simulated_experiment.py; echo \\\"=== grep model roster ===\\\"; grep -n -i \\\"SIM\\\\b\\\\|-SIM\\\\|fable\\\\|subagent\\\\|Task(\\\" bench/tools/run_simulated_experiment.py | head -40\", \"description\": \"Read sim experiment runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"subagent\\\\|Task tool\\\\|claude\\\\|agent\\\" bench/tools/sim_dispatch_shim.py | head -30; echo \\\"=== head ===\\\"; head -40 bench/tools/sim_dispatch_shim.py\", \"description\": \"Identify what the SIM stand-ins are\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -E '\\\"--model\\\"|model =|MODEL|opus|sonnet|haiku' bench/tools/sim_dispatch_shim.py | head -30\", \"description\": \"Which claude model backs the stand-ins\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/scratchpad/verify.py\\\" <<'PYEOF'\\nimport json, glob, os, re, itertools\\nimport numpy as np\\nfrom scipy import stats\\n\\nROOT = '/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo'\\nREAL = 'bench/logs/exp4"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,statistics as st\\ndef sevs(path,key='registry'):\\n    j=json.load(open(path))\\n    return [e['severity'] for e in j['registry']['entries'].values()], j\\ne45='bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'\\nreh='bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'\\na,_=sevs(e45); b,"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'PY'\\nimport sys; sys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\n# MIRROR CASE: the repair covered VERDICTS. Does the same repeat-yourself vector\\n# survive on the FINDINGS path (line 10925: re-report -> unconditional CONFIRM)?\\nr = RR.FindingRegistry()\\nr.en"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; wc -c /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314d-2376-49fd-af98-071de8d48e82/tasks/bvws02shq.output; tail -c 3000 /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-8pyvq0r3-repo/9e85314"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 043a0a8^:bench/dm/_memory.py > /tmp/old_mem.py && python3 - <<'EOF'\\nimport ast,hashlib\\ndef fns(p):\\n    src=open(p).read(); t=ast.parse(src); out={}\\n    for node in ast.walk(t):\\n        if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)):\\n            seg=ast.get_source_segment(src,node)\\n            out.setdefault(node.name,[]).append(seg)\\n    return out\\no=fns('"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"run_simulated_experiment\\\\|--model\\\" bench/tools/run_simulated_experiment_sandboxed.sh | head -20; echo \\\"=== grep install( call ===\\\"; grep -n \\\"install(\\\\|SHIM.install\\\\|args.model\\\" bench/tools/run_simulated_experiment.py | head\", \"description\": \"Find which claude model the sim used\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && python3 - <<'EOF'\\nimport json,glob,os,re\\nimport numpy as np\\nfrom scipy import stats\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z'); S=rounds('sim45_memory_20260901T040"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R/bench\\\" && python3 - <<'PY'\\nimport sys; sys.path.insert(0,'.')\\nimport reference_runner_v2 as RR\\n# REACHABLE version: one model re-reports its own finding once per round for 3 rounds\\n# (line 10925 fires once per model per round via lookup_alias), while THREE DISTINCT\\n# other models each c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && python3 -m pytest bench/tests -q -p no:randomly --timeout=600 2>&1 | tail -15\", \"description\": \"Rerun test suite foreground\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,re\\nimport numpy as np\\nfrom scipy import stats\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nR=rounds('exp45_memory_statistics_live_20260727T225640Z'); S=rounds('sim45_memory_20260901T040540Z')\\n# STRIC"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nj=json.load(open('bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'))\\nents=j['registry']['entries']\\nprint('retrieval_query set:',sum(1 for e in ents.values() if e.get('retrieval_query')))\\nprint('retrieved_at set:',sum(1 for e in ents.values() if e.get('retrieved_at')))\\n# does any round prompt mention exp45 C00xx?\\nimport glob,os,re\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/r0_gemini_20260727T225905Z.json'))\\nprint(list(d.keys()))\\nprint(json.dumps(d.get('metadata'),indent=1)[:800])\\n\\\"; echo \\\"=== launcher log ===\\\"; head -30 bench/logs/launcher_transcripts/exp45_launch_20260727.log\", \"description\": \"Confirm exp45 used real model APIs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,numpy as np\\nfrom scipy import stats\\ndef rounds(run):\\n    out=[]\\n    for p in sorted(glob.glob(os.path.join('bench/logs',run,'round_*.json'))):\\n        d=json.load(open(p)); out += (d.get('findings') or [])\\n    return out\\nR={f['finding_id']+'_r%d'%f['round_idx']:f for f in rounds('exp45_memory_statistics_live_20260727T225640Z')}\\nS={f['find"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -oE \\\"(deepseek[_a-z0-9]*|chatgpt[_0-9a-z]*|codex[_0-9a-z]*|gemini[_0-9a-z.-]*|claude[_0-9a-z.-]*|cc2[_0-9a-z]*)\\\" bench/logs/launcher_transcripts/exp45_launch_20260727.log | sort -u | head -20\", \"description\": \"Extract exp45 model ids\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show d96b611 -- experimental_notes/Overnight_Panel_Loop_And_A_Vote_That_Deleted_Findings_2026-09-01.md | head -40\", \"description\": \"Check the 5.1x commit diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && git stash list >/dev/null; git worktree add -q /tmp/wt_prev HEAD~1 2>/dev/null; cd /tmp/wt_prev && python3 -m pytest bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py::TestTheReportSaysWhereThePanelCouldReach::test_the_sandbox_flag_distinguishes_the_two_cases bench/tests/test_ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && python3 - <<'PY'\\nimport ast, subprocess\\nold = subprocess.run(['git','show','043a0a8^:bench/dm/_memory.py'],capture_output=True,text=True).stdout\\nnew = open('bench/dm/_memory.py').read()\\ndef fns(src):\\n    t=ast.parse(src); out={}\\n    for n in ast.walk(t):\\n        if isinstance(n,(a"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && python3 - <<'PY'\\nimport json,glob,os,collections\\nfiles=[p for p in glob.glob('bench/logs*/*/round_[0-9][0-9].json')]\\nsims=[p for p in files if 'sim45' in p]; real=[p for p in files if 'sim45' not in p]\\ndef harvest(ps):\\n    out=[]\\n    def walk(o):\\n        if isinstance(o,dict):\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\"; grep -n \\\"model.*sonnet\\\\|--model\\\\|def make_shim\\\" bench/tools/sim_dispatch_shim.py 2>/dev/null | head; echo \\\"=== sim report confinement ===\\\"; python3 -c \\\"\\nimport json;d=json.load(open('bench/logs/sim45_memory_20260901T040540Z/sim45_memory_report.json'))\\nprint({k:v for k,v in d.items"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && python3 - <<'PY'\\nimport sys,json,tempfile,os; sys.path.insert(0,'bench')\\nfrom dm._memory import ImmuneMemory, compute_source_hash\\n# E: hash collision (byte-identical code since exp45)\\nprint(\\\"E collision:\\\", compute_source_hash([\\\"XY\\\",\\\"Z\\\"])==compute_source_hash([\\\"X\\\",\\\"YZ\\\"]))\\n#"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\"; grep -n \\\"^def \\\\|^class \\\\|    def \\\" bench/dm/_memory.py | head -30\", \"description\": \"List memory API\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8pyvq0r3/repo; cd \\\"$R\\\" && python3 - <<'PY'\\nimport sys,os,tempfile; sys.path.insert(0,'bench')\\nfrom dm._memory import ImmuneMemory as IM\\nd=tempfile.mkdtemp()\\ndef w(n,c):\\n    p=os.path.join(d,n); open(p,'w').write(c); return p\\na,b = w(\\\"XY\\\",\\\"XY\\\"), w(\\\"Z\\\",\\\"Z\\\"); c,e = w(\\\"X\\\",\\\"X\\\"), w(\\\"YZ\\\",\\\"YZ\\\")\\npri"
+    }
+  ]
+}

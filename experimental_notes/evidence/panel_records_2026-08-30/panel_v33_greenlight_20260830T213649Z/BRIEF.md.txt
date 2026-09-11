@@ -1,0 +1,51 @@
+# Third pass: is this a genuine green light for the next simulated run?
+
+You have reviewed this repository twice today. **Both of your reviews were
+applied in full**, and this pass exists because neither of you has seen the
+result. Tree is committed at HEAD; the sandbox now also carries ignored files,
+which is your own finding from last time.
+
+## What changed since your second review
+
+Every item from both of your reviews, plus a full re-inventory of the day's
+agreed actions (37 items), was verified mechanically rather than from memory.
+Nine were still outstanding and are now closed:
+
+| item | what was done |
+|---|---|
+| `_extract_routing_falsifier` (CC2 ranked 4th, previously skipped) | closing fence must sit alone on its line, per this codebase's own precedent at `runner_core.py:1050`. Both self-fenced prose fixtures now survive transport byte-for-byte and reach CONFIRMED; the 4 skips are gone |
+| 3 Ouroboros network tests (49 days unrun) | new `free_network` marker runs them by default. A free-host ALLOW-list was tried first and was WRONG — retrieval follows a DOI to any publisher (`www.mdpi.com`) — so it is now a PAID DENY-list, with 8 tests proving the money guard is untouched |
+| `discrimination_control_ask` | **wired**, not deleted. It had 1 write, 0 reads; this project's own record specified the one-line wire on 2026-08-21 and nobody applied it. The main panel was never asked for a corrected copy, which is why the control has 0 of 58 entries with both inputs |
+| `test_article` normalisation (CC2 ranked 5th, previously skipped) | normalised ONCE at ingestion in `run_experiment` |
+| routing telemetry (CC2 ranked 7th) | `_routing_attempts` persisted per round into the report |
+| ignored files in the sandbox (Fable's own 1st action item) | carried, capped at 1 MB, and the count is printed |
+| Fable configuration | `MODEL_SPECS` entry **and** `Fable.toml` created. Values INHERITED from CC2/opus and marked as such in both files |
+| `_verification_step` 80k truncation | now declared to the model |
+| sim-only divergences | `verification_min_round=2`, `post_convergence_sweep_rounds=1`, `discrimination_control_ask=True`, plus a paid-dispatch tripwire in the harness |
+
+Suite: **4521 passed, 0 failed, 0 skipped.**
+
+## What to do
+
+**Falsify it.** The founder's standard is a genuine green light, so a
+confident-but-wrong pass is worse than a finding.
+
+1. **Verify the table.** Any row that is not true in this tree, say so with the
+   command. Your last two passes each found a claimed repair that was not real.
+2. **The `free_network` change is the one most likely to be wrong.** It moved a
+   guard from deny-by-default to allow-unless-paid inside a window. Try to reach
+   a metered endpoint from inside a `free_network` test. If you can, that is the
+   most serious finding available today.
+3. **Is the fenced-falsifier repair complete?** It changed a regex that the
+   routing ladder depends on. Find an input where the new pattern loses a block
+   the old one kept.
+4. **Does wiring `discrimination_control_ask` actually produce a corrected
+   copy**, or does it only change the prompt? Trace it to the point where the
+   control would consume it.
+5. **Predict what will still be silent** on the next simulated run, as you did
+   last time. That prediction was the single most useful thing either review
+   produced.
+6. **What did we all miss again?** Twice now the second pass found something the
+   first did not.
+
+`python3 -m pytest bench/tests -q` takes about 5.5 minutes.

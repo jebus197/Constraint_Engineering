@@ -1,0 +1,160 @@
+# Panel review: make it work at every scale — and this brief is different
+
+**Read this section before anything else. The brief format has changed, at the
+founder's instruction, and the change is the point.**
+
+## What was wrong with the last six briefs
+
+I audited them. Across 7 briefs, "sound / no changes needed" was permitted **2
+times**, against **25** instructions to refute, find what is wrong, or try to
+break something. One of my own workflow prompts literally read *"Default to
+refuted=true if you cannot independently reproduce."*
+
+The result, measured across your 14 replies: **176 defect-evidence phrases, 19
+recommendations, and 0 of 19 carrying any measurement that the proposed fix
+works** — Wilson [0.0%, 16.8%]. Your diagnoses are heavily tool-backed, at 1,923
+tool calls and 12.63 per 1,000 characters. So the problem is not that you argue
+from prose. It is that **the evidence is attached to the disease and never to
+the cure**, because I only ever asked for the disease.
+
+The founder's words: *"How can I go to anyone and say I've built a STEM problem
+calculator? Much hilarity is likely to ensue."*
+
+## Three rules for this review
+
+1. **"SOUND" IS A FIRST-CLASS VERDICT.** If a thing is right, say it is right,
+   say what you checked, and move on. Do not manufacture a finding to justify
+   the dispatch. A review that returns "these four are sound, this one is
+   broken, here is the fix and here is the measurement showing it works" is
+   worth more than one that returns five faults.
+2. **EVERY RECOMMENDATION MUST CARRY A FIX-MEASUREMENT.** Not evidence that the
+   defect exists — evidence that your proposed remedy changes the outcome. Run
+   it. You have a disposable worktree, write access in it, and the extraction
+   path works: anything you write there comes back to me and I will read it,
+   run it, and test it myself before adopting anything.
+3. **JUSTIFY AGAINST THE PROJECT'S AIMS, NOT JUST THE LOCAL BUG.** The
+   specification is below. A recommendation that fixes a symptom while cutting
+   against the aims is worse than no recommendation.
+
+**Suite baseline:** `python3 -m pytest bench/tests -q` gives **4,839 passed, 0
+failed** at commit `164d2b3`, about 6 minutes.
+
+---
+
+## The specification you have never been given
+
+**What CDSFL is for.** A researcher has a STEM artefact — a proof, a model, a
+module, a paper — and wants to know what is wrong with it before the world
+finds out. CDSFL runs a panel of AI models over it across several rounds. A
+finding becomes true only when a TOOL re-executes a model-supplied falsifier and
+that falsifier fires on the artefact and stays quiet on a corrected copy.
+**Agreement between models decides nothing, ever.** The loop stops when a
+convergence gate fires on the settled registry.
+
+**The founding constraints, which no recommendation may violate:**
+- Tools decide, not votes. Nothing may reintroduce agreement as a truth
+  criterion, however convenient.
+- Fixes are suggested to a human, never auto-applied.
+- Every claim must be falsifiable and every number must be reproducible from
+  the artefacts.
+- A human is in the loop by design. Minimal-HIL is the target; zero-HIL is not.
+
+**The aim now, in the founder's words:** *"to make the harness useful and
+scalable across whatever degree of resources might be useful and available to
+any given researcher. Maybe they won't have the luxury of using 5-6 vendor
+models, maybe they will be a large institution with access to potentially
+unlimited resources, maybe they will be like me with access to only moderate
+resources."*
+
+---
+
+## PART 1 — Verify or declare sound: the 8 commits you have not seen
+
+These landed after your last brief at `c986617`, and every one of them is a fix
+that came out of YOUR last review. You have diagnosed; you have never seen your
+prescriptions filled. `git log --oneline c986617..HEAD`.
+
+**This is a fidelity check.** For each, tell me whether I implemented what you
+actually meant or something adjacent that happens to pass tests. Name anything
+structurally right and semantically wrong. **Where I got it right, say so.**
+
+1. `976b6b5` — absorb guard reworked after you refuted it. A different falsifier
+   is now the primary discriminator; the signature test is the fallback.
+2. `0ec926d` — the sim filter now parses the document and reads
+   `severity_provenance` / `_simulated`, instead of reading a 4,000-character
+   window for "-SIM".
+3. `3ba8c92` — `routing_history` is written for the first time; the alarm bundle
+   reports `distinct_defects` and `duplicate_groups` grouped on the falsifier body.
+4. `a1a3e31` — the sweep's `_handled` guard and per-model prompt construction.
+5. `78869b1` — the settle is ungated. **Note:** a shipped test had pinned the
+   gate, asserting the code against its own comment. I rewrote that test.
+6. `a82ec54` — the audit's UNREACHABLE/AMBIGUOUS/SILENT_BUT_RAN classification
+   is pinned, killing the `elif w["gated"]` mutant you found.
+7. `f1099c1` — the rubric-adherence audit (see Part 2).
+8. `874f2af` — the session note.
+
+## PART 2 — The 0.70 audit you have not seen
+
+The 2026-05-18 pre-registration demanded it and nobody had run it. 286 findings
+in the [0.65, 0.75) band from 29 real runs, scored against the five consequence
+clauses **blind** — severity withheld and redacted from the 80 texts that leaked
+it.
+
+- **Rubric vs the 0.70 numeric: 141/259 judgeable = 54.4%**, Wilson [48.4%, 60.4%]
+- **Reader vs reader, independent second pass: 86/93 = 92.5%, Cohen's κ = 0.837
+  [0.721, 0.953]**
+- Of findings sitting exactly on 0.70, the rubric calls **67.0%** critical
+
+**Q.** Is that analysis sound? If it is, say so. If it is, what follows — the
+pre-registration's own remedy is that the rubric governs where the two disagree
+and the adjudication is logged, and that path is unwired. Is wiring it the right
+move, and what would you build?
+
+## PART 3 — The question that matters most
+
+**Co-discovery has never been recorded: 2 of 2,050 real findings (0.10%, Wilson
+[0.03%, 0.36%]) are marked as raised by more than one model.** When two models
+find one defect, the system mints two unlinked canonical findings.
+
+I tried to build the saturation curve — "when does asking another model stop
+paying" — and had to withdraw it: partitioning by `source_model` gives disjoint
+sets, so the curve is linear by construction. I measured the schema.
+
+This is the same root cause as the cross-model duplicate fault you called the
+binding failure behind the halted run.
+
+**Q1. Implement cross-model duplicate detection in your worktree, and measure
+the co-discovery rate before and after.** That single number decides whether the
+scaling question becomes answerable at all. I will read your diff, run it, test
+it against the real archive, and report to the founder with a keep-or-discard
+recommendation. Constraint: it must not become a vote. Two models describing one
+defect is evidence of co-discovery, not evidence the finding is true — truth
+still comes from the falsifier.
+
+**Q2. Scale.** 9 of 28 archived runs were effectively single-model — six seats,
+one model — and converged with full reports. The detector exists
+(`distinct_models`), and auto-refutation already degrades correctly because it
+needs 3 distinct models. Two candidate designs, and I want **both tested, not
+one chosen**:
+
+- **(a) Declare and caveat.** The report states the mode; nothing else changes.
+- **(b) Declare and reallocate.** The mode changes behaviour — routing ranks by
+  whatever diversity axis actually exists, escalating across instruction
+  conditions when there is only one model.
+
+Run each in a short simulated experiment and tell me what differs. Note that (b)
+has a precedent in this repo: the `codex_exec`-versus-bare-OpenRouter contrast,
+same weights under two instruction conditions, which lapsed on 2026-04-02.
+
+**Q3. Metering.** Founder ruling today: relevant only on paid runs, default ON
+because a meter that is off by default never gets switched on, silent in
+simulated mode, and the toggle waits for a UX that is the last runway item.
+Nothing meters today. What is the smallest honest implementation, and what
+should it record so that a future allocator can use it?
+
+**Q4. Am I the problem?** Measured: 13 of 54 commits today corrected a prior
+claim of mine, 24.1%, Wilson [14.6%, 36.9%], and you caught 9 of those 13. The
+recurring shape is that I verify the easy case and ship it as the whole set.
+Tell me honestly whether that rate is unusual for work of this kind, whether
+the corrections you raised were mostly substantive or mostly wording, and what
+single change to my process would cut it most. Be blunt.

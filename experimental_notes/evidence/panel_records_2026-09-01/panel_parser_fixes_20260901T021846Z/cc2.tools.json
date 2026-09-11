@@ -1,0 +1,379 @@
+{
+  "model": "opus",
+  "elapsed_s": 1838.0,
+  "tool_calls": 93,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && pwd && ls && git status --short | head -50 && echo \\\"---DIFF---\\\" && git diff\", \"description\": \"Show working dir, status, and diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd $(pwd) && ls bench/ 2>/dev/null && echo \\\"---\\\" && find . -name \\\"reference_runner_v2.py\\\" -o -name \\\"runner_core.py\\\" | head\", \"description\": \"Locate key files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2200,2320p' bench/reference_runner_v2.py\", \"description\": \"Read _VERDICT_RE region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '780,1030p' bench/runner_core.py\", \"description\": \"Read parse findings core\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 -m pytest bench/tests/ -q 2>&1 | tail -30\", \"description\": \"Run test suite with changes applied\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -30 && echo \\\"--- count round json ---\\\" && find bench/logs -name \\\"round_*.json\\\" | wc -l && echo \\\"--- _proposed.patch? ---\\\" && ls -la _proposed.patch 2>&1; ls bench/runner_core_old.py bench/runner_core_prop.py -la\", \"description\": \"Survey logs and check patch file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/ -q 2>&1 | tail -30\", \"description\": \"Run test suite\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff <(git show HEAD:bench/runner_core.py) bench/runner_core_old.py >/dev/null && echo \\\"old == HEAD\\\" || echo \\\"old != HEAD\\\"; diff bench/runner_core.py bench/runner_core_prop.py >/dev/null && echo \\\"prop == working\\\" || echo \\\"prop != working\\\"; wc -l bench/runner_core*.py\", \"description\": \"Compare stray runner_core copies\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash && python3 -m pytest bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py bench/tests/test_experiment_run_ledger_2026-08-26.py bench/tests/test_operational_scripts.py -q 2>&1 | tail -8; git stash pop\", \"description\": \"Check if failures pre-exist on HEAD\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff bench/runner_core_prop.py bench/runner_core.py | head -80\", \"description\": \"Diff stray prop file vs working\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git diff --stat experimental_notes/ ; echo \\\"--- sample of what changed ---\\\"; git diff experimental_notes/ | head -40\", \"description\": \"Inspect unexpected modifications\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git checkout -- experimental_notes/ && git stash pop && git status --short\", \"description\": \"Restore archive files and recover the patch\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git checkout -- experimental_notes/ ; grep -rl \\\"Panel_Enforcement_Prose_FULL_RECORD\\\\|FULL_RECORD\\\" bench/tests/ bench/*.py scripts/ 2>/dev/null | head -20\", \"description\": \"Find code referencing the destroyed records\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"assemble_panel_record\\\" bench/tests/ | head -20\", \"description\": \"Find which test invokes the assembler\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"NO RESPONSE FILE\\\\|open(\\\\|write\\\\|__main__\\\\|RESP_DIR\\\\|Path(\\\" scripts/assemble_panel_record.py | head -40\", \"description\": \"Inspect the assembler script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git checkout -- experimental_notes/ 2>/dev/null; git status --short experimental_notes/ ; echo \\\"=== clean above ===\\\"; python3 -m pytest bench/tests/test_operational_scripts.py -q 2>&1 | tail -5; echo \\\"=== git status after ===\\\"; git status --short experimental_notes/\", \"description\": \"Test if operational_scripts test destroys archive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git checkout -- experimental_notes/; for t in TestUsageTextAdvertisesOnlyImplementedFlags TestEveryScriptCompiles; do git checkout -- experimental_notes/ 2>/dev/null; python3 -m pytest bench/tests/test_operational_scripts.py -k \\\"$t\\\" -q >/dev/null 2>&1; echo \\\"$t -> $(git status --short experimental_notes/ | wc -l) files modified\\\"; done; git checkout -- experimental_notes/\", \"descri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"class TestUsageText\\\" -A 40 bench/tests/test_operational_scripts.py | head -60\", \"description\": \"Read the help test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 -c \\\"\\nimport json,glob\\nfs=sorted(glob.glob('logs/**/round_*.json',recursive=True))\\nprint(len(fs),'files')\\nimport collections\\nd=json.load(open(fs[0]))\\nprint(fs[0], type(d), list(d)[:20] if isinstance(d,dict) else len(d))\\n\\\"\", \"description\": \"Inspect log json shape\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench && python3 -c \\\"\\nimport json,glob,collections\\nfs=sorted(glob.glob('logs/**/round_*.json',recursive=True))\\nshapes=collections.Counter(); n=0; reps=[]\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception as e: shapes[('ERR',str(e)[:30])]+=1; continue\\n    if isinstance(d,dict) and 'response' in d:\\n        shapes['dict-response']+=1; reps.append((f,d.get('model"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\nfs=sorted(glob.glob('logs/**/round_*.json',recursive=True))\\nshapes=collections.Counter(); reps=[]\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception as e: shapes['ERR']+=1; continue\\n    if isinstance(d,dict) and 'response' in d:\\n        shapes['dict-response']+=1; reps.append((f,d.get('model_label'),d['response']))\\n    e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\nfs=sorted(glob.glob('bench/logs/**/round_*.json',recursive=True))+sorted(glob.glob('logs/**/round_*.json',recursive=True))\\nprint('files',len(fs))\\nshapes=collections.Counter(); reps=[]\\ndef harvest(f,o):\\n    if isinstance(o,dict):\\n        if 'response' in o and isinstance(o['response'],str):\\n            reps.append((f,o.get('model_label"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections,pickle\\nfs=sorted(set(glob.glob('bench/logs/**/round_*.json',recursive=True))|set(glob.glob('logs/**/round_*.json',recursive=True)))\\nreps=[]; shapes=collections.Counter()\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception: shapes['ERR']+=1; continue\\n    if isinstance(d,dict) and 'model_responses' in d:\\n        mr=d['model_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CONFIRM|CHALLENGE|EXTEND|MERGE\\\" --include=*.py bench/ | grep -v \\\"^bench/tests/\\\" | head -30\", \"description\": \"Find all verdict regexes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_VERDICT_RE\\\\|_parse_verdicts\\\" --include=*.py bench/ | head -30\", \"description\": \"Find verdict regex usage\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CONFIRM\\\\|CHALLENGE\\\\|EXTEND\\\\|MERGE\", \"path\": \"bench\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_VERDICT_RE|_parse_verdicts\", \"path\": \"bench\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CONFIRM\\\\|CHALLENGE\\\\|EXTEND\\\\|MERGE\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_VERDICT_RE|_parse_verdicts\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/_fix1_probe.py\", \"content\": \"import re, pickle, collections, sys\\n\\nCOMMON_HEAD = (\\n    r'^[ \\\\t]*'\\n    r'(?:>[ \\\\t]*)?'\\n    r'(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\n)\\nNEW_ALT = r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?'\\nTAIL = (\\n    r'(?:\\\\*{1,2}|_{1,2})?'\\n    r'(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)'\\n "
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/tmp/_fix1_probe.py\", \"content\": \"import re, pickle, collections, sys\\n\\nCOMMON_HEAD = (\\n    r'^[ \\\\t]*'\\n    r'(?:>[ \\\\t]*)?'\\n    r'(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\n)\\nNEW_ALT = r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?'\\nTAIL = (\\n    r'(?:\\\\*{1,2}|_{1,2})?'\\n    r'(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)'\\n    r'(?:\\\\*{1,2}|_{1,2})?'\\n    r'[ \\\\t]+'\\n    r'(?:\\\\*{1,2}|_{1,2})?'\\n    r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_fix1_probe.py <<'PYEOF'\\nimport re, pickle, collections\\n\\nHEAD = r'^[ \\\\t]*(?:>[ \\\\t]*)?(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\nALT  = r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?'\\nTAIL = (r'(?:\\\\*{1,2}|_{1,2})?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)(?:\\\\*{1,2}|_{1,2})?'\\n        r'[ \\\\t]+(?:\\\\*{1,2}|_{1,2})?(C\\\\d{4,})(?:\\\\*{1,2}|_{1,2})?'\\n        r'(?:[ \\\\t]*(?:\\\\*{1,2}|_{1,2})?[ \\\\t]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_s.py <<'PYEOF'\\nimport pickle, collections, random\\ng=pickle.load(open('/tmp/gained.pkl','rb'))\\nby=collections.defaultdict(list)\\nfor m,k,l in g: by[k].append((m,l))\\nfor k in ['VERDICT','FIND','DESCRIPTION','FINDING_ID','PROPOSED_FIX']:\\n    print(f\\\"\\\\n=== {k}  (n={len(by[k])}) ===\\\")\\n    random.seed(7)\\n    for m,l in random.sample(by[k],min(6,len(by[k]))): print(f\\\" "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10795,10850p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py\", \"description\": \"Read verdict call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def add_verdict\\\" -A 30 /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py | head -45\", \"description\": \"Read add_verdict for dedup\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_fix1b.py <<'PYEOF'\\nimport re, pickle, collections\\nHEAD=r'^[ \\\\t]*(?:>[ \\\\t]*)?(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\nALT=r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?'\\nTAIL=(r'(?:\\\\*{1,2}|_{1,2})?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)(?:\\\\*{1,2}|_{1,2})?'\\n      r'[ \\\\t]+(?:\\\\*{1,2}|_{1,2})?(C\\\\d{4,})(?:\\\\*{1,2}|_{1,2})?'\\n      r'(?:[ \\\\t]*(?:\\\\*{1,2}|_{1,2})?[ \\\\t]*[|<:.\\\\-\\u2014\\u2"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _update_finding_statuses\\\" -A 80 /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py | head -100\", \"description\": \"Read status transition vote logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2760,2900p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py\", \"description\": \"Read CONFIRM/CHALLENGE counting\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2900,2990p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py\", \"description\": \"Read confirm/challenge status decision\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'distinct\\\\|{v\\\\[\\\"model\\\"\\\\]\\\\|len(confirms)\\\\|len(challenges)\\\\|confirming_models\\\\|\\\"CONFIRMED\\\"' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py | sed -n '1,60p'\", \"description\": \"Find where confirms become CONFIRMED\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '3080,3115p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py\", \"description\": \"Read confirm_models quorum\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"auto_resolve_contested\\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runner_v2.py\", \"description\": \"Check auto_resolve_contested call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_dupmeasure.py <<'PYEOF'\\nimport re, pickle, collections\\nHEAD=r'^[ \\\\t]*(?:>[ \\\\t]*)?(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\nALT=r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?'\\nTAIL=(r'(?:\\\\*{1,2}|_{1,2})?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)(?:\\\\*{1,2}|_{1,2})?'\\n      r'[ \\\\t]+(?:\\\\*{1,2}|_{1,2})?(C\\\\d{4,})(?:\\\\*{1,2}|_{1,2})?'\\n      r'(?:[ \\\\t]*(?:\\\\*{1,2}|_{1,2})?[ \\\\t]*[|<:.\\\\-\\u20"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo && cat > /tmp/_falsify1.py <<'PYEOF'\\nimport sys, os\\nsys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport reference_runner_v2 as R\\n\\n# One model, one reply, verdict restated in three field labels + a summary line.\\nreply = \\\"\\\"\\\"## Summary\\nVERDICT: CHALLENGE C0001 | the cited guard already e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_ab.py <<'PYEOF'\\nimport sys, re\\nsys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport reference_runner_v2 as R\\nreply = \\\"\\\"\\\"## Summary\\nVERDICT: CHALLENGE C0001 | the cited guard already exists.\\n\\n### Detail\\nFINDING_ID: CHALLENGE C0001\\nDESCRIPTION: CHALLENGE C0001 | same point restated in the block header\\nFIND: CHALLENGE C0001 | and once more in the evidence fi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_pre.py <<'PYEOF'\\nimport sys,re\\nsys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport reference_runner_v2 as R\\nR._VERDICT_RE = re.compile(R._VERDICT_RE.pattern.replace(r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\t]*)?','',1), re.MULTILINE)\\nplain = \\\"CHALLENGE C0001 | reason one\\\\nCHALLENGE C0001 | reason two\\\\nCHALLENGE C0001 | reason three\\\\n\\\"\\nv=R._parse_verdicts(plain,\\\"Gemini"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_adv.py <<'PYEOF'\\nimport sys\\nsys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport reference_runner_v2 as R\\ncases = [\\n (\\\"schema echo\\\",        \\\"FORMAT: CONFIRM C0001 <one-line reason>\\\"),\\n (\\\"example echo\\\",       \\\"EXAMPLE: CONFIRM C0042 \\u2014 like this\\\"),\\n (\\\"instruction recap\\\",  \\\"OUTPUT: CONFIRM C0007 if you agree\\\"),\\n (\\\"negation\\\",           \\\"NOT A V"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_wl.py <<'PYEOF'\\nimport re,pickle,collections\\nHEAD=r'^[ \\\\t]*(?:>[ \\\\t]*)?(?:[-*][ \\\\t]+|\\\\d+[.)][ \\\\t]+)?'\\nTAIL=(r'(?:\\\\*{1,2}|_{1,2})?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)(?:\\\\*{1,2}|_{1,2})?'\\n      r'[ \\\\t]+(?:\\\\*{1,2}|_{1,2})?(C\\\\d{4,})(?:\\\\*{1,2}|_{1,2})?'\\n      r'(?:[ \\\\t]*(?:\\\\*{1,2}|_{1,2})?[ \\\\t]*[|<:.\\\\-\\u2014\\u2013\\u2190]+[ \\\\t]*(.*))?')\\nVARIANTS={\\n 'OLD"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1015,1100p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Read fallback arm 5\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CRITICAL\\\\|critical\\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py | head -20; echo \\\"=== v2 severity->critical ===\\\"; grep -n \\\"severity.*>=.*0\\\\.\\\\|critical_count\\\\|_is_critical\\\\|def _severity_band\\\\|CRITICAL\\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/reference_runne"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1205,1275p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py; echo \\\"=== sev_match in core ===\\\"; grep -n \\\"sev_match\\\\s*=\\\" -A 8 /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Read severity parsing and word map\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def parse_findings\\\\|_normalise_field_labels(\\\\|def _parse_findings_core\\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Check normalisation entry point\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/ab && git show HEAD:bench/runner_core.py > /tmp/ab/rc_head.py && cp bench/runner_core.py /tmp/ab/rc_new.py && ls -la /tmp/ab/\", \"description\": \"Stage HEAD and patched runner_core for A/B\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/ab/run.py <<'PYEOF'\\nimport sys, pickle, importlib.util, collections, json\\nwhich=sys.argv[1]\\nsys.path.insert(0,'bench')\\nspec=importlib.util.spec_from_file_location(\\\"rc\\\", f\\\"/tmp/ab/rc_{which}.py\\\")\\nrc=importlib.util.module_from_spec(spec); sys.modules['rc']=rc\\nspec.loader.exec_module(rc)\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nout={}\\nfor i,(f,m,t) in enumerat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -i.bak \\\"s|sys.path.insert(0,'bench')|sys.path.insert(0,'bench'); sys.path.insert(0,'.')|\\\" /tmp/ab/run.py && python3 /tmp/ab/run.py head && python3 /tmp/ab/run.py new\", \"description\": \"Rerun A/B with repo root on path\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/ab/diff.py <<'PYEOF'\\nimport pickle, collections\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nh=pickle.load(open('/tmp/ab/res_head.pkl','rb')); n=pickle.load(open('/tmp/ab/res_new.pkl','rb'))\\nchg=[i for i in h if h[i]!=n[i]]\\nprint(\\\"replies whose parse changed:\\\",len(chg))\\nreal=[i for i in chg if not (reps[i][1] or '').endswith('-SIM')]\\nsim=[i for i in chg if (reps[i]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1295,1400p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Read parse_findings wrapper\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^    # \\u2500\\u2500\\\\|if not findings\\\\|^    findings\\\\s*=\\\\|findings = \\\\[\\\\]\\\\|for block in\\\\|blocks = \\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py | sed -n '1,40p'\", \"description\": \"Map arm structure of the parser\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/ab/rc_head.py /tmp/ab/rc_head2.py && python3 /tmp/ab/run.py head2 && python3 -c \\\"\\nimport pickle\\na=pickle.load(open('/tmp/ab/res_head.pkl','rb')); b=pickle.load(open('/tmp/ab/res_head2.pkl','rb'))\\nd=[i for i in a if a[i]!=b[i]]\\nprint('HEAD vs HEAD differing replies:',len(d))\\nprint(d[:20])\\n\\\"\", \"description\": \"Determinism check\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for s in 0 1 2; do PYTHONHASHSEED=$s python3 /tmp/ab/run.py head >/dev/null 2>&1; cp /tmp/ab/res_head.pkl /tmp/ab/h_$s.pkl; done; python3 -c \\\"\\nimport pickle\\nr=[pickle.load(open(f'/tmp/ab/h_{s}.pkl','rb')) for s in (0,1,2)]\\nd=[i for i in r[0] if not (r[0][i]==r[1][i]==r[2][i])]\\nprint('unstable under PYTHONHASHSEED 0/1/2:',len(d),d[:20])\\n\\\"\", \"description\": \"Test hash seed sensiti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport pickle\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nr=[pickle.load(open(f'/tmp/ab/h_{s}.pkl','rb')) for s in (0,1,2)]\\nfor i in (1302,1333,2216,2226):\\n    print('===',i,reps[i][0],reps[i][1],'len',len(reps[i][2]))\\n    for k in range(3):\\n        print('   run',k,'n=',len(r[k][i]), [ (x[0],x[1]) for x in r[k][i]][:6])\\n\\\" 2>&1 | head -40\", \"description\": \"Insp"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport pickle\\nr=[pickle.load(open(f'/tmp/ab/h_{s}.pkl','rb')) for s in (0,1,2)]\\nfor i in (1302,2226):\\n    print('===',i)\\n    for j,(a,b,c) in enumerate(zip(r[0][i],r[1][i],r[2][i])):\\n        for f in range(5):\\n            if not (a[f]==b[f]==c[f]):\\n                print(f'  finding{j} field{f}:')\\n                print('    run0:',repr(a[f])[:200]); print('    ru"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _parse_flaw_class\\\" -A 40 /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Read _parse_flaw_class\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 /tmp/ab/run.py head >/dev/null && PYTHONHASHSEED=0 python3 /tmp/ab/run.py new >/dev/null && PYTHONHASHSEED=0 python3 /tmp/ab/diff.py 2>&1 | head -30\", \"description\": \"Re-run A/B with pinned hash seed\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 -c \\\"\\nimport pickle\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nh=pickle.load(open('/tmp/ab/res_head.pkl','rb')); n=pickle.load(open('/tmp/ab/res_new.pkl','rb'))\\nchg=[i for i in h if h[i]!=n[i]]\\nreal=[i for i in chg if not (reps[i][1] or '').endswith('-SIM')]\\nsim=[i for i in chg if (reps[i][1] or '').endswith('-SIM')]\\nprint('HEAD findings on changed re"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 -c \\\"\\nimport pickle,re\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nfor i,(f,m,t) in enumerate(reps):\\n    if 'exp37_evidence_20260409T050932Z' in f and 'round_15' in f and m=='DeepSeek':\\n        print(t[:3000]); break\\n\\\"\", \"description\": \"Inspect the exp37 round_15 reply\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 -c \\\"\\nimport pickle,re\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nfor i,(f,m,t) in enumerate(reps):\\n    if 'exp37_evidence_20260409T050932Z' in f and 'round_15' in f and m=='DeepSeek':\\n        for mm in re.finditer(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING[ \\\\t]+)?(F\\\\d{2,4})\\\\b[ \\\\t]*[\\u2014\\u2013:.\\\\-]?[ \\\\t]*(.*)\\\\$', t, re.M):\\n            print(repr(mm"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\n\\n# (a) Does a round-summary with F-headings now register, bypassing the exp43 guard?\\nsummary = \\\"\\\"\\\"## Review: Round 8 Summary\\n\\nThis round I reviewed the registry. Cross-referencing C0019, C0020 and C0021.\\n\\n### F001 \\u2014 Round 8 review summary\\nNothi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re,collections; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nreal=[(f,m,t) for f,m,t in reps if m and not m.endswith('-SIM')]\\nsim=[(f,m,t) for f,m,t in reps if m and m.endswith('-SIM')]\\nMD=re.compile(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING[ \\\\t]+)?(F\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nh=pickle.load(open('/tmp/ab/res_head.pkl','rb')); n=pickle.load(open('/tmp/ab/res_new.pkl','rb'))\\nchg=[i for i in h if h[i]!=n[i]]\\nreal=[i for i in chg if not (reps[i][1] or '').endswith('-SIM')]\\nprint(\\\"pinned REAL changed re"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nt=[x[2] for x in reps if 'exp37_evidence_20260409T050932Z/round_00' in x[0] and x[1]=='DeepSeek'][0]\\nMD=re.compile(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING[ \\\\t]+)?(F\\\\d{2,4})\\\\b',re.M)\\nnorm=rc._normalise"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,importlib.util; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\ndef load(name,path):\\n    spec=importlib.util.spec_from_file_location(name,path); m=importlib.util.module_from_spec(spec)\\n    sys.modules[name]=m; spec.loader.exec_module(m); return m\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nt=[x[2] for x in reps if 'exp37"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/ab/rc_new.py /tmp/ab/rc_dbg.py && python3 - <<'PYEOF'\\nimport re\\np='/tmp/ab/rc_dbg.py'; s=open(p).read()\\ns=s.replace(\\\"        _hits = list(_MD_HDR.finditer(response))\\\",\\n            \\\"        _hits = list(_MD_HDR.finditer(response))\\\\n        print('DBG arm4b hits:', [(h.group(1), repr(response[max(0,h.start()-40):h.end()])) for h in _hits])\\\")\\nopen(p,'w').write(s)\\nPYEOF"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nMD=re.compile(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING[ \\\\t]+)?(F\\\\d{2,4})\\\\b[ \\\\t]*[\\u2014\\u2013:.\\\\-]?[ \\\\t]*(.*)$', re.M)\\nt=[x[2] for x in reps if 'exp37_evidence_20260409T050932Z/round_00' in x[0] and "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nsel=[x for x in reps if 'exp37_evidence_20260409T050932Z/round_00' in x[0] and x[1]=='DeepSeek']\\nprint(\\\"matching replies:\\\",len(sel))\\nfor j,(f,m,t) in enumerate(sel):\\n    n=rc._normalise_field_labels"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np='/tmp/ab/rc_dbg.py'; s=open(p).read()\\ns=s.replace(\\\"        print('DBG arm4b hits:', [(h.group(1), repr(response[max(0,h.start()-40):h.end()])) for h in _hits])\\\",\\n            \\\"        print('DBG len(response)=',len(response),'sha=',__import__('hashlib').sha1(response.encode()).hexdigest()[:12],'hits=',len(_hits))\\\\n        print('DBG has_##F001:', '## F001' "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=411 && NR<=470' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py | grep -n \\\"response\\\" ; echo \\\"=== all response reassignments in core ===\\\"; awk 'NR>=411 && NR<=1010 && /response *=|response\\\\.replace|_unwrap|_strip/ {print NR\\\": \\\"$0}' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\ndef pre(t):\\n    r=rc._normalise_field_labels(t)\\n    r=re.sub(r'\\\\*{2,}','',r)\\n    r=re.sub(r'^\\\\s*```\\\\w*\\\\s*\\\\n?','',r,flags=re.M)\\n    r=re.sub(r'^\\\\s*```\\\\s*$','',r,flags=re.M)\\n    return r\\nMD=re.compile(r'^[ \\\\t]{0,3}#{1,6}[ \\\\t]*(?:FINDING"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport runner_core as rc\\n# A model quoting the EXPECTED FORMAT inside a fenced code block.\\nquoted = \\\"\\\"\\\"I found nothing this round. For reference the schema I was asked to use is:\\n\\n```markdown\\n### F001 - <short title of the defect>\\nSEVERITY: 0.9\\nFIND: <what is wrong>\\nFOLLOW:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,importlib.util; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location('rch','/tmp/ab/rc_head.py'); H=importlib.util.module_from_spec(spec)\\nsys.modules['rch']=H; spec.loader.exec_module(H)\\nquoted = \\\"\\\"\\\"I found nothing this round. For reference the schema I was asked to use is:\\n\\n```markdown\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | grep -i \\\"sim45\\\\|exp43\\\" | head; echo \\\"=== exp43 dirs ===\\\"; ls -d logs/exp43* bench/logs/exp43* 2>/dev/null | head\", \"description\": \"Locate rehearsal and exp43 logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,collections,importlib.util; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); sys.modules[n]=m; s.loader.exec_module(m); return m\\nH=load('rch','/tmp/ab/rc_head.py'); N=load('rcn','/tmp/ab/rc_new.py')\\nreps=pickle.load(open("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,collections,importlib.util; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\ndef load(n,p):\\n    s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); sys.modules[n]=m; s.loader.exec_module(m); return m\\nH=load('rch','/tmp/ab/rc_head.py'); N=load('rcn','/tmp/ab/rc_new.py')\\nreps=pickle.load(open("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle,re; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\ncands=[(f,m,t) for f,m,t in reps if m=='DeepSeek' and re.search(r'^\\\\s*#*\\\\s*(?:Round\\\\s+\\\\d+\\\\s+)?Review',t.strip()[:80],re.I)]\\nprint(\\\"replies opening with a Review heading:\\\",len(cands))\\nfor f,m,t in cands[:12]:\\n    MD=re.c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np='bench/reference_runner_v2.py'; s=open(p).read()\\nold = \\\"    r'(?:[A-Z][A-Z_ ]{2,20}:[ \\\\\\\\t]*)?'           # optional FIELD_LABEL: prefix\\\"\\nnew = \\\"    r'(?:(?:VERDICT|FINDING_ID|DESCRIPTION|FIND|PROPOSED_FIX):[ \\\\\\\\t]*)?'  # named field label\\\"\\nassert old in s, \\\"anchor not found\\\"\\ns = s.replace(old, new, 1)\\n# dedup identical (type, cid) rows from one rep"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport sys,pickle; sys.path.insert(0,'bench'); sys.path.insert(0,'.')\\nimport reference_runner_v2 as R\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nreal=[(f,m,t) for f,m,t in reps if m and not m.endswith('-SIM')]\\ntot=sum(len(R._parse_verdicts(t,m,0)) for _,m,t in real)\\nprint(\\\"verdicts with whitelist+dedup:\\\", tot, \\\"(HEAD=6070, proposed-permi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '425,462p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kx_7487f/repo/bench/runner_core.py\", \"description\": \"Read preprocessing block to place capture\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np='bench/runner_core.py'; s=open(p).read()\\n\\na = \\\"\\\"\\\"    findings: List[Finding] = []\\n\\n    # Strip markdown bold markers \\u2014 CC2 uses **SEVERITY:** format\\n    response = re.sub(r'\\\\\\\\*{2,}', '', response)\\\"\\\"\\\"\\nb = \\\"\\\"\\\"    findings: List[Finding] = []\\n\\n    # PANEL REPAIR 2026-09-01: keep the pre-strip text. The fence strip below\\n    # promotes a hea"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/runner_core.py /tmp/ab/rc_fixed.py && PYTHONHASHSEED=0 python3 /tmp/ab/run.py fixed && PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport pickle\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nh=pickle.load(open('/tmp/ab/res_head.pkl','rb')); n=pickle.load(open('/tmp/ab/res_new.pkl','rb')); x=pickle.load(open('/tmp/ab/res_fixed.pkl','rb'))\\ndef stats(d,pred):\\n    idx=[i for i in d "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport pickle,collections,json,glob\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nc=collections.Counter(len(t) for _,_,t in reps)\\nprint(\\\"replies of exactly 10000 chars:\\\", c[10000], \\\"/\\\", len(reps))\\n# compare with recorded response_length\\nn=0; tr=0\\nfor f in set(x[0] for x in reps):\\n    d=json.load(open(f))\\n    mr=d.get('model_responses') "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 - <<'PYEOF'\\nimport pickle,json,collections\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nn=tr=0; ex=[]\\nfor f in sorted(set(x[0] for x in reps)):\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    mr=d.get('model_responses')\\n    if not isinstance(mr,dict): continue\\n    for k,v in mr.items():\\n        if isinstance(v,dict) and isinstance(v."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PYTHONHASHSEED=0 python3 -c \\\"\\nimport pickle\\nreps=pickle.load(open('/tmp/reps.pkl','rb'))\\nfor f,m,t in reps:\\n    if len(t)==10000: print(f,m); print('  ...TAIL:',repr(t[-90:])); break\\n\\\"; grep -rn \\\"\\\\[:10000\\\\]\\\\|10000\\\" bench/runner_core.py bench/reference_runner_v2.py | grep -i \\\"resp\\\\|trunc\\\\|\\\\[:10000\\\\]\\\" | head\", \"description\": \"Check whether 10000-char replies are trunca"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"\\\\[:10000\\\\]\\\" bench/*.py | head -5; echo \\\"--- my proposed replacement diff ---\\\"; git checkout -- experimental_notes/ 2>/dev/null; git diff --stat bench/\", \"description\": \"Find truncation source and summarize my diff\"}"
+    }
+  ]
+}

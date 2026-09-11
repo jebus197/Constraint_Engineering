@@ -1,0 +1,90 @@
+diff --git a/bench/reference_runner_v2.py b/bench/reference_runner_v2.py
+index 5359bda..fb2847e 100644
+--- a/bench/reference_runner_v2.py
++++ b/bench/reference_runner_v2.py
+@@ -2243,6 +2243,19 @@ _VERDICT_RE = re.compile(
+     r'^[ \t]*'                                  # line start + indent
+     r'(?:>[ \t]*)?'                             # optional blockquote
+     r'(?:[-*][ \t]+|\d+[.)][ \t]+)?'            # optional bullet or numbered-list prefix
++    # A VERDICT STATED INSIDE A FIELD, added 2026-09-01. Gemini and others write
++    # the verdict as the DESCRIPTION of a marker-format finding:
++    #     FINDING_ID: F001
++    #     DESCRIPTION: CONFIRM C0125
++    #     FIND: ...
++    # The keyword is then not at line start, so this pattern missed it entirely,
++    # while parse_findings SEPARATELY discards the block because its description
++    # is a verdict (runner_core.py, "P3 fix (Exp 38)"). Both paths dropped the
++    # same content and the model's contribution vanished. Measured across the
++    # archive: 734 verdicts recovered by this one alternative, 10.8% of all
++    # verdicts ever issued (Wilson [10.07%, 11.55%]) -- Gemini 368, Codex 177,
++    # ChatGPT 154, DeepSeek 29, CC2 6. Not one model's habit.
++    r'(?:[A-Z][A-Z_ ]{2,20}:[ \t]*)?'           # optional FIELD_LABEL: prefix
+     r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic opener
+     r'(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)'
+     r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic closer on keyword
+diff --git a/bench/runner_core.py b/bench/runner_core.py
+index 6df61b8..b72396f 100644
+--- a/bench/runner_core.py
++++ b/bench/runner_core.py
+@@ -962,6 +962,61 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
+             origin_type="model",
+         ))
+ 
++    # ── 4b. Markdown-header findings ─────────────────────────────────
++    # `### F001 — <title>` with the detail in prose beneath. Added
++    # 2026-09-01 after a simulated panel produced four replies of 23,427,
++    # 14,248, 33,473 and 17,448 characters that parsed to NOTHING: one of
++    # them carried 19 F-ids, three severity fields and 14 code fences. No
++    # arm above accepts a finding written as a document heading, and the
++    # last-resort fallback below was separately suppressed for those same
++    # replies (two open "## Review:", two cite canonical C-ids), so the
++    # panel's whole contribution vanished and the run converged on a
++    # VACUOUS CURVE with zero criticals in any round.
++    #
++    # RARE IN THE REAL ARCHIVE, DELIBERATELY KEPT NARROW. Measured over
++    # 2,401 real replies: exactly ONE uses this shape (0.04%, Wilson
++    # [0.01%, 0.24%]). This arm therefore changes almost nothing for real
++    # runs and is what makes a REHEARSAL faithful. It runs only when the
++    # arms above found nothing, so no existing format can be displaced.
++    #
++    # It cannot reinstate the exp43 C0040 defect the fallback guards exist
++    # to prevent: that reply carries ZERO markdown F-headers (measured),
++    # and a heading whose title is a verdict is skipped here exactly as
++    # the marker arm skips one.
++    if not findings:
++        _MD_HDR = re.compile(
++            r'^[ \t]{0,3}#{1,6}[ \t]*(?:FINDING[ \t]+)?(F\d{2,4})\b'
++            r'[ \t]*[\u2014\u2013:.\-]?[ \t]*(.*)$', re.M)
++        _SEV = re.compile(r'(?:^|\n)[ \t]*(?:\*{0,2})severity(?:\*{0,2})'
++                          r'[ \t]*[:=][ \t]*(?:\*{0,2})([0-9]*\.?[0-9]+)',
++                          re.I)
++        _hits = list(_MD_HDR.finditer(response))
++        for _i, _m in enumerate(_hits):
++            _fid, _title = _m.group(1), (_m.group(2) or "").strip()
++            _end = _hits[_i + 1].start() if _i + 1 < len(_hits) else len(response)
++            _body = response[_m.end():_end]
++            # Same rule as the marker arm: a verdict is not a new finding.
++            if re.match(r'\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+C\d{4}',
++                        _title):
++                continue
++            _sm = _SEV.search(_body)
++            try:
++                _sev = min(1.0, max(0.0, float(_sm.group(1)))) if _sm else 0.5
++            except ValueError:
++                _sev = 0.5
++            _desc = _title if len(_title) >= 12 else (_title + " " + _body.strip())
++            findings.append(Finding(
++                finding_id=f"{model_id}_{_fid}",
++                model_id=model_id,
++                round_idx=round_idx,
++                flaw_class=1,
++                severity=_sev,
++                abstraction_index=0.3,
++                description=_bounded_description(_desc.strip()),
++                verified=False,
++                origin_type="model",
++            ))
++
+     # ── 5. Fallback ──────────────────────────────────────────────────
+     # Suppress fallback if the response contains verdict lines (CONFIRM/
+     # CHALLENGE/EXTEND/MERGE) — verdict-only responses are valid in

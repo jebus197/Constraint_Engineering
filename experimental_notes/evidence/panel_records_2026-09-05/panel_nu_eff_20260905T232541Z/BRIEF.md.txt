@@ -1,0 +1,172 @@
+# Does the CDSFL model need a reach term? A 2-seat adjudication.
+
+## Why you are being asked, and the one thing that makes this brief unusual
+
+A 6-seat panel on 2026-09-05 asked whether the distinction between COMPRESSIVE simplicity
+(a short statement with wide reach) and COST simplicity (a small edit) requires new
+mathematics in the CDSFL model. Four seats answered. Three said **no new central
+mathematics** — the distinction lives in reduction *theorems about* the equations, not in
+terms *inside* them. One seat, **cc2**, dissented and proposed one scalar change.
+
+An external model (Grok) has since been consulted by the founder and also answered "no new
+mathematics". **It was never shown cc2's argument.** So the count is 4 to 1, and the count
+is worthless: this project's founding rule is TOOLS DECIDE, NOT VOTES.
+
+**cc2: you are the seat that made this proposal.** You are therefore not an independent
+reviewer of it. Your job here is NOT to restate it. It is to defend it against the
+strongest attack you can construct, and to say plainly if the attack succeeds.
+
+**fable: your job is to kill it.** Assume it is wrong and find where. A refutation backed
+by execution is the most useful thing you can return.
+
+## The proposal under adjudication
+
+Replace the re-injection charge `ν` with `ν_eff = ν / |D|`, where `|D|` is the number of
+sites a simplification is declared to cover, declared BEFORE the simplification is proposed.
+
+## What is already established BY TOOL. Do not re-derive; attack or extend.
+
+Verified 2026-09-05 with SymPy, z3 and Wolfram, agreeing:
+
+1. Break-even re-injection `ν*` derived from the runner's own phases:
+   `ν* = σRq / (1 − qR(1−σ))`, and at `σ=1` it reduces exactly to `qR`.
+2. **`ν*`'s free symbols are exactly `{R, q, σ}`.** No `K`, no `w_k`, no scope or reach
+   measure of any kind.
+3. `∂R_new/∂ν = 1 − R_base`, and **z3 finds no counterexample** to its strict positivity on
+   `R_base ∈ [0,1)`. Blast radius is therefore *unconditionally* costly.
+4. Phase 3 (`R_k(i) = R_base(1−ν) + ν`) is applied PER CLASS k, so a fix holding at 1000
+   sites earns benefit ×K and is charged re-injection ×K. The benefit/cost ratio is K-free.
+5. Separately verified: `π` is absent from the update rule and the marginal gain, but
+   PRESENT in the answer via `R_k(0) = π`. `PAPER.md:170` states this precisely; the
+   appendix Stage table compresses it to "π vanishes", which is lossy.
+
+## cc2's claim, stated as sharply as possible so it can be attacked
+
+Because `ν*` contains no reach term, the model gives a one-line fix that holds at ONE site
+and a one-line fix that holds at a THOUSAND sites the identical verdict. So the model does
+not merely fail to encode the founder's distinction — **it encodes its negation**, asserting
+that simplicity and sufficiency always compete. `ν_eff = ν/|D|` restores reach-sensitivity,
+is not piecewise, and collapses to the present model exactly at `|D| = 1`.
+
+## The counter-position, stated as sharply as possible so it can be defended
+
+Compressive simplicity is a DETERMINISTIC IDENTITY claim (S ≡ F over declared scope D).
+`ν` is a FORWARD-LOOKING STOCHASTIC RATE. No value of a probability can distinguish "small
+because it captured the structure" from "small because something was dropped". Putting
+admissibility inside `R_k` makes the equation piecewise on a proof obligation, which is the
+opposite of the collapse that is the model's verified core. The right home is a discharge
+rule over claims, not a term in the equation. Adding a term to a model that has survived
+every attack for 6 months, to encode something the reduction theorems already express, is
+the kind of elaboration this project exists to refuse.
+
+## The questions. Answer all 4.
+
+**Q1. Is claim (2)+(3) — no reach term, and blast radius unconditionally costly — a DEFECT
+in the model, or a correct modelling choice?** It is not self-evidently a defect: it may be
+right that a change touching more code is riskier per unit of benefit. Derive, do not assert.
+
+**Q2. If it IS a defect, is `ν_eff = ν/|D|` the correct repair?** Test it. Does it stay
+non-piecewise? Does it reduce to the present model at `|D|=1`? Does it introduce a
+perverse incentive — can `|D|` be inflated to buy admissibility? What stops that?
+
+**Q3. Can the founder's distinction be encoded WITHOUT touching the governing equation?**
+The reduction criterion as documentation plus a discharge rule is the alternative on the
+table. If that suffices, say so and show why the `ν*` reach-blindness then does no harm.
+
+**Q4. What would REFUTE your own answer?** Name the executable check.
+
+
+---
+
+# PART 2 OF THE BRIEF: check the corrections that were APPLIED, not just the defects you found
+
+An earlier round of this panel found 3 defects in `docs/MATHEMATICAL_APPENDIX.md`. **CC1 then
+applied corrections. You have not seen those corrections.** The founder's standing rule is
+that fixes are checked by the panel before being trusted, and that step was skipped because
+the corrections were made after your round closed. Check them now, by execution.
+
+## Correction 1 — the L38 coupling bound
+
+REMOVED: the claim that `Σψ_ij ≤ −Σlog(1 − q_i)` is required to keep state probabilities
+non-negative. Replaced with a statement that the justification is false (exp is strictly
+positive; Z already bounds P), plus this, offered as the condition IF an unnormalised
+variant were ever used:
+
+> **∀S ⊆ [n]:  Σ_{i<j ∈ S} ψ_ij  ≤  −Σ_{i∈S} log(q_i)  −  Σ_{i∉S} log(1 − q_i)**
+
+with the worked counterexample that the all-ones bound alone is insufficient for n ≥ 3:
+at n=3, q=1/20, the whole budget `3·log20 = 8.9872` on ψ₁₂ satisfies the all-ones
+inequality EXACTLY while state {1,2} carries unnormalised weight **19**.
+
+**ALSO ADDED, and this came from no seat — attack it:** the original complement error is
+NOT uniformly conservative. It crosses over at exactly `q = 1/2`; below that the stated
+bound over-constrains, ABOVE it the stated bound UNDER-constrains and admits couplings it
+was meant to exclude.
+
+**Q5. Is the per-subset condition correct AND minimal?** Is it necessary and sufficient for
+`w(x) ≤ 1`? Is there a tighter or more compact equivalent? Is the crossover claim right,
+and does the "under-constrains above 1/2" half actually matter for any reachable parameter
+region, or is it decorative?
+
+## Correction 2 — the G_n reduction row
+
+REMOVED: "n_H = 0" as the necessary condition. REPLACED with the exact residual
+
+> **G_n − w·C_M  =  w · C_H · (1 − ρ_MH) · (1 − C_M)**
+
+stated as zero iff `C_H = 0 ∨ C_M = 1 ∨ ρ_MH = 1 ∨ w = 0`. The `w = 0` branch came from
+Wolfram `Reduce` and had been missed by enumeration.
+
+**Q6. Is that zero-set complete and correct?** Is stating the residual actually better than
+enumerating conditions, or does it hide a case a reader needs? Is `w = 0` meaningful or a
+degenerate artefact that should be excluded rather than listed?
+
+## Correction 3 — the numerical illustration at L688-695
+
+It was spliced from 2 inconsistent computations AND row-shifted. The appendix's own formulas
+give `C_H = 0.921095`; the table printed `0.698`. The `ρ=0` row used the correct value; the
+`ρ=0.3` and `ρ=0.6` rows were `G_n` at `ρ=0` and `ρ=0.3` computed with the WRONG `C_H`.
+Corrected to **0.825** and **0.689**, reproducible via
+`scripts/verify_appendix_numerical_illustration.py`.
+
+**Q7. Re-derive the table independently from the stated parameters** (3 machine passes
+p_M=0.3 d_M=0.7; 2 human passes E=0.85 M=0.9 α=0.4 d_H=0.9). Do you get the same 6 values?
+Is the diagnosis of the splice right, or is there a different reading of what went wrong?
+
+## Correction 4 — the reduction criterion's placement
+
+The proposal, on which 3 seats + an external model agree: NO new mathematics, NO new
+machinery. It becomes a definition in the appendix, a sentence in the acceptance policy, and
+a short provenance note near the FRONT of the README — before the equations — locating the
+staged collapses inside the ordinary scientific practice of requiring a general account to
+recover its special cases (Nagel 1961; limiting-case reductions in physics; model-order
+reduction). Plus one sentence distinguishing it from the unrelated quantum-information
+"reduction criterion" (Horodecki / Cerf-Adami 1999), which shares the name only.
+
+**Q8. Is that placement right, and is the historical framing accurate?** Specifically: is
+the Nagel anchor correct for what our reduction properties actually do, or is a different
+tradition the better fit? And is there a risk the README note over-claims?
+
+
+## Constraints
+
+* **TOOLS DECIDE.** Use sympy, z3, numpy, mpmath. You have a shell. The named tools
+  `sympy_verify` etc. are NOT on your route — use the shell directly, and say so.
+* **NO COMPELLED CONVERGENCE.** Disagreement is preserved as information.
+* A clean verdict backed by derivation is as useful as a refutation. You are not scored on
+  finding fault.
+* Do not pad. The founder has ADHD and reads every word.
+
+## Project context, so your focus does not narrow
+
+CDSFL uses structured Popperian falsification and a multi-model panel to find defects in
+STEM artefacts. Biological component names are analogy only. The mathematical model has
+survived every attack in the project's life and is treated as the fixed point: when
+something fails, the cause has always been mechanical. The founder's position is explicitly
+neutral — "we should go with what gives us the demonstrably superior results" — and he has
+said that if the model can be improved and the improvement measurably observed, that is
+what the project exists to do. He has also warned against being rash. Both halves are real.
+
+The appendix is at `docs/MATHEMATICAL_APPENDIX.md`, the runner at
+`bench/reference_runner_v3.py`, and the executing reduction tests at
+`bench/tests/test_appendix_reduction_properties_2026-09-05.py` (35 passing).

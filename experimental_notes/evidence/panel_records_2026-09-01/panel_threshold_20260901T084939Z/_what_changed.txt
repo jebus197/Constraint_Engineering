@@ -1,0 +1,52 @@
+commit 48d6254492de9a98d07bf818ec74502cbbc0a002
+Author: jebus197 <jebus.2504@gmail.com>
+Date:   Tue Sep 1 09:49:04 2026 +0100
+
+    Build the pre-registered threshold profile and boundary census (F6), never implemented
+    
+    CRITICAL_DEFINITION_PREREG_2026-05-18.md requires, verbatim, that gamma be
+    "additionally reported at 0.5 / 0.6 / 0.7 / 0.8 so a reviewer sees the full
+    threshold profile, not a single chosen point", and per run "the count of findings
+    where rubric and numeric disagreed, and the verdict's sensitivity to that
+    disagreement". Measured 2026-09-01: neither exists in the code, and 0 of 50
+    archived real reports carries a profile. The frozen definition existed; the
+    machinery that makes it auditable did not.
+    
+    WHY IT MATTERS, over 6,865 real archived findings. There is NO natural break at
+    0.70. scipy KDE minima fall at 0.12, 0.37 and 0.62; a numpy histogram puts
+    valleys at 0.67 and 0.71, either side of it. 401 findings, 5.8 percent, sit
+    EXACTLY on 0.70 because models quantise to round numbers, so the boundary runs
+    straight through a spike, which is the most sensitive place a threshold can sit.
+    Moving it to 0.72 would reclassify 456 findings, 6.6 percent of the archive.
+    
+    THE THRESHOLD IS NOT MOVED. The pre-registration names moving it after seeing
+    results as the single largest cooking vector, and the founder ruling stands: keep
+    0.7, make the pre-registration visible. This is additive only.
+    
+    _settled_novelty_series takes an optional severity_threshold defaulting to the
+    pre-registered proxy, so every existing caller is byte-identical.
+    gamma_threshold_profile re-reads the SAME settled registry at each threshold and
+    reports gamma, the critical series, both gate sides, and whether the verdict
+    depended on the chosen point. boundary_band_census reports the population a
+    rubric adjudication must cover, LABELLED IN ITS OWN OUTPUT as a proxy, because
+    the five-clause consequence rubric cannot be evaluated mechanically.
+    
+    Validated against archived exp45: at 0.7 the instrument reproduces the recorded
+    12 criticals exactly. Across the profile, gamma runs 0.5012, 0.5394, 0.7468,
+    0.7789 with 25, 18, 12 and 5 criticals, and the gate fires at every threshold, so
+    verdict_is_threshold_sensitive is False. That STRENGTHENS the exp45 result: its
+    convergence did not depend on the chosen point.
+    
+    THREE BUGS I INTRODUCED AND CAUGHT BY TESTING RATHER THAN READING. The first
+    substitution landed inside unverified_critical_count, leaving an undefined _thr
+    and a NameError waiting to fire. The second landed in a severity-calibration
+    function. The third targeted a literal that appears twice in the target function,
+    once in its own docstring. Each was found by asserting the profile actually
+    VARIES with the threshold, which it did not until the fix was correct.
+    
+    Suite: 4,680 passed, 0 failed.
+    
+    Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+ bench/reference_runner_v2.py | 137 ++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 135 insertions(+), 2 deletions(-)

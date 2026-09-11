@@ -1,0 +1,62 @@
+# Is the instrument at proof-of-concept standard? Argue BOTH sides, then decide.
+
+You are in a disposable COPY of the repository. Read and run freely; do not delete
+things to test that.
+
+This is a STRATEGIC judgement, not a code review. Do not hunt for defects — the
+question is explicitly about what to do GIVEN that defects certainly remain.
+
+## THE SITUATION, stated without spin
+
+The founder runs this project alone on a Mac Mini M1, months behind his hoped
+schedule. Over the last 3 days a large number of instrument defects were found and
+fixed. A new enforcement layer now flags, today, that 22 of 89 runner config
+fields are named in no test — Wilson [16.9%, 34.6%]. It is near-certain that a
+systematic sweep would surface not tens but hundreds of comparable items.
+
+His question: **given that, does the instrument — once the remaining build
+experiments on the runway are done — do what it says on the tin to a standard
+sufficient for a formal proof-of-concept release?** And is the simplest sufficient
+path to ship it and let others with far greater compute find the refinements,
+rather than continuing to polish it alone?
+
+He notes this cuts against the project's ouroboros framing, in which the
+instrument has always been used to improve the instrument.
+
+## EVIDENCE YOU SHOULD CHECK RATHER THAN TAKE FROM ME
+
+* 25 archived runs record a convergence. Verify what they actually demonstrate,
+  and whether any depends on machinery since found defective. The S_k
+  admissibility gate, for instance, never rejected anything: 0 of 3816.
+* 13 committed `verify_`/`measure_` scripts exist. How many headline claims in
+  `PAPER.md`, `README.md` and `docs/MATHEMATICAL_APPENDIX.md` travel with a
+  reproducing script, and how many do not?
+* Of 60 commits since 2026-09-05, by subject line only 2 touched a reported
+  result; the rest touched the instrument's own checks. Test that claim properly.
+* `experimental_notes/CDSFL_Agent_Operational_Plan.md` holds the runway.
+
+## THE THREE QUESTIONS
+
+**1. Do the demonstrated CLAIMS survive the known defects?** A proof of concept
+does not need a defect-free instrument; it needs its claims to hold. Separate
+"the instrument has faults" from "the reported results are unsound". Name any
+result you find that does NOT survive.
+
+**2. What is the MINIMUM remaining work before a PoC release is honest?** Not the
+ideal list — the minimum. For each item say what claim fails without it. If the
+answer is "nothing further is required", say that plainly.
+
+**3. Is "ship it and let others polish" sound or self-serving?** Argue the
+strongest case AGAINST it: what breaks if a stranger runs this on better hardware
+and it does not reproduce? What would they hit first? Then argue the case FOR.
+Then give your own verdict and say which way you would move if you were wrong.
+
+## HOW TO ANSWER
+
+Take a position. Do not hedge into "it depends". If you think the honest answer is
+that it is not ready, say so and name the smallest thing that would make it ready.
+If you think it is ready, name the one claim most likely to embarrass the founder
+in public and say why it holds anyway.
+
+Cite what you executed. Budget 25 minutes. Disagreement between seats is
+information here and will not be smoothed away.

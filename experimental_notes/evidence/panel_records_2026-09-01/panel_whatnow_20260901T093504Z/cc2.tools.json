@@ -1,0 +1,295 @@
+{
+  "model": "opus",
+  "elapsed_s": 624.3,
+  "tool_calls": 72,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la; echo \\\"---\\\"; git log --oneline -15; echo \\\"---\\\"; git status --short | head -20\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CRITICAL_SEVERITY_THRESHOLD\\\" --include=*.py --include=*.md --include=*.json . 2>/dev/null | head -40\", \"description\": \"Find threshold definition and uses\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CRITICAL_SEVERITY_THRESHOLD\", \"output_mode\": \"files_with_matches\", \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ | head -60; echo \\\"=== scripts\\\"; ls scripts/; echo \\\"=== docs\\\"; ls docs/\", \"description\": \"List bench, scripts, docs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/*/ 2>/dev/null; pwd; ls experimental_notes/ | grep -i -E \\\"brief|threshold|calibrat|prereg|BR2|bench_run\\\" | head -30\", \"description\": \"Find brief/threshold notes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la experimental_notes/ | tail -40\", \"description\": \"Recent experimental notes\"}"
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Map BR2 design + gates\", \"prompt\": \"In this repo (CDSFL research framework), find and summarise everything that defines **Bench Run 2** (BR2): its design, preconditions, gates, what it is supposed to claim, and any blockers listed.\\n\\nStart with these files, then follow references:\\n- experimental_notes/OUTSTANDING_QUEUE_to_BR2.md\\n- experimental_notes/RUNWAY_to_BR2_2026-08-18.md\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat experimental_notes/The_Threshold_Question_And_The_Panel_Verdict_2026-09-01.md\", \"description\": \"Read threshold verdict note\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/OUTSTANDING_QUEUE_to_BR2.md\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/RUNWAY_to_BR2_2026-08-18.md\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/Path_To_BR2_And_Open_Decisions_2026-08-13.md\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/docs/BENCH_RUN_1_ANALYSIS.md\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/bench/BENCH_EXPANSION_PLAN.md\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"BR2|Bench Run 2|bench run 2|BENCH RUN 2\", \"output_mode\": \"files_with_matches\", \"head_limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/docs/CURRENT_STATE.md\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"BR2|Bench Run 2\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/The_Threshold_Question_And_The_Panel_Verdict_2026-09-01.md\", \"output_mode\": \"content\", \"-C\": 6}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/The_Threshold_Question_And_The_Panel_Verdict_2026-09-01.md\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"BR2|Bench Run 2\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/resources\", \"output_mode\": \"content\", \"-C\": 4, \"head_limit\": 120}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"Cost Estimate|cost estimate|per run|\\\\$[0-9]+|wall.?clock|hours per run\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/docs/REPRODUCING.md\", \"output_mode\": \"content\", \"-C\": 4, \"head_limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/docs/REPRODUCING.md\", \"offset\": 330, \"limit\": 50}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"BR2\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes\", \"output_mode\": \"content\", \"-C\": 3, \"glob\": \"*2026-08-2*.md\", \"head_limit\": 150}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"go/no-go\\\\|go-no-go\\\\|GO/NO-GO\\\" --include=*.md --include=*.py . | head -40\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rniE \\\"(BR2|bench run 2)[^.]{0,120}(cost|\\\\\\\\$|hour|wall)\\\" --include=*.md . | head -30; echo ---; grep -rniE \\\"(cost|\\\\\\\\$)[^.]{0,80}(BR2|bench run 2)\\\" --include=*.md . | head -30\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"go/no-go|no-go|GO / NO-GO|go decision\", \"output_mode\": \"content\", \"-i\": true, \"-C\": 3, \"head_limit\": 60}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"(BR2|Bench Run 2).{0,150}(cost|\\\\$|hours|wall)\", \"output_mode\": \"content\", \"-i\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"BR2\\\" \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/CDSFL_Agent_Operational_Plan.md\\\" | cut -c1-400 | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && grep -rnE \\\"\\\\\\\\\\\\$[0-9]+\\\" --include=\\\"*.md\\\" experimental_notes docs resources | grep -iE \\\"run|dispatch|panel|cost\\\" | cut -c1-260 | head -50\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && sed -n '100,125p' experimental_notes/State_And_Remaining_Path_Plain_English_2026-08-01.md; echo ===; grep -n \\\"Bench Run 2\\\" -A 40 experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md | sed -n '1,120p'\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && grep -rn \\\"CRITICAL_SEVERITY_THRESHOLD\\\" --include=\\\"*.py\\\" --include=\\\"*.md\\\" . | cut -c1-200 | head -30\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && ls bench/*.md bench/tasks_frontier | head -50; echo \\\"=== 8 April plan?\\\"; grep -rln \\\"27 frontier\\\\|27 tasks\\\\|frontier STEM\\\" --include=*.md . | head -20\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"27 frontier|frontier STEM|104 runs|4 conditions\", \"output_mode\": \"content\", \"-i\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && sed -n '545,600p' experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md; echo \\\"=== ONBOARDING 2035-2070\\\"; sed -n '2035,2070p' resources/ONBOARDING.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && grep -rn \\\"headline\\\" --include=\\\"*.md\\\" experimental_notes docs resources bench | grep -i \\\"critical\\\\|0.7\\\\|severity\\\\|count\\\" | cut -c1-300 | head -25\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && sed -n '1,80p' bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && for f in experimental_notes/Decisions_Needed_2026-08-30.md experimental_notes/Overnight_Run_Complete_2026-08-31.md experimental_notes/Overnight_Panel_Loop_And_A_Vote_That_Deleted_Findings_2026-09-01.md experimental_notes/Six_Things_I_Made_You_Guess_At_2026-08-30.md; do echo \\\"### $f\\\"; grep -n"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo/experimental_notes/Six_Things_I_Made_You_Guess_At_2026-08-30.md\", \"offset\": 1, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u5cqs8a0/repo\\\" && grep -n \\\"5.62\\\\|35.30\\\\|2.52\\\" experimental_notes/Exp45_Convergence_2026-07-28.md experimental_notes/Remaining_Arc_Forensic_Roadmap_2026-07-22.md docs/EXPERIMENTAL_RESULTS.md resources/RECOVERY.md 2>/dev/null | cut -c1-220 | head -20; echo ===; sed -n '315,325p' bench/EXPERIMENT_DESIGN.md; ec"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls experimental_notes/data/ ; echo \\\"=== find archive\\\"; find . -iname \\\"*archive*\\\" -maxdepth 4 -not -path \\\"./.git/*\\\" 2>/dev/null | head -30\", \"description\": \"Locate archive data\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name \\\"*.json\\\" -path \\\"*finding*\\\" -not -path \\\"./.git/*\\\" 2>/dev/null | head -20; echo \\\"=== registry\\\"; ls -la .cdsfl_tmp/ scripts/cdsfl_registry 2>/dev/null | head -30\", \"description\": \"Find findings JSON stores\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show --stat 48d6254 | head -30; echo \\\"=== 88060fd\\\"; git show --stat 88060fd | head -20\", \"description\": \"Inspect last two commits\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la .scratch/; echo \\\"=== \\\"; python3 -c \\\"\\nimport json\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nprint(type(d), (list(d.keys())[:12] if isinstance(d,dict) else len(d)))\\n\\\"\", \"description\": \"Scratch dir + discrimination archive shape\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 48d6254 --stat | tail -20; echo \\\"=== boundary_band_census\\\"; grep -rn \\\"boundary_band_census\\\\|gamma_threshold_profile\\\" --include=*.py . | head -20\", \"description\": \"Find census implementation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nprint('n=',d['n']); print('tally=',json.dumps(d['tally'])[:600])\\nr=d['rows'][0]; print('row keys:',list(r.keys()))\\nprint(json.dumps(r)[:800])\\n\\\"\", \"description\": \"Inspect discrimination archive rows\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,collections,math\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nrows=d['rows']\\nprint('total rows',len(rows))\\nruns=collections.Counter(r['run'] for r in rows)\\nfor k,v in runs.most_common(40): print(v,k)\\n\\\"\", \"description\": \"Run provenance in discrimination archive\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"6865\\\\|6,865\\\\|_settled_novelty_series\\\" bench/reference_runner_v2.py scripts/*.py 2>/dev/null | head -20; echo \\\"=== registry files\\\"; find . -name \\\"*.jsonl\\\" -not -path \\\"./.git/*\\\" | head -20; find . -name \\\"registry*.json\\\" -not -path \\\"./.git/*\\\" | head\", \"description\": \"Locate settled registry\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"88.4\\\\|88\\\\.4%\\\" experimental_notes/*.md docs/*.md 2>/dev/null | head -20\", \"description\": \"Trace the 88.4% claim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"discrimination\\\" bench/logs/*/  2>/dev/null | head; echo \\\"=== sim vs real logs\\\"; ls bench/logs/ | head -50\", \"description\": \"Enumerate run logs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,collections\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nrows=d['rows']\\nscored=[r for r in rows if r['route_a'] in ('DISCRIMINATING','NO_DISCRIMINATION_OR_INEFFECTIVE_FIX')]\\nprint('route_a values:',collections.Counter(r['route_a'] for r in rows))\\nprint('n rows',len(rows))\\nsim=[r for r in rows if 'sim' in r['run'].low"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' scripts/discrimination_control_archive.py\", \"description\": \"Read archive generator header\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"discrimination\\\" bench/reference_runner_v2.py | grep -i \\\"record\\\\|scored\\\\|control\\\" | head -25\", \"description\": \"Find in-runner discrimination record fields\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,os\\n# search all run catalogues / registries for a discrimination record field\\nhits=collections.Counter()\\nfor p in glob.glob('bench/logs/**/*.json*',recursive=True)+glob.glob('bench/results/**/*.json*',recursive=True):\\n    try:\\n        s=open(p,'r',errors='ignore').read()\\n    except Exception: continue\\n    if 'discrimination' in s:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,os,re\\npat=re.compile(r'discrimination_control:([A-Z_]+)')\\nper=collections.Counter(); outc=collections.Counter()\\nfor p in glob.glob('bench/logs/**/*',recursive=True)+glob.glob('bench/results/**/*',recursive=True):\\n    if not os.path.isfile(p): continue\\n    try: s=open(p,'r',errors='ignore').read()\\n    except Exception: continue\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,collections\\nd=json.load(open('experimental_notes/data/discrimination_control_archive.json'))\\nrows=d['rows']\\nA=[r for r in rows if r['route_a'] in ('DISCRIMINATES','NO_DISCRIMINATION_OR_INEFFECTIVE_FIX')]\\ndisc=[r for r in A if r['route_a']=='DISCRIMINATES']\\nprint(f\\\"Route A scored={len(A)} discriminates={len(disc)} rate={len(disc)/len(A):.4f}\\\")\\n# W"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"exp55_v3_control\\\\|exp55\\\" experimental_notes/*.md docs/CURRENT_STATE.md 2>/dev/null | head -10; echo \\\"=== is exp55 sim?\\\"; ls bench/logs/exp55_v3_control_20260823T144624Z/ | head\", \"description\": \"Classify exp55_v3_control\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,collections,math\\nsev=[]; srcs=collections.Counter()\\nfor p in glob.glob('bench/logs/**/*finding_catalogue.jsonl',recursive=True):\\n    for ln in open(p,errors='ignore'):\\n        try: o=json.loads(ln)\\n        except: continue\\n        if isinstance(o,dict) and isinstance(o.get('severity'),(int,float)): sev.append(o['severity']); srcs[p]+=1\\npri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,os,collections,math,re\\nsev=[]; per=collections.Counter()\\ndef walk(o,src):\\n    if isinstance(o,dict):\\n        s=o.get('severity')\\n        if isinstance(s,(int,float)) and 0<=s<=1 and ('description' in o or 'id' in o or 'title' in o or 'claim' in o):\\n            sev.append((s,src)); per[src]+=1\\n        for v in o.values(): walk(v,src)\\n    elif"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,statistics,re,os\\n# per-model severity from round files r{n}_{model}_*.json across real runs\\nper=collections.defaultdict(list)\\nfor p in glob.glob('bench/logs/exp4*/r*_*.json')+glob.glob('bench/logs/exp5*/r*_*.json'):\\n    m=re.search(r'/r\\\\d+_([a-z0-9]+)_',p)\\n    if not m: continue\\n    model=m.group(1)\\n    try: o=json.load(open(p,er"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp45_memory_statistics_live_20260727T225640Z/ 2>/dev/null | head -20; echo \\\"---\\\"; ls bench/logs/ | grep -E \\\"exp4[2-7]\\\" | head\", \"description\": \"Inspect real run log layout\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,statistics,re\\nper=collections.defaultdict(list)\\nrunmodel=collections.defaultdict(list)\\nfor p in glob.glob('bench/logs/exp4*_*/r*_*_2026*.json'):\\n    m=re.search(r'/r(\\\\d+)_([a-z0-9]+)_20',p)\\n    if not m: continue\\n    model=m.group(2); run=p.split('/')[2]\\n    try: o=json.load(open(p,errors='ignore'))\\n    except: continue\\n    val"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\no=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/r1_cc2_20260727T230946Z.json'))\\nprint(type(o), list(o.keys())[:20] if isinstance(o,dict) else len(o))\\n\\\" ; echo \\\"=== report structure\\\"; python3 -c \\\"\\nimport json\\no=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,statistics\\nper=collections.defaultdict(list)\\nnfiles=0\\nfor p in glob.glob('bench/logs/exp4*_*/*_report.json')+glob.glob('bench/logs/exp5*_*/*_report.json'):\\n    try: o=json.load(open(p,errors='ignore'))\\n    except: continue\\n    reg=o.get('registry')\\n    if not isinstance(reg,(dict,list)): continue\\n    nfiles+=1\\n    ents = reg.val"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,statistics\\nper=collections.defaultdict(list); runper=collections.defaultdict(lambda: collections.defaultdict(list))\\ndef entries(reg):\\n    out=[]\\n    def rec(x,d=0):\\n        if d>3: return\\n        if isinstance(x,dict):\\n            if 'severity' in x and ('source_model' in x or 'canonical_id' in x): out.append(x); return\\n         "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math,statistics\\nfrom scipy import stats\\n# cluster-level means measured above\\nreal={'Gemini':0.6469,'DeepSeek':0.6144,'ChatGPT':0.6526,'CC2':0.5841,'Codex':0.6215}\\nsim={'DeepSeek':0.4629,'ChatGPT':0.4479,'CC2':0.4637,'Codex':0.4767}\\nR=list(real.values()); S=list(sim.values())\\nprint(\\\"UNPAIRED cluster-level Welch t-test (each MODEL = 1 observation):\\\")\\nt"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\n# sampling-noise correction on between-model variance\\nreal=[('Gemini',679,0.2881,0.6469),('DeepSeek',548,0.2070,0.6144),('ChatGPT',354,0.2290,0.6526),('CC2',350,0.1510,0.5841),('Codex',336,0.2135,0.6215)]\\nsim=[('DeepSeek',21,0.1160,0.4629),('ChatGPT',19,0.1211,0.4479),('CC2',16,0.1417,0.4637),('Codex',15,0.1209,0.4767)]\\nfor lab,d in (('REAL',real),('"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline --all -- bench/dm/_memory.py | head -8; echo \\\"=== target of exp45\\\"; python3 -c \\\"\\nimport json;o=json.load(open('bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json'));print(o['target_file'],o['context_files'],o['models'])\\\"; echo \\\"=== does the tree at 043a0a8^ contain exp45 findings?\\\"; git ls-tree -r --name-only 043a"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== exp45 answers present in the frozen tree?\\\"; git ls-tree -r --name-only 043a0a8^ | grep -iE \\\"exp45_memory_statistics_live\\\" | head; echo \\\"--- count\\\"; git ls-tree -r --name-only 043a0a8^ | grep -ciE \\\"exp45_memory\\\"; echo \\\"=== severities readable there?\\\"; git show 043a0a8^:bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show 043a0a8^:bench/logs/exp45_memory_statistics_live_20260727T225640Z/exp45_memory_statistics_live_report.json | python3 -c \\\"\\nimport json,sys\\no=json.load(sys.stdin); reg=o['registry']\\nents = reg.get('entries', reg) if isinstance(reg,dict) else reg\\nif isinstance(ents,dict) and all(isinstance(v,dict) for v in ents.values()):\\n    items=ents.items()\\nelse:\\n    print('reg keys:"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"worktree\\\\|EXCLUDE\\\\|exclude\\\\|bench/logs\\\" bench/tools/simulated_bench.py 2>/dev/null | head -30; echo \\\"=== ls tools\\\"; ls bench/tools/ | head -30\", \"description\": \"Check sandbox staging exclusions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tools/run_simulated_experiment_sandboxed.sh\", \"description\": \"Read the sandbox script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"allowed_tools\\\\|allowedTools\\\\|disallow\\\\|tools=\\\\|Read\\\\|Grep\\\\|permission\\\" bench/tools/sim_panel_agents.py | head -25\", \"description\": \"Check sim panel agent tool access\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,statistics\\nfrom scipy import stats\\ndef entries(reg):\\n    out=[]\\n    def rec(x,d=0):\\n        if d>3: return\\n        if isinstance(x,dict):\\n            if 'severity' in x and 'source_model' in x: out.append(x); return\\n            for v in x.values(): rec(v,d+1)\\n        elif isinstance(x,list):\\n            for v in x: rec(v,d+1)\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\nfrom statsmodels.stats.power import TTestPower\\n# per-seat offsets and their sampling noise (same-target exp45 vs sim45)\\nseats=[('CC2',6,0.1510,16,0.1417,0.0613),('ChatGPT',5,0.2290,19,0.1211,0.2521),\\n       ('Codex',5,0.2135,15,0.1209,0.1733),('DeepSeek',12,0.2070,21,0.1160,0.0288),\\n       ('Gemini',11,0.2881,14,0.1160,0.2649)]\\noffs=[s[5] for s in "
+    }
+  ]
+}

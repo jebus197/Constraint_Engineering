@@ -1,0 +1,14 @@
+{
+  "reviewer": "fable",
+  "ok": true,
+  "chars": 1065,
+  "elapsed_s": 577.2,
+  "response": "**Suite addendum, part 1 \u2014 the patch is not suite-clean as delivered.**\n\nThe first full-suite run (with `-x`) failed at exactly one test, and it is a defect in the rescued patch, not in the repo:\n\n- `test_operational_scripts.py::TestUsageTextAdvertisesOnlyImplementedFlags::...[co_discovery_audit.py]` \u2014 the patch's new `scripts/co_discovery_audit.py` dispatches on `\"--calibrate\" in sys.argv` and **silently ignores any unknown flag**, violating the repo's own \"a retired flag must fail, not be silently ignored\" rule (the 118-day-no-op lesson). 2,891 tests passed before the stop; the meter stayed silent through the entire sim-heavy suite (confirming sim-mode silence under real load).\n\nMinimal fix applied in this disposable copy (reject unknown args loudly, exit nonzero); the operational-scripts class now passes 78/78. The full suite is re-running without `-x` to sweep the ~1,950 tests the early stop skipped \u2014 final verdict when it completes.\n\nFor adoption: take the patch **plus this three-line argv guard**, or its own test suite will flag it on arrival.",
+  "tree_carried": {
+    "tracked_diff_bytes": 0,
+    "untracked_files": 0,
+    "skipped": [],
+    "ignored_files": 6519,
+    "ignored_skipped_over_1mb": 9
+  }
+}

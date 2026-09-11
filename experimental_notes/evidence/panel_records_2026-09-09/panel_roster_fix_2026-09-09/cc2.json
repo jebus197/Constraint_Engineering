@@ -1,0 +1,187 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15515,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/jebus/Documents/CDSFL 2>/dev/null || find ~ -maxdepth 4 -name \\\"reference_runner_v3.py\\\" -path \\\"*bench*\\\" 2>/dev/null | head -5\", \"description\": \"Locate the repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls\", \"description\": \"Show cwd\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_declared_models\\\" -r bench/ | head -50\", \"description\": \"Find _declared_models references\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exp_config.models\\\\|cfg.models\\\\|\\\\.models\\\" bench/reference_runner_v3.py | head -60\", \"description\": \"Find .models reads in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5120,5240p bench/reference_runner_v3.py\", \"description\": \"Read helper and routing call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5720,5820p bench/reference_runner_v3.py\", \"description\": \"Read sweep call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/routing.py; sed -n 1,200p bench/routing.py\", \"description\": \"Read routing.py head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,150p \\\"bench/tests/test_declared_models_roster_2026-09-09.py\\\"\", \"description\": \"Read new guards\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . log --oneline -8; echo ---; git -C . diff HEAD~1 --stat 2>/dev/null | tail -20\", \"description\": \"Git log\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 330,430p \\\"bench/tests/test_d9_d11_configs_valid_2026-09-05.py\\\"\", \"description\": \"Read re-aimed guards\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp56_configs/; for f in bench/exp56_configs/*.json; do echo \\\"== $f\\\"; python3 -c \\\"\\nimport json,sys\\nd=json.load(open('$f'))\\nfor k in ['models','routing_enabled','post_convergence_sweep_rounds','merge_arbitration_enabled','rounds','simulate','target_kind','test_article']:\\n    if k in d: print(' ',k,'=',d[k])\\n\\\"; done\", \"description\": \"Dump exp56 configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for L in 765 8355 8435 11365 11820 12020 13045; do echo \\\"===== $L\\\"; sed -n \\\"${L},$((L+25))p\\\" bench/reference_runner_v3.py; done\", \"description\": \"Inspect other exp_config.models sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"-SIM\\\"\\\\|-SIM\\\\b' bench/reference_runner_v3.py | head -40; echo \\\"=== launcher_core\\\"; grep -rn \\\"SIM\\\" bench/launcher_core.py | head -40\", \"description\": \"Find -SIM label creation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _verification_step\\\" bench/reference_runner_v3.py\", \"description\": \"Find _verification_step\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 430,455p bench/reference_runner_v3.py; echo \\\"=== 6440-6470\\\"; sed -n 6445,6470p bench/reference_runner_v3.py\", \"description\": \"Read base_model_label\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 9109,9180p bench/reference_runner_v3.py\", \"description\": \"Read _verification_step\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_declared_models_roster_2026-09-09.py\\\" \\\"bench/tests/test_d9_d11_configs_valid_2026-09-05.py\\\" -q 2>&1 | tail -25\", \"description\": \"Run the two test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp56_configs/d11_seat_contrast_diversity_arm.json; echo \\\"=== sim configs models decl\\\"; grep -l '\\\"models\\\"' bench/exp5*_configs/*.json configs/*.json 2>/dev/null | head; echo ---; grep -rn \\\"SIM\\\" bench/exp5*_configs/*.json 2>/dev/null | head\", \"description\": \"Dump d11 config, look for SIM declarations\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"verification_min_round\\\\|verification_batch_size\\\\|verification_enabled\\\" bench/reference_runner_v3.py bench/launcher_core.py | head -20\", \"description\": \"Check CC2v gating defaults\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_routing_note\\\\|_sweep_note\\\\|routing_enabled\\\\|post_convergence_sweep_rounds\\\" bench/tests/test_d9_d11_configs_valid_2026-09-05.py | head -20\", \"description\": \"Do tests check note/flag agreement?\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 13030,13056p bench/reference_runner_v3.py | grep -n \\\"if \\\\|_verification_step\\\" \", \"description\": \"Check CC2v gating at call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/fx && cat > /tmp/fx/f1.py <<'EOF'\\n\\\"\\\"\\\"FALSIFIER C-A: the roster repair is INCOMPLETE. `_verification_step` (CC2v, A5)\\nis still handed `exp_config.models` at reference_runner_v3.py:13052 and selects a\\nseat by base label, so in the Arm C (D11) config -- which declares only\\n['Codex','ChatGPT'] -- it dispatches to CC2, a seat the arm never declared.\\nFails (FALSIFIED) "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && grep -rn \\\"SIM\\\" bench/experiment_11_orchestrator.py | head -20; echo \\\"=== who makes sim roster\\\"; grep -rn \\\"\\\\-SIM\\\" bench/*.py | grep -v reference_runner_v3 | head -20\", \"description\": \"Find how -SIM rosters are constructed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11485,11530p bench/reference_runner_v3.py\", \"description\": \"Read the declared-vs-counted preflight check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5240,5400p bench/reference_runner_v3.py\", \"description\": \"Read rest of _apply_routing\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fx/f2.py <<'EOF'\\n\\\"\\\"\\\"PROBE: what routing ON actually does in each exp56 arm. Drives _apply_routing\\nand _post_convergence_sweep with a stub dispatcher and counts seats reached.\\\"\\\"\\\"\\nimport copy, json, sys, types\\nfrom pathlib import Path\\nREPO = Path(\\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h8i327pq/repo\\\")\\nsys.path.insert(0, str(REPO))\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"irreducible_escalation\\\" bench/reference_runner_v3.py | head -20; echo \\\"=== unverified_critical_count\\\"; grep -n \\\"def unverified_critical_count\\\" -A 30 bench/reference_runner_v3.py | head -45\", \"description\": \"Where irreducible/unverified counts read escalated\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"merge_candidate_of\\\\|routing_duplicate_of\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Consumers of routing duplicate stamps\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'routing_deferred' bench/reference_runner_v3.py | head; echo \\\"=== 6060-6100\\\"; sed -n 6060,6100p bench/reference_runner_v3.py\", \"description\": \"routing_deferred writer + consumer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 755,800p bench/tests/test_d9_d11_configs_valid_2026-09-05.py\", \"description\": \"Read third re-aimed guard\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && cp bench/reference_runner_v3.py /tmp/fx/rr.bak && python3 - <<'EOF'\\nimport re,io\\np=\\\"bench/reference_runner_v3.py\\\"\\ns=open(p).read()\\n# MUTATION: revert both call sites to the pre-repair full roster.\\na=s.replace(\\\"    _roster = _declared_models(exp_config, cfg)\\\",\\n            \\\"    _roster = list(exp_config.models)  # MUTANT\\\")\\nb=a.replace(\\\"        for mc in _dec"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_verification_step\\\" bench/ --include=*.py | grep -v \\\"reference_runner_v3.py:\\\"; echo \\\"--- current line 13052\\\"; sed -n 13050,13053p bench/reference_runner_v3.py; echo \\\"--- skip line\\\"; sed -n 9149,9156p bench/reference_runner_v3.py\", \"description\": \"Check other callers/tests of _verification_step\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_verification_step\\\" bench/tests/ | head\", \"description\": \"Tests referencing _verification_step\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h8i327pq/repo/bench/reference_runner_v3.py\", \"old_string\": \"        # CC2v verification (A5)\\n        verification_stats = _verification_step(\\n            registry, round_idx, full_code, exp_config.models, cfg)\", \"new_string\": \"        # CC2v verification (A5)\\n        #\\n        # THE FOURTH"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fx/f3.py <<'EOF'\\n\\\"\\\"\\\"FIX VERIFICATION for C-A. The proposed one-line change at\\nreference_runner_v3.py:13052 is\\n\\n    -    registry, round_idx, full_code, exp_config.models, cfg)\\n    +    registry, round_idx, full_code, _declared_models(exp_config, cfg), cfg)\\n\\nApplied here by passing the fixed argument, since the target tree is staged\\nread-only. Asserts: (1) no arm "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fx/f4.py <<'EOF'\\n\\\"\\\"\\\"EDGE PROBE for _declared_models: label shapes, and the asymmetry the\\nnormalisation creates against the runner's OWN panel-eligibility rule\\n(reference_runner_v3.py:8362 / :8442, `mc.label in set(cfg.models)`, exact match).\\\"\\\"\\\"\\nimport sys, types\\nfrom pathlib import Path\\nREPO = Path(\\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"dispatch_to_model(\\\" bench/reference_runner_v3.py | grep -v \\\"def dispatch_to_model\\\" | head -30\", \"description\": \"Enumerate all dispatch sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && python3 - <<'EOF'\\nimport copy, json, sys, types\\nfrom pathlib import Path\\nREPO=Path(\\\".\\\"); sys.path.insert(0,\\\".\\\")\\nimport bench.reference_runner_v3 as rr\\nfrom bench import launcher_core\\nfrom bench.launcher_core import build_runner_config_from_dict\\nexp=launcher_core.load_experiment_config()\\nd=json.loads(Path(\\\"bench/exp56_configs/d9_single_model_with_agents.json"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5440,5485p bench/reference_runner_v3.py\", \"description\": \"Read the deferral/irreducible stamping block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fx/f5.py <<'EOF'\\n\\\"\\\"\\\"FALSIFIER C-B: with routing now ENABLED, a structurally-empty ladder (the\\n1-seat arm, where the only declared seat is the finding's own source and is\\nexcluded) is misclassified by the transport-dead guard at\\nreference_runner_v3.py:5364-5368. The `continue` fires before the deferral stamp,\\nso the critical carries NEITHER `routing_deferred` NOR `ir"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fx/f6.py <<'EOF'\\n\\\"\\\"\\\"FIX VERIFICATION for C-B. The proposed patch inserts one branch into the\\ntransport-dead guard in `_apply_routing` (reference_runner_v3.py ~5364):\\n\\n        if e.pop(\\\"_error_route_pending\\\", None):\\n            if len(_routing_attempts) > _n0:\\n                e[\\\"error_routed\\\"] = True\\n+           elif getattr(result, \\\"rungs_tried\\\", 0) == 0:\\n+"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && python3 - <<'EOF' 2>&1 | grep -v \\\"^\\\\[2\\\"\\nimport sys, types; sys.path.insert(0, \\\".\\\")\\nimport bench.reference_runner_v3 as rr\\ndef make(stamp):\\n    reg = rr.FindingRegistry()\\n    for i in range(3):\\n        e = {\\\"status\\\": \\\"UNCONFIRMED\\\", \\\"severity\\\": 0.9, \\\"escalated\\\": True,\\n             \\\"description\\\": \\\"critical %d no declared seat can adjudicate\\\" % i,\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && python3 - <<'EOF' 2>&1 | grep -v \\\"^\\\\[2\\\"\\nimport sys, types; sys.path.insert(0, \\\".\\\")\\nimport bench.reference_runner_v3 as rr\\ndef make(stamp):\\n    reg = rr.FindingRegistry()\\n    for i in range(3):\\n        e = {\\\"status\\\": \\\"UNCONFIRMED\\\", \\\"severity\\\": 0.9, \\\"escalated\\\": True,\\n             \\\"description\\\": \\\"critical %d no declared seat can adjudicate\\\" % i,\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$PWD\\\" && grep -n \\\"^CRITICAL_SEVERITY_THRESHOLD\\\\|^ROUTABLE_INSTRUMENT_FAULTS\\\" bench/reference_runner_v3.py\", \"description\": \"Get severity threshold value\"}"
+    }
+  ],
+  "n_tool_calls": 44,
+  "elapsed_s": 595.7,
+  "response": "## verdict\n\n**REFUTED** \u2014 the two repaired sites are correct and correctly guarded, but the repair is **incomplete**, and one consequence of enabling routing is unsafe. Turning routing and the sweep on is not yet justified for all three arms. Two material findings, both with executed falsifiers and verified fixes.\n\nThe parts that are sound, established by execution:\n\n```\n$ python3 -m pytest bench/tests/test_declared_models_roster_2026-09-09.py \\\n                    bench/tests/test_d9_d11_configs_valid_2026-09-05.py -q\n81 passed, 1 warning in 0.61s\n```\n\n```\n$ python3 /tmp/fx/f2.py     # drives both call sites in all 3 arms, stubbed dispatcher\n=== d9_single_model_with_agents.json   declared=['CC2']\n _declared_models -> ['CC2']   ladder(exclude=CC2) = []\n routing seats reached: []      sweep seats reached: ['CC2','CC2']            undeclared: []\n=== d9_multi_model_panel.json          declared=['CC2','Codex','Gemini','DeepSeek','ChatGPT']\n routing seats reached: ['Codex','ChatGPT']  sweep: all 5 \u00d7 2 rounds          undeclared: []\n=== d11_seat_contrast_diversity_arm.json declared=['Codex','ChatGPT']\n routing seats reached: ['ChatGPT']          sweep: ['Codex','ChatGPT']\u00d72     undeclared: []\n```\n\n**Mutation test (item 3 \u2014 were the guards weakened?).** I reverted both call sites to `exp_config.models`, ran the suite, restored:\n\n```\nmutant applied\nFAILED test_declared_models_roster_2026-09-09.py::test_the_SWEEP_reaches_only_declared_seats\nFAILED test_declared_models_roster_2026-09-09.py::test_apply_routing_builds_its_ladder_from_the_DECLARED_roster\nFAILED test_d9_d11_configs_valid_2026-09-05.py::TestSubsetPanelLeaks::test_the_post_convergence_sweep_dispatches_to_undeclared_seats\n3 failed, 78 passed\nRESTORED \u2192 81 passed\n```\n\nThe re-aimed guards are **honest**. The inverted sweep assertion still asserts `reached` non-empty first, so it cannot pass vacuously, and it dies under the mutant. The preflight guard was *strengthened*, not weakened \u2014 it now builds its own routing-off fixture instead of borrowing a production value, and adds a converse check that the refusal discriminates. One caveat worth stating: `test_the_routing_ladder_reaches_only_seats_the_arm_declared` does **not** go red under the mutant, because it calls `_declared_models` directly \u2014 it has exactly the weakness its own docstring criticises in its predecessor. It is covered only because the new file's two wiring tests exist.\n\n**Edge shapes (item 1).** `-SIM` normalisation is correct in both directions; whitespace stripped; case variants and double suffixes fail closed with a loud log. The one thing that defeats it is case (`'cc2'` \u2192 `[]`), which fails safe.\n\n```\nSIM roster, bare decl  roster=['CC2-SIM',...] decl=['CC2']     -> ['CC2-SIM']\nREAL roster, SIM decl  roster=['CC2',...]     decl=['CC2-SIM'] -> ['CC2']\ncase variant 'cc2'                                             -> []   (+ ROSTER EMPTY log)\n```\n\n**Empty case (item 2).** Returning empty is right \u2014 refusing the run would be a new failure mode in a helper whose whole job is selection, and the log fires. But see finding C-B: empty is only safe if the *caller* knows why it is empty.\n\n---\n\n## findings\n\n### C-A (material) \u2014 a third live leak site the repair missed\n\n`_verification_step` (CC2v, A5) is handed `exp_config.models` at `reference_runner_v3.py:13052`, unconditionally, and selects a seat by base label. Arm C declares `['Codex','ChatGPT']` and gets **CC2** \u2014 a seat it never declared \u2014 at every round \u2265 `verification_min_round` (6), with `max_rounds` 8. That silently makes Arm C a three-seat arm for its last two rounds and contaminates the D9/D11 comparison the arms exist to run.\n\nI enumerated all 8 `dispatch_to_model` call sites. Answer to item 4: routing (5244, fixed), sweep (5769, fixed), the three inside `_dispatch_single_model` (fed from `eligible`, filtered by `cfg.models`), preflight (11378, filtered), merge arbitration (12020, full roster but off in all three arms and documented), and **9163 \u2014 `_verification_step`, full roster, ungated**. Exactly one unmitigated site remains.\n\n```\n$ python3 /tmp/fx/f1.py\narm declares : ['Codex', 'ChatGPT']\nroster carries: ['CC2', 'Codex', 'ChatGPT', 'Gemini', 'DeepSeek']\nverification_min_round = 6  max_rounds = 8\nseats reached by CC2v: ['CC2']\nFALSIFIED\nAssertionError: CC2v dispatched to seats Arm C never declared: ['CC2']\n```\n\n**Fix** (one line at 13052, plus the comment block):\n\n```diff\n-        verification_stats = _verification_step(\n-            registry, round_idx, full_code, exp_config.models, cfg)\n+        verification_stats = _verification_step(\n+            registry, round_idx, full_code,\n+            _declared_models(exp_config, cfg), cfg)\n```\n\nThis is a confinement, not a removal: Arm C loses CC2v *because it declared no CC2 seat*, and the existing `{\"skipped\": True, \"reason\": \"CC2 config not found\"}` already announces it. Verified that it does not become a blanket disable:\n\n```\n$ python3 /tmp/fx/f3.py\nPRE  d11_seat_contrast... declared=['Codex','ChatGPT'] reached=['CC2'] undeclared=['CC2']\nPOST d11_seat_contrast... declared=['Codex','ChatGPT'] reached=[]      undeclared=[] skipped=True\nPOST d9_single...         declared=['CC2']             reached=['CC2']\nPOST d9_multi...          declared=[...5...]           reached=['CC2']\nclean: leak closed, CC2v retained in every arm that declares CC2\n```\n\n### C-B (material) \u2014 an empty ladder is misclassified as a dead transport\n\nNewly reachable *because* routing was just enabled. In Arm A the ladder is `rank_falsifier_writers(['CC2'], exclude=['CC2']) == []` \u2014 measured. `route()` returns `rungs_tried=0`, and the transport-dead guard at ~5364 `continue`s before the deferral stamp. The critical carries **neither** `routing_deferred` **nor** `irreducible_escalation`: it blocks convergence forever (`unverified_critical_count` counts UNCONFIRMED and skips only `irreducible_escalation`) while never entering `irreducible_queue_count` (which counts `irreducible_escalation OR routing_deferred`). The `HALTED_IRREDUCIBLE_QUEUE_ALARM` that Arm A's own pre-registration names as its reportable outcome **cannot fire**.\n\n```\n$ python3 /tmp/fx/f5.py\nARM A  declared=['CC2']  rungs_available=1 rungs_tried=0 verdict=UNTOOLABLE\n       routing_deferred=None irreducible_escalation=None escalated=True\n       irreducible_queue_count=0  unverified_critical_count=1\nARM C (transport DEAD)   rungs_available=2 rungs_tried=1\nFALSIFIED\nAssertionError: Arm A: empty ladder -> no deferral stamp, queue count 0,\nunverified count 1. The pre-registered irreducible-queue halt cannot fire and\nthe critical blocks to the round cap instead.\n```\n\nNote `rungs_available=1` in the history record: a human reading the bundle sees \"1 rung available, 0 tried\" and reads a transport failure. The one available rung is the source model itself.\n\n**Fix** \u2014 one branch, no new state. `resolve_via_routing` increments `tried` *before* calling `resolve_fn`, so `rungs_tried == 0` can only mean the ladder was empty:\n\n```diff\n         if e.pop(\"_error_route_pending\", None):\n             if len(_routing_attempts) > _n0:\n                 e[\"error_routed\"] = True\n+            elif getattr(result, \"rungs_tried\", 0) == 0:\n+                # EMPTY LADDER != DEAD TRANSPORT. Waiting for a later round\n+                # cannot help: the ladder is empty by construction.\n+                e[\"routing_deferred\"] = True\n+                _log(f\"  routing {cid}: EMPTY LADDER ({len(models)} declared \"\n+                     f\"seat(s), all excluded as the source) \u2014 deferred, \"\n+                     f\"not transport-dead\")\n+                continue\n             elif not result.resolved and result.verdict != \"DUPLICATE\":\n                 continue\n```\n\nDiscriminator proven exact, and consequence measured:\n\n```\n$ python3 /tmp/fx/f6.py\nempty ladder  -> rungs_tried=0 verdict=UNTOOLABLE\nrung present  -> rungs_tried=1 verdict=ERROR\ndiscriminator EXACT: rungs_tried == 0 iff the ladder had no rungs\n\nstamp=False queue=0 unverified=3 alarm=silent evidence_items=-\nstamp=True  queue=3 unverified=3 alarm=FIRES  evidence_items=3\n```\n\nAdditive on both counts: the stamp does **not** excuse the critical (unverified count stays 3, it keeps blocking), and it restores the alarm *with* its evidence bundle \u2014 the 2026-09-08 collector at line 6085 already reads `routing_deferred`.\n\n### Below threshold, recorded not blocking\n\n- `_declared_models`'s local `_base` duplicates `base_model_label`, defined in the **same module** at line 449. The docstring's justification (\"routing.py must not import its own caller\") is a non-sequitur here. Four copies now exist (runner_core:88, routing.py:97, rr:449, rr:5174). Identical today; a divergence risk, not a defect.\n- `_routing_note` and `_sweep_note` in all three configs still read **\"OFF IN ALL THREE ARMS\"** beside `routing_enabled: true` and `post_convergence_sweep_rounds: 2`. The comment at 5364 likewise still asserts \"routing_enabled is unset in all 14 forward configs \u2014 VERIFIED against the config files\". Behaviour follows the flags, so this misleads a reader, not the runner.\n- `_declared_models` normalises `-SIM`; the panel-eligibility rule at 8362/8442 matches labels exactly. Measured divergence: SIM roster + bare declaration gives `panel_eligible=[]` while `routing/sweep=['CC2-SIM']`. Not live \u2014 no exp56 arm is simulated, and an empty panel would be immediately visible.\n\n---\n\n## model_use\n\n**S_k.** Vacuous here, and I will not manufacture an answer: `sk_enabled: false` in all three arms (measured). Confinement cannot change an input distribution that has no inputs. Generally the brief's premise holds \u2014 fewer resolving seats means fewer findings reach a rung that proposes a fix, so S_k's input set shrinks \u2014 but not in Exp 56.\n\n**\u03b3.** Ladder depth per arm, measured: A = 0 rungs, C = 1, B = 4 (capped at `max_rungs=2`). Taking \u00a75's `C(n) = 1 \u2212 (1\u2212q)\u207f` with the archive's 53/69 = 0.768 measured on full-roster ladders at n = 2:\n\n> (1\u2212q)\u00b2 = 0.232 \u2192 q = 0.518; Wilson [0.656, 0.852] \u2192 (1\u2212q)\u00b2 \u2208 [0.148, 0.344] \u2192 **q \u2208 [0.414, 0.615]**\n\nPredicted absorption under confinement: **Arm B 0.768** [0.656, 0.852] (unchanged \u2014 it declares all 5), **Arm C 0.518** [0.414, 0.615], **Arm A exactly 0** \u2014 not an estimate, a measurement, the ladder is `[]`. Residual per un-confirmed critical therefore rises 0.232 \u2192 0.482 \u2192 1.000. With `max_irreducible_queue = 2`, Arm A halts at its third un-confirmed critical *once C-B is fixed*; today it silently runs to the round cap instead.\n\nDoes \u03b3's decay shape change? No. \u03b3_critical is computed on the location-keyed critical *arrival* series; routing converts escalated criticals to CONFIRMED but does not change arrival rate. Arm A's binding gate is criterion (3), \"no unverified critical pending\" \u2014 not \u03b3. And the honest answer to \"would a run that previously converged still converge\": **the question has no archival referent.** The test file's own section 10 states no configuration has ever declared a panel subset. There is no prior confined run to regress, and equally no evidence that one converges. The 76.8% figure was measured on 4-rung ladders in deduplicated simulated runs; it does not transfer to a 0- or 1-rung arm, so \"did the repair damage it\" is the wrong test. It is unchanged for Arm B and inapplicable to A and C.\n\n**\u03c1.** Estimable pairs = C(k,2): Arm A \u2192 **0 pairs, no estimator at all**. Any \u03c1 Arm A reports is a default, not a measurement, and `rho_threshold: 0.25` over a rolling window of 3 cannot gate on it \u2014 it must not be read as evidence of independence. Arm C \u2192 1 pair, and by the config's own `state_at_head_measured` those two seats share model_id, api, role and system_prompt_path, so what is measured is composed-phenotype divergence between two instances of the same weights, not cross-architecture correlation; reporting it as \u03c1 is a category error. Only Arm B (10 pairs, 4 vendors) yields cross-architecture \u03c1. Note the direction: the repair **improves** \u03c1's validity \u2014 the leak would have injected 4 undeclared vendors into Arm A and could have manufactured a spurious cross-architecture \u03c1 in a 1-seat arm.\n\n**Severity.** `CRITICAL_SEVERITY_THRESHOLD = 0.7` gates the sub-critical ladder branch; both findings above sit at severity \u2265 0.7 in the arms' own terms \u2014 C-A because it changes an arm's seat count mid-experiment (verification-integrity, \u00a710 cat. 3), C-B because it suppresses a pre-registered reportable outcome (\u00a710 cat. 4).\n\n---\n\n## disagreement\n\nThe brief names the defect after two functions rather than after the invariant, and that framing is precisely what let C-A survive today's repair. The leak was never a property of `_apply_routing` and `_post_convergence_sweep`; it is a property of *every* consumer of `exp_config.models` that dispatches. Three call-site edits produce a fix that closes two of three live sites and a test suite that guards two of three \u2014 and the fourth site was missed because it is not called \"routing\". The durable fix is an invariant at the dispatcher: `dispatch_to_model` should refuse a `ModelConfig` whose label is not in the run's declared set, so that a new consumer added next month cannot reintroduce this. I did not implement that here because it is a larger change than the panel was convened for, but I would not call the leak closed until it exists.\n\nSecond: \"2 sites were found. Are there more?\" invites a bounded search. I answered it by enumerating dispatch sites rather than `.models` reads, which is the reason I found one. The brief's own question would have been answered \"no\" by a reviewer who grepped for the phrase in the diff.\n\n## what would refute me\n\n- **C-A**: show that `_verification_step` is unreachable in Arm C \u2014 that `run_experiment` returns before round 6, or that the arm's `max_rounds: 8` is capped below `verification_min_round: 6` by the extension/stall path in practice. My probe called `_verification_step` directly; I did not drive `run_experiment` to round 6. If the arm reliably terminates before round 6, C-A is latent rather than live \u2014 but still a defect, since `verification_min_round` is a config value.\n- **C-B**: show a second writer of `routing_deferred` or `irreducible_escalation` on the path Arm A takes, which would mean the stamp arrives elsewhere and the alarm can still fire. I grepped all writers (5470 and 5529 only) and measured the entry post-call, but a later-round code path I did not execute could stamp it.\n- **Both**: a founder ruling that Arm C is intended to receive CC2v verification despite not declaring CC2, or that Arm A is intended to run to the round cap rather than halt. Either would make the behaviour a design choice; both should then be written into the config as an explicit declared delta, the way merge arbitration was.\n- **The clean verdict on the two repaired sites**: a config or launch path where `cfg.models` is populated after `_apply_routing` is first called, or where the roster is mutated mid-run. I assumed both lists are fixed at build time.\n\n## termination\n\n**4 passes.** Pass 1: read the helper, both call sites, `routing.py`, both test files; drove all 3 arms. Pass 2: enumerated `.models` reads, then all 8 dispatch sites \u2192 C-A; ran the mutation test on the guards. Pass 3: edge shapes, the empty case, the normalisation asymmetry \u2192 C-B. Pass 4: fix verification for both, and a re-check for further above-threshold findings \u2014 none. Pass 4 produced only the three sub-threshold notes above, which is the diminishing-returns signal; I stopped there rather than enumerate further."
+}
