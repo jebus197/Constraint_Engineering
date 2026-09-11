@@ -1,0 +1,175 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 14232,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -5 2>/dev/null | head -20\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -140\", \"description\": \"List scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/sync_desktop_mirrors.py scripts/note_vagueness_lint.py scripts/scripts_are_reached_2026-09-11.py scripts/flake_rate_2026-09-11.py\", \"description\": \"Line counts of target files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/sync_desktop_mirrors.py\", \"description\": \"Read sync_desktop_mirrors\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/note_vagueness_lint.py\", \"description\": \"Read note_vagueness_lint\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/scripts_are_reached_2026-09-11.py; echo \\\"=====FLAKE=====\\\"; cat scripts/flake_rate_2026-09-11.py\", \"description\": \"Read reachability and flake scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python scripts/scripts_are_reached_2026-09-11.py 2>&1 | tail -20; echo \\\"=== FLAKE ===\\\"; timeout 300 python scripts/flake_rate_2026-09-11.py 2>&1 | tail -20\", \"description\": \"Reproduce both published figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -iE \\\"reach|vague|note_standard|desktop|precommit|mirror\\\" \", \"description\": \"Find relevant tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/scripts_are_reached_2026-09-11.py 2>&1 | tail -20; echo \\\"=== FLAKE ===\\\"; python scripts/flake_rate_2026-09-11.py 2>&1 | tail -20\", \"description\": \"Reproduce both published figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tests/test_scripts_are_reached_2026-09-11.py\", \"description\": \"Read reachability test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/scripts_are_reached_2026-09-11.py 2>&1 | tail -20; echo \\\"=== FLAKE ===\\\"; python3 scripts/flake_rate_2026-09-11.py 2>&1 | tail -20\", \"description\": \"Reproduce both published figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"scripts/\\\" experimental_notes/PARKED_FOR_THE_FOUNDER.md | head -40\", \"description\": \"Check roll-call line format\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git rev-parse --git-dir 2>&1; git status --short 2>&1 | head -3; ls -a | head\", \"description\": \"Check git presence\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport tempfile, pathlib, os\\nprint('gettempdir      ', tempfile.gettempdir())\\nprint('gettempdir res  ', pathlib.Path(tempfile.gettempdir()).resolve())\\nREPO=pathlib.Path('scripts/sync_desktop_mirrors.py').resolve().parents[1]\\nprint('REPO            ', REPO)\\nprint('in parents?     ', pathlib.Path(tempfile.gettempdir()).resolve() in REPO.parents)\\nimport pwd\\nprint('p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/nottemp_probe && TMPDIR=/tmp/nottemp_probe/ python3 -c \\\"\\nimport sys, tempfile, pathlib\\nsys.path.insert(0,'scripts')\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location('sdm','scripts/sync_desktop_mirrors.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nprint('gettempdir      :', tempfile.gettempdir())\\nprint('REPO            :"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport importlib.util, pathlib, tempfile, textwrap\\nspec=importlib.util.spec_from_file_location('nvl','scripts/note_vagueness_lint.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\n\\n# STRAY CLOSE FIRST, THEN AN UNCLOSED OPEN.\\ndoc = '''Intro paragraph that is definitely long enough to be linted here.\\n\\n<!-- verbatim-end -->\\n\\nMiddle paragraph"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib, re, importlib.util\\nspec=importlib.util.spec_from_file_location('nvl','scripts/note_vagueness_lint.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nnotes=sorted(pathlib.Path('experimental_notes').rglob('*.md'))\\nprint('notes under experimental_notes/:', len(notes))\\nallmd=sorted(pathlib.Path('.').rglob('*.md'))\\nprint('all md"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location('sar','scripts/scripts_are_reached_2026-09-11.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nfor form in ['scripts/foo.py', '\\\\\\\"scripts/foo.py\\\\\\\",', '- scripts/foo.py', '* scripts/foo.py', '  - \\\\`scripts/foo.py\\\\`', '1. scripts/foo.py']:\\n    print(repr(form), '->', bool(m."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && rm -rf mut && mkdir mut && cp -R \\\"$OLDPWD\\\" mut/repo 2>/dev/null; cd mut/repo && python3 - <<'PY'\\nimport re, pathlib\\np = pathlib.Path('scripts/scripts_are_reached_2026-09-11.py')\\nt = p.read_text()\\n# MUTATION: drop the test file from INSTRUMENT. The docstring of\\n# test_an_instrument_may_still_vouch_for_an_instrument says that reference is\\n# what keeps the module from "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport importlib.util, pathlib, tempfile\\nspec=importlib.util.spec_from_file_location('nvl','scripts/note_vagueness_lint.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\ndoc = \\\"\\\"\\\"Opening paragraph of ordinary prose, long enough to be linted properly.\\n\\n<!-- verbatim-begin: fable -->\\n\\nA seat said the coverage rose and the rate improved "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/mut/repo && git checkout -q -- scripts/scripts_are_reached_2026-09-11.py 2>/dev/null; python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('scripts/scripts_are_reached_2026-09-11.py'); t=p.read_text()\\nold=\\\"\\\"\\\"    if voucher == target:\\n        return False\\n    return not (voucher in INSTRUMENT and target not in INSTRUMENT)\\\"\\\"\\\"\\nnew=\\\"\\\"\\\"    if voucher == target:\\n        re"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport importlib.util, pathlib, tempfile\\nspec=importlib.util.spec_from_file_location('nvl','scripts/note_vagueness_lint.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\ndoc = \\\"\\\"\\\"Opening paragraph of ordinary prose, long enough to be linted properly.\\n\\n<!-- verbatim-begin: fable -->\\n\\nA seat said the coverage rose and the rate improved "
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d3_2fk16/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"    opens = closes = 0\\n    for para in paragraphs(text):\\n        scan = _strip_quoted(para)\\n        opens += 1 if VERBATIM_BEGIN.search(scan) else 0\\n        closes += 1 if VERBATIM_END.search(scan) else 0\\n    if opens != closes"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d3_2fk16/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"def verbatim_paragraphs(text: str) -> set[int]:\\n    \\\"\\\"\\\"Paragraph numbers that fall inside a verbatim region.\", \"new_string\": \"class RegionState(typing.NamedTuple):\\n    \\\"\\\"\\\"What ONE walk of the paragraphs found out about the v"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/note_vagueness_lint.py\\\")\\nt = p.read_text()\\n\\nold_tally = '''    opens = closes = 0\\n    for para in paragraphs(text):\\n        scan = _strip_quoted(para)\\n        opens += 1 if VERBATIM_BEGIN.search(scan) else 0\\n        closes += 1 if VERBATIM_END.search(scan) else 0\\n    if opens != closes:\\n        counted.insert(0, (1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport importlib.util, pathlib, tempfile\\nspec=importlib.util.spec_from_file_location('nvl','scripts/note_vagueness_lint.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\ndoc = '''Intro paragraph that is definitely long enough to be linted here.\\n\\n<!-- verbatim-end -->\\n\\nMiddle paragraph of ordinary prose long enough to reach five words.\\n\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/scripts_are_reached_2026-09-11.py\\\"); t = p.read_text()\\nold = '''_ROLL_CALL = re.compile(r'[\\\"\\\\\\\\'`]?(scripts/[\\\\\\\\w./-]+\\\\\\\\.py)[\\\"\\\\\\\\'`]?,?')'''\\nassert old in t, \\\"roll-call regex not found\\\"\\nnew = '''#\\n#: LIST MARKERS WERE DOCUMENTED AND NOT IMPLEMENTED, and that is a false zero of\\n#: exactly the class this whole s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/sync_desktop_mirrors.py\\\"); t = p.read_text()\\n\\nold = '''def refuse_reason() -> str | None:'''\\nassert old in t\\n\\nnew = '''#: Every directory that is a temp root ON THIS MACHINE, resolved.\\n#:\\n#: `tempfile.gettempdir()` ALONE IS ONE FORM OF THE THING. It returns whatever\\n#: `TMPDIR` says, and `TMPDIR` is inherited -- so "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/false_zero_probe_2026-09-11.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Catch FALSE ZEROS as a CLASS: a scanner that resolves 1 form and misses the other.\\n\\nWHY A CLASS CHECK AND NOT A 16TH INDIVIDUAL FIX. This defect has now landed 15\\ntimes in 1 session, and on 2026-09-11 it landed 4 times in 1 morning -- 3 of\\nthose inside instruments built to detect it. The 4:\\n\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_false_zero_class_2026-09-11.py <<'PYEOF'\\n\\\"\\\"\\\"The 4 false zeros of 2026-09-11, pinned as a CLASS and as 4 individuals.\\n\\nA SCANNER THAT RESOLVES 1 FORM OF A THING AND REPORTS A FALSE ZERO FOR THE OTHER\\nhas now been confirmed 15 times in this session, 4 of them on 2026-09-11 and 3 of\\nthose inside instruments built to detect it. Every one was fixed individual"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_false_zero_class_2026-09-11.py -q -p no:cacheprovider 2>&1 | grep -E \\\"passed|failed|FAILED|Error\\\" | head -20\", \"description\": \"Run the new test file, filtered output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/note_vagueness_lint.py /tmp/bk_nvl.py && cp scripts/scripts_are_reached_2026-09-11.py /tmp/bk_sar.py && cp scripts/sync_desktop_mirrors.py /tmp/bk_sdm.py && python3 - <<'PY'\\nimport pathlib, re\\n# MUTATION 1: put the order-blind tally back in place of the state machine.\\np=pathlib.Path(\\\"scripts/note_vagueness_lint.py\\\"); t=p.read_text()\\nt=t.replace(\\\"    state = region_st"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/bk_nvl.py scripts/note_vagueness_lint.py && cp /tmp/bk_sar.py scripts/scripts_are_reached_2026-09-11.py && cp /tmp/bk_sdm.py scripts/sync_desktop_mirrors.py && python3 -m pytest bench/tests/test_false_zero_class_2026-09-11.py bench/tests/test_note_standard_v17_enforced_2026-08-26.py bench/tests/test_note_vagueness_lint_2026-08-23.py bench/tests/test_verbatim_exemption_reaches_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -ld bench bench/tests scripts; readlink bench 2>/dev/null; ls -l bench/tests/test_false_zero_class_2026-09-11.py; cat pytest.ini 2>/dev/null | head -20; ls -l /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_false_zero_class_2026-09-11.py 2>&1 | head -3\", \"description\": \"Check whether sandbox tests are symlinked to the real repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 420,470p bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py; echo \\\"--- REPO defn ---\\\"; grep -n \\\"REPO\\\\s*=\\\" bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py bench/tests/test_lint_reach_over_notes_2026-09-10.py | head\", \"description\": \"Inspect the failing desktop-mirror assertion\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"PR=/Users/georgejackson/Developer_Projects/Constraint_Engineering; mkdir -p /tmp/pristine && cp $PR/scripts/sync_desktop_mirrors.py /tmp/pristine/ 2>&1 && cp /tmp/pristine/sync_desktop_mirrors.py scripts/sync_desktop_mirrors.py && python3 -m pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py -q -p no:cacheprovider 2>&1 | grep -E \\\"^(FAILED|[0-9]+ (passed|failed))\\\" ; e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/lint_reach_over_notes_2026-09-10.py 2>&1 | tail -5; echo \\\"--- exit $? ---\\\"; grep -n \\\"REPO\\\\|Constraint_Engineering\\\\|parents\\\\[\\\" scripts/lint_reach_over_notes_2026-09-10.py | head -5\", \"description\": \"Check whether lint_reach script breaks under my change\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py\\\"); t=p.read_text()\\nold='''    def test_the_founders_own_checkout_is_not_refused(self, sync, monkeypatch):\\n        \\\"\\\"\\\"POSITIVE CONTROL: outside a test, the real repository still mirrors,\\n        or the hook has silently stopped refreshing what he reads.\\\"\\\"\\\"\\n        m"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom scipy.stats import beta\\nimport mpmath as mp\\nmp.mp.dps=50\\nz=mp.mpf(\\\"1.959963984540054235524594430520551527955550995213\\\")\\ndef wil(k,n):\\n    p,N=mp.mpf(k)/n,mp.mpf(n); c=p+z**2/(2*N)\\n    h=z*mp.sqrt(p*(1-p)/N+z**2/(4*N**2)); d=1+z**2/N\\n    return float((c-h)/d), float((c+h)/d)\\nfor label,k,n in ["
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport importlib.util, pathlib, sys\\ndef load(p,n):\\n    s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m\\nnew=load('scripts/note_vagueness_lint.py','new')\\nimport shutil, tempfile\\nd=pathlib.Path(tempfile.mkdtemp()); shutil.copy('/Users/georgejackson/Developer_Projects/Constraint_Engineering/scrip"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/false_zero_probe_2026-09-11.py --check >/dev/null 2>&1; echo \\\"probe --check exit: $?\\\"; python3 -m pytest bench/tests/test_false_zero_class_2026-09-11.py -q -p no:cacheprovider 2>&1 | grep -E \\\"^[0-9]+ (passed|failed)\\\"; echo \\\"--- files written ---\\\"; ls -l scripts/false_zero_probe_2026-09-11.py scripts/note_vagueness_lint.py scripts/scripts_are_reached_2026-09-11.py"
+    }
+  ],
+  "n_tool_calls": 41,
+  "elapsed_s": 893.2,
+  "response": "## 1. `verdict`\n\n**SPLIT.** Of the 5 fixes: **FIX 2 and FIX 5 close their holes** (confirmed by execution and by mutation). **FIX 3 closes its hole but its published figure is stale.** **FIX 1 and FIX 4 do NOT close the holes they name** \u2014 both leave the *same* defect reachable by a one-line change to the input, and I reproduced both. FIX 1 additionally shipped a positive control that is red in every clone.\n\n## 2. `reasoning`\n\nThree passes. What I ran, and what it said:\n\n**FIX 1 \u2014 NOT CLOSED, two ways.**\n`refuse_reason()`'s temp-root rule is correct on this machine \u2014 I verified the `/var` \u2192 `/private/var` question directly rather than reasoning about it: `gettempdir()` = `/var/folders/cc/.../T`, resolved = `/private/var/folders/cc/.../T`, and `REPO` is already `.resolve()`d at import, so containment holds (`in parents? True`). Section 3 item 2's first half is **sound**.\n\nIts second half is the hole. With the temp root relocated and *nothing else changed*:\n\n```\nDESKTOP         : /Users/georgejackson/Desktop\nreal_desktop()  : /Users/georgejackson/Desktop\nrefuse_reason() : None\n```\n\n`None` means it would have copied this clone's files over the founder's. A clone on his Desktop, in `~/repos`, or on an external drive escapes both rules \u2014 the pre-commit hook in that clone is a non-pytest invocation, so it writes. **This is the 2026-09-11 incident with the clone moved 3 directories.** I did not call `main()`; the guard's verdict is the whole proof.\n\nSecond: the passwd rule **fails open**. `if DESKTOP.resolve() != real_desktop().resolve(): return None` treats a mismatch as *proof of a drill* and returns before every other rule. Under `sudo`, macOS keeps `HOME` while `getuid()` becomes 0, so `real_desktop()` \u2192 `/var/root/Desktop`, the paths differ, and one `sudo` disables the entire guard on a run whose `DESKTOP` is his real one. Section 3 item 1 asks which failure is mine: **mine is the fail-open one \u2014 a clone gets through.** I could not stage a uid change, which is precisely why the fix makes the decision take its inputs as arguments.\n\n**FIX 4 \u2014 NOT CLOSED.** Section 3 item 3's attack (finding prepended at paragraph 1 while paragraph 1 is exempt) **fails**: the `insert(0, \u2026)` happens *after* `counted` is filtered, so it is counted unconditionally. That part is sound. The hole is elsewhere and is one line away. A **stray `verbatim-end` before an unclosed `verbatim-begin`**:\n\n```\nexempt paragraphs : [4, 5]\ncounted findings  : 0\nexempted findings : 1   QUANTITY WITHOUT A VALUE 'rate'\n```\n\n`opens == closes == 1`, so the new guard says BALANCED and stays silent while a region really is open and really does exempt to end of file. A **tally is order-blind; an unclosed region is a fact about order.** The guard added this morning to end silent amnesty does not detect it.\n\n**FIX 2 \u2014 SOUND.** `partition()` is genuinely one implementation with two callers, and the prepend ordering is right.\n\n**FIX 3 \u2014 SOUND, figure stale.** Over 402 notes I get **29 substring vs 28 bounded**, not 28 vs 27. The *durable* claim reproduces exactly: the boundary drops **1**, and it is the verb on `Panel_Roster_Round2_FULL_RECORD_2026-09-09.md`. The absolute pair has gone stale over a growing corpus \u2014 the same entry-6.1 lesson `scripts_are_reached` states about itself.\n\n**FIX 5 \u2014 SOUND, and the asymmetry IS tested.** I mutated `vouches()` to `return voucher not in INSTRUMENT` (an instrument vouches for nothing): **4 failed, 10 passed**. The hour-long vacuity is closed. I did find a *different* live false zero in the same file: `_ROLL_CALL`'s docstring claims it takes \"quotes, comma or list marker\" and the test docstring says \"in a fenced list\", but `- scripts/foo.py`, `* \u2026`, `1. \u2026` and `` - `\u2026` `` all returned `False`. The roll call works today only because `PARKED_FOR_THE_FOUNDER.md` happens to use bare indented paths. Reformat it as a bullet list and every orphan reads as reached.\n\n**Section 3 item 6 \u2014 the class check.** Built and run. `scripts/false_zero_probe_2026-09-11.py` imports the **real** scanners and requires `verdict(f, x) == verdict(f, t(x))` for form-preserving `t` (indentation, invisible whitespace, list form, inflection). It caught the `_ROLL_CALL` defect mechanically, with no reading of the regex, and it pins this morning's two repairs so they stay repaired.\n\n**One hypothesis I refuted against myself.** The probe flagged the paragraph splitter as CRLF-fragile in memory (`PARAGRAPH_BREAK = r\"\\n[ \\t]*\\n\"` never matches `\\r\\n\\r\\n`, collapsing a note to 1 paragraph and exempting the whole file). Through the real entry point it is unreachable: `path.read_text()` applies universal newlines. **Refuted \u2014 not a finding.**\n\n## 3. `falsifier`\n\n`bench/tests/test_false_zero_class_2026-09-11.py` \u2014 19 assertions.\n\n**GREEN:**\n```\n19 passed in 0.18s\n```\nNeighbourhood, after all changes:\n```\n134 passed, 2 skipped in 1.93s\n```\n(`test_desktop_mirrors_stay_current`, `test_false_zero_class`, `test_note_standard_v17_enforced`, `test_note_vagueness_lint`, `test_verbatim_exemption_reaches_every_gate`)\n\n**RED \u2014 three mutations, reverting each fix:**\n```\n6 failed, 13 passed in 0.19s\nFAILED ...TestTheClassCheck::test_no_scanner_flips_under_a_form_change\nFAILED ...TestTheRollCallMatcher::test_every_markdown_list_form_is_a_roll_call_line\nFAILED ...TestTheUnclosedRegion::test_partition_counts_the_finding\nFAILED ...TestTheDesktopGuard::test_a_clone_outside_the_temp_root_is_refused\nFAILED ...TestTheDesktopGuard::test_sudo_does_not_disable_the_guard\nFAILED ...TestTheDesktopGuard::test_a_container_with_no_passwd_entry_is_refused\n\nE  assert not [{'axis': 'bullet -', 'kind': 'FALSE ZERO', 'probe': 'roll-call line matcher', ...}]\nE  assert any(\"UNBALANCED\" in c[1] for c in counted)  \u2192  assert False\nE  assert r is not None and \"clone or a scratch fixture\" in r  \u2192  assert (None is not None)\n```\n\n**The probe itself, mutation-tested for vacuity** (`test_the_probe_is_not_vacuous` re-instates the old matcher in-process and requires \u22654 flips), and `test_every_accepted_flip_carries_a_reason` stops `ACCEPTED` becoming a mute button.\n\n**Anti-vacuity on the `returncode in (0, 4)` failure mode:** every Desktop assertion asserts on the refusal *string*, not on \"not None\".\n\n## 4. `fix`\n\n| file | change |\n|---|---|\n| `scripts/false_zero_probe_2026-09-11.py` **(new)** | The class check. 6 real scanners \u00d7 29 form axes; `--check` exits 1 on any undeclared flip. Caught `_ROLL_CALL` mechanically; pins the anchor fix and the whitespace-splitter fix. |\n| `scripts/note_vagueness_lint.py` | `region_state()` \u2014 one ordered walk returning `marked / opens / closes / unclosed / opened_at / stray_closes`. `verbatim_paragraphs` **delegates** to it, `partition` gates on `unclosed or stray_closes` instead of a tally. The old walk is kept under `_verbatim_paragraphs_walk_retained_for_its_reasoning` \u2014 its comments record two defects and nothing is removed. |\n| `scripts/sync_desktop_mirrors.py` | `refuse_reason_for(desktop, passwd_desktop, passwd_reliable, repo, env, roots, recorded_source)` \u2014 the whole decision, inputs explicit, so `sudo` / passwd-less / clone-on-Desktop are reachable by a test. `temp_roots()` covers `TMPDIR`, `/tmp`, `/private/tmp`, `/var/tmp`, all resolved. Passwd mismatch now **fails closed** when the identification is unreliable. Source-of-record sidecar + `--adopt` refuses a second checkout writing the same Desktop. `preserve_before_overwrite()` keeps the superseded bytes \u2014 the one rule that is about **bytes, not paths**, and is therefore wrong in none of the cases above. `refuse_reason()` is a thin wrapper; nothing removed. |\n| `scripts/scripts_are_reached_2026-09-11.py` | `_ROLL_CALL` accepts the list forms its own docstring already claimed. Verified it still **rejects** real references (`SCRIPT = REPO / \"scripts/foo.py\"`, `python3 scripts/foo.py --check`). |\n| `bench/tests/test_false_zero_class_2026-09-11.py` **(new)** | 19 assertions, all seen red. |\n| `bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py` | `test_the_founders_own_checkout_is_not_refused` was red in every clone. Live assertion **kept**; deterministic `refuse_reason_for` assertion added so the property is checked everywhere; skip reason names why. |\n\nNothing disabled. No git ref touched, no paid seat, no key store. No write outside the sandbox tree \u2014 verified: `/Users/.../Constraint_Engineering/bench/tests/test_false_zero_class_2026-09-11.py: No such file or directory`.\n\n## 5. `figures`\n\nEvery interval: statsmodels Wilson vs a 50-digit mpmath closed form; Clopper-Pearson statsmodels `beta` vs `scipy.stats.beta`.\n\n| figure | k/n | Wilson | 2nd tool agrees to |\n|---|---|---|---|\n| I38 flake (**reproduced exactly**) | 2/6 = 33.3333% | [9.6771%, 70.0007%] | 5.55e-17 / 0 |\n| reachability (brief's counts) | 115/121 = 95.0413% | [89.6029%, 97.7078%] | 1.11e-16 / 0 |\n| Rule 28: bounded drop | 1/29 = 3.4483% | [0.6113%, 17.1755%] | 6.94e-18 / 5.55e-17 |\n| roll-call list forms rejected pre-fix | 5/7 = 71.4286% | [35.8934%, 91.7781%] | 2.22e-16 / 1.11e-16 |\n\n**The two cases are not alike, and Section 5 is right to insist on it.** I38 is **6 observations**: Wilson spans a factor of 7.2 and contains both \"1-in-10 flake\" and \"fails 7 times in 10\". Nothing about a remedy can be justified from it. Reachability at 115/121 is \u00b14 points and is actionable. Treating 33.3333% as a rate is over-reading, and I say so as a finding.\n\n**Reachability could not be re-executed here**: this sandbox is not a git checkout, and `_tracked()` correctly refuses rather than reporting everything unreached. That refusal is right; the figure is unverified by me and I do not endorse it.\n\n**Regression evidence for my linter change \u2014 402 notes, old vs new:** `counted findings OLD=969 NEW=969`, **0 files changed**. The state machine fires only on the constructed shape; it introduces no false positives on the live corpus.\n\n## 6. `strongest_disagreement`\n\n1. **FIX 1 does not close its hole, and its own docstring overstates what was measured.** It says the two rules together \"catch any clone\". They catch any clone *under the temp root*. Failing case above: `refuse_reason() \u2192 None` with `DESKTOP` = the real Desktop. **Severity: equal to the reference incident** \u2014 same file, same mechanism, same silent loss, only the clone's location differs.\n2. **FIX 1's passwd rule fails open, which is the worse direction.** A mismatch is treated as proof of a drill and short-circuits every later rule. One `sudo` turns the guard off. **Severity: high.**\n3. **FIX 4 does not close its hole.** `opens == closes == 1` with a region open. The brief calls this fix's attack surface \"paragraph 1 inside a region\"; that attack fails, and the real one is a stray close. **Severity: medium-high** \u2014 it is the silent 12-paragraph amnesty, unchanged, inside the guard written to end it.\n4. **FIX 3's published figure is wrong today.** 29/28, not 28/27. The delta claim is exactly right; the absolute pair is stale, and a typed figure over a growing corpus was already this project's own named lesson. **Severity: low (accuracy).**\n5. **FIX 1 shipped a red test into every clone.** `test_the_founders_own_checkout_is_not_refused` \u2014 identical `1 failed, 19 passed, 1 skipped` before and after my other repairs, so it came in with the guard. 5 of the 6 full-size runs in the census are clones. This is plausibly a contributor to what gets logged as suite flake. **Severity: medium.**\n6. **Where I agree and say so:** FIX 2 and FIX 5 are sound, and FIX 5's asymmetry is genuinely tested \u2014 I mutated it and 4 tests went red. Section 3 item 5 asks for the *next* vacuous assertion; I did not find one in that file. The live defect there is `_ROLL_CALL`, which is a documented-but-unimplemented form, not a vacuous test.\n\n## 7. `refutation_condition`\n\nConcrete, in order of how much it would cost me:\n\n- **F1 dies** if `TMPDIR=/tmp/nottemp_probe python3 -c \"\u2026; print(refuse_reason())\"` prints a refusal on an unpatched tree, or if someone shows the pre-commit hook can never run from a non-temp clone.\n- **F2 dies** if `sudo -n true; sudo printenv HOME` shows macOS resetting `HOME` to `/var/root` here \u2014 then `DESKTOP` is not his real Desktop under sudo and the mismatch branch is honest.\n- **F3 dies** if the stray-close fixture in `TestTheUnclosedRegion.STRAY` is shown to be unwritable in practice \u2014 e.g. a pre-commit stage already rejects a `verbatim-end` with no open region. I looked and found none; a named stage would refute me.\n- **F4 dies** if `git grep -n \"^\\s*[-*+] scripts/.*\\.py$\"` over the tracked tree returns nothing *and* a rule exists forbidding that form in a roll call. Today it is prevented only by convention.\n- **F5 dies** if `test_the_founders_own_checkout_is_not_refused` passes in a fresh clone on an unpatched tree \u2014 one `pytest bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py` in a clone settles it.\n- **My whole class check dies** if the next false zero found in this repository is one the probe's axes cannot express \u2014 a semantic form rather than a textual one (encoding, locale, a differently-spelled identifier). That is its stated limit, and finding such a case is the right way to attack it.\n- **The preserve-before-overwrite rule dies** if a superseded sidecar is shown to break a reader the founder actually uses \u2014 e.g. a Desktop tool that globs `CDSFL_*.md` and picks up `.superseded-*`.\n\n## 8. `termination`\n\n**3 passes.** Pass 1: read the 5 fixes, reproduce both published figures (I38 exact; reachability refused, correctly, for want of git). Pass 2: attack each fix by execution \u2014 2 holes confirmed, 1 attack refuted (the paragraph-1 prepend), 1 hypothesis of my own refuted (CRLF). Pass 3: build, mutate, corpus-regress \u2014 this added F5 (the clone-red control) and the 969-findings-unchanged regression evidence.\n\nA fourth pass over the same surface produced only the plural-as-noun blind spot and the hyphenated-form question, both below the reference threshold and both now **declared with reasons** in the probe's `ACCEPTED` rather than left as prose. That is the diminishing-returns signal, so I stopped. I am not declaring convergence on FIX 1 or FIX 4: material defects remain open there, and my patches are proposals carrying evidence, not rulings."
+}

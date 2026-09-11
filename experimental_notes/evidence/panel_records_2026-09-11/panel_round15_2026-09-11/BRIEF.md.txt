@@ -1,0 +1,76 @@
+# PANEL BRIEF — round 15: a clone's test suite overwrote the founder's Desktop, and 4 guards each reported a false zero. DELIVER YOUR FIX AS A FILE
+
+<!-- figure: scripts reached by a caller, a citation or a document | scripts/scripts_are_reached_2026-09-11.py | reached: 115/121 = 95.0413% -->
+<!-- figure: I38 artefact-classifier flake across full-size suite runs | scripts/flake_rate_2026-09-11.py | I38 failures: 2 of 6 = 33.3333% -->
+<!-- figure: the same, with its interval | scripts/flake_rate_2026-09-11.py | Wilson          [9.6771%, 70.0007%] -->
+
+## SECTION 0 — THE DELIVERY RULE, AND THREE HARD PROHIBITIONS
+
+**Founder ruling:** *"they need to supply fixes, not just problems!"* Write your fix INTO your own sandbox tree at its real path. **THE 3 CATEGORIES HE RESERVES TO HIMSELF:** do not delete a git ref, do not spend money on a paid seat, do not touch the sealed answer-key store.
+
+## SECTION 1 — The question
+
+One defect class has now appeared 15 times in this session: **a scanner that resolves one form of a thing and reports a false zero for the other.** 4 more instances landed today, and 3 of them were inside instruments built to detect that very class. The question for this round is whether the 5 fixes below actually close each hole, and what they broke.
+
+## SECTION 2 — What is built, and what is measured. RUN IT.
+
+**FIX 1 — `scripts/sync_desktop_mirrors.py`, `refuse_reason()` added.** A full-suite run in a fresh clone OVERWROTE `~/Desktop/CDSFL_OUTCOMES_LOG.md`, the file the founder actually reads, with the clone's own older copy: 27,669 bytes over 34,082. `scripts/cdsfl_recover.py` reported the divergence 13 minutes later and the pre-commit mirror refresh restored it, which was luck rather than design. Cause: `DESKTOP = Path.home() / "Desktop"` is absolute while `REPO` is not, so any clone or scratch fixture copies the wrong source over the right destination. Attributed by EXECUTION, not reading: 43 candidate test files were each run under a fake HOME holding sentinels, and exactly 1 rewrote them — `bench/tests/test_precommit_guard_2026-09-09.py::test_a_commit_is_refused_in_a_clone_of_this_actual_repository`. The guard refuses under pytest or from a repository under the temp root, and keys on the **passwd** home rather than `Path.home()`, because the legitimate drills fake `$HOME` on purpose and under a faked `$HOME` a drill and an escape are the same path.
+
+**FIX 2 — `scripts/note_vagueness_lint.py`, `partition()` added and `main` rewired.** The suite failed on `Panel_Roster_Round2_FULL_RECORD_2026-09-09.md` at line 290, inside a region a panel seat's words occupy — the exemption task V8 added so a seat's reply reaches the record unedited. The CLI subtracted the exempt paragraphs; `bench/tests/test_note_standard_v17_enforced_2026-08-26.py` called the reporter raw and subtracted nothing. Each was internally consistent, so neither could detect the disagreement. There is now 1 implementation with 2 callers.
+
+**FIX 3 — the same file, Rule 28 matching bounded.** `"the decay curve measure" in low` is a bare substring test and fires on "measure**s**" — a verb, using the founder's own term as a subject, which Rule 28 does not ban. Measured over 402 notes: 28 substring matches against 27 bounded. The boundary drops exactly 1 and it is that verb.
+
+**FIX 4 — the same file, unclosed regions.** Writing the region's begin-marker inside single backticks while DESCRIBING it opened a real region in the outcomes log; nothing closed it, and 12 paragraphs from there to end of file stopped being linted, silently. An inline code span is now treated as quoted exactly as a fenced block already was, and an unbalanced pair is reported as a COUNTED finding that the region it describes cannot itself exempt.
+
+**FIX 5 — `scripts/scripts_are_reached_2026-09-11.py`, `vouches()` added.** This instrument invalidated itself by being committed: it asks whether any tracked file mentions a script, so its own list of 8 orphans declared all 8 reached and the figure jumped to 120 of 120 within 8 minutes of publication. The first repair OVER-corrected, excluding 3 whole files including the test that genuinely runs the script — which made the instrument report ITSELF unreached. Then the prose explaining that made a third script read as reached, and moving that sentence into the test docstring did it a fourth time. `vouches()` now says an INSTRUMENT file may vouch only for another INSTRUMENT file: asymmetric, because the test really does run the module.
+
+**A SEPARATE FINDING, AND IT IS THE SHARPEST ONE.** The audit that re-counted the I38 flake grepped `^FAILED` across archived suite logs and returned **0 failures**. The real count is **2**. Those log lines are indented by 2 spaces, so the anchor could not match. The instrument built to count false zeros produced one.
+
+## SECTION 3 — Attack these specifically
+
+1. **THE DESKTOP GUARD KEYS ON `pwd.getpwuid(os.getuid()).pw_dir`.** Find the case where that is wrong or absent: `sudo`, a different effective uid, a container with no passwd entry, a network home, a symlinked home (`/Users` vs `/System/Volumes/Data/Users` on this machine). Show a scenario where the guard either lets a clone through or blocks the founder's own commit. The second failure is worse than the first — say which yours is.
+2. **THE TEMP-ROOT RULE USES `tempfile.gettempdir()`.** On this machine that is `/var/folders/...`, which is a symlink to `/private/var/folders/...`. `REPO.resolve()` returns the private form. Prove the comparison holds under every combination, or show it failing. Then ask whether a clone made somewhere that is not the temp root — the founder's own Desktop, say — escapes both rules.
+3. **`partition()` PREPENDS THE UNBALANCED FINDING TO `counted` AT PARAGRAPH 1.** If paragraph 1 is itself inside a region, is the finding still counted? Construct the file that breaks it.
+4. **THE BOUNDED MATCHER USES `(?<![a-z])` AND `(?![a-z])`.** Find a real Rule 28 violation it now misses: a capitalised sentence opener, a hyphenated form, a plural used as a noun rather than a verb. The corpus measurement says it drops exactly 1 across 402 notes — reproduce that, or show the extractor is measuring itself.
+5. **`vouches()` IS ASYMMETRIC AND THE ASYMMETRY WAS UNTESTED FOR AN HOUR.** Mutating the rule to its symmetric form left all 13 tests green, because an unrelated document happens to name the module. Find the next assertion in this repository that passes for an unrelated reason. Name the file and line, and show the mutation that should have failed and does not.
+6. **THE 4 FALSE-ZERO INSTANCES TODAY WERE ALL PATTERN-MATCHING BUGS** — an anchor, a substring, a name-versus-content selector, a roll-call line. Propose the mechanical check that would have caught them as a CLASS rather than one at a time, and build it. This is the fix the founder most wants from this round.
+
+## SECTION 3B — EVERY FIX MUST BE TESTED, BY YOU, BEFORE YOU HAND IT BACK
+
+**A fix you have not executed is a hypothesis.** Put the test at `bench/tests/<name>.py`, run it, quote the result line. **The test must be able to FAIL** — break the thing your fix repairs and quote the red output too. Several of this session's own controls were vacuous on the first attempt and were caught only by mutation; one asserted `returncode in (0, 4)`, which no outcome could violate.
+
+**Use the mathematical instruments.** Any proportion needs a Wilson interval and a second tool.
+
+## SECTION 4 — WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1
+
+State it plainly. Disagreement is preserved as information, not smoothed to consensus. If you think a fix above is wrong, say so and show the failing case.
+
+## SECTION 5 — USE THE MATHEMATICAL INSTRUMENTS
+
+Every proportion in this brief carries a **Wilson** interval cross-checked by a second tool, and both declared figures above are reproducible by running the named script. Recompute them. Where a fix changes a rate, report the new rate the same way — Wilson plus a second tool — and say which tools agreed to what precision.
+
+**What Wilson should tell you here, specifically.** The I38 figure is **2 of 6**, Wilson [9.6771%, 70.0007%]. That interval spans a factor of 7 and includes both "rare flake" and "fails half the time". Any seat that treats 33.3333% as a settled rate rather than as 6 observations has over-read it, and saying so is a finding. Conversely the reachability figure is **115 of 121** with a Wilson width of about 8 points, which is tight enough to act on. Distinguish the 2 cases explicitly; do not apply the same confidence to both.
+
+**Severity.** Score each finding you return. The Desktop overwrite destroyed a file the founder reads and was recovered by luck rather than by design; weigh your findings against that as the reference point rather than against each other.
+
+## SECTION 6 — WHAT WOULD REFUTE YOU
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion, and this project does not record opinions as findings. Be concrete: name the command, the file, or the observation that would show you wrong.
+
+## SECTION 7 — OUTPUT SHAPE
+
+Return these fields, named, so replies can be compared without a parser guessing:
+
+1. `verdict` — one of CONFIRMED, REFUTED, SPLIT, or SUPERSEDED, for the brief's central claim that the 5 fixes close the holes they name.
+2. `reasoning` — why, in prose, referring to what you ran.
+3. `falsifier` — the test you WROTE and EXECUTED, its path under `bench/tests/`, and the quoted result line. Include the RED output from breaking the thing it guards; a test you have not seen fail is not yet a test.
+4. `fix` — the path of every file you wrote in your sandbox, and what each changes.
+5. `figures` — any rate you computed, with a Wilson interval and the second tool that agreed.
+6. `strongest_disagreement` — WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1, stated plainly. If you think a fix above is wrong, show the failing case rather than asserting it.
+7. `refutation_condition` — from Section 6.
+
+## SECTION 8 — TERMINATION
+
+Stop when a further pass produces no new above-threshold findings — this project's own diminishing-returns criterion, the same one the gate uses. Say how many passes you ran and what the last one added. A pass that adds nothing is the signal to stop, not a failure.
+
+Written under CDSFL note standard v1.7 (26 August 2026).

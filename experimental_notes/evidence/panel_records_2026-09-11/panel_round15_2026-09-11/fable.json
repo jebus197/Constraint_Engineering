@@ -1,0 +1,151 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 11570,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-09-11*\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/scripts/sync_desktop_mirrors.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/scripts/scripts_are_reached_2026-09-11.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/scripts/note_vagueness_lint.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/scripts/flake_rate_2026-09-11.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/scripts_are_reached_2026-09-11.py 2>&1 | tail -15 && echo ---- && python3 scripts/flake_rate_2026-09-11.py 2>&1 | tail -15\", \"description\": \"Reproduce both declared figures\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"passwd|pw_dir|gettempdir|refuse_reason\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/bench/tests\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status 2>&1 | head -3; git ls-files 2>&1 | head -2; ls -a | head\", \"description\": \"Check whether sandbox is a git checkout\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git init -q 2>&1 && git add -A 2>&1 | head -3; git ls-files | grep -c '^scripts/.*\\\\.py$'\", \"description\": \"Init throwaway git repo in sandbox to enable reachability instrument\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/scripts_are_reached_2026-09-11.py 2>&1 | tail -12\", \"description\": \"Reproduce reachability figure 115/121\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, re, sys\\nsys.path.insert(0, 'scripts')\\nrepo = pathlib.Path('.')\\nnotes = sorted(repo.glob('experimental_notes/**/*.md')) + sorted(repo.glob('*.md')) + sorted(repo.glob('docs/**/*.md'))\\nprint(\\\"candidate note count:\\\", len(notes))\\nph = \\\"the decay curve measure\\\"\\nbounded = re.compile(r\\\"(?<![a-z])\\\" + re.escape(ph) + r\\\"(?![a-z])\\\")\\nsub_n = b_n ="
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, re\\nphrases = [\\\"the save routine\\\",\\\"the save script\\\",\\\"the state save routine\\\",\\\"the state-save script\\\",\\n           \\\"the recovery script\\\",\\\"the quality control script\\\",\\\"the decay curve measure\\\",\\\"the convergence measure\\\"]\\ndef sweep(files, label):\\n    sub=b=0; diffs=[]\\n    for f in files:\\n        t=f.read_text(errors='replace').lower()"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib, importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"nvl\\\", \\\"scripts/note_vagueness_lint.py\\\")\\nnvl = importlib.util.module_from_spec(spec); spec.loader.exec_module(nvl)\\ntmp = pathlib.Path(\\\".cdsfl_tmp\\\"); tmp.mkdir(exist_ok=True)\\n\\n# A: future stamp, note BEGINS with a verbatim region at paragraph 1\\na = tmp/\\\"a_future_stamp_in_re"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"scripts/(inventory_2026_09_06|priority_starvation_simulation|quarantine_to_candidate)\\\\.py\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/experimental_notes/PARKED_FOR_THE_FOUNDER.md\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/bench/tests/test_scripts_are_reached_2026-09-11.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/scripts_are_reached_2026-09-11.py /tmp/sar_backup.py\\npython3 - <<'EOF'\\nimport re, pathlib\\np = pathlib.Path(\\\"scripts/scripts_are_reached_2026-09-11.py\\\")\\nsrc = p.read_text()\\nold = \\\"    return not (voucher in INSTRUMENT and target not in INSTRUMENT)\\\"\\nnew = \\\"    return not ((voucher in INSTRUMENT) != (target in INSTRUMENT))  # MUTANT: symmetric\\\"\\nassert old in src\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, os, pathlib\\nspec = importlib.util.spec_from_file_location(\\\"sync\\\", \\\"scripts/sync_desktop_mirrors.py\\\")\\nsync = importlib.util.module_from_spec(spec); spec.loader.exec_module(sync)\\n\\n# (a) SUDO / UID MISMATCH: macOS sudo preserves $HOME by default, so\\n# DESKTOP = $HOME/Desktop = founder's real Desktop, but pw_dir(uid 0) = /var/root.\\n# The"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/scripts/note_vagueness_lint.py\", \"old_string\": \"    fs = future_stamp(path)\\n    if fs is not None:\\n        hits = [(1, \\\"FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)\\\",\\n                 fs[0], f\\\"note claims {fs[0]}; the file was written at {fs[1]}\\\")] + hits\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/note_vagueness_lint.py\\\")\\nsrc = p.read_text()\\n\\n# FIX A: future-stamp finding must be un-exemptable\\nold = '''    fs = future_stamp(path)\\n    if fs is not None:\\n        hits = [(1, \\\"FUTURE TIMESTAMP (Rule 1: read the clock, do not extrapolate)\\\",\\n                 fs[0], f\\\"note claims {fs[0]}; the file was written at "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/sync_desktop_mirrors.py\\\")\\nsrc = p.read_text()\\n\\nold = '''    if DESKTOP.resolve() != real_desktop().resolve():\\n        return None  # pointed at a fake: a drill, and drills must still run\\n    if os.environ.get(\\\"PYTEST_CURRENT_TEST\\\"):\\n        return (\\\"a test is running and DESKTOP is the founder's real one; a \\\"\\n  "
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_fnood31b/repo/bench/tests/test_panel_round15_fixes_2026-09-11.py\", \"content\": \"\\\"\\\"\\\"Panel round 15: the four escapes found by execution, pinned.\\n\\nEvery case here was first demonstrated RED against the unpatched module in the\\npanel sandbox on 2026-09-11, then the fix was written, then the case went\\ngreen. The f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_panel_round15_fixes_2026-09-11.py <<'PYEOF'\\n\\\"\\\"\\\"Panel round 15: the four escapes found by execution, pinned.\\n\\nEvery case here was first demonstrated RED against the unpatched module in the\\npanel sandbox on 2026-09-11, then the fix was written, then the case went\\ngreen. The four:\\n\\n  1. SUDO-SHAPED UID/PASSWD MISMATCH. macOS sudo preserves $HOME while\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_panel_round15_fixes_2026-09-11.py 2>&1 | grep -E \\\"passed|failed|error\\\" | tail -3\", \"description\": \"Show test result line\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider -W ignore::pytest.PytestWarning bench/tests/test_panel_round15_fixes_2026-09-11.py 2>&1 | grep -E \\\"^[0-9]+ (passed|failed)|FAILED|ERROR\\\" ; echo \\\"exit=$?\\\"\", \"description\": \"Run round-15 tests, filter to result line\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/sync_desktop_mirrors.py /tmp/sync_fixed.py && cp scripts/note_vagueness_lint.py /tmp/nvl_fixed.py && cp scripts/scripts_are_reached_2026-09-11.py /tmp/sar_fixed.py\\ngit show :scripts/sync_desktop_mirrors.py > scripts/sync_desktop_mirrors.py\\ngit show :scripts/note_vagueness_lint.py > scripts/note_vagueness_lint.py\\npython3 -m pytest -q -p no:cacheprovider -W ignore::pytest."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_scanner_specimen_contract_2026-09-11.py <<'PYEOF'\\n\\\"\\\"\\\"THE CLASS CHECK for this session's recurring defect: a scanner that\\nresolves one surface form of a thing and reports a false zero (or a false\\nnon-zero) for the other.\\n\\n15 instances in one session, 4 today, 3 of those inside instruments built to\\ndetect the class. All 4 of today's were PATTERN-MATCHING "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"# mutant 1: re-anchor the FAILED matcher (today's sharpest instance)\\npython3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/flake_rate_2026-09-11.py\\\"); s = p.read_text()\\nold = '    return re.search(r\\\"FAILED\\\\\\\\s+\\\\\\\\S*\\\"'\\nnew = '    return re.search(r\\\"^FAILED\\\\\\\\s+\\\\\\\\S*\\\"'\\nassert old in s\\np.write_text(s.replace(old, new).replace('+ r\\\"::\\\" + re.escape(TEST.split(\\\"::\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_scripts_are_reached_2026-09-11.py\\\")\\ns = p.read_text()\\nold = '''        assert not mod.vouches(orphan, orphan), \\\"a file vouches for itself\\\"'''\\nnew = '''        assert not mod.vouches(orphan, orphan), \\\"a file vouches for itself\\\"\\n        # THE 5TH CASE, ADDED BY PANEL ROUND 15 AFTER EXECUTING THE MUTANT.\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider -W ignore::pytest.PytestWarning bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py bench/tests/test_note_standard_v17_enforced_2026-08-26.py 2>&1 | grep -E \\\"^(FAILED|SKIPPED|[0-9]+ .*(passed|failed))\\\" ; echo ===\\ngrep -rl \\\"refuse_reason\\\\|note_vagueness_lint\\\" bench/tests/ | tr '\\\\n' ' '\", \"description\": \"Run the two directly-affect"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"# Attribution: same two tests against the PRISTINE sync module\\ngit show :scripts/sync_desktop_mirrors.py > /tmp/sync_pristine.py\\ncp /tmp/sync_pristine.py scripts/sync_desktop_mirrors.py\\npython3 -m pytest -q -p no:cacheprovider -W ignore::pytest.PytestWarning \\\"bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py::TestACloneCannotWriteTheFoundersDesktop::test_the_founders_own"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/sync_pristine.py scripts/sync_desktop_mirrors.py 2>/dev/null || git show :scripts/sync_desktop_mirrors.py > scripts/sync_desktop_mirrors.py\\npython3 -m pytest -q -p no:cacheprovider -W ignore::pytest.PytestWarning \\\"bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py::TestACloneCannotWriteTheFoundersDesktop::test_the_founders_own_checkout_is_not_refused\\\" 2>&1 | grep -"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git show :scripts/note_vagueness_lint.py > /tmp/nvl_pristine.py\\npython3 - <<'EOF'\\nimport importlib.util, pathlib\\ndef load(p, n):\\n    spec = importlib.util.spec_from_file_location(n, p)\\n    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\\na = load(\\\"/tmp/nvl_pristine.py\\\", \\\"nvl_old\\\")\\nb = load(\\\"scripts/note_vagueness_lint.py\\\", \\\"nvl_new\\\")\\nnote"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport mpmath as mp\\ndef wilson_mp(k, n):\\n    mp.mp.dps = 50\\n    z = mp.mpf(\\\"1.959963984540054235524594430520551527955550995213\\\")\\n    p, N = mp.mpf(k)/n, mp.mpf(n)\\n    c = p + z**2/(2*N); h = z*mp.sqrt(p*(1-p)/N + z**2/(4*N**2)); d = 1 + z**2/N\\n    return float((c-h)/d), float((c+h)/d)\\nfor label, k"
+    }
+  ],
+  "n_tool_calls": 35,
+  "elapsed_s": 911.6,
+  "response": "All green (95 passed), all figures cross-checked to ~1e-16 agreement, flake script byte-identical to its staged form. A fourth pass added nothing above threshold \u2014 stopping per \u00a78. Final report:\n\n---\n\n## `verdict`\n\n**SPLIT.** Each of the 5 fixes closes the specific hole it names \u2014 I reproduced every claimed measurement that could be reproduced here. But FIX 1's guard is bypassable in three executed scenarios (one of which defeats *both* of its rules at once), FIX 2/4's `partition()` still had two region defects of the same class it was fixing, and FIX 5's asymmetry test does not kill the symmetric mutant it exists to catch. All confirmed by execution, all repaired, all repairs shown red-then-green.\n\n## `reasoning`\n\nWhat I ran, and what it showed:\n\n1. **Figures reproduce.** Reachability: 115/121 = 95.0413%, Wilson [89.6029%, 97.7078%] \u2014 exact match (after `git init` in the sandbox; it correctly *refused* to answer without a checkout, which is the right failure mode). I38: 2/6, Wilson [9.6771%, 70.0007%] \u2014 exact match. Rule 28: on `experimental_notes/**/*.md` (exactly 402 files) the boundary drops **exactly 1** and it is the roster verb \u2014 but today's absolute counts are **29/28, not the declared 28/27**. The corpus grew by one occurrence since measurement: the brief's own entry-6.1 staleness lesson biting its own typed figure. Minor, but it is the third instrument this round whose figure travelled without a date.\n2. **FIX 1 bypasses, all executed** (`refuse_reason()` returned `None` in each):\n   - **(a) uid/passwd mismatch.** macOS `sudo` preserves `$HOME` while `getuid()` \u2192 0, so `real_desktop()` = `/var/root/Desktop` \u2260 `DESKTOP` = the founder's real one \u2192 classified as a *drill* \u2192 **both rules bypassed simultaneously**, even with `PYTEST_CURRENT_TEST` set AND the repo under the temp root. This is the \"lets a clone through\" direction \u2014 but the highest-privilege run is the one exempted, which makes it the sharpest of the three.\n   - **(b) TMPDIR-stripped environment.** With `TMPDIR` unset, `gettempdir()` \u2192 `/tmp`; a clone under `/var/folders` escaped the temp rule (subprocess-verified). The symlink combination itself *holds* when TMPDIR is present \u2014 both sides `.resolve()` to the `/private` form; the failure is environmental, not lexical.\n   - **(c) A clone anywhere outside scratch** \u2014 the founder's Desktop, `~/src` \u2014 passes both rules and replays the original incident exactly. The brief's own question; answer: yes, it escapes.\n3. **FIX 2/4 residuals, both executed:** (i) the FUTURE TIMESTAMP finding was prepended *before* the exempt split, so a note whose first paragraph opens a verbatim region bought amnesty for its own Rule 1 violation (finding landed in `exempted`); the unbalanced-region finding got region-immunity, the future-stamp finding didn't \u2014 the inconsistency was the defect. (ii) `verbatim-end` + `verbatim-begin` on adjacent lines (one paragraph) silently ended the exemption \u2014 bool-per-paragraph processes `closed` last regardless of position \u2014 so seat 2's verbatim words were **COUNTED** (the blocking ratchet would refuse the record: the exact V8 defeat) while the balance counter (also bool-per-paragraph) reported nothing. Also: two begins in one paragraph counted as one open, blinding the unbalanced check.\n4. **FIX 3 holds** (verdict: sound). Reproduced independently with my own sweep, not their extractor: 402 notes, drop = exactly 1, the verb at roster line 290. Residual: a plural *noun* use (\"the decay curve measures agree\") is now invisible, but it is surface-identical to the verb \u2014 no regex can split them, and the corpus contains zero instances. Not material.\n5. **FIX 5's asymmetry is *still* untested.** Mutating `vouches()` to `not ((voucher in INSTRUMENT) != (target in INSTRUMENT))` left **all 14 tests green**, including `test_the_vouching_rule_is_asymmetric`, whose docstring claims its 4 cases can see it. The direction the symmetric form flips \u2014 an *ordinary* file vouching *for* an instrument \u2014 has no case. Attack 5 answered exactly: `bench/tests/test_scripts_are_reached_2026-09-11.py`, the assertion block at lines 186\u2013196.\n6. **Attack 3's literal question:** the unbalanced finding **is** still counted when paragraph 1 is inside a region (insertion happens after the split) \u2014 that part of FIX 4 holds.\n7. **Attack 6 built:** the class is \"a pattern that was never run against a planted specimen of known value in more than one surface form.\" The mechanical check is a **specimen contract**: a registry of every count/exemption-producing pattern, each required to fire on the canonical form *and* a transformed form (indented, bulleted, inflected, adjacent) and stay silent on a true negative. All four of today's instances fail this contract on the day they were written; re-planting two of them (re-anchored `^FAILED`, un-bulleted roll-call) turned the contract red on exactly those rows.\n\n## `falsifier`\n\n- **`bench/tests/test_panel_round15_fixes_2026-09-11.py`** \u2014 green on fixed: `10 passed in 0.15s`. **Red on pristine modules** (restored from the git index): `7 failed, 3 passed in 0.23s`, e.g. `FAILED ...test_a_sudo_shaped_run_in_a_clone_is_refused` (the 3 passing either way are the anti-vacuity / default-off controls, which must).\n- **`bench/tests/test_scanner_specimen_contract_2026-09-11.py`** \u2014 green: `6 passed in 0.16s`. **Red with two instances re-planted:** `2 failed, 4 passed in 0.17s` \u2014 `FAILED ...[flake._failed_the_test]`, `FAILED ...[roll-call line selector]`.\n- **Strengthened `test_the_vouching_rule_is_asymmetric`** (5th case added): symmetric mutant now dies \u2014 `1 failed in 0.19s`; real module: `14 passed in 16.47s`.\n- **Differential census:** `402 notes; count differs on 0` \u2014 the lint patch changes blocking counts on no existing note.\n\n## `fix`\n\nAll in my sandbox tree at real paths:\n\n- `scripts/sync_desktop_mirrors.py` \u2014 drill exemption now requires `DESKTOP` displaced **to scratch** (closes the sudo/uid bypass); temp rule checks a resolved *set* of scratch roots (`gettempdir()`, `/tmp`, `/var/tmp`, `/var/folders`, `/dev/shm` \u2014 closes the TMPDIR-stripped escape); opt-in `.cdsfl_canonical_checkout` marker on the real Desktop refuses any other checkout by name (closes the non-scratch-clone class; **default-off** \u2014 no marker, no behaviour change; refusals stay exit-0 so no commit is ever blocked); `--register-canonical` flag wired into `main` and executed by test, and a scratch clone cannot register itself.\n- `scripts/note_vagueness_lint.py` \u2014 future-stamp finding inserted into `counted` *after* the exempt split (region-immune, matching the unbalanced finding); new `_marker_events()` walks markers in positional order and both consumers (exemption + balance counter) share it \u2014 one implementation, two callers, their own stated idiom.\n- `scripts/scripts_are_reached_2026-09-11.py` \u2014 `_ROLL_CALL` accepts markdown-bullet roll-call lines (`- scripts/x.py`), the same one-form defect pointing the other way (false non-zero reach hiding an orphan).\n- `bench/tests/test_scripts_are_reached_2026-09-11.py` \u2014 5th `vouches` case, with the executed mutant history in the comment.\n- `bench/tests/test_panel_round15_fixes_2026-09-11.py`, `bench/tests/test_scanner_specimen_contract_2026-09-11.py` \u2014 new, described above.\n\n## `figures`\n\n| figure | value | Wilson 95% | second tool, agreement |\n|---|---|---|---|\n| reachability | 115/121 = 95.0413% | [89.6029%, 97.7078%] | mpmath 50-dps closed form, \u22641.11e-16 |\n| I38 flake | 2/6 = 33.3333% | [9.6771%, 70.0007%] | mpmath, \u22645.55e-17 (also CP [4.3272%, 77.7222%]) |\n| Rule 28 bounded-drop (today) | 1/29 = 3.4483% | [0.6113%, 17.1755%] | mpmath, \u22645.55e-17 |\n| lint-patch behaviour drift | 0/402 notes | \u2014 | differential census, exact |\n\n**The two-cases distinction, explicitly:** the I38 interval spans 9.7%\u201370% \u2014 a factor of 7 covering both \"rare flake\" and \"fails half the time\"; **6 observations is a description of 6 runs, not a rate**, and the Fisher p=1.0000 clone split settles nothing. Act on it only by collecting more rows. The reachability interval (~8 points wide, floor 89.6%) is tight enough to act on. Treating these with equal confidence would itself be a defect.\n\n**Severity** (reference: the Desktop overwrite \u2014 founder's file destroyed, recovered by luck): sudo-bypass **high** (defeats both rules at once, but requires an unusual invocation); TMPDIR escape **medium-high** (plausible in cron/launchd/sudo environments); non-scratch clone **medium-high** (replays the incident exactly; needs a second checkout, which the founder demonstrably makes); seat-swallowing paragraph **medium** (blocks a founder record \u2014 the *worse* direction \u2014 but loudly, at commit); exempt future-stamp **medium-low** (silent amnesty, narrow trigger); vouches mutant survival **medium** (a calibration instrument asserting an untested property); roll-call bullet **low** today (no bulleted line exists yet); stale Rule 28 figure **low**.\n\n## `strongest_disagreement`\n\nThe brief says FIX 1's passwd keying separates \"a drill from an escape\" because \"a drill cannot move it.\" **The keying is backwards under privilege change**: it doesn't identify the *founder's* Desktop, it identifies the *current uid's* Desktop, and the mismatch is treated as proof of a drill when it is equally proof of `sudo`. Failing case, executed: `refuse_reason()` \u2192 `None` with the pytest flag set AND the repo under the temp root \u2014 both rules dead. I also disagree with the brief's implicit framing that the 5 fixes constitute closure of the *class*: 15 instances of one defect class closed one-at-a-time is the pattern the founder is objecting to; the specimen contract is the class-level answer, and only it turned red on re-planted instances. Finally, against CC1's likely reading of `test_the_vouching_rule_is_asymmetric` as discharging the mutation debt: it did not \u2014 I ran the mutant and all 14 stayed green.\n\n## `refutation_condition`\n\n- Show a **legitimate existing drill** that displaces `DESKTOP` to a non-scratch path \u2014 my tightening would refuse it, flipping my sudo fix into the worse (founder-starving) failure. Command: `grep -rn \"setattr(sync, \\\"DESKTOP\\\"\" bench/tests/` and exhibit one not under `tmp_path` (I found none).\n- Show `refuse_reason()` returning non-None in the founder's real checkout with no marker present \u2014 would refute my \"no new blocking by default\" claim. Command: `python3 -c 'import ...; print(refuse_reason())'` in his checkout.\n- Show any of the 402 notes where pristine vs fixed `blocking()` counts differ \u2014 refutes my zero-regression claim (my census script is in the transcript; re-run it).\n- Show pytest emitting a `FAILED` line-form my specimen registry doesn't cover (e.g. a wrapped/truncated id) that `_failed_the_test` misses \u2014 would show the contract is itself under-specified, the recursive instance of the class.\n- A 7th full-size suite run moving I38 outside [9.6771%, 70.0007%] refutes nothing \u2014 that is the point of quoting the interval.\n\n**Passes:** 3 substantive (reproduce + probe; fix + red/green; regression attribution + differential census). A 4th pass produced no new above-threshold finding \u2014 that is the stop signal, per \u00a78. Residual falsification debt: FIX 1's behaviour under a genuinely absent passwd entry (containers) was derived (falls back to `Path.home()`, rules apply \u2014 safe direction) but not executed, and the two regression reds in `test_desktop_mirrors_stay_current` were attributed to sandbox artifacts (pristine-module red; unborn-HEAD ratchet baselines) rather than eliminated \u2014 both marked [VERIFY:current] for a run in a real checkout."
+}
