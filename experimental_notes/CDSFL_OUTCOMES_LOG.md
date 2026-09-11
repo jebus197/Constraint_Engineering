@@ -257,7 +257,7 @@ Reversible: revert `75beb74`. The only behaviour changed is that 9 scripts answe
 
 | Measure | Value |
 |---|---|
-| Full suite | **A FRESH CLONE AT `b3766d0` RUNS GREEN: 7,237 passed, 52 skipped, 1 xfailed, 0 failed, exit 0** — task A2's claim, true for the first time after being asserted and false twice. Producer: `scripts/fresh_clone_suite_2026-09-11.py`; full output at `bench/logs/fresh_clone_last_run.txt` |
+| Full suite | **A FRESH CLONE RUNS GREEN AT 2 COMMITS, `b3766d0` AND `5a20b87`: 7,237 passed, 52 skipped, 1 xfailed, 0 failed, exit 0** — task A2's claim, true for the first time after being asserted and false twice. Producer: `scripts/fresh_clone_suite_2026-09-11.py`; full output at `bench/logs/fresh_clone_last_run.txt` |
 | Task list | **2026-09-11: 94 entries, 83 done, 2 open, 4 blocked, 1 deferred, 4 withdrawn** (was 88 entries, 40 done, 42 open, 3 blocked, 3 withdrawn) |
 | Commits since 2026-09-10 00:00 | 127 |
 | Commits on 2026-09-11 | 61 |
