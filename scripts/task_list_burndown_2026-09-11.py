@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""How fast does the master task list close, and does it grow while being closed?
+
+WHY THIS EXISTS. The founder asked for an ETA on completing the list. A burn-down
+figure answers that only if the list is a FIXED target, and this one is not: it
+gains entries as it is worked, because closing an entry keeps turning up defects
+that become entries. An ETA computed without that term is the classic
+underestimate, and quoting one would be exactly the fabricated certainty this
+project exists to catch.
+
+WHAT IT MEASURES, from the file's own git history rather than from memory. For
+every commit that touched the list, it counts the `<!-- task: ... | state: ... -->`
+markers and how many read DONE. That gives the total and closed curves over the
+list's life, and the difference between the first populated snapshot and the last
+gives entries ADDED alongside entries CLOSED.
+
+THE START POINT IS THE FIRST POPULATED SNAPSHOT, NOT A CONVENIENT ONE. Measured
+by hand first, starting from the snapshot at the end of the list's second day,
+the growth share came out at 16.8421% -- and that was an UNDERSTATEMENT produced
+by choosing a start point after 20 entries had already been added. Reading from
+the first commit at which the list had any entries at all gives 37.8947%. A
+figure whose value depends on where the author began measuring is the figure this
+script exists to replace.
+
+THE FIGURE THAT MATTERS IS NOT THE CLOSURE RATE. It is the share of the list that
+was created AFTER the list was first populated: work discovered by doing the
+work. Expressed as a multiplier, 1/(1-r), it says how much total work each
+nominal entry implies.
+
+`measured-rate-travels-with-its-script`: every figure quoted about this list's
+progress comes from here.
+"""
+from __future__ import annotations
+
+import argparse
+import re
+import subprocess
+
+LIST = "experimental_notes/CDSFL_MASTER_TASK_LIST.md"
+
+#: A marker line. Anchored to the line so prose that merely quotes the syntax --
+#: which several entries do -- is not counted as an entry.
+MARK = re.compile(r"^<!-- task:\s*([^|]+?)\s*\|\s*state:\s*(\w+)", re.M)
+
+
+def snapshots() -> list[tuple[str, str, int, int]]:
+    """(when, short sha, distinct entry ids, DONE ids) for each touching commit.
+
+    DISTINCT IDS rather than raw marker lines. The list briefly carried 6
+    duplicated ids, and counting lines made their removal read as entries being
+    deleted.
+    """
+    r = subprocess.run(
+        ["git", "log", "--reverse", "--format=%H|%ad",
+         "--date=format:%Y-%m-%d %H:%M", "--", LIST],
+        capture_output=True, text=True)
+    if r.returncode != 0:
+        # REFUSE rather than report an empty history. A scan that cannot read the
+        # repository must not report 0 commits as though the list were new.
+        raise SystemExit("git log failed; refusing to report a burn-down from no history")
+    out = []
+    for line in r.stdout.strip().splitlines():
+        sha, when = line.split("|", 1)
+        blob = subprocess.run(["git", "show", f"{sha}:{LIST}"],
+                              capture_output=True, text=True).stdout
+        marks = MARK.findall(blob)
+        # UNIQUE IDS, NOT RAW MARKERS. At `3501c38` six ids appeared TWICE --
+        # P1, P2, P3, P4, 2.1 and 5.1 -- and the next commit de-duplicated them.
+        # Counting raw markers made that cleanup look like 2 entries being
+        # DELETED, which would be an additive-standard violation and was not one.
+        # The set of ids is the thing that must never shrink.
+        ids = {i.strip(): st for i, st in marks}
+        out.append((when, sha[:7], len(ids),
+                    sum(1 for st in ids.values() if st == "DONE")))
+    return out
+
+
+def figures(rows: list[tuple[str, str, int, int]]) -> dict:
+    populated = [r for r in rows if r[2] > 0]
+    if len(populated) < 2:
+        raise SystemExit("fewer than 2 populated snapshots; nothing to compare")
+    first, last = populated[0], populated[-1]
+    added, closed = last[2] - first[2], last[3] - first[3]
+
+    from statsmodels.stats.proportion import proportion_confint
+    from scipy.stats import beta
+    k, n = added, last[2]
+    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
+    cl = float(beta.ppf(0.025, k, n - k + 1)) if k else 0.0
+    ch = float(beta.isf(0.025, k + 1, n - k)) if k < n else 1.0
+    return {"first": first, "last": last, "added": added, "closed": closed,
+            "share": (k, n), "wilson": (lo, hi), "cp": (cl, ch),
+            "multiplier": 1.0 / (1.0 - k / n)}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--curve", action="store_true",
+                    help="print the full total/DONE curve, one line per commit")
+    a = ap.parse_args()
+
+    rows = snapshots()
+    f = figures(rows)
+    if a.curve:
+        print(f"  {'when':17} {'total':>6} {'done':>5} {'not done':>9}")
+        for when, _sha, total, done in rows:
+            print(f"  {when:17} {total:>6} {done:>5} {total - done:>9}")
+        print()
+
+    first, last = f["first"], f["last"]
+    print(f"task list burn-down, from {LIST}'s own history")
+    print(f"  first populated : {first[0]}  total {first[2]}, done {first[3]}")
+    print(f"  latest          : {last[0]}  total {last[2]}, done {last[3]}")
+    print(f"  closed since    : {f['closed']}")
+    print(f"  ADDED since     : {f['added']}")
+    print(f"  added per closed: {f['added'] / f['closed']:.4f}")
+    k, n = f["share"]
+    print(f"\n  share of the list created after it was first populated: "
+          f"{k} of {n} = {100 * k / n:.4f}%")
+    print(f"    Wilson          [{100 * f['wilson'][0]:.4f}%, {100 * f['wilson'][1]:.4f}%]")
+    print(f"    Clopper-Pearson [{100 * f['cp'][0]:.4f}%, {100 * f['cp'][1]:.4f}%]")
+    print(f"  implied work multiplier 1/(1-r): {f['multiplier']:.4f}")
+    print("\n  AN ETA FROM THE CLOSURE RATE ALONE WOULD BE WRONG BY THAT MULTIPLIER.")
+    print("  The list is not a fixed target: closing an entry keeps turning up")
+    print("  defects that become entries.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
