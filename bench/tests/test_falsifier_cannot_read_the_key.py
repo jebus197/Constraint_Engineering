@@ -236,9 +236,41 @@ def test_the_artefact_classifier_cannot_excuse_a_real_escape():
     """
     is_location_artefact = _artefact_classifier()
 
+    # THE FAILURE MUST PRINT ITS OWN CAUSE, because this test failed ONCE in a
+    # full clone run on 2026-09-11 and has not reproduced since -- not in a
+    # second full clone run, not in a 3,011-test slice, not in isolation, and
+    # not in a full working-tree run. One observation with no reproduction is
+    # not a defect anyone can fix, and guessing at a mechanism from the source
+    # is what `execute-do-not-grep` exists to stop.
+    #
+    # The classifier's answer depends on 2 pieces of state a bare AssertionError
+    # does not show: the project names it resolved and where they came from, and
+    # whether any suffix of the probed path EXISTS under the repository root --
+    # `_names_this_checkout` asks the filesystem. Both are captured here, so a
+    # recurrence is diagnosable from the log instead of needing to be caught in
+    # the act.
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location(
+        "archived_rejections_state",
+        REPO_ROOT / "scripts" / "archived_falsifier_rejections_2026-09-10.py")
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+
+    def _state(raw: str) -> str:
+        import pathlib as _pl
+        parts = [x for x in _pl.PurePosixPath(raw).parts if x not in ("/", "")]
+        probes = {
+            str(_pl.Path(*parts[i:])): (REPO_ROOT / _pl.Path(*parts[i:])).exists()
+            for i in range(max(0, len(parts) - _mod.MIN_SUFFIX_PARTS + 1))}
+        return (f"\n    project names : {sorted(_mod._PROJECT_NAMES)}"
+                f"\n    name source   : {_mod._NAME_SOURCE}"
+                f"\n    repo root     : {REPO_ROOT}"
+                f"\n    suffix probes : {probes}")
+
     here = str(REPO_ROOT)
     assert is_location_artefact([("a path outside the declared target", here)]), (
-        "the honest case must still be recognised, or this control proves nothing")
+        "the honest case must still be recognised, or this control proves "
+        "nothing." + _state(here))
     for bad in (
         [("answer-key vocabulary", "PLANTED_CLAIMS")],
         [("a path outside the declared target", "/Users/someone/.ssh/id_rsa")],
@@ -246,7 +278,9 @@ def test_the_artefact_classifier_cannot_excuse_a_real_escape():
         [("a path outside the declared target", here),
          ("an answer-key file path", "ft-001_KEY.json")],
     ):
-        assert not is_location_artefact(bad), bad
+        assert not is_location_artefact(bad), (
+            f"{bad} was forgiven as a location artefact"
+            + _state(bad[0][1]))
     assert not is_location_artefact([]), "no violation is not an artefact"
 
 
