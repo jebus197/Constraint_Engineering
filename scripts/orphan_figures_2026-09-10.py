@@ -62,6 +62,54 @@ class GitCannotAnswer(RuntimeError):
     """
 
 
+#: A path string that is an EXAMPLE or an ELISION rather than a citation.
+#: Added 2026-09-11, task A8, after measuring where each flagged path actually
+#: appears: of 44 untracked flagged paths, only 25 were cited by a NOTE. Twelve
+#: appeared ONLY in test files and 3 only in code -- illustrative fixtures, not
+#: evidence. `bench/logs/x/y.json` is a fixture written on 2026-09-10 by a test
+#: that exists to prove the extractor rejects non-file paths. The extractor's
+#: population was path-shaped STRINGS; the entry's question is about cited
+#: EVIDENCE, and roughly 4 in 10 of what it flagged was neither.
+_ELIDED = re.compile(r"XX|\.\.\.|<|\*|\{|\bNNN\b")
+
+
+def cited_where(path: str) -> list[str]:
+    """Which TRACKED files mention this path. Read from git, not guessed."""
+    r = subprocess.run(["git", "grep", "-l", "--", path], cwd=REPO,
+                       capture_output=True, text=True)
+    return sorted(f for f in r.stdout.split() if f)
+
+
+def classify_citation(path: str) -> str:
+    """NOTE, TESTS ONLY, CODE ONLY, ELIDED, or UNCITED.
+
+    THE DISTINCTION DECIDES THE QUESTION, and getting it wrong inflated A8's
+    figure by roughly three quarters. A path cited by a NOTE is evidence a reader
+    is pointed at; a path appearing only in a test is a fixture; a path carrying
+    `XX` or an ellipsis is an elision in prose, which is shorthand and not a
+    citation to anything.
+    """
+    if _ELIDED.search(path):
+        return "ELIDED"
+    where = cited_where(path)
+    if not where:
+        return "UNCITED"
+    tests = [f for f in where if f.startswith("bench/tests/")]
+    notes = [f for f in where
+             if f.endswith(".md") and not f.startswith("bench/tests/")]
+    # A FIXTURE STAYS A FIXTURE HOWEVER MUCH PROSE DISCUSSES IT, and this rule
+    # exists because the census promoted its own worked example. Writing the A8
+    # analysis into the master task list made `bench/logs/x/y.json` -- a fixture
+    # in a test that exists to prove the extractor rejects non-file paths --
+    # come back classified NOTE, because a note now mentioned it. A classifier
+    # that reclassifies a path by being written about is measuring the writing.
+    if tests:
+        return "TESTS ONLY"
+    if notes:
+        return "NOTE"
+    return "CODE ONLY"
+
+
 def untracked_cited_paths(prefix: str = "bench/logs/"):
     """Cited paths under `prefix` that git does not track. Entry A8's figure."""
     cited = set()
@@ -178,6 +226,27 @@ def main() -> int:
     # measures the SLICE and its own denominator; it does not reproduce 4.65%
     # and does not pretend to.
     all_cited, _ = untracked_cited_paths(prefix="")
+    # WHAT KIND OF MENTION EACH ONE IS. Added 2026-09-11, task A8.
+    import collections as _c
+    kinds = _c.Counter(classify_citation(u) for u in untracked)
+    print(f"\n  of the {len(untracked)} untracked, BY WHAT MENTIONS THEM:")
+    for kind, n in kinds.most_common():
+        print(f"    {n:3d}  {kind}")
+    note_cited = [u for u in untracked if classify_citation(u) == "NOTE"]
+    if cited:
+        lo_n, hi_n = proportion_confint(len(note_cited), len(cited), method="wilson")
+        lo_nc, hi_nc = proportion_confint(len(note_cited), len(cited), method="beta")
+        print(f"  the population a RULING is about -- cited by a note, untracked:")
+        print(f"    {len(note_cited)}/{len(cited)} = "
+              f"{len(note_cited)/len(cited):.4%}")
+        print(f"    Wilson 95%          : [{lo_n:.4%}, {hi_n:.4%}]")
+        print(f"    Clopper-Pearson 95% : [{lo_nc:.4%}, {hi_nc:.4%}]")
+        print(f"  ELIDED paths carry `XX` or an ellipsis and are shorthand in "
+              f"prose, not citations.")
+        print(f"  TESTS ONLY paths are fixtures -- and stay fixtures however "
+              f"much prose discusses\n  them, which is a rule this census "
+              f"needed after promoting its own worked example.")
+
     print(f"\n  for comparison, the entry's denominator is EVERY cited path, not")
     print(f"  only bench/logs ones. This script measures the slice: {len(untracked)}")
     print(f"  untracked of {len(cited)} cited bench/logs paths. The entry's 4.65% is")
