@@ -20,6 +20,21 @@ such line. The check is therefore: exit 0 AND a line beginning `usage:`.
 WHAT IT CANNOT SEE, stated rather than hidden. A script could print a `usage:`
 line and still do its work; nothing here would notice. The check is necessary,
 not sufficient, and it is the half that is mechanically decidable.
+
+AND IT MEASURES THIS TREE, NOW. There is deliberately no `--at <rev>` option,
+and the reason is worth recording because the option looks obviously useful.
+The pre-fix figure -- 30 of 53, quoted in `scripts/_cli_help.py` and in the
+round-14 panel brief -- was measured in the maintainer's FULL working tree,
+untracked archives and `.env` included. A revision-walking version would have to
+measure a `git archive` or a detached worktree, which holds TRACKED FILES ONLY.
+The 30 scripts being counted are exactly the ones that run their whole
+measurement when handed `--help`, and several of those measurements read
+untracked archives, so more of them would fail there and the number would be
+larger. It would be a different measurement wearing the same name.
+
+To reproduce the pre-fix figure, take a worktree at `d92564e^`, give it the
+untracked artefacts this tree has, and run this script in it. Saying so is the
+honest form; shipping an `--at` that quietly answers a different question is not.
 """
 from __future__ import annotations
 
