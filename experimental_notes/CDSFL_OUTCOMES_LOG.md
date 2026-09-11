@@ -244,7 +244,7 @@ Reversible: revert `9348514`, `3b1cb37`, `68bf559`, `4917b5e`. The only behaviou
 | Files deleted today | 0 |
 | Paid model dispatches today | **0** — panel rounds 3, 4, 14 and 15 all ran `PANEL_ONLY=cc2,fable`, Max subscription only |
 | Paid dispatches, WHOLE ARCHIVE | **30 across 79 review directories**, latest 2026-09-05; **0 of the 25 directories since**, Wilson [0.0000%, 13.3192%]. The figure read 10 until 2026-09-11, because the instrument globbed `panel_*` and read a missing `route` field as free |
-| Scripts reached by a caller, a citation or a document | **115 of 121 = 95.0413%**, Wilson [89.6029%, 97.7078%]. Producer: `scripts/scripts_are_reached_2026-09-11.py`. The denominator grows; re-run rather than quote |
+| Scripts reached by a caller, a citation or a document | **116 of 122 = 95.0820% at commit `a0e498d`**, Wilson [89.6848%, 97.7268%]. Producer: `scripts/scripts_are_reached_2026-09-11.py`. **Pinned to a revision**: the denominator moved 3 times in 1 day as scripts were added, so a dated figure was still going stale within hours |
 | I38 artefact-classifier flake | **3 of 8 full-size runs = 37.5000%**, Wilson [13.6844%, 69.4258%]. Producer: `scripts/flake_rate_2026-09-11.py`. 8 observations is a description of 8 runs, not a rate |
 | Panel records mirrored | **79 of 79** round directories have a tracked copy |
 | FFAFP cycle | 10 passes, series `[11, 4, 2, 3, 6, 2, 3, 2, 9, 10]`, gamma 0.365597, gate KEEP GOING, resurgence flagged |

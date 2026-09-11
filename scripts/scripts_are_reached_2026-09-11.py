@@ -6,14 +6,19 @@ reaches is not additive either: every new flag, gate, subcommand or entry point
 must be wired to a caller and executed by a test."* The project already ratchets
 config fields nothing reads. Scripts had no such check.
 
-MEASURED 2026-09-11: **115 of 121 scripts are reached -- 95.0413%, Wilson
-[89.6029%, 97.7078%], Clopper-Pearson [89.5194%, 98.1588%]**
+MEASURED AT COMMIT `a0e498d`, 2026-09-11: **116 of 122 scripts are reached --
+95.0820%, Wilson [89.6848%, 97.7268%], Clopper-Pearson
+[89.6027%, 98.1740%]**, both intervals cross-checked by 2 tools.
 
-THE DENOMINATOR GROWS, so this figure is dated on purpose and the producer is
-named beside it. It read 114 of 120 an hour earlier and moved when 1 script was
-added -- the entry-6.1 lesson in the task list, that a typed figure over a
-growing corpus is not merely unverifiable but guaranteed to go stale. The RATCHET
-is the durable claim; the percentage is a snapshot. Re-run rather than quote., both intervals
+PINNED TO A COMMIT, AND THE 3RD ATTEMPT AT STATING IT. It read 114 of 120, then
+115 of 121, then this, all on the same day -- each time because a script was
+added and the denominator moved. Dating a figure is not enough when the corpus
+grows hourly; naming the REVISION makes it permanently true instead of briefly
+true. That is entry 6.1's lesson taken one step further than entry 6.1 took it.
+
+THE RATCHET IS THE DURABLE CLAIM. The percentage is a snapshot of one revision;
+the set of 6 named scripts is what may not grow. Re-run the producer rather than
+quoting either., both intervals
 cross-checked by 2 tools (statsmodels against a 50-digit mpmath Wilson closed
 form; statsmodels `beta` against `scipy.stats.beta` for Clopper-Pearson).
 
