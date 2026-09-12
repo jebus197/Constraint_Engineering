@@ -65,6 +65,22 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-12 21:42 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `347d0d4`, main, **level with `origin/main` — everything pushed.** Working tree clean. `sv` ran at 21:30, exit code 0, and captured an Open Brain summary. Written immediately before a founder-initiated restart of the machine for a macOS update.
+
+**★ THE FRAME CHANGED ON 2026-09-11, AND THIS PARAGRAPH IS THE ONE TO READ FIRST.** The founder established that this list was only ever meant to be *"the canonical list of un-actioned founder decisions over the last several days. But nothing more and nothing less than this."*
+
+* **36 entries are HIS**, the numbered ones. **They are closed**: 32 DONE, 2 WITHDRAWN on his own ruling and on a false premise, 1 DEFERRED by his ruling (0.1, Wolfram), 1 BLOCKED on him (10.2). **Nothing on his list waits on the assistant, and has not for some time.**
+* **59 entries are NOT his**, the lettered ones. They arose from the work and were filed as though commissioned. They now sit in a SUPPLEMENTARY LIST at the bottom of `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, each with its state and its source. **20 of the 59 came from a panel round or seat, not from the assistant alone**, which is why more panel review grows the list rather than clearing it.
+* **NO LETTERED ENTRY MAY BE WORKED WITHOUT HIS EXPLICIT GO-AHEAD.** Both remaining OPEN entries on the whole list, A8 and A19, are assistant-derived and out of frame by his own definition.
+
+**★ WHAT IS ACTUALLY WAITING ON HIM: 8 numbered decisions**, written for him at `experimental_notes/Task_List_59_Decision_2026-09-12.md` and as spoken text at `~/Desktop/CDSFL_tts/Task_List_59_Decision_2026-09-12.txt`. They are A8, A19, A11, R1, R3, Z1, W1, and the scoping verdict over all 59. He replies by number. **Do not start any of them; they are his by category.**
+
+**★ THE PLAN HE APPROVED IN PRINCIPLE, PENDING THAT SCOPING VERDICT.** The other 51 go to the panel in 1 dispatch, briefed to the validated format, which requires each seat to RUN the harness, name a mathematical instrument, produce a fix rather than a finding, execute a falsifier against it, say what would refute its own answer, and name a termination criterion. Expected return is a board of verdicts, not a longer problem list. 2 to 4 hours of wall-clock, none of it his attention.
+
+**★ THE STOP HOOK IS PARKED, DELIBERATELY.** `hooks/work_not_narrate.py` is inert by a sentinel file at `~/.claude/hooks/.work_not_narrate_PARKED` and its `Stop` key is renamed to `_PARKED_Stop_2026-09-11` in the desktop application's settings. **Do not re-arm either without asking him.** It had 2 defects that made it refuse 11 consecutive stops after he said "Pause all activity": it read its own feedback as his words, and its refusal budget reset on every refusal. Both are fixed and tested, and it is parked anyway.
+
+**★ 1 CHANGE TO HIS MACHINE, 2026-09-12.** Tailscale's `accept-dns` is now `False` on his instruction. It had installed MagicDNS as the system's primary resolver, so killing Tailscale left every lookup pointing at a dead server while raw IP still worked — which is what presented as "the ethernet is down". Verified: `100.100.100.100` now appears 0 times in the output of `scutil --dns`. A resolver-health probe he can re-run sits at `~/Desktop/dns_resolver_health_2026-09-12.py`.
+
 **★ RESUME POINTER (2026-09-11 22:20 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `8768311`, main, **164 ahead of `origin/main` — NOT PUSHED**. Working tree clean. `rs` ran at 22:16 with `--record-restore`, **exit code 0**, after a compaction at 21:09; the founder issued it because he did not trust the post-compaction summary, and he was right to — see below.
 
 **PAUSED ON THE FOUNDER'S INSTRUCTION.** Nothing is running. Pause record: `experimental_notes/PAUSED_2026-09-11.md`. Everything awaiting him: `experimental_notes/PARKED_FOR_THE_FOUNDER.md`, the scope decision first.
