@@ -323,7 +323,7 @@ agent pattern cannot share one kernel. On demand from Bash, there is no contenti
 
 If `wolframscript` ever reports a licence problem, check `ps` for `MacOS/wolfram -run`
 processes FIRST — a stale MCP-spawned kernel is the likely cause, not the licence.
-`$LicenseExpirationDate` is **2026-09-11**; renew before then.
+`$LicenseExpirationDate` is **2026-10-08**, activated by hand on 2026-09-15. **The licence did NOT auto-renew at its 2026-09-11 expiry**, so treat renewal as manual and do it before that date. On 2026-09-14 the same *"not activated or ... license-related problem"* message was a GENUINE expiry, so after ruling out stale kernels, read `$LicenseExpirationDate` and the mtime of `~/Library/WolframEngine/Licensing/mathpass` before concluding either way. Since 2026-09-15 the kernel path is set in WolframScript's own config; before that, plain `wolframscript` could not locate a kernel at all and needed `WolframKernel=` supplied per call (task 0.1).
 
 **Superseded 2026-08-02: the Engine IS installed, on the founder's ruling.** The
 licence caution below is retained as the reasoning, not as current advice. Its
