@@ -473,14 +473,34 @@ def find_drift_callers(root: str) -> list[str]:
 
 class TestDriftDetector:
 
-    def test_update_drift_has_no_production_caller(self):
-        """Structural, not by inspection. 'It never fired' and 'it never ran'
-        are different claims and only the second is true."""
+    def test_update_drift_has_exactly_one_production_caller(self):
+        """TURNED AROUND, NOT REMOVED, ON THE FOUNDER'S RULING OF 2026-09-16.
+
+        This guard pinned "the detector has never run", which was true and
+        worth pinning: 'it never fired' and 'it never ran' are different
+        claims and only the second was true. The founder then ruled it be
+        wired, conditional on its not depending on the current mathematical
+        model — it reads `pi_mem` only, never `blended_prior`, so the
+        condition was met and task I31 wired it.
+
+        What must hold NOW is narrower and still structural: it runs in
+        exactly 1 place, that place is the runner's memory-recording site,
+        and — asserted in
+        bench/tests/test_drift_detector_is_wired_2026-09-17.py — nothing
+        branches on its verdict. The calibration tests below are unchanged and
+        matter MORE now that it is live: the asymmetry they record means a
+        class the memory rates highly can barely be flagged upward, so a
+        threshold of 2.0 is not yet trusted and the next simulated run
+        measures it.
+        """
         callers = find_drift_callers(_project_root)
-        assert not callers, (
-            f"update_drift/is_drifting now has a production caller: {callers}. "
-            f"The detector is live — its calibration (see the asymmetry test "
-            f"below) must be settled before it is trusted.")
+        assert len(callers) == 1, (
+            f"the drift detector should have exactly 1 production caller after "
+            f"I31; found {len(callers)}: {callers}. More than 1 means it is "
+            f"being called somewhere unreviewed; 0 means the wiring was lost.")
+        assert "reference_runner_v3.py" in callers[0], (
+            f"the caller should be the runner's memory-recording site, not "
+            f"{callers[0]}")
 
     def test_replaying_the_recorded_runs_never_fires_it(self):
         """Fed the observed per-class confirmation rate of each recording run,
