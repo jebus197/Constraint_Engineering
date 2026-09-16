@@ -15253,12 +15253,55 @@ def run_experiment(
                 exp_id=cfg.experiment_name,
                 flaw_counts={k: (v[0], v[1]) for k, v in _flaw_counts.items()},
             )
+            # I31, FOUNDER RULING 2026-09-16: the drift detector is WIRED HERE.
+            #
+            # `update_drift` is a two-sided CUSUM over the gap between this run's
+            # observed confirmation rate for a flaw class and `pi_mem`, memory's
+            # prediction for it. It had 0 production callers -- established by an
+            # AST scan for call sites, not by grep -- so it had never run, and a
+            # finding about its calibration could be neither confirmed nor
+            # refuted. Under the additive standard an addition nothing reaches is
+            # not additive.
+            #
+            # WHY IT IS WIRED NOW RATHER THAN DEFERRED WITH THE MATHEMATICAL
+            # MODEL REVISION. The founder's ruling was conditional: defer if it
+            # depends on the current model, wire it now if it does not. It does
+            # not. `update_drift` reads `pi_mem` ONLY -- a Beta-Binomial smoothed
+            # count of confirmed against rejected, which appears nowhere in
+            # docs/MATHEMATICAL_APPENDIX.md. The model-coupled method is the
+            # SIBLING, `blended_prior`, which mixes pi_mem with pi_base by rho;
+            # this call does not touch it.
+            #
+            # IT REPORTS AND DECIDES NOTHING. No gate, status or prompt reads the
+            # result. That is deliberate: its threshold of 2.0 has never been
+            # exercised against live data, so the next simulated run measures it
+            # before anything is allowed to depend on it.
+            _drift: dict[int, bool] = {}
+            for _fc, (_c, _r) in sorted(_flaw_counts.items()):
+                _seen = _c + _r
+                if _seen == 0:
+                    continue
+                try:
+                    _drift[_fc] = bool(_mem.update_drift(_fc, _c / _seen))
+                except Exception as _d_exc:  # noqa: BLE001 — never kill a run
+                    _log(f"  WARNING: drift check failed for flaw class "
+                         f"{_fc} ({_d_exc})")
             _mem.save(_mem_path)
             _pi = {k: round(_mem.pi_mem(k), 3) for k in sorted(_flaw_counts)}
+            _drifted = sorted(k for k, v in _drift.items() if v)
+            _log(f"  drift detector: evaluated {len(_drift)} flaw class(es), "
+                 f"{len(_drifted)} over the CUSUM threshold "
+                 f"{getattr(_mem, 'drift_threshold', '?')}"
+                 + (f"; drifted {_drifted}" if _drifted else "")
+                 + ". Reported only; nothing reads this verdict.")
             _log(f"  immune memory: recorded {sum(v[0] for v in _flaw_counts.values())}"
                  f" confirmed / {sum(v[1] for v in _flaw_counts.values())} rejected"
                  f" across {len(_flaw_counts)} flaw classes; pi_mem now {_pi}")
-            result["immune_memory"] = {"recorded": True, "pi_mem": _pi}
+            result["immune_memory"] = {
+                "recorded": True, "pi_mem": _pi,
+                "drift": {str(k): v for k, v in _drift.items()},
+                "drift_threshold": getattr(_mem, "drift_threshold", None),
+            }
         except Exception as _im_exc:  # noqa: BLE001
             _log(f"  WARNING: immune memory recording failed ({_im_exc})")
             result["immune_memory"] = {"recorded": False, "error": str(_im_exc)}
