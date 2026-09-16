@@ -75,10 +75,30 @@ STEM_PACKAGES = [
     ("z3", "z3-solver", "Z3 SMT solver — formal verification (B Cell v2)"),
     ("uncertainties", "uncertainties", "Error propagation in calculations"),
     ("mpmath", "mpmath", "Arbitrary precision arithmetic"),
+    # ADDED 2026-09-17 on the founder's ruling. `.claude/CLAUDE.md`'s Tool
+    # Constraint Box names 21 imports; this script checked 7 of them, so a new
+    # clone could pass onboarding and then fail the first dimensional or
+    # chemical claim it met. The 4 stdlib entries (ast, difflib, dis, inspect)
+    # need no check. These 10 are the remainder.
+    ("pint", "pint", "Dimensional analysis and units — default for unit claims"),
+    ("astropy", "astropy", "Physical constants, SI/CGS conversion"),
+    ("pandas", "pandas", "Data frames and time-series aggregation"),
+    ("networkx", "networkx", "Graph-theoretic claims — default for graph claims"),
+    ("pulp", "PuLP", "Linear and integer programming"),
+    ("crosshair", "crosshair-tool", "Symbolic execution via z3 — behavioural claims"),
+    ("sklearn", "scikit-learn", "ML metric and model claims"),
+    ("rdkit", "rdkit", "SMILES parsing — default for chemical structure claims"),
+    ("Bio", "biopython", "Sequence validation — default for biological sequences"),
+    ("matplotlib", "matplotlib", "Plotting"),
 ]
 
 OPTIONAL_PACKAGES = [
-    ("wolframalpha", "wolframalpha", "Wolfram Alpha API client"),
+    # RETIRED, kept visible rather than deleted: the key-authenticated Wolfram
+    # Alpha API client was dropped on 2026-08-03 and NO key should be supplied
+    # for it. Wolfram now reaches this project 2 ways, neither needing this
+    # package: the local Engine through `wolframscript`, and the Wolfram
+    # connector's tools inside the assistant's own session.
+    ("wolframalpha", "wolframalpha", "RETIRED 2026-08-03 — do not install or key"),
     ("web3", "web3", "Ethereum/Web3 blockchain interaction"),
     ("PIL", "Pillow", "Image processing"),
 ]
@@ -292,37 +312,105 @@ def check_claude_code() -> bool:
     return False
 
 
-def check_wolfram_mcp() -> bool:
-    """Report the Wolfram route.
+def wolfram_kernel_path() -> str | None:
+    """The Engine's kernel binary, if the app is installed."""
+    for candidate in (
+            "/Applications/Wolfram Engine.app/Contents/MacOS/WolframKernel",
+            "/Applications/Wolfram.app/Contents/MacOS/WolframKernel",
+            "/Applications/Mathematica.app/Contents/MacOS/WolframKernel"):
+        if Path(candidate).is_file():
+            return candidate
+    return None
 
-    The key-authenticated Wolfram Local MCP Bridge was RETIRED on 2026-08-03
-    and its credential archived; the current route is the credential-free
-    hosted MCP endpoint plus the local Wolfram Engine driven on demand through
-    `wolframscript`. Reporting the retired bridge as "[MISSING] ... download
-    from wolfram.com" told a reader to go and re-acquire a component the
-    project has deliberately dropped. Returns True if a local `wolframscript`
-    is on PATH — the only part of this route that is checkable from here.
+
+def wolfram_state(timeout: int = 120) -> str:
+    """Does Wolfram actually COMPUTE here? Returns a state, never a guess.
+
+    ABSENT        — `wolframscript` is not installed.
+    NO_KERNEL     — installed, but it cannot locate a kernel to run.
+    NOT_ACTIVATED — a kernel is there and the licence is expired or unactivated.
+    OK            — it evaluated 1+1 and returned 2.
+
+    WHY THIS REPLACED A PATH CHECK (2026-09-15). The previous version reported
+    `[FOUND] wolframscript` whenever the command existed. On 2026-09-14 that was
+    true all evening while every call failed: the licence had expired on
+    2026-09-11 without auto-renewing, and separately `wolframscript` could not
+    locate a kernel at all. Presence is not capability, and a check that cannot
+    tell them apart reports success during a total outage.
     """
-    print("  Wolfram:")
-    print("    [RETIRED] Wolfram Local MCP Bridge (key-authenticated) — retired")
-    print("              2026-08-03, credential archived. No key is needed and")
-    print("              none should be supplied. Not a missing dependency.")
-
-    bridge_app = Path("/Applications/WolframLocalMCPBridge.app")
-    if bridge_app.exists():
-        print(f"    [LEFTOVER] {bridge_app} is still on disk. It is not the")
-        print("               live route and nothing in this project calls it.")
-
-    print("    [INFO] Live route: hosted MCP endpoint (agenttools.wolfram.com,")
-    print("           no credential), plus local Wolfram Engine on demand.")
-
     script = shutil.which("wolframscript")
-    if script:
-        print(f"    [FOUND] wolframscript at {script} — on-demand local engine")
-        return True
-    print("    [ABSENT] wolframscript not on PATH — the on-demand local engine")
-    print("             is unavailable; the hosted endpoint is unaffected.")
-    return False
+    if not script:
+        return "ABSENT"
+    try:
+        r = subprocess.run([script, "-code", "Print[1+1]"],
+                           capture_output=True, text=True, timeout=timeout,
+                           stdin=subprocess.DEVNULL)
+    except Exception:
+        return "NO_KERNEL"
+    out = (r.stdout + r.stderr).strip()
+    if r.returncode == 0 and out.splitlines()[-1:] == ["2"]:
+        return "OK"
+    low = out.lower()
+    if "not activated" in low or "license" in low or "licence" in low:
+        return "NOT_ACTIVATED"
+    if "kernel" in low:
+        return "NO_KERNEL"
+    return "NO_KERNEL"
+
+
+def check_wolfram() -> str:
+    """Report the Wolfram routes, and offer to repair the local one."""
+    print("  Wolfram:")
+    print("    [INFO] 2 routes, and they are not redundant. The local Engine")
+    print("           runs Wolfram Language through `wolframscript` with no")
+    print("           per-call limit. The Wolfram connector, authorised in the")
+    print("           assistant's own session, adds natural-language queries and")
+    print("           a cloud kernel. Neither is used inside an automated run:")
+    print("           Wolfram's terms bar systematic in-pipeline extraction.")
+    print("    [RETIRED] The key-authenticated Wolfram Local MCP Bridge was")
+    print("              retired 2026-08-03. No key is needed and none should")
+    print("              be supplied. Not a missing dependency.")
+
+    state = wolfram_state()
+    if state == "OK":
+        print("    [OK] wolframscript evaluated 1+1 and returned 2.")
+        return state
+
+    if state == "ABSENT":
+        print("    [ABSENT] wolframscript is not installed.")
+        if has_homebrew():
+            print("      Command: brew install --cask wolfram-engine")
+            if ask("Install the Wolfram Engine via Homebrew?", default="y"):
+                subprocess.run(["brew", "install", "--cask", "wolfram-engine"],
+                               check=False)
+        else:
+            print("      Homebrew is not available. Download the free Wolfram")
+            print("      Engine for Developers, then re-run this script:")
+            print("        https://www.wolfram.com/engine/")
+        return state
+
+    if state == "NO_KERNEL":
+        print("    [NO KERNEL] wolframscript cannot locate a kernel to run.")
+        kernel = wolfram_kernel_path()
+        if kernel:
+            print(f"      A kernel IS installed at: {kernel}")
+            print("      Command: wolframscript -configure "
+                  f'WOLFRAMSCRIPT_KERNELPATH="{kernel}"')
+            if ask("Point wolframscript at that kernel?", default="y"):
+                subprocess.run(["wolframscript", "-configure",
+                                f"WOLFRAMSCRIPT_KERNELPATH={kernel}"], check=False)
+                print(f"      Re-checked: {wolfram_state()}")
+        else:
+            print("      No Engine app found either. Install it first (above).")
+        return state
+
+    print("    [NOT ACTIVATED] a kernel runs but the licence is not valid.")
+    print("      This needs your Wolfram ID and password, so it cannot be")
+    print("      automated from here. Run, and follow the prompts:")
+    print("        wolframscript -activate")
+    print("      The free Engine licence does NOT reliably auto-renew: it")
+    print("      lapsed on 2026-09-11 and had to be activated by hand.")
+    return state
 
 
 def check_api_keys() -> None:
@@ -952,7 +1040,7 @@ def main() -> int:
     print()
     check_claude_code()
     print()
-    check_wolfram_mcp()
+    check_wolfram()
 
     # --- API KEYS ---
     print_header("API KEYS")
