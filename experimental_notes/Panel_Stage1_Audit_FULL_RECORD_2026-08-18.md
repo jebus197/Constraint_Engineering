@@ -1281,8 +1281,6 @@ Second, weaker: I claim no archived verdict changes under the `novel_critical_hi
 
 *5 of 5 panellists returned a usable response (counted by ok=true AND non-empty text, not by file presence).*
 
-Written under CDSFL note standard v1.4 (13 August 2026, Rule 24 added 16 August).
-
 ---
 
 ## Addendum, 2026-09-17: the producer for this record's figures
@@ -1295,4 +1293,4 @@ It reproduces 9 of 9 figures this record declares, over the same 27 findings and
 
 **One figure elsewhere does not reproduce, and it is not in this record.** The comment in `bench/dm/_similarity.py` states that clamping moved the rate from 97.4% to 15.8%. The 97.4% reproduces exactly; the 15.8% matches neither scenario, the same 351 pairs giving 18.5% hypothetical and 21.4% actual.
 
-Written under CDSFL note standard v1.7 (26 August 2026).
+Written under CDSFL note standard v1.4 (13 August 2026, Rule 24 added 16 August).
