@@ -21,8 +21,42 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 EVID = REPO / "experimental_notes" / "evidence" / "done_audit_2026-09-11"
 TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
-#: Round 2 covered the 13 entries round 1 never reached; these are its upheld ids.
-ROUND2_UPHELD = ("3.3", "9.2", "9.3", "9.4", "L2", "P7")
+ROUND2 = EVID / "round2_never_audited_13.json"
+
+
+def round2_upheld() -> set[str]:
+    """Round 2's overclaiming ids, DERIVED from the adjudication.
+
+    THIS REPLACED A HAND-TYPED TUPLE, AND THE TUPLE WAS WRONG (2026-09-17).
+    It read `("3.3", "9.2", "9.3", "9.4", "L2", "P7")` -- 6 ids transcribed by
+    eye from the round-2 evidence, and never compared against the file they came
+    from. That file marks SEVEN entries non-SUPPORTED: `7.3` carries verdict
+    PARTIAL and was dropped in transcription, so the census reported 30 where
+    its own committed evidence says 31.
+
+    Found by the cc2 seat in panel round 16 and confirmed here independently
+    before being accepted. It is the same defect class the 30 entries are being
+    closed for -- a figure asserted rather than produced -- committed inside the
+    instrument built to measure that class.
+
+    Deriving is cheaper than guarding: it removes the failure mode by
+    construction rather than adding a checker that could itself drift.
+    """
+    rows: list[dict] = []
+
+    def walk(o) -> None:
+        if isinstance(o, dict):
+            if "id" in o and "verdict" in o:
+                rows.append(o)
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(json.loads(ROUND2.read_text(encoding="utf-8")))
+    return {str(r["id"]).strip() for r in rows
+            if str(r.get("verdict", "")).strip().upper() not in ("SUPPORTED", "")}
 
 
 def done_ids() -> set[str]:
@@ -34,8 +68,11 @@ def done_ids() -> set[str]:
 def overclaiming() -> tuple[set[str], set[str]]:
     real = done_ids()
     verdicts = json.loads((EVID / "verification_verdicts.json").read_text(encoding="utf-8"))
-    r1 = {str(r["id"]).strip() for r in verdicts if r.get("upheld") is True} & real
-    return r1 | set(ROUND2_UPHELD), real
+    r1 = {str(r["id"]).strip() for r in verdicts if r.get("upheld") is True}
+    # THE INTERSECTION IS SYMMETRIC. It used to be applied to round 1 only, so a
+    # phantom id in the round-2 half could inflate the numerator unchecked --
+    # and round 1 genuinely carried 5 ids that are not entries.
+    return (r1 | round2_upheld()) & real, real
 
 
 def main() -> int:
