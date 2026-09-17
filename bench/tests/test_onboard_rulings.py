@@ -550,13 +550,47 @@ def test_check_api_keys_never_prints_a_key_value(capsys, monkeypatch):
     assert captured.out.count("[FOUND]") == len(ob.API_KEYS)
 
 
-def test_wolfram_is_reported_retired_not_missing(capsys):
-    ob.check_wolfram_mcp()
+def test_wolfram_is_reported_retired_not_missing(capsys, monkeypatch):
+    """RENAMED AND NARROWED 2026-09-17, on the founder's onboarding ruling.
+
+    `check_wolfram_mcp` became `check_wolfram`, which PROVES the kernel computes
+    rather than reporting that the command exists -- presence was true all
+    through 2026-09-14 while nothing computed.
+
+    THE LINK ASSERTION IS NARROWED, NOT DROPPED, AND THE DISTINCTION IS THE
+    POINT. It forbade `www.wolfram.com` to stop a reader being sent back to the
+    key-authenticated MCP bridge retired on 2026-08-03. The founder then ruled
+    that onboarding should install the free Wolfram Engine where it is missing,
+    and the Engine's download page shares that domain. Two different
+    destinations, one hostname. What must stay forbidden is the BRIDGE; the
+    Engine link is the ruling being carried out, and only in the branch where
+    the Engine is genuinely absent.
+    """
+    monkeypatch.setattr(ob.shutil, "which", lambda _c: None)
+    monkeypatch.setattr(ob, "has_homebrew", lambda: False)
+    monkeypatch.setattr(ob, "ask", lambda *a, **k: False)
+    ob.check_wolfram()
     out = capsys.readouterr().out
     assert "[RETIRED]" in out
     assert "2026-08-03" in out
     assert "[MISSING]" not in out, "a retired component is not a missing dependency"
-    assert "www.wolfram.com" not in out, "do not send a reader to re-acquire the retired bridge"
+    for bridge in ("WolframLocalMCPBridge", "mcp-remote", "agenttools.wolfram.com"):
+        assert bridge not in out, (
+            f"onboarding points a reader at the retired bridge ({bridge}); it was "
+            f"dropped on 2026-08-03 and no key should be supplied for it")
+    assert "wolfram.com/engine" in out, (
+        "the Engine download is the founder's 2026-09-16 ruling being carried "
+        "out; if this branch stops offering it, the ruling has been lost")
+
+
+def test_the_wolfram_check_proves_the_kernel_rather_than_its_presence(monkeypatch):
+    """The substance of the rename: presence and capability are different."""
+    monkeypatch.setattr(ob.shutil, "which", lambda _c: "/usr/local/bin/wolframscript")
+    import subprocess as _sp
+    monkeypatch.setattr(ob.subprocess, "run",
+                        lambda *a, **k: _sp.CompletedProcess(a[0], 255, "", ""))
+    assert ob.wolfram_state() != "OK", (
+        "a command that exists but computes nothing must not report OK")
 
 
 # ---------------------------------------------------------------------------
@@ -586,7 +620,7 @@ def _neutralise_environment_checks(monkeypatch) -> None:
     monkeypatch.setattr(ob, "check_packages", lambda *a, **k: [])
     monkeypatch.setattr(ob, "check_system_tools", lambda: [])
     monkeypatch.setattr(ob, "check_claude_code", lambda: True)
-    monkeypatch.setattr(ob, "check_wolfram_mcp", lambda: True)
+    monkeypatch.setattr(ob, "check_wolfram", lambda: "OK")
     monkeypatch.setattr(ob, "check_api_keys", lambda: None)
     monkeypatch.setattr(ob, "print_structure", lambda root: None)
     monkeypatch.setattr(ob, "print_mc_commands", lambda root: None)

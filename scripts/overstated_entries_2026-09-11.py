@@ -60,7 +60,7 @@ def blocks(by_id) -> dict:
     out = {}
     for k, e in enumerate(es):
         start = e.line_no - 1
-        end = es[k + 1].line_no - 1 if k + 1 < len(es) else len(lines)
+        end = es[k + 1].line_no - 1 if k + 1 < len(es) else tlm.end_of_entries(lines)
         out[e.ident] = "\n".join(lines[start:end])
     return out
 

@@ -103,8 +103,22 @@ def test_a_logs_directory_outside_bench_is_irrelevant(tmp_path):
 
 # --- The live claim itself. --------------------------------------------------
 
-def test_this_repository_currently_has_no_production_caller():
-    assert find_drift_callers(str(REPO)) == []
+def test_this_repository_now_has_exactly_one_production_caller():
+    """TURNED AROUND 2026-09-17 ON THE FOUNDER'S RULING, NOT DELETED.
+
+    This pinned "no production caller", which was true and worth pinning: the
+    detector had never run, so a finding about its calibration could be neither
+    confirmed nor refuted. The founder ruled on 2026-09-16 that it be wired,
+    conditional on its not depending on the current mathematical model -- it
+    reads `pi_mem` only, never `blended_prior`, so the condition was met.
+
+    What must hold now is narrower and still structural: exactly 1 caller, and
+    it is the runner's memory-recording site. More than 1 means it is being
+    called somewhere unreviewed; 0 means the wiring was lost.
+    """
+    callers = find_drift_callers(str(REPO))
+    assert len(callers) == 1, f"expected exactly 1 production caller, got {callers}"
+    assert "reference_runner_v3.py" in callers[0], callers
 
 
 def test_the_archived_seat_snapshot_is_present_but_not_counted():

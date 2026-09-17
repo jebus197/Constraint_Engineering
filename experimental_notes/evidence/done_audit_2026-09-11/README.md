@@ -45,4 +45,6 @@ Coverage is now complete: **84 of 84 DONE entries audited, 0 unaudited.**
 
 Raw returns: `round2_never_audited_13.json` (10 agents, unfiltered) and `round2_workflow_return.txt`.
 
+**Every figure above is produced by `scripts/done_audit_overclaim_rate_2026-09-17.py`**, which derives them from the JSON files in this directory rather than restating them: the combined 31 of 84, round 1's 24 of 71 with both intervals, the 84.5238% round-1 coverage, and the superseded 30 of 84. The superseded figure is reproduced deliberately, because a correction a reader cannot recompute is an assertion that a correction happened. Run it with no arguments; `--ids` lists the entry ids alone.
+
 **A regex defect found while computing this, in the assistant's own hand.** The pattern `<!-- task: ([^|]+?) | state: DONE` swallowed 615 characters for entry M1, because M1's own prose quotes a task marker. That made M1 look both unaudited and phantom, and produced a "24 of 70" correction that was itself wrong. The bounded pattern `([A-Za-z0-9._]+)` resolves all 84 ids at a longest length of 4 characters. This is the recurring false-zero class again: a scanner that resolves one form of a thing and misreports the other.

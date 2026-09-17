@@ -153,6 +153,19 @@ def test_the_exp56_arms_cannot_reach_the_threshold_they_ship_with():
         max_age = d["max_rounds"] - 1
         if max_age < thr:
             unreachable.append((arm.name, d["max_rounds"], thr, max_age))
-    assert unreachable, (
-        "every arm can now reach its exhausted threshold — if a config change "
-        "landed, update this test to assert the new state rather than deleting it")
+    # THE CONFIG CHANGE LANDED, SO THIS ASSERTS THE NEW STATE (2026-09-17).
+    # The founder ruled on 2026-09-16: "Set it to 6 in the next simulated run.
+    # There is no point having machinery that in effect does nothing." All 3
+    # arms now carry `exhausted_round_threshold: 6` against `max_rounds: 8`, so
+    # the greatest reachable age of 7 satisfies `age >= 6` and the valve can
+    # open with a round left in which the bypass can act. This test does what
+    # its own failure message instructed rather than being deleted.
+    assert not unreachable, (
+        f"these arms still cannot reach their exhausted threshold: {unreachable}. "
+        f"The founder set it to 6 against max_rounds 8; an arm back above the "
+        f"reachable age has had its pre-registration changed.")
+    for arm in arms:
+        d = json.loads(arm.read_text())
+        thr = d.get("exhausted_round_threshold", default)
+        assert thr < d["max_rounds"] - 1, (
+            f"{arm.name}: threshold {thr} leaves no round after the valve opens")

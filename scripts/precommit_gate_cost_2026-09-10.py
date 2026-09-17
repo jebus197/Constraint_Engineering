@@ -25,6 +25,7 @@ script something nobody runs, which is how the 6.2 instrument died.
 from __future__ import annotations
 
 import argparse
+import re
 import pathlib
 import platform
 import statistics
@@ -90,10 +91,18 @@ def time_once(files: list[str]) -> tuple[float, int]:
     return time.perf_counter() - t0, r.returncode
 
 
+TASK_LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
+MARKER_RE = re.compile(r"(<!-- gate-cost: files=)\d+( collected=)\d+")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repeats", type=int, default=5,
-                    help="how many timed runs (default 5; 1 gives no range)")
+                    help="how many timed runs (default 5; 1 gives no range; "
+                         "0 skips timing, for a count-only refresh)")
+    ap.add_argument("--write", action="store_true",
+                    help="rewrite entry 1.1's gate-cost marker in the task list "
+                         "to the counts measured now")
     a = ap.parse_args()
 
     files = gate_files()
@@ -108,10 +117,30 @@ def main() -> int:
             raise SystemExit(f"the hook names {f} and it does not exist")
 
     n = collected(files)
-    print(f"\ntests collected: {n}   (exact — a count, not a timing)")
+    print(f"\ntests collected: {n}   (exact -- a count, not a timing)")
+
+    if a.write:
+        # THE DOCUMENTED REFRESH COMMAND DID NOT REFRESH ANYTHING. Until
+        # 2026-09-17 the guard's failure message told the reader to run this
+        # script to update the declaration, and this script only ever printed.
+        # A refresh path that writes nothing is the same defect as a figure
+        # nobody is forced to refresh -- which is the defect the marker exists
+        # to prevent.
+        before = TASK_LIST.read_text(encoding="utf-8")
+        after, subs = MARKER_RE.subn(
+            lambda m: f"{m.group(1)}{len(files)}{m.group(2)}{n}", before, count=1)
+        if not subs:
+            raise SystemExit(
+                "entry 1.1 carries no `<!-- gate-cost: files=N collected=M -->` "
+                "marker, so there is nothing to refresh. Restore the marker.")
+        if after == before:
+            print("  marker already current; nothing written")
+        else:
+            TASK_LIST.write_text(after, encoding="utf-8")
+            print(f"  marker refreshed -> files={len(files)} collected={n}")
 
     times, codes = [], []
-    for i in range(max(1, a.repeats)):
+    for i in range(max(0, a.repeats)):
         el, rc = time_once(files)
         times.append(el)
         codes.append(rc)
@@ -120,6 +149,11 @@ def main() -> int:
     if any(c != 0 for c in codes):
         print(f"\n  *** THE GATE IS RED: exit codes {codes}. The cost figure below "
               f"is the cost of a FAILING gate. ***")
+
+    if not times:
+        print("\ntiming skipped (--repeats 0): the count above is exact and "
+              "needs no timed run.")
+        return 0
 
     med = statistics.median(times)
     print(f"\nwall clock over {len(times)} run(s), including interpreter start:")

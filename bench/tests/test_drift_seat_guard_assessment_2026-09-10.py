@@ -89,17 +89,24 @@ def test_the_real_runs_would_not_have_fired_and_that_is_a_different_claim():
     assert abs(st.cusum_neg) < m.drift_threshold
 
 
-def test_the_detector_still_has_no_production_caller():
-    """The founder's decision is unchanged by this assessment.
+def test_the_detector_is_now_wired_and_its_calibration_is_live():
+    """THE DECISION WAS TAKEN. Turned around 2026-09-17, not deleted.
 
-    If this fails, the detector has been wired and its calibration is now live —
-    which makes the seat's finding urgent rather than latent."""
+    This test predicted its own reversal: "If this fails, the detector has been
+    wired and its calibration is now live -- which makes the seat's finding
+    urgent rather than latent." The founder ruled on 2026-09-16 that it be
+    wired, so that is exactly what happened, and the seat's finding about the
+    CUSUM threshold of 2.0 is now urgent rather than latent. It is measured by
+    the next simulated run, and until then nothing reads the verdict -- asserted
+    in bench/tests/test_drift_detector_is_wired_2026-09-17.py.
+    """
     import importlib.util
     spec = importlib.util.spec_from_file_location(
         "imm", REPO / "bench" / "tests" / "test_immune_memory_evaluation.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     callers = mod.find_drift_callers(REPO)
-    assert not callers, (
-        f"update_drift now has a production caller: {callers}. Its calibration "
-        f"is live and I31 stops being a latent question.")
+    assert len(callers) == 1, (
+        f"the detector should have exactly 1 production caller after I31; got "
+        f"{callers}. 0 means the wiring was lost; more than 1 means it is "
+        f"called somewhere unreviewed.")

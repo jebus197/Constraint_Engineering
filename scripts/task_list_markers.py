@@ -110,6 +110,30 @@ def _is_entry(line: str) -> bool:
     return not any(body.startswith(p) for p in NOT_ENTRIES)
 
 
+SUPPLEMENTARY = "# SUPPLEMENTARY LIST"
+
+
+def end_of_entries(lines: list[str]) -> int:
+    """Index of the first line past the last task entry.
+
+    THE LAST ENTRY ABSORBS EVERYTHING AFTER IT. Every consumer slices a body as
+    "this entry's heading to the next heading, or to end of file for the last
+    one", which was harmless while the file held nothing but entries. On
+    2026-09-11 a SUPPLEMENTARY LIST of 59 items was appended, and the last entry
+    silently grew by 7,612 characters of table.
+
+    It stopped being latent on 2026-09-17: `blocker_triage` read the term
+    "verdict-tuple" out of that table, found it inside what it believed was
+    entry W1, and reported W1 as declaring a dependency on it. W1 contains 0
+    occurrences of the term.
+
+    ONE DEFINITION, 6 CALLERS, because repairing 1 of 6 copies is precisely how
+    this class of defect survives being found.
+    """
+    return next((i for i, l in enumerate(lines) if l.startswith(SUPPLEMENTARY)),
+                len(lines))
+
+
 def parse_entries(path: Path = LIST) -> list[Entry]:
     lines = path.read_text().splitlines()
     out: list[Entry] = []

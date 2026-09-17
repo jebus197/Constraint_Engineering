@@ -14,16 +14,20 @@ The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **142 files**, of which one is `MEMORY.md` itself
-(the index), leaving **141 individual memory files**. They partition as:
+The directory holds **143 files**, of which one is `MEMORY.md` itself
+(the index), leaving **142 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 84 |
+| Mirrored (in summarised form) in `MEMORY.md` | 85 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 141 |
+| total | 142 |
+
+> **[Correction 2026-09-17.]** Total 141 -> 142, mirrored 84 -> 85, directory 142 -> 143. One memory file was written in the small hours of 2026-09-17: `feedback_no_privately_preamble.md`, recording the founder's ruling that a planning preamble must not open a reply. It is mirrored in `MEMORY.md` at the pointer "No 'Privately' Preamble", so it falls in the residual bucket rather than needing a name under Excluded or Unclassified.
+>
+> This is the 8th consecutive manual correction to a figure the 2026-08-17 remedy said should be derived inside `sv` rather than typed. The guard caught it at the pre-commit gate, which is the mechanism working; the underlying remedy is still not built, and that remains open.
 
 > **[Correction 2026-09-08, second.]** Total 137 -> 138, mirrored 80 -> 81, directory 138 -> 139. One
 > memory file was written in the small hours of 2026-09-08:

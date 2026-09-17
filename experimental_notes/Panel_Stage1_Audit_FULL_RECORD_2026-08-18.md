@@ -1282,3 +1282,15 @@ Second, weaker: I claim no archived verdict changes under the `novel_critical_hi
 *5 of 5 panellists returned a usable response (counted by ok=true AND non-empty text, not by file presence).*
 
 Written under CDSFL note standard v1.4 (13 August 2026, Rule 24 added 16 August).
+
+---
+
+## Addendum, 2026-09-17: the producer for this record's figures
+
+**Added after the fact. Nothing above this line has been altered** -- the transcript is the record of what was said on 18 August 2026 and is left as it stands.
+
+This record states the immune pipeline's removal rate 6 times and named no script, which under `measured-rate-travels-with-its-script` made the project's most consequential measurement a claim about evidence rather than evidence. `scripts/immune_removal_rate_exp46_2026-09-17.py` now reproduces it from exp46's archived findings, using the live embedding backend in `bench/dm/_similarity.py` rather than a copy of it.
+
+It reproduces 9 of 9 figures this record declares, over the same 27 findings and 351 pairs: raw cosine minimum 0.150, median 0.484, maximum 0.867, none negative; under the retired `(cos+1)/2` mapping with no class match, minimum 0.460, median 0.593, 97.4% flagged duplicate; with a class match, minimum 0.520, median 0.653, 100.0% flagged.
+
+**One figure elsewhere does not reproduce, and it is not in this record.** The comment in `bench/dm/_similarity.py` states that clamping moved the rate from 97.4% to 15.8%. The 97.4% reproduces exactly; the 15.8% matches neither scenario, the same 351 pairs giving 18.5% hypothetical and 21.4% actual.

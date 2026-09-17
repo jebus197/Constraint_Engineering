@@ -175,7 +175,7 @@ class TestTheFindingsAreRecordedWhereAReaderWillLook:
         es = sorted(tlm.parse_entries(), key=lambda e: e.line_no)
         for k, e in enumerate(es):
             if e.ident == "A6":
-                end = es[k + 1].line_no - 1 if k + 1 < len(es) else len(lines)
+                end = es[k + 1].line_no - 1 if k + 1 < len(es) else tlm.end_of_entries(lines)
                 block = "\n".join(lines[e.line_no - 1:end])
                 assert "0 of 84" in block, "the I11 result is not on the entry"
                 assert "0 of 22" in block, "the I13 result is not on the entry"

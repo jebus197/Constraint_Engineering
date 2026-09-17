@@ -74,12 +74,44 @@ def test_the_count_is_a_subset_of_the_real_done_entries():
     assert not phantom, f"the producer names ids that are not DONE entries: {phantom}"
 
 
-def test_the_interval_is_cross_verified_inside_the_script():
-    """The script asserts statsmodels against a scipy closed form; prove it runs."""
+def test_every_interval_is_cross_verified_not_just_the_first():
+    """EVERY interval the script prints must be checked by 2+ implementations.
+
+    REWRITTEN 2026-09-17, AND THE OLD FORM CAUGHT A REAL DEFECT FIRST. It
+    asserted `count("Wilson 95%") == 2` -- the statsmodels and scipy pair for
+    the headline. When the producer was extended to derive round 1 and the
+    superseded figure, those 2 new intervals were computed with statsmodels
+    alone and the count went to 4, so the guard went red for exactly the right
+    reason. Relaxing it to `>= 2` would have deleted the guard rather than
+    satisfied it.
+
+    The hardcoded count was still the wrong assertion: it pinned HOW MANY
+    intervals exist rather than THAT EACH IS VERIFIED, so it had to fail
+    whenever a figure was legitimately added. This form scales.
+    """
     out = _run()
-    assert out.count("Wilson 95%") == 2, out
-    lows = re.findall(r"\[([\d.]+)%,", out)
-    assert len(lows) == 2 and lows[0] == lows[1], lows
+    lines = [l for l in out.splitlines()
+             if "Wilson 95%" in l or "Clopper-Pearson 95%" in l]
+    assert len(lines) >= 4, f"expected at least 4 intervals, saw {len(lines)}: {lines}"
+    for l in lines:
+        assert "agree to" in l, f"this interval states no cross-verification: {l}"
+        m = re.search(r"agree to ([\d.]+e[-+]\d+)", l)
+        assert m, f"the agreement is not a measured magnitude: {l}"
+        assert float(m.group(1)) < 1e-12, f"implementations disagree: {l}"
+        assert sum(t in l for t in ("statsmodels", "scipy", "mpmath")) >= 2, (
+            f"fewer than 2 named implementations: {l}")
+
+
+def test_the_agreement_figure_is_measured_not_typed():
+    """The previous version printed the literal string "agrees to 0.0e+00" beside
+    an interval whose real worst disagreement is 5.55e-17. A typed agreement
+    asserts a verification rather than reporting one."""
+    out = _run()
+    assert "agrees to 0.0e+00" not in out
+    mags = {m for m in re.findall(r"agree to ([\d.]+e[-+]\d+)", out)}
+    assert len(mags) > 1, (
+        f"every interval reports the identical agreement {mags}, which is what a "
+        f"hardcoded string looks like")
 
 
 def test_the_brief_declares_this_producer():

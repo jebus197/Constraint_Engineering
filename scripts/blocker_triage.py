@@ -76,10 +76,27 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     tasks = tasks or (REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
     try:
         sys.path.insert(0, str(REPO / "scripts"))
-        from task_list_markers import parse_entries, ENTRY, _is_entry   # type: ignore
+        from task_list_markers import (parse_entries, ENTRY, _is_entry,  # type: ignore
+                                end_of_entries)
     except Exception as exc:
         return False, f"cannot read the task list ({exc}); parking rather than guessing"
     lines = tasks.read_text(encoding="utf-8").splitlines()
+
+    # THE LAST ENTRY'S BODY MUST NOT RUN TO END OF FILE (2026-09-17).
+    # Bodies are sliced from one entry start to the next, so the final entry
+    # absorbed everything after it. On 2026-09-11 a SUPPLEMENTARY LIST of 59
+    # generated entries was appended to this same file, and from that moment
+    # W1 -- the last entry, state BLOCKED -- carried all 61 of its table rows:
+    # 90 lines and 10,725 characters it does not contain. One of those rows
+    # names the verdict-tuple guard, so the predicate reported W1 as blocked by
+    # an item appearing nowhere in W1, and a BLOCKED state short-circuits the
+    # dependency check that would otherwise have caught it.
+    #
+    # The boundary is the supplementary heading, because that list is a
+    # different document sharing a file: its rows are a table ABOUT entries,
+    # not entry bodies. Measured before the fix: W1's body was 10,725 chars;
+    # after, it is its own text alone.
+    lines = lines[:end_of_entries(lines)]
     starts = [i for i, l in enumerate(lines) if _is_entry(l)]
     states = {e.ident: e.state for e in parse_entries(tasks)}
 

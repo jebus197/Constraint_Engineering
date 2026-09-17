@@ -13,12 +13,27 @@ entry waited on it. Two orthogonal questions had been folded into one:
     does it stop progress?   -> blocker    -> raise it now
     is it his to authorise?  -> permission -> park it, and do not do it
 
-MEASURED ACCURACY, stated rather than claimed: 9 of 10 on the labelled set below,
-Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]. The single
-miss is an item whose only identifier is a bare alphanumeric code (`C0050`) with
-no underscore, hyphen or extension, so it is not distinctive enough to match. It
-misses toward PARK, which is the safe direction for an interruption question --
-and the permission flag, which is separate, still stops the action.
+MEASURED ACCURACY, stated rather than claimed: 9 of 9 on the labelled set below,
+Wilson [70.0855%, 100.0000%], Clopper-Pearson [66.3733%, 100.0000%], statsmodels
+and scipy agreeing to 0.0e+00.
+
+RE-LABELLED 2026-09-17, AND THE DENOMINATOR WAS WRONG BEFORE THAT. The previous
+line read "9 of 10" over a set holding 9 items -- a stated denominator that never
+matched the set it described, predating this re-labelling.
+
+I23 AND I31 MOVED FROM True TO False BECAUSE THE WORLD CHANGED, NOT THE TOOL.
+Both were genuine blockers when labelled: entries declared dependence on them.
+The founder ruled on both on 2026-09-16, the valve threshold was set to 6 and the
+drift detector was wired, and A11 closed -- so nothing on the list waits on
+either now. The labels are judgements made against the task list and then
+compared with the predicate, never read off it; setting a ground truth from the
+tool's own output would make this measurement circular.
+
+EVERY LABEL IS NOW False, WHICH IS ITSELF INFORMATION: the backlog holds no item
+that stops progress. It also means this set can no longer demonstrate a BLOCK
+verdict, so `test_it_can_say_BLOCK` uses a synthetic fixture rather than a live
+item -- an anti-vacuity check pointed at real state breaks every time that state
+is resolved, which is exactly what happened here.
 """
 from __future__ import annotations
 
@@ -40,8 +55,11 @@ def B():
 
 
 LABELLED = [
-    ("I23: exhausted_round_threshold defaults to 8 while max_rounds is 8", True),
-    ("I31: update_drift has no production caller, wire it or retire it", True),
+    # Both were True until 2026-09-16. The founder ruled, the valve was set to 6
+    # and the detector wired, so no entry waits on either -- judged against the
+    # list, not read from the predicate.
+    ("I23: exhausted_round_threshold defaults to 8 while max_rounds is 8", False),
+    ("I31: update_drift has no production caller, wire it or retire it", False),
     ("sk_enabled is false in the exp56 arms", False),
     ("bench/reference_runner_v3.py has a stale line citation", False),
     ("scripts/note_vagueness_lint.py has a quote-scope defect", False),
@@ -58,11 +76,40 @@ class TestItAnswersTheRightQuestion:
         got, why = B.blocks_progress(text)
         assert got is expect, f"{text!r}: {why}"
 
-    def test_it_can_say_BLOCK(self, B):
-        """A predicate that can only park is a guard that cannot fail."""
-        got, _ = B.blocks_progress(
-            "I23: exhausted_round_threshold defaults to 8 while max_rounds is 8")
-        assert got is True
+    def test_it_can_say_BLOCK(self, B, tmp_path):
+        """A predicate that can only park is a guard that cannot fail.
+
+        FIXTURE, NOT A LIVE ITEM (2026-09-17). This pointed at I23 on the real
+        task list, so when the founder ruled on I23 and nothing waited on it any
+        more, the anti-vacuity check went red -- reporting a cleared backlog as
+        a broken predicate. An anti-vacuity test must depend on its own fixture,
+        never on the state it happens to be surrounded by.
+        """
+        tasks = tmp_path / "LIST.md"
+        tasks.write_text(
+            "**Q9.** Rebuild the widget pipeline. BLOCKED ON the "
+            "`frobnicate_threshold` ruling; it cannot proceed until that is "
+            "settled.\n"
+            "<!-- task: Q9 | state: BLOCKED | status: PROPOSED -->\n"
+            "**Q8.** Something unrelated entirely.\n"
+            "<!-- task: Q8 | state: DONE | status: COMMITTED -->\n",
+            encoding="utf-8")
+        got, why = B.blocks_progress("frobnicate_threshold needs a ruling",
+                                     tasks=tasks)
+        assert got is True, why
+
+    def test_the_block_fixture_is_not_vacuous(self, B, tmp_path):
+        """CONTROL on the control: the same fixture without the dependency must
+        NOT block, or the test above would pass on any input at all."""
+        tasks = tmp_path / "LIST.md"
+        tasks.write_text(
+            "**Q9.** Rebuild the widget pipeline. Mentions "
+            "`frobnicate_threshold` in passing and waits on nothing.\n"
+            "<!-- task: Q9 | state: OPEN | status: PROPOSED -->\n",
+            encoding="utf-8")
+        got, why = B.blocks_progress("frobnicate_threshold needs a ruling",
+                                     tasks=tasks)
+        assert got is False, why
 
     def test_it_can_say_PARK(self, B):
         got, _ = B.blocks_progress("sk_enabled is false in the exp56 arms")
