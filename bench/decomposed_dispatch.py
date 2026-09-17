@@ -44,7 +44,7 @@ from typing import Any, Sequence
 # Import shared logging and circuit breaker from orchestrator
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI
+from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI, seat_environment
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1005,6 +1005,7 @@ def _decomposed_claude_cli(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=seat_environment(),
             )
 
             if result.returncode != 0:
@@ -1061,6 +1062,7 @@ def _decomposed_claude_cli(
             capture_output=True,
             text=True,
             timeout=timeout,
+            env=seat_environment(),
         )
         elapsed = time.monotonic() - t0
 
@@ -1178,6 +1180,7 @@ def _decomposed_codex(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=seat_environment(keep=("OPENAI_API_KEY",)),
             )
 
             if result.returncode != 0:

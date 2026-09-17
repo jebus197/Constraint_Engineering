@@ -873,6 +873,39 @@ def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
     return f"{len(stripped)} chars with no verdict marker (holding note?)"
 
 
+#: A variable whose NAME looks like a credential. Matched on the name, never the
+#: value, case-insensitively, and on a secret word ANYWHERE between underscores:
+#: the first version anchored at the end of the name and let
+#: AWS_SECRET_ACCESS_KEY through, which its own test caught.
+_SECRET_NAME = _re.compile(
+    r"(?:^|_)(?:API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|SECRET(?:_?KEY)?|TOKEN|PASSWORD|PASSWD|CREDENTIALS?)(?:_|$)",
+    _re.IGNORECASE)
+
+
+def seat_environment(base: "dict[str, str] | None" = None,
+                     keep: "tuple[str, ...]" = ()) -> "dict[str, str]":
+    """The environment a model seat is started with: the parent's, minus secrets.
+
+    FOUND 2026-09-17, AND MEASURED BEFORE IT WAS FIXED. The panel dispatcher
+    loads `.env` into its own process: 10 secrets, 8 API keys plus
+    GITHUB_TOKEN and ZENODO_TOKEN. Every seat was started with no `env=`, so it
+    inherited all of them, and a free probe on the Max plan showed a seat's Bash
+    tool printing back a secret-named marker variable set in the parent. So a
+    "free" seat's shell could call OpenRouter or OpenAI, push to GitHub, or
+    publish to Zenodo. Confirming 0 paid SEATS before a launch said nothing about
+    what those seats could REACH.
+
+    A seat needs none of them. `claude -p` authenticates to the Max plan through
+    the keychain, and ANTHROPIC_API_KEY in particular must never reach it,
+    because its presence would switch the seat to metered API billing.
+
+    `keep` names the secrets a route genuinely authenticates with, and nothing
+    else survives: Codex falls back to OPENAI_API_KEY when it is not logged in.
+    """
+    env = dict(os.environ if base is None else base)
+    return {k: v for k, v in env.items() if k in keep or not _SECRET_NAME.search(k)}
+
+
 def call_claude_cli(
     model_id: str,
     system_prompt: str | None,
@@ -1025,6 +1058,7 @@ def call_claude_cli(
                 text=True,
                 timeout=timeout,
                 cwd=_cwd,
+                env=seat_environment(),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
@@ -1159,6 +1193,9 @@ def call_codex(
                 text=True,
                 timeout=timeout,
                 cwd=_get_panel_cwd_raw(),
+                # Codex authenticates with OPENAI_API_KEY when it is not logged
+                # in, so this route keeps that 1 key and nothing else.
+                env=seat_environment(keep=("OPENAI_API_KEY",)),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()

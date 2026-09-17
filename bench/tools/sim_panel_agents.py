@@ -50,6 +50,8 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from experiment_11_orchestrator import seat_environment  # noqa: E402
+
 #: Six stand-ins for six models. Named by letter, never by vendor.
 SIM_AGENTS = ["SIM-A", "SIM-B", "SIM-C", "SIM-D", "SIM-E", "SIM-F"]
 
@@ -108,6 +110,7 @@ def _one_agent(label: str, target: str, timeout: int, model: str = "opus") -> li
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],
             capture_output=True, text=True, timeout=timeout,
             cwd=str(REPO), stdin=subprocess.DEVNULL,
+            env=seat_environment(),
         )
     except subprocess.TimeoutExpired:
         print(f"  [{label}] TIMEOUT after {timeout}s", flush=True)
