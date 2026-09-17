@@ -30,7 +30,10 @@ the canonical tree; confinement worked. The failure is in INDEPENDENCE and
 ATTRIBUTION, not containment.
 
 COST, MEASURED BEFORE THE CHANGE: 6.53 s and 606 MB per sandbox on this machine,
-so a 2-seat round pays 13 s against a 15-to-25-minute panel.
+so a 2-seat round pays 13 s against a 15-to-25-minute panel. No script produced
+that figure when it was written. `scripts/sandbox_build_cost_2026-09-17.py` now
+does, run by `bench/tests/test_sandbox_build_cost_2026-09-17.py`; its output
+depends on what the checkout holds, because `build` copies untracked files too.
 """
 from __future__ import annotations
 
@@ -176,3 +179,105 @@ class TestTheSandboxesAreActuallyDistinct:
         finally:
             panel_sandbox.teardown(a)
             panel_sandbox.teardown(b)
+
+
+def _population_statements(src: str) -> str:
+    """main()'s real statements from `sandboxes = {}` through the assignment of
+    `_PANEL_SANDBOX_CWD`, i.e. everything between the brief checks and the `try`
+    that dispatches. Taken from the dispatcher's own source by AST, so what runs
+    here is the code that ships, not a copy of it."""
+    main = next(n for n in ast.parse(src).body
+                if isinstance(n, ast.FunctionDef) and n.name == "main")
+    body = main.body
+    loop = next(i for i, n in enumerate(body)
+                if isinstance(n, ast.For)
+                and any(isinstance(c, ast.Call) and getattr(c.func, "attr", None) == "build"
+                        for c in ast.walk(n)))
+    start = loop
+    if loop and isinstance(body[loop - 1], ast.Assign) and any(
+            getattr(t, "id", None) == "sandboxes" for t in body[loop - 1].targets):
+        start = loop - 1
+    stop = next(i for i in range(loop, len(body)) if isinstance(body[i], ast.Try))
+    segment = body[start:stop]
+    assigns = {getattr(t, "id", None) for n in segment if isinstance(n, ast.Assign)
+               for t in n.targets}
+    assert {"sandboxes", "_PANEL_SANDBOX_CWD"} <= assigns, (
+        f"main() no longer builds `sandboxes` and sets `_PANEL_SANDBOX_CWD` before "
+        f"its dispatch `try`; this test must be re-aimed, not skipped: {assigns}")
+    return "\n".join(ast.unparse(n) for n in segment)
+
+
+class TestThePopulationStepIsExecuted:
+    """EXECUTED, because every test above passes with the population line gone.
+
+    FOUND BY PANEL ROUND 16, 2026-09-17. Deleting the single line
+    `_SEAT_SANDBOXES[_n] = str(sandboxes[_n])` from a copy of the dispatcher left
+    the 5 tests above green: the AST checks see `build` in a loop and the map read
+    on the dispatch path, and `test_panel_sandbox_2026-09-07` fills the map
+    itself. But with the map empty, `confine_this_thread` falls back to
+    `_SEAT_SANDBOXES.get(name) or _PANEL_SANDBOX_CWD`, which main() sets to the
+    FIRST seat's sandbox, so every seat would work in 1 shared tree and the
+    harvest would file their edits under whichever names it iterates.
+
+    This runs main()'s own population statements, with a stub builder in place
+    of the 606 MB copy, then confines each seat in its own worker thread and
+    reads back the thread's working directory."""
+
+    SEATS = [("cc2", "opus", "claude_cli"), ("fable", "fable", "claude_cli"),
+             ("ds", "deepseek-v4-pro", "deepseek")]
+
+    def test_every_seat_resolves_to_its_own_sandbox(self, tmp_path, monkeypatch):
+        import concurrent.futures
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("panel_population", PANEL)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        from experiment_11_orchestrator import get_panel_cwd, set_panel_cwd
+
+        built = []
+
+        class StubSandbox:
+            @staticmethod
+            def build(_repo):
+                d = tmp_path / f"seat_{len(built)}" / "repo"
+                d.mkdir(parents=True)
+                built.append(d)
+                return d
+
+        g = mod.__dict__
+        monkeypatch.setitem(g, "panel_sandbox", StubSandbox)
+        monkeypatch.setitem(g, "MODELS", list(self.SEATS))
+        monkeypatch.setitem(g, "print", lambda *a, **k: None)
+        monkeypatch.setitem(g, "sandboxes", None)
+        monkeypatch.setitem(g, "sandbox", None)
+        monkeypatch.setitem(g, "_PANEL_SANDBOX_CWD", None)
+        mod._SEAT_SANDBOXES.clear()
+        try:
+            exec(compile(_population_statements(PANEL.read_text(encoding="utf-8")),
+                         str(PANEL), "exec"), g)
+            names = [n for n, _, _ in self.SEATS]
+            assert len(built) == len(names), f"{len(built)} builds for {len(names)} seats"
+            assert g["_PANEL_SANDBOX_CWD"], "main()'s fallback directory was not set"
+            missing = [n for n in names if n not in mod._SEAT_SANDBOXES]
+            assert not missing, (
+                f"seats {missing} are absent from the per-seat map after main()'s "
+                f"population step, so they fall back to {g['_PANEL_SANDBOX_CWD']}")
+
+            set_panel_cwd(None)
+
+            def worker(name):
+                mod.confine_this_thread(name)
+                return name, get_panel_cwd()
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(names)) as pool:
+                resolved = dict(pool.map(worker, names))
+            assert len(set(resolved.values())) == len(names), (
+                f"{len(names)} seats resolved to {len(set(resolved.values()))} "
+                f"distinct directories: {resolved}")
+            own = {n: str(Path(mod._SEAT_SANDBOXES[n]).resolve()) for n in names}
+            assert {n: str(Path(v).resolve()) for n, v in resolved.items()} == own, (
+                resolved, own)
+        finally:
+            mod._SEAT_SANDBOXES.clear()
+            set_panel_cwd(None)

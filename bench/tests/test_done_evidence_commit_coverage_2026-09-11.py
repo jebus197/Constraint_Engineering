@@ -10,9 +10,11 @@ GUARDS list and nothing else. So the concession has a size, and until 2026-09-11
 nobody had measured it. The cc2 seat measured it in panel round 11; this
 reproduces it and keeps it true.
 
-MEASURED HERE: 2 of 52 DONE-evidence files run at commit time, 3.8462%, Wilson
-[1.0611%, 12.9812%], Clopper-Pearson [0.4692%, 13.2128%]. The V3 window is
-therefore open for 50 of 52 entries.
+MEASURED BY `scripts/done_evidence_commit_coverage_2026-09-11.py`, AND THE FIGURE
+IS WHATEVER THAT SCRIPT PRINTS ON THE DAY IT IS RUN. This docstring used to carry
+"2 of 52"; the script printed 2/55 at 6c6d053, the commit that wrote it, and
+2/82 = 2.4390% at 989f32f on 2026-09-17. A count typed here drifts as DONE
+entries are added and no test here can see it, so none is typed.
 
 THE SEAT SAID 3 OF 52 AND THAT IS NOT A DISAGREEMENT. Entries 4.2 and 7.3 named
 a GUARD file as their evidence -- so it counted as covered -- while that file
@@ -78,14 +80,55 @@ class TestTheGapIsRealAndMeasured:
         assert "Wilson 95%" in r.stdout and "Clopper-Pearson" in r.stdout
 
     def test_the_two_tools_agree(self, mod):
+        """The script's statsmodels intervals against computations that share no
+        code with scipy.
+
+        REPLACED 2026-09-17 (panel round 16). The first version compared
+        statsmodels' `beta` interval with `scipy.stats.beta.ppf`, but statsmodels
+        0.14 computes that interval BY CALLING `scipy.stats.beta`, so it was 1
+        tool computed twice and could not disagree. Wilson is now the closed
+        form in `math`, and Clopper-Pearson is solved by bisection on the exact
+        binomial tail built from `math.comb`."""
+        import math
         from statsmodels.stats.proportion import proportion_confint
-        from scipy.stats import beta as sbeta
         guards = set(mod.guard_files())
         ev = mod.done_evidence()
         k, n = len(set(ev) & guards), len(ev)
-        _lo, hi_c = proportion_confint(k, n, method="beta")
-        hi_s = sbeta.ppf(0.975, k + 1, n - k)
-        assert abs(hi_s - hi_c) < 1e-12, (hi_s, hi_c)
+        assert 0 < k < n, (k, n)
+
+        z = 1.959963984540054
+        p = k / n
+        centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+        half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+        lo_w, hi_w = proportion_confint(k, n, method="wilson")
+        assert abs(lo_w - (centre - half)) < 1e-12 and abs(hi_w - (centre + half)) < 1e-12, (
+            (lo_w, hi_w), (centre - half, centre + half))
+
+        def tail_at_most(q, j):   # P(X <= j) for X ~ Binomial(n, q)
+            return math.fsum(math.comb(n, i) * q ** i * (1 - q) ** (n - i)
+                             for i in range(j + 1))
+
+        def bisect(f, lo=0.0, hi=1.0):   # f is decreasing in q; root of f == 0
+            for _ in range(200):
+                mid = (lo + hi) / 2
+                lo, hi = (mid, hi) if f(mid) > 0 else (lo, mid)
+            return (lo + hi) / 2
+
+        hi_cp = bisect(lambda q: tail_at_most(q, k) - 0.025)
+        lo_cp = bisect(lambda q: 0.025 - (1 - tail_at_most(q, k - 1)))
+        lo_c, hi_c = proportion_confint(k, n, method="beta")
+        assert abs(lo_c - lo_cp) < 1e-9 and abs(hi_c - hi_cp) < 1e-9, (
+            (lo_c, hi_c), (lo_cp, hi_cp))
+
+        # And the PRINTED Wilson interval is the script's, rounded outward.
+        r = subprocess.run([sys.executable, str(SCRIPT)], cwd=ROOT,
+                           capture_output=True, text=True, timeout=600)
+        import re
+        m = re.search(r"Wilson 95%\s*:\s*\[([\d.]+)%, ([\d.]+)%\]", r.stdout)
+        assert m, r.stdout
+        lo_p, hi_p = float(m.group(1)) / 100, float(m.group(2)) / 100
+        assert lo_p <= centre - half < lo_p + 1e-6 and hi_p - 1e-6 < centre + half <= hi_p, (
+            (lo_p, hi_p), (centre - half, centre + half))
 
 
 class TestItSaysWhatItDoesNotDo:

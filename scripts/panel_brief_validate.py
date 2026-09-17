@@ -430,8 +430,13 @@ def validate(text: str) -> list[str]:
             f"the brief is {len(text.strip())} characters, which is too short to "
             f"carry the required sections; an under-specified brief is the "
             f"'simple open ended prompt' the founder's ruling forbids")
+    # re.I, ADDED 2026-09-17 (found under task A4): the brief is lowercased above,
+    # so the 3 patterns written with capitals -- S_k, Duane and Wilson -- could
+    # never match, and a brief naming only 1 of them was refused on the
+    # instrument check. Every other pattern is lowercase, so re.I changes nothing
+    # else. test_every_check_pattern_can_match_2026-09-17.py holds it.
     for label, patterns, remedy in CHECKS:
-        if not any(re.search(p, low, re.M) for p in patterns):
+        if not any(re.search(p, low, re.M | re.I) for p in patterns):
             problems.append(f"{label}: NOT FOUND — {remedy}")
 
     # The output check is SECTION SCOPED, unlike the rest. See _section().

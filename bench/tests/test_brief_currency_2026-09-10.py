@@ -86,17 +86,77 @@ class TestItDetectsAnOvertakenBrief:
         assert mod.check_currency(brief, repo=tmp_path) == []
 
 
+#: A brief that passes every refusing check and declares no figure, so its exit
+#: code depends on currency alone. It names `gamma`, not `Wilson`: validate()
+#: matches against the LOWERCASED text, so the `\bWilson\b`, `\bS_k\b` and
+#: `\bDuane\b` instrument patterns cannot match (a separate, open defect).
+_VALID_BRIEF = (
+    "# Brief 2026-09-17\n\n"
+    "Review `scripts/thing.py`. Each seat must run it and execute the tests.\n"
+    "Use gamma, the depletion exponent, to say whether findings are drying up, "
+    "and report any rate with its interval and the script that produced it.\n"
+    "The artefact is small, so the review should be short, but every claim must "
+    "rest on command output rather than on reading the source.\n"
+    "Propose a fix, and an executed falsifier with its output.\n"
+    # The delivery rule became the validator's 8th check on 2026-09-17 (task P4),
+    # so a fixture brief that omits it is no longer a VALID brief.
+    "Write each fix into the sandbox repository tree at its real path, so it is delivered as a file rather than left in prose.\n"
+    "State what would refute your answer.\n"
+    "## Output\n\n- verdict\n- fix\n- falsifier_result\n\n"
+    "Stop at diminishing returns.\n")
+
+
+def _run_copied_validator(tmp_path, artefact_offset_s: float):
+    """Run a COPY of the validator in tmp_path/scripts/, so its REPO is tmp_path.
+
+    The named artefact's modification time is set to the brief's plus
+    `artefact_offset_s` with os.utime, so the ordering is exact rather than
+    dependent on a sleep outlasting the filesystem's timestamp resolution."""
+    import os
+    import shutil
+    (tmp_path / "scripts").mkdir()
+    copy = tmp_path / "scripts" / "panel_brief_validate.py"
+    shutil.copy(VALIDATOR, copy)
+    art = tmp_path / "scripts" / "thing.py"
+    art.write_text("x = 1\n", encoding="utf-8")
+    brief = tmp_path / "BRIEF.md"
+    brief.write_text(_VALID_BRIEF, encoding="utf-8")
+    b = brief.stat().st_mtime
+    os.utime(art, (b + artefact_offset_s, b + artefact_offset_s))
+    return subprocess.run([sys.executable, str(copy), str(brief)],
+                          cwd=tmp_path, capture_output=True, text=True, timeout=120)
+
+
 class TestItWarnsRatherThanRefuses:
-    def test_the_warning_does_not_change_the_exit_code(self, mod, tmp_path):
-        """A currency warning must not block a dispatch on its own."""
-        src = VALIDATOR.read_text(encoding="utf-8")
-        i = src.index("_stale = check_currency")
-        window = src[i:i + 1200]
-        assert "return" not in window.split("if _stale")[0][:200] or True
-        assert "CURRENCY WARNING" in window
-        # The refusal path is the CHECKS list; currency must not appear in it.
-        assert "check_currency" not in src[src.index("CHECKS = ("):
-                                           src.index("def _section")], (
+    def test_an_overtaken_valid_brief_warns_and_exits_zero(self, tmp_path):
+        """A currency warning must not block a dispatch on its own.
+
+        EXECUTED, not read (panel round 16, 2026-09-17). The test this replaces
+        sliced the validator's source and ended in `or True`, so a validator that
+        printed the warning and then returned 1 passed the whole file. This runs
+        the validator on a brief whose named file moved 60 s after it was
+        written and reads the exit code."""
+        r = _run_copied_validator(tmp_path, artefact_offset_s=60.0)
+        assert "CURRENCY WARNING" in r.stderr, (
+            f"the overtaken brief was not reported at all:\n{r.stderr}")
+        assert "REFUSED" not in r.stderr, (
+            f"a valid brief was refused once a named file moved:\n{r.stderr}")
+        assert r.returncode == 0, (
+            f"a currency warning changed the exit code to {r.returncode}; an "
+            f"unrelated edit to a named file would then block every dispatch")
+
+    def test_the_same_brief_unovertaken_exits_zero_with_no_warning(self, tmp_path):
+        """THE CONTROL for the test above. If the fixture brief failed a refusing
+        check, both runs would exit 1 and the exit-code assertion would be read
+        off a broken fixture; here it must pass with no warning at all."""
+        r = _run_copied_validator(tmp_path, artefact_offset_s=-60.0)
+        assert r.returncode == 0, f"the fixture brief is not valid:\n{r.stderr}"
+        assert "CURRENCY WARNING" not in r.stderr, r.stderr
+
+    def test_currency_is_not_one_of_the_refusing_checks(self, mod):
+        """The refusal path is CHECKS plus declared figures; read CHECKS as data."""
+        assert mod.CHECKS, "the refusing checks did not load"
+        assert not any("currency" in label.lower() for label, _, _ in mod.CHECKS), (
             "currency was added to the refusing checks; an unrelated edit to a "
             "named file would then block every dispatch")
 

@@ -29,8 +29,19 @@ _QUOTED = re.compile(r'"[^"]*"')
 
 
 def old_sentences(text: str):
-    """The pre-fix generator: no masking, quotes stripped later per sentence."""
-    for para_no, para in enumerate(text.split("\n\n"), 1):
+    """The pre-fix generator: no masking, quotes stripped later per sentence.
+
+    IT SPLITS PARAGRAPHS WITH THE LINTER'S OWN `paragraphs()` (panel round 16,
+    2026-09-17), so before and after differ by the quote mask ALONE. It used to
+    split on a literal blank line, which matched the linter when this script was
+    written at b593500. Since 6c6d053 the linter splits on a whitespace-tolerant
+    break, so a blank line carrying a space renumbered every later paragraph on 1
+    side only. The findings are keyed on paragraph number, so an unchanged finding
+    read as 1 removed plus 1 added: at 989f32f this script printed 19 ADDED and
+    exited 1, all 19 in 1 note, and no regression. With the shared splitter the
+    same corpus prints 0 added. `bench/tests/test_quote_exemption_effect_2026-09-17.py`
+    holds the difference on a 2-note fixture."""
+    for para_no, para in enumerate(lint_mod.paragraphs(text), 1):
         flat = " ".join(para.split())
         if not flat or flat.startswith(("|", "#", "```")):
             continue
@@ -71,7 +82,7 @@ def _print_usage_and_exit() -> "None":
     import sys as _sys
     print((__doc__ or "").strip())
     print()
-    print(f"usage: {_sys.argv[0].split('/')[-1]} [paths...]")
+    print(f"usage: {_sys.argv[0].split('/')[-1]} [-h]")
     raise SystemExit(0)
 
 
@@ -83,6 +94,16 @@ def _help_requested() -> bool:
 def main() -> int:
     if _help_requested():
         _print_usage_and_exit()
+    # ANY OTHER ARGUMENT IS REFUSED (2026-09-17). The usage line used to offer
+    # `[paths...]`, which main() never read: every argument was ignored and the
+    # whole corpus measured. `test_an_unknown_flag_is_rejected_loudly` passed only
+    # because this script exited 1 on its 19 false additions; once the paragraph
+    # split was repaired it exited 0 on `--this-flag-does-not-exist`.
+    if sys.argv[1:]:
+        print(f"unrecognised argument(s): {' '.join(sys.argv[1:])}; this script "
+              f"takes none and measures every note under experimental_notes/",
+              file=sys.stderr)
+        return 2
     notes = sorted((REPO / "experimental_notes").rglob("*.md"))
     before = after = removed = added = 0
     changed = []

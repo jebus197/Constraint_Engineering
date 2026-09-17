@@ -44,7 +44,7 @@ Fixed by deriving `EXHAUSTED_VALVE_STATUSES` from the readers rather than listin
 | 7.1 (bounded) | 207 of 283 spelled numbers converted, 73.14%, Wilson [67.7%, 78.0%] | `scripts/spelled_number_repair_2026-09-09.py` |
 | 7.2 | Note linter reached by the commit path | 5th guard in `hooks/pre-commit`, a ratchet |
 | 7.3, 8.1 | Two-document distinction recorded; `rs` no longer hunts absent files | `git log --all`: 0 commits touching either path |
-| L2 | Quote exemption survives a sentence boundary | `scripts/quote_exemption_effect_2026-09-09.py`: 8 removed, 0 added |
+| L2 | Quote exemption survives a sentence boundary | `scripts/quote_exemption_effect_2026-09-09.py` as committed at `b593500` (2026-09-09): 379 notes, 1136 findings, 8 removed, 0 added; its output grows with the corpus, so re-run it rather than quote this row |
 
 ---
 

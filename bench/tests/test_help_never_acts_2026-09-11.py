@@ -28,6 +28,14 @@ one of the 3 categories reserved to him. The executing proof is done ONCE, by
 hand, in a throwaway clone -- all 9 repaired scripts print usage, exit 0 and
 leave the tree clean -- and the ratchet below keeps it that way without repeating
 the risk on every suite run.
+
+THAT HAND RUN COVERED DIRECT INVOCATION ONLY (panel round 16, 2026-09-17). Under
+`python3 -m scripts.<name> --help`, 5 of the 9 still swallowed the ImportError of
+their guard and ran their ordinary work; `answers_help` now reads that form (see
+its docstring) and the 5 carry the own-directory insert. 4 of the 9, the ones
+that write records and the topology diagram, are EXECUTED under both forms by
+`bench/tests/test_help_is_inert_under_dash_m_2026-09-17.py`. The rate this entry
+quoted is printed by `scripts/help_writers_rate_2026-09-17.py`.
 """
 from __future__ import annotations
 
@@ -56,7 +64,7 @@ def tracked_scripts() -> list[pathlib.Path]:
     return [REPO / f for f in r.stdout.split() if f.endswith(".py")]
 
 
-def answers_help(src: str) -> bool:
+def answers_help(src: str, under_dash_m: bool = True) -> bool:
     """Does this script actually CALL a help handler, or build a parser?
 
     A SUBSTRING TEST WAS NOT ENOUGH, and the mutation caught it within a minute.
@@ -68,19 +76,70 @@ def answers_help(src: str) -> bool:
 
     So the question is asked of the parsed module: is `answer_help` CALLED at
     module level, or is an `ArgumentParser` constructed anywhere?
+
+    A CALL THAT `python3 -m` CANNOT REACH DOES NOT COUNT (panel round 16,
+    2026-09-17), unless `under_dash_m=False` asks the direct-invocation question.
+    The repaired guards read `try: from _cli_help import answer_help` with an
+    `except ImportError: pass` arm. Run directly, scripts/ is `sys.path[0]` and
+    the import resolves; under `-m` the repository root is, the import fails, the
+    arm swallows it, and the script's ordinary work runs with `--help` on its
+    command line. 5 of the 9 repaired scripts had exactly that guard. A swallowing
+    guard now counts only when a `sys.path.insert` built from `__file__` precedes
+    the import in the same `try`, which is the form `assemble_panel_record.py`
+    carries. It is a static proxy: it does not prove the inserted path is the
+    script's own directory.
     """
     try:
         tree = ast.parse(src)
     except SyntaxError:
         return False
+    leaky = _help_calls_unreachable_under_dash_m(tree) if under_dash_m else set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         fn = node.func
         name = getattr(fn, "id", None) or getattr(fn, "attr", None)
-        if name in ("answer_help", "ArgumentParser"):
+        if name == "ArgumentParser":
+            return True
+        if name == "answer_help" and id(node) not in leaky:
             return True
     return False
+
+
+def _help_calls_unreachable_under_dash_m(tree: ast.AST) -> set[int]:
+    """ids of `answer_help` calls inside a `try` that imports `_cli_help`, swallows
+    ImportError with `pass`, and puts nothing built from `__file__` on sys.path
+    before the import."""
+    def catches_import_error(h: ast.ExceptHandler) -> bool:
+        types = h.type.elts if isinstance(h.type, ast.Tuple) else [h.type]
+        return any(getattr(t, "id", None) in ("ImportError", "ModuleNotFoundError")
+                   for t in types)
+
+    leaky: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        at = next((i for i, s in enumerate(node.body)
+                   if isinstance(s, ast.ImportFrom) and s.module == "_cli_help"), None)
+        if at is None:
+            continue
+        if not any(catches_import_error(h) and all(isinstance(s, ast.Pass) for s in h.body)
+                   for h in node.handlers):
+            continue
+        before = [n for s in node.body[:at] for n in ast.walk(s)]
+        inserts = any(isinstance(n, ast.Call) and getattr(n.func, "attr", None) == "insert"
+                      and getattr(getattr(n.func, "value", None), "attr", None) == "path"
+                      for n in before)
+        uses_file = any(isinstance(n, ast.Name) and n.id == "__file__" for n in before)
+        if inserts and uses_file:
+            continue
+        for part in (node.body, node.orelse):
+            for s in part:
+                for n in ast.walk(s):
+                    if isinstance(n, ast.Call) and (getattr(n.func, "id", None)
+                                                    or getattr(n.func, "attr", None)) == "answer_help":
+                        leaky.add(id(n))
+    return leaky
 
 
 class TestNoWriterIgnoresTheFlag:
@@ -107,7 +166,10 @@ class TestNoWriterIgnoresTheFlag:
         matcher above cannot quietly stop covering them."""
         for name in ("assemble_panel_record.py", "assemble_panel_record_0819.py"):
             src = (REPO / "scripts" / name).read_text(encoding="utf-8")
-            assert "answer_help" in src, name
+            # PARSED, not a substring (2026-09-17): `"answer_help" in src` was the
+            # comment-satisfiable test this file's own `answers_help` docstring
+            # records failing a mutation.
+            assert answers_help(src), name
             assert WRITES.search(src), (
                 f"{name} no longer looks like a writer, so this control has "
                 f"stopped testing what it was written for")
@@ -120,6 +182,52 @@ class TestNoWriterIgnoresTheFlag:
         assert WRITES.search("open(f, 'w')")
         assert not WRITES.search("p.read_text()")
         assert not WRITES.search("open(f) as fh")
+
+    def test_a_guard_that_swallows_the_import_under_dash_m_does_not_count(self):
+        """ANTI-VACUITY AND POSITIVE CONTROL for the `-m` rule, on the 3 guard
+        shapes that exist in scripts/ today."""
+        leaky = ('if __name__ == "__main__":\n'
+                 '    try:\n'
+                 '        from _cli_help import answer_help\n'
+                 '    except ImportError:\n'
+                 '        pass\n'
+                 '    else:\n'
+                 '        answer_help(__doc__, __file__)\n')
+        repaired = ('if __name__ == "__main__":\n'
+                    '    try:\n'
+                    '        import sys as _sys\n'
+                    '        import pathlib as _pl\n'
+                    '        _here = str(_pl.Path(__file__).resolve().parent)\n'
+                    '        if _here not in _sys.path:\n'
+                    '            _sys.path.insert(0, _here)\n'
+                    '        from _cli_help import answer_help\n'
+                    '    except ImportError:\n'
+                    '        pass\n'
+                    '    else:\n'
+                    '        answer_help(__doc__, __file__)\n')
+        bare = ('if __name__ == "__main__":\n'
+                '    from _cli_help import answer_help\n'
+                '    answer_help(__doc__, __file__)\n')
+        assert not answers_help(leaky), "a swallowed import under -m was counted"
+        assert answers_help(leaky, under_dash_m=False), (
+            "the direct-invocation question must still accept the leaky guard")
+        assert answers_help(repaired), "the repaired guard was not accepted"
+        assert answers_help(bare), "a bare import fails closed under -m and must count"
+        assert answers_help("import argparse\nargparse.ArgumentParser()\n")
+
+    def test_every_repaired_guard_survives_dash_m(self):
+        """The 9 scripts A26 repaired, read with the `-m` rule. 5 of them failed
+        it until 2026-09-17."""
+        nine = ("apply_v3.py", "assemble_panel_record.py", "assemble_panel_record_0819.py",
+                "branch_supplies_adjudication_versions_2026-09-10.py",
+                "compose_all_2026-08-23.py", "dump_panel_findings_2026-09-05.py",
+                "ffafp_cycle_gamma_2026-09-10.py", "generate_topology.py",
+                "task_list_entry_count_2026-09-10.py")
+        failing = [n for n in nine
+                   if not answers_help((REPO / "scripts" / n).read_text(encoding="utf-8"))]
+        assert not failing, (
+            f"{failing} answer --help only when run directly; under `python3 -m` "
+            f"their ImportError is swallowed and their ordinary work runs")
 
 
 #: Calls that change something on disk.

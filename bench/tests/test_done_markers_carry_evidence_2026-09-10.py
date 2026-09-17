@@ -312,3 +312,27 @@ def test_a_failure_in_a_section_p_mechanism_invalidates_its_entry(evidence, entr
         f"a failing test in {evidence} does not invalidate DONE entry {entry}, "
         f"so {entry}'s completion claim does not rest on the file that exercises "
         f"its clause. The mapper reports: {hits}")
+
+
+def test_duplicate_identifiers_merge_rather_than_overwrite(tmp_path):
+    """`unsupported_done_entries` MERGES the evidence of 2 entries sharing an id.
+
+    TASK V7 says "It merges now", and until panel round 16 (2026-09-17) no test
+    reached that line: with `scripts/task_list_markers.py`'s merge reverted to
+    `out[e.ident] = hit`, every existing test stayed green while this fixture
+    lost 1 of its 2 failing evidence files. Duplicate ids are forbidden
+    elsewhere; a reporter that loses a finding on malformed input is a second
+    defect, held here on its own terms."""
+    listing = tmp_path / "list.md"
+    listing.write_text(
+        "**X1. The first entry to use the identifier.**\n"
+        "<!-- task: X1 | state: DONE | status: COMMITTED | evidence: bench/tests/test_a.py -->\n\n"
+        "**X1. A second entry reusing it.**\n"
+        "<!-- task: X1 | state: DONE | status: COMMITTED | evidence: bench/tests/test_b.py -->\n",
+        encoding="utf-8")
+    parsed = M.parse_entries(listing)
+    assert [e.ident for e in parsed] == ["X1", "X1"], parsed
+    got = M.unsupported_done_entries(
+        ["bench/tests/test_a.py::t", "bench/tests/test_b.py::t"], listing)
+    assert got == {"X1": ["bench/tests/test_a.py", "bench/tests/test_b.py"]}, (
+        f"a duplicate identifier deleted a failing evidence file from the report: {got}")

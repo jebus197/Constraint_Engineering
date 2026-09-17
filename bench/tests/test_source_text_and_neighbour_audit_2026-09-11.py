@@ -142,20 +142,107 @@ class TestTheCensusIsCurrent:
         assert "CENSUS, NOT A VERDICT" in r.stdout
 
 
-class TestTheExperimentsRefuseToRunUnsafely:
-    """Both scripts mutate a TRACKED file and revert with `git checkout --`."""
+#: Arguments that make each script mutate `mod.py` in a scratch repository.
+_SCRIPT_ARGS = {
+    FRAGILITY.name: ["--target", "mod.py", "--mode", "eof"],
+    NEIGHBOUR.name: ["--module", "mod.py", "--symbol", "f"],
+}
+_COMMITTED_MOD = "def f():\n    return 1\n"
+_UNCOMMITTED_LINE = "# UNCOMMITTED WORK the refusal exists to protect\n"
 
-    @pytest.mark.parametrize("script", [FRAGILITY, NEIGHBOUR])
+
+def _git_env():
+    """The parent environment minus GIT_*: under the pre-commit hook GIT_INDEX_FILE
+    and GIT_DIR point at the REAL repository, and a scratch `git` must not use them."""
+    import os
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
+def _scratch_repo(tmp_path, script):
+    """A git repository holding a copy of `script` (so its REPO is this tree), a
+    committed `mod.py` and 1 committed test file that names and calls it."""
+    import shutil
+    if shutil.which("git") is None:
+        pytest.skip("git is not on PATH")
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "bench" / "tests").mkdir(parents=True)
+    copy = repo / "scripts" / script.name
+    shutil.copy(script, copy)
+    (repo / "mod.py").write_text(_COMMITTED_MOD, encoding="utf-8")
+    (repo / "bench" / "tests" / "test_x.py").write_text(
+        "# covers mod.py\nimport sys, pathlib\n"
+        "sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))\n"
+        "from mod import f\n\n\ndef test_f():\n    assert f() == 1\n",
+        encoding="utf-8")
+    # Loading the copy in-process writes scripts/__pycache__/, which would make
+    # the tree dirty and turn every run into a refusal.
+    (repo / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    env = _git_env()
+    for args in (["init", "-q"], ["add", "-A"],
+                 ["-c", "user.name=t", "-c", "user.email=t@example.invalid",
+                  "-c", "commit.gpgsign=false", "commit", "-q", "--no-verify",
+                  "-m", "base"]):
+        r = subprocess.run(["git", *args], cwd=repo, env=env,
+                           capture_output=True, text=True)
+        assert r.returncode == 0, f"git {args} -> {r.returncode}\n{r.stderr}"
+    return repo, copy
+
+
+class TestTheExperimentsRefuseToRunUnsafely:
+    """Both scripts mutate a TRACKED file and revert with `git checkout --`.
+
+    EXECUTED, not read (panel round 16, 2026-09-17). The test this replaces
+    asserted that `REFUSING`, `git checkout` and `finally:` appear in each
+    script's text, inside the file whose subject is that such assertions do not
+    test behaviour. A copy of either script with its first `tree_is_clean()`
+    check disabled kept all 3 strings, passed, and then destroyed an
+    uncommitted edit. Both properties are now run: the refusal on a dirty tree,
+    and the revert when the mutated run raises."""
+
+    @pytest.mark.parametrize("script", [FRAGILITY, NEIGHBOUR], ids=lambda p: p.stem)
     def test_a_dirty_tree_is_refused(self, script, tmp_path):
-        m = _load(script, f"safety_{script.stem}")
-        assert hasattr(m, "tree_is_clean"), (
-            f"{script.name} no longer checks tree cleanliness before mutating a "
-            f"tracked file, so a revert could destroy uncommitted work")
-        src = script.read_text(encoding="utf-8")
-        assert "REFUSING" in src and "git checkout" in src
-        assert "finally:" in src, (
-            "the revert is not in a finally block, so an exception mid-run "
-            "leaves the repository mutated")
+        repo, copy = _scratch_repo(tmp_path, script)
+        (repo / "mod.py").write_text(_COMMITTED_MOD + _UNCOMMITTED_LINE,
+                                     encoding="utf-8")
+        r = subprocess.run([sys.executable, str(copy), *_SCRIPT_ARGS[script.name]],
+                           cwd=repo, env=_git_env(), capture_output=True,
+                           text=True, timeout=300)
+        survived = _UNCOMMITTED_LINE in (repo / "mod.py").read_text(encoding="utf-8")
+        assert survived, (
+            f"{script.name} ran on a dirty tree and its `git checkout --` revert "
+            f"destroyed uncommitted work (exit {r.returncode})")
+        assert r.returncode == 2 and "REFUSING" in r.stderr, (
+            f"{script.name} did not refuse a dirty tree: exit {r.returncode}\n"
+            f"{r.stderr[-2000:]}")
+
+    @pytest.mark.parametrize("script", [FRAGILITY, NEIGHBOUR], ids=lambda p: p.stem)
+    def test_the_revert_runs_when_the_mutated_run_raises(self, script, tmp_path,
+                                                         monkeypatch):
+        """The `finally`, executed: the 2nd test run (the one made while the
+        target is mutated) raises, and the target must still be restored."""
+        repo, copy = _scratch_repo(tmp_path, script)
+        for k in [k for k in __import__("os").environ if k.startswith("GIT_")]:
+            monkeypatch.delenv(k)
+        m = _load(copy, f"revert_{script.stem}")
+        assert m.REPO == repo, f"the copy resolved REPO to {m.REPO}, not the scratch tree"
+        calls = []
+
+        def run(paths, timeout=3600):
+            calls.append(list(paths))
+            if len(calls) == 2:
+                assert (repo / "mod.py").read_text(encoding="utf-8") != _COMMITTED_MOD, (
+                    "the 2nd run was reached with the target unmutated")
+                raise RuntimeError("injected failure during the mutated run")
+            return (0, []) if script == FRAGILITY else []
+
+        monkeypatch.setattr(m, "run", run)
+        monkeypatch.setattr(sys, "argv", [str(copy), *_SCRIPT_ARGS[script.name]])
+        with pytest.raises(RuntimeError, match="injected failure"):
+            m.main()
+        assert len(calls) == 2, f"the run was not reached as expected: {calls}"
+        assert (repo / "mod.py").read_text(encoding="utf-8") == _COMMITTED_MOD, (
+            f"{script.name} left the target mutated after an exception mid-run")
 
     def test_the_neighbour_script_separates_naming_from_calling(self):
         """The refinement that moved the headline from 29.7297% to 0.0000%."""

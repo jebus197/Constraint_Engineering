@@ -72,6 +72,11 @@ import sys
 # importing the module then reaches exactly the code it reached before.
 if __name__ == "__main__":
     try:
+        import sys as _sys
+        import pathlib as _pl
+        _here = str(_pl.Path(__file__).resolve().parent)
+        if _here not in _sys.path:
+            _sys.path.insert(0, _here)
         from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
     except ImportError:
         # A COPY OUTSIDE scripts/, which is how the mutation harness runs
