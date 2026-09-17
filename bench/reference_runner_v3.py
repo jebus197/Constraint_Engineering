@@ -156,6 +156,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "bench"))
 
+from experiment_11_orchestrator import seat_environment as _seat_environment  # noqa: E402
 from experiment_11_orchestrator import (
     load_default_config,
     dispatch,
@@ -8574,7 +8575,11 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
             r = subprocess.run(
                 shlex.split(test_cmd), capture_output=True, text=True,
                 cwd=str(sb), timeout=300,
-                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                # Secrets out and the Wolfram gate first, 2026-09-17: this runs a
+                # MODEL-PROPOSED source under pytest. Measured before the change:
+                # scripts/gate_environment_secrets_2026-09-17.py, 11 of 11 selections
+                # give identical counts with and without the secrets.
+                env={**_seat_environment(), "PYTHONDONTWRITEBYTECODE": "1"},
             )
         except (subprocess.TimeoutExpired, Exception) as e:
             return False, f"gate_exec:{type(e).__name__}"
@@ -10234,7 +10239,11 @@ def _run_effect_regression(
                 shlex.split(test_cmd),
                 capture_output=True, text=True, timeout=120,
                 cwd=str(sandbox),
-                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                # Secrets out and the Wolfram gate first, 2026-09-17: this runs a
+                # MODEL-PROPOSED source under pytest. Measured before the change:
+                # scripts/gate_environment_secrets_2026-09-17.py, 11 of 11 selections
+                # give identical counts with and without the secrets.
+                env={**_seat_environment(), "PYTHONDONTWRITEBYTECODE": "1"},
             )
             output = result.stdout + result.stderr
 

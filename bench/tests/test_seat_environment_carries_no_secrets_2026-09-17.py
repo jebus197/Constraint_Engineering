@@ -242,3 +242,33 @@ class TestTheLiveProbeIsCommittedAndInert:
         r = subprocess.run([sys.executable, str(ROOT / "scripts/seat_environment_probe_2026-09-17.py"), "--help"],
                            capture_output=True, text=True, timeout=60)
         assert r.returncode == 0 and r.stdout.startswith("usage:") and "RESULT" not in r.stdout
+
+
+class TestTheRunnersFixGates:
+    """`_apply_back_gate` and `_run_effect_regression` run MODEL-PROPOSED source under
+    pytest. They take the seat environment too, after a measurement showed it changes
+    no outcome: scripts/gate_environment_secrets_2026-09-17.py, 11 of 11 selections
+    identical with and without the secrets."""
+
+    @pytest.fixture
+    def rr(self, monkeypatch):
+        import reference_runner_v3 as rr
+        # The gates copy the whole repository first; a directory is all the spawn needs.
+        monkeypatch.setattr(rr.shutil, "copytree", lambda src, dst, **k: Path(dst).mkdir(parents=True))
+        return rr
+
+    @pytest.mark.parametrize("gate", ["back gate", "effect regression"])
+    def test_each_gate(self, rr, monkeypatch, secrets_in_parent, gate):
+        seen = _capture(monkeypatch, rr)
+        try:
+            if gate == "back gate":
+                rr._apply_back_gate("x = 1\n", "bench/_probe_target.py", "python3 -m pytest -q")
+            else:
+                rr._run_effect_regression("x = 1\n", str(ROOT / "bench" / "_probe_target.py"),
+                                          "python3 -m pytest -q")
+        except Exception:                           # noqa: BLE001
+            pass
+        assert "env" in seen, "subprocess.run was never reached, so nothing was checked"
+        assert not set(SECRETS) & set(seen["env"])
+        assert seen["env"].get("PYTHONDONTWRITEBYTECODE") == "1"
+        _wolfram_denied(seen, claude=False)
