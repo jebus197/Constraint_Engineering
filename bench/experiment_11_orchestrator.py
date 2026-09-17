@@ -873,6 +873,17 @@ def verdict_is_substantive(text: str, min_chars: int = 800) -> str | None:
     return f"{len(stripped)} chars with no verdict marker (holding note?)"
 
 
+# THE WOLFRAM STANDARD'S DENY LAYER (founder, Question 11, 2026-09-17). Every
+# seat launcher that calls `seat_environment()` also puts a refusing
+# `wolframscript` first on the seat's PATH, and every `claude -p` seat carries
+# WOLFRAM_DENY_ARGS. See bench/wolfram_standard.py for what this cannot stop.
+try:
+    from wolfram_standard import CLAUDE_CLI_DENY_ARGS as WOLFRAM_DENY_ARGS  # noqa: E402
+    from wolfram_standard import gated_path as _wolfram_gated_path  # noqa: E402
+except ImportError:  # imported as bench.experiment_11_orchestrator
+    from bench.wolfram_standard import CLAUDE_CLI_DENY_ARGS as WOLFRAM_DENY_ARGS  # noqa: E402
+    from bench.wolfram_standard import gated_path as _wolfram_gated_path  # noqa: E402
+
 #: A variable whose NAME looks like a credential. Matched on the name, never the
 #: value, case-insensitively, and on a secret word ANYWHERE between underscores:
 #: the first version anchored at the end of the name and let
@@ -884,7 +895,8 @@ _SECRET_NAME = _re.compile(
 
 def seat_environment(base: "dict[str, str] | None" = None,
                      keep: "tuple[str, ...]" = ()) -> "dict[str, str]":
-    """The environment a model seat is started with: the parent's, minus secrets.
+    """The environment a model seat is started with: the parent's, minus secrets,
+    with the Wolfram deny gate first on PATH.
 
     FOUND 2026-09-17, AND MEASURED BEFORE IT WAS FIXED. The panel dispatcher
     loads `.env` into its own process: 10 secrets, 8 API keys plus
@@ -903,7 +915,8 @@ def seat_environment(base: "dict[str, str] | None" = None,
     else survives: Codex falls back to OPENAI_API_KEY when it is not logged in.
     """
     env = dict(os.environ if base is None else base)
-    return {k: v for k, v in env.items() if k in keep or not _SECRET_NAME.search(k)}
+    return _wolfram_gated_path(
+        {k: v for k, v in env.items() if k in keep or not _SECRET_NAME.search(k)})
 
 
 def call_claude_cli(
@@ -994,6 +1007,7 @@ def call_claude_cli(
         # enforcing control is the read-only staged target (stage_targets.sh);
         # the detecting control is the per-round target hash guard in
         # reference_runner_v3.py. Three layers, none of them relied on alone.
+        *WOLFRAM_DENY_ARGS,
         "--allowedTools", "Bash", "Read", "Grep", "Glob", "WebFetch", "WebSearch",  # STEM tools via Bash (SymPy/z3/numpy/scipy); source via Read/Grep/Glob; research via WebFetch/WebSearch. No file modification.
         # THE PANELLIST IS BRIEFED BY THE DIRECTIVE, NOT BY THE OPERATOR'S OWN
         # INSTRUCTIONS (founder ruling 2026-08-31).

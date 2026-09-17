@@ -87,7 +87,9 @@ ANSWERED_RULES = [
      "experimental_notes/D9_D11_Experiment_Design_2026-09-05.md",
      "restore specified as S1; NOT applied"),
     (r"wolfram licence|licence expir",
-     None, "expires 2026-09-11; still open, 6 days"),
+     "bench/wolfram_standard.py",
+     "lapsed 2026-09-11, renewed by hand 2026-09-15, expires 2026-10-08; onboarding "
+     "reads the date and warns 14 days ahead (corrected 2026-09-17)"),
 ]
 
 

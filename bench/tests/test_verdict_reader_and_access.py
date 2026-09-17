@@ -397,7 +397,10 @@ def test_the_trace_records_a_denial_with_its_ready_marker(tmp_path):
     """The parser's contract, asserted directly: no ready marker means the
     observer never installed, which is NOT the same as 'nothing happened'."""
     empty = tmp_path / "absent.trace"
-    assert _read_trace(str(empty)) == {"observed": False, "denials": []}
+    # `wolfram` ADDED 2026-09-17 (Question 11): the observer now refuses the
+    # licensed kernel and records it apart from an out-of-root read, because the
+    # 2 mean different things to a verdict.
+    assert _read_trace(str(empty)) == {"observed": False, "denials": [], "wolfram": []}
     written = tmp_path / "present.trace"
     written.write_text("OBSERVER-READY\nD open\t/elsewhere\n")
     parsed = _read_trace(str(written))

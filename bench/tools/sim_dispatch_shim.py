@@ -48,7 +48,7 @@ for p in (str(REPO), str(REPO / "bench")):
         sys.path.insert(0, p)
 
 import reference_runner_v3 as R   # noqa: E402
-from experiment_11_orchestrator import seat_environment  # noqa: E402
+from experiment_11_orchestrator import WOLFRAM_DENY_ARGS, seat_environment  # noqa: E402
 
 #: Vendor label -> simulated stand-in. Order fixed so a run is reproducible.
 #: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
@@ -185,6 +185,7 @@ def make_shim(model: str = "opus", timeout: int = 900):
                  # after. `--bare` also works but forces API-key auth, which
                  # would break subscription dispatch -- rejected.
                  "--setting-sources", "",
+                 *WOLFRAM_DENY_ARGS,
                  "--allowedTools", "Bash", "Read", "Grep", "Glob"],
                 capture_output=True, text=True, timeout=budget,
                 cwd=str(REPO), stdin=subprocess.DEVNULL,

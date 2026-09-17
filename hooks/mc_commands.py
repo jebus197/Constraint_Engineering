@@ -58,7 +58,9 @@ _OBLIGATION = {
            "NumPy, statsmodels, mpmath, pint, Wolfram). Prose reasoning does NOT satisfy it. "
            "AND the 21 Apr 2026 rule: every computational claim cross-verified with at "
            "least TWO tools (z3+SymPy, scipy+statsmodels, NumPy+mpmath). Any proportion "
-           "you report needs a confidence interval.",
+           "you report needs a confidence interval. A Wolfram call that errored, timed out "
+           "or printed a Name::tag message verified NOTHING (the claim stays UNVERIFIED), "
+           "and a Wolfram-derived value carries an attribution (bench/wolfram_standard.py).",
     "f":   "F — FFAFP, five steps, all of them: FIND the issue with evidence; FOLLOW the "
            "blast radius BEFORE touching anything; ANALYSE with tools (the tool output IS "
            "the evidence); FIX the root cause; P-PASS by actively trying to break the fix. "

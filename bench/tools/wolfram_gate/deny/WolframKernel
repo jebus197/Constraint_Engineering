@@ -1,0 +1,6 @@
+#!/bin/sh
+# The refusing gate put first on an automated seat's PATH. Wolfram's published
+# terms bar its use in automated AI pipelines; see bench/wolfram_standard.py,
+# whose DENY_MESSAGE this must match (tested).
+printf '%s\n' "[Error] Wolfram is excluded from automated runs (licence constraint, .claude/CLAUDE.md). NOT EVIDENCE: the claim stays UNVERIFIED."
+exit 3

@@ -43,6 +43,8 @@ from typing import NamedTuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from cdsfl_utils import latest_experiment, read_section, repo_root, source_env, test_count
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bench"))
+import wolfram_standard as W  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -136,8 +138,10 @@ API_KEYS = {
 # broken merely because no key stands for them above.
 UNCREDENTIALED_ROUTES = [
     "Claude Opus (cc2) — `claude` CLI piped mode on the Max subscription; no API key.",
-    "Wolfram — hosted MCP endpoint plus local `wolframscript`; no API key "
-    "(the key-authenticated bridge was retired 2026-08-03).",
+    "Wolfram — local `wolframscript` on the Wolfram Engine, plus the hosted Wolfram "
+    "connector authorised in the assistant's own session; no API key (the "
+    "key-authenticated bridge was retired 2026-08-03, and the WolframCloud MCP "
+    "entry was removed on 2026-09-10 because it had stopped connecting).",
 ]
 
 SYSTEM_TOOLS = [
@@ -323,12 +327,31 @@ def wolfram_kernel_path() -> str | None:
     return None
 
 
+def stale_kernels() -> list[str]:
+    """Wolfram kernel processes already running, from `ps`.
+
+    `.claude/CLAUDE.md` requires this check BEFORE a licence message is read as a
+    licence fault: on 2026-08-02 a second kernel spawned against the single-kernel
+    licence made every call report "not activated", which it was not."""
+    try:
+        r = subprocess.run(["ps", "-axo", "pid=,command="], capture_output=True,
+                           text=True, timeout=10)
+    except Exception:
+        return []
+    return [line.strip() for line in (r.stdout or "").splitlines()
+            if "MacOS/wolfram" in line or "WolframKernel" in line]
+
+
 def wolfram_state(timeout: int = 120) -> str:
     """Does Wolfram actually COMPUTE here? Returns a state, never a guess.
 
     ABSENT        — `wolframscript` is not installed.
     NO_KERNEL     — installed, but it cannot locate a kernel to run.
-    NOT_ACTIVATED — a kernel is there and the licence is expired or unactivated.
+    BUSY          — a kernel answered "Connection closed by WolframKernel" twice:
+                    another caller holds the single-kernel licence.
+    STALE_KERNEL  — a licence message, while kernel processes are already running;
+                    a leftover kernel is the likely cause, not the licence.
+    NOT_ACTIVATED — a licence message with no other kernel running.
     OK            — it evaluated 1+1 and returned 2.
 
     WHY THIS REPLACED A PATH CHECK (2026-09-15). The previous version reported
@@ -337,25 +360,42 @@ def wolfram_state(timeout: int = 120) -> str:
     2026-09-11 without auto-renewing, and separately `wolframscript` could not
     locate a kernel at all. Presence is not capability, and a check that cannot
     tell them apart reports success during a total outage.
+
+    RETRIED, AND 2 STATES ADDED, 2026-09-17 (Question 11). The first version
+    classed kernel contention and a timeout as NO_KERNEL after 1 call, and then
+    offered to reconfigure the kernel path, which is the wrong repair for both.
+    It now goes through `wolfram_standard.run_local`, which retries once after a
+    result that is not evidence.
     """
     script = shutil.which("wolframscript")
     if not script:
         return "ABSENT"
-    try:
-        r = subprocess.run([script, "-code", "Print[1+1]"],
-                           capture_output=True, text=True, timeout=timeout,
-                           stdin=subprocess.DEVNULL)
-    except Exception:
-        return "NO_KERNEL"
-    out = (r.stdout + r.stderr).strip()
-    if r.returncode == 0 and out.splitlines()[-1:] == ["2"]:
+    # `runner=subprocess.run` is looked up NOW, so a test that replaces it is obeyed.
+    r = W.run_local("Print[1+1]", timeout=timeout, runner=subprocess.run, script=script)
+    out = (r["stdout"] + r["stderr"]).strip()
+    if r["evidence"] and out.splitlines()[-1:] == ["2"]:
         return "OK"
     low = out.lower()
+    if "connection closed by wolframkernel" in low:
+        return "BUSY"
     if "not activated" in low or "license" in low or "licence" in low:
-        return "NOT_ACTIVATED"
-    if "kernel" in low:
-        return "NO_KERNEL"
+        return "STALE_KERNEL" if stale_kernels() else "NOT_ACTIVATED"
     return "NO_KERNEL"
+
+
+def wolfram_licence_warning(timeout: int = 60) -> str | None:
+    """Read `$LicenseExpirationDate` and warn before it lapses.
+
+    The Engine licence did not auto-renew on 2026-09-11 and was activated by hand
+    on 2026-09-15, expiring 2026-10-08. When the kernel cannot say, the recorded
+    date is used and the warning says so."""
+    r = W.run_local("$LicenseExpirationDate", timeout=timeout, runner=subprocess.run,
+                    script=shutil.which("wolframscript"))
+    read = W.parse_licence_expiry(r["stdout"]) if r["evidence"] else None
+    warning = W.licence_warning(read or W.RECORDED_LICENCE_EXPIRY)
+    if warning and not read:
+        warning += f" (date recorded on 2026-09-15; the kernel did not report one: {r['reason']})"
+    return warning
 
 
 def check_wolfram() -> str:
@@ -374,6 +414,28 @@ def check_wolfram() -> str:
     state = wolfram_state()
     if state == "OK":
         print("    [OK] wolframscript evaluated 1+1 and returned 2.")
+        warning = wolfram_licence_warning()
+        if warning:
+            print(f"    [RENEW] {warning}")
+        return state
+
+    if state == "BUSY":
+        print("    [BUSY] the kernel is in use: 2 calls both got \"Connection closed")
+        print("           by WolframKernel\". The Engine licence allows 1 kernel at a")
+        print("           time. Close the other Wolfram session and re-run this script.")
+        print("           Nothing needs reconfiguring.")
+        return state
+
+    if state == "STALE_KERNEL":
+        print("    [STALE KERNEL] a licence message, but Wolfram kernel processes are")
+        print("           already running, and a leftover kernel is the likely cause:")
+        kernels = stale_kernels()
+        for line in kernels[:5]:
+            print(f"             {line[:100]}")
+        if len(kernels) > 5:
+            print(f"             ... and {len(kernels) - 5} more; `ps -axo pid,command | grep -i wolfram` lists all")
+        print("           End those processes, then re-run this script. Do not")
+        print("           re-activate on the strength of this message alone.")
         return state
 
     if state == "ABSENT":

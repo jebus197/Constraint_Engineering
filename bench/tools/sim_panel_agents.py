@@ -50,7 +50,7 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from experiment_11_orchestrator import seat_environment  # noqa: E402
+from experiment_11_orchestrator import WOLFRAM_DENY_ARGS, seat_environment  # noqa: E402
 
 #: Six stand-ins for six models. Named by letter, never by vendor.
 SIM_AGENTS = ["SIM-A", "SIM-B", "SIM-C", "SIM-D", "SIM-E", "SIM-F"]
@@ -107,6 +107,7 @@ def _one_agent(label: str, target: str, timeout: int, model: str = "opus") -> li
             ["claude", "-p", prompt, "--model", model, "--output-format", "text",
              "--no-session-persistence",
         "--setting-sources", "",  # panellists read the directive, not the operator config
+             *WOLFRAM_DENY_ARGS,
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],
             capture_output=True, text=True, timeout=timeout,
             cwd=str(REPO), stdin=subprocess.DEVNULL,

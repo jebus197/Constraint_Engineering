@@ -44,7 +44,7 @@ from typing import Any, Sequence
 # Import shared logging and circuit breaker from orchestrator
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI, seat_environment
+from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI, WOLFRAM_DENY_ARGS, seat_environment
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1050,7 +1050,7 @@ def _decomposed_claude_cli(
         # narrowed to the two tools the falsifier needs. The per-chunk delivery
         # turns above ran tool-less (chunk 0 created the session with Bash/Edit/
         # Write disallowed); only this final --resume invocation carries tools.
-        cmd_final.extend(["--allowedTools", "Bash", "Read"])
+        cmd_final.extend([*WOLFRAM_DENY_ARGS, "--allowedTools", "Bash", "Read"])
 
     _log(f"  [claude-cli] delivering final instruction (chunk {total}/{total})"
          f"{' [tools-on]' if enable_tools else ''}")

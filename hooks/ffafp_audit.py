@@ -203,7 +203,11 @@ _INPLACE = re.compile(r"(?:\bsed\s+-i\b|\|\s*tee\b|\btee\s+[-\w./~$]|\bgit\s+app
 _STEM_NAMES = r"sympy|z3|scipy|statsmodels|mpmath|uncertainties|numpy|wolframalpha|wolfram|sage|networkx|pint"
 _STEM = re.compile(
     r"(?:(?:^|[\s;&|(])(?:import|from)\s+(?P<a>" + _STEM_NAMES + r")\b)"
-    r"|(?:\bpython3?\b[^\n]{0,400}?\b(?P<b>" + _STEM_NAMES + r")\b)",
+    r"|(?:\bpython3?\b[^\n]{0,400}?\b(?P<b>" + _STEM_NAMES + r")\b)"
+    # A local Wolfram evaluation (Question 11, 2026-09-17). `wolframscript -code`
+    # is Wolfram Language, not Python, so neither form above could credit it, and
+    # a turn whose only analysis was Wolfram was reported as having no STEM trace.
+    r"|(?:(?:^|[\s;&|(/])(?P<c>wolframscript)\s+-(?:code|file|script)\b)",
     re.I | re.M,
 )
 
@@ -315,7 +319,8 @@ def bash_signals(cmd: str) -> dict:
     body of a `python3 - <<'PY'` IS the evidence. Only redirect scanning excludes them.
     """
     return {
-        "stem": sorted({(m.group("a") or m.group("b") or "").lower() for m in _STEM.finditer(cmd)} - {""}),
+        "stem": sorted({(m.group("a") or m.group("b") or m.group("c") or "").lower()
+                        for m in _STEM.finditer(cmd)} - {""}),
         "test": bool(_TEST.search(cmd)),
         "failable": bool(_TEST.search(cmd) or _ASSERT.search(cmd)),
         "search": bool(_SEARCH.search(cmd)),
@@ -374,6 +379,13 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
         if len(turn["searches"]) < SEARCH_CAP:
             turn["searches"].append([idx, blob[:400]])
         _add_read_paths(turn, _paths_in(blob))
+        return
+
+    # The hosted Wolfram connector's tools (WolframLanguageEvaluator, WolframAlpha,
+    # WolframContext) are STEM tool calls in their own right (2026-09-17).
+    if "wolfram" in name.lower() and name.startswith("mcp__"):
+        if "wolfram" not in turn["stem"]:
+            turn["stem"].append("wolfram")
         return
 
     if name == "Bash":

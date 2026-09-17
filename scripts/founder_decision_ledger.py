@@ -57,7 +57,9 @@ GROUPS = [
  ("Adopt nu_eff = nu/|D|", [106], "DONE", "",
   "REFUTED twice, both Wolfram-verified. Closed."),
  ("The Wolfram Engine licence expiry", [19,63,109], "RULED", "",
-  "Founder ruled 2026-09-06: set a reminder. Done, fires 2026-09-09."),
+  "Founder ruled 2026-09-06: set a reminder. Done, fires 2026-09-09. It fired; the licence "
+  "lapsed 2026-09-11 regardless, was renewed by hand 2026-09-15 and expires 2026-10-08, "
+  "which onboarding now reads and warns on 14 days ahead (added 2026-09-17)."),
  ("Where the Reduction Criterion belongs", [64,115,124], "RULED", "",
   "Founder: put it to CC2 and Fable; references section deferred to discussion."),
  ("Run one-model-direct versus one-model-with-agents", [3], "RULED", "",

@@ -63,7 +63,7 @@ sympy: pip install sympy
   hook: verify_expression(claim) → VERIFIED_TRUE | VERIFIED_FALSE | UNVERIFIABLE
 
 [Tools — optional]
-wolfram: mcp://wolfram-alpha
+wolfram: mcp://wolfram-alpha   # SUPERSEDED, see the note under section 4
   hook: verify_numerical(expression, tolerance) → bool
 
 [Limitations]
@@ -173,6 +173,8 @@ Estimated code change: ~150-200 lines in `run_benchmark.py`, ~100 lines in new `
 ---
 
 ## 4. Tool Manifest — Verification Tools by Domain
+
+**Superseded for Wolfram, 2026-09-17.** The Wolfram Alpha (MCP) entries below predate the Wolfram standard of 2026-08-02. Wolfram's published terms bar its use inside automated AI pipelines, so Wolfram is not a bench tool: automated runs are denied it by `bench/wolfram_standard.py`, and it remains an interactive cross-check for the assistant only. The rows are kept as the plan was written.
 
 | Domain | Required tools | Optional tools |
 |--------|---------------|----------------|

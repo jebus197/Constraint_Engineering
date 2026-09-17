@@ -44,6 +44,16 @@ class _Captured(Exception):
     pass
 
 
+def _wolfram_denied(seen, claude=True):
+    """QUESTION 11, 2026-09-17: the same launchers carry the Wolfram deny layer."""
+    import wolfram_standard as W
+    assert seen["env"]["PATH"].split(":")[0] == str(W.DENY_GATE), seen["env"]["PATH"][:120]
+    if claude:
+        cmd = list(seen["cmd"])
+        n = len(W.CLAUDE_CLI_DENY_ARGS)
+        assert any(tuple(cmd[i:i + n]) == W.CLAUDE_CLI_DENY_ARGS for i in range(len(cmd))), cmd
+
+
 def _capture(monkeypatch, module):
     seen = {}
 
@@ -97,6 +107,7 @@ class TestEverySpawnSitePassesIt:
         assert isinstance(seen.get("env"), dict), f"no env passed: {seen.get('env')}"
         assert not set(SECRETS) & set(seen["env"])
         assert seen["env"].get("CDSFL_PROBE_PLAIN") == "plain-visible"
+        _wolfram_denied(seen)
 
     def test_call_codex_keeps_only_its_own_key(self, monkeypatch, secrets_in_parent):
         seen = _capture(monkeypatch, orch)
@@ -108,6 +119,7 @@ class TestEverySpawnSitePassesIt:
         assert isinstance(seen.get("env"), dict), f"no env passed: {seen.get('env')}"
         leaked = (set(SECRETS) - {"OPENAI_API_KEY"}) & set(seen["env"])
         assert not leaked, leaked
+        _wolfram_denied(seen, claude=False)
 
     def _load(self, rel, name):
         spec = importlib.util.spec_from_file_location(name, ROOT / rel)
@@ -132,6 +144,7 @@ class TestEverySpawnSitePassesIt:
                         f"the helper itself is still covered above")
         assert isinstance(seen.get("env"), dict), f"the shim passed no env: {seen.get('env')}"
         assert not set(SECRETS) & set(seen["env"])
+        _wolfram_denied(seen)
 
     def test_the_simulated_panel_agents(self, monkeypatch, secrets_in_parent):
         spa = self._load("bench/tools/sim_panel_agents.py", "spa_env_probe")
@@ -144,6 +157,7 @@ class TestEverySpawnSitePassesIt:
         assert isinstance(seen.get("env"), dict), f"no env passed: {seen.get('env')}"
         assert not set(SECRETS) & set(seen["env"])
         assert seen["env"].get("CDSFL_PROBE_PLAIN") == "plain-visible"
+        _wolfram_denied(seen)
 
     # FOUND WHILE CLOSING THE CARD: `decomposed_dispatch`, which the experiment
     # runner imports for payloads too large for 1 call, starts Claude and Codex
@@ -166,6 +180,18 @@ class TestEverySpawnSitePassesIt:
         assert ("--resume" in seen["cmd"]) == (n_chunks == 0), "reached the wrong spawn site"
         assert isinstance(seen.get("env"), dict), f"no env passed: {seen.get('env')}"
         assert not set(SECRETS) & set(seen["env"])
+        # The chunk turns disallow Bash outright; only the final turn gets tools.
+        _wolfram_denied(seen, claude=False)
+
+    def test_decomposed_final_turn_with_tools_carries_the_deny_args(self, monkeypatch, secrets_in_parent):
+        dd = self._decomposed(monkeypatch)
+        seen = _capture(monkeypatch, dd)
+        try:
+            dd._decomposed_claude_cli("opus", [], "directives", "final", timeout=5, enable_tools=True)
+        except Exception:                           # noqa: BLE001
+            pass
+        assert "env" in seen and "--allowedTools" in seen["cmd"]
+        _wolfram_denied(seen)
 
     def test_decomposed_codex_keeps_only_its_own_key(self, monkeypatch, secrets_in_parent):
         dd = self._decomposed(monkeypatch)
@@ -179,6 +205,7 @@ class TestEverySpawnSitePassesIt:
         assert seen["cmd"][:2] == ["codex", "exec"]
         assert isinstance(seen.get("env"), dict), f"no env passed: {seen.get('env')}"
         assert not (set(SECRETS) - {"OPENAI_API_KEY"}) & set(seen["env"])
+        _wolfram_denied(seen, claude=False)
 
 
 SEAT_MODULES = ("bench/experiment_11_orchestrator.py", "bench/decomposed_dispatch.py",

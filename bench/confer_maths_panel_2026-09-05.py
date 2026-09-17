@@ -180,6 +180,8 @@ MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
 # Removing any of them to make room would be the subtractive failure the additive
 # standard forbids. Cost: the seat prompt goes from ~3.0K to ~31.2K characters,
 # about 7,800 tokens, which is the schema doing its job rather than overhead.
+from wolfram_standard import PANEL_CLAUSE as _WOLFRAM_CLAUSE  # noqa: E402
+
 _SCHEMA_DOC = _REPO / "bench" / "directives" / "universal" / "cdsfl_core_formal.md"
 _SCHEMA = _SCHEMA_DOC.read_text(encoding="utf-8")
 
@@ -219,6 +221,12 @@ SYSTEM = (
     "lose the budget waiting. Run targeted tests instead. If you run short of "
     "time, WRITE YOUR FINDINGS SO FAR. A partial answer carrying evidence is "
     "worth everything; a holding note is worth nothing."
+    # THE WOLFRAM STANDARD REACHES EVERY SEAT BY CONSTRUCTION (Question 11,
+    # 2026-09-17). Seats run with `--setting-sources ""`, so .claude/CLAUDE.md,
+    # where the standard lived, never reached them: the audit read this SYSTEM
+    # at 29,924 characters and found "wolfram", "Out[" and "UNVERIFIED" 0 times.
+    # The seats are also DENIED the kernel by the launcher, not only told.
+    "\n\n" + _WOLFRAM_CLAUSE
 )
 
 

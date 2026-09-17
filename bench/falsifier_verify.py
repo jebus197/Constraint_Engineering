@@ -179,6 +179,11 @@ import site
 import subprocess
 import sys
 import tempfile
+
+try:
+    import wolfram_standard as _wolfram
+except ImportError:  # imported as bench.falsifier_verify
+    from bench import wolfram_standard as _wolfram
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -444,9 +449,11 @@ runs. Two jobs, both of which must fail loudly rather than quietly:
      demonstration apart from an instrument that broke before it started.
 """
 import os
+import re
 import sys
 
 _CFG = __CDSFL_CONFIG__
+_KERNEL = re.compile(_CFG["kernel_re"])
 
 _FD = None
 try:
@@ -577,6 +584,14 @@ def _hook(event, args):
                                  if isinstance(x, (str, bytes, os.PathLike)))
             for blob in blobs:
                 text = blob.decode("utf-8", "replace") if isinstance(blob, bytes) else str(blob)
+                # THE WOLFRAM STANDARD (Question 11, 2026-09-17). Model-written
+                # code in an automated run must not start the licensed kernel:
+                # a fake binary of that name WAS reached here before this rule.
+                # 0 of 1,006 archived falsifier sources mention Wolfram
+                # (scripts/falsifier_corpus_env_and_wolfram_2026-09-17.py).
+                if _KERNEL.search(text):
+                    _emit("W %s\t%s" % (event, text[:300]))
+                    raise PermissionError(_CFG["mark"] + ": Wolfram refused")
                 path = _resolve(text)
                 if _looks_home_rooted(text) or (path is not None and _denied(path)):
                     _emit("D %s\t%s" % (event, text[:300]))
@@ -669,6 +684,7 @@ def _observer_source(
         "allow": allow,
         "deny": deny,
         "protected": protected,
+        "kernel_re": _wolfram.KERNEL_RE.pattern,
     }
     return _OBSERVER_SOURCE.replace("__CDSFL_CONFIG__", repr(cfg))
 
@@ -695,7 +711,7 @@ def _read_trace(trace_path: str) -> dict:
     ``site.execsitecustomize`` swallows a failing sitecustomize with a warning
     and carries on, so this is a real state and not a theoretical one.
     """
-    out = {"observed": False, "denials": []}
+    out = {"observed": False, "denials": [], "wolfram": []}
     try:
         with open(trace_path, "r", encoding="utf-8", errors="replace") as fh:
             lines = fh.read().splitlines()
@@ -706,6 +722,8 @@ def _read_trace(trace_path: str) -> dict:
             out["observed"] = True
         elif line.startswith("D "):
             out["denials"].append(line[2:].replace("\t", " "))
+        elif line.startswith("W "):
+            out["wolfram"].append(line[2:].replace("\t", " "))
     return out
 
 
@@ -796,6 +814,22 @@ def _announce_rejection(where: str, violations: list[tuple[str, str]], code: str
     print("\n".join(lines), file=sys.stderr, flush=True)
 
 
+def _seat_environment() -> dict:
+    """`seat_environment()` from whichever copy of the orchestrator is loaded.
+
+    Checked in sys.modules first, because importing it under the other name would
+    create a second module with its own globals, such as `_PANEL_CWD` above."""
+    for name in ("experiment_11_orchestrator", "bench.experiment_11_orchestrator"):
+        mod = sys.modules.get(name)
+        if mod is not None and hasattr(mod, "seat_environment"):
+            return mod.seat_environment()
+    try:
+        from experiment_11_orchestrator import seat_environment
+    except ImportError:
+        from bench.experiment_11_orchestrator import seat_environment
+    return seat_environment()
+
+
 def _sandbox_env(repo_root: str, bootstrap: str | None = None) -> dict:
     """Build a subprocess env with the repo importable via PYTHONPATH.
 
@@ -803,7 +837,11 @@ def _sandbox_env(repo_root: str, bootstrap: str | None = None) -> dict:
     ``from bench.dm... import ...`` resolves against the real tree while the
     rest of the parent environment (PATH for the interpreter, etc.) is kept.
     """
-    env = dict(os.environ)
+    # SECRETS OUT AND THE WOLFRAM GATE FIRST, 2026-09-17: the same environment a
+    # model seat now gets. Model-authored code runs here with the parent's
+    # credentials otherwise, and 0 of 1,006 archived falsifier sources name any
+    # secret-named variable (scripts/falsifier_corpus_env_and_wolfram_2026-09-17.py).
+    env = _seat_environment()
     # EXAM RUNS: strip the scoring-key location from the child's environment.
     # Model-authored code runs here with the PARENT's credentials, so anything
     # in the environment is handed to it. Adversarial audit, 2026-07-29: a
@@ -943,6 +981,8 @@ def execute_python(
             if r.returncode != 0:
                 out += f"\n[exit {r.returncode}]\n" + (r.stderr or "")[-2000:]
             obs = _read_trace(trace_path)
+            if obs["wolfram"]:
+                return _wolfram.DENY_MESSAGE
             if obs["denials"]:
                 _announce_rejection(
                     "execute_python sandbox",
@@ -1201,6 +1241,10 @@ def reverify_falsifier(
               "trusted to decide anything", "observer trace absent")],
             falsifier_code)
         return INTEGRITY_VIOLATION
+    if obs["wolfram"]:
+        # Not an integrity fault: the falsifier asked for a tool automated runs
+        # may not use, so it could not decide the claim. That is ERROR.
+        return "ERROR"
     if obs["denials"]:
         _announce_rejection(
             "reverify_falsifier sandbox",

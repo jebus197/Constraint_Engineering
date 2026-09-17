@@ -150,6 +150,11 @@ _NETWORK_BINARIES = {
     "claude", "codex", "gemini", "chatgpt", "llm", "ollama",
     "curl", "wget", "http", "httpie", "nc", "ncat", "telnet", "ssh", "scp",
     "gh", "pip", "pip3", "npm", "npx", "brew",
+    # THE LICENSED WOLFRAM KERNEL (Question 11, 2026-09-17). Not a network
+    # call, but the suite is automated use, which Wolfram's terms bar, and the
+    # Engine here is single-kernel, so a test starting it would contend with the
+    # operator's own session. A fake binary of this name was reached before.
+    "wolframscript", "WolframKernel", "wolfram",
 }
 
 _LOOPBACK_HOSTS = {
