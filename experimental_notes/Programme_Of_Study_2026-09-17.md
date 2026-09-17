@@ -28,6 +28,8 @@ Those 151 tests already prove each repair in isolation. What no test can show is
 
 7. Record integrity. The note linter, the DONE-evidence guard and the citation repairs all changed. MEASURE: whether any record written during the run fails its own guard.
 
+8. CC1's own position, and the range across the seats. Added 2026-09-17 on the founder's ruling: "If this is a missing test/instrument, then build it and implement it, and add it to the program of study for the next simulated run." The `pr` protocol has always required that CC1 participate with a position of its own and synthesise the range, and nothing measured it until `scripts/p5_cc1_position_2026-09-17.py`. It derives the range from the seats' own verdict tokens, so the set is computed rather than asserted, and reports which of those entries CC1 answered with a position of its own. MEASURE: per arm, the number of entries carrying a verdict from more than 1 seat, the number where those verdicts differ, and the share of that range answered in CC1's own section. A run where the seats never differ is reported as VACUOUS, not as a pass, because 0 of 0 is not evidence that anything was synthesised. Round 17, measured after the instrument was built: 9 entries with 2 verdicts, 2 of them in disagreement (A22 and A23), both answered.
+
 ## The Three Arms
 
 All 3 target the same file, the registry engine, for 8 rounds, with routing, the falsifier gate and the admissibility gate on, and the hardened gate, merge arbitration and immune memory off.

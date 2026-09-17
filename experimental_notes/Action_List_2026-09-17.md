@@ -94,6 +94,17 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 
 - **(k) V9: explained in chat, verdict awaited.**
 - **(l) The P5 clause: ruled to be built.** *"If this is a missing test/instrument, then build it and implement it, and add it to the program of study for the next simulated run."*
+
+### What (l) turned into, 2026-09-17 23:55 BST
+
+**DONE.** The P5 clause about CC1 has an instrument, the instrument is implemented against a real round, and the programme of study carries it.
+
+- **The instrument**: `scripts/p5_cc1_position_2026-09-17.py`. It derives THE RANGE from the seats' own verdict tokens -- the entries where 2 seats gave different verdicts -- so the set is computed, not asserted, and then reports which of those entries CC1 answered with a position of its own. It never scores a seat, because that would be a model judging a model.
+- **Measured against round 17, before anything was written**: 9 entries carried a verdict from both seats, they differed on 2 (A22: cc2 HOLDS against fable PARTIAL; A23: cc2 FAILS against fable HOLDS), and the record carried no CC1 position at all. Verdict NO_CC1_POSITION.
+- **Implemented**: the round-17 record now carries "CC1's own position, and the range across the seats", answering both with evidence and preserving the disagreement rather than resolving it by weight of seats. The instrument returns SATISFIED, 2 of 2 covered. Record: `experimental_notes/evidence/p5_cc1_position_round17_2026-09-17.json`.
+- **It can say no**: 8 tests in `bench/tests/test_p5_cc1_position_2026-09-17.py`, 3 of them negative controls -- no section, a section that misses a disagreed entry, and a section that names the entry without taking a position. Agreement everywhere is reported VACUOUS rather than as a pass, because 0 of 0 covered is not evidence.
+- **Programme of study**: item 8 of "What The Run Must Measure", with the figures above.
+
 - **(m) The agent worktrees: `y`.** Removed 2026-09-17 22:22 BST; 2.3 GB freed, all 5 branches kept.
 - **The 3 tests that fail without a git repository: the founder asked why a repair would skip.** Answered in chat: each asks git a question, and in a sandbox with no `.git` git answers "not a repository", which the test reported as a project defect. The repair makes each test detect that its precondition is absent instead of inventing a failure; inside a real checkout nothing is skipped and they can still fail.
 

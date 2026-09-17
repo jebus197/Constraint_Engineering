@@ -30,6 +30,18 @@ Record written 2026-09-17T17:34:08+01:00.
 
 **Still open after the intake.** 3 tests fail in a copy with no `.git`, and neither seat proposed a fix: 1 in `bench/tests/test_every_test_file_is_collected_2026-09-01.py` and 2 in `bench/tests/test_overstated_entries_2026-09-11.py`. They fail openly rather than inventing an answer, but in a sandbox they still raise the "DONE entries whose evidence failed" banner.
 
+## CC1's own position, and the range across the seats
+
+**Added 2026-09-17 23:50 BST, on the founder's ruling that the missing instrument be built and implemented.** The `pr` protocol has always said CC1 *"actively participates with its own position and synthesizes the range"*, and until now nothing in the project measured that half. `scripts/p5_cc1_position_2026-09-17.py` now derives the range from the seats' own verdict tokens and reports which of them CC1 reached. Run against this record before this section existed, it returned NO_CC1_POSITION with 2 entries in the range.
+
+**The range, derived and not asserted.** 9 entries carry a verdict from both seats. They differ on 2.
+
+**A23. cc2 says FAILS, fable says HOLDS, and CC1's position is FAILS.** Execution decides it and did: the guard's suite-figure rule accepts a producer only as a `scripts/<name>.py` path, so an honest sentence reporting the full suite cannot satisfy it, and its reachability probe read git's exit 128, "no repository", as "not reachable", which fabricates a failure in any tree without `.git` -- which every panel sandbox is. Both defects reproduced at HEAD. fable's HOLDS is not simply wrong, and the reason matters more than the verdict: its retry ran in the sandbox its timed-out first attempt had already been editing, so its reading was taken against a tree carrying its own unreported edits. That is a defect in the dispatcher, now fixed, and not a fault of the seat.
+
+**A22. cc2 says HOLDS, fable says PARTIAL, and CC1's position is HOLDS.** fable's PARTIAL rests on the claim that the entry's prose is now false. The entry refutes that in its own dated paragraph, which fable's reply does not engage with, and the intake refused the correction on that ground after re-executing it. The disagreement is preserved here rather than resolved by weight of seats: 1 seat against 1, decided by the entry's own record.
+
+**What CC1 is NOT claiming.** Nothing above scores a seat. The instrument reports which of the 2 disagreed entries this section answers, from a set computed out of the seats' own verdict tokens, and this section states a position with its evidence; neither counts votes, which this project forbids.
+
 ## Seats and cost
 
 2 seat(s): `cc2`, `fable`. **0 paid dispatches**, enforced by `PANEL_ONLY=cc2,fable`.
