@@ -15296,6 +15296,17 @@ def run_experiment(
             # SIBLING, `blended_prior`, which mixes pi_mem with pi_base by rho;
             # this call does not touch it.
             #
+            # CORRECTED 2026-09-17: THE PREMISE ABOVE IS FALSE. The appendix writes
+            # it with the Greek letter: `π_mem` is defined in section 1.5 of
+            # docs/MATHEMATICAL_APPENDIX.md, with the CUSUM statistics S_pos and
+            # S_neg and the 2.0 threshold, so this detector DOES depend on the
+            # current model and the founder's condition for deferring was met.
+            # Run scripts/i31_drift_detector_premise_2026-09-17.py. It also shows the
+            # call cannot fire here: 1 update per class per run, `save` keeps no
+            # CUSUM state, and z3 finds that fewer than 3 same-direction updates
+            # cannot exceed 2.0. Behaviour is unchanged; keeping or reverting this
+            # report-only call is the founder's verdict.
+            #
             # IT REPORTS AND DECIDES NOTHING. No gate, status or prompt reads the
             # result. That is deliberate: its threshold of 2.0 has never been
             # exercised against live data, so the next simulated run measures it
