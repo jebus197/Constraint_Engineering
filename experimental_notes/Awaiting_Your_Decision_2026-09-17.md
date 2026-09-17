@@ -6,7 +6,7 @@
 
 Items 1 to 10 of `experimental_notes/Action_List_2026-09-17.md` are done, each with its evidence recorded in the list. The full suite is green under `--netguard-strict` at `def8eae`: 7,936 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0, 2526.06 s. Nothing on the assistant's side is waiting on work.
 
-What remains is 5 actions only the founder can take, 8 verdicts owed, and 6 decisions that surfaced during today's work. Every one has a conservative default already in force, so none of them blocks progress; they are listed so that a default is chosen rather than inherited by silence.
+What remains is 4 actions only the founder can take, 8 verdicts owed, and 6 decisions that surfaced during today's work. The 5th, the Wolfram licence renewal, was automated after this note was first written and is recorded as done below. Every one has a conservative default already in force, so none of them blocks progress; they are listed so that a default is chosen rather than inherited by silence.
 
 ## 1. Actions only the founder can take
 
@@ -18,7 +18,7 @@ git stash drop 'stash@{1}' && git stash drop 'stash@{0}'
 
 **A2. Push, or run `sv`.** 17 commits sit unpushed, `0812897` through `3f391f4`.
 
-**A3. Renew the Wolfram Engine licence, before 2026-10-08.** That is 21 days from today, computed with `datetime` and cross-checked on ordinals with `mpmath`. The free licence did not auto-renew last time and lapsed on 2026-09-11. The steps are in `experimental_notes/Wolfram_Setup_Instructions_2026-09-17.md`, and `python3 scripts/cdsfl_onboard.py` now reads `$LicenseExpirationDate` and warns from 14 days out.
+**A3. DONE 2026-09-17 21:34 BST, and it needed no decision after all.** The founder's instruction that it needs no credentials was correct and the project's record was wrong: `wolframscript -activate` with stdin closed returns exit 0 and "Wolfram Engine activated", prompting for nothing. `scripts/wolfram_licence_renew_2026-09-17.py` runs under the LaunchAgent `com.cdsfl.wolfram-licence-renew` at login and twice a day, so a lapse repairs itself. Nothing is owed on 2026-10-08.
 
 **A4. Decide how to stop Wolfram connector permission prompts.** The project rule `mcp__Wolfram__*` does not match the connector's tool names. Either choose "always allow" at the next prompt, or reply `y` and the assistant adds the connector's identifier to `permissions.allow` in `.claude/settings.json`.
 
@@ -62,6 +62,6 @@ git stash drop 'stash@{1}' && git stash drop 'stash@{0}'
 
 ## 4. What happens if none of this is decided
 
-Every default is already in force: R10, R11 and A19 stay held; the I31 call stays and cannot fire; arm C stays launch-blocked; Wolfram stays denied to automated runs; the 3 unvalidated dispatchers stay registered and unused; the worktrees stay on disk. The only item with a date on it is the Wolfram licence, which lapses on 2026-10-08.
+Every default is already in force: R10, R11 and A19 stay held; the I31 call stays and cannot fire; arm C stays launch-blocked; Wolfram stays denied to automated runs; the 3 unvalidated dispatchers stay registered and unused; the worktrees stay on disk. No item now carries a date: the Wolfram licence renews itself under a LaunchAgent.
 
 Written under CDSFL note standard v1.7 (26 August 2026).

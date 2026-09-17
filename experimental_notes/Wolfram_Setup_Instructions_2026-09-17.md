@@ -58,7 +58,7 @@ Every row is a command that was run between 15:45 and 15:53 BST, 1 Wolfram call 
 
 ## 5. Steps for the founder
 
-**F1. Renew the Engine licence by hand before 2026-10-08. Needs a Wolfram ID and password.**
+**F1. SUPERSEDED 2026-09-17 21:34 BST: the renewal is automated and needs nothing from the founder.** Measured that evening with `mathpass` backed up first, `wolframscript -activate` run with stdin closed returned exit 0 and "Wolfram Engine activated", prompting for nothing: it authenticates through the cloud credential already stored under `~/Library/WolframEngine/ApplicationData/CloudObject/Authentication`. The claim that it needs a Wolfram ID and password was wrong, and `scripts/cdsfl_onboard.py` is corrected. `scripts/wolfram_licence_renew_2026-09-17.py` now runs under the LaunchAgent `com.cdsfl.wolfram-licence-renew` at login, at 09:05 and at 21:05, skipping while another kernel is running and logging to `~/Library/Logs/cdsfl_wolfram_renew.log`. Re-activating early does not move the date, so the agent keeps trying and the renewal lands at or after expiry. **The steps below are kept as the manual fallback, for a machine where the agent is not installed.**
 
 1. On 2026-10-07, open Terminal.
 2. Run `wolframscript -code '$LicenseExpirationDate'`.

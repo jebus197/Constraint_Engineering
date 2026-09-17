@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>com.cdsfl.wolfram-licence-renew</string>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Library/Frameworks/Python.framework/Versions/3.13/bin/python3</string>
+		<string>/Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/wolfram_licence_renew_2026-09-17.py</string>
+		<string>--run</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/georgejackson/Library/Logs/cdsfl_wolfram_renew.launchd.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/georgejackson/Library/Logs/cdsfl_wolfram_renew.launchd.log</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>5</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>21</integer>
+			<key>Minute</key>
+			<integer>5</integer>
+		</dict>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/georgejackson/Developer_Projects/Constraint_Engineering</string>
+</dict>
+</plist>

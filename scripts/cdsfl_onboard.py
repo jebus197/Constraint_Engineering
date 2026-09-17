@@ -466,12 +466,21 @@ def check_wolfram() -> str:
             print("      No Engine app found either. Install it first (above).")
         return state
 
+    # CORRECTED 2026-09-17. This block used to say activation "needs your Wolfram
+    # ID and password, so it cannot be automated from here". Measured that
+    # evening with the licence file backed up first: `wolframscript -activate`
+    # with stdin CLOSED returned exit 0 and "Wolfram Engine activated", prompting
+    # for nothing, because it authenticates through the cloud credential already
+    # stored under ~/Library/WolframEngine/ApplicationData/CloudObject.
     print("    [NOT ACTIVATED] a kernel runs but the licence is not valid.")
-    print("      This needs your Wolfram ID and password, so it cannot be")
-    print("      automated from here. Run, and follow the prompts:")
+    print("      Activation needs no password here: it authenticates through the")
+    print("      stored cloud credential. Run it, or let the agent do it:")
     print("        wolframscript -activate")
-    print("      The free Engine licence does NOT reliably auto-renew: it")
-    print("      lapsed on 2026-09-11 and had to be activated by hand.")
+    print("        python3 scripts/wolfram_licence_renew_2026-09-17.py --run --force")
+    print("      A LaunchAgent, com.cdsfl.wolfram-licence-renew, runs that script")
+    print("      at login and twice a day, so a lapse repairs itself. The free")
+    print("      Engine licence does NOT auto-renew on its own: it lapsed on")
+    print("      2026-09-11 and was activated by hand on 2026-09-15.")
     return state
 
 
