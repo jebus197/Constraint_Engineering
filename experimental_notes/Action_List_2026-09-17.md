@@ -78,6 +78,20 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **(h) Experiment 56's arm-declaration exposure stays an expected failure**, and moves to the post-revision list: *"we will need to build another action list for things to do after the mathematical model revisions."*
 - **(i) The 3 paid dispatchers that pay without validating a brief: no ruling given.** They stay registered as open exemptions and unused.
 - **(j) The sandbox defect: ruled, with 2 extra conditions.** *"Do it. And make sure this is how all future panel reviews and experiments (both paid and simulated) work in the future too. Take care when a panel review or an experiment completes however that the sandbox does not simply get automatically deleted and that the results do not end up simply being discarded, as has happened in the recent past."*
+
+### What (j) turned into, 2026-09-17 23:30 BST
+
+**DONE.** A retry gets a tree of its own, the attempt travels with the reply, and nothing is deleted on the way out.
+
+- **Fresh tree per attempt**: `call_claude_cli` takes an `on_attempt` hook, called before every attempt, which returns the working directory that attempt runs in. The panel dispatcher's `fresh_sandbox_for_attempt` keeps the pre-built copy for attempt 1, so a round with no retry costs nothing extra, and builds a NEW copy for every attempt after it.
+- **The attempt is in the reply**: each seat record now carries `attempts`, a list of `{attempt, path, built}`, on both the success and the failure path, and each attempt's tool-log entry carries the directory it ran in.
+- **Every attempt is harvested, not just the last**: `seat_proposals.diff` is now keyed `seat:attempt-N:path`. Reading only the tree a seat ended in is what left 14 of fable's 19 files with no reply behind them in round 17.
+- **Nothing is deleted unasked**: `panel_sandbox.harvest` copies whole changed files out, not only diffs, and `panel_sandbox.release` removes a copy only when asked AND only after a complete harvest. `harvest_and_retain` writes `sandbox_manifest.json`, prints where the copies are and prints the exact command to remove them. `PANEL_REAP_SANDBOXES=1` is the opt-in.
+- **The rest of the fleet, measured rather than assumed**: `scripts/sandbox_deletion_audit_2026-09-17.py` parses every tree-removing call in `bench/` with `ast` and classifies what it removes. 26 calls: 6 seat trees, 9 scratch, 11 unresolved. 2 seat trees were being destroyed with no harvest, in `bench/build_experiment_run.py` and `bench/confer_convergence_panel_2026-08-23.py`, and a 3rd in `bench/tools/run_simulated_experiment.py`, which is the simulated path. All 3 now harvest first and keep the tree when a harvest fails. The audit reports **0** seat trees deleted without a harvest.
+- **The audit's own first version missed the worst site**, because it classified by variable name and the simulated runner calls its worktree `_wt_parent`. It now asks whether the same function hands the path to a model.
+- **Non-vacuity**: restoring the round-17 reuse fails `test_attempt_1_reuses_the_copy_already_built_and_attempt_2_does_not`; restoring the unconditional delete fails `test_the_dispatchers_own_end_of_run_step_keeps_every_attempts_tree`. Both run and reverted at 23:22 BST. 11 tests in `bench/tests/test_fresh_sandbox_per_attempt_2026-09-17.py`.
+- **1 older test was asserting the opposite** and is amended with the ruling recorded in it: `test_every_sandbox_is_torn_down` required `main` to destroy every copy.
+
 - **(k) V9: explained in chat, verdict awaited.**
 - **(l) The P5 clause: ruled to be built.** *"If this is a missing test/instrument, then build it and implement it, and add it to the program of study for the next simulated run."*
 - **(m) The agent worktrees: `y`.** Removed 2026-09-17 22:22 BST; 2.3 GB freed, all 5 branches kept.

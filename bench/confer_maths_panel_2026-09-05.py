@@ -49,6 +49,99 @@ _PANEL_SANDBOX_CWD: str | None = None
 _SEAT_SANDBOXES: "dict[str, str]" = {}
 _SEAT_SANDBOX_LOCK = _threading.Lock()
 
+#: seat name -> [{attempt, path, built}], every tree the seat ever ran in.
+#:
+#: FOUNDER RULING (j), 2026-09-17, on the round-17 defect: a seat that timed out
+#: retried IN THE SAME SANDBOX the timed-out attempt had been editing for half an
+#: hour, so 14 of the 19 files it left had no reply behind them. Each attempt now
+#: gets its own copy, and each copy is recorded here and harvested at the end --
+#: *"the results do not end up simply being discarded, as has happened in the
+#: recent past."*
+_SEAT_ATTEMPTS: "dict[str, list]" = {}
+
+
+def harvest_and_retain(seat_attempts: dict, logs_dir, repo, reap: "bool | None" = None) -> dict:
+    """Take the results out of every attempt's copy, and KEEP the copies.
+
+    FOUNDER RULING (j), 2026-09-17: *"Take care when a panel review or an
+    experiment completes however that the sandbox does not simply get
+    automatically deleted and that the results do not end up simply being
+    discarded, as has happened in the recent past."*
+
+    The line this replaces destroyed every copy on the way out. The diffs had
+    been harvested, but a diff is not a file: a seat that wrote a new script, a
+    data file or a figure lost the artefact itself, and round 15 lost even the
+    diff to a decode error. So every attempt's tree is harvested into the run's
+    own log directory -- whole files, not only diffs -- and the copies are then
+    KEPT unless `PANEL_REAP_SANDBOXES=1` says otherwise.
+    `panel_sandbox.release` refuses to remove a copy whose harvest did not
+    complete, whatever that variable says.
+
+    Separate from the dispatcher so the other runners the founder named -- *"all
+    future panel reviews and experiments (both paid and simulated)"* -- can call
+    the same rule instead of writing a second one.
+    """
+    if reap is None:
+        reap = os.environ.get("PANEL_REAP_SANDBOXES", "").strip().lower() in ("1", "true", "yes")
+    logs_dir = Path(logs_dir)
+    manifest, kept, taken = [], [], 0
+    for name, attempts in seat_attempts.items():
+        for a in attempts:
+            if not os.path.isdir(a["path"]):
+                manifest.append({"seat": name, "attempt": a["attempt"],
+                                 "sandbox": a["path"], "exists": False,
+                                 "harvested": False,
+                                 "note": "the copy was already gone"})
+                continue
+            m = panel_sandbox.release(
+                Path(a["path"]), Path(repo),
+                logs_dir / "sandbox_harvest" / name / f"attempt-{a['attempt']}",
+                reap=reap)
+            m.update({"seat": name, "attempt": a["attempt"]})
+            manifest.append(m)
+            taken += m.get("bytes", 0)
+            if m.get("exists"):
+                kept.append(a["path"])
+    out = {"reap_requested": reap, "kept": kept, "harvest_bytes": taken,
+           "per_attempt": manifest}
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    (logs_dir / "sandbox_manifest.json").write_text(json.dumps(out, indent=2),
+                                                    encoding="utf-8")
+    print(f"    harvested {taken} byte(s) of seat-written files into "
+          f"{logs_dir / 'sandbox_harvest'}")
+    if kept:
+        print(f"    {len(kept)} sandbox copy/copies KEPT, not deleted. They are listed in "
+              f"{logs_dir / 'sandbox_manifest.json'}.")
+        print("    To remove them when you are finished with them: re-run with "
+              f"PANEL_REAP_SANDBOXES=1, or rm -rf {' '.join(kept)}")
+    return out
+
+
+def fresh_sandbox_for_attempt(name: str, attempt: int) -> "str | None":
+    """The working directory attempt `attempt` of seat `name` runs in.
+
+    Attempt 1 keeps the copy built before dispatch, so a round with no retry
+    costs nothing extra (a copy is 6.53 s and 606 MB, measured). Every later
+    attempt gets a NEW copy of the canonical tree, so a retry starts from the
+    repository rather than from the wreckage of the attempt that timed out.
+    """
+    with _SEAT_SANDBOX_LOCK:
+        seen = _SEAT_ATTEMPTS.setdefault(name, [])
+        if attempt <= 1 and _SEAT_SANDBOXES.get(name):
+            path = _SEAT_SANDBOXES[name]
+            if not any(a["attempt"] == attempt for a in seen):
+                seen.append({"attempt": attempt, "path": path, "built": False})
+            set_panel_cwd(path)
+            return path
+    path = str(panel_sandbox.build(_REPO))          # outside the lock: 6.53 s
+    with _SEAT_SANDBOX_LOCK:
+        _SEAT_SANDBOXES[name] = path
+        _SEAT_ATTEMPTS.setdefault(name, []).append(
+            {"attempt": attempt, "path": path, "built": True})
+    set_panel_cwd(path)
+    print(f"    {name} attempt {attempt} confined to a FRESH copy: {path}", flush=True)
+    return path
+
 
 def confine_this_thread(name: str) -> "str | None":
     """Set THIS thread's panel cwd to `name`'s own sandbox, and return it.
@@ -324,6 +417,9 @@ def dispatch(name, model_id, route):
                 resp = call_claude_cli(
                     model_id, SYSTEM, PROMPT, timeout=1800, max_retries=2,
                     accept=accept_reply_or_work(_seat_cwd or str(_REPO)),
+                    # RULING (j): a retry gets a tree of its own, never the one
+                    # the timed-out attempt was halfway through editing.
+                    on_attempt=lambda n, _s=name: fresh_sandbox_for_attempt(_s, n),
                 )  # native Bash
             finally:
                 set_tool_log_sink(None)
@@ -346,7 +442,10 @@ def dispatch(name, model_id, route):
         ok = bool(resp and resp.strip())
         out = {"model": name, "route": route, "ok": ok, "chars": len(resp or ""),
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
-               "elapsed_s": round(time.time() - t0, 1), "response": resp or ""}
+               "elapsed_s": round(time.time() - t0, 1), "response": resp or "",
+               # RULING (j): "recording the attempt number in the reply". A
+               # reader can now tell which tree a verdict was measured in.
+               "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
     except Exception as e:  # noqa: BLE001
         # READ THE SINK ON THE FAILURE PATH TOO (cc2, 2026-09-08, SS-2b).
         # The previous fix kept the counter KEYS here but not the counter VALUE.
@@ -370,7 +469,8 @@ def dispatch(name, model_id, route):
         out = {"model": name, "route": route, "ok": False,
                "error": f"{type(e).__name__}: {e}",
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
-               "elapsed_s": round(time.time() - t0, 1), "response": ""}
+               "elapsed_s": round(time.time() - t0, 1), "response": "",
+               "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
     (_logs_dir() / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} "
           f"tools={out.get('n_tool_calls', 'native')} {out['elapsed_s']}s"
@@ -483,9 +583,15 @@ def main() -> int:
         # left which, which is exactly the provenance failure the project's own
         # "no fake model labels" rule exists to prevent.
         proposals = {}
-        for _n, _sb in sandboxes.items():
-            for rel, d in panel_sandbox.changes(_sb, _REPO).items():
-                proposals[f"{_n}:{rel}"] = d
+        # EVERY ATTEMPT'S TREE, not just the one the seat ended in (ruling (j)).
+        # A seat that timed out and retried leaves 2 trees, and round 17 showed
+        # what reading only 1 of them costs: 14 files with no reply behind them.
+        for _n, _atts in _SEAT_ATTEMPTS.items():
+            for _a in _atts:
+                if not os.path.isdir(_a["path"]):
+                    continue
+                for rel, d in panel_sandbox.changes(Path(_a["path"]), _REPO).items():
+                    proposals[f"{_n}:attempt-{_a['attempt']}:{rel}"] = d
         if proposals:
             (_logs_dir() / "seat_proposals.diff").write_text(
                 "\n".join(f"### {rel}\n{d}" for rel, d in sorted(proposals.items())),
@@ -536,11 +642,20 @@ def main() -> int:
                       f"{_at_exc} -- the alarm stands unattributed")
         else:
             print("    canonical tree unchanged (7900 tracked files re-hashed)")
-        # EVERY sandbox, not just the first. Leaving N-1 behind would put 606 MB
-        # each into TMPDIR per round and, worse, leave a seat's proposals on disk
-        # after they were supposed to have been harvested.
-        for _sb in sandboxes.values():
-            panel_sandbox.teardown(_sb)
+        # NOTHING IS DELETED UNLESS THE OPERATOR ASKS (founder ruling (j),
+        # 2026-09-17): *"Take care when a panel review or an experiment completes
+        # however that the sandbox does not simply get automatically deleted and
+        # that the results do not end up simply being discarded, as has happened
+        # in the recent past."*
+        #
+        # The line this replaces destroyed every copy on the way out. The diff
+        # had been harvested, but a diff is not a file: a seat that wrote a new
+        # script, a data file or a figure lost the artefact itself. So every
+        # attempt's tree is harvested INTO THE RUN'S OWN LOG DIRECTORY first --
+        # whole files, not only diffs -- and the copies are then KEPT unless
+        # PANEL_REAP_SANDBOXES=1 says otherwise. `release` refuses to remove a
+        # copy whose harvest did not complete, whatever that variable says.
+        harvest_and_retain(_SEAT_ATTEMPTS, _logs_dir(), _REPO)
         _SEAT_SANDBOXES.clear()
 
     ok = sum(1 for r in results if r["ok"])

@@ -425,9 +425,34 @@ def main() -> int:
         result = R.run_experiment(exp_cfg, cdsfl_path.read_text(encoding="utf-8"), cfg)
     finally:
         SHIM.restore(original)
-        subprocess.run(["git", "worktree", "remove", "--force", str(_wt)],
-                       cwd=str(REPO), capture_output=True)
-        shutil.rmtree(_wt_parent, ignore_errors=True)
+        # HARVEST BEFORE REMOVING (founder ruling (j), 2026-09-17): *"Take care
+        # when a panel review or an experiment completes however that the sandbox
+        # does not simply get automatically deleted and that the results do not
+        # end up simply being discarded, as has happened in the recent past."*
+        #
+        # This worktree is `cfg.panel_cwd` -- the tree the SEATS work in -- and
+        # the 2 lines below removed it unconditionally, so anything a seat wrote
+        # that was not already parsed out of its reply went with it. The sweep
+        # that found this is scripts/sandbox_deletion_audit_2026-09-17.py, which
+        # classified 26 removal sites across bench/ and, on its first run, missed
+        # this one: it read `_wt_parent` as scratch because of the name. A
+        # classifier that names the failure by its VARIABLE misses the site whose
+        # variable is badly named, so it now asks whether the same function hands
+        # the path to a model.
+        try:
+            from bench import panel_sandbox as _PS
+            _kept = _PS.harvest(_wt, REPO, logs / "panel_worktree_harvest")
+            print(f"    panel worktree harvested: {_kept['changed']} changed file(s), "
+                  f"{_kept['bytes']} byte(s) -> {logs / 'panel_worktree_harvest'}",
+                  flush=True)
+        except Exception as _h:                                  # noqa: BLE001
+            print(f"    WARNING: the panel worktree could not be harvested "
+                  f"({type(_h).__name__}: {_h}); it is NOT being removed, so "
+                  f"nothing is lost: {_wt}", flush=True)
+        else:
+            subprocess.run(["git", "worktree", "remove", "--force", str(_wt)],
+                           cwd=str(REPO), capture_output=True)
+            shutil.rmtree(_wt_parent, ignore_errors=True)
     el = time.monotonic() - t0
 
     result["_simulated"] = True

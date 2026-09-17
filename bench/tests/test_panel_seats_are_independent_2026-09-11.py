@@ -114,22 +114,42 @@ class TestOneSandboxPerSeat:
             f"(followed: {sorted(seen)}), so seats share whatever the "
             f"module-level path says")
 
-    def test_every_sandbox_is_torn_down(self):
-        """N-1 sandboxes left behind is 606 MB each AND a seat's proposals still
-        on disk after they were supposed to be harvested."""
+    def test_every_sandbox_is_harvested_and_none_is_deleted_behind_the_operator(self):
+        """AMENDED 2026-09-17 ON FOUNDER RULING (j), AND THE AMENDMENT REVERSES
+        WHAT THIS TEST USED TO DEMAND.
+
+        It required that `main` tear every sandbox down, on the grounds that N-1
+        copies left behind cost 606 MB each and leave a seat's proposals on disk
+        after they were supposed to be harvested. The founder ruled the other
+        way, because the harvest was the part that failed: *"Take care when a
+        panel review or an experiment completes however that the sandbox does not
+        simply get automatically deleted and that the results do not end up
+        simply being discarded, as has happened in the recent past."*
+
+        So the property is now: `main` hands EVERY attempt's tree to the
+        retention step, and the retention step keeps the copies unless the
+        operator asks for them to go. The disk cost the old test protected
+        against is answered by the manifest and the exact removal command the
+        step prints, not by deleting a seat's work unasked.
+
+        The behaviour itself is EXECUTED in
+        `bench/tests/test_fresh_sandbox_per_attempt_2026-09-17.py`; this holds
+        the wiring inside `main`, which no test can call without paying for a
+        panel round.
+        """
         main = _main_body()
-        teardowns = [n for n in ast.walk(main)
-                     if isinstance(n, ast.Call)
-                     and getattr(n.func, "attr", None) == "teardown"]
-        assert teardowns, "nothing is torn down"
-        for node in ast.walk(main):
-            if isinstance(node, ast.For):
-                if any(isinstance(sub, ast.Call)
-                       and getattr(sub.func, "attr", None) == "teardown"
-                       for sub in ast.walk(node)):
-                    return
-        raise AssertionError(
-            "teardown is not inside a loop, so only 1 of N sandboxes is removed")
+        calls = [n for n in ast.walk(main) if isinstance(n, ast.Call)
+                 and getattr(n.func, "id", None) == "harvest_and_retain"]
+        assert calls, "main does not harvest the seats' trees on the way out"
+        passed = {getattr(a, "id", None) for c in calls for a in c.args}
+        assert "_SEAT_ATTEMPTS" in passed, (
+            "the retention step is not given every attempt's tree, so a retry's "
+            "work can still be discarded -- the round-17 defect")
+        bare = [n for n in ast.walk(main) if isinstance(n, ast.Call)
+                and getattr(n.func, "attr", None) == "teardown"]
+        assert not bare, (
+            "main destroys a sandbox directly again; removal belongs in "
+            "panel_sandbox.release, which refuses to delete an unharvested copy")
 
 
 class TestProposalsCarryTheirAuthor:

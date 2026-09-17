@@ -172,9 +172,20 @@ def dispatch(tag: str, model_id: str, route: str, prompt: str, timeout: int = 18
                                    timeout=timeout, max_retries=2) or ""
         finally:
             set_panel_cwd(None)
-            subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
-                           cwd=str(REPO), capture_output=True)
-            shutil.rmtree(wt.parent, ignore_errors=True)
+            # HARVEST BEFORE REMOVING (founder ruling (j), 2026-09-17). Same
+            # shape as the panel dispatcher's round-17 loss: the seat's tree was
+            # destroyed on the way out. Found by
+            # scripts/sandbox_deletion_audit_2026-09-17.py.
+            try:
+                from bench import panel_sandbox as _PS
+                _PS.harvest(wt, REPO, LOGS / "worktree_harvest" / str(model_id).replace("/", "_"))
+            except Exception as _h:                              # noqa: BLE001
+                print(f"    WARNING: worktree not harvested ({_h}); KEEPING {wt}",
+                      flush=True)
+            else:
+                subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
+                               cwd=str(REPO), capture_output=True)
+                shutil.rmtree(wt.parent, ignore_errors=True)
     if route == "deepseek":                         # NO tool loop on this route
         return call_deepseek(model_id, SYSTEM_NOTOOLS, prompt) or ""
     # 30, not 8. Measured: the target file needs 22 read_file calls at the 24,000-char

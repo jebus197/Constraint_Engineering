@@ -938,6 +938,7 @@ def call_claude_cli(
     max_retries: int = 3,
     backoff_base: float = 1.0,
     accept: "Callable[[str], str | None] | None" = None,
+    on_attempt: "Callable[[int], str | None] | None" = None,
 ) -> str:
     """Call Claude via claude CLI (Max subscription — no API credits needed).
 
@@ -961,6 +962,19 @@ def call_claude_cli(
     2026-08-31 against a median reply of 7,512 characters. The caller marked it
     ``ok=False`` and kept it anyway, because the only substance test in the
     system ran AFTER the call had already returned.
+
+    ``on_attempt`` is called with the attempt number BEFORE each attempt and
+    returns the working directory that attempt should run in, or None to keep
+    the current one. Added 2026-09-17 on founder ruling (j): *"make sure this is
+    how all future panel reviews and experiments (both paid and simulated) work
+    in the future too."*
+
+    THE DEFECT IT CLOSES, MEASURED IN ROUND 17. A seat hit the 1,800 s cap and
+    its retry reran in the SAME sandbox, which the timed-out attempt had already
+    been editing for half an hour. 14 of the 19 files that seat left behind had
+    no reply behind them, and its verdict on 1 entry was measured against its own
+    unreported edits. A retry that inherits a half-finished tree is not a second
+    attempt at the same task; it is a first attempt at a different one.
 
     Default None leaves behaviour identical for every existing caller.
     """
@@ -1065,6 +1079,19 @@ def call_claude_cli(
         # failed. Stop at the first attempt that finds its cwd gone, and SAY that
         # is what happened, so the disappearance is the reported fault rather
         # than a retry count.
+        # A FRESH TREE PER ATTEMPT, when the caller supplies one. The check
+        # below then applies to the NEW directory, which is the one this attempt
+        # will actually use.
+        if on_attempt is not None:
+            try:
+                _given = on_attempt(attempt)
+            except Exception as _oa:                            # noqa: BLE001
+                _given = None
+                _log(f"  [claude-cli:{model_id}] attempt {attempt}: could not "
+                     f"prepare a fresh working directory ({type(_oa).__name__}: "
+                     f"{_oa}); reusing the current one")
+            if _given:
+                _log(f"  [claude-cli:{model_id}] attempt {attempt} in {_given}")
         _cwd = _get_panel_cwd_raw()
         if _cwd is not None and not os.path.isdir(_cwd):
             last_error = FileNotFoundError(
@@ -1092,7 +1119,11 @@ def call_claude_cli(
                 _sink_calls.extend(_calls)
                 _sink_attempts.append({"attempt": attempt,
                                        "elapsed_s": round(elapsed, 1),
-                                       "tool_calls": len(_calls)})
+                                       "tool_calls": len(_calls),
+                                       # WHICH TREE THIS ATTEMPT RAN IN, so a
+                                       # reply can be matched to the files it
+                                       # left rather than to a shared directory.
+                                       "cwd": _cwd})
                 try:
                     pathlib.Path(_sink).write_text(json.dumps(
                         {"model": model_id, "elapsed_s": round(elapsed, 1),

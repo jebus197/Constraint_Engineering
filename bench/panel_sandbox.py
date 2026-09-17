@@ -482,3 +482,61 @@ def teardown(sandbox: Path) -> None:
             f"one was expected.")
     subprocess.run(["chflags", "-R", "nouchg,noschg", str(base)], capture_output=True)
     shutil.rmtree(base, ignore_errors=True)
+
+
+def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
+    """Take everything a seat changed OUT of `sandbox` and put it in `dest`.
+
+    FOUNDER RULING (j), 2026-09-17: *"Take care when a panel review or an
+    experiment completes however that the sandbox does not simply get
+    automatically deleted and that the results do not end up simply being
+    discarded, as has happened in the recent past."*
+
+    `changes()` describes the edits as diffs, which is enough to READ them and
+    not enough to RE-RUN them: a seat that wrote a new script, a data file or a
+    figure leaves an artefact whose value is the file itself. This copies the
+    whole changed file, keeps the diff beside it, and returns a manifest saying
+    exactly what was taken, so a later reader can tell "nothing was changed"
+    from "the harvest failed".
+    """
+    dest = Path(dest)
+    files_dir = dest / "files"
+    taken, bytes_taken, failed = [], 0, []
+    diffs = changes(Path(sandbox), Path(repo))
+    for rel in sorted(diffs):
+        src = Path(sandbox) / rel
+        try:
+            target = files_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, target)
+            taken.append(rel)
+            bytes_taken += target.stat().st_size
+        except OSError as exc:                                  # noqa: PERF203
+            failed.append({"path": rel, "error": str(exc)})
+    dest.mkdir(parents=True, exist_ok=True)
+    if diffs:
+        (dest / "changes.diff").write_text(
+            "\n".join(f"### {rel}\n{d}" for rel, d in sorted(diffs.items())),
+            encoding="utf-8")
+    return {"sandbox": str(sandbox), "dest": str(dest), "changed": len(diffs),
+            "files_taken": taken, "bytes": bytes_taken, "failed": failed,
+            "harvested": not failed}
+
+
+def release(sandbox: Path, repo: Path, dest: Path, reap: bool = False) -> dict:
+    """Harvest a sandbox, then remove it ONLY if asked AND the harvest succeeded.
+
+    The default keeps the copy on disk. Deleting it is a choice a caller makes
+    explicitly, and it is refused outright when anything failed to come out --
+    the ruling above exists because results went with the sandbox once already.
+    """
+    m = harvest(sandbox, repo, dest)
+    m["reaped"] = False
+    if reap and m["harvested"]:
+        teardown(Path(sandbox))
+        m["reaped"] = True
+    elif reap:
+        m["reap_refused"] = ("the harvest did not complete, so removing the copy "
+                             "would destroy the only surviving record")
+    m["exists"] = Path(sandbox).exists()
+    return m

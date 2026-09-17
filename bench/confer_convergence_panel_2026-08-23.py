@@ -68,9 +68,21 @@ def run(tag, model_id):
                "elapsed_s": round(time.time() - t0, 1), "response": ""}
     finally:
         set_panel_cwd(None)
-        subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
-                       cwd=str(REPO), capture_output=True)
-        shutil.rmtree(wt.parent, ignore_errors=True)
+        # HARVEST BEFORE REMOVING (founder ruling (j), 2026-09-17). This worktree
+        # is what the reviewer worked in, and these lines removed it
+        # unconditionally, so anything it wrote that was not already parsed out
+        # of its reply went with it. Found by
+        # scripts/sandbox_deletion_audit_2026-09-17.py.
+        try:
+            from bench import panel_sandbox as _PS
+            _PS.harvest(wt, REPO, LOGS / "worktree_harvest" / tag)
+        except Exception as _h:                                  # noqa: BLE001
+            print(f"  [{tag}] WARNING: worktree not harvested ({_h}); KEEPING {wt}",
+                  flush=True)
+        else:
+            subprocess.run(["git", "worktree", "remove", "--force", str(wt)],
+                           cwd=str(REPO), capture_output=True)
+            shutil.rmtree(wt.parent, ignore_errors=True)
     (LOGS / f"{tag}.json").write_text(json.dumps(rec, indent=2))
     print(f"  [{tag}] ok={rec['ok']} chars={rec.get('chars',0)} {rec['elapsed_s']}s"
           + (f"  ERR={rec.get('error')}" if not rec["ok"] else ""), flush=True)
