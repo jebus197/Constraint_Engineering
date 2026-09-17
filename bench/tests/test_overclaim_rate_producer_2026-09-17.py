@@ -30,10 +30,26 @@ def _run(*args: str) -> str:
 
 
 def test_it_answers_help_without_measuring():
+    """`--help` must DESCRIBE, never measure.
+
+    The first version of this test asserted the word "of" appeared in the help
+    text -- a proxy for "it printed the figure", and a false one: argparse
+    prints the docstring's first line, which contains no such word. A test
+    whose assertion is a guess about output it never read is the shape this
+    project keeps withdrawing. It now asserts the 2 things that matter: the
+    usage line is present, and NO measurement was performed.
+    """
     r = subprocess.run([sys.executable, str(SCRIPT), "--help"],
                        capture_output=True, text=True, timeout=120)
-    assert r.returncode == 0
-    assert "of" in r.stdout.lower()
+    assert r.returncode == 0, r.stderr[-800:]
+    out = r.stdout
+    assert out.startswith("usage:"), out[:200]
+    assert "--ids" in out, "the help no longer documents its own flag"
+    for measured in ("Wilson", "%", "statsmodels"):
+        assert measured not in out, (
+            f"--help printed {measured!r}, so it ran the measurement instead of "
+            f"describing it -- the defect that once destroyed a 55,814-byte "
+            f"panel record")
 
 
 def test_it_is_deterministic():
