@@ -40,6 +40,7 @@ the gate's verdict; gamma should tell you whether the run was converging at all.
 ## Produce a fix and test it
 A finding without a fix is half an answer. Write a runnable falsifier, EXECUTE it,
 and report the command and its output.
+Write the fix INTO the sandbox repository tree at its real path; prose is not delivered.
 
 ## What would refute you
 State what evidence would overturn your own conclusion before you conclude.
@@ -73,6 +74,8 @@ def test_a_simple_open_ended_prompt_is_refused():
     ("## Termination\nStop when a further pass produces no new above-threshold findings, and say how\nmany passes you ran. Diminishing returns is the criterion.\n", "termination"),
     ("Return: verdict, reasoning, the falsifier and its executed result, and your\nstrongest disagreement with this brief's framing.\n", "output"),
     ("Use S_k and the severity model to say whether a recovered block would have changed\nthe gate's verdict; gamma should tell you whether the run was converging at all.\n", "mathematical instrument"),
+    # ADDED 2026-09-17 (task P4): the delivery rule, the 8th shape check.
+    ("Write the fix INTO the sandbox repository tree at its real path; prose is not delivered.\n", "DELIVERED as a file"),
 ])
 def test_removing_a_required_section_is_detected(drop, expect):
     """Each check must fail in the direction it exists to check, one at a time."""
@@ -209,20 +212,63 @@ def test_a_script_that_exits_non_zero_is_refused(tmp_path, monkeypatch):
         broken.unlink(missing_ok=True)
 
 
-def test_the_dispatcher_calls_it_and_not_only_the_shape_checks():
+def _import_dispatcher(monkeypatch):
+    """The dispatcher, imported (possible since task A22) with nothing dispatched.
+
+    `main()` is never called, so no seat, sandbox or network is reached.
+    """
+    monkeypatch.setattr(sys, "argv", ["pytest"])
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    sys.path.insert(0, str(REPO / "bench"))
+    spec = importlib.util.spec_from_file_location("panel_dispatcher_under_test", DISPATCHER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_dispatcher_calls_it_and_not_only_the_shape_checks(monkeypatch, capsys):
     """An addition nothing reaches is not additive.
 
-    Asserted by IMPORT, not by reading source: the dispatcher's module is loaded
-    and the symbol it binds is compared against the validator's own function.
+    REPLACED 2026-09-17 (task P7): this read the dispatcher's SOURCE and asserted
+    that "check_declared_figures" and "_figures(PROMPT)" appear in it. Both
+    assertions still held with `problems += _figures(PROMPT)` commented out, so
+    the test could not fail in the direction it exists for, while its docstring
+    said "Asserted by IMPORT, not by reading source". The replacement dominates
+    on 1 named property, mutation sensitivity: it CALLS the dispatcher's
+    pre-dispatch refusal and goes red when that call is removed.
+
+    Refusal half: a brief that passes every shape check but declares gamma as
+    0.451 -- the round-4 figure -- is refused with exit 2 and the figure named.
+    Control half: the same brief, with the figure check replaced by a no-op in
+    the module the dispatcher imports, is NOT refused, which shows the refusal
+    came from the figure check and from nothing else.
     """
-    import importlib.util as iu
-    path = REPO / "bench" / "confer_maths_panel_2026-09-05.py"
-    src = path.read_text(encoding="utf-8")
-    assert "check_declared_figures" in src, (
-        "the dispatcher no longer imports the figure check, so a brief with a "
-        "wrong number would reach the seats again")
-    assert "_figures(PROMPT)" in src, (
-        "the dispatcher imports the check but never calls it")
+    import types
+    D = _import_dispatcher(monkeypatch)
+    monkeypatch.delenv("PANEL_BRIEF_UNCHECKED", raising=False)
+    monkeypatch.delitem(sys.modules, "panel_brief_validate", raising=False)
+    wrong = GOOD + "\n" + _decl("gamma", _GAMMA_SCRIPT, "0.451") + "\n"
+    assert pbv.validate(wrong) == [], "the probe must fail ONLY the figure check"
+    monkeypatch.setattr(D, "PROMPT", wrong)
+    monkeypatch.setattr(D, "BRIEF", "probe")
+
+    with pytest.raises(SystemExit) as refused:
+        D._validate_brief_or_refuse()
+    err = capsys.readouterr().err
+    assert refused.value.code == 2, (
+        f"a brief declaring gamma 0.451 must be refused with exit 2; got "
+        f"{refused.value.code}\n{err[-600:]}")
+    assert "REFUSED" in err and "0.451" in err, err[-600:]
+
+    real = sys.modules["panel_brief_validate"]
+    stub = types.ModuleType("panel_brief_validate")
+    stub.validate = real.validate
+    stub.check_declared_figures = lambda text, *a, **k: []
+    monkeypatch.setitem(sys.modules, "panel_brief_validate", stub)
+    D._validate_brief_or_refuse()          # must return, not raise
+    assert "REFUSED" not in capsys.readouterr().err, (
+        "with the figure check disabled the brief was still refused, so the "
+        "refusal above did not come from the figure check")
 
 
 def test_the_round_4_brief_itself_now_passes():

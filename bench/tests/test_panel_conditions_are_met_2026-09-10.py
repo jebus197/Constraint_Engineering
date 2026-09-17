@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -50,9 +49,21 @@ PAID_SEATS = ("cx", "cgpt", "ds")
 #: been asserted as running under the ruling. Dates are parsed and compared now.
 
 
+def _load_compliance():
+    spec = importlib.util.spec_from_file_location("panel_compliance", SCRIPT)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 @pytest.fixture(scope="module")
 def mod():
-    spec = importlib.util.spec_from_file_location("panel_compliance", SCRIPT)
+    return _load_compliance()
+
+
+def _mirror_module():
+    spec = importlib.util.spec_from_file_location(
+        "mirror_records", ROOT / "scripts" / "mirror_panel_records_2026-09-11.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
@@ -80,16 +91,17 @@ def _review_dirs():
     The predicate is imported rather than reimplemented, because this file and
     the compliance script drifting apart is the defect that produced 4 wrong
     figures today.
+
+    AND IT READ `bench/logs/` ONLY (2026-09-17, tasks P1, P3, P4, P5), which
+    `.gitignore:41` excludes. In a clone the P5 guard therefore PASSED over 0
+    replies, and the P1 and P3 claims passed over 0 replies beside a skipping
+    sibling. All 32 replies under the ruling are tracked under
+    `experimental_notes/evidence/panel_records_*`, so the population is now the
+    mirror module's `archive_rounds()`: live where present, tracked elsewhere.
+    A fallback keyed on "bench/logs holds nothing" would not have fired -- a
+    clone holds force-tracked, pre-ruling review directories there.
     """
-    import importlib.util as _ilu
-    spec = _ilu.spec_from_file_location(
-        "mirror_records", ROOT / "scripts" / "mirror_panel_records_2026-09-11.py")
-    mod = _ilu.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    logs = ROOT / "bench" / "logs"
-    if not logs.is_dir():
-        return []
-    return sorted(d for d in logs.iterdir() if mod.holds_review_output(d))
+    return _mirror_module().archive_rounds()
 
 
 def _replies():
@@ -180,6 +192,67 @@ class TestP1NoPaidSeatWasEverDispatchedUnderTheRuling:
             pytest.skip(reason)
         assert n >= 10, f"only {n} seat replies under the ruling; too few to conclude from"
 
+    def test_is_paid_and_the_inline_predicate_are_executed_against_each_other(self):
+        """`_is_paid` HAD 0 CALLERS (2026-09-17, task P1; profiled: 0 calls).
+
+        The money check above uses the inline predicate `route != "claude_cli"`,
+        which is STRICTER: it counts a reply with no route as paid whatever the
+        seat. `_is_paid` is the documented rule -- the route where one exists,
+        seat identity where none does. 2 forms of 1 rule with no comparator is
+        the shape `execute-do-not-grep` names, so both are run over every reply
+        in the archive and their disagreement is required to be exactly the
+        known one: the inline form never passes a reply `_is_paid` calls paid,
+        and every reply only the inline form flags records no route and comes
+        from a free seat. A `_is_paid` that dropped its seat fallback, or its
+        route check, breaks one of the 2 assertions.
+        """
+        replies = _replies()
+        reason = corpus.shortfall(len(replies), 10, "panel seat replies")
+        if reason:
+            pytest.skip(reason)
+
+        def inline(d):
+            return d.get("route") != "claude_cli"
+
+        missed = [(rnd, d["_seat"]) for rnd, d in replies if _is_paid(d) and not inline(d)]
+        assert missed == [], (
+            f"the money check passes replies the documented rule calls paid: {missed}")
+        only_inline = [(rnd, d["_seat"], d.get("route")) for rnd, d in replies
+                       if inline(d) and not _is_paid(d)]
+        unexplained = [x for x in only_inline if x[2] or x[1] in PAID_SEATS]
+        assert unexplained == [], (
+            f"the 2 predicates differ on replies that are not route-less free "
+            f"seats, so they no longer encode 1 rule: {unexplained}")
+
+
+class TestEveryReviewDirectoryHasADate:
+    """THE DATE PARSER DROPPED 5 DIRECTORIES (2026-09-17, task P1).
+
+    `_COMPACT_DATE` required a `T\\d{6}Z` time, so `severity_review_2_20260907`
+    and 4 siblings dated 2026-09-07 returned None, so the cost line
+    "paid seat replies AFTER 2026-09-05" left all 5 out of its population.
+    """
+
+    def test_the_compact_form_parses_with_and_without_a_time(self):
+        m = _mirror_module()
+        assert m.round_date("severity_review_2_20260907") == "2026-09-07"
+        assert m.round_date("five_fixes_review_20260907") == "2026-09-07"
+        assert m.round_date("panel_verify_20260904T203042Z") == "2026-09-04"
+        assert m.round_date("panel_round11_2026-09-11") == "2026-09-11"
+        # A longer digit run is not a date, on either side.
+        assert m.round_date("run_202609071") is None
+        assert m.round_date("run_120260907") is None
+
+    def test_no_review_directory_in_the_archive_is_undated(self):
+        dirs = _review_dirs()
+        reason = corpus.shortfall(len(dirs), 10, "review directories")
+        if reason:
+            pytest.skip(reason)
+        undated = [d.name for d in dirs if _round_date(d.name) is None]
+        assert undated == [], (
+            f"{len(undated)} review directories carry no date the parser reads, "
+            f"so every date-split figure silently files them as pre-ruling: {undated}")
+
 
 class TestP3SeatsUsedTheHarness:
     def test_every_reply_under_the_ruling_recorded_a_tool_call(self):
@@ -200,6 +273,44 @@ class TestP3SeatsUsedTheHarness:
             "no historical reply had 0 tool calls, so P3's measurement has no "
             "contrast and this test cannot show the ruling did anything")
 
+    def test_the_guard_and_the_quoted_split_share_1_population(self, mod):
+        """P3 QUOTED A SPLIT NO COMMITTED SCRIPT PRINTED (2026-09-17).
+
+        28 of 28 against 8 of 134, Fisher p = 1.495245e-24, came from the
+        compliance script's per-seat-file population, while the 2 tests above
+        walk a wider one (`_replies()` reads every reply-shaped JSON file, not
+        only the per-seat files the script counts).
+        `p3_split()` is now the script's own, printed by `main()`, and this
+        asserts the condition on THAT population.
+        """
+        k_under, n_under, k_pre, n_pre, p = mod.p3_split()
+        reason = corpus.shortfall(n_under, 10, "per-seat replies under Section P")
+        if reason:
+            pytest.skip(reason)
+        assert k_under == n_under, (
+            f"only {k_under} of {n_under} per-seat replies under the ruling "
+            f"recorded a tool call")
+        assert k_pre < n_pre, (
+            f"{k_pre} of {n_pre} pre-ruling replies recorded a tool call, so the "
+            f"split shows no contrast")
+        assert p is not None and p < 0.05, f"Fisher p = {p}"
+
+    def test_the_recorded_figures_are_reproduced_by_the_script(self, mod):
+        """The figures P3 quotes, re-derived rather than typed.
+
+        The recorded population is every round dated on or before 2026-09-11
+        except round 15. The rounds it covers are archived and closed, so these
+        values are fixed; a change means the archive or the counting changed.
+        """
+        k_under, n_under, k_pre, n_pre, p = mod.p3_split(**mod.P3_RECORDED)
+        reason = corpus.shortfall(n_pre, 100, "pre-ruling per-seat replies")
+        if reason:
+            pytest.skip(reason)
+        assert (k_under, n_under, k_pre, n_pre) == (28, 28, 8, 134)
+        assert f"{p:.6e}" == "1.495245e-24"
+        assert f"{mod.fisher_two_sided_mpmath(k_under, n_under - k_under, k_pre, n_pre - k_pre):.6e}" \
+            == "1.495245e-24", "the mpmath cross-check no longer agrees with scipy"
+
 
 #: A reply preserves disagreement if it carries a section ABOUT disagreeing --
 #: not if it contains one particular phrase.
@@ -213,39 +324,131 @@ class TestP3SeatsUsedTheHarness:
 #: shape that has now cost this project 4 separate findings.
 #:
 #: The requirement is a SECTION about disagreement, so that is what is matched.
-DISAGREEMENT_RE = re.compile(
-    r"strongest[_ ]disagreement"
-    r"|where\s+i\s+disagree"
-    r"|(?:^|\n)\s*#{0,4}\s*\**\s*disagreement\b"
-    r"|i\s+disagree\s+with",
-    re.I)
+#:
+#: RETIRED 2026-09-17 (task P5): the definition that lived here. It was 1 of 2 --
+#: the compliance script carried a narrower private `_DISAGREE` -- and the 2
+#: disagreed on `panel_roster_fix_2026-09-09` (cc2 and fable) and on
+#: `panel_round16_2026-09-17` cc2. The pattern
+#: now lives in `scripts/panel_condition_compliance_2026-09-10.py` and is
+#: IMPORTED, unchanged, so the name below is the same object the script uses.
+#: The decision is `carries_disagreement`, which also refuses a section whose
+#: body declares absence ("none", "nothing", "n/a", or empty).
+_COMPLIANCE = _load_compliance()
+DISAGREEMENT_RE = _COMPLIANCE.DISAGREEMENT_RE
+carries_disagreement = _COMPLIANCE.carries_disagreement
+
+
+def _under_ruling():
+    return [(rnd, d) for rnd, d in _replies() if (_round_date(rnd) or "") >= RULING]
 
 
 class TestP5DisagreementIsPreserved:
     def test_most_replies_under_the_ruling_carry_their_own_disagreement(self):
-        under = [(rnd, d) for rnd, d in _replies()
-                 if (_round_date(rnd) or "") >= RULING]
+        under = _under_ruling()
+        # ANTI-VACUITY, ADDED 2026-09-17. With 0 replies this read `0 >= -2` and
+        # PASSED, in every clone, while P1's sibling skipped.
+        reason = corpus.shortfall(len(under), 10, "panel seat replies under Section P")
+        if reason:
+            pytest.skip(reason)
         got = [(rnd, d["model"]) for rnd, d in under
-               if DISAGREEMENT_RE.search(d.get("response", ""))]
+               if carries_disagreement(d.get("response", ""))]
         assert len(got) >= len(under) - 2, (
             f"only {len(got)} of {len(under)} replies preserved a disagreement; "
             f"the known 2 misses are panel_roster_fix_2026-09-09, dispatched "
             f"before the field was in the brief")
 
     def test_the_misses_are_the_ones_we_think_they_are(self):
-        under = [(rnd, d) for rnd, d in _replies()
-                 if (_round_date(rnd) or "") >= RULING]
+        under = _under_ruling()
+        # ANTI-VACUITY, ADDED 2026-09-17. With 0 replies this read
+        # `set() <= {...}` and PASSED.
+        reason = corpus.shortfall(len(under), 10, "panel seat replies under Section P")
+        if reason:
+            pytest.skip(reason)
         missing = {rnd for rnd, d in under
-                   if not DISAGREEMENT_RE.search(d.get("response", ""))}
+                   if not carries_disagreement(d.get("response", ""))}
         assert missing <= {"panel_roster_fix_2026-09-09"}, (
             f"a round other than the known first one lost its disagreement: {missing}")
 
 
+class TestP5TheGuardIsNotVacuous:
+    """Found 2026-09-17 by execution: the P5 guard passed on nothing, counted a
+    declared absence as a disagreement, and disagreed with the script that
+    printed the figure it guarded."""
+
+    @pytest.mark.parametrize("name", [
+        "test_most_replies_under_the_ruling_carry_their_own_disagreement",
+        "test_the_misses_are_the_ones_we_think_they_are",
+    ])
+    def test_neither_p5_test_passes_on_an_empty_corpus(self, monkeypatch, name):
+        monkeypatch.setattr(sys.modules[__name__], "_replies", lambda: [])
+        with pytest.raises(pytest.skip.Exception):
+            getattr(TestP5DisagreementIsPreserved(), name)()
+
+    @pytest.mark.parametrize("reply", [
+        "strongest_disagreement: none",
+        "I disagree with nothing.",
+        "## Disagreement\nNone.",
+        "**WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1**\n\nN/A\n",
+        "## strongest_disagreement\n\n## termination\nstopped after 2 passes",
+        "`strongest_disagreement`: nothing",
+        "## strongest_disagreement: none\n\n## termination\nstopped after 2 passes",
+    ])
+    def test_a_declared_absence_is_not_a_disagreement(self, reply):
+        assert not carries_disagreement(reply), (
+            f"a section that declares no disagreement was counted as one: {reply!r}")
+
+    @pytest.mark.parametrize("reply", [
+        "strongest_disagreement: the brief's gamma is 0.451 and the script prints 0.415413",
+        "## Disagreement\nThe brief overstates the round-7 evidence.",
+        "**disagreement**: the brief's framing assumes the index is the artefact",
+        "## WHERE I DISAGREE WITH THE OTHER SEAT OR WITH CC1\n\nNone with the other "
+        "seat; with CC1, the date parser drops 5 directories.",
+        "I disagree with the brief on Q3.",
+        "## strongest_disagreement: the date parser drops 5 directories\n\n## termination\n2 passes",
+        "**Strongest disagreement:**\n\nThe brief's 47 of 49 has no producer.",
+    ])
+    def test_a_disagreement_with_a_body_still_counts(self, reply):
+        """DISCRIMINATION. A predicate that refused everything would pass the
+        test above and report every real round as a miss."""
+        assert carries_disagreement(reply), f"a real disagreement was refused: {reply!r}"
+
+    def test_the_guard_and_the_script_count_the_same_replies(self, mod):
+        """2 FORMS, EXECUTED AGAINST EACH OTHER.
+
+        The guard walks `_replies()`; the script's printed P5 figure comes from
+        `seat_row()`. Before 2026-09-17 each carried its own pattern and they
+        disagreed on named replies under the ruling. Both paths are called here
+        over the same rounds and must report the same count.
+        """
+        under = _under_ruling()
+        reason = corpus.shortfall(len(under), 10, "panel seat replies under Section P")
+        if reason:
+            pytest.skip(reason)
+        guard = sum(1 for _, d in under if carries_disagreement(d.get("response", "")))
+        rounds_under = [d for d in _review_dirs() if (_round_date(d.name) or "") >= RULING]
+        script_n = sum(mod.seat_row(d)["n"] for d in rounds_under)
+        script_dis = sum(mod.seat_row(d)["dis"] for d in rounds_under)
+        assert script_n == len(under), (
+            f"the script counts {script_n} replies under the ruling and the guard "
+            f"{len(under)}, so they are not measuring the same population")
+        assert script_dis == guard, (
+            f"the script's P5 count is {script_dis} and the guard's is {guard} over "
+            f"the same {len(under)} replies")
+
+
+def _round_dir(name: str):
+    """A named round from the archive, live or mirrored, or None."""
+    return next((d for d in _review_dirs() if d.name == name), None)
+
+
 class TestP4AFixMustArriveAsAFile:
+    # READ THROUGH THE ARCHIVE, NOT `bench/logs/` ALONE (2026-09-17). All 3 tests
+    # below skipped in every clone, although rounds 5, 6 and 7 are tracked under
+    # `experimental_notes/evidence/panel_records_2026-09-10/`.
     def test_round_seven_delivered_source_files(self, mod):
-        d = ROOT / "bench" / "logs" / "panel_round7_2026-09-10"
-        if not d.is_dir():
-            pytest.skip("round 7 not present in this clone")
+        d = _round_dir("panel_round7_2026-09-10")
+        if d is None:
+            pytest.skip("round 7 not present in this checkout, live or mirrored")
         src = mod.source_files(d)
         assert src, "round 7 delivered no source files, so the delivery rule failed"
         assert any(x.startswith("scripts/") or x.startswith("bench/tests/") for x in src), (
@@ -253,9 +456,10 @@ class TestP4AFixMustArriveAsAFile:
 
     def test_the_delivery_rule_is_in_the_brief_that_produced_it(self):
         """An addition nothing reaches is not additive: the rule must be WRITTEN."""
-        b = ROOT / "bench" / "logs" / "panel_round7_2026-09-10" / "BRIEF.md"
-        if not b.is_file():
-            pytest.skip("round 7 brief not present in this clone")
+        d = _round_dir("panel_round7_2026-09-10")
+        b = _mirror_module().brief_of(d) if d is not None else None
+        if b is None:
+            pytest.skip("round 7 brief not present in this checkout, live or mirrored")
         t = b.read_text(encoding="utf-8")
         assert "not delivered either" in t and "sandbox repository tree" in t, (
             "the delivery rule is absent from the brief, so a later round would "
@@ -263,8 +467,7 @@ class TestP4AFixMustArriveAsAFile:
 
     def test_rounds_five_and_six_are_the_contrast(self, mod):
         """Without the earlier failure this proves nothing about the rule."""
-        present = [d for d in (ROOT / "bench" / "logs").glob("panel_round[56]_2026-09-10")
-                   if d.is_dir()]
+        present = [d for d in _review_dirs() if d.name in P4_CONTRAST]
         reason = corpus.shortfall(len(present), 2,
                                   "panel round 5 and 6 directories")
         if reason:
@@ -273,6 +476,147 @@ class TestP4AFixMustArriveAsAFile:
         assert len(empties) == 2, (
             f"rounds 5 and 6 were expected to have delivered 0 source files, "
             f"which is what makes round 7 evidence that the rule worked: {empties}")
+
+
+#: The recorded contrast: the 2 rounds under the ruling that delivered 0 files,
+#: before the delivery rule was written into the brief in round 7.
+P4_CONTRAST = frozenset({"panel_round5_2026-09-10", "panel_round6_2026-09-10"})
+
+
+def _dispatch_running(name: str) -> bool:
+    """True iff a panel dispatcher process for round `name` is running now."""
+    try:
+        r = subprocess.run(["ps", "-axo", "command="], capture_output=True,
+                           text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return any("confer_maths_panel" in ln and name in ln.split()
+               for ln in r.stdout.splitlines())
+
+
+def _p4_undelivered(dirs, mod) -> list[str]:
+    """Rounds under the ruling holding a seat reply that delivered no file,
+    outside the recorded contrast. The standing test and its falsifiers call
+    this 1 function, so a falsifier that fails exercises the real check."""
+    out = []
+    for d in dirs:
+        if (_round_date(d.name) or "") < RULING or d.name in P4_CONTRAST:
+            continue
+        if not any((d / f"{s}.json").is_file() for s in mod.SEATS):
+            continue
+        if not mod.source_files(d):
+            out.append(d.name)
+    return out
+
+
+class TestP4DeliveryIsAStandingCondition:
+    """P4 IS MARKED ENABLED AND ITS EVIDENCE WAS A PAST DEMONSTRATION (2026-09-17).
+
+    The 3 tests above pin round 7, and the middle one asserts 2 literal strings
+    in a frozen brief. Nothing required any LATER round to deliver a file, and
+    `source_files()` read only `seat_proposals.diff`, so it printed 0 for round
+    15, which delivered 4 files through the per-seat layout. These hold the
+    condition over every round under the ruling, and the falsifiers run the same
+    check on synthetic rounds it must refuse.
+    """
+
+    def test_round_fifteen_delivered_through_the_per_seat_layout(self, mod):
+        d = _round_dir("panel_round15_2026-09-11")
+        if d is None:
+            pytest.skip("round 15 not present in this checkout, live or mirrored")
+        src = mod.source_files(d)
+        assert len(src) == 4, (
+            f"round 15's mirror holds 4 per-seat files and a README.md; "
+            f"source_files() returned {len(src)}: {src}")
+        assert not any("readme" in x.lower() for x in src), src
+
+    def test_every_round_under_the_ruling_left_a_file(self, mod):
+        # A ROUND STILL RUNNING IS NOT YET A ROUND THAT DELIVERED NOTHING. The
+        # dispatcher writes each seat's reply as that seat finishes and harvests
+        # `seat_proposals.diff` only after every seat has, so mid-run a round
+        # holds replies and no delivery. Only a dispatcher PROCESS naming the
+        # round excludes it; a round whose process died with no delivery is
+        # still reported, because it delivered nothing.
+        dirs = [d for d in _review_dirs()
+                if (_round_date(d.name) or "") >= RULING
+                and any((d / f"{s}.json").is_file() for s in mod.SEATS)
+                and not _dispatch_running(d.name)]
+        reason = corpus.shortfall(len(dirs), 10, "panel rounds under Section P")
+        if reason:
+            pytest.skip(reason)
+        assert P4_CONTRAST <= {d.name for d in dirs}, (
+            "the recorded contrast rounds are missing from the population, so a "
+            "pass here is not a comparison")
+        undelivered = _p4_undelivered(dirs, mod)
+        assert undelivered == [], (
+            f"{len(undelivered)} round(s) under the ruling returned a seat reply and "
+            f"delivered no file: {undelivered}. P4 requires a fix as a file.")
+
+    def _synthetic(self, root, name, files):
+        d = root / name
+        d.mkdir(parents=True)
+        (d / "cc2.json").write_text(json.dumps(
+            {"route": "claude_cli", "n_tool_calls": 5, "model": "opus",
+             "response": "verdict: the fix is to change X; here it is in prose."}),
+            encoding="utf-8")
+        for rel, text in files.items():
+            p = d / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text, encoding="utf-8")
+        return d
+
+    def test_falsifier_an_all_prose_round_is_refused(self, tmp_path, mod):
+        d = self._synthetic(tmp_path, "panel_round99_2026-09-12", {})
+        assert _p4_undelivered([d], mod) == [d.name]
+
+    def test_falsifier_a_round_leaving_only_a_readme_is_refused(self, tmp_path, mod):
+        """The hole in round 16's proposed test: a README is not a fix."""
+        d = self._synthetic(tmp_path, "panel_round98_2026-09-12",
+                            {"seat_proposals/README.md": "harvested by the dispatcher\n"})
+        assert _p4_undelivered([d], mod) == [d.name]
+
+    def test_falsifier_a_round_leaving_only_cache_junk_is_refused(self, tmp_path, mod):
+        d = self._synthetic(tmp_path, "panel_round97_2026-09-12", {
+            "seat_proposals.diff": "### bench/__pycache__/x.cpython-313.pyc\n",
+            "seat_proposals/x.pyc.as-the-seat-wrote-it.txt": "junk\n"})
+        assert _p4_undelivered([d], mod) == [d.name]
+
+    @pytest.mark.parametrize("files", [
+        {"seat_proposals/fix.py.as-the-seat-wrote-it.txt": "def fix(): return 1\n"},
+        {"seat_proposals.diff": "### scripts/fix.py\n+def fix(): return 1\n"},
+    ])
+    def test_control_a_round_that_delivered_passes(self, tmp_path, mod, files):
+        """DISCRIMINATION. A check that refused every round would pass the
+        falsifiers above and fail every real round."""
+        d = self._synthetic(tmp_path, "panel_round96_2026-09-12", files)
+        assert _p4_undelivered([d], mod) == []
+
+    def test_the_running_round_exclusion_sees_a_real_process_and_only_while_it_runs(self):
+        """The exclusion above is a gate, so it is executed: a process whose
+        command line names a dispatcher and a round is seen while it runs and
+        not after it ends. Nothing is dispatched; the process only sleeps."""
+        name = "panel_round95_2026-09-12"
+        assert not _dispatch_running(name)
+        p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)",
+                              "confer_maths_panel_2026-09-05.py", name])
+        try:
+            import time
+            deadline = time.time() + 10
+            seen = False
+            while time.time() < deadline and not seen:
+                seen = _dispatch_running(name)
+                time.sleep(0.1)
+            assert seen, "a running process naming the round was not detected"
+            assert not _dispatch_running("panel_round94_2026-09-12"), (
+                "a different round was reported as running")
+        finally:
+            p.kill()
+            p.wait(timeout=10)
+        assert not _dispatch_running(name), "a finished process is still reported"
+
+    def test_a_pre_ruling_round_is_outside_the_condition(self, tmp_path, mod):
+        d = self._synthetic(tmp_path, "panel_old_20260901T000000Z", {})
+        assert _p4_undelivered([d], mod) == []
 
 
 class TestTheToolEnabledDateMatchesTheArchive:
@@ -298,7 +642,14 @@ class TestTheToolEnabledDateMatchesTheArchive:
 
         repo = pathlib.Path(__file__).resolve().parents[2]
         per_round = {}
-        for f in (repo / "bench" / "logs").glob("*/*.json"):
+        # THE TRACKED MIRROR TOO (2026-09-17), for directories the live tree does
+        # not hold, so a clone checks the date instead of skipping.
+        live = sorted((repo / "bench" / "logs").glob("*/*.json"))
+        live_rounds = {f.parent.name for f in live}
+        mirrored = [f for f in sorted((repo / "experimental_notes" / "evidence")
+                                      .glob("panel_records_*/*/*.json"))
+                    if f.parent.name not in live_rounds]
+        for f in live + mirrored:
             if f.name.endswith(".tools.json"):
                 continue
             try:

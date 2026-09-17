@@ -274,3 +274,41 @@ def test_the_conftest_actually_calls_it():
         "the mapper is not imported by the suite, so no run would ever report it")
     assert "_report_unsupported_done_entries(terminalreporter)" in conftest, (
         "the reporter is defined but never called from the terminal summary")
+
+
+# ---------------------------------------------------------------------------
+# SECTION P'S MARKERS MUST NAME THE FILES THAT EXERCISE THEIR CLAUSES.
+# Added 2026-09-17 on panel round 16's audit.
+#
+# P1, P3, P4 and P7 each named only
+# `bench/tests/test_panel_conditions_are_met_2026-09-10.py`. Run under an audit
+# hook recording every file a test opens, that file opens neither the
+# dispatcher, the formal schema, `scripts/panel_brief_validate.py`,
+# `scripts/task_list_markers.py` nor `scripts/wilson_interval_consistency.py`.
+# So a red test in the files that DO exercise the format, the brief-side
+# instrument clause, the delivery rule and the assistant's own guards
+# invalidated none of these entries: `unsupported_done_entries` mapped a failure
+# in the schema test to no entry at all, and a failure in the brief-format test
+# to 5.1, 5.2, P2 and P6 only.
+#
+# Each pair below is CALLED through the mapper against the live task list. It is
+# red until the marker names the file, which is the point: the claim and its
+# evidence are bound by execution, not by the text of the entry.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("evidence,entry", [
+    ("bench/tests/test_panel_runs_under_the_schema_2026-09-07.py", "P1"),
+    ("bench/tests/test_panel_brief_format_2026-09-09.py", "P1"),
+    ("bench/tests/test_panel_brief_format_2026-09-09.py", "P3"),
+    ("bench/tests/test_panel_brief_format_2026-09-09.py", "P4"),
+    ("bench/tests/test_brief_check_breakdown_2026-09-17.py", "P4"),
+    ("bench/tests/test_panel_brief_format_2026-09-09.py", "P7"),
+    ("bench/tests/test_done_markers_carry_evidence_2026-09-10.py", "P7"),
+    ("bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py", "P7"),
+])
+def test_a_failure_in_a_section_p_mechanism_invalidates_its_entry(evidence, entry):
+    hits = M.unsupported_done_entries([f"{evidence}::test_x"])
+    assert entry in hits, (
+        f"a failing test in {evidence} does not invalidate DONE entry {entry}, "
+        f"so {entry}'s completion claim does not rest on the file that exercises "
+        f"its clause. The mapper reports: {hits}")

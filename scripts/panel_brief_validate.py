@@ -7,6 +7,12 @@ instrument, 8 required a fix, and 2 required the fix to be tested. They were
 hand-written markdown read straight off disk -- no template, no schema, no
 validation, no test. The founder's ruling names exactly those gaps.
 
+ANNOTATED 2026-09-17: no committed script prints the 8 and the 2 above; they are
+a reader's count. This module's own lexical checks, run over the same 49 briefs
+by `scripts/brief_archive_refusal_rate_2026-09-10.py`, find 43 meeting "requires
+a fix" and 27 meeting "requires the fix to be TESTED" -- a looser test than that
+reading, so the 2 pairs of figures do not measure the same thing.
+
 WHY IT REFUSES RATHER THAN WARNS. 3 of the 5 panel seats are PAID. A defective
 brief costs money and returns something unusable, and the project's own record
 holds a case where a briefing defect broke 2 seats and cost a re-dispatch. A
@@ -56,6 +62,24 @@ CHECKS = (
     ("requires the fix to be TESTED",
      (r"falsifier", r"\btest\b\w*\s+(?:the|your|that)\s+fix", r"\bexecuted?\b.*\bfalsifier\b"),
      "require a runnable falsifier that the seat has EXECUTED, and its output"),
+    # ADDED 2026-09-17 (task P4). THE DELIVERY RULE REACHED BRIEFS BY COPYING.
+    # Rounds 5 and 6 returned 0 source files because both seats wrote their
+    # fixes into scratch space that `panel_sandbox.teardown` destroyed; round 7's
+    # brief told them to write INTO the sandbox repository tree at the real path,
+    # and rounds 7 to 15 copied that paragraph forward. Nothing required it: the
+    # template never mentioned the sandbox tree, no check here asked where a fix
+    # is written, and the round-16 brief of 2026-09-17 carries none of the
+    # phrases below. Measured over the post-ruling briefs before enabling:
+    # rounds 7 to 15 pass it, and roster_fix, roster_round2, rounds 4, 5, 6, the
+    # verification-gap round and round 16 do not. Printed per check by
+    # scripts/brief_archive_refusal_rate_2026-09-10.py and held by
+    # bench/tests/test_brief_check_breakdown_2026-09-17.py.
+    ("requires the fix to be DELIVERED as a file",
+     (r"\breal path\b", r"\bsandbox (?:repository )?tree\b",
+      r"\bdeliver\w*\s+(?:your\s+|the\s+|each\s+)?fix(?:es)?\s+as\s+a\s+file\b"),
+     "require the seat to write its fix INTO the sandbox repository tree at its "
+     "real path; a fix left in prose or in scratch space is destroyed at "
+     "teardown and is not delivered"),
     ("asks what would refute the seat",
      (r"refut", r"overturn", r"\bfalsif\w*\s+your\b", r"what would change your"),
      "require each seat to state what evidence would overturn its own answer"),

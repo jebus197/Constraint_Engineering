@@ -4,7 +4,7 @@
 
 **This is the standard for every panel review, free-seat and full paid 6-model alike.** It is validated by `scripts/panel_brief_validate.py`, which `bench/confer_maths_panel_2026-09-05.py` runs before dispatching. A brief that fails validation is refused rather than sent, because a paid dispatch on a defective brief costs money and returns nothing usable.
 
-**Why a template at all, measured.** Across the 49 briefs archived before this date: **0 required a seat to use the mathematical model as an instrument, 8 required a fix, and 2 required the fix to be tested.** They were hand-written markdown read straight off disk with no template, no schema, no validation and no test. The founder's diagnosis — that they were closer to open-ended prompts than to a format — is confirmed by that measurement.
+**Why a template at all, measured.** Across the 49 briefs archived before this date: **0 required a seat to use the mathematical model as an instrument, 8 required a fix, and 2 required the fix to be tested.** They were hand-written markdown read straight off disk with no template, no schema, no validation and no test. The founder's diagnosis — that they were closer to open-ended prompts than to a format — is confirmed by that measurement. (Annotated 2026-09-17: the 8 and the 2 are a reader's count that no committed script prints. The validator's own lexical checks, printed per check by `scripts/brief_archive_refusal_rate_2026-09-10.py`, find 43 of the 49 meeting "requires a fix" and 27 meeting "requires the fix to be TESTED", a looser test than that reading.)
 
 **What this template does NOT contain.** The formal schema, the no-compelled-convergence rule, the additive standard and the one-shot notice all reach every seat through the dispatcher's SYSTEM string by construction, and are tested by `bench/tests/test_panel_runs_under_the_schema_2026-09-07.py`. Repeating them here would be duplication with no comparator. This template governs the USER half only, which is the half that did not exist.
 
@@ -23,6 +23,8 @@ A seat that returns prose about a fix without having run anything has not answer
 ## REQUIRED SECTION 3 — Produce a fix, and test it
 
 State that a finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis. Require the seat to report the command it ran and the output it saw.
+
+State where the fix must be delivered: written INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason, while both seats reported writing and running working code. Added 2026-09-17, when the validator began requiring it.
 
 ## REQUIRED SECTION 4 — What would refute you
 

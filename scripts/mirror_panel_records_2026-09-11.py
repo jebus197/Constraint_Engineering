@@ -45,7 +45,18 @@ SOURCE = REPO / "bench" / "logs"
 DEST_ROOT = REPO / "experimental_notes" / "evidence"
 
 _DATE = re.compile(r"(20\d\d-\d\d-\d\d)")
-_COMPACT_DATE = re.compile(r"(20\d{6})T\d{6}Z")
+#: The compact form, with OR WITHOUT a time. WIDENED 2026-09-17 (task P1).
+#:
+#: This read `(20\d{6})T\d{6}Z`, so a directory dated `20260907` with no time
+#: part returned None. 5 review directories use exactly that form --
+#: `five_fixes_review_20260907`, `fixes_and_ffafp_20260907`,
+#: `poc_readiness_20260907`, `severity_enforcement_review_20260907` and
+#: `severity_review_2_20260907` -- and every caller reads None as "undated", so
+#: the cost line "paid seat replies AFTER 2026-09-05" left all 5 out; it now
+#: prints 31 directories (`scripts/panel_condition_compliance_2026-09-10.py`).
+#: The digit look-arounds keep a longer digit run
+#: (a 9-digit id, say) from yielding a date by accident.
+_COMPACT_DATE = re.compile(r"(?<!\d)(20\d{6})(?:T\d{6}Z)?(?!\d)")
 
 #: A directory holds review output if it carries a seat reply or a brief.
 #: SELECTED BY CONTENT, NOT BY NAME, and the first version was not.
@@ -78,6 +89,45 @@ def rounds() -> list[Path]:
     if not SOURCE.is_dir():
         return []
     return sorted(p for p in SOURCE.iterdir() if holds_review_output(p))
+
+
+#: The mirrored copy of a brief. `mirrored_name` renames `.md` to `.md.txt`.
+MIRRORED_BRIEF_FILES = ("BRIEF.md.txt",)
+
+
+def archive_rounds() -> list[Path]:
+    """Every review directory THIS CHECKOUT can read: live first, then the mirror.
+
+    ADDED 2026-09-17 (tasks P1, P3, P4, P5). The Section P guard and the
+    compliance script read `bench/logs/` only, and `.gitignore:41` excludes it,
+    so a clone measured nothing under the ruling and the P5 guard PASSED over 0
+    replies. A fallback keyed on "bench/logs holds no review directory" would
+    not have fired: a clone of this repository holds force-tracked review
+    directories there, every one dated before the ruling. So the 2 locations
+    are UNIONED by directory name, and the live copy wins where both exist --
+    `--check` above holds the mirror byte-identical to it, so on the machine
+    that ran the rounds the population is unchanged, and in a clone it is the
+    tracked record rather than nothing.
+
+    A mirrored directory counts if it holds a seat reply or a mirrored brief.
+    """
+    seen: dict[str, Path] = {d.name: d for d in rounds()}
+    if DEST_ROOT.is_dir():
+        for d in sorted(DEST_ROOT.glob("panel_records_*/*")):
+            if d.name in seen or not d.is_dir():
+                continue
+            if holds_review_output(d) or any(
+                    (d / n).is_file() for n in MIRRORED_BRIEF_FILES):
+                seen[d.name] = d
+    return [seen[k] for k in sorted(seen)]
+
+
+def brief_of(d: Path) -> Path | None:
+    """A round's brief, live or mirrored, or None."""
+    for n in BRIEF_FILES + MIRRORED_BRIEF_FILES:
+        if (d / n).is_file():
+            return d / n
+    return None
 
 
 def round_date(name: str) -> str | None:
