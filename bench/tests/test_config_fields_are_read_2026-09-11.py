@@ -3,14 +3,19 @@
 THE ENTRY SAYS THREE exp56 OFF-SWITCHES ARE "read by none of the 210 runner
 modules under `bench/`, resolved by AST, not by grep". Two of the three are read:
 
-  merge_arbitration_enabled   reference_runner_v3.py:12638
+  merge_arbitration_enabled   reference_runner_v3.py:12911
                               `if getattr(cfg, "merge_arbitration_enabled", False)`
-  immune_memory_enabled       reference_runner_v3.py:14984, same form
+  immune_memory_enabled       reference_runner_v3.py:15262, same form
   _ouroboros.max_papers_per_round
                               genuinely unread -- and its SIBLING in the same
                               block, `api_access`, IS read at
-                              reference_runner_v3.py:9423, so the block reaches
+                              reference_runner_v3.py:9443, so the block reaches
                               the runner and exactly 1 of its 2 keys is consulted
+
+  (Line numbers as `readers_of()` in
+  scripts/config_fields_are_read_2026-09-11.py resolves them at f2c1a74; they
+  drift with every edit above them, so re-run the resolver rather than trust
+  them. Originally 12638, 14984 and 9423.)
 
 WHY THE SWEEP MISSED THEM, and it is this project's recurring shape in a new
 place. An AST scan for attribute access resolves `cfg.field` and reports ZERO for

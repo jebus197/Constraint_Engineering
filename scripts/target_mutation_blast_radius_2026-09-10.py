@@ -65,6 +65,18 @@ OBSERVED_REWRITES = (
 EXPECTED_SIZE = {"bench/dm/_memory.py": 20605}
 
 
+def git_history_available() -> bool:
+    """Added 2026-09-17: a clone without `.git` has no history to interrogate.
+
+    Without this check, `git log` failing made every committed_* query return
+    empty, and the output below asserted "never reached a commit" and "ABSENT
+    in the history" about a history it could not see. Absence of the instrument
+    must be reported as absence, never as a verdict.
+    """
+    return subprocess.run(["git", "rev-parse", "--git-dir"], cwd=REPO,
+                          capture_output=True).returncode == 0
+
+
 def committed_sizes(rel: str) -> list[int]:
     """Every byte size this path has had in a commit, across all refs."""
     revs = subprocess.run(
@@ -164,6 +176,7 @@ def classify(report: dict) -> dict:
 
 
 def main() -> int:
+    git_ok = git_history_available()
     reps = reports()
     with_hashes, mutated, uncommitted, unknowable, outside = [], [], [], [], []
 
@@ -181,6 +194,8 @@ def main() -> int:
         rel = c["rel"]
         if rel is None:
             outside.append((name, target))
+            continue
+        if not git_ok:
             continue
         known = committed_digests(rel)
         stray = [h for h in distinct if h not in known]
@@ -206,7 +221,11 @@ def main() -> int:
           f"{len(with_hashes)} hashed")
     for name, target in outside:
         print(f"  OUTSIDE THE TREE, not checkable against git: {name} -> {target}")
-    if uncommitted:
+    if not git_ok:
+        print("  GIT HISTORY UNAVAILABLE: this clone has no .git, so whether a")
+        print("  digest was ever committed CANNOT BE CHECKED HERE. This half of")
+        print("  the instrument needs a real checkout; nothing is asserted.")
+    elif uncommitted:
         for name, rel, stray, distinct, known in uncommitted:
             print(f"  NEVER COMMITTED: {name}: {stray} of {distinct} digest(s) for "
                   f"{rel} match none of its {known} committed revisions")
@@ -241,7 +260,12 @@ def main() -> int:
 
     print("\n--- ANSWER TO (a), THE BLAST RADIUS ---")
     print(f"  Runs showing a target mutated mid-run: {len(mutated)}")
-    print(f"  Runs whose target content was never committed: {len(uncommitted)}")
+    # Without git history `uncommitted` is empty because nothing was CHECKED,
+    # not because nothing was found; printing its length here was a false zero
+    # left behind by the no-.git repair above. Added at intake, 2026-09-17.
+    never = (len(uncommitted) if git_ok
+             else "UNKNOWN, no git history to check against")
+    print(f"  Runs whose target content was never committed: {never}")
     print(f"  Runs that cannot be checked at all: {len(unknowable)}")
     print("  The radius is therefore bounded BELOW by the first 2 and cannot be")
     print("  bounded above from the archives alone.")
@@ -252,6 +276,11 @@ def main() -> int:
     # reason. A rewrite that never reached a commit cannot need reverting, and
     # whether it reached one is a question the whole history answers exactly.
     print("\n--- ANSWER TO (b), DOES ANYTHING NEED REVERTING ---")
+    if not git_ok:
+        print("  GIT HISTORY UNAVAILABLE: this clone has no .git. (b) is decided")
+        print("  by the commit history and needs a real checkout; the sweep in")
+        print("  (a) above stands, but nothing about commits is asserted here.")
+        return 0 if not mutated else 1
     landed = []
     by_file = {}
     for rel, size, where in OBSERVED_REWRITES:

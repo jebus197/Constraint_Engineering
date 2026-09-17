@@ -13,11 +13,65 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import pathlib
+import subprocess
 
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "target_mutation_blast_radius_2026-09-10.py"
+
+
+def _git_history_available() -> bool:
+    """A clone without `.git` has no history to interrogate.
+
+    Added 2026-09-17: in such a clone `git log` fails, `committed_sizes` and
+    `committed_digests` return empty, and the history tests below FAILED in a
+    way indistinguishable from "the history contradicts R6" -- while
+    `test_no_observed_rewrite_ever_reached_a_commit` PASSED vacuously against
+    an empty history, which is worse. Absence of the instrument must read as
+    SKIP, never as a verdict either way.
+    """
+    r = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT,
+                       capture_output=True)
+    return r.returncode == 0
+
+
+needs_git = pytest.mark.skipif(
+    not _git_history_available(),
+    reason="no .git in this clone: R6's commit-history claims need a real "
+           "checkout; skipping is not passing and not failing")
+
+
+class TestNoGitIsReportedAsAbsenceNotAsAVerdict:
+    """Added at intake, 2026-09-17: the script's own no-.git branch, EXECUTED.
+
+    The repair that added `git_history_available()` to the script was reached by
+    no test -- the skip marker above uses its own copy of the predicate -- and
+    it left 1 false zero behind: ANSWER TO (a) still printed "never committed:
+    0" when nothing had been checked. `main()` is called here with the
+    predicate forced False and every commit-history reader instrumented, in a
+    real checkout, so this runs everywhere.
+    """
+
+    def test_main_asserts_nothing_about_commits_without_git(self, br, monkeypatch,
+                                                            capsys):
+        monkeypatch.setattr(br, "git_history_available", lambda: False)
+        consulted = []
+        monkeypatch.setattr(br, "committed_digests",
+                            lambda rel: consulted.append(rel) or set())
+        monkeypatch.setattr(br, "committed_sizes",
+                            lambda rel: consulted.append(rel) or [])
+        br.main()
+        out = capsys.readouterr().out
+        assert out.count("GIT HISTORY UNAVAILABLE") == 2, out[-1500:]
+        for verdict in ("NEVER COMMITTED", "never reached a commit",
+                        "ABSENT in the history", "NOTHING NEEDS REVERTING",
+                        "matches a committed revision",
+                        "never committed: 0"):
+            assert verdict not in out, f"a verdict without git: {verdict!r}"
+        assert "never committed: UNKNOWN" in out
+        assert not consulted, (
+            f"commit history was consulted with git declared absent: {consulted}")
 
 
 @pytest.fixture(scope="module")
@@ -46,6 +100,7 @@ class TestTheDetectorCanFire:
         assert c["hashed"] is False and c["mutated"] is False, (
             "a run with no instrument must not be reported as clean")
 
+    @needs_git
     def test_content_never_committed_is_detectable(self, br):
         """POSITIVE CONTROL for instrument 2, both directions."""
         rel = pathlib.Path("bench/dm/_memory.py")
@@ -86,6 +141,7 @@ class TestTheAnswerToA:
 
 
 class TestTheAnswerToB:
+    @needs_git
     def test_no_observed_rewrite_ever_reached_a_commit(self, br):
         """The decidable half. A rewrite never committed cannot need reverting."""
         for rel, size, where in br.OBSERVED_REWRITES:
@@ -94,6 +150,7 @@ class TestTheAnswerToB:
                 f"{rel} at {size:,} bytes ({where}) IS in the committed history; "
                 f"it needs reverting after all")
 
+    @needs_git
     def test_the_size_search_finds_a_size_that_IS_there(self, br):
         """POSITIVE CONTROL. Otherwise 'not in sizes' proves nothing."""
         for rel, expected in br.EXPECTED_SIZE.items():
@@ -102,6 +159,7 @@ class TestTheAnswerToB:
                 f"{rel} has never been committed at its stated correct size "
                 f"{expected:,}, so the search above cannot be trusted either")
 
+    @needs_git
     def test_the_file_has_only_the_sizes_its_record_accounts_for(self, br):
         sizes = set(br.committed_sizes("bench/dm/_memory.py"))
         assert 20605 in sizes

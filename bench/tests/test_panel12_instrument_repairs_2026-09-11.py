@@ -62,14 +62,47 @@ def _load(rel, name):
     return m
 
 
+def _scratch_checkout(base: pathlib.Path) -> pathlib.Path:
+    """A real git checkout with 1 tracked file, built fresh.
+
+    HERMETICITY REPAIR, 2026-09-17. The first version asked ROOT whether
+    `bench/repo_paths.py` is tracked, which assumes THIS TREE is a git
+    checkout. In a review sandbox -- a copy with `.git` dropped, the exact
+    environment where `tracked()` once fabricated an 11-of-11 failure rate --
+    both git-dependent tests here FAILED for the environment, not for the
+    code, and one of the two failures was the repaired refusal
+    (`NotAGitCheckout`) firing correctly. Evidence that reports the fix as
+    broken precisely where the original defect bit is the defect's shape
+    surviving in the test. So the checkout is now BUILT, not assumed: the
+    tests exercise the same 3 exit codes and both `tracked()` answers in
+    every tree, git-managed or not, and lose nothing in a real clone.
+    `git add` suffices -- `ls-files` reads the index, so no commit and no
+    author identity are needed.
+    """
+    import os
+    repo = base / "scratch_checkout"
+    repo.mkdir()
+    env = {"PATH": os.environ["PATH"], "HOME": str(base),
+           "GIT_CONFIG_GLOBAL": str(base / "gitconfig"),
+           "GIT_CONFIG_SYSTEM": os.devnull}
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=env)
+    (repo / "tracked.py").write_text("# tracked\n", encoding="utf-8")
+    (repo / "untracked.py").write_text("# not added\n", encoding="utf-8")
+    subprocess.run(["git", "add", "tracked.py"], cwd=repo, check=True, env=env)
+    return repo
+
+
 class TestGitExitCodesAreTheAnswer:
-    def test_the_three_codes_are_what_this_assumes(self):
-        """The premise, checked rather than believed."""
-        d = tempfile.mkdtemp()
+    def test_the_three_codes_are_what_this_assumes(self, tmp_path):
+        """The premise, checked rather than believed -- in a checkout this
+        test BUILDS, so the answer is about git, not about where it runs."""
+        repo = _scratch_checkout(tmp_path)
+        norepo = tmp_path / "norepo"
+        norepo.mkdir()
         codes = {}
-        for label, cwd, path in (("no repo", d, "x.py"),
-                                 ("untracked", ROOT, "no_such_file_xyz.py"),
-                                 ("tracked", ROOT, "bench/repo_paths.py")):
+        for label, cwd, path in (("no repo", norepo, "x.py"),
+                                 ("untracked", repo, "untracked.py"),
+                                 ("tracked", repo, "tracked.py")):
             r = subprocess.run(["git", "ls-files", "--error-unmatch", path],
                                cwd=cwd, capture_output=True, text=True)
             codes[label] = r.returncode
@@ -85,10 +118,15 @@ class TestGitExitCodesAreTheAnswer:
         finally:
             m.REPO = real
 
-    def test_it_still_answers_inside_a_checkout(self):
+    def test_it_still_answers_inside_a_checkout(self, tmp_path):
         m = _load("scripts/overstated_entries_2026-09-11.py", "oe12b")
-        assert m.tracked("bench/repo_paths.py") is True
-        assert m.tracked("a_file_that_is_not_tracked_xyz.py") is False
+        real = m.REPO
+        try:
+            m.REPO = _scratch_checkout(tmp_path)
+            assert m.tracked("tracked.py") is True
+            assert m.tracked("untracked.py") is False
+        finally:
+            m.REPO = real
 
 
 class TestTheChecksReadTheBlock:

@@ -27,6 +27,27 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "task_list_entry_count_2026-09-10.py"
 LIST = ROOT / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 
+#: PRECONDITION, added 2026-09-17 (Q9 panel). Every figure in this file is a
+#: walk of the LIST's git history. In a tree with no `.git` -- a panel sandbox,
+#: a ZIP, a Zenodo archive -- the script runs, finds "0 of them" revisions, and
+#: 7 tests here reported FAILED with messages blaming the script, while
+#: `test_no_counter_reads_29_at_any_revision` passed VACUOUSLY, because 0
+#: revisions also prints "NONE". A fabricated failure and a control that cannot
+#: fail, from one missing precondition. Task V2 records exactly this class.
+#: The desktop-mirror suite already skips with a reason on the same
+#: precondition; this follows it. In a real checkout nothing is skipped.
+_HIST = subprocess.run(
+    ["git", "log", "--format=%h", "--",
+     "experimental_notes/CDSFL_MASTER_TASK_LIST.md"],
+    cwd=ROOT, capture_output=True, text=True)
+HAVE_HISTORY = _HIST.returncode == 0 and bool(_HIST.stdout.strip())
+requires_history = pytest.mark.skipif(
+    not HAVE_HISTORY,
+    reason="this tree has no git history for the task list (no .git here), so "
+           "the revision-walk figures cannot be produced OR refuted -- run in "
+           "a real checkout. Without this skip, 7 tests fail blaming the "
+           "script and 1 passes vacuously.")
+
 
 def _load():
     """Import the script as a module so its functions can be driven directly."""
@@ -53,6 +74,7 @@ def run_output():
     return r.stdout
 
 
+@requires_history
 class TestTheScriptRuns:
     def test_it_exits_zero_and_produces_the_figure_m1_quotes(self, run_output):
         assert "15 of 48 = 31.2500%" in run_output, (
@@ -71,6 +93,7 @@ class TestTheScriptRuns:
             "M1 quotes Clopper-Pearson [18.7%, 46.3%]")
 
 
+@requires_history
 class TestTwentyNineIsUnreproducible:
     """The claim the second correction rests on."""
 
@@ -121,6 +144,7 @@ class TestTheCountersAreDistinguishable:
             len(shipped.parse_entries(LIST))
 
 
+@requires_history
 class TestTheNumeratorIsEstablishedNotAssumed:
     def test_fifteen_is_found_under_both_patterns(self, mod):
         text = subprocess.run(
@@ -141,6 +165,7 @@ class TestTheNumeratorIsEstablishedNotAssumed:
             "prose/marker distinction the script documents is wrong")
 
 
+@requires_history
 class TestMutationsAreCaught:
     """Each mutation is asserted APPLIED, and asserted to land on an executed line.
 

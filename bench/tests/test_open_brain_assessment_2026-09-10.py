@@ -83,6 +83,22 @@ class TestTheHarnessDoesNotFabricateFailures:
         assert "nonzero_but_ran" in src, (
             "a non-zero exit is treated as a failure, which mislabels `verify` "
             "-- the command that exits 1 precisely because it found something")
+        # EXECUTED, NOT ONLY GREPPED -- repaired 2026-09-17. With the original
+        # defect reinstated (`failed = ... or r.returncode != 0`) while the
+        # string "nonzero_but_ran" stayed in the source, every test in this
+        # file remained green: the property the docstring says was "caught
+        # before it became the answer" was guarded by a source grep that a
+        # behavioural regression walks straight past. `verify` is read-only
+        # and exits non-zero BECAUSE it found unhashed rows, so it is the
+        # exact command the distinction exists for.
+        r = mod.run(["verify"])
+        assert r["exit"] != 0, (
+            "verify now exits 0; the store may be fully hashed and this "
+            "probe needs a different non-zero-but-working subcommand")
+        assert not r["failed"], (
+            "a non-zero exit was counted as a failure again: `verify` -- the "
+            "most informative command in the set -- is being mislabelled")
+        assert r["nonzero_but_ran"], r
 
 
 class TestTheMeasuredAnswers:

@@ -30,7 +30,12 @@ a clone at all, which is exactly how it survived being false for a day.
 
 So: a suite-shaped or clone-shaped figure in the newest block must name a script.
 That is mechanically decidable, it would have caught this, and it still says
-nothing about whether the prose is any good.
+nothing about whether the prose is any good. WIDENED 2026-09-17 (panel round
+17, task A23): a complete pytest command also counts as a producer, because the
+full suite has no `scripts/*.py` producer and the rule was unsatisfiable by
+honest prose about it; see `_NAMES_A_PYTEST_RUN` below. The check is still
+syntactic: it asks that a producer be NAMED, not that the named one produced
+the figure.
 """
 from __future__ import annotations
 
@@ -64,6 +69,30 @@ class TestTheNewestBlockIsCurrent:
         _when, body = _newest_block()
         shas = re.findall(r"`([0-9a-f]{7,40})`", body)
         assert shas, "the newest SESSION STATE names no commit at all"
+        # THE PROBE MUST BE ABLE TO ANSWER, OR SAY SO. Added 2026-09-17 by panel
+        # review of task A23. `git merge-base --is-ancestor` exits 0 ancestor,
+        # 1 not-an-ancestor and 128 when it cannot answer at all -- and "not a
+        # git repository" is 128. Reading `returncode == 0` alone collapses 1
+        # and 128 into "not reachable", so OUTSIDE A CHECKOUT this test
+        # FABRICATED the failure "the block describes a tree that is not this
+        # one". That is exactly the defect panel round 12 found in
+        # `overstated_entries_2026-09-11.py`, which fabricated a 100% failure
+        # rate from exit 128 -- and it was live here, in any `.git`-less copy
+        # (a `git archive` export, a ZIP) and in every panel sandbox, because
+        # `panel_sandbox.build()` deletes `.git`. A `git clone` keeps `.git`
+        # and was never affected.
+        #
+        # The sibling test below ALREADY skips for this reason (":88"). One
+        # test in a class skipping where its twin fabricates is the whole bug.
+        #
+        # SCOPED DELIBERATELY so this is not a hole: the skip is keyed on git
+        # having no repository AT ALL, not on the 128 exit. A block naming a
+        # sha that does not exist inside a real checkout still exits 128 and
+        # still FAILS, which is the case worth catching.
+        if subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT,
+                          capture_output=True).returncode != 0:
+            pytest.skip("not a git checkout, so reachability is undefined here "
+                        "rather than false; run this in a checkout")
         reachable = []
         for sha in shas[:4]:
             r = subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"],
@@ -133,6 +162,41 @@ _SUITE_FIGURE = re.compile(r"\b\d{1,3}(?:,\d{3})*\s+(?:passed|failed)\b")
 #: Anything that looks like it names a committed producer.
 _NAMES_A_SCRIPT = re.compile(r"scripts/[\w./-]+\.py")
 
+#: A COMPLETE, re-runnable pytest invocation -- interpreter, `-m pytest`, and at
+#: least one further argument. Added 2026-09-17 by panel review of task A23.
+#:
+#: WHY, and it is a measurement rather than a preference. The rule below is
+#: right: a suite figure a reader cannot re-run can go false without anything
+#: noticing. Its PATTERN was wrong, because it accepted only `scripts/<name>.py`
+#: and THE FULL SUITE HAS NO SUCH PRODUCER -- what produces "7,493 passed" is a
+#: pytest invocation. The guard was therefore UNSATISFIABLE by honest prose
+#: about the suite, and the only ways to green were to cite a script that did
+#: not produce the number, or to stop reporting the suite. Both are worse than
+#: the defect this rule exists to catch, and the first is a fabricated citation.
+#:
+#: It was not hypothetical. This guard was RED at HEAD on 2026-09-17: the newest
+#: SESSION STATE block reported the suite green at `a2999f1` and named no
+#: producer at all, so task A23's own DONE marker stood on a failing test.
+#: `scripts/suite_figure_producers_2026-09-17.py` counts the forms actually used
+#: across the whole file -- 4 of 20 suite-figure paragraphs are backed by a
+#: pytest command against 3 by a `scripts/*.py` -- so the command form is the
+#: one the record already uses, including in the blocks of 2026-09-08 and
+#: 2026-09-06 that the shipped pattern would call offenders.
+#:
+#: THIS IS A WIDENING AND NOT A LOOSENING, and the boundary is kept sharp: a
+#: bare mention of the word "pytest" does NOT match, and neither does running
+#: prose -- the token after `pytest` must LOOK like a target or a flag (a path,
+#: a `.py`, or a `-`). The first attempt used `\S+` and the negative control
+#: below caught it inside the hour: "We ran python3 -m pytest and it passed"
+#: satisfied it. The controls that pin the boundary live in
+#: bench/tests/test_suite_figure_producer_forms_2026-09-17.py.
+_NAMES_A_PYTEST_RUN = re.compile(r"python3?\s+-m\s+pytest\s+(?:-\S+|\S*/\S*|\S+\.py)")
+
+#: Either accepted form. The rule is "the figure travels with something a reader
+#: can re-run", never "the figure travels with a file under scripts/".
+_NAMES_A_PRODUCER = re.compile(
+    _NAMES_A_SCRIPT.pattern + "|" + _NAMES_A_PYTEST_RUN.pattern)
+
 
 def _newest_block_text() -> str:
     """The newest SESSION STATE block's body, up to the next one."""
@@ -168,12 +232,13 @@ class TestASuiteFigureNamesItsProducer:
         for para in re.split(r"\n\s*\n", block):
             if not _SUITE_FIGURE.search(para):
                 continue
-            if not _NAMES_A_SCRIPT.search(para):
+            if not _NAMES_A_PRODUCER.search(para):
                 offenders.append(_SUITE_FIGURE.search(para).group(0)
                                  + " -- " + para.strip()[:110])
         assert not offenders, (
             "a suite figure in the newest SESSION STATE block names no "
-            "producing script, so a reader cannot re-run it and it can go "
+            "producer (a scripts/*.py or a complete pytest command), so a "
+            "reader cannot re-run it and it can go "
             "false without anything noticing -- which is what happened to "
             "\"6658 passed ... EXIT 0\" on 2026-09-11:\n  "
             + "\n  ".join(offenders))

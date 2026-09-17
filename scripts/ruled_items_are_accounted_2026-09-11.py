@@ -97,7 +97,16 @@ def account(num: int, block: str, rest: str) -> str:
     # there; the pattern was not looking at the text a human sees. Same class as
     # every other formatting-versus-token miss in this project, in a new place.
     emph = r"[*_`\s]*"
-    pat = re.compile(rf"\({num}\)|\bitem{emph}{num}\b|\bruling{emph}{num}\b")
+    # A COUNT PHRASE IS NOT A REFERENCE. Found 2026-09-17: P3's sentence
+    # "under the ruling 28 of 28 = 100.0000%" matched `ruling 28`, so item 28
+    # was reported CARRIED by a proportion about seat replies, and deleting
+    # A12's declaration of it would have gone unnoticed -- a guard that cannot
+    # fire, the A25 false-hit class inside the A12 instrument. `ruling N of M`
+    # (M a number) is a count; `ruling N of the tracker` is still a reference,
+    # which is why the lookahead requires a NUMBER after `of`.
+    not_count = rf"(?!{emph}of{emph}\d)"
+    pat = re.compile(
+        rf"\({num}\)|\bitem{emph}{num}\b{not_count}|\bruling{emph}{num}\b{not_count}")
     if pat.search(rest):
         return "CARRIED"
     if pat.search(block):

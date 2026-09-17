@@ -6,7 +6,9 @@ THE ENTRY SAID 25 ACROSS 9 RUNS, WITH `exp53_control_zero_live` ACCOUNTING FOR
   No predicate returns 25. The closest -- severity >= CRITICAL_SEVERITY_THRESHOLD
   (0.7, READ from the runner, not typed) AND `hil_escalated` AND no
   `falsifier_code` -- returns 22, and reproduces the entry's OTHER family figure
-  exactly (`exp55_v3_control` = 8), so it is almost certainly what was meant.
+  exactly (`exp55_v3_control` = 8). The identification is UNDERDETERMINED --
+  {20, 22, 32} all pass that anchor -- so 22 is quoted with its family; see
+  the producer's docstring, which withdrew the stronger sentence.
 
   exp53 CONTRIBUTES 0 AND CANNOT CONTRIBUTE ANY. Its 2 runs hold no
   `*_report.json` at all: findings live in `checkpoint.json` under

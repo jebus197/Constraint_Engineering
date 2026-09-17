@@ -32,6 +32,25 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
+
+#: PRECONDITION, added 2026-09-17 (Q9 panel). The 2 classes below clone THIS
+#: tree with `git clone file://REPO`. In a tree with no `.git` -- a panel
+#: sandbox, a ZIP, a Zenodo archive -- the clone exits 128 and 4 tests
+#: reported FAILED blaming the script, whereupon the DONE-evidence banner
+#: indicted task A2. Third instance of the class task V2 records; the
+#: desktop-mirror suite's reasoned skip is the precedent. In a real checkout
+#: nothing is skipped. `TestItSaysWhetherTheTreeIsClean` is deliberately NOT
+#: marked: it builds its own scratch repositories under `tmp_path`, and in a
+#: `.git`-less copy its 3 tests pass on real evidence (measured at intake,
+#: 2026-09-17: marking it skipped 3 tests that had passed there).
+_IS_REPO = subprocess.run(
+    ["git", "rev-parse", "--is-inside-work-tree"],
+    cwd=REPO, capture_output=True, text=True).returncode == 0
+requires_repo = pytest.mark.skipif(
+    not _IS_REPO,
+    reason="this tree is not a git repository, so it cannot be cloned and the "
+           "clone-and-run path cannot be exercised OR refuted here -- run in "
+           "a real checkout")
 SCRIPT = REPO / "scripts" / "fresh_clone_suite_2026-09-11.py"
 
 #: 0.58 s in this tree, and it touches only the task list and the marker parser.
@@ -50,6 +69,7 @@ def mod():
     return m
 
 
+@requires_repo
 class TestItActuallyClonesAndRuns:
     def test_a_green_target_reports_green_from_the_clone(self, mod):
         """THE END-TO-END PATH. If this passes, the instrument works; if it is
@@ -154,6 +174,7 @@ class TestTheHelperIsNotUsedWhereArgparseAlreadyWorks:
             assert flag in r.stdout, f"--help does not mention {flag}"
 
 
+@requires_repo
 class TestTheTranscriptSurvives:
     """A clone run that reports only WHICH test failed discards the evidence.
 

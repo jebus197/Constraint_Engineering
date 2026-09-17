@@ -82,6 +82,13 @@ class TestTheClassifierIsConservative:
         "open('x', 'w')\n",
         "with open('x', 'a') as f:\n    pass\n",
         "import os\nos.system('rm -rf x')\n",
+        # Panel round 17 (2026-09-17): file-creating calls the denylist
+        # missed. Each of these came back MEASUREMENT before the round's fix,
+        # while the module claimed an unrecognised call is an ACTION.
+        "import sqlite3\nsqlite3.connect('x.db')\n",
+        "import tempfile\ntempfile.NamedTemporaryFile(delete=False)\n",
+        "import logging\nlogging.FileHandler('x.log')\n",
+        "import zipfile\nzipfile.ZipFile('x.zip', 'w')\n",
     ])
     def test_every_writing_shape_is_an_action(self, m, tmp_path, body):
         f = tmp_path / "w.py"
@@ -116,6 +123,17 @@ class TestTheSurveyWritesNothing:
         def _status():
             r = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
                                capture_output=True, text=True)
+            if r.returncode == 128 and "not a git repository" in r.stderr:
+                # Added 2026-09-17 (Q9 panel). In a tree with no `.git` -- a
+                # panel sandbox, a ZIP, a Zenodo archive -- this reported
+                # FAILED, blaming the survey, when the missing thing is the
+                # repository. The desktop-mirror suite already skips with a
+                # reason on this precondition; a skip is loud where a pass on
+                # empty-vs-empty would be silent, and fabricates nothing.
+                pytest.skip(
+                    "no .git here, so `git status` cannot answer and this "
+                    "check would compare empty output with empty output -- "
+                    "run in a real checkout")
             assert r.returncode == 0, (
                 f"git cannot report the tree's state here (exit "
                 f"{r.returncode}); this check would compare empty output with "

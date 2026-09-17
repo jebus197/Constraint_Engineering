@@ -22,8 +22,12 @@ survey does not run it.
 CONSERVATIVE BY CONSTRUCTION, because the failure mode is asymmetric. A
 measurement wrongly classed as an action costs a missing row in a survey. An
 action wrongly classed as a measurement overwrites a preserved archive. So
-anything this cannot resolve is an ACTION: an unrecognised call, a dynamic
-attribute, a `subprocess` invocation, an `os.system`. The classification is
+anything this cannot RESOLVE is an ACTION -- a dynamic attribute, a computed
+open() mode, an unparseable file, a `subprocess` invocation, an `os.system`.
+The call scan itself is a DENYLIST of known writing and spawning shapes, one
+import level deep, so a file-creating call not on the list passes silently;
+the list below is extended whenever a probe finds such a shape (panel round
+17 added the sqlite3/tempfile/logging/zipfile constructors). The classification is
 reported with the REASON, so a wrong call can be argued with rather than guessed
 at.
 
@@ -52,6 +56,15 @@ _WRITING_ATTRS = {
 _WRITING_FUNCS = {
     "rmtree", "copy", "copy2", "copyfile", "copytree", "move", "remove",
     "makedirs", "mkdir", "rename", "unlink", "system", "dump",
+    # File-creating calls the denylist missed (panel round 17, 2026-09-17):
+    # `sqlite3.connect("x.db")` CREATES the database file if absent, and the
+    # tempfile/logging/zip constructors below all create files on call. Each
+    # was probed against `classify` and came back MEASUREMENT before this
+    # line. The cost of listing them is the cheap direction: a lost survey
+    # row, never an overwritten archive.
+    "connect", "NamedTemporaryFile", "TemporaryFile", "mkstemp", "mkdtemp",
+    "fdopen", "FileHandler", "basicConfig", "ZipFile", "savefig", "to_csv",
+    "extractall",
 }
 #: Spawning a process means this file cannot see what happens next.
 _SPAWNING = {"run", "Popen", "call", "check_call", "check_output", "system",

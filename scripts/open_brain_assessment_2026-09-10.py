@@ -100,6 +100,13 @@ def callers() -> dict:
             if not base.is_dir():
                 continue
             for p in base.rglob(pat):
+                # A NESTED GIT WORKTREE IS NOT A CALLER, 2026-09-17. The agent
+                # worktrees this session used live at `.claude/worktrees/`, inside
+                # the repository, so each one contributed its own copy of every
+                # caller and this survey reported 16 production paths where there
+                # is 1. A copy of the tree is the same code counted again.
+                if ".claude/worktrees/" in p.as_posix():
+                    continue
                 try:
                     t = p.read_text(encoding="utf-8", errors="replace")
                 except OSError:
