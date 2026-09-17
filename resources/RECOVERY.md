@@ -25,6 +25,28 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-09-17 21:02 BST (READ THIS FIRST)
+
+HEAD `def8eae` plus this save, main, 15 ahead of `origin/main` — NOT PUSHED. The push is item 14 of the action list and is the founder's to run, or `sv`.
+
+**★★★ THE FULL SUITE IS GREEN UNDER `--netguard-strict` AT `def8eae`: 7,936 passed, 5 skipped, 1 xfailed, 0 failed, 2526.06 s, pytest exit code 0**, captured directly. The run before it, at `733452b`, was 2 failed and 7,933 passed: a July note became "live" to the figure scanner because task L2's correction cites it by name, and `core.hooksPath` had been rewritten to an absolute path by the worktree tooling. Neither came from the merged work.
+
+**★★★ THE 15-ITEM ACTION LIST OF 2026-09-17 IS AT `experimental_notes/Action_List_2026-09-17.md`. ITEMS 1 TO 10 ARE DONE; 11 TO 15 ARE THE FOUNDER'S.** Each ticked item carries its evidence in the list itself.
+
+**★★★ EVERY MODEL SEAT NOW STARTS WITHOUT THE DISPATCHER'S SECRETS.** A seat inherited 8 API keys plus `GITHUB_TOKEN` and `ZENODO_TOKEN`, and a free Max-plan probe showed a seat's Bash tool reading a secret-named marker set in the parent: BEFORE `KEY_PRESENT`, AFTER `KEY_ABSENT`. `seat_environment()` in `bench/experiment_11_orchestrator.py` strips them at 7 launchers, and the round 17 panel ran under it: a live read of both seat processes found PATH and HOME present and 0 secret names. `.env` holds no `ANTHROPIC_API_KEY`, so no earlier seat was billed through this route.
+
+**★★★ THE WOLFRAM STANDARD IS CODE NOW, AND AUTOMATED RUNS ARE DENIED THE KERNEL.** `bench/wolfram_standard.py` classifies per route, because the local kernel exits 0 on `1/0` while printing `Power::infy`. Seats carry CLI deny rules and a refusing `wolframscript` first on PATH; a live probe with a fake binary ran it before and was denied after. The falsifier sandbox, the test guard and the runner's 2 fix gates are covered. The panel SYSTEM prompt carries the standard. Onboarding retries, names contention and stale kernels, and warns 14 days before the 2026-10-08 licence expiry.
+
+**★★★ PANEL ROUND 17 RAN AND ITS INTAKE IS DONE: 12 PROPOSALS ADOPTED, 8 REFUSED, EACH BY EXECUTION.** cc2 found a real A23 failure: the suite-figure guard could not accept a pytest command as a producer, and its reachability probe read git's exit 128 as "not reachable", fabricating a failure in every panel sandbox. fable found the same class in 3 more evidence files. **A PROCESS FINDING IS RECORDED AND NOT FIXED:** the dispatcher reused fable's sandbox after its 1,800 s timeout, so 14 of the 19 files it left have no reply behind them, and its A23 verdict was measured against its own unreported edits.
+
+**★★★ ALL 31 QUESTION 7 ENTRIES CARRY A DATED CORRECTION RESTING ON EXECUTION.** 26 needed code or tests. The work was built in 4 isolated worktrees and merged 1 at a time, each merge re-run here before commit. Found on the way: 3 patterns in the panel brief validator could never match a lowercased brief; the Open Brain survey counted nested agent worktrees as production callers; A18's cited runner lines drifted 3 times in 1 day and now cite the producer that prints them.
+
+**★★★ I31'S WIRING RESTED ON A FALSE PREMISE.** The commit said `pi_mem` appears nowhere in the mathematical appendix; it appears as `π_mem`, defined in section 1.5 with the CUSUM statistics and the 2.0 threshold. SymPy reduces the code's formula minus the appendix's to 0. z3, confirmed by `Reduce` on the local Wolfram Engine, finds fewer than 3 same-direction updates cannot cross 2.0, and production makes 1 per run with no persisted state, so it cannot fire. Keep or revert is the founder's, item 12(b).
+
+**★★★ A8's MANIFEST CALLED 197 EXISTING DIRECTORIES "NEVER KEPT".** The classifier now returns 1 of 6 states, the manifest is pinned to `c9e7b08` and reproduces byte for byte, and 50 cited paths are genuinely absent, in no git ref's history.
+
+**Where to pick up.** Items 11 to 15 of the action list are the founder's: the 2 stash drops, 8 verdicts, Tailscale SSH, the push, and the Zenodo rotation last. Nothing on the list is waiting on assistant work. Experiment 56 stays deferred until the revised mathematical model is reviewed.
+
 ## SESSION STATE — 2026-09-17 15:21 BST (READ THIS FIRST)
 
 HEAD `a2999f1` before this save, main, 25 ahead of `origin/main`; this `sv` pushes them on the founder's `sv` command. Working tree clean.

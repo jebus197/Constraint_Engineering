@@ -44,7 +44,9 @@ The source of every item is 1 of: the founder's answers after the hash marks in 
 
     DONE 2026-09-17 19:31 BST. Round 17's records are mirrored and its full record written, and every seat proposal was re-executed before anything changed: 12 adopted, 8 refused with executed reasons, and the 2 entries the intake could not finish (A7's withdrawn identification, A18's drifting line citations) finished here. cc2's A23 failure is real: the suite-figure guard could not accept a pytest command as a producer, and its reachability probe fabricated a failure in any tree without `.git`. fable found the same no-repository class in 3 more evidence files. A process finding is recorded and not fixed: the dispatcher reused fable's sandbox after its 1,800 s timeout, so its reply describes work it did not report.
 
-10. [ ] **Close out.** Done when the full suite passes under `--netguard-strict` with the exit code captured, the recovery documents and tracker are current, everything is committed, and this list is reprinted as done or not done.
+10. [x] **Close out.** Done when the full suite passes under `--netguard-strict` with the exit code captured, the recovery documents and tracker are current, everything is committed, and this list is reprinted as done or not done.
+
+    DONE 2026-09-17 21:02 BST. The full suite is green under `--netguard-strict` at `def8eae`: 7,936 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0, 2526.06 s, captured directly. The run before it was 2 failed and 7,933 passed, and neither failure came from the merged work: a July note became live to the figure scanner because task L2's correction cites it by name, and `core.hooksPath` had been rewritten to an absolute path by the worktree tooling. Both are fixed and the note carries a dated provenance block. `resources/RECOVERY.md` gains a SESSION STATE block and the tracker a resume pointer, both naming the suite result and this list. 16 commits from `0812897` to this one, none pushed: the push is item 14.
 
 ## Placed last: the founder's own items
 

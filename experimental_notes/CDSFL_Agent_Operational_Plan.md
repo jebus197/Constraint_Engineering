@@ -65,6 +65,8 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-17 21:02 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `def8eae` plus the close-out save, main, 15 ahead of `origin/main`, NOT PUSHED. The full suite is green under `--netguard-strict` at `def8eae`: 7,936 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0, 2526.06 s. Items 1 to 10 of `experimental_notes/Action_List_2026-09-17.md` are DONE and each carries its evidence there; items 11 to 15 are the founder's (2 stash drops, 8 verdicts, Tailscale SSH, the push, the Zenodo rotation last). Panel round 17 ran on 2 free seats with 0 paid dispatches and its intake is complete. All 31 Question 7 entries carry dated corrections. Experiment 56 stays deferred until the revised mathematical model is reviewed.
+
 **★ RESUME POINTER (2026-09-17 15:21 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `a2999f1` before this `sv`, which pushes 25 commits on the founder's `sv` command. Working tree clean. The full suite is green under `--netguard-strict` at `a2999f1`: 7,493 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0.
 
 **★ READ `resources/RECOVERY.md`'s NEWEST SESSION STATE BLOCK FOR THE DETAIL.** In short: the founder's rulings of 2026-09-17 are executed and committed; the suite runs in about 23 minutes again; a 15.8% figure reported overnight as unreproducible was a mislabel, now corrected with dated strikes; and the note standard's version check now fails closed.
