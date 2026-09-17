@@ -80,6 +80,18 @@ The question owed is narrow: point the Codex seat at `openai/gpt-5.3-codex` and 
 
 7 timestamps written into the action list tonight were typed rather than read from the clock, including 1 that placed work in the following day. Each now carries the commit time of the work it describes, or the producing script's own recorded time. The rule this broke is the project's own: never type a timestamp, capture it.
 
+## The suite, and the defect it caught in the record
+
+Added 2026-09-18 00:10 BST. The full suite was run twice after the work above.
+
+The first run came back RED: 8,008 passed, 2 failed, exit code 1. Neither failure came from the night's work. Checking out `7700b9d`, the session's own starting point, reproduces both, so the red predated the session that found it by 6 commits.
+
+The cause is the guard working on the record that describes it. The round-17 intake adopted a repair at `733452b` requiring any paragraph that quotes a suite figure to name a producer a reader can re-run: a `scripts/*.py` or a complete pytest command. The close-out at `dd6892b` then wrote "7,936 passed ... at `def8eae`" into the newest SESSION STATE block of `resources/RECOVERY.md` with no producer beside it. The figure was true when it was captured; what was missing was the means to re-run it, which is exactly what the rule exists to require. The sentence recording a green suite is what turned the suite red.
+
+The paragraph now carries the command that produced its figure. Removing that command puts both tests back to red, run and reverted. A23 is the entry whose evidence those tests are, so the DONE-evidence banner fired correctly against it, and the entry now records that its evidence was failing for 6 commits while the banner said so. The DONE claim itself stands.
+
+The second run is the one quoted: **8,011 passed, 5 skipped, 1 xfailed, 0 failed, 1,399.53 s, pytest exit code 0, at `7345a2c` against a clean tree**, under `python3 -m pytest bench/tests/ -q --netguard-strict`, with the network guard strict and 49 outbound attempts denied across 21 tests, every one of them declared. A run started before that was stopped rather than quoted, because its tree was edited underneath it while it ran and its number would not have travelled with any commit. The 3-test difference from the red run is accounted for: 2 are the repaired failures and 1 is a new parametrised case, the note linter's own case for this document, confirmed by collection and cross-checked with NumPy and mpmath.
+
 ## What is still owed by the founder
 
 The verdicts on the drift detector and on the proposed V9 entry, both explained in chat; the ruling on the 3 paid dispatchers that read a brief and pay for seats without validating it, which stay registered and unused meanwhile; the narrow Codex seat question above; dropping the 2 stashes, which is a git reference deletion and reserved to him; the push, now 25 commits; task 10.2 on Tailscale's own SSH service; and the Zenodo token rotation, last, as ruled.
