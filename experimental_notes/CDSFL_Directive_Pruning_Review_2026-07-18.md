@@ -1619,3 +1619,5 @@ This report is the input to that experiment, not a decision.
 
 Prepared 2026-07-18 (22:33 BST) as a recommendation-only pruning review. All
 section sizes measured by script from the target file; no size is estimated.
+
+**FIGURE PROVENANCE, added 2026-09-17T20:16:49+01:00 in panel round 16's intake.** **This note states no measurement of its own.** Its character, word, line and section counts were measured by script from `bench/directives/universal/cdsfl_operational.md` as it stood on 2026-07-18, and that script was not committed, so those counts are a record of what was read that day and are not reproducible now. The only token the figure scanner matches, `p=0.7` on line 458, is not a result: it is an example of the directive's own parameter syntax, quoted beside `eta=0.8`, `d=0.6` and `S_k=0.9`. The note entered the scanner's live set on 2026-09-17, when task L2's correction cited it by name.
