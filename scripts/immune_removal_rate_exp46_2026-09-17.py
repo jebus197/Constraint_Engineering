@@ -8,16 +8,30 @@ that made the project's single most consequential measurement a claim about
 evidence rather than evidence -- and it is the note a reader is most likely to
 reach, being linked from canonical documents.
 
-WHAT IT CHECKS, AND AGAINST WHOM. The record declares 6 figures, and 2 further
-sources disagree with it on 3 more. Every one is asserted here as a target, so
-this script can FAIL rather than merely report:
+WHAT IT CHECKS, AND AGAINST WHOM. The record's measurement blocks state 15
+figures, and 2 further sources state 3 more, each about a DIFFERENT SET of the
+same pairs. Every one is checked against a recomputation, and the script EXITS 1
+if any fails, so it can fail rather than merely report:
 
   the record  : raw cosine min 0.150, median 0.484, max 0.867
-  the record  : (cos+1)/2 with no class match -- min 0.460, median 0.593, 97.4% flagged
-  the record  : (cos+1)/2 with a class match  -- min 0.520, median 0.653, 100.0% flagged
-  _similarity : the class-match floor was 0.541      <- DISAGREES with the record's 0.520
-  _similarity : clamping moved 97.4% to 15.8%
-  memory      : clamping moved 98.0% to 21.4%        <- DISAGREES with _similarity
+  the record  : (cos+1)/2, no bonus on any pair -- min 0.460, median 0.593, 97.4% flagged
+  the record  : (cos+1)/2, bonus on every pair  -- min 0.520, median 0.653, 100.0% flagged
+  the record  : clamped, no bonus on any pair   -- min 0.120, median 0.387, 18.5% flagged
+  the record  : clamped, bonus on every pair    -- min 0.180, median 0.447, 35.3% flagged
+  _similarity : the class-match floor was 0.541      <- the 79 pairs that share a class
+  _similarity : clamping moved 97.4% to 15.8%        <- the 272 pairs that do NOT
+  3660816     : clamping moved 98.0% to 21.4%        <- all 351 pairs, bonus per pair
+
+WHERE THE 272 COMES FROM. Arithmetic over the class partition leaves only the
+272 -- 79 pairs admit neither figure, 351 admit 97.4% but not 15.8% -- but it
+cannot exclude every other subset, since 20 pair counts up to 351 admit both. So
+the identification rests on a label: measurement M10 of the 2026-08-18 panel
+record, experimental_notes/evidence/panel_records_2026-08-18/
+confer_stage1_audit_2026-08-18/PRIMARY_SOURCE_MEASUREMENTS.md.txt, reads "flagged
+97.4% (n=272)". The plain-English note of the same day qualified the 15.8% "for
+pairs without a class match" but, at its line 49, called the 97.4% a rate "of all
+pairs" -- both labels in 1 note -- and the comment in bench/dm/_similarity.py kept
+"Same 351 pairs" until 2026-09-17. M10's medians are checked as corroboration.
 
 EXECUTED, NOT RESTATED. The embeddings come from the live backend in
 `bench.dm._similarity` and the constants are read from that module, so a change
@@ -45,7 +59,14 @@ TAU_SIM = 0.50
 
 
 def findings() -> list[dict]:
-    """The 27 archived findings, deduplicated by id as the registry holds them."""
+    """The FIRST occurrence of each finding_id: 27 findings.
+
+    Models reuse ids across rounds, so the report holds more findings than ids;
+    main() prints both counts. Keeping the first occurrence reproduces every
+    figure in the record and in M10. Whether the pipeline's registry holds this
+    same 27 is NOT established here, and keeping a different occurrence of a
+    reused id gives a different set of findings.
+    """
     d = json.loads(RUN.read_text(encoding="utf-8"))
     uniq: dict[str, dict] = {}
     for r in d["rounds"]:
@@ -75,6 +96,12 @@ def main() -> int:
     fs = findings()
     n = len(fs)
     print(f"exp46 archived findings: {n}   pairs: {n * (n - 1) // 2}")
+    raw = [f for r in json.loads(RUN.read_text(encoding="utf-8"))["rounds"]
+           for f in r.get("findings", [])]
+    reused = sum(1 for fid in {f["finding_id"] for f in raw}
+                 if len({f["description"] for f in raw if f["finding_id"] == fid}) > 1)
+    print(f"  first occurrence per finding_id: {len(raw)} findings under {n} ids, "
+          f"{reused} ids appear with more than 1 description")
     print(f"backend: {S.EMBEDDING_MODEL_NAME}   BETA={S.BETA}   "
           f"CLASS_BONUS={S.CLASS_BONUS}   tau_sim={TAU_SIM}")
 
@@ -103,12 +130,17 @@ def main() -> int:
                ("raw median", statistics.median(cos), 0.484),
                ("raw max", max(cos), 0.867)]
 
-    for label, cls, tmin, tmed, trate in [
-            ("no class match", False, 0.460, 0.593, 97.4),
-            ("class match", True, 0.520, 0.653, 100.0)]:
-        sc = [blend(c, cls, clamp=False) for c in cos]
+    # "no class match" in the record means the bonus WITHHELD ON ALL 351 PAIRS,
+    # not the 272 that genuinely lack a class match. Both give 97.4% retired, which
+    # is how the 2 sets came to share a name; the labels here say which is which.
+    for label, cls, clamp, tmin, tmed, trate in [
+            ("retired, no bonus", False, False, 0.460, 0.593, 97.4),
+            ("retired, bonus on all", True, False, 0.520, 0.653, 100.0),
+            ("clamped, no bonus", False, True, 0.120, 0.387, 18.5),
+            ("clamped, bonus on all", True, True, 0.180, 0.447, 35.3)]:
+        sc = [blend(c, cls, clamp=clamp) for c in cos]
         rate = 100 * sum(s >= TAU_SIM for s in sc) / len(sc)
-        print(f"\nRETIRED mapping (cos+1)/2, {label}")
+        print(f"\n{label.upper()}, all {len(cos)} pairs")
         print(f"  min {min(sc):.3f}   median {statistics.median(sc):.3f}   "
               f"flagged duplicate: {rate:.1f}%")
         checks += [(f"{label} min", min(sc), tmin),
@@ -129,12 +161,13 @@ def main() -> int:
     print(f"live (clamped)  -> {r_new:.1f}% flagged")
 
     print("\nAGAINST THE DECLARED FIGURES")
-    worst = 0.0
+    differs = []
     for name, got, want in checks:
         d = abs(got - want)
-        worst = max(worst, d if want < 5 else d / 100)
-        print(f"  {name:22} got {got:8.3f}   declared {want:8.3f}   "
-              f"{'MATCH' if d <= 0.0006 or (want >= 5 and d <= 0.06) else 'DIFFERS'}")
+        verdict = 'MATCH' if d <= 0.0006 or (want >= 5 and d <= 0.06) else 'DIFFERS'
+        if verdict == 'DIFFERS':
+            differs.append(name)
+        print(f"  {name:30} got {got:8.3f}   declared {want:8.3f}   {verdict}")
 
     # THE 3 "DISAGREEMENTS" ARE NOT DISAGREEMENTS. Each source quotes a
     # different SCENARIO without naming it, and every figure is correct for the
@@ -149,27 +182,72 @@ def main() -> int:
     print(f"    class-match floor {cls_floor_hyp:.3f}   "
           f"retired {100 * sum(s >= TAU_SIM for s in [blend(c, False, False) for c in cos]) / len(cos):.1f}%"
           f" -> clamped {hyp_clamped:.1f}%")
-    print(f"    the RECORD quotes 0.520 and 97.4% here, both reproduced")
+    print("    the RECORD quotes 0.520 and 97.4% here, both reproduced")
     print(f"  ACTUAL, each pair with its own flaw class ({ncls} of {len(cos)} match):")
     print(f"    class-match floor {cls_floor_actual:.3f}   "
           f"retired {r_old:.1f}% -> clamped {r_new:.1f}%")
-    print(f"    this is what _similarity.py quotes for the floor (0.541) and "
-          f"what the session memory quotes for the rates (98.0% -> 21.4%)")
-    print(f"  The 4-month logged rate of 97.1% sits between the 2 retired-mapping "
-          f"figures, as a live pipeline mixing both kinds of pair.")
+    print("    this is what _similarity.py quotes for the floor (0.541) and "
+          "what commit 3660816 states for the rates (98.0% -> 21.4%)")
+    hyp_retired = 100 * sum(blend(c, False, False) >= TAU_SIM for c in cos) / len(cos)
+    lo_r, hi_r = sorted((hyp_retired, r_old))
+    where = "between" if lo_r <= 97.1 <= hi_r else ("below" if 97.1 < lo_r else "above")
+    print(f"  The 4-month logged rate of 97.1% lies {where} the 2 retired-mapping "
+          f"figures ({lo_r:.1f}% and {hi_r:.1f}%).")
 
-    # ONE DECLARED FIGURE DOES NOT REPRODUCE, AND IT IS IN LIVE CODE.
-    # bench/dm/_similarity.py's own comment states the clamp moved the rate
-    # "97.4% -> 15.8%". The 97.4% reproduces exactly. The 15.8% matches neither
-    # scenario: the hypothetical gives 18.5% and the actual 21.4%. Stating it
-    # here rather than quietly dropping it, because a figure in a module comment
-    # is read as the module's own account of itself.
-    print(f"\n  UNREPRODUCED: bench/dm/_similarity.py's comment says clamping "
-          f"gave 15.8%.")
-    print(f"    measured, same 351 pairs: {hyp_clamped:.1f}% hypothetical, "
-          f"{r_new:.1f}% actual. 15.8% is neither.")
-    print(f"    Not a blocker -- no entry waits on it -- but the comment is the "
-          f"module's account of itself, so it is carried to the final report.")
+    # THE COMMENT'S 97.4% -> 15.8% REPRODUCES, ON THE SET IT MEASURED.
+    # Until 2026-09-17 this block called 15.8% unreproduced: rates were computed
+    # over all 351 pairs and over the 79 that share a class, never over the 272
+    # that do not. M10 of the 2026-08-18 panel record labelled the figures
+    # "(n=272)" all along, and the comment dropped the qualifier. Arithmetic over
+    # the class partition leaves only the 272 but cannot exclude other subsets --
+    # 20 pair counts up to 351 admit both figures -- so the set is taken from M10's
+    # label, and its medians are checked here as corroboration.
+    from fractions import Fraction
+    import sympy as sp
+
+    def counts_rounding_to(target: float, n: int) -> list[int]:
+        t = round(target * 10)
+        exact = [k for k in range(n + 1)
+                 if Fraction(t * 10 - 5, 10000) <= Fraction(k, n) < Fraction(t * 10 + 5, 10000)]
+        symbolic = [k for k in range(n + 1)
+                    if sp.Rational(t * 10 - 5, 10000) <= sp.Rational(k, n) < sp.Rational(t * 10 + 5, 10000)]
+        assert exact == symbolic, "fractions and sympy disagree about the rounding"
+        return exact
+
+    differ = [i for i, k in enumerate(same_class) if not k]
+    print("\nSETS -- each figure tied to the pairs it describes")
+    for name, idx in (("all351", list(range(len(cos)))), ("differ272", differ)):
+        kr = sum(act_old[i] >= TAU_SIM for i in idx)
+        kn = sum(act_new[i] >= TAU_SIM for i in idx)
+        print(f"  SET {name} n={len(idx)} retired {100 * kr / len(idx):.1f} ({kr} of {len(idx)}) "
+              f"clamped {100 * kn / len(idx):.1f} ({kn} of {len(idx)})")
+
+    both = [n for n in range(1, len(cos) + 1)
+            if counts_rounding_to(97.4, n) and counts_rounding_to(15.8, n)]
+    print(f"  pair counts up to {len(cos)} admitting both 97.4% and 15.8%: {len(both)}")
+    none351 = counts_rounding_to(15.8, len(cos))
+    print(f"  a count out of {len(cos)} that rounds to 15.8%: "
+          f"{none351 if none351 else 'none exists'}   (fractions and sympy agree)")
+
+    ret = [act_old[i] for i in differ]
+    new = [act_new[i] for i in differ]
+    m10 = {"retired rate": 97.4, "clamped rate": 15.8,
+           "retired median": 0.594, "clamped median": 0.388}
+    got = {"retired rate": round(100 * sum(s >= TAU_SIM for s in ret) / len(differ), 1),
+           "clamped rate": round(100 * sum(s >= TAU_SIM for s in new) / len(differ), 1),
+           "retired median": round(statistics.median(ret), 3),
+           "clamped median": round(statistics.median(new), 3)}
+    for k in m10:
+        print(f"  M10 {k:15} {m10[k]:>7}   recomputed {got[k]:>7}   "
+              f"{'MATCH' if got[k] == m10[k] else 'MISMATCH'}")
+    ok = all(got[k] == m10[k] for k in m10)
+    print(f"  M10's subset figures: {'REPRODUCED' if ok else 'NOT REPRODUCED'}")
+    # EXIT 1 ON ANY FAILED CHECK. Until 2026-09-17 this returned 0 whatever the
+    # comparisons said, while its docstring claimed it "can FAIL"; only a test's
+    # string match noticed a DIFFERS line.
+    if differs or not ok:
+        print(f"\n*** FAILED: {differs + ([] if ok else ['M10 subset'])} ***")
+        return 1
     return 0
 
 

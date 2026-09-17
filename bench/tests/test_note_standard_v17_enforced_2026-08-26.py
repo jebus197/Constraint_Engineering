@@ -39,6 +39,76 @@ FOOTLINE = re.compile(r"CDSFL note standard v(\d+)\.(\d+)")
 RULE_27 = "SPELLED NUMBER"
 RULE_28 = "CATEGORY NOUN"
 
+#: A LINE SHAPED LIKE A FOOT-LINE, however it is dressed (added 2026-09-17).
+#: `FOOTLINE` above matches "CDSFL note standard vX.Y" ANYWHERE and `search`
+#: returns the FIRST mention, so a note quoting an older version in its prose
+#: before its own v1.7 foot-line was classified by the quotation and silently
+#: exempted from this enforcement. `FOOTLINE` itself is kept because the
+#: lint-reach script keys its cached fast path on that pattern's text.
+#:
+#: TOLERANT ON PURPOSE. List markers, HTML tags and comments, heading marks,
+#: backticks, bold or italic, "the", other whitespace, letter case, and a short
+#: preamble ending in a full stop -- a date stamp such as "2026-08-16, 04:10 BST."
+#: or a list number "1." -- all still count. A reader stricter than the text it
+#: reads exempts every format it did not foresee, and 2 rounds of independent
+#: review found this fix doing exactly that: first for list, HTML, heading,
+#: backtick and non-breaking-space forms, then, once the prefix was possessive,
+#: for a foot-line inside an HTML comment and for the date-stamped shape 4
+#: existing notes already use. STILL NOT READ, although the first-mention rule
+#: read it: a label before the foot-line, "Footer: Written under ...". A real note
+#: in that shape would lose enforcement, and the direction-aware check in
+#: test_footline_is_read_from_the_footline_2026-09-17.py fails on exactly that.
+#:
+#: 3 PARTS, EACH BOUNDED, SO NO INPUT CAN STALL IT.
+#:   preamble   (?:[^.\n]{0,60}\.\s+)?  -- at most 60 characters.
+#:   prefix     possessive, and a tag may contain neither "written" nor "<" and is
+#:              at most 200 characters. Without the possessive, "<" matched both
+#:              branches and a line of 20 "<!-- -->" took 0.254 s, growing about
+#:              15 times per 4 more, so about 30 on 1 line would have tripped the
+#:              suite's 300 s timeout. Without the "written" exclusion, the
+#:              possessive tag branch swallowed a whole "<!-- Written under ... -->"
+#:              and never gave it back.
+#:   the words  (?a:written) folds case in ASCII only, as `git grep -i` does, so
+#:              the live selector and the revision reader agree on every letter.
+FOOTLINE_LINE = re.compile(
+    r"^(?:[^.\n]{0,60}\.\s+)?"
+    r"(?:<(?:(?!written)[^<>]){0,200}>|[\W_])*+"
+    r"(?a:written)\s+under\W+(?:the\s+)?CDSFL\s+note\s+standard\s+v(\d+)(?:\.(\d+))?",
+    re.IGNORECASE)
+
+
+def footline_version(line: str) -> tuple[int, int] | None:
+    """The version 1 line declares, if that line is shaped like a foot-line."""
+    m = FOOTLINE_LINE.match(line)
+    return (int(m.group(1)), int(m.group(2) or 0)) if m else None
+
+
+def declared_version(text: str) -> tuple[int, int] | None:
+    """The version a note is HELD to: the highest any foot-line-shaped line declares.
+
+    THE HIGHEST, NOT THE LAST, because the 2 ways to be wrong are not equally bad.
+    Under-enforcement is SILENT: a v1.7 note escapes Rules 27 and 28 and nothing
+    reports it. Over-enforcement is LOUD: an older note is linted, fails, and a
+    person looks. So the rule fails closed. The first version of this fix took
+    the LAST foot-line, and an independent review showed that a quoted older
+    foot-line placed after the real one then exempted the note.
+
+    Mentions in the middle of a sentence never count, so prose discussing the
+    standard -- "this will move to v1.7" -- cannot promote an older note.
+
+    ONE RULE, EVALUATED LINE BY LINE, so the revision reader in
+    scripts/lint_reach_over_notes_2026-09-10.py applies it to `git grep` output
+    and gets exactly the answer this gives on the whole file. Lines are split on
+    "\\n" only, which is git's line model; `splitlines` also breaks on U+2028 and
+    form feeds, which git does not.
+
+    MEASURED BEFORE ADOPTION: the same 61 notes as the first-mention rule, and the
+    same 29 of 379 at b593500, both printed by the lint-reach script, with its
+    per-line and whole-file answers identical at both revisions.
+    """
+    versions = [v for v in (footline_version(line) for line in text.split("\n")) if v]
+    return max(versions) if versions else None
+
 
 def _v17_notes():
     out = []
@@ -49,8 +119,8 @@ def _v17_notes():
     # would have been exempt from it silently. Same bounded-traversal shape as
     # the vault, arc and QC defects repaired the same night.
     for p in sorted(NOTES.rglob("*.md")):
-        m = FOOTLINE.search(p.read_text(encoding="utf-8", errors="replace"))
-        if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
+        v = declared_version(p.read_text(encoding="utf-8", errors="replace"))
+        if v and v >= (1, 7):
             out.append(p)
     return out
 

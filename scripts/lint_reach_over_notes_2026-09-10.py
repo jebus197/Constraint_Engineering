@@ -36,8 +36,13 @@ NOTES = REPO / "experimental_notes"
 GUARD = REPO / "bench" / "tests" / "test_note_standard_v17_enforced_2026-08-26.py"
 
 
+@functools.lru_cache(maxsize=None)
 def _selector():
-    """Import the LIVE selector from the enforcement test."""
+    """Import the LIVE selector from the enforcement test.
+
+    CACHED (2026-09-17). The readers below consult it on every call, and each
+    fresh import re-reads every note and adds to sys.path.
+    """
     sys.path.insert(0, str(REPO))
     spec = importlib.util.spec_from_file_location("v17_guard", GUARD)
     mod = importlib.util.module_from_spec(spec)
@@ -77,11 +82,18 @@ def populations() -> dict[str, list[pathlib.Path]]:
 
 
 def declaring(paths: list[pathlib.Path], footline: re.Pattern) -> list[pathlib.Path]:
-    """Notes whose foot-line declares v1.7 or later — the selector's own rule."""
+    """Notes whose foot-line declares v1.7 or later — the selector's own rule.
+
+    DECIDED BY THE GUARD'S RULE FOR EVERY NOTE (2026-09-17). `footline` is still
+    accepted so existing callers keep working, but it no longer chooses the rule:
+    when it did, a pattern written differently from the live one, though matching
+    the same strings, silently switched this function back to first-mention.
+    """
+    decide = _selector().declared_version
     out = []
     for p in paths:
-        m = footline.search(p.read_text(encoding="utf-8", errors="replace"))
-        if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
+        v = decide(p.read_text(encoding="utf-8", errors="replace"))
+        if v and v >= (1, 7):
             out.append(p)
     return out
 
@@ -114,19 +126,42 @@ def _revision_footlines(rev: str) -> tuple[tuple[str, int, int], ...]:
 @functools.lru_cache(maxsize=None)
 def _revision_declaring(rev: str) -> frozenset[str]:
     """The set of note paths at `rev` whose foot-line declares v1.7 or later."""
+    # EVERY LINE CONTAINING "written", case-insensitively (2026-09-17). The
+    # guard's rule tolerates formats a literal "CDSFL note standard v" search
+    # would not return -- a non-breaking space, other letter case -- and every
+    # line shaped like a foot-line contains the word, so this is a superset of
+    # the candidates the per-line rule has to see.
+    #
+    # BYTES, NUL-SEPARATED, AND INDEPENDENT OF THE USER'S GIT CONFIG. Parsing
+    # git's human output made the answer depend on settings: with
+    # grep.lineNumber=true every line gained a "3:" prefix, the rule -- anchored
+    # at the start of the line -- matched nothing, and the historical figure read
+    # 0 of 379 where HEAD's code read 29. `-z` puts a NUL after the path, so a
+    # colon in a file name cannot split it; `--no-line-number --no-column`
+    # override the config; `core.quotePath=false` stops git quoting non-ASCII
+    # names; `-a` reads a file holding a NUL byte, as the live selector does; and
+    # decoding with errors="replace" cannot crash on a Latin-1 line, which the
+    # text-mode reader did once the search was widened to "written".
     r = subprocess.run(
-        ["git", "grep", "-I", "-e", "CDSFL note standard v", rev, "--",
+        ["git", "-c", "core.quotePath=false", "grep", "-z", "-a", "--no-color",
+         "--no-line-number", "--no-column", "-i", "-e", "written", rev, "--",
          "experimental_notes/"],
-        cwd=REPO, capture_output=True, text=True, timeout=300)
+        cwd=REPO, capture_output=True, timeout=300)
     if r.returncode not in (0, 1):
-        raise SystemExit(f"git grep failed at {rev}: {r.stderr[-400:]}")
+        raise SystemExit(f"git grep failed at {rev}: "
+                         f"{r.stderr.decode('utf-8', 'replace')[-400:]}")
     hits: set[str] = set()
-    for line in r.stdout.splitlines():
-        # `<rev>:<path>:<matched line>`
-        parts = line.split(":", 2)
-        if len(parts) < 3:
+    held: dict[str, tuple[int, int]] = {}
+    per_line = _selector().footline_version
+    prefix = f"{rev}:"
+    for record in r.stdout.split(b"\n"):
+        # `<rev>:<path>` NUL `<matched line>`
+        name, sep, body = record.partition(b"\0")
+        if not sep:
             continue
-        path, text = parts[1], parts[2]
+        path = name.decode("utf-8", "replace")
+        if path.startswith(prefix):
+            path = path[len(prefix):]
         # `.md` ONLY, MATCHING THE LIVE SELECTOR. `_v17_notes()` globs
         # `NOTES.rglob("*.md")`; this half asked git grep for the foot-line
         # across `experimental_notes/` with NO extension filter, so any file
@@ -146,8 +181,22 @@ def _revision_declaring(rev: str) -> frozenset[str]:
         # only 1 of them was the imported one.
         if not path.endswith(".md"):
             continue
-        m = re.search(r"CDSFL note standard v(\d+)\.(\d+)", text)
-        if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
+        # A lone CR ends a line for the live selector, whose read_text translates
+        # newlines, so it must end a line here too.
+        body_text = body.decode("utf-8", "replace").replace("\r\n", "\n").replace("\r", "\n")
+        for text in body_text.split("\n"):
+            v = per_line(text)
+            if v and v > held.get(path, (0, 0)):
+                held[path] = v
+    # THE VERSION IS DECIDED BY THE GUARD'S OWN RULE (2026-09-17). This loop
+    # counted a note as v1.7 if ANY mention anywhere said so, while the live
+    # selector took the FIRST mention, so a note whose mentions fell on both
+    # sides of v1.7 was classified differently by the 2 halves from identical
+    # bytes. The guard's rule is the highest version on any foot-line-shaped
+    # line, evaluated line by line, so applying it to `git grep` lines gives
+    # exactly the answer `declared_version` gives on the whole file.
+    for path, v in held.items():
+        if v >= (1, 7):
             hits.add(path)
     return frozenset(hits)
 
@@ -168,9 +217,9 @@ def at_revision(rev: str, recursive: bool, footline: re.Pattern) -> tuple[int, i
     the working tree can neither confirm nor refute it. A script that cannot
     reach the revision a figure was taken at cannot back that figure.
 
-    `footline` is accepted and its PATTERN is honoured, so a caller substituting
-    the selector still steers this function -- the selector must remain the live
-    one rather than a copy.
+    `footline` is accepted, and a pattern other than the live one takes the slow
+    per-file path below. Since 2026-09-17 that path is decided by the same rule,
+    so a substitution costs time and can no longer change the answer.
     """
     md = list(_revision_notes(rev))
     if not recursive:
@@ -180,11 +229,13 @@ def at_revision(rev: str, recursive: bool, footline: re.Pattern) -> tuple[int, i
         # A substituted selector cannot use the cached fast path, because the
         # cache was built with the live pattern. Fall back to reading each file.
         k = 0
+        decide = _selector().declared_version
         for n in md:
-            t = subprocess.run(["git", "show", f"{rev}:{n}"], cwd=REPO,
-                               capture_output=True, text=True, timeout=60).stdout
-            m = footline.search(t)
-            if m and (int(m.group(1)), int(m.group(2))) >= (1, 7):
+            raw = subprocess.run(["git", "show", f"{rev}:{n}"], cwd=REPO,
+                                 capture_output=True, timeout=60).stdout
+            t = raw.decode("utf-8", "replace").replace("\r\n", "\n").replace("\r", "\n")
+            v = decide(t)
+            if v and v >= (1, 7):
                 k += 1
         return k, len(md)
     return sum(1 for n in md if n in declaring), len(md)

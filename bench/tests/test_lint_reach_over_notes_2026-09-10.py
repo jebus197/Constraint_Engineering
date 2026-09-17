@@ -216,12 +216,14 @@ class TestMutationsAreCaught:
             m.unlink(missing_ok=True)
 
     def test_mutation_footline_pattern_broken(self):
-        # ANCHOR MOVED with the same rewrite: the per-file search is now the
-        # FALLBACK path taken only by a substituted selector, and the fast path
-        # matches the version inside `_revision_declaring`.
+        # ANCHOR MOVED AGAIN 2026-09-17. The version is now read by the guard's
+        # per-line rule, `footline_version`, called from `_revision_declaring`.
+        # The literal search this used to anchor on had become a redundant
+        # pre-filter -- disabling it changed no figure -- and was removed.
+        # Disabling the call that decides must take the historical count to 0.
         m = self._mutate(
-            '        m = re.search(r"CDSFL note standard v(\\d+)\\.(\\d+)", text)',
-            '        m = None')
+            '            v = per_line(text)',
+            '            v = None')
         try:
             out = self._run(m).stdout
             assert "0 of 379" in out, (
