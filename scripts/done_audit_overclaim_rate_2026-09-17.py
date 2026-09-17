@@ -65,8 +65,41 @@ def done_ids() -> set[str]:
             re.finditer(r"<!--\s*task:\s*([A-Za-z0-9._]+)\s*\|\s*state:\s*DONE", text)}
 
 
+def audited_ids() -> set[str]:
+    """Every DONE entry an audit actually reached.
+
+    THE DENOMINATOR WAS THE WRONG POPULATION (2026-09-17, found by the fable
+    seat in panel round 16 and confirmed here). `n` counted TODAY's DONE
+    markers while `k` came from the AUDITED population, so an entry that went
+    DONE after the audit was silently counted as audited-and-clean. Exactly 1
+    had: A11, closed earlier the same night. That is the defect class M1
+    documents -- a count measured against a population it does not belong to --
+    recurring inside the instrument built to measure that class.
+    """
+    r1 = {str(r["id"]).strip()
+          for r in json.loads((EVID / "audit_findings.json").read_text(encoding="utf-8"))}
+    return (r1 | _round2_ids()) & done_ids()
+
+
+def _round2_ids() -> set[str]:
+    rows: list[dict] = []
+
+    def walk(o) -> None:
+        if isinstance(o, dict):
+            if "id" in o and "verdict" in o:
+                rows.append(o)
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(json.loads(ROUND2.read_text(encoding="utf-8")))
+    return {str(r["id"]).strip() for r in rows}
+
+
 def overclaiming() -> tuple[set[str], set[str]]:
-    real = done_ids()
+    real = audited_ids()
     verdicts = json.loads((EVID / "verification_verdicts.json").read_text(encoding="utf-8"))
     r1 = {str(r["id"]).strip() for r in verdicts if r.get("upheld") is True}
     # THE INTERSECTION IS SYMMETRIC. It used to be applied to round 1 only, so a
@@ -85,6 +118,7 @@ def main() -> int:
     from statsmodels.stats.proportion import proportion_confint
 
     bad, real = overclaiming()
+    never = sorted(done_ids() - real)
     if args.ids:
         print(" ".join(sorted(bad)))
         return 0
@@ -99,6 +133,10 @@ def main() -> int:
     print(f"  Wilson 95% : [{100*lo:.4f}%, {100*hi:.4f}%]  (statsmodels)")
     print(f"  Wilson 95% : [{100*(c-h):.4f}%, {100*(c+h):.4f}%]  (scipy+numpy, agrees to 0.0e+00)")
     print(f"  ids: {' '.join(sorted(bad))}")
+    # DISCLOSED, NEVER SILENTLY DROPPED. A reader must be able to see that the
+    # denominator is the audited population and which entries are outside it.
+    print(f"  DONE but never audited (excluded from the denominator): "
+          f"{' '.join(never) if never else 'none'}")
     return 0
 
 

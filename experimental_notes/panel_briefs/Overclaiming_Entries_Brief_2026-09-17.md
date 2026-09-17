@@ -6,16 +6,16 @@
 
 The artefact under review is `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, together with the test files each entry names in its own `<!-- task: ... | evidence: ... -->` marker. The audit that produced this list is committed unfiltered at `experimental_notes/evidence/done_audit_2026-09-11/` — `audit_findings.json`, `verification_verdicts.json` and `round2_never_audited_13.json`.
 
-**What is and is not wrong.** No test fails. Every named evidence file exists and passes. The gap is between what the tests establish and what the entries CLAIM. Measured across all 84 DONE entries by a 52-agent adversarial audit, every flag handed to a second agent instructed to refute it: **31 of 85 = 36.4706%**, Wilson [27.0293%, 47.0819%].
+**What is and is not wrong.** No test fails. Every named evidence file exists and passes. The gap is between what the tests establish and what the entries CLAIM. Measured across all 84 DONE entries by a 52-agent adversarial audit, every flag handed to a second agent instructed to refute it: **31 of 84 = 36.9048%**, Wilson [27.3701%, 47.5848%].
 
-<!-- figure: overclaim count | scripts/done_audit_overclaim_rate_2026-09-17.py | 31 of 85 -->
-<!-- figure: overclaim rate | scripts/done_audit_overclaim_rate_2026-09-17.py | 36.4706% -->
-<!-- figure: overclaim wilson low | scripts/done_audit_overclaim_rate_2026-09-17.py | 27.0293% -->
-<!-- figure: overclaim wilson high | scripts/done_audit_overclaim_rate_2026-09-17.py | 47.0819% -->
+<!-- figure: overclaim count | scripts/done_audit_overclaim_rate_2026-09-17.py | 31 of 84 -->
+<!-- figure: overclaim rate | scripts/done_audit_overclaim_rate_2026-09-17.py | 36.9048% -->
+<!-- figure: overclaim wilson low | scripts/done_audit_overclaim_rate_2026-09-17.py | 27.3701% -->
+<!-- figure: overclaim wilson high | scripts/done_audit_overclaim_rate_2026-09-17.py | 47.5848% -->
 
 The 31 entries: 1.2, 2.2, 3.3, 5.2, 6.1, 6.6, 7.3, 8.1, 8.3, 9.1, 9.2, 9.3, 9.4, 10.1, A4, A6, A13, A20, A26, L2, P1, P3, P4, P5, P7, R2, R3, R5, V1, V4, V7.
 
-**CORRECTED 2026-09-17, AFTER DISPATCH.** The copy sent to the panel said 30 and 35.2941%. The cc2 seat refuted it: the census carried its round-2 half as a typed tuple of 6 and the adjudication marks 7, dropping `7.3`. Confirmed independently and fixed at source, so the census now derives. The dispatched copy in `bench/logs/panel_round16_2026-09-17/BRIEF.md` is left as it was sent, because a brief is a record of what the seats were actually asked.
+**CORRECTED TWICE, 2026-09-17, AFTER DISPATCH, AND BOTH SEATS WERE RIGHT.** The copy sent to the panel said 30 of 85 and 35.2941%. cc2 showed the NUMERATOR was short: the census carried its round-2 half as a typed tuple of 6 where the adjudication marks 7, dropping `7.3`. fable showed the DENOMINATOR was the wrong population: it counted today's 85 DONE markers while the numerator came from the audited set, silently counting never-audited `A11` as audited-and-clean. The 2 defects compose, and the defensible figure is 31 of 84. The census now derives both halves and discloses what it excludes. The cc2 seat refuted it: the census carried its round-2 half as a typed tuple of 6 and the adjudication marks 7, dropping `7.3`. Confirmed independently and fixed at source, so the census now derives. The dispatched copy in `bench/logs/panel_round16_2026-09-17/BRIEF.md` is left as it was sent, because a brief is a record of what the seats were actually asked.
 
 Each carries a closing plan from the verifier that upheld it. Those plans are the proposal under review. They are not to be taken on trust: the founder's standing instruction is that the panel produces and tests fixes rather than confirming them.
 

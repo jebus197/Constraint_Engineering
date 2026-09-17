@@ -41,7 +41,7 @@ Coverage is now complete: **84 of 84 DONE entries audited, 0 unaudited.**
 
 - Round 1: 24 upheld of 71 audited.
 - Round 2: 7 upheld of 13 audited — 3.3, 7.3, 9.2, 9.3, 9.4, L2, P7. Severity: 5 touch one sub-claim, 1 (9.4) is a whole-claim flag.
-- **Combined: 31 of 85 = 36.4706%**, Wilson [27.0293%, 47.0819%] (SUPERSEDES '30 of 84 = 35.7143%, Wilson [26.2994%, 46.3787%]', which was short by 1: the round-2 half was a typed tuple of 6 against an adjudication marking 7, omitting `7.3`, and the denominator moved 84 to 85 when A11 closed), computed 3 ways (statsmodels, scipy+numpy closed form, mpmath at 30 decimal places) agreeing to 0.
+- **Combined: 31 of 84 = 36.9048%**, Wilson [27.3701%, 47.5848%] (the denominator is the AUDITED population; A11 is DONE but was never audited and is excluded, disclosed by the producer) (SUPERSEDES '30 of 84 = 35.7143%, Wilson [26.2994%, 46.3787%]', which was short by 1: the round-2 half was a typed tuple of 6 against an adjudication marking 7, omitting `7.3`, and the denominator moved 84 to 85 when A11 closed), computed 3 ways (statsmodels, scipy+numpy closed form, mpmath at 30 decimal places) agreeing to 0.
 
 Raw returns: `round2_never_audited_13.json` (10 agents, unfiltered) and `round2_workflow_return.txt`.
 
