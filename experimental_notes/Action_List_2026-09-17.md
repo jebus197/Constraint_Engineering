@@ -57,18 +57,30 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **(a) R10, R11 and A19 stay held.** *"We will do exactly that after these issues are addressed."*
 - **(b) I31, the drift detector: not settled, and reframed.** *"Remind me what it's supposed to do, in plain English. And if what it's supposed to do is useful and it isn't doing it, we should probably enable it, once the work on the revised mathematical model is complete."* Explained in chat: memory holds, per flaw class, how often findings of that class proved real; the detector accumulates how far this run's confirmation rate drifts from that prediction and warns when the total gets large, which says memory's priors are stale. It cannot do that today because the total is reset every run and gets exactly 1 addition, while 3 in the same direction are needed to cross. Enabling it properly means persisting that total between runs, which changes how memory behaves, so it goes on the post-revision list.
 - **(c) Arm C: the assistant's summary was wrong and no verdict was possible.** The founder: *"There has never been a paid Codex seat in any simulated run. This is a clear conflation."* Correct. The config's own note blocks the arm because *"the strong form of the contrast is not present at HEAD: the Codex seat's `api` is `openrouter`, not `codex_exec`"*; the paid line beside it is a cost note. The real question is the panel confound the founder found himself: the Codex and ChatGPT seats are byte-identical `ModelConfig`s apart from the label, so the panel has 4 architectures and reports 5, and the remedy he approved in `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` was *"injecting a published Codex system prompt into one seat; NOT BUILT."* He now asks whether Codex is available separately through OpenRouter, and at what version and price, with epistemic diversity as the goal. To be measured before he rules.
+
+### What (c) turned into: MEASURED, and 1 narrow question is owed, 2026-09-17 23:14 BST
+
+The founder asked for the catalogue to be read before he rules: *"The ideal scenario would be to check if ChatGPT and Codex are available via OpenRouter, and if Codex is available separately, which version best suits our needs, given time, money and our requirements."*
+
+Producer: `scripts/openrouter_codex_availability_2026-09-17.py`, reading the public catalogue, which needs no key and dispatches nothing. Record: `experimental_notes/evidence/openrouter_codex_availability_2026-09-17.json`. 445 models listed.
+
+- **Codex IS available separately: 5 distinct ids.** `openai/gpt-5.1-codex` and `-codex-max` at 1.25 dollars per 1,000,000 prompt tokens and 10.00 per 1,000,000 completion tokens; `-codex-mini` at 0.25 and 2.00; `openai/gpt-5.2-codex` and `openai/gpt-5.3-codex` at 1.75 and 14.00. All carry a 400,000-token context.
+- **The confound, confirmed from the catalogue rather than from the config alone.** Both the `cx` and `cgpt` seats point at `openai/gpt-5.5`, which is a real listed model at 5.00 and 30.00 per 1,000,000 tokens with a 1,050,000-token context. 1 model, 2 labels, so the panel has 4 architectures and reports 5.
+- **Cost, at round 17's own volumes** (a 31,298-character brief, a mean reply of 17,983 characters, 4 characters per token): 1 seat-round costs 0.1740 dollars at `openai/gpt-5.5` and 0.0766 at `openai/gpt-5.3-codex`, cross-checked with NumPy and mpmath agreeing to 1e-12. A distinct Codex seat costs **0.440 of what that seat costs today**, so the diversity is cheaper than the confound.
+- **The question owed:** point `cx` at `openai/gpt-5.3-codex` and leave `cgpt` on `openai/gpt-5.5`? That gives 5 architectures for 5 seats and lowers the Codex seat's cost. Changing a paid seat's model is the founder's, so nothing is changed until he says so.
+
 - **(d) Wolfram is ENABLED, as the secondary source only.** *"So fully enable it. But we don't depend just on Wolfram ... Wolfram, although it should always be used wherever possible, should remain the secondary/verification source (a second falsifier), where our other relevant tools should also always be used and should remain primary in all cases. Basically the idea is that anyone running the project, should not be required to install Wolfram to do so, although we might recommend it, and make it as trivial as possible for them to do via our onboarding script."*
 - **(e) Agents and seats are NOT exempt from tools, Wolfram included.** *"Agents are not exempt from using tools. That is the whole point of this project. Every model and every agent should use tools wherever possible, including Wolfram ... The only exception is when a tool may be literally physically unavailable to a model/agent, in which case it should also fall back exclusively to the Open Source tools it does have access to."*
 - **(f) The project instructions are to be corrected.** Ruled *"Already addressed"*; measured at 2026-09-17 22:22 BST, `.claude/CLAUDE.md` still carries both the dead `mcp__Wolfram__*` row and the sentence calling the local Engine the only working route, so the edit is made with the test that asserts that sentence, in 1 commit.
 
-### What (d), (e) and (f) turned into, 2026-09-17 22:55 BST
+### What (d), (e) and (f) turned into, 2026-09-17 22:54 BST (commit 1e86df8)
 
 **DONE.** Wolfram is enabled for every seat and every dispatched agent as the second falsifier, queued against the 1 licensed kernel.
 
 - **The policy layer**, `bench/wolfram_standard.py`: `serial` by default, `deny` retained and selectable with `CDSFL_WOLFRAM_POLICY`. `gate_dir`, `claude_cli_args` and `panel_clause` all read the same policy, so what a seat is TOLD and what its launcher DOES cannot disagree.
 - **The queue**, `bench/tools/wolfram_gate/serial/`: a gate first on every seat's PATH that takes a machine-wide exclusive lock, runs the real binary, passes the child's exit code through untouched, and appends either Wolfram's required attribution or `[NOT EVIDENCE]` with the reason. Every call is recorded to `~/Library/Logs/cdsfl_wolfram_calls.log`.
-- **Measured, not asserted**, `scripts/wolfram_serial_gate_probe_2026-09-17.py`: 2 calls started at the same moment through the real gate against the real Engine, 2026-09-17 22:44 BST. The second waited 5.1 s in the queue while the first held the kernel for 5.1 s; the kernel windows were disjoint; both results classified as evidence; both carried the attribution; both answers correct. Record: `experimental_notes/evidence/wolfram_serial_gate_2026-09-17.json`.
-- **Non-vacuity**: removing the lock makes `test_2_concurrent_calls_do_not_overlap` fail on overlapping intervals, run and reverted at 22:36 BST. 22 tests in `bench/tests/test_wolfram_secondary_source_2026-09-17.py`.
+- **Measured, not asserted**, `scripts/wolfram_serial_gate_probe_2026-09-17.py`: 2 calls started at the same moment through the real gate against the real Engine, 2026-09-17 22:38 BST. The second waited 5.1 s in the queue while the first held the kernel for 5.1 s; the kernel windows were disjoint; both results classified as evidence; both carried the attribution; both answers correct. Record: `experimental_notes/evidence/wolfram_serial_gate_2026-09-17.json`.
+- **Non-vacuity**: removing the lock makes `test_2_concurrent_calls_do_not_overlap` fail on overlapping intervals, run and reverted before commit 1e86df8. 22 tests in `bench/tests/test_wolfram_secondary_source_2026-09-17.py`.
 - **Never a dependency**: an absent kernel, a busy queue and a failed call each return a message naming SymPy, z3 and mpmath and saying it is not a blocker. Onboarding says the same and still offers the 1-command install.
 - **The 1 exception**: a STORED falsifier still may not call Wolfram, because it is re-run by whoever reproduces the experiment and *"anyone running the project, should not be required to install Wolfram to do so"*. The model that writes it may use Wolfram itself. `bench/falsifier_verify.py` pins its sandbox to `deny` explicitly rather than inheriting.
 - **(f)**: `.claude/CLAUDE.md` carries the ruling verbatim, the corrected connector tool names, and the corrected route sentence; `bench/tests/test_wolfram_route_retired_2026-09-10.py` amended in the same commit.
@@ -79,7 +91,7 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **(i) The 3 paid dispatchers that pay without validating a brief: no ruling given.** They stay registered as open exemptions and unused.
 - **(j) The sandbox defect: ruled, with 2 extra conditions.** *"Do it. And make sure this is how all future panel reviews and experiments (both paid and simulated) work in the future too. Take care when a panel review or an experiment completes however that the sandbox does not simply get automatically deleted and that the results do not end up simply being discarded, as has happened in the recent past."*
 
-### What (j) turned into, 2026-09-17 23:30 BST
+### What (j) turned into, 2026-09-17 23:04 BST (commit 7635e05)
 
 **DONE.** A retry gets a tree of its own, the attempt travels with the reply, and nothing is deleted on the way out.
 
@@ -89,13 +101,13 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **Nothing is deleted unasked**: `panel_sandbox.harvest` copies whole changed files out, not only diffs, and `panel_sandbox.release` removes a copy only when asked AND only after a complete harvest. `harvest_and_retain` writes `sandbox_manifest.json`, prints where the copies are and prints the exact command to remove them. `PANEL_REAP_SANDBOXES=1` is the opt-in.
 - **The rest of the fleet, measured rather than assumed**: `scripts/sandbox_deletion_audit_2026-09-17.py` parses every tree-removing call in `bench/` with `ast` and classifies what it removes. 26 calls: 6 seat trees, 9 scratch, 11 unresolved. 2 seat trees were being destroyed with no harvest, in `bench/build_experiment_run.py` and `bench/confer_convergence_panel_2026-08-23.py`, and a 3rd in `bench/tools/run_simulated_experiment.py`, which is the simulated path. All 3 now harvest first and keep the tree when a harvest fails. The audit reports **0** seat trees deleted without a harvest.
 - **The audit's own first version missed the worst site**, because it classified by variable name and the simulated runner calls its worktree `_wt_parent`. It now asks whether the same function hands the path to a model.
-- **Non-vacuity**: restoring the round-17 reuse fails `test_attempt_1_reuses_the_copy_already_built_and_attempt_2_does_not`; restoring the unconditional delete fails `test_the_dispatchers_own_end_of_run_step_keeps_every_attempts_tree`. Both run and reverted at 23:22 BST. 11 tests in `bench/tests/test_fresh_sandbox_per_attempt_2026-09-17.py`.
+- **Non-vacuity**: restoring the round-17 reuse fails `test_attempt_1_reuses_the_copy_already_built_and_attempt_2_does_not`; restoring the unconditional delete fails `test_the_dispatchers_own_end_of_run_step_keeps_every_attempts_tree`. Both run and reverted before commit 7635e05. 11 tests in `bench/tests/test_fresh_sandbox_per_attempt_2026-09-17.py`.
 - **1 older test was asserting the opposite** and is amended with the ruling recorded in it: `test_every_sandbox_is_torn_down` required `main` to destroy every copy.
 
 - **(k) V9: explained in chat, verdict awaited.**
 - **(l) The P5 clause: ruled to be built.** *"If this is a missing test/instrument, then build it and implement it, and add it to the program of study for the next simulated run."*
 
-### What (l) turned into, 2026-09-17 23:55 BST
+### What (l) turned into, 2026-09-17 23:12 BST (commit 594c63d)
 
 **DONE.** The P5 clause about CC1 has an instrument, the instrument is implemented against a real round, and the programme of study carries it.
 
@@ -108,7 +120,7 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **(m) The agent worktrees: `y`.** Removed 2026-09-17 22:22 BST; 2.3 GB freed, all 5 branches kept.
 - **The 3 tests that fail without a git repository: the founder asked why a repair would skip.** Answered in chat: each asks git a question, and in a sandbox with no `.git` git answers "not a repository", which the test reported as a project defect. The repair makes each test detect that its precondition is absent instead of inventing a failure; inside a real checkout nothing is skipped and they can still fail.
 
-### The 3 tests that failed without a git repository: REPAIRED, not skipped, 2026-09-17 23:40 BST
+### The 3 tests that failed without a git repository: REPAIRED, not skipped, 2026-09-17 23:07 BST (commit 48487c4)
 
 The founder: *"Surely you can't repair these (and the other 3 entries) and skip? That doesn't make any sense. Why not just repair?"* Repaired, in both files, and neither carries a skip.
 

@@ -32,7 +32,7 @@ Record written 2026-09-17T17:34:08+01:00.
 
 ## CC1's own position, and the range across the seats
 
-**Added 2026-09-17 23:50 BST, on the founder's ruling that the missing instrument be built and implemented.** The `pr` protocol has always said CC1 *"actively participates with its own position and synthesizes the range"*, and until now nothing in the project measured that half. `scripts/p5_cc1_position_2026-09-17.py` now derives the range from the seats' own verdict tokens and reports which of them CC1 reached. Run against this record before this section existed, it returned NO_CC1_POSITION with 2 entries in the range.
+**Added 2026-09-17 23:12 BST, on the founder's ruling that the missing instrument be built and implemented.** The `pr` protocol has always said CC1 *"actively participates with its own position and synthesizes the range"*, and until now nothing in the project measured that half. `scripts/p5_cc1_position_2026-09-17.py` now derives the range from the seats' own verdict tokens and reports which of them CC1 reached. Run against this record before this section existed, it returned NO_CC1_POSITION with 2 entries in the range.
 
 **The range, derived and not asserted.** 9 entries carry a verdict from both seats. They differ on 2.
 
