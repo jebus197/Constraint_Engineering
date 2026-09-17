@@ -127,10 +127,35 @@ class TestTheBlockReaderIsUsedNotTheLine:
         assert not bare, bare
 
 
+def _is_repo() -> bool:
+    return subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=ROOT,
+                          capture_output=True, text=True).returncode == 0
+
+
 class TestTheScriptRuns:
+    """REPAIRED 2026-09-17, and repaired rather than skipped.
+
+    The founder: *"Surely you can't repair these ... and skip? That doesn't make
+    any sense. Why not just repair?"* These 2 tests asserted exit 0 and the
+    section headings, and in a copy with no `.git` -- a panel sandbox, a ZIP, a
+    Zenodo archive -- the script deliberately REFUSES to measure and exits 2,
+    because without git every path would count as untracked and the figure would
+    read 100% by construction. That refusal is the script working, so both
+    branches now assert something real: in a checkout, the measurement; outside
+    one, the refusal and its stated reason. Nothing is skipped either way.
+    """
+
     def test_it_exits_zero_and_reports_every_section(self):
         r = subprocess.run([sys.executable, str(SCRIPT)], cwd=ROOT,
                            capture_output=True, text=True, timeout=900)
+        if not _is_repo():
+            # The refusal goes to STDERR, which is where an error belongs, so the
+            # check reads both streams rather than guessing which one carries it.
+            assert r.returncode == 2, r.stdout[-800:]
+            assert "REFUSING TO MEASURE: not a git repository" in (r.stdout + r.stderr), (
+                "outside a checkout the script must refuse OUT LOUD, not return "
+                "a figure that is 100% by construction")
+            return
         assert r.returncode == 0, r.stdout[-800:] + r.stderr[-400:]
         for heading in ("the 11 named by V2", "NOT tracked by git",
                         "no live producing script", "does not carry"):
@@ -139,6 +164,7 @@ class TestTheScriptRuns:
     def test_it_says_an_unchecked_claim_is_not_a_refuted_one(self):
         r = subprocess.run([sys.executable, str(SCRIPT)], cwd=ROOT,
                            capture_output=True, text=True, timeout=900)
-        assert "UNCHECKED, not refuted" in r.stdout, (
+        needle = ("REFUSING TO MEASURE" if not _is_repo() else "UNCHECKED, not refuted")
+        assert needle in (r.stdout + r.stderr), (
             "the script no longer states its own boundary, so a reader could "
             "take a silent section for a cleared one")

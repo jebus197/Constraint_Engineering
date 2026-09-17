@@ -43,12 +43,51 @@ NOT_PYTEST_MODULES = {
 }
 
 
+#: Directories that are not the project: another checkout's worktree, a build
+#: cache, a seat's harvested copy. A test file inside one of these is not a
+#: stray project test.
+_NOT_THE_PROJECT = (".git/", ".claude/worktrees/", "node_modules/", "__pycache__/",
+                    "bench/logs/", ".venv/", "venv/", "sandbox_harvest/",
+                    "worktree_harvest/")
+
+
+def _walked_test_files():
+    """Every `test_*.py` in the tree, found by walking it.
+
+    THE FALLBACK, AND WHY IT IS A REPAIR RATHER THAN A SKIP. The founder,
+    2026-09-17: *"Surely you can't repair these ... and skip? That doesn't make
+    any sense. Why not just repair?"* Right, where a real answer survives the
+    missing precondition. `git ls-files` answers "which test files does the
+    project TRACK", and in a copy with no `.git` -- a panel sandbox, a ZIP, a
+    Zenodo archive -- git exits 128 and the old assertion reported a project
+    defect that was really a missing directory. Walking the tree answers the
+    question that still HAS an answer there: which test files EXIST outside the
+    collected root, which is the thing this test is protecting against. Nothing
+    is skipped, and in a real checkout git remains the authority.
+    """
+    out = []
+    for path in sorted(REPO.rglob("test_*.py")):
+        rel = path.relative_to(REPO).as_posix()
+        if any(part in f"{rel}/" for part in _NOT_THE_PROJECT):
+            continue
+        out.append(rel)
+    return out
+
+
 def _tracked_test_files():
     out = subprocess.run(["git", "ls-files", "*/test_*.py", "test_*.py"],
                          cwd=str(REPO), capture_output=True, text=True,
                          timeout=120)
-    assert out.returncode == 0, out.stderr
-    return [ln for ln in out.stdout.splitlines() if ln.strip()]
+    if out.returncode == 0:
+        return [ln for ln in out.stdout.splitlines() if ln.strip()]
+    if out.returncode == 128 or "not a git repository" in (out.stderr or "").lower():
+        return _walked_test_files()
+    assert False, out.stderr
+
+
+def _is_repo() -> bool:
+    return subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=str(REPO),
+                          capture_output=True, text=True).returncode == 0
 
 
 class TestEveryTestFileIsReachable:
@@ -57,6 +96,10 @@ class TestEveryTestFileIsReachable:
                  if not f.startswith(COLLECTED_ROOT)
                  and f not in NOT_PYTEST_MODULES]
         assert not stray, (
+            ("" if _is_repo() else
+             "NOTE: this tree has no .git, so the list came from walking the "
+             "directory rather than from git, and an uncommitted local file "
+             "counts as a stray here. ") +
             "test files outside the suite's collection root -- they will pass "
             "when invoked directly and contribute nothing to the suite:\n  "
             + "\n  ".join(stray)

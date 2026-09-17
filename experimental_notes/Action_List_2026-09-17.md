@@ -97,6 +97,14 @@ Given on the printed list at `~/Developer_Projects/Responses/Awaiting_Your_Decis
 - **(m) The agent worktrees: `y`.** Removed 2026-09-17 22:22 BST; 2.3 GB freed, all 5 branches kept.
 - **The 3 tests that fail without a git repository: the founder asked why a repair would skip.** Answered in chat: each asks git a question, and in a sandbox with no `.git` git answers "not a repository", which the test reported as a project defect. The repair makes each test detect that its precondition is absent instead of inventing a failure; inside a real checkout nothing is skipped and they can still fail.
 
+### The 3 tests that failed without a git repository: REPAIRED, not skipped, 2026-09-17 23:40 BST
+
+The founder: *"Surely you can't repair these (and the other 3 entries) and skip? That doesn't make any sense. Why not just repair?"* Repaired, in both files, and neither carries a skip.
+
+- `bench/tests/test_every_test_file_is_collected_2026-09-01.py` asked git which test files the project tracks, and git exits 128 in a copy with no `.git`. It now falls back to WALKING the tree, which answers the question that still has an answer there: which test files exist outside the collected root. In a checkout git remains the authority; outside one the failure message says the list came from a walk, so an uncommitted local file is named as such.
+- `bench/tests/test_overstated_entries_2026-09-11.py` asserted exit 0 and the section headings. Outside a checkout the script deliberately REFUSES to measure and exits 2, because without git every path would count as untracked and the figure would read 100% by construction. That refusal is the script working, so the test now asserts the measurement inside a checkout and the refusal with its stated reason outside one. Both branches assert something real.
+- Measured in a copy with the `.git` directory removed: 14 passed, 0 failed. The same 14 pass in the checkout.
+
 ## Placed last: the founder's own items
 
 11. [ ] **I18: drop both stashes, in person**, because deleting a git ref is the founder's to do: `git stash drop 'stash@{1}' && git stash drop 'stash@{0}'`
