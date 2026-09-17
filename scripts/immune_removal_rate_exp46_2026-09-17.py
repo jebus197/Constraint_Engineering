@@ -30,6 +30,7 @@ calibrated for the Jaccard backend whose floor genuinely is 0.
 """
 from __future__ import annotations
 
+import argparse
 import itertools
 import json
 import pathlib
@@ -54,6 +55,19 @@ def findings() -> list[dict]:
 
 
 def main() -> int:
+    # `--help` MUST DESCRIBE, NEVER MEASURE. Without this, the flag fell through
+    # and ran the whole reproduction: loading the embedding model and scoring 351
+    # pairs. Caught 2026-09-17 by test_help_is_answered_2026-09-11.py, which runs
+    # any script it cannot vouch for structurally rather than trusting a grep.
+    #
+    # THE DESCRIPTION IS WRITTEN OUT, not taken from __doc__'s first line, because
+    # that line carries "97%" and a figure in help output is the measurement
+    # leaking into the thing that exists to avoid measuring.
+    argparse.ArgumentParser(
+        description="Recompute the immune pipeline's removal rate from exp46's "
+                    "archived findings, and check it against the figures the "
+                    "Stage 1 panel record states.").parse_args()
+
     sys.path.insert(0, str(REPO))
     import numpy as np
     from bench.dm import _similarity as S

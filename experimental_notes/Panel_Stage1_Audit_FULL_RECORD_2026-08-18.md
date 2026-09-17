@@ -1294,3 +1294,5 @@ This record states the immune pipeline's removal rate 6 times and named no scrip
 It reproduces 9 of 9 figures this record declares, over the same 27 findings and 351 pairs: raw cosine minimum 0.150, median 0.484, maximum 0.867, none negative; under the retired `(cos+1)/2` mapping with no class match, minimum 0.460, median 0.593, 97.4% flagged duplicate; with a class match, minimum 0.520, median 0.653, 100.0% flagged.
 
 **One figure elsewhere does not reproduce, and it is not in this record.** The comment in `bench/dm/_similarity.py` states that clamping moved the rate from 97.4% to 15.8%. The 97.4% reproduces exactly; the 15.8% matches neither scenario, the same 351 pairs giving 18.5% hypothetical and 21.4% actual.
+
+Written under CDSFL note standard v1.7 (26 August 2026).
