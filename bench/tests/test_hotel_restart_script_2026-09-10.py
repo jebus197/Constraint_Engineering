@@ -17,8 +17,12 @@ on record was to be physically at the machine.
 restores this conversation by its own identifier, with `--continue` as the
 fallback if the id has aged out.
 
-TESTED IN DRY RUN ONLY, DELIBERATELY. Running it for real restarts the
-application, which would kill the session writing it.
+NEVER RUN AGAINST A REAL HOST, DELIBERATELY. Running it for real restarts the
+application, which would kill the session writing it. Since 2026-09-17 both the
+dry run and the full restart-and-resume path are EXECUTED against a recording
+`ssh` stub (`TestTheDryRunIsObservedOffline`), which proves what the script SENDS
+and nothing about what the Mac does with it. The real restart-and-resume path
+remains unexecuted end to end.
 
 ONE DEFECT WAS FOUND BY RUNNING IT AND WOULD NOT HAVE BEEN FOUND BY READING IT.
 `BatchMode=yes` is correct -- it stops the script hanging on a password prompt a
@@ -29,6 +33,7 @@ case and prints the single command that fixes it.
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 import subprocess
@@ -75,7 +80,8 @@ class TestItIsSafeToRun:
 
 class TestItDoesWhatHeAsked:
     def test_it_restarts_the_application(self, src):
-        assert 'quit app \\"Claude\\"' in src or "quit app" in src
+        # The former first disjunct entailed the second, so it could never decide.
+        assert "quit app" in src
         assert "open -a Claude" in src
 
     def test_it_resumes_THIS_session_by_id(self, src):
@@ -91,7 +97,9 @@ class TestItDoesWhatHeAsked:
             assert var in src, f"{var} cannot be overridden"
 
     def test_it_reaches_the_mac_over_the_tailnet(self, src):
-        assert "tail8b628c.ts.net" in src or "CLAUDE_MAC_HOST" in src
+        # The former `or "CLAUDE_MAC_HOST" in src` is already asserted by the test
+        # above, so it made this one pass whenever that one did.
+        assert "tail8b628c.ts.net" in src
 
 
 class TestItFailsHelpfully:
@@ -109,12 +117,64 @@ class TestItFailsHelpfully:
     def test_dry_run_and_check_exist(self, src):
         assert "--dry-run" in src and "--check" in src
 
-    def test_a_dry_run_changes_nothing_here(self):
-        """Runs for real against the live tailnet; must not restart anything."""
-        r = subprocess.run([str(REPO_COPY), "--dry-run"], capture_output=True,
-                           text=True, timeout=180)
-        assert "quit app" not in r.stdout, "a dry run issued a real quit"
-        assert r.returncode in (0, 1, 3), r.returncode
+
+class TestTheDryRunIsObservedOffline:
+    """The dry run is executed to completion against a recording `ssh` stub.
+
+    REPLACES `test_a_dry_run_changes_nothing_here` (2026-09-17, task 10.1
+    correction). That test ran the script against the live tailnet and accepted
+    exit 0, 1 or 3. Where the host did not resolve it exited 1 at the reachability
+    probe, before the dry-run branch, and still passed; a copy with both `DRY`
+    checks disarmed passed it too. On a machine that DID reach the host, that
+    disarmed copy would have issued a real quit. The replacement dominates on
+    that named property: it detects disarmed `DRY` checks in every environment,
+    and it never touches a network.
+
+    THE STUB. `ssh` and `tailscale` are shadowed first on PATH. `ssh` appends its
+    argv to a log and answers the reachability probe with `ok`; it reaches no host.
+    `CLAUDE_MAC_HOST` is set to a `.invalid` name as well, so even a bypassed stub
+    fails at the probe, before anything is restarted.
+    """
+
+    SSH_STUB = (
+        "#!/bin/bash\n"
+        "printf '%s\\n' \"$*\" >> \"$SSH_STUB_LOG\"\n"
+        "if [ \"${@: -1}\" = \"echo ok\" ]; then echo ok; fi\n"
+        "exit 0\n")
+
+    def _run(self, tmp_path, *args):
+        bindir = tmp_path / "bin"
+        bindir.mkdir(exist_ok=True)
+        for name, body in (("ssh", self.SSH_STUB), ("tailscale", "#!/bin/bash\nexit 0\n")):
+            p = bindir / name
+            p.write_text(body, encoding="utf-8")
+            p.chmod(0o755)
+        log = tmp_path / "ssh_calls.log"
+        env = dict(os.environ, PATH=f"{bindir}{os.pathsep}{os.environ.get('PATH', '')}",
+                   CLAUDE_MAC_HOST="nobody@stub.invalid", SSH_STUB_LOG=str(log))
+        r = subprocess.run(["bash", str(REPO_COPY), *args], capture_output=True,
+                           text=True, timeout=120, env=env)
+        calls = log.read_text(encoding="utf-8").splitlines() if log.is_file() else []
+        assert any("nobody@stub.invalid" in c and c.endswith("echo ok") for c in calls), (
+            "the stub never saw the reachability probe, so this run did not go "
+            f"through it: rc={r.returncode} stderr={r.stderr[-300:]}")
+        return r, calls
+
+    def test_a_dry_run_completes_and_sends_no_restart_or_resume(self, tmp_path):
+        r, calls = self._run(tmp_path, "--dry-run")
+        assert r.returncode == 0, (r.returncode, r.stdout[-400:], r.stderr[-300:])
+        assert "DRY RUN COMPLETE" in r.stdout, r.stdout[-400:]
+        for forbidden in ("osascript", "open -a Claude", "claude --resume"):
+            sent = [c for c in calls if forbidden in c]
+            assert not sent, f"a dry run sent {forbidden!r} over ssh: {sent}"
+
+    def test_the_stub_does_observe_a_real_restart_attempt(self, tmp_path):
+        """CONTROL. Without --dry-run the same stub must record both commands,
+        or the test above would pass for a stub that sees nothing."""
+        r, calls = self._run(tmp_path)
+        assert any("osascript" in c and "open -a Claude" in c for c in calls), calls
+        assert any("claude --resume" in c for c in calls), calls
+        assert "DRY RUN COMPLETE" not in r.stdout
 
 
 class TestTheDesktopCopyMatches:

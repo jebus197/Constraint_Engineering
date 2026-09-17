@@ -24,6 +24,12 @@ WHAT IS CHECKABLE IS WHAT THIS REPOSITORY ACTUALLY COMMITS: the record. Both
 entries now quote the substance verbatim and state plainly that the artefact is
 not carried here. That is a real assertion about real committed bytes, and it
 fails the moment either entry is trimmed back to a bare "Status COMMITTED".
+
+ENTRY 8.1 ADDED 2026-09-17 (panel round 16). Its in-tree half, the `rs` row in
+`resources/SHORTCUTS.md` and the resolution in `resources/RECOVERY.md`, is held
+by `test_rs_definition_names_this_projects_queue_2026-09-17.py`. Its other half
+is the global `~/.claude/CLAUDE.md`, the same out-of-tree shape as 4.2 and 7.3,
+so the same rule applies: hold the committed record, not the file.
 """
 from __future__ import annotations
 
@@ -76,6 +82,18 @@ class TestEntry73KeepsTheRulingItCommits:
 
     def test_it_says_the_memory_file_is_not_carried_here(self):
         assert "does not carry" in _block("7.3")
+
+
+class TestEntry81KeepsTheRecordItCommits:
+    def test_it_quotes_the_global_clause(self):
+        assert "PROJECT-CONDITIONAL, amended 2026-09-09" in _block("8.1"), (
+            "8.1 no longer quotes the clause it added to the global definition, "
+            "so this repository no longer records WHAT was changed out of tree")
+
+    def test_it_says_the_global_file_is_not_carried_here(self):
+        assert "Not carried here" in _block("8.1"), (
+            "8.1 claims the global definition was amended without saying that "
+            "the file lives outside this repository")
 
 
 class TestTheClaimAboutTheOldEvidenceIsTrue:

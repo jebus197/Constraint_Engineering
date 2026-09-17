@@ -65,7 +65,12 @@ CENSUS = [
     ("bench/tests/test_branch_supplies_versions_2026-09-10.py", "local-only-ref",
      "exp39-experimental is a LOCAL branch that was never pushed, so no clone "
      "can carry it, and the early return skipped the methodological caveat",
-     "the caveat prints on both paths and the absence is named"),
+     "the caveat prints on both paths and the absence is named. SUPERSEDED "
+     "2026-09-17 (task 8.3 correction): the caveat was a constant and is now "
+     "computed from the measured ref sets; a local-path clone DOES carry the "
+     "history, under refs/remotes/origin/, and the branch now resolves from "
+     "there or from the pin tag; only when nothing resolves does the script "
+     "exit 4, and the test skips on that exit"),
     ("bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py",
      "corpus-differs",
      "the pinned figure 4142 was measured over the maintainer's on-disk archive; "

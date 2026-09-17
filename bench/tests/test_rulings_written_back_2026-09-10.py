@@ -63,6 +63,26 @@ class TestR5MaterialityIsNotPending:
                "RULED 2026-09-06" in t, (
             "RECOVERY still carries the materiality check as pending")
 
+    def test_the_research_record_no_longer_says_needs_founder(self):
+        """Added 2026-09-17 (task R5 correction). The R4 check, applied to entry 55.
+
+        Commit 27e1c52 closed R5 and annotated entry 102 of this file for R4, but
+        left entry 55 reading NEEDS FOUNDER. Red at HEAD 989f32f before the
+        annotation was written.
+        """
+        t = _text("experimental_notes/Research_FULL_RECORD_2026-09-09.md")
+        i = t.index("55. HIL materiality confirmation on C0015 and C0017")
+        entry = t[i:t.index("\n", i)]
+        assert "RULED 2026-09-06" in entry, entry[:300]
+        assert "NEEDS FOUNDER" in entry, (
+            "the question as asked is gone; it is annotated, not rewritten")
+
+    def test_the_could_not_establish_note_points_to_the_ruling(self):
+        t = _text("experimental_notes/Research_FULL_RECORD_2026-09-09.md")
+        i = t.index("2. Entry 55, the HIL materiality confirmation on C0015 and C0017")
+        para = t[i:t.index("\n", i)]
+        assert "RULED 2026-09-06" in para and "R5a" in para, para[:300]
+
 
 class TestR7TheSealingIsRecordedAsHisOwnWork:
     def test_the_tracker_credits_him_and_the_time(self):
