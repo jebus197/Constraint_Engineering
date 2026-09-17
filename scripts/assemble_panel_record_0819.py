@@ -19,6 +19,20 @@ import json, pathlib
 # importing the module then reaches exactly the code it reached before.
 if __name__ == "__main__":
     try:
+        # RESOLVE THE GUARD UNDER `-m` TOO (2026-09-17). The comment below was a
+        # true statement about ONE invocation form and a false assumption about
+        # the others: `python3 -m scripts.assemble_panel_record_0819 --help` puts
+        # the REPOSITORY ROOT on sys.path[0], not `scripts/`, so this bare import
+        # raised ImportError, the except arm swallowed it, and the ordinary work
+        # ran with --help on the command line -- destroying 31,669 bytes of a
+        # verbatim panel record and exiting 0. Found by the fable seat in panel
+        # round 16 and reproduced in a clean worktree with a fresh copy of the
+        # record per invocation form.
+        import sys as _sys
+        import pathlib as _pl
+        _here = str(_pl.Path(__file__).resolve().parent)
+        if _here not in _sys.path:
+            _sys.path.insert(0, _here)
         from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
     except ImportError:
         # A COPY OUTSIDE scripts/, which is how the mutation harness runs
