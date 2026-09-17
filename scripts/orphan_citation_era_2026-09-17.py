@@ -76,7 +76,11 @@ def era(path: str) -> str | None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--quiet", action="store_true")
-    ap.parse_args()
+    ap.add_argument("--manifest", metavar="PATH",
+                    help="write the disposition of every cited path as JSON: "
+                         "tracked, local_only, or missing. This is the LABEL "
+                         "half of the founder's accept-and-label ruling.")
+    args = ap.parse_args()
 
     import numpy as np
     import scipy.stats as st
@@ -123,6 +127,26 @@ def main() -> int:
         print(f"  untracked paths dated 2026-09 or later: {wilson(len(recent), len(dated))}")
         print("  The hypothesis predicts this share is SMALL. A large share means the"
               "\n  cause is current practice, not the project's prose era.")
+
+    # THE LABEL HALF OF THE RULING. A cited path is in exactly 1 of 3 states,
+    # and the 3rd is the one nobody had counted: the file was never kept, so it
+    # cannot be opened on ANY machine, not merely on someone else's.
+    missing = [p for p in untracked if not (REPO / p).is_file()]
+    local_only = [p for p in untracked if (REPO / p).is_file()]
+    print(f"\nDISPOSITION OF EVERY CITED PATH")
+    print(f"  tracked in git            : {wilson(len(cites) - len(untracked), len(cites))}")
+    print(f"  present but untracked     : {wilson(len(local_only), len(cites))}")
+    print(f"  MISSING -- never kept     : {wilson(len(missing), len(cites))}")
+    if args.manifest:
+        import json
+        rows = {}
+        for path, kinds in sorted(cites.items()):
+            state = ("tracked" if path not in untracked
+                     else "local_only" if (REPO / path).is_file() else "missing")
+            rows[path] = {"cited_by": sorted(kinds), "state": state}
+        Path(args.manifest).write_text(
+            json.dumps(rows, indent=2) + "\n", encoding="utf-8")
+        print(f"\n  manifest written: {args.manifest} ({len(rows)} paths)")
     return 0
 
 

@@ -1,0 +1,84 @@
+2026-09-01T01:52:57 INFO Domain config loaded: statistics (1 sections)
+2026-09-01T01:52:57 INFO Skin barrier (v2): 4 passed, 0 failed out of 4 findings
+2026-09-01T01:52:57 INFO DC v2 reclassification: DeepSeek-SIM_F002 — v1=mathematical → v2=statistical (conf=0.85)
+2026-09-01T01:52:57 INFO DC v2 reclassification: DeepSeek-SIM_F003 — v1=code_structural → v2=mathematical (conf=0.85)
+2026-09-01T01:52:57 INFO DC v2 (v2): 2/4 findings reclassified
+2026-09-01T01:52:57 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 4 findings to classify.
+2026-09-01T01:53:07 INFO LLM classifier: Codex-SIM_UNSTRUCTURED — regex=mathematical llm=code_behavioral (conf=0.80, BLOCKED by MATHEMATICAL guard, 10.6s)
+2026-09-01T01:53:18 INFO LLM classifier: DeepSeek-SIM_F001 — regex=mathematical llm=code_behavioral (conf=0.95, BLOCKED by MATHEMATICAL guard, 10.7s)
+2026-09-01T01:53:32 INFO LLM classifier OVERRIDE: DeepSeek-SIM_F002 — regex=statistical → llm=code_behavioral (conf=0.80, threshold=0.70 cleared, 14.1s)
+2026-09-01T01:53:48 INFO LLM classifier: DeepSeek-SIM_F003 — regex=mathematical llm=code_structural (conf=0.80, BLOCKED by MATHEMATICAL guard, 16.1s)
+2026-09-01T01:53:48 INFO LLM classifier: 0/4 agree with regex (0.0%), 1 overrides applied
+2026-09-01T01:53:48 INFO B Cell v2 (v2): 3 claims checked, 0 grounded proofs
+2026-09-01T01:53:48 INFO   Codex-SIM_UNSTRUCTURED: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T01:53:48 INFO   DeepSeek-SIM_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T01:53:48 INFO   DeepSeek-SIM_F003: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T01:54:02 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-09-01T01:55:44 INFO CT v2 (v2): 0 verdicts in 115.3s — none
+2026-09-01T01:55:44 INFO B-Cell specialist (LIVE, domain=statistics): 3 verdicts
+2026-09-01T01:55:44 INFO Formalisation agent: 2 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-01T01:55:44 INFO Helper T v2 (v2): 4 findings — 0 CONFIRMED, 0 REJECTED, 3 UNCERTAIN, 1 DUPLICATE
+2026-09-01T01:55:44 INFO Reconciliation LOCKED: DeepSeek-SIM_F003 — both pipelines REJECTED (v1=0.56, v2=0.56, max=0.56 >= 0.5)
+2026-09-01T01:55:44 INFO Reconciliation locked 1 finding(s): DeepSeek-SIM_F003
+2026-09-01T01:55:54 INFO Fix NOT verified: DeepSeek-SIM_F001 — verdict=HARMFUL (issues introduced)
+2026-09-01T01:55:54 INFO Fix NOT verified: DeepSeek-SIM_F002 — verdict=HARMFUL (issues introduced)
+2026-09-01T01:55:54 INFO UNCERTAIN-ESCALATED to HIL: Codex-SIM_UNSTRUCTURED (B-Cell cannot ground claim in source)
+2026-09-01T01:55:54 INFO UNCERTAIN-ESCALATED to HIL: DeepSeek-SIM_F001 (B-Cell cannot ground claim in source)
+2026-09-01T01:55:54 INFO Escalated 2 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-09-01T02:08:44 INFO Domain config loaded: statistics (1 sections)
+2026-09-01T02:08:44 INFO Skin barrier (v2): 3 passed, 0 failed out of 3 findings
+2026-09-01T02:08:44 INFO DC v2 reclassification: CC2-SIM_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-09-01T02:08:44 INFO DC v2 reclassification: Codex-SIM_F001 — v1=logical → v2=statistical (conf=0.85)
+2026-09-01T02:08:44 INFO DC v2 (v2): 2/3 findings reclassified
+2026-09-01T02:08:44 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 3 findings to classify.
+2026-09-01T02:08:58 INFO LLM classifier OVERRIDE: CC2-SIM_F001 — regex=uncategorised → llm=logical (conf=0.87, threshold=0.70 cleared, 14.0s)
+2026-09-01T02:09:17 INFO LLM classifier: Gemini-SIM_F001 — regex=mathematical llm=code_behavioral (conf=0.88, BLOCKED by MATHEMATICAL guard, 18.8s)
+2026-09-01T02:09:27 INFO LLM classifier OVERRIDE: Codex-SIM_F001 — regex=statistical → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 9.8s)
+2026-09-01T02:09:27 INFO LLM classifier: 0/3 agree with regex (0.0%), 2 overrides applied
+2026-09-01T02:09:27 INFO B Cell v2 (v2): 2 claims checked, 0 grounded proofs
+2026-09-01T02:09:27 INFO   CC2-SIM_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T02:09:27 INFO   Gemini-SIM_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T02:09:29 INFO NK v2 (v2): 2 verdicts (1 intra-round dups, 0 bugs closed, 1 escalated to HIL)
+2026-09-01T02:11:37 INFO CT v2 (v2): 0 verdicts in 129.8s — none
+2026-09-01T02:11:37 INFO B-Cell specialist (LIVE, domain=statistics): 1 verdicts
+2026-09-01T02:11:37 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-01T02:11:37 INFO Helper T v2 (v2): 3 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 2 DUPLICATE
+2026-09-01T02:11:37 INFO Reconciliation LOCKED: Gemini-SIM_F001 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-09-01T02:11:37 INFO Reconciliation LOCKED: Codex-SIM_F001 — both pipelines REJECTED (v1=0.73, v2=0.73, max=0.73 >= 0.5)
+2026-09-01T02:11:37 INFO Reconciliation locked 2 finding(s): Codex-SIM_F001, Gemini-SIM_F001
+2026-09-01T02:11:40 INFO Fix NOT verified: CC2-SIM_F001 — verdict=HARMFUL (issues introduced)
+2026-09-01T02:16:51 INFO Domain config loaded: statistics (1 sections)
+2026-09-01T02:16:51 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-09-01T02:16:51 INFO DC v2 reclassification: CC2-SIM_F001 — v1=logical → v2=mathematical (conf=0.85)
+2026-09-01T02:16:51 INFO DC v2 (v2): 1/1 findings reclassified
+2026-09-01T02:16:51 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-09-01T02:17:11 INFO LLM classifier: CC2-SIM_F001 — regex=mathematical llm=code_structural (conf=0.80, BLOCKED by MATHEMATICAL guard, 19.9s)
+2026-09-01T02:17:11 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-09-01T02:17:11 INFO CT v2 (v2): no code findings to investigate
+2026-09-01T02:17:11 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-09-01T02:17:11 INFO   CC2-SIM_F001: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-09-01T02:17:13 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-09-01T02:17:15 INFO B-Cell specialist (LIVE, domain=statistics): 1 verdicts
+2026-09-01T02:17:15 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-01T02:17:15 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-09-01T02:17:15 INFO Reconciliation LOCKED: CC2-SIM_F001 — both pipelines REJECTED (v1=0.59, v2=0.59, max=0.59 >= 0.5)
+2026-09-01T02:17:15 INFO Reconciliation locked 1 finding(s): CC2-SIM_F001
+2026-09-01T02:24:49 INFO Domain config loaded: statistics (1 sections)
+2026-09-01T02:24:49 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-09-01T02:24:49 INFO DC v2 reclassification: Codex-SIM_F001 — v1=logical → v2=mathematical (conf=0.85)
+2026-09-01T02:24:49 INFO DC v2 (v2): 1/2 findings reclassified
+2026-09-01T02:24:49 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-09-01T02:25:02 INFO LLM classifier: Codex-SIM_F001 — regex=mathematical llm=code_structural (conf=0.80, BLOCKED by MATHEMATICAL guard, 12.9s)
+2026-09-01T02:25:16 INFO LLM classifier: ChatGPT-SIM_F004 — regex=mathematical llm=code_behavioral (conf=0.75, BLOCKED by MATHEMATICAL guard, 14.8s)
+2026-09-01T02:25:16 INFO LLM classifier: 0/2 agree with regex (0.0%), 0 overrides applied
+2026-09-01T02:25:16 INFO CT v2 (v2): no code findings to investigate
+2026-09-01T02:25:16 INFO B Cell v2 (v2): 2 claims checked, 0 grounded proofs
+2026-09-01T02:25:16 INFO   Codex-SIM_F001: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T02:25:16 INFO   ChatGPT-SIM_F004: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-01T02:25:18 INFO NK v2 (v2): 2 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-09-01T02:25:22 INFO B-Cell specialist (LIVE, domain=statistics): 2 verdicts
+2026-09-01T02:25:22 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-01T02:25:23 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 2 DUPLICATE
+2026-09-01T02:25:23 INFO Reconciliation LOCKED: Codex-SIM_F001 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+2026-09-01T02:25:23 INFO Reconciliation LOCKED: ChatGPT-SIM_F004 — both pipelines REJECTED (v1=0.54, v2=0.54, max=0.54 >= 0.5)
+2026-09-01T02:25:23 INFO Reconciliation locked 2 finding(s): ChatGPT-SIM_F004, Codex-SIM_F001

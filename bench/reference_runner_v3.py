@@ -11528,7 +11528,7 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 3507 of 3507 gate records in `bench/logs`, Wilson
+    is zero in 3555 of 3555 gate records in `bench/logs`, Wilson
     [99.89%, 100.00%], Clopper-Pearson [99.89%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute.
@@ -11542,12 +11542,27 @@ def sk_threshold_shadow(
     Found 2026-09-10 by task A2, running the whole suite in a fresh clone.
 
     THE 2 FIGURES DIFFER BY EXACTLY THE ENCODING SPLIT, and that is not a
-    coincidence: 3507 records encode `s_star` as the float `0.0` and 635 as the
-    STRING "0", the latter confined to the 4 `sim45_*` families, which stringify
-    every numeric field ("sk": "0.9345", "s_star": "0", "R_old": "0.5") -- and
-    those families are precisely the untracked ones (measured: 361 of the 610
-    untracked JSON files are `sim45_*`). So a reader has NONE of the
-    string-encoded records and cannot see the encoding split at all. On the
+    coincidence: the tracked records encode `s_star` as the float `0.0` and the
+    remainder as the STRING "0", the latter confined to the 4 `sim45_*`
+    families, which stringify every numeric field ("sk": "0.9345", "s_star":
+    "0", "R_old": "0.5"). So a reader sees fewer of the string-encoded records
+    than the maintainer does, and correspondingly less of the encoding split.
+
+    RE-MEASURED 2026-09-17 AFTER TASK A8 TRACKED 53 CITED EVIDENCE FILES. The
+    founder ruled that files a note cites must be readable from a clone, so
+    those files were added against `.gitignore:41` -- which MOVED RECORDS FROM
+    THE UNTRACKED CORPUS INTO THE TRACKED ONE. Tracked strict floats went
+    3507 -> 3555; the on-disk total is UNCHANGED at 4142, because tracking a
+    file that was always on disk cannot change what is on disk. The split is
+    now 3555 tracked against 4142 - 3555 = 587 still untracked, where it was
+    3507 against 635. Both figures come from the same committed script, run
+    twice: with `--tracked-only` and without.
+
+    THIS DOCSTRING WENT STALE THE MOMENT THOSE FILES WERE ADDED, AND THE GUARD
+    CAUGHT IT RATHER THAN A READER. `test_stated_gate_count_matches_measurement_2026-09-07.py`
+    refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
+    gives 3555". That is the blast radius of adding evidence to git, and it was
+    not anticipated when the files were staged. On the
     maintainer's disk the coercing count is 4142 of 4142, Wilson
     [99.91%, 100.00%]. Both are real; only the first is reproducible.
     Recompute either with:

@@ -1,0 +1,64 @@
+{
+  "round_idx": 0,
+  "mode": "patrol",
+  "anomaly_count": 4,
+  "pipeline_modified": false,
+  "verdicts_received": 48,
+  "observations": [
+    {
+      "observation_id": "macro_0001",
+      "mode": "patrol",
+      "category": "timing_spike",
+      "description": "Stage 'llm_classifier' took 207.23s (94197.3x median 0.00s)",
+      "severity": "1.0",
+      "evidence": {
+        "stage": "llm_classifier",
+        "time": "207.2341",
+        "median": "0.0022"
+      },
+      "is_anomaly": true,
+      "timestamp": "1788135336.4031029"
+    },
+    {
+      "observation_id": "macro_0002",
+      "mode": "patrol",
+      "category": "timing_spike",
+      "description": "Stage 'parallel_verification' took 89.14s (40517.8x median 0.00s)",
+      "severity": "1.0",
+      "evidence": {
+        "stage": "parallel_verification",
+        "time": "89.1392",
+        "median": "0.0022"
+      },
+      "is_anomaly": true,
+      "timestamp": "1788135336.4031081"
+    },
+    {
+      "observation_id": "macro_0003",
+      "mode": "patrol",
+      "category": "timing_spike",
+      "description": "Stage 'fix_evaluation' took 13.57s (6166.1x median 0.00s)",
+      "severity": "1.0",
+      "evidence": {
+        "stage": "fix_evaluation",
+        "time": "13.5654",
+        "median": "0.0022"
+      },
+      "is_anomaly": true,
+      "timestamp": "1788135336.403111"
+    },
+    {
+      "observation_id": "macro_0004",
+      "mode": "patrol",
+      "category": "immune_deficiency",
+      "description": "PE gates passed all 5 claims with 0% rejection \u2014 gates may not be functioning",
+      "severity": "0.9",
+      "evidence": {
+        "total_passed": 5,
+        "total_failed": 0
+      },
+      "is_anomaly": true,
+      "timestamp": "1788135336.403114"
+    }
+  ]
+}
