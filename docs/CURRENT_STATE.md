@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 12 September 2026 21:30 BST (2026-09-12T21:30:59+01:00)
+Generated: 17 September 2026 15:23 BST (2026-09-17T15:23:11+01:00)
 
 ---
 
@@ -18,16 +18,21 @@ Generated: 12 September 2026 21:30 BST (2026-09-12T21:30:59+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `1d8d305` The 59-entry decision file, as a TTS text and a markdown mirror
-- **Committed:** 2026-09-12 00:04:40 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 174
-- **Working tree at snapshot time:** clean
+- **Last commit (the PARENT of the commit containing this file):** `a2999f1` fix: hold a note to its foot-line's version, failing closed; the 15.8% was a mislabel
+- **Committed:** 2026-09-17 11:22:16 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 25
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- `M resources/ONBOARDING.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**7351 tests collected** at 12 September 2026 21:30 BST, HEAD `1d8d305` (`python3 -m pytest bench/tests/ --co -q`)
+**7499 tests collected** at 17 September 2026 15:23 BST, HEAD `a2999f1` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +62,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `1d8d305 The 59-entry decision file, as a TTS text and a markdown mirror`
-- `7294680 Parking the hook now takes effect immediately, because renaming a key did not`
-- `8c0967d Supplementary list: the 59 entries the work generated, with their source`
-- `48db9c2 Park the Stop hook on his instruction, reversibly`
-- `c112dc1 A command he explains is still a command, and there is now 1 parser not 2`
-- `86fdcf0 Flag the 9.4 cardinality glitch on item 46, per the founder's instruction`
-- `fdaadc7 The Stop hook read its own words as the founder's and erased his command`
-- `529dada The triage gate cannot see an entry that says it needs his ruling`
-- `ffae638 rs: fresh resume pointer, recording what the restore corrected`
-- `8768311 Audit coverage is complete: 84 of 84, and 30 carry an overclaim`
+- `a2999f1 fix: hold a note to its foot-line's version, failing closed; the 15.8% was a mislabel`
+- `1c4c84f docs: the green board, and the defects behind it`
+- `725d1f9 fix: one foot-line, with the addendum above it`
+- `cea399c fix: an inert --help on the new producer, and a foot-line for the addendum`
+- `7cc1530 perf: answer citations from 1 index pass, not 1 git grep per path`
+- `f22e95e fix: one boundary for entry bodies, and every interval cross-verified`
+- `75b1163 Panel round 16: the full unfiltered record, and what was verified before adoption`
+- `d673edd A26: three scripts destroyed content under -m --help, not one`
+- `aeda07a A26 shut one entrance: --help still destroyed a panel record under -m`
+- `16ccdf2 The overclaim figure was wrong twice over, and both seats were right`

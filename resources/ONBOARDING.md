@@ -1,11 +1,25 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 September 2026 21:30 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 17 September 2026 15:23 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
 
-## CURRENT STATE — 2026-09-08 16:22 BST
+## CURRENT STATE — 2026-09-17 15:21 BST
+
+**HEAD `a2999f1` before this save, main; this `sv` pushes 25 commits. Suite 7,493 passed, 5 skipped, 1 xfailed, 0 failed under `--netguard-strict`, pytest exit code 0, in about 23 minutes.**
+
+**The suite had become unfinishable and is fast again.** A citation classifier ran 1 `git grep` per path inside loops; 1 test file took 611 s. An index built in 1 pass takes 2 s with identical answers.
+
+**A figure called unreproducible overnight was a mislabel.** The 15.8% in `bench/dm/_similarity.py` is correct for the 272 pairs whose findings do not share a flaw class, as measurement M10 of the 2026-08-18 panel record had labelled it. The overnight claim did not consult M10. Corrections are dated and struck through, not rewritten.
+
+**The note standard's version check fails closed.** A note is held to the highest version on any line shaped like a foot-line, so a quotation can no longer exempt it from Rules 27 and 28.
+
+**The founder's rulings of 2026-09-17 are executed**: I23, I31, I16, A11, A8 with its reversal, onboarding, the programme of study for the next simulated run, and panel round 16 on the 30 overclaiming entries. Full detail and the open items are in the newest SESSION STATE block of `resources/RECOVERY.md`.
+
+**Next: the founder's revised mathematical model.** The simulated run stays held until that is reviewed.
+
+## CURRENT STATE — 2026-09-08 16:22 BST (SUPERSEDED by the block above)
 
 **HEAD `5921bd6`, main, 8 commits ahead of `origin/main` (`071f1ed`). Suite 5426 passed, 4 skipped, 0 failed under `--netguard-strict`, pytest exit code 0.**
 

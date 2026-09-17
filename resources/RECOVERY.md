@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 September 2026 21:30 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 17 September 2026 15:23 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,24 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-09-17 15:21 BST (READ THIS FIRST)
+
+HEAD `a2999f1` before this save, main, 25 ahead of `origin/main`; this `sv` pushes them on the founder's `sv` command. Working tree clean.
+
+**★★★ THE FULL SUITE IS GREEN UNDER `--netguard-strict` AT `a2999f1`: 7,493 passed, 5 skipped, 1 xfailed, 0 failed, 1413.75 s, pytest exit code 0**, captured directly rather than through a pipe. Pass rate Wilson [99.9488%, 100.0000%], Clopper-Pearson [99.9508%, 100.0000%]. The 5 skips are the sealed key store, absent from this machine by design (4), and a fresh-clone identity check that needs a git remote (1). The xfail is the d9 arm-declaration exposure, awaiting a founder ruling because its fix edits a frozen pre-registration. All 45 outbound attempts were denied, each by a test on the known list.
+
+**★★★ THE SUITE WAS UNFINISHABLE AND NOW TAKES ABOUT 23 MINUTES.** `cited_where` in `scripts/orphan_figures_2026-09-10.py` ran a `git grep` per path, 1.42 s against 8,705 tracked files, inside loops over the untracked set, which the A8 reversal had just grown from 58 paths to 95. 1 test file took 611 s. An index built in 1 pass with 1 extraction regex answers identically in 2 s. 2 faster-looking alternatives were rejected on measurement, including an alternation of 95 branches that ran for over 660 s. Commit `7cc1530`.
+
+**★★★ ENTRY BODIES STOP AT THE SUPPLEMENTARY LIST.** On the founder's instruction to check the W1 case first: `blocker_triage` reported W1 depending on a term W1 does not contain, because the last entry's body ran to end of file and absorbed 7,612 characters of the supplementary table. 6 consumers carried the same slice and now share `task_list_markers.end_of_entries`. Commit `f22e95e`.
+
+**★★★ THE 15.8% IN `bench/dm/_similarity.py` WAS A MISLABEL, AND THIS SESSION CLAIMED OVERNIGHT THAT IT REPRODUCED NOWHERE.** It is 43 of the 272 exp46 pairs whose findings do not share a flaw class, and measurement M10 of the 2026-08-18 panel record had labelled it "(n=272)". The overnight claim was made without consulting M10. The corrections are struck through and dated in `experimental_notes/Green_Board_2026-09-17.md` and the Stage 1 addendum, and `scripts/immune_removal_rate_exp46_2026-09-17.py` now checks all 15 of the record's figures and M10's 4, exiting 1 on any mismatch. Commit `a2999f1`.
+
+**★★★ A NOTE IS HELD TO ITS FOOT-LINE'S VERSION, FAILING CLOSED.** The v1.7 enforcement took the first mention of a version anywhere in a note, so a quotation could silently exempt it. Both readers now hold a note to the highest version on any line shaped like a foot-line, and the revision reader parses `git grep -z` as bytes, so git settings cannot change its answer; with `grep.lineNumber=true` the text-mode reader had read 0 of 379. 2 rounds of independent review found defects in 2 earlier versions, and the review stopped after round 2 by judgement, not by convergence. Enforcement is unchanged at 61 notes, and 29 of 379 at `b593500`. Commit `a2999f1`.
+
+**Founder rulings executed 2026-09-17, 00:22 to 02:13 BST**, from `~/Developer_Projects/Responses/Outstanding_Rulings_2026-09-15.rtf` and chat: I23 exhausted-round valve set to 6 (`45369e5`); I31 drift detector wired (`90873cb`); I16 C0050 withdrawn and A11 closed (`aa53838`); A8 accepted, then reversed on his instruction to mirror rather than track, with 37 `bench/logs` files untracked and 0 removed from disk (`b8dc6fd`, `f22e95e`); onboarding checks every third-party tool and proves the Wolfram kernel computes (`d5f0bd3`); the programme of study for the next simulated run (`6c3bedc`); panel round 16 on the 30 overclaiming DONE entries, cc2 and fable only, 0 paid dispatch (`75b1163`). The overclaim census is 31 of 84 = 36.9048%, Wilson [27.3701%, 47.5848%], from `scripts/done_audit_overclaim_rate_2026-09-17.py`.
+
+**Where to pick up: an audit of every item agreed in the last 24 hours follows this save immediately, because several are NOT verified complete.** Q7, applying panel round 16's closures to the 30 entries; Q9, dispatching the engineering entries to the panel; W1, reading the founder's Gemini Wolfram chat and printing setup instructions; Q11, the updated Wolfram standard wired into every test, panel review and run; the study programme's copy on his Desktop; A19's per-fragment classification; and task-list entry A8, whose marker still reads OPEN after `b8dc6fd` closed it. Held by the founder: I18, dropping both stashes in person; the d9 xfail ruling; and the revised mathematical model, which comes next.
 
 ## SESSION STATE — 2026-09-11 17:14 BST (READ THIS FIRST)
 

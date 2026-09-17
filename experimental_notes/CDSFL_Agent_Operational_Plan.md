@@ -65,6 +65,16 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-17 15:21 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `a2999f1` before this `sv`, which pushes 25 commits on the founder's `sv` command. Working tree clean. The full suite is green under `--netguard-strict` at `a2999f1`: 7,493 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0.
+
+**★ READ `resources/RECOVERY.md`'s NEWEST SESSION STATE BLOCK FOR THE DETAIL.** In short: the founder's rulings of 2026-09-17 are executed and committed; the suite runs in about 23 minutes again; a 15.8% figure reported overnight as unreproducible was a mislabel, now corrected with dated strikes; and the note standard's version check now fails closed.
+
+**★ NEXT, IN ORDER.** (1) Audit every item agreed with the founder in the last 24 hours against the repository, finish what is unfinished, and report with a recommended action for anything left. The unverified items are Q7, Q9, W1's Wolfram setup instructions, Q11's Wolfram wiring, the study programme's Desktop copy, A19's per-fragment classification, and the stale A8 marker. (2) The founder's revised mathematical model. The simulated run stays held until it is reviewed.
+
+**★ HELD BY THE FOUNDER.** I18: drop both stashes, in person, since deleting a git ref is his. The d9 arm-declaration xfail ruling. Z1, the Zenodo token rotation, stays at the bottom of the list.
+
+---
+
 **★ RESUME POINTER (2026-09-12 21:42 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `347d0d4`, main, **level with `origin/main` — everything pushed.** Working tree clean. `sv` ran at 21:30, exit code 0, and captured an Open Brain summary. Written immediately before a founder-initiated restart of the machine for a macOS update.
 
 **★ THE FRAME CHANGED ON 2026-09-11, AND THIS PARAGRAPH IS THE ONE TO READ FIRST.** The founder established that this list was only ever meant to be *"the canonical list of un-actioned founder decisions over the last several days. But nothing more and nothing less than this."*
