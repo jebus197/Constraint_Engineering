@@ -103,7 +103,7 @@ If the tools cannot verify a claim, the claim is UNVERIFIABLE — escalate, do n
 | astropy 7.2.0 | `import astropy` | Physical/astronomical constants, unit conversion, coordinate transforms. Use for constant verification and SI/CGS conversion. |
 | PuLP 3.3.0 | `import pulp` | Linear programming, integer programming, constraint optimisation modelling. |
 | pandas 2.3.3 | `import pandas` | Data frames, time series aggregation, pivot tables, merge/join operations. |
-| Wolfram (MCP) | `mcp__Wolfram__*` | WolframAlpha (natural language queries), WolframLanguageEvaluator (Wolfram Language code), WolframContext (knowledge base). Use for cross-validation of SymPy results, specialised knowledge queries, or when Wolfram Language is more natural than Python. |
+| Wolfram (connector) | `mcp__<connector-id>__WolframAlpha`, `...__WolframLanguageEvaluator`, `...__WolframContext` | Natural-language queries, Wolfram Language, knowledge base. **The old `mcp__Wolfram__*` prefix matched NOTHING and is corrected here on the founder's approval, 2026-09-17**: the connector's tools carry a per-installation identifier, not the word Wolfram, which is why every call still raises a permission prompt. Use for cross-validation of SymPy results, or when Wolfram Language is more natural than Python. Seats and agents use the local Engine instead, through the serial gate. |
 
 ### Code Analysis Tools (Python)
 
@@ -219,18 +219,65 @@ commit message or paper carries an explicit attribution to Wolfram Language or
 Wolfram|Alpha. Their terms do permit use of results in academic/non-commercial
 publications, so this obligation is cheap and it is not optional.
 
-**Wolfram stays OUT of the automated pipeline — now a licence constraint, not
-only a design preference.** Wolfram's general Terms of Use (effective
-2024-07-29), which the Engine terms inherit by reference and which govern the
-hosted endpoints by their own scope clause, bar systematically extracting results
-into a new data table or AI system and state the Services *"should not be used in
-conjunction with your AI-powered tools or services"* absent a separate agreement.
-Wolfram|Alpha's terms separately forbid repeated scripted access. Assistant-side
-interactive cross-checking — the current arrangement — is defensible, and Wolfram
-publishes a `for-agents.md` naming Claude Code, which a prohibition cannot
-sensibly forbid. An automated in-pipeline fallback called by dispatched agents at
-experiment scale is **not** defensible on the published terms. Under
-`p-pass-ambiguity-default` this is HARD until Wolfram answers in writing.
+**WOLFRAM IS ENABLED FOR EVERY SEAT AND EVERY AGENT, AS THE SECOND FALSIFIER —
+FOUNDER'S RULING, 2026-09-17, AND IT REVERSES THE DEFAULT THIS BLOCK USED TO
+STATE.** Verbatim: *"So fully enable it. But we don't depend just on Wolfram ...
+Wolfram, although it should always be used wherever possible, should remain the
+secondary/verification source (a second falsifier), where our other relevant
+tools should also aways be used and should remain primary in all cases.
+Basically the idea is that anyone running the project, should not be required to
+install Wolfram to do so, although we might recommend it, and make it as trivial
+as possible for them to do via our onboarding script."* And, on agents: *"Agents
+are not exempt from using tools. That is the whole point of this project. Every
+model and every agent should use tools wherever possible, including Wolfram. (But
+again only in the above context.) The only exception is when a tool may be
+literally physically unavailable to a model/agent, in which case it should also
+fall back exclusively to the Open Source tools it does have access to."*
+
+**What that means in code, all of it in `bench/wolfram_standard.py`.** The policy
+is `serial` by default, selectable with `CDSFL_WOLFRAM_POLICY`. Every seat and
+every dispatched agent gets `bench/tools/wolfram_gate/serial` first on PATH: a
+gate that takes a machine-wide exclusive lock, runs the real binary 1 call at a
+time, passes the exit code through untouched, and appends either Wolfram's
+required attribution or `[NOT EVIDENCE]` with the reason. The same seats are
+TOLD this, in the dispatcher's SYSTEM prompt, generated from the same policy, so
+the words and the launcher can never disagree. SymPy, z3, mpmath, SciPy,
+statsmodels and NumPy remain PRIMARY in every case; a missing or busy kernel is
+reported and worked around, never a blocker.
+
+**The 1 exception, and it is the founder's own condition rather than a
+preference: a STORED FALSIFIER may not call Wolfram.** A falsifier is re-run by
+whoever reproduces the experiment, and *"anyone running the project should not be
+required to install Wolfram to do so"* — a falsifier that calls the kernel writes
+exactly that requirement into the archive. Falsifiers also run in parallel
+against 1 licensed kernel. The model that WRITES a falsifier is free to use
+Wolfram while reasoning, through the serial gate on its own PATH. Enforced in
+`bench/falsifier_verify.py`, which pins the sandbox to `deny` explicitly rather
+than inheriting the policy.
+
+**The licence reasoning that produced the earlier default is RETAINED, because
+the ruling overrides the conclusion and not the facts.** Wolfram's general Terms
+of Use (effective 2024-07-29), which the Engine terms inherit by reference and
+which govern the hosted endpoints by their own scope clause, bar systematically
+extracting results into a new data table or AI system and state the Services
+*"should not be used in conjunction with your AI-powered tools or services"*
+absent a separate agreement. Wolfram|Alpha's terms separately forbid repeated
+scripted access, and Wolfram publishes a `for-agents.md` naming Claude Code.
+Task W1 — the founder's email asking Wolfram in writing whether the connector's
+use and the local agent-tools server are permitted — is still open and still
+unanswered. The conservative reading was CC1's, under
+`p-pass-ambiguity-default`; the decision is the founder's, it is recorded here
+with its date, and it is reversible by the same route.
+
+**Serialisation is what makes the enabled route safe, and it is measured rather
+than asserted.** `scripts/wolfram_serial_gate_probe_2026-09-17.py` runs 2 calls
+through the real gate at the same moment: measured 2026-09-17, the second waited
+5.1 s in the queue while the first held the kernel for 5.1 s, the 2 kernel
+windows were disjoint, both results classified as evidence, both carried the
+attribution, and both answers were correct. Without the queue, 3 concurrent calls
+measured on 2026-08-02 gave 1 result and 2 "Connection closed by WolframKernel".
+The test suite holds the same property against a fake kernel, and removing the
+lock makes it fail.
 
 **HOW WOLFRAM IS WIRED (settled 2026-08-02 22:15 after a failed restart).**
 Two routes, and the split is forced by a measured constraint, not preference:
@@ -239,7 +286,10 @@ Two routes, and the split is forced by a measured constraint, not preference:
     BECAUSE IT IS UNWANTED.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`,
     and the entry was removed from the desktop application's config on the
     founder's explicit instruction, he being away from the machine. **The local
-    Engine via `wolframscript` in Bash is the only WORKING Wolfram route today.**
+    Engine via `wolframscript` in Bash is the route every seat and every agent
+    uses, through the serial gate.** It is no longer the ONLY working route: the
+    connector, authorised in the assistant's own session, returned `Out[1]= 4` on
+    2026-09-17, which is why the sentence changed with the founder's approval.
 
     **The founder's position, and it corrects an earlier overstatement here.** An
     earlier version of this block said "RETIRED ... DO NOT USE IT AND DO NOT

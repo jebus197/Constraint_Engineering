@@ -119,6 +119,12 @@ class TestLicence:
 
 
 class TestTheDenyLayer:
+    """`deny` is no longer the default -- the founder enabled Wolfram as the
+    second falsifier on 2026-09-17 -- but it is RETAINED, and it is what the test
+    suite and the falsifier sandbox run under, so it goes on being executed
+    here. The serial policy has its own file,
+    test_wolfram_secondary_source_2026-09-17.py."""
+
     @pytest.mark.parametrize("name", ["wolframscript", "WolframKernel"])
     def test_the_gate_refuses_with_the_modules_own_message(self, name):
         gate = W.DENY_GATE / name
@@ -140,10 +146,17 @@ class TestTheDenyLayer:
         assert r.returncode == 0 and W.DENY_MESSAGE not in r.stdout
 
     def test_gated_path_puts_the_gate_first_once(self):
-        env = W.gated_path(W.gated_path({"PATH": "/usr/local/bin:/usr/bin"}))
+        env = W.gated_path(W.gated_path({"PATH": "/usr/local/bin:/usr/bin"}, "deny"), "deny")
         parts = env["PATH"].split(":")
         assert parts[0] == str(W.DENY_GATE) and parts.count(str(W.DENY_GATE)) == 1
         assert parts[1:] == ["/usr/local/bin", "/usr/bin"]
+
+    def test_switching_policy_replaces_the_gate_rather_than_stacking_them(self):
+        # A seat handed both gates would take whichever came first, which is how
+        # a policy change could silently fail to apply.
+        env = W.gated_path(W.gated_path({"PATH": "/usr/bin"}, "serial"), "deny")
+        parts = env["PATH"].split(":")
+        assert parts == [str(W.DENY_GATE), "/usr/bin"], parts
 
     def test_real_wolframscript_never_returns_a_gate(self, tmp_path):
         real = tmp_path / "bin" / "wolframscript"

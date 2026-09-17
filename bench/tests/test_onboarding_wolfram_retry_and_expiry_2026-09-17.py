@@ -35,6 +35,13 @@ def onb():
     return m
 
 
+#: WHAT `wolframscript -code "Print[1+1]"` ACTUALLY PRINTS, measured 2026-09-17
+#: 22:50 BST: the 2, and then the Null that `Print` returns. The fixtures here
+#: used to reply "2", which the binary never emits, and that invented shape
+#: hid a defect that called a working kernel NO_KERNEL.
+REAL_PRINT_OUTPUT = "2\nNull"
+
+
 def _world(monkeypatch, onb, kernel_replies, ps_lines=()):
     """A fake machine: kernel calls take `kernel_replies` in order (the last repeats)."""
     calls = {"kernel": [], "ps": 0}
@@ -60,11 +67,23 @@ class TestRetryAndContention:
         assert len(calls["kernel"]) == 2
 
     def test_contention_then_success_is_ok(self, onb, monkeypatch):
-        calls = _world(monkeypatch, onb, [("Connection closed by WolframKernel", 1), ("2", 0)])
+        calls = _world(monkeypatch, onb, [("Connection closed by WolframKernel", 1), (REAL_PRINT_OUTPUT, 0)])
         assert onb.wolfram_state() == "OK" and len(calls["kernel"]) == 2
 
+    def test_a_working_kernel_is_ok_rather_than_no_kernel(self, onb, monkeypatch):
+        """THE DEFECT THIS FILE'S FIXTURES USED TO HIDE, 2026-09-17 22:50 BST.
+
+        `Print` writes its argument and returns Null, so a healthy kernel answers
+        "2\nNull". The state check demanded "2" as the LAST line, so it read a
+        kernel that had just computed correctly as NO_KERNEL -- and `check_wolfram`
+        then offers to reconfigure the kernel path, which is the wrong repair for
+        a kernel that works. Reverting the fix fails this test.
+        """
+        _world(monkeypatch, onb, [(REAL_PRINT_OUTPUT, 0)])
+        assert onb.wolfram_state() == "OK"
+
     def test_a_timeout_then_success_is_ok(self, onb, monkeypatch):
-        calls = _world(monkeypatch, onb, [(TimeoutError, None), ("2", 0)])
+        calls = _world(monkeypatch, onb, [(TimeoutError, None), (REAL_PRINT_OUTPUT, 0)])
         assert onb.wolfram_state() == "OK" and len(calls["kernel"]) == 2
 
     def test_busy_offers_no_reconfiguration(self, onb, monkeypatch, capsys):
@@ -105,6 +124,6 @@ class TestExpiry:
 
     def test_check_wolfram_prints_renew_when_ok_and_near(self, onb, monkeypatch, capsys):
         soon = dt.date.today() + dt.timedelta(days=5)
-        _world(monkeypatch, onb, [("2", 0), (f"DateObject[{{{soon.year}, {soon.month}, {soon.day}}}, Day]", 0)])
+        _world(monkeypatch, onb, [(REAL_PRINT_OUTPUT, 0), (f"DateObject[{{{soon.year}, {soon.month}, {soon.day}}}, Day]", 0)])
         assert onb.check_wolfram() == "OK"
         assert "[RENEW]" in capsys.readouterr().out

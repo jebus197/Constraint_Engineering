@@ -373,7 +373,16 @@ def wolfram_state(timeout: int = 120) -> str:
     # `runner=subprocess.run` is looked up NOW, so a test that replaces it is obeyed.
     r = W.run_local("Print[1+1]", timeout=timeout, runner=subprocess.run, script=script)
     out = (r["stdout"] + r["stderr"]).strip()
-    if r["evidence"] and out.splitlines()[-1:] == ["2"]:
+    # THE ANSWER IS NOT THE LAST LINE, MEASURED 2026-09-17 22:50 BST. `Print`
+    # writes 2 and then RETURNS Null, so the real binary prints "2\nNull" and
+    # this check -- which required "2" to be the final line -- classified a
+    # KERNEL THAT COMPUTED CORRECTLY as NO_KERNEL, and then offered to
+    # reconfigure a kernel path that was already right: the exact wrong repair
+    # this function's docstring says it was rewritten to stop making. The
+    # fixtures never caught it because they replied "2", a shape the binary does
+    # not produce -- a producer and a consumer that disagreed while each
+    # described itself consistently (`execute-do-not-grep`).
+    if r["evidence"] and "2" in [line.strip() for line in out.splitlines()]:
         return "OK"
     low = out.lower()
     if "connection closed by wolframkernel" in low:
@@ -405,8 +414,15 @@ def check_wolfram() -> str:
     print("           runs Wolfram Language through `wolframscript` with no")
     print("           per-call limit. The Wolfram connector, authorised in the")
     print("           assistant's own session, adds natural-language queries and")
-    print("           a cloud kernel. Neither is used inside an automated run:")
-    print("           Wolfram's terms bar systematic in-pipeline extraction.")
+    print("           a cloud kernel.")
+    print("    [POLICY] Wolfram is the SECOND falsifier, and it is never required.")
+    print("           Founder ruling 2026-09-17: every model and every agent uses")
+    print("           tools wherever possible, Wolfram included, but SymPy, z3,")
+    print("           mpmath, SciPy, statsmodels and NumPy stay PRIMARY in every")
+    print("           case. Nothing in this project depends on Wolfram, and the")
+    print("           test suite passes on a machine that has never had it.")
+    print("           Calls from seats and agents are queued through 1 kernel:")
+    print("           bench/tools/wolfram_gate/serial, wired by wolfram_standard.")
     print("    [RETIRED] The key-authenticated Wolfram Local MCP Bridge was")
     print("              retired 2026-08-03. No key is needed and none should")
     print("              be supplied. Not a missing dependency.")
@@ -439,7 +455,10 @@ def check_wolfram() -> str:
         return state
 
     if state == "ABSENT":
-        print("    [ABSENT] wolframscript is not installed.")
+        print("    [ABSENT] wolframscript is not installed. NOT A BLOCKER: the")
+        print("             project runs without it and every result stays")
+        print("             reproducible. Installing it adds a second falsifier,")
+        print("             which is why it is recommended and made this easy.")
         if has_homebrew():
             print("      Command: brew install --cask wolfram-engine")
             if ask("Install the Wolfram Engine via Homebrew?", default="y"):

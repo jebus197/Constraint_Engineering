@@ -1,0 +1,8 @@
+#!/bin/sh
+# The QUEUING gate, first on a seat's or an agent's PATH under the `serial`
+# policy (founder, 2026-09-17: "fully enable it ... Wolfram ... should remain
+# the secondary/verification source"). It does not refuse: it takes the
+# machine-wide single-kernel lock, runs the real binary, and appends the
+# attribution or a NOT EVIDENCE line. See bench/wolfram_standard.py::run_gated.
+d=$(cd -- "$(dirname -- "$0")" && pwd)
+exec /usr/bin/env python3 "$d/../../../wolfram_standard.py" serial --tool wolframscript -- "$@"

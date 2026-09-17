@@ -584,8 +584,12 @@ def _hook(event, args):
                                  if isinstance(x, (str, bytes, os.PathLike)))
             for blob in blobs:
                 text = blob.decode("utf-8", "replace") if isinstance(blob, bytes) else str(blob)
-                # THE WOLFRAM STANDARD (Question 11, 2026-09-17). Model-written
-                # code in an automated run must not start the licensed kernel:
+                # THE WOLFRAM STANDARD (Question 11, 2026-09-17, and the
+                # founder's enabling ruling that evening). A SCORED FALSIFIER
+                # must not start the licensed kernel -- it has to re-run on a
+                # machine with no Wolfram, and falsifiers run in parallel
+                # against 1 kernel. The model that wrote it is free to use
+                # Wolfram itself, through the serial gate on its own PATH:
                 # a fake binary of that name WAS reached here before this rule.
                 # 0 of 1,006 archived falsifier sources mention Wolfram
                 # (scripts/falsifier_corpus_env_and_wolfram_2026-09-17.py).
@@ -896,6 +900,14 @@ def _sandbox_env(repo_root: str, bootstrap: str | None = None) -> dict:
     parts = [p for p in (bootstrap, repo_root, os.path.join(repo_root, "bench"))
              if p] + kept
     env["PYTHONPATH"] = os.pathsep.join(parts)
+    # THE SANDBOX IS THE 1 PLACE THAT STAYS ON `deny`, WHATEVER THE POLICY IS
+    # (founder, 2026-09-17). Everywhere else Wolfram is now the second falsifier
+    # and the PATH gate queues it; here it is refused, because a falsifier is a
+    # STORED artefact that anyone must be able to re-run without Wolfram
+    # installed, which is the founder's own condition, and because falsifiers run
+    # in parallel against 1 licensed kernel. Stated explicitly rather than
+    # inherited, so a change of policy elsewhere cannot quietly open this.
+    env = _wolfram.gated_path(env, "deny")
     return env
 
 
@@ -982,7 +994,7 @@ def execute_python(
                 out += f"\n[exit {r.returncode}]\n" + (r.stderr or "")[-2000:]
             obs = _read_trace(trace_path)
             if obs["wolfram"]:
-                return _wolfram.DENY_MESSAGE
+                return _wolfram.SANDBOX_REFUSAL
             if obs["denials"]:
                 _announce_rejection(
                     "execute_python sandbox",
@@ -1242,8 +1254,10 @@ def reverify_falsifier(
             falsifier_code)
         return INTEGRITY_VIOLATION
     if obs["wolfram"]:
-        # Not an integrity fault: the falsifier asked for a tool automated runs
-        # may not use, so it could not decide the claim. That is ERROR.
+        # Not an integrity fault: the falsifier reached for a tool a STORED
+        # falsifier may not depend on (see wolfram_standard.SANDBOX_REFUSAL --
+        # the model that wrote it may use Wolfram itself, through the serial
+        # gate), so this run could not decide the claim. That is ERROR.
         return "ERROR"
     if obs["denials"]:
         _announce_rejection(

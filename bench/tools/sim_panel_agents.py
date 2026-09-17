@@ -50,7 +50,8 @@ for p in (str(REPO), str(REPO / "bench")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from experiment_11_orchestrator import WOLFRAM_DENY_ARGS, seat_environment  # noqa: E402
+from experiment_11_orchestrator import WOLFRAM_ARGS, seat_environment  # noqa: E402
+from wolfram_standard import panel_clause as _wolfram_clause  # noqa: E402
 
 #: Six stand-ins for six models. Named by letter, never by vendor.
 SIM_AGENTS = ["SIM-A", "SIM-B", "SIM-C", "SIM-D", "SIM-E", "SIM-F"]
@@ -91,12 +92,19 @@ document at the same time, and the most likely defect is the one in AL-03. So:
 The archive holds 5282 CONFIRM and 209 EXTEND cross-references, so a panel that
 emits none is not a realistic panel.
 
-Return between 1 and 3 findings. JSON only, no prose, no markdown fence."""
+Return between 1 and 3 findings. JSON only, no prose, no markdown fence.
+
+{tools}"""
 
 
 def _one_agent(label: str, target: str, timeout: int, model: str = "opus") -> list:
     """Dispatch one agent; return its findings with the label stamped on."""
-    prompt = BRIEF.format(target=target)
+    # A SIMULATED AGENT IS NOT EXEMPT FROM USING TOOLS (founder, 2026-09-17:
+    # "Every model and every agent should use tools wherever possible,
+    # including Wolfram"). The clause is generated from the policy the
+    # launcher applies, so the brief cannot tell the agent one thing while
+    # its PATH does another.
+    prompt = BRIEF.format(target=target, tools=_wolfram_clause())
     t0 = time.monotonic()
     try:
         r = subprocess.run(
@@ -107,7 +115,7 @@ def _one_agent(label: str, target: str, timeout: int, model: str = "opus") -> li
             ["claude", "-p", prompt, "--model", model, "--output-format", "text",
              "--no-session-persistence",
         "--setting-sources", "",  # panellists read the directive, not the operator config
-             *WOLFRAM_DENY_ARGS,
+             *WOLFRAM_ARGS(),
              "--allowedTools", "Bash", "Read", "Grep", "Glob"],
             capture_output=True, text=True, timeout=timeout,
             cwd=str(REPO), stdin=subprocess.DEVNULL,

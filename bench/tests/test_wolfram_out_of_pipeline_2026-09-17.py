@@ -57,6 +57,12 @@ class TestTheSuiteCannotStartIt:
 
 
 class TestTheFalsifierSandboxRefusesIt:
+    """STILL refuses, under either policy, and now for the founder's own reason
+    rather than a blanket one: a falsifier is a stored artefact that anyone must
+    be able to re-run without Wolfram installed (2026-09-17), and falsifiers run
+    in parallel against 1 licensed kernel. The MODEL that writes a falsifier is
+    free to use Wolfram itself, through the serial gate on its own PATH."""
+
     @pytest.mark.parametrize("form", ["absolute", "bash -c", "os.system", "Popen by name"])
     def test_every_spawn_form(self, fake, form):
         binary, marker = fake
@@ -69,7 +75,7 @@ class TestTheFalsifierSandboxRefusesIt:
         out = FV.execute_python(code, repo_root=str(ROOT))
         assert not marker.exists(), f"{form}: the fake kernel ran"
         assert "FAKE-WOLFRAMSCRIPT-REACHED" not in out
-        assert out == W.DENY_MESSAGE, out
+        assert out == W.SANDBOX_REFUSAL, out
 
     def test_control_an_ordinary_spawn_still_runs(self):
         out = FV.execute_python("import subprocess; print(subprocess.run(['echo', 'ok'], "
@@ -117,10 +123,15 @@ class TestEveryPanelSeatIsToldTheStandard:
                 os.environ["PANEL_ONLY"] = old
 
     def test_the_clause_is_in_the_real_system_string(self, system):
-        assert W.PANEL_CLAUSE in system
+        assert W.panel_clause() in system
 
     def test_the_clause_states_the_rule_the_code_applies(self):
-        for prefix in W.FAILURE_PREFIXES:
-            assert prefix in W.PANEL_CLAUSE
-        for needle in ("Out[", "UNVERIFIED", "Name::tag", "$Failed", "attribution", "Do not run `wolframscript`"):
-            assert needle in W.PANEL_CLAUSE, needle
+        # The failure shapes are the same under either policy; what changes is
+        # whether the seat is told to use the tool or to leave it alone, which
+        # test_wolfram_secondary_source_2026-09-17.py holds for both.
+        for clause in (W.SERIAL_CLAUSE, W.DENY_CLAUSE):
+            for prefix in W.FAILURE_PREFIXES:
+                assert prefix in clause
+            for needle in ("Out[", "UNVERIFIED", "Name::tag", "$Failed", "attribution"):
+                assert needle in clause, needle
+        assert "Do not run `wolframscript`" in W.DENY_CLAUSE

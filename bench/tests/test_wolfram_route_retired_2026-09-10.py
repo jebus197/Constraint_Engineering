@@ -159,10 +159,23 @@ class TestTheRetirementIsRecorded:
             d["entry"]["WolframCloud"]["args"]), "the endpoint URL was not preserved"
         assert Path(d["backup"]).is_file(), "the named backup does not exist"
 
-    def test_the_local_engine_is_named_as_the_working_route(self):
+    def test_the_local_engine_is_named_as_the_route_seats_and_agents_use(self):
+        """AMENDED 2026-09-17 on the founder's approval, and the amendment is the
+        point of the test rather than a weakening of it.
+
+        It used to assert the box said the local Engine was the "only WORKING
+        Wolfram route today". That sentence became false the same day: the
+        connector, authorised in the assistant's own session, returned `Out[1]=
+        4`. The property worth holding is not the word "only" -- it is that the
+        box names, unambiguously, the route an automated seat or agent actually
+        reaches, which is the local Engine through the serial gate.
+        """
         box = BOX.read_text(encoding="utf-8")
-        assert "only WORKING Wolfram route today" in box, (
-            "the box must name what an agent should actually use")
+        assert "the route every seat and every agent" in box, (
+            "the box must name what a seat or an agent should actually use")
+        assert "serial gate" in box
+        assert "only WORKING Wolfram route today" not in box, (
+            "the superseded sentence is back; the connector contradicts it")
 
     def test_the_retirement_cites_its_producing_script(self):
         """`measured-rate-travels-with-its-script`, applied to a REMOVAL.

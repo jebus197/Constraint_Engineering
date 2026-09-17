@@ -45,13 +45,24 @@ class _Captured(Exception):
 
 
 def _wolfram_denied(seen, claude=True):
-    """QUESTION 11, 2026-09-17: the same launchers carry the Wolfram deny layer."""
+    """QUESTION 11, 2026-09-17: the same launchers carry the Wolfram POLICY layer.
+
+    The founder enabled Wolfram as the second falsifier that evening, so the
+    default gate is the QUEUE rather than the refusal. What this asserts is the
+    property that survived the change and matters either way: the launcher hands
+    the seat the gate of the policy in force -- never the other one, never none --
+    and the `claude -p` arguments of that same policy.
+    """
     import wolfram_standard as W
-    assert seen["env"]["PATH"].split(":")[0] == str(W.DENY_GATE), seen["env"]["PATH"][:120]
+    pol = W.policy()
+    parts = seen["env"]["PATH"].split(":")
+    assert parts[0] == str(W.gate_dir(pol)), seen["env"]["PATH"][:120]
+    assert parts.count(str(W.DENY_GATE)) + parts.count(str(W.SERIAL_GATE)) == 1, parts[:4]
     if claude:
         cmd = list(seen["cmd"])
-        n = len(W.CLAUDE_CLI_DENY_ARGS)
-        assert any(tuple(cmd[i:i + n]) == W.CLAUDE_CLI_DENY_ARGS for i in range(len(cmd))), cmd
+        want = W.claude_cli_args(pol)
+        n = len(want)
+        assert any(tuple(cmd[i:i + n]) == want for i in range(len(cmd))), cmd
 
 
 def _capture(monkeypatch, module):

@@ -1,0 +1,36 @@
+{
+  "when": "2026-09-17T22:38:48+0100",
+  "gate": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript",
+  "policy": "serial",
+  "lock": "/tmp/cdsfl_wolfram_kernel.lock",
+  "calls": [
+    {
+      "seat": "probe-A",
+      "code": "Sum[i, {i, 1, 10}]",
+      "seconds": 5.19,
+      "returncode": 0,
+      "stdout": "55",
+      "evidence": true,
+      "reason": "exit 0 with output and no failure shape",
+      "attributed": true,
+      "kernel_seconds": 5.1
+    },
+    {
+      "seat": "probe-B",
+      "code": "Prime[100]",
+      "seconds": 10.33,
+      "returncode": 0,
+      "stdout": "541",
+      "evidence": true,
+      "reason": "exit 0 with output and no failure shape",
+      "attributed": true,
+      "kernel_seconds": 5.1
+    }
+  ],
+  "serialised": true,
+  "second_call_waited_seconds": 5.1,
+  "kernel_windows_disjoint": true,
+  "both_evidence": true,
+  "both_attributed": true,
+  "answers_correct": true
+}
