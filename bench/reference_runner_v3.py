@@ -752,31 +752,111 @@ def target_hash_event(target_path) -> tuple[str, str | None]:
 #:
 #: This changes no prompt, no verdict and no gate. It only records more at a
 #: moment where the record was blank.
-_SEATS_IN_FLIGHT: Dict[int, Dict[str, Any]] = {}
+#:
+#: COMPLETION IS RECORDED, NOT DELETED (2026-09-17, task 6.6, panel round 16).
+#: Until then a registration carried only `label`, `thread` and `running_for_s`,
+#: `seat_done` had no production caller, and after a 5-seat pool and then a
+#: 2-seat pool had both shut down, `seats_in_flight()` still returned 5 records
+#: with nothing marking any as finished. Deleting a registration on completion
+#: would have been worse: the integrity check runs AFTER the round's dispatch
+#: pool has joined, so it would read an empty candidate set at every detection.
+#: So `_dispatch_single_model` now sets `until` in a `finally`
+#: (`seat_finished`), every record carries `since`, `until` and `finished`, and
+#: `could_have_written` excludes a seat whose window lies wholly before or after
+#: the file's mtime. Registrations are keyed by (thread, label, since), so a
+#: pool thread whose ident is reused cannot overwrite an earlier candidate.
+_SEATS_IN_FLIGHT: Dict[Tuple[int, str, float], Dict[str, Any]] = {}
 _SEATS_LOCK = threading.Lock()
+
+#: Finished registrations kept for attribution. The integrity check runs every
+#: round, so a write is detected in the round it happens; 64 is several rounds
+#: of a 5-seat panel. Unfinished registrations are never dropped.
+_SEATS_FINISHED_KEEP = 64
 
 
 def seat_in_flight(label: str) -> None:
     """Register the calling thread as dispatching `label`."""
+    now = time.time()
     with _SEATS_LOCK:
-        _SEATS_IN_FLIGHT[threading.get_ident()] = {
-            "label": label, "since": time.time()}
+        _SEATS_IN_FLIGHT[(threading.get_ident(), label, now)] = {
+            "label": label, "since": now, "until": None}
+        finished = sorted((k for k, v in _SEATS_IN_FLIGHT.items()
+                           if v["until"] is not None),
+                          key=lambda k: _SEATS_IN_FLIGHT[k]["until"])
+        for k in finished[:max(0, len(finished) - _SEATS_FINISHED_KEEP)]:
+            del _SEATS_IN_FLIGHT[k]
+
+
+def seat_finished(label: str) -> None:
+    """Mark the calling thread's open registration for `label` as finished.
+
+    Sets `until`; never deletes, because the record is read after the pool that
+    made it has joined. Safe to call when never registered.
+    """
+    now = time.time()
+    ident = threading.get_ident()
+    with _SEATS_LOCK:
+        open_keys = [k for k, v in _SEATS_IN_FLIGHT.items()
+                     if k[0] == ident and k[1] == label and v["until"] is None]
+        if open_keys:
+            _SEATS_IN_FLIGHT[max(open_keys, key=lambda k: k[2])]["until"] = now
 
 
 def seat_done(label: str) -> None:
-    """Deregister the calling thread. Safe to call when never registered."""
+    """Deregister the calling thread. Safe to call when never registered.
+
+    SUPERSEDED IN PRODUCTION by `seat_finished` (2026-09-17): deleting on
+    completion would empty the candidate set before the integrity check reads
+    it. Kept for resetting the registry between tests.
+    """
+    ident = threading.get_ident()
     with _SEATS_LOCK:
-        _SEATS_IN_FLIGHT.pop(threading.get_ident(), None)
+        for k in [k for k in _SEATS_IN_FLIGHT if k[0] == ident]:
+            del _SEATS_IN_FLIGHT[k]
+
+
+def _records_seat_completion(fn):
+    """Run `fn` and record the seat's completion however it ends."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(mc, *args, **kwargs):
+        try:
+            return fn(mc, *args, **kwargs)
+        finally:
+            seat_finished(mc.label)
+    return wrapper
 
 
 def seats_in_flight() -> list:
-    """A snapshot of who was dispatching, newest registration last."""
+    """A snapshot of every retained registration, oldest first.
+
+    `running_for_s` is how long the seat ran: to `until` when it has finished,
+    to now when it has not. `finished` says which.
+    """
+    now = time.time()
     with _SEATS_LOCK:
         return sorted(
-            ({"label": v["label"], "thread": k,
-              "running_for_s": round(time.time() - v["since"], 3)}
+            ({"label": v["label"], "thread": k[0],
+              "since": round(v["since"], 3),
+              "until": None if v["until"] is None else round(v["until"], 3),
+              "finished": v["until"] is not None,
+              "running_for_s": round((v["until"] or now) - v["since"], 3)}
              for k, v in _SEATS_IN_FLIGHT.items()),
-            key=lambda d: -d["running_for_s"])
+            key=lambda d: d["since"])
+
+
+def could_have_written(record: Dict[str, Any], mtime_epoch: float) -> bool:
+    """False when a seat's dispatch window lies wholly before or after `mtime_epoch`.
+
+    A seat that started after the write, or finished before it, cannot have made
+    it through its own dispatch. An open registration (`until` None) is kept for
+    any mtime at or after its start.
+    """
+    if record["since"] > mtime_epoch:
+        return False
+    until = record.get("until")
+    return until is None or until >= mtime_epoch
 
 
 def target_attribution(target_path) -> Dict[str, Any]:
@@ -804,6 +884,12 @@ def target_attribution(target_path) -> Dict[str, Any]:
         }
     except OSError as exc:
         rec["file_error"] = f"{type(exc).__name__}: {exc}"
+    else:
+        # THE NARROWING, 2026-09-17: the seats whose dispatch window contains
+        # the file's mtime. `seats_in_flight` above stays the full superset.
+        rec["seats_whose_window_contains_mtime"] = [
+            s["label"] for s in rec["seats_in_flight"]
+            if could_have_written(s, rec["file"]["mtime_epoch"])]
     return rec
 
 
@@ -844,6 +930,46 @@ def study_programme_report(registry, cfg=None, findings=None) -> Dict[str, Any]:
 
     models = {e.get("source_model") for e in entries if e.get("source_model")}
 
+    # TASK 9.4, CORRECTED 2026-09-17 (panel round 16). `source_model` is a SEAT
+    # LABEL, and this item counted labels and never read `cfg`, so a simulated
+    # panel -- every seat answered by the 1 stand-in model from
+    # bench/tools/sim_dispatch_shim.make_shim -- reported 6 "distinct" models
+    # and answerable: True, in every archived all -SIM report. It now refuses a
+    # simulated run (by cfg, or by the -SIM marker on the recorded labels, using
+    # the same run_is_simulated rule), and resolves labels through the
+    # registry's seat-identity map when it has one, so 2 labels on 1 model count
+    # once. Guarded by test_cross_architecture_refuses_a_sim_panel_2026-09-17.py.
+    _resolve = getattr(registry, "resolve_model", None)
+    try:
+        architectures = ({_resolve(m) for m in models} if callable(_resolve)
+                         else set(models))
+    except Exception:                                    # noqa: BLE001
+        architectures = set(models)
+    from types import SimpleNamespace as _NS
+    simulated = bool(
+        (cfg is not None and run_is_simulated(cfg))
+        or run_is_simulated(_NS(models=sorted(models))))
+    cross_answerable = len(architectures) > 1 and not simulated
+    if cross_answerable:
+        cross_why_not = None
+    elif simulated:
+        cross_why_not = (
+            f"this is a simulated run: every seat is answered by the same "
+            f"stand-in model from bench/tools/sim_dispatch_shim.make_shim, so "
+            f"{len(models)} labels are not {len(models)} architectures. This "
+            f"is a PRECONDITION, not a measurement -- task 9.4")
+    elif len(models) > 1:
+        cross_why_not = (
+            f"the {len(models)} seat labels resolve through the registry's "
+            f"seat-identity map to {len(architectures)} model(s), so there are "
+            f"no distinct architectures to correlate. This is a PRECONDITION, "
+            f"not a measurement -- task 9.4")
+    else:
+        cross_why_not = ("every seat resolved to 1 model wearing several "
+                         "labels, so there are no distinct architectures to "
+                         "correlate. This is a PRECONDITION, not a measurement "
+                         "-- task 9.4")
+
     return {
         "_what": "the 6 items his 2026-09-06 rulings scheduled for a run to report",
         "_decides_nothing": True,
@@ -857,13 +983,32 @@ def study_programme_report(registry, cfg=None, findings=None) -> Dict[str, Any]:
             "n": len(sev),
         },
 
+        # CORRECTED 2026-09-17 (task 9.1, panel round 16). This answered that
+        # CONFIRMED is terminal to the sweep and that the sweep "cannot clear
+        # one -- it was never able to". Executed, the sweep re-offers a
+        # CONFIRMED finding and clears an OPEN critical on a CONFIRMED
+        # falsifier. What it cannot do is RETIRE a critical, because its 2
+        # withdrawal branches are severity-gated. The terminal set now comes
+        # from the constant the sweep itself uses, and
+        # test_sweep_report_matches_the_sweep_2026-09-17.py compares this item
+        # with the executed sweep.
         "why_the_sweep_cannot_clear_a_critical": {
-            "question": "which statuses does the post-convergence sweep treat as terminal?",
-            "answer": ("the sweep only re-examines NON-terminal entries; a "
-                       "critical already CONFIRMED or CLOSED is terminal to it, "
-                       "so the sweep cannot clear one -- it was never able to"),
-            "terminal_statuses": sorted({"MERGED", "CLOSED", "REFUTED",
-                                         "DUPLICATE", "CONFIRMED"}),
+            "question": ("which findings does the post-convergence sweep "
+                         "re-examine, and what stops it retiring a critical?"),
+            "answer": ("the sweep re-examines every finding whose status is not "
+                       "in terminal_statuses, so OPEN, CONTESTED and CONFIRMED "
+                       "criticals are all residuals. A CONFIRMED runnable "
+                       "falsifier clears one, with no severity gate. What the "
+                       "sweep cannot do is RETIRE a finding at or above "
+                       "cannot_retire_at_or_above: a REFUTED falsifier and a "
+                       "reasoned withdrawal are both severity-gated (founder "
+                       "ruling 2026-08-03), and a withdrawal also needs a proven "
+                       "severity. A REFUTED verdict on a critical is recorded as "
+                       "computed evidence and the finding stays open"),
+            "terminal_statuses": sorted(SWEEP_TERMINAL_STATUSES),
+            "clears_a_critical_by": ("a CONFIRMED runnable falsifier, with no "
+                                     "severity gate"),
+            "cannot_retire_at_or_above": CRITICAL_SEVERITY_THRESHOLD,
         },
 
         "falsifier_error_causes": {
@@ -877,13 +1022,11 @@ def study_programme_report(registry, cfg=None, findings=None) -> Dict[str, Any]:
 
         "cross_architecture_correlation": {
             "question": "what is rho across genuinely distinct architectures?",
-            "answerable": len(models) > 1,
+            "answerable": cross_answerable,
             "distinct_source_models": sorted(m for m in models if m),
-            "why_not": (None if len(models) > 1 else
-                        "every seat resolved to one model wearing several "
-                        "labels, so there are no distinct architectures to "
-                        "correlate. This is a PRECONDITION, not a measurement "
-                        "-- task 9.4"),
+            "distinct_architectures": sorted(a for a in architectures if a),
+            "simulated": simulated,
+            "why_not": cross_why_not,
         },
 
         "corrected_s_star": {
@@ -6197,6 +6340,13 @@ def _settle_confirmed_findings(registry, round_idx):
     return settled
 
 
+#: The statuses `_post_convergence_sweep` does NOT re-examine. Hoisted 2026-09-17
+#: (task 9.1, panel round 16) so `study_programme_report` reports the set the
+#: sweep uses rather than a copy of it; the copy had drifted to include
+#: CONFIRMED, which the sweep treats as a residual.
+SWEEP_TERMINAL_STATUSES = frozenset({"MERGED", "CLOSED", "REFUTED", "DUPLICATE"})
+
+
 def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None):
     """Bounded epilogue: panel clears residual non-terminal findings AFTER the
     convergence verdict is recorded. Guards (founder malady-proofing,
@@ -6217,7 +6367,7 @@ def _post_convergence_sweep(registry, exp_config, cfg, round_idx, repo_root=None
     # to re-falsify them would just burn dispatch. What survives here is the
     # CONTESTED-to-CONFIRMED case (reference_runner_v3.py ~1655), which reaches
     # CONFIRMED without `verified` and therefore never settles on its own.
-    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
+    _TERMINAL = SWEEP_TERMINAL_STATUSES
     stats = {"cleared": 0, "withdrawn": 0, "rounds": 0, "remaining": 0}
     # Ids this sweep has already disposed of. Needed because clearing a residual
     # sets it to CONFIRMED, which is no longer in `_TERMINAL` — so without this
@@ -8638,6 +8788,7 @@ def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
     return src
 
 
+@_records_seat_completion
 def _dispatch_single_model(
     mc: ModelConfig, mgr: DynamicManager, prompt: str,
     cdsfl_text: str, full_code: str, round_idx: int,
@@ -8645,9 +8796,11 @@ def _dispatch_single_model(
     enable_tools: bool = True,
 ) -> Tuple[List[Finding], Optional[str]]:
     # TASK 6.6: RECORD WHO IS IN FLIGHT, so a target rewrite has candidates.
-    # Registration is per THREAD and overwrites, so the record always names the
-    # seat this thread is currently running. `running_for_s` travels with it, so
-    # a stale entry is visible as stale rather than passing as current.
+    # Each dispatch adds a registration keyed by (thread, label, since); the
+    # `_records_seat_completion` decorator sets its `until` in a `finally`
+    # however this function ends, so a finished seat is marked finished rather
+    # than passing as current, and is not deleted before the integrity check
+    # (which runs after the pool joins) can read it.
     seat_in_flight(mc.label)
     # CONFINE THIS SEAT ON ITS OWN THREAD. See _PANEL_CWD_FOR_WORKERS. A no-op
     # when unset, so a code run's default behaviour is byte-identical.

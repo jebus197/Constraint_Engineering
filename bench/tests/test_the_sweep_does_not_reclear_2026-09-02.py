@@ -48,10 +48,26 @@ class TestTheGuardStopsARepeatClear:
             "at this scope, so every later model re-clears the same finding")
 
     def test_confirmed_really_is_absent_from_this_scopes_terminal_set(self, sweep_src):
-        """If this ever changes, the _handled guard becomes belt-and-braces."""
-        m = re.search(r"_TERMINAL\s*=\s*\{([^}]*)\}", sweep_src)
-        assert m, "the sweep no longer defines its own _TERMINAL"
-        assert "CONFIRMED" not in m.group(1), (
+        """If this ever changes, the _handled guard becomes belt-and-braces.
+
+        EXTENDED 2026-09-17 (task 9.1, panel round 16). The sweep's set was
+        hoisted to the module constant `SWEEP_TERMINAL_STATUSES` so the study
+        report reads the same set. A set literal is still read from the source;
+        a name is resolved to the value the imported runner actually holds.
+        """
+        import ast
+        import importlib
+        fn = ast.parse(sweep_src).body[0]
+        assigns = [n for n in ast.walk(fn) if isinstance(n, ast.Assign)
+                   and any(getattr(t, "id", None) == "_TERMINAL" for t in n.targets)]
+        assert assigns, "the sweep no longer defines its own _TERMINAL"
+        value = assigns[0].value
+        if isinstance(value, ast.Name):
+            members = set(getattr(importlib.import_module("reference_runner_v3"),
+                                  value.id))
+        else:
+            members = set(ast.literal_eval(value))
+        assert "CONFIRMED" not in members, (
             "CONFIRMED is now terminal here; re-check whether the _handled "
             "guard is still the thing preventing re-clears")
 

@@ -58,6 +58,26 @@ import time
 
 import pytest
 
+#: The (run directory, canonical id) of every critical finding this file writes
+#: the falsifier for. `scripts/missing_falsifiers_2026-09-10.py` derives ALREADY
+#: WRITTEN and REMAINING from these declarations, and
+#: `test_missing_falsifiers_all_covered_2026-09-17.py` requires their union to
+#: equal the script's population. The run is part of the key because a
+#: canonical id is only unique within a run.
+COVERS = {
+    ("exp53_control_zero_live_20260729T222431Z", "C0001"),
+    ("exp53_control_zero_live_20260729T222431Z", "C0005"),
+    ("exp53_control_zero_live_20260729T222431Z", "C0014"),
+    ("exp53_control_zero_live_20260729T222431Z", "C0023"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0001"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0003"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0004"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0007"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0012"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0031"),
+    ("exp53_control_zero_live_20260801T005649Z", "C0032"),
+}
+
 TARGET = pathlib.Path(
     "/Users/georgejackson/CDSFL_review_targets/current/SW-21-REF-04.md")
 

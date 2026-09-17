@@ -49,6 +49,17 @@ from bench.cdsfl_registry.composer import (  # noqa: E402
     _split_packet_directives,
 )
 
+#: The (run directory, canonical id) of every critical finding this file writes
+#: the falsifier for. `scripts/missing_falsifiers_2026-09-10.py` derives ALREADY
+#: WRITTEN and REMAINING from these declarations, and
+#: `test_missing_falsifiers_all_covered_2026-09-17.py` requires their union to
+#: equal the script's population. The run is part of the key because a
+#: canonical id is only unique within a run.
+COVERS = {
+    ("exp42_composer_20260606T202037Z", "C0036"),
+    ("exp42_composer_20260606T202037Z", "C0054"),
+}
+
 #: The 4 topics the helper knows. Named so a 5th arriving is loud.
 KNOWN = {"verbosity", "examples", "rationale", "table"}
 

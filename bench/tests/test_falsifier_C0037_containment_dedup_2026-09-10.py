@@ -61,6 +61,16 @@ from bench.cdsfl_registry.composer import (  # noqa: E402
     _semantically_duplicate,
 )
 
+#: The (run directory, canonical id) of every critical finding this file writes
+#: the falsifier for. `scripts/missing_falsifiers_2026-09-10.py` derives ALREADY
+#: WRITTEN and REMAINING from these declarations, and
+#: `test_missing_falsifiers_all_covered_2026-09-17.py` requires their union to
+#: equal the script's population. The run is part of the key because a
+#: canonical id is only unique within a run.
+COVERS = {
+    ("exp42_composer_20260606T202037Z", "C0037"),
+}
+
 GENERAL = "SS = z * sqrt(LT * sigma_d^2 + d_bar^2 * sigma_LT^2)."
 SPECIAL = "SS = z * sigma_d * sqrt(LT)"
 

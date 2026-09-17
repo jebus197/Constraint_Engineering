@@ -109,10 +109,36 @@ def test_a_fallback_runs_before_signal_complete():
         "indistinguishable from a named halt that was never propagated")
 
 
-def test_the_unrecorded_case_is_distinguishable_from_a_named_halt():
+def test_the_unrecorded_case_is_distinguishable_from_a_named_halt(tmp_path):
     """'The runner did not record why' is a different and worse condition than
-    any named halt, and must not look the same in the archive."""
+    any named halt, and must not look the same in the archive.
+
+    CORRECTED 2026-09-17 (task 6.1, panel round 16). This ended with
+    `assert "UNRECORDED_STOP" != "HALTED_IRREDUCIBLE_QUEUE_ALARM"`, which compares
+    2 string literals and cannot fail. It now EXECUTES the runner's fallback
+    `if` (selected by AST, as in `test_stop_reason_fallback_executes_2026-09-17.py`)
+    on an empty state and compares what it writes with the runner's own
+    `IRREDUCIBLE_QUEUE_HALT`.
+    """
+    import ast
     src = RUNNER.read_text()
     assert "UNRECORDED_STOP" in src
     assert "HALTED_IRREDUCIBLE_QUEUE_ALARM" in src
-    assert "UNRECORDED_STOP" != "HALTED_IRREDUCIBLE_QUEUE_ALARM"
+    tree = ast.parse(src)
+    halt = next(ast.literal_eval(n.value) for n in tree.body
+                if isinstance(n, ast.Assign)
+                and any(getattr(t, "id", None) == "IRREDUCIBLE_QUEUE_HALT"
+                        for t in n.targets))
+    fn = next(n for n in tree.body
+              if isinstance(n, ast.FunctionDef) and n.name == "run_experiment")
+    i = next(i for i, s in enumerate(fn.body)
+             if ast.unparse(s) == "signal = brain.signal_complete()")
+    fallback = fn.body[i - 1]
+    assert isinstance(fallback, ast.If), ast.unparse(fallback)[:120]
+    b = _brain(tmp_path, converged=False, stop_reason="", convergence_reason="",
+               failure_reason="")
+    exec(compile(ast.Module(body=[fallback], type_ignores=[]), str(RUNNER), "exec"),
+         {"brain": b, "result": {}})
+    written = b.signal_complete()["reason"]
+    assert written.startswith("UNRECORDED_STOP"), written
+    assert written != halt and halt not in written, (written, halt)

@@ -118,9 +118,17 @@ class TestTheAnswerableCarryData:
         assert item["by_cause"] == {"error_routed": 1, "unrouted": 1}
 
     def test_the_sweep_answer_names_the_terminal_statuses(self):
+        """CORRECTED 2026-09-17 (task 9.1, panel round 16). This asserted
+        `"CONFIRMED" in terminal_statuses` and `"cannot clear one" in answer`,
+        the report's own false wording, so it could not go red on the defect.
+        The executed comparison with the real sweep is
+        `test_sweep_report_matches_the_sweep_2026-09-17.py`; these are the
+        corrected expectations for the same item."""
         item = rr.study_programme_report(_sample())["why_the_sweep_cannot_clear_a_critical"]
-        assert "CONFIRMED" in item["terminal_statuses"]
-        assert "cannot clear one" in item["answer"]
+        assert set(item["terminal_statuses"]) == set(rr.SWEEP_TERMINAL_STATUSES)
+        assert "CONFIRMED" not in item["terminal_statuses"]
+        assert "cannot clear one" not in item["answer"]
+        assert item["cannot_retire_at_or_above"] == rr.CRITICAL_SEVERITY_THRESHOLD
 
 
 class TestItIsWiredAndCannotBreakARun:

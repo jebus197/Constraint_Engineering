@@ -64,11 +64,29 @@ def config_files() -> list[pathlib.Path]:
     return out
 
 
+def _getattr_string_read(n: ast.Call) -> str | None:
+    """`getattr(obj, "field", ...)`: an attribute read WRITTEN AS A STRING.
+
+    ADDED 2026-09-17 (task 3.3, panel round 16). Until then this scanner resolved
+    `cfg.field`, `d["field"]` and `d.get("field")` but not this form, so it
+    reported `merge_arbitration_enabled` and `immune_memory_enabled` as read by
+    nothing while `bench/reference_runner_v3.py` reads both through `getattr`.
+    Task A18's `readers_of()` in `scripts/config_fields_are_read_2026-09-11.py`
+    had already resolved both forms; its test compares the 2 instruments.
+    """
+    if isinstance(n.func, ast.Name) and n.func.id == "getattr" \
+            and len(n.args) >= 2 and isinstance(n.args[1], ast.Constant) \
+            and isinstance(n.args[1].value, str):
+        return n.args[1].value
+    return None
+
+
 def read_fields(src: str) -> set[str]:
     """Field names the runner actually reads, by AST rather than by grep.
 
     A grep for the name matches its own definition, a comment, and a docstring.
-    Only a subscript or an attribute access is a READ.
+    Only a subscript, an attribute access, a `.get("field")` or a
+    `getattr(obj, "field")` is a READ.
     """
     names: set[str] = set()
     try:
@@ -86,10 +104,14 @@ def read_fields(src: str) -> set[str]:
                 and isinstance(n.args[0], ast.Constant) \
                 and isinstance(n.args[0].value, str):
             names.add(n.args[0].value)
+        elif isinstance(n, ast.Call):
+            s = _getattr_string_read(n)
+            if s:
+                names.add(s)
     return names
 
 
-def explanation(data: dict, leaf: str) -> str:
+def explanation(data: dict, leaf: str, path: str | None = None) -> str:
     """The sibling `_<field>_note` that explains an off-switch, if one exists.
 
     ADDED 2026-09-10 17:35 BST, AFTER THIS SWEEP REPORTED 9 FINDINGS THAT WERE
@@ -104,14 +126,90 @@ def explanation(data: dict, leaf: str) -> str:
     That is `feedback_check_the_record_before_declaring_a_gap` violated by an
     instrument built to find gaps: the record was not merely in the repository,
     it was 3 lines away in the file being read.
+
+    NESTED PATHS, ADDED 2026-09-17 (task 3.3, panel round 16), AND IT IS THE SAME
+    DEFECT A SECOND TIME. This looked only at top-level `_<field>_note` keys, so
+    `_ouroboros.max_papers_per_round = 0` read as unexplained in every arm while
+    its own block carried `_note`: "External literature retrieval OFF". Given the
+    full `path`, each enclosing block is now searched too, innermost first: its
+    sibling `_<field>_note` keys, then the block's own `_note`.
     """
     base = leaf.rstrip("_")
-    for key in (f"_{base}_note", f"_{base.replace('_enabled','')}_note",
-                f"_{base.split('_')[0]}_note"):
-        v = data.get(key)
+    keys = (f"_{base}_note", f"_{base.replace('_enabled','')}_note",
+            f"_{base.split('_')[0]}_note")
+    blocks = list(reversed(_enclosing_blocks(data, path))) if path else []
+    for block in [data] + blocks:
+        for key in keys:
+            v = block.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+    for block in blocks:
+        v = block.get("_note")
         if isinstance(v, str) and v.strip():
             return v.strip()
     return ""
+
+
+def _enclosing_blocks(data: dict, path: str) -> list[dict]:
+    """The dicts that contain the leaf at `path`, outermost first, excluding `data`."""
+    tokens = [t for t in re.split(r"\.|\[(\d+)\]", path) if t]
+    out, node = [], data
+    for tok in tokens[:-1]:
+        try:
+            node = node[int(tok)] if isinstance(node, list) else node[tok]
+        except (KeyError, IndexError, ValueError, TypeError):
+            return out
+        if isinstance(node, dict):
+            out.append(node)
+    return out
+
+
+def cited_record(data: dict, leaf: str, val) -> str:
+    """A string elsewhere in the same file that names `leaf=value`, if any.
+
+    ADDED 2026-09-17 (task 3.3, panel round 16). `hardened_gate_enabled = false`
+    has no `_note` of its own in any exp56 arm, but each arm's
+    `_convergence_criteria.description` reads "TWO-SIDED GATE (founder ruling
+    2026-06-10; hardened_gate_enabled=false)". That RECORDS the setting and names
+    the ruling it belongs to without stating a reason, so it is reported as
+    CITED, distinct from a note that explains the setting.
+    """
+    if val is False:
+        value = r"false"
+    elif isinstance(val, (int, float)) and not isinstance(val, bool):
+        value = re.escape(json.dumps(val)) + r"(?![\d.])"
+    else:
+        return ""
+    pat = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(leaf)}\s*[=:]\s*{value}", re.I)
+    for path, s in walk(data):
+        if isinstance(s, str):
+            m = pat.search(s)
+            if m:
+                return f"{path}: {m.group(0)}"
+    return ""
+
+
+def classify(data: dict, rel: str, read: set[str]) -> list[dict]:
+    """Every off-switch in a config, with whether it is read and what records it.
+
+    `status` is DOCUMENTED (a note states a reason), CITED (a string names the
+    setting without stating a reason) or UNEXPLAINED (neither).
+    """
+    rows = []
+    for path, val in walk(data):
+        leaf = path.split(".")[-1].split("[")[0]
+        off = (val is False and ENABLEMENT.search(leaf)) or \
+              (isinstance(val, int) and not isinstance(val, bool)
+               and val == 0 and ALLOWANCE.search(leaf))
+        if not off:
+            continue
+        why = explanation(data, leaf, path)
+        cite = "" if why else cited_record(data, leaf, val)
+        rows.append({"file": rel, "path": path, "leaf": leaf, "value": val,
+                     "read": leaf in read, "why": why, "cited": cite,
+                     "status": "DOCUMENTED" if why else
+                               "CITED" if cite else "UNEXPLAINED"})
+    return rows
 
 
 def walk(obj, prefix=""):
@@ -125,7 +223,8 @@ def walk(obj, prefix=""):
         yield prefix, obj
 
 
-def main() -> int:
+def survey() -> dict:
+    """Read every runner module and every config; classify every off-switch."""
     srcs = runner_sources()
     read = set()
     for f in srcs:
@@ -133,36 +232,43 @@ def main() -> int:
             read |= read_fields(f.read_text(encoding="utf-8", errors="replace"))
         except OSError:
             continue
-    disabled, unread = [], []
     files = config_files()
+    rows = []
     for f in files:
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
             continue
-        for path, val in walk(data):
-            leaf = path.split(".")[-1].split("[")[0]
-            off = (val is False and ENABLEMENT.search(leaf)) or \
-                  (isinstance(val, int) and not isinstance(val, bool)
-                   and val == 0 and ALLOWANCE.search(leaf))
-            if not off:
-                continue
-            rel = str(f.relative_to(REPO))
-            why = explanation(data, leaf)
-            (disabled if leaf in read else unread).append((rel, path, val, why))
+        rows.extend(classify(data, str(f.relative_to(REPO)), read))
+    return {"sources": srcs, "read": read, "files": files, "rows": rows}
+
+
+def main() -> int:
+    s = survey()
+    srcs, read, files, rows = s["sources"], s["read"], s["files"], s["rows"]
+    disabled = [r for r in rows if r["read"]]
+    unread = [r for r in rows if not r["read"]]
 
     print(f"config files scanned: {len(files)}")
     print(f"runner modules scanned: {len(srcs)}")
     print(f"fields those modules READ, by AST: {len(read)}\n")
 
     _SHOW = 40
+    _TAG = {"DOCUMENTED": "DOCUMENTED", "CITED": "CITED, NO REASON STATED",
+            "UNEXPLAINED": "*** UNEXPLAINED ***"}
+
+    def show(r):
+        print(f"    {r['file']}\n        {r['path']} = {r['value']!r}   "
+              f"[{_TAG[r['status']]}]")
+        if r["why"]:
+            print(f"          reason on file: {r['why'][:150]}")
+        elif r["cited"]:
+            print(f"          cited on file : {r['cited'][:150]}")
+
     print(f"CAPABILITIES SWITCHED OFF IN CONFIG THAT THE RUNNER READS "
           f"({len(disabled)}):")
-    for rel, path, val, why in disabled[:_SHOW]:
-        tag = "DOCUMENTED" if why else "*** UNEXPLAINED ***"
-        print(f"    {rel}\n        {path} = {val!r}   [{tag}]")
-        if why:
-            print(f"          reason on file: {why[:150]}")
+    for r in disabled[:_SHOW]:
+        show(r)
     if len(disabled) > _SHOW:
         print(f"    ... {len(disabled) - _SHOW} more not shown")
     if not disabled:
@@ -170,24 +276,30 @@ def main() -> int:
 
     print(f"\nSET TO OFF BUT THE RUNNER NEVER READS THE FIELD ({len(unread)}) — "
           f"a DIFFERENT defect, an unwired addition, not this task's:")
-    for rel, path, val, why in unread[:_SHOW]:
-        tag = "DOCUMENTED" if why else "*** UNEXPLAINED ***"
-        print(f"    {rel}\n        {path} = {val!r}   [{tag}]")
+    for r in unread[:_SHOW]:
+        show(r)
     if len(unread) > _SHOW:
         print(f"    ... {len(unread) - _SHOW} more not shown")
     if not unread:
         print("    none")
 
-    allsw = disabled + unread
-    unexplained = [x for x in allsw if not x[3]]
-    print(f"\n  THE FIGURE THAT MATTERS: off-switches with NO recorded reason in "
-          f"their own file: {len(unexplained)} of {len(allsw)}")
-    for rel, path, val, _ in unexplained[:_SHOW]:
-        print(f"      {rel}: {path} = {val!r}")
+    documented = [r for r in rows if r["status"] == "DOCUMENTED"]
+    cited = [r for r in rows if r["status"] == "CITED"]
+    unexplained = [r for r in rows if r["status"] == "UNEXPLAINED"]
+    print(f"\n  off-switches whose own file STATES A REASON (a sibling or "
+          f"enclosing-block note): {len(documented)} of {len(rows)}")
+    print(f"  off-switches whose own file only CITES the setting, stating no "
+          f"reason: {len(cited)} of {len(rows)}")
+    for r in cited[:_SHOW]:
+        print(f"      {r['file']}: {r['path']} = {r['value']!r}")
+    print(f"\n  THE FIGURE THAT MATTERS: off-switches with NEITHER a note NOR a "
+          f"cited record in their own file: {len(unexplained)} of {len(rows)}")
+    for r in unexplained[:_SHOW]:
+        print(f"      {r['file']}: {r['path']} = {r['value']!r}")
     if not unexplained:
-        print("      none — every off-switch found carries a sibling _<field>_note "
-              "giving a measured reason")
-    n = len(disabled) + len(unread)
+        print("      none — every off-switch found has a note or a cited record "
+              "in its own file")
+    n = len(rows)
     if n:
         from statsmodels.stats.proportion import proportion_confint
         from scipy import stats as sps

@@ -8,22 +8,28 @@ so every figure in task 2.1 -- 26 of 69 across a run, 1 of 9 in the round that
 halted -- had to be reconstructed by hand from archived text.
 
 THE FAIR DENOMINATOR IS THE WHOLE POINT, and reporting the raw one alone would
-overstate the drop by a factor of 3. Measured over 119 archived replies carrying
-a FALSIFIER label:
+overstate the drop. Many `FALSIFIER:` labels have no fence within 3 lines --
+`FALSIFIER: none`, or the word quoted in prose -- and nothing could be recovered
+from them. So recovery is reported over both denominators, and neither may be
+quoted alone.
 
-  * over RAW labels    : 132 of 411 = 32.1168%, Wilson [27.7862%, 36.7786%]
-  * over FENCED labels : 132 of 140 = 94.2857%, Wilson [89.1297%, 97.0764%]
+WHAT THIS FILE ESTABLISHES IS A BAND, NOT A POINT. Over the archive, in the order
+and with the stop rule used below, recovery over FENCED labels has a Wilson lower
+bound above 0.85, and the interval over RAW labels lies wholly below that bound.
 
-271 of those labels have no fence within 3 lines -- `FALSIFIER: none`, or the
-word quoted in prose -- and nothing could be recovered from them. The parser
-recovers 94.2857% of the labels that actually carry a block, which is a very
-different picture from "the parser drops findings", and it is the honest one.
-Both rates are reported so neither can be quoted alone.
-
-6 of the 132 were recovered ONLY by the tolerant companion added on 2026-09-09.
-That is the 2.1 widening's measured effect size on this sample, and it exists
-because the companion was UNIONED with the strict pattern rather than replacing
-it -- a replacement was tried first and measured WORSE, 4,867 against 5,295.
+POINT FIGURES WITHDRAWN 2026-09-17 (task 9.3, panel round 16). This docstring
+used to quote 132 of 411 raw labels, 132 of 140 fenced labels, 271 unfenced
+labels and 6 recoveries by the tolerant companion alone. No committed script
+produced them, they disagreed with the task entry's own 132 of 138, and a re-scan
+with the shipped telemetry reproduced none of them. The producer is now
+`scripts/intake_parser_recovery_2026-09-17.py`, guarded by
+`test_intake_parser_recovery_producer_2026-09-17.py`; quote only its printed
+output, with the population it prints. The tolerant companion was UNIONED with
+the strict pattern rather than replacing it, because task 2.1 recorded a
+replacement as worse, 4,867 blocks against 5,295. That figure is prose in the
+docstring of `test_falsifier_described_block_2026-09-09.py`, whose
+`test_the_union_never_loses_what_the_old_pattern_found` holds the property it
+motivated; neither file re-measures the figure.
 
 IT DECIDES NOTHING. No gate reads it, no status turns on it, no prompt changes.
 """

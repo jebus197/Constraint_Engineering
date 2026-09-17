@@ -46,6 +46,16 @@ from bench.dm._divergence import (  # noqa: E402
     score_isomorphism,
 )
 
+#: The (run directory, canonical id) of every critical finding this file writes
+#: the falsifier for. `scripts/missing_falsifiers_2026-09-10.py` derives ALREADY
+#: WRITTEN and REMAINING from these declarations, and
+#: `test_missing_falsifiers_all_covered_2026-09-17.py` requires their union to
+#: equal the script's population. The run is part of the key because a
+#: canonical id is only unique within a run.
+COVERS = {
+    ("exp47_divergence_locationkey_live_20260728T230026Z", "C0053"),
+}
+
 #: The scenario, in the finding's own terms. A prior-round alternative with NO
 #: contrast statement, and this round's FIX: the same argument plus the contrast
 #: statement that was missing. A system that punishes this punishes the repair.

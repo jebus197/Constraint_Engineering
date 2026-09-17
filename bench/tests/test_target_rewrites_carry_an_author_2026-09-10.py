@@ -14,8 +14,12 @@ NAMING THE WRITING PROCESS NEEDS ROOT and is not attempted. On macOS that means
 simply never collected, narrows "someone" to a short list:
 
   * the SEATS IN FLIGHT at the instant of detection, each with how long it had
-    been running -- a seat that started after the write cannot have made it, and
-    a stale registration is visible as stale rather than passing as current;
+    been running -- a seat that started after the write cannot have made it.
+    CORRECTED 2026-09-17 (task 6.6, panel round 16): "a stale registration is
+    visible as stale" was false when written, because nothing marked a
+    registration finished. Each record now carries `since`, `until` and
+    `finished`, set by the runner however the dispatch ends; see
+    `test_target_attribution_attaches_2026-09-17.py`;
   * the file's own `stat`: the writing UID, the mode, and the MTIME, which dates
     the write independently of when the check noticed it;
   * the pid and thread doing the noticing, so a runner-side write is
@@ -125,7 +129,15 @@ class TestTheFileEvidence:
 
 
 class TestItIsActuallyWired:
-    """AST, not grep. An addition nothing reaches is not additive."""
+    """An addition nothing reaches is not additive.
+
+    CORRECTED 2026-09-17 (task 6.6, panel round 16). This docstring said "AST, not
+    grep", which is true of the call-site test only. The attachment test below is
+    a substring assert, and it stays green when the record is replaced by `{}`.
+    The attachment is proved by execution in
+    `test_target_attribution_attaches_2026-09-17.py`, which runs the real
+    integrity branch and fails on that substitution.
+    """
 
     def test_both_functions_have_call_sites_in_the_runner(self):
         tree = ast.parse(RUNNER.read_text(encoding="utf-8"))

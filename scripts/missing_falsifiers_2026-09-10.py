@@ -76,6 +76,71 @@ def survey() -> dict:
     return {"pre": pre, "post": post}
 
 
+#: Where a written falsifier declares what it covers.
+TESTS = REPO / "bench" / "tests"
+
+
+def declared_covers(tests_dir: pathlib.Path = TESTS) -> dict[tuple[str, str], list[str]]:
+    """Every (run directory, canonical id) pair a test file declares, and who declares it.
+
+    ADDED 2026-09-17 (task 2.2, panel round 16). This used to be a typed set
+    holding 1 pair, so the script went on printing "ALREADY WRITTEN: 1 /
+    REMAINING: 27" after all 28 falsifiers had been written. The count now comes
+    from the test files themselves: each one that writes a falsifier for a
+    finding in `survey()["post"]` carries a module-level
+
+        COVERS = {("<run directory>", "<canonical id>"), ...}
+
+    The run is part of the key because a canonical id is unique only within a
+    run: exp53 carries C0001 in 2 runs, exp55 carries C0005 and C0006 in 2.
+
+    The declaration is read with `ast.literal_eval`, so no test module is
+    imported. A `COVERS` that is not a literal set of 2 strings raises rather
+    than being skipped, because a declaration this function cannot read would
+    otherwise show up only as a falsifier that was never written.
+    """
+    import ast
+
+    out: dict[tuple[str, str], list[str]] = {}
+    for f in sorted(pathlib.Path(tests_dir).glob("test_*.py")):
+        src = f.read_text(encoding="utf-8")
+        if "COVERS" not in src:
+            continue
+        for node in ast.parse(src, filename=str(f)).body:
+            if not (isinstance(node, ast.Assign)
+                    and any(isinstance(t, ast.Name) and t.id == "COVERS"
+                            for t in node.targets)):
+                continue
+            try:
+                value = ast.literal_eval(node.value)
+            except ValueError as exc:
+                raise ValueError(f"{f.name}:{node.lineno}: COVERS is not a "
+                                 f"literal: {exc}") from exc
+            if not isinstance(value, set) or not all(
+                    isinstance(p, tuple) and len(p) == 2
+                    and all(isinstance(x, str) for x in p) for p in value):
+                raise ValueError(f"{f.name}:{node.lineno}: COVERS must be a set "
+                                 f"of (run directory, canonical id) string pairs")
+            try:
+                shown = str(f.relative_to(REPO))
+            except ValueError:
+                shown = str(f)
+            for pair in value:
+                out.setdefault(pair, []).append(shown)
+    return out
+
+
+def coverage(post: list[dict], covers) -> tuple[set, set, set]:
+    """(written, remaining, stale): the population split by the declarations.
+
+    `stale` is a declared pair that is not in the population, which means a
+    run directory or id was mistyped or the population moved.
+    """
+    population = {(r["run"], r["id"]) for r in post}
+    declared = set(covers)
+    return population & declared, population - declared, declared - population
+
+
 def main() -> int:
     s = survey()
     pre, post = s["pre"], s["post"]
@@ -126,10 +191,20 @@ def main() -> int:
         print(f"  Clopper-Pearson 95% : [{slo * 100:.2f}%, {shi * 100:.2f}%]  "
               f"(scipy, cross-check; agrees to {abs(slo - lo_c):.1e})")
 
-    done = {("exp47_divergence_locationkey_live_20260728T230026Z", "C0053")}
+    covers = declared_covers()
+    done, left, stale = coverage(post, covers)
+    files = sorted({f for pair in done for f in covers[pair]})
     print(f"\n  ALREADY WRITTEN: {len(done)} "
-          f"(bench/tests/test_falsifier_C0053_recidivism_2026-09-10.py)")
-    print(f"  REMAINING       : {len(post) - len(done)}")
+          f"(declared as COVERS in {len(files)} test files under bench/tests)")
+    for f in files:
+        print(f"      {f}")
+    print(f"  REMAINING       : {len(left)}")
+    for run, fid in sorted(left):
+        print(f"      {run} {fid}")
+    if stale:
+        print(f"  DECLARED BUT NOT IN THE POPULATION: {len(stale)}")
+        for run, fid in sorted(stale):
+            print(f"      {run} {fid}  <- {covers[(run, fid)]}")
     return 0
 
 
