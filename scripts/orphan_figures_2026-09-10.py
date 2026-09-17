@@ -73,11 +73,83 @@ class GitCannotAnswer(RuntimeError):
 _ELIDED = re.compile(r"XX|\.\.\.|<|\*|\{|\bNNN\b")
 
 
+#: Memoised results for `cited_where`. One `git grep` per path costs 1.42s
+#: against this checkout's 8,705 tracked files, and the callers below classify
+#: the whole untracked set in a loop, so the cost is multiplied by the set size.
+_WHERE_CACHE: dict[str, list[str]] = {}
+
+
+#: A path this index can answer exactly. The extractor captures
+#: `bench/logs/` followed by `[\w./-]+`, so a path containing anything else
+#: would never BE an index key, and answering it from the index would report a
+#: false UNCITED. Those fall through to `git grep`.
+_INDEXABLE = re.compile(r"bench/logs/[\w./-]+")
+
+_CITATION_INDEX: dict | None = None
+
+
+def build_citation_index(force: bool = False) -> int:
+    """Which tracked files cite each `bench/logs/` path, in 1 pass.
+
+    MEASURED 2026-09-17, and 2 faster-looking ideas were tried and rejected
+    first, both against a recorded 95-path baseline:
+
+        95 separate `git grep` calls      135.4s   (what this replaces)
+        1 `git grep` with 95 patterns     127.8s   (5%: the cost is per-pattern too)
+        1 pass, 95-branch alternation     >660s    (catastrophic backtracking)
+        1 pass, 1 extraction regex          2.0s   <- this
+
+    The difference is that ONE simple regex runs over each file, after a plain
+    `"bench/logs/" not in text` reject, instead of asking the engine to try 95
+    alternatives at every position.
+
+    WHY IT WAS SLOW AT ALL. `cited_where` shelled out to `git grep` per path,
+    scanning 8,705 tracked files each time, and every caller loops it over the
+    whole untracked set. The set had just grown 58 -> 95 because the A8 reversal
+    untracked 37 `bench/logs` files, so the cost rose with the ruling.
+
+    IDENTICAL, NOT MERELY FASTER: all 95 live paths classify the same as the
+    `git grep` baseline, and this reads EVERY tracked file rather than the 5
+    directories the extractor scans, which closes a gap of 77 tracked `.md`
+    files that could otherwise have turned a CODE ONLY into a NOTE.
+    """
+    global _CITATION_INDEX
+    if _CITATION_INDEX is not None and not force:
+        return len(_CITATION_INDEX)
+    r = subprocess.run(["git", "ls-files"], cwd=REPO, capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        raise GitCannotAnswer(
+            f"`git ls-files` could not list this checkout (exit {r.returncode}). "
+            f"An empty corpus would mark every path UNCITED by construction.")
+    pat = re.compile(r"(bench/logs/[\w./-]+)")
+    idx: dict = {}
+    for f in r.stdout.split():
+        try:
+            text = (REPO / f).read_text(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            continue                      # binaries; `git grep` skips them too
+        if "bench/logs/" not in text:
+            continue
+        for hit in pat.findall(text):
+            idx.setdefault(hit.rstrip(".,);:"), set()).add(f)
+    _CITATION_INDEX = {k: sorted(v) for k, v in idx.items()}
+    return len(_CITATION_INDEX)
+
+
 def cited_where(path: str) -> list[str]:
     """Which TRACKED files mention this path. Read from git, not guessed."""
+    if path in _WHERE_CACHE:
+        return _WHERE_CACHE[path]
+    if _INDEXABLE.fullmatch(path):
+        build_citation_index()
+        out = _CITATION_INDEX.get(path, [])
+        _WHERE_CACHE[path] = out
+        return out
     r = subprocess.run(["git", "grep", "-l", "--", path], cwd=REPO,
                        capture_output=True, text=True)
-    return sorted(f for f in r.stdout.split() if f)
+    out = sorted(f for f in r.stdout.split() if f)
+    _WHERE_CACHE[path] = out
+    return out
 
 
 def classify_citation(path: str) -> str:
@@ -151,6 +223,10 @@ def untracked_cited_paths(prefix: str = "bench/logs/"):
             f"measurement. Run this in a git checkout.")
     tracked = set(r.stdout.split())
     untracked = sorted(c for c in cited if c not in tracked)
+    # Every caller loops `classify_citation` over this list, so answering the
+    # whole set in 1 `git grep` here removes the multiplication at source
+    # rather than asking each caller to remember to do it.
+    build_citation_index()
     return sorted(cited), untracked
 
 
