@@ -11,6 +11,15 @@ only 52 existed on disk.
 This test re-derives every disposition from the repository and requires the
 committed manifest to match. A stale manifest is worse than none, because it
 labels a path recoverable when it is not.
+
+REPAIRED 2026-09-17, AND THE FIRST VERSION SHARED THE PRODUCER'S BLIND SPOT.
+The producer called every cited path that was not a FILE "missing", and
+`test_no_row_claims_missing_when_the_file_is_present` asked the same question,
+`is_file()`, so it could not see the defect: 194 of the 335 "missing" rows were
+directories that exist, 78 prefixes of existing paths, 14 templates. The
+producer now has 6 states and this test CALLS its `disposition` and
+`cited_paths` rather than restating them. The manifest records the commit it was
+built at, so its rows are compared with the citations at that commit exactly.
 """
 from __future__ import annotations
 
@@ -22,11 +31,26 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 MANIFEST = REPO / "experimental_notes" / "evidence" / "cited_logs_manifest_2026-09-17.json"
+PRODUCER = REPO / "scripts" / "orphan_citation_era_2026-09-17.py"
 
 
 @pytest.fixture(scope="module")
-def manifest() -> dict:
+def producer():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("orphan_era", PRODUCER)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+@pytest.fixture(scope="module")
+def document() -> dict:
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def manifest(document) -> dict:
+    return document["rows"]
 
 
 @pytest.fixture(scope="module")
@@ -39,10 +63,59 @@ def test_the_manifest_exists_and_is_not_empty(manifest):
     assert len(manifest) > 100, len(manifest)
 
 
-def test_every_row_carries_a_known_state(manifest):
+def test_every_row_carries_a_known_state(manifest, producer, document):
+    assert tuple(document["states"]) == producer.STATES
     for path, row in manifest.items():
-        assert row["state"] in {"tracked", "local_only", "missing"}, (path, row)
+        assert row["state"] in producer.STATES, (path, row)
         assert row["cited_by"], path
+
+
+def test_the_rows_are_exactly_the_citations_at_the_named_commit(document, producer):
+    """Not a count typed into a docstring: the producer, run at the commit the
+    manifest names, must derive the same set of paths."""
+    rev = document["generated_at_commit"]
+    derived = producer.cited_paths(rev)
+    assert set(document["rows"]) == set(derived), (
+        f"manifest only: {sorted(set(document['rows']) - set(derived))[:5]}; "
+        f"producer only: {sorted(set(derived) - set(document['rows']))[:5]}")
+    wrong = [p for p, r in document["rows"].items() if r["cited_by"] != sorted(derived[p])]
+    assert not wrong, wrong[:5]
+
+
+def test_tracked_rows_agree_with_git_at_the_named_commit(document, producer):
+    at = producer.tracked(document["generated_at_commit"])
+    wrong = [p for p, r in document["rows"].items() if (r["state"] == "tracked") != (p in at)]
+    assert not wrong, wrong[:8]
+
+
+class TestDisposition:
+    """The classifier itself, on a tree whose every state is known."""
+
+    @pytest.fixture
+    def tree(self, tmp_path):
+        logs = tmp_path / "bench" / "logs"
+        (logs / "panel_round9").mkdir(parents=True)
+        (logs / "panel_round9" / "cc2.json").write_text("{}")
+        (logs / "exp45_v3_20260801").mkdir()
+        (logs / "kept.json").write_text("{}")
+        return tmp_path
+
+    def test_an_existing_directory_is_never_missing(self, producer, tree):
+        """THE CONTROL THE FIRST VERSION LACKED."""
+        assert producer.disposition("bench/logs/panel_round9", set(), tree) == "directory"
+        assert producer.disposition("bench/logs/panel_round9/", set(), tree) == "directory"
+
+    @pytest.mark.parametrize("path,tracked,state", [
+        ("bench/logs/kept.json", {"bench/logs/kept.json"}, "tracked"),
+        ("bench/logs/kept.json", set(), "local_only"),
+        ("bench/logs/exp55_XX/round_00.json", set(), "template"),
+        ("bench/logs/panel_round.../cc2.json", set(), "template"),
+        ("bench/logs/exp45_", set(), "prefix"),
+        ("bench/logs/never_kept.json", set(), "missing"),
+        ("bench/logs/panel_round9/gone.json", set(), "missing"),
+    ])
+    def test_each_state(self, producer, tree, path, tracked, state):
+        assert producer.disposition(path, tracked, tree) == state
 
 
 def test_no_row_claims_tracked_when_git_does_not_track_it(manifest, tracked):
@@ -52,9 +125,11 @@ def test_no_row_claims_tracked_when_git_does_not_track_it(manifest, tracked):
     assert not wrong, f"manifest says tracked, git does not: {wrong[:8]}"
 
 
-def test_no_row_claims_missing_when_the_file_is_present(manifest):
-    wrong = [p for p, r in manifest.items() if r["state"] == "missing" and (REPO / p).is_file()]
-    assert not wrong, f"manifest says missing, the file exists: {wrong[:8]}"
+def test_no_row_claims_missing_when_the_path_is_present(manifest):
+    """`exists()`, not `is_file()`: asking only about files is how 194 existing
+    directories came to be labelled "never kept"."""
+    wrong = [p for p, r in manifest.items() if r["state"] == "missing" and (REPO / p).exists()]
+    assert not wrong, f"manifest says missing, the path exists: {wrong[:8]}"
 
 
 def test_the_note_cited_recoverable_files_are_readable_from_a_clone(manifest):
@@ -68,7 +143,9 @@ def test_the_note_cited_recoverable_files_are_readable_from_a_clone(manifest):
     files in git directly dropped that count from 41 to 5 against a floor of 10.
 
     The founder then ruled the reversal: mirror the 36 the existing mirror
-    script accepts, leave the 14 it rejects tracked, build no new machinery. So
+    script accepts, leave the 14 it rejects tracked, build no new machinery.
+    CORRECTED 2026-09-17: `git show --name-status f22e95e` untracks 37 of the
+    50 and leaves 13 tracked, so the 36 and 14 above are 1 off each. So
     the property that matters is not "tracked" -- it is READABLE FROM A CLONE,
     which a mirrored copy satisfies exactly as well.
     """

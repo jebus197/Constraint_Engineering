@@ -157,17 +157,37 @@ def test_every_entry_carries_a_marker_at_all():
     assert not unmarked, f"entries with no marker, and so no state: {unmarked}"
 
 
-def test_the_evidence_field_is_optional_in_the_format_and_required_here():
+def test_the_evidence_field_is_optional_in_the_format_and_required_here(tmp_path):
     """The format must not break entries that predate it.
 
     An OPEN entry carrying no evidence must still parse; only DONE is held to
-    the requirement. If this fails, adding the field has broken the list."""
+    the requirement. If this fails, adding the field has broken the list.
+
+    THE WITNESS WAS THE LIVE LIST, AND IT RAN OUT ON 2026-09-17. This used to
+    find an OPEN entry without evidence in the real task list and fail if there
+    was none. A8 was the last: when its marker gained the evidence its committed
+    work has, every OPEN entry carried evidence, and the test failed although
+    nothing about the format had changed. A property of the PARSER was being
+    read off the CONTENTS of the list. The witness is now built here, so the
+    test fails only when the parser or the checker stops accepting an OPEN
+    marker with no evidence, and it also runs `check`, which the first version
+    never called."""
     entries = M.parse_entries(LIST)
     assert entries, "the list no longer parses at all"
-    open_without = [e for e in entries if e.state == "OPEN" and not e.evidence]
-    assert open_without, (
-        "every OPEN entry now carries evidence, which would mean the field has "
-        "become mandatory for work not yet done")
+    witness = tmp_path / "list.md"
+    witness.write_text(
+        "**Z1. An open entry that predates the evidence field.**\n"
+        "<!-- task: Z1 | state: OPEN | status: PROPOSED -->\n\n"
+        "**Z2. A done entry.**\n"
+        "<!-- task: Z2 | state: DONE | status: COMMITTED | evidence: bench/tests/test_x.py -->\n",
+        encoding="utf-8")
+    parsed = {e.ident: e for e in M.parse_entries(witness)}
+    assert parsed["Z1"].state == "OPEN" and parsed["Z1"].evidence == (), parsed
+    assert parsed["Z2"].evidence == ("bench/tests/test_x.py",), parsed
+    code, problems = M.check(witness)
+    assert code == 0 and not problems, (
+        "an OPEN marker with no evidence is refused, which would mean the field has "
+        f"become mandatory for work not yet done: {problems}")
 
 
 def test_what_this_guard_does_not_prove_is_written_down():
