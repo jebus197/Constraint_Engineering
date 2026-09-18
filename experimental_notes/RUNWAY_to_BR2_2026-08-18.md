@@ -311,6 +311,7 @@ flags all 85 pairs at 47% precision, which is the base rate.
 | 4.2 | exp53 re-run on the new clean target | same | PROPOSED |
 | 4.3 | Load-balancer shakedown: panel judges whether a component should EXIST, then builds it | founder proposal, Decision 8. Brief must carry the "nine judges, two effective votes" finding so the panel starts from the constraint | PROPOSED, CAPPED |
 | 4.4 | `exp49_dedup` | **DEFERRED by unanimous panel advice** — premature until Stage 1 and 2 land | DEFERRED |
+| 4.5 | **The drift detector, I31: enable it properly or retire it** | founder ruling 2026-09-18 01:30 BST: *"The drift detector should be put on the action list (and on the runway) for after the maths model review."* | **PROPOSED — AFTER THE MATHS MODEL REVIEW.** What it is for: memory holds, per flaw class, how often findings of that class proved real, and the detector accumulates how far this run's confirmation rate drifts from that prediction, warning when the total gets large. What stops it: `ImmuneMemory.save` writes no CUSUM state, so every run starts from 0 and gets exactly 1 update, while z3 and Wolfram's `Reduce` both find 3 same-direction updates are needed to cross the threshold of 2.0. Enabling it means persisting that state between runs, which changes how memory behaves, and the threshold has never met live data. The report-only call stays meanwhile: it decides nothing and cannot fire. Also item 2 of `experimental_notes/Action_List_After_Model_Revision_2026-09-17.md`. |
 
 ---
 

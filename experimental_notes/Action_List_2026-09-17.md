@@ -128,6 +128,23 @@ The founder: *"Surely you can't repair these (and the other 3 entries) and skip?
 - `bench/tests/test_overstated_entries_2026-09-11.py` asserted exit 0 and the section headings. Outside a checkout the script deliberately REFUSES to measure and exits 2, because without git every path would count as untracked and the figure would read 100% by construction. That refusal is the script working, so the test now asserts the measurement inside a checkout and the refusal with its stated reason outside one. Both branches assert something real.
 - Measured in a copy with the `.git` directory removed: 14 passed, 0 failed. The same 14 pass in the checkout.
 
+## The founder's rulings, 2026-09-18 01:23 BST
+
+- **(c) reopened and corrected: BOTH seats go to OpenRouter as separate models.** Verbatim: *"Why only either ChatGPT, or Codex on OpenRouter? We can't use Codex exec via my CLI. It was costing me a fortune, so I dropped it. Why not just run separate instances of Codex and ChatGPT via Open Router? You should check. I think the problem previously might have been I wanted Codex 5.5, but you said only 5.4 was available on OpenRouter at that time. So we came up with an elaborate (and potentially unnecessary now) fix for this that involved grabbing Codex's system prompt from a 3rd party resource and injecting it into a bare metal version of ChatGPT via Open Router. But given how clunky this is for a 3rd party reviewer, we should probably just attempt the OpenRouter route in both cases now."* The either/or framing was the assistant's error, not a limit in the catalogue.
+- **The drift detector goes on the post-revision action list AND on the runway.** Verbatim: *"The drift detector should be put on the action list (and on the runway) for after the maths model review."*
+- **V9: approved.** Verbatim: *"V9: Approved."* The entry is opened and scheduled after the model review.
+- **The skip-versus-repair fix: approved.** Verbatim: *"Re. Skip-versus-repair. Your fix is approved."* Already delivered at `48487c4`: both files repaired, neither carries a skip.
+
+### What the catalogue says, measured 2026-09-18 01:23 BST
+
+Producer: `scripts/openrouter_codex_availability_2026-09-17.py`, reading the public listing, which needs no key and dispatches nothing. 445 models, 91 of them `openai/*`.
+
+- **Both seats can be separate models today, and no injection is needed.** The Codex line is listed as 5 distinct ids, and every one supports tool calling and tool choice, which the panel's OpenRouter route requires: `openai/gpt-5.1-codex`, `-codex-max`, `-codex-mini`, `openai/gpt-5.2-codex` and `openai/gpt-5.3-codex`. The catalogue describes the newest as OpenAI's *"most advanced agentic coding model"*, with a 400,000-token context.
+- **The founder's recollection is confirmed in shape, and it still holds.** The Codex line lags the mainline and always has: the mainline now reaches 5.6, in 3 named variants, while Codex stops at 5.3. So there is no Codex 5.5 or 5.6 to buy, and there was no Codex 5.5 then either. What has changed is that a 5.3 Codex exists and is a genuinely different model, so the gap no longer needs bridging with a borrowed system prompt.
+- **`codex_exec` is retired for cost, on the founder's own statement**, not merely absent at HEAD. That changes what arm C of experiment 56 is blocked on: its note says the strong form returns when the `codex_exec` route is restored, and the route is not coming back.
+- **Cost per seat-round at round 17's volumes** (a 31,298-character brief, a mean reply of 17,983 characters, 4 characters per token), NumPy and mpmath agreeing to 1 part in 1,000,000,000,000,000: `openai/gpt-5.5` 0.1740 dollars, `openai/gpt-5.3-codex` 0.0766, `openai/gpt-5.6-sol` 0.0606, `openai/gpt-5.1-codex-mini` 0.0109. The `cx` and `cgpt` pair costs 0.3480 dollars today, 0.2506 as Codex 5.3 plus 5.5 (0.720 of today), and 0.1372 as Codex 5.3 plus 5.6-sol (0.394 of today).
+- **What is catalogue-verified and what is not.** Every id, price, context length and tool-calling flag above is read from the listing. NONE of it is dispatch-verified, because a live call is a paid call and none was authorised. The cheapest possible proof that a route answers is 1 short call to `openai/gpt-5.1-codex-mini`, which at 0.25 and 2.00 dollars per 1,000,000 tokens costs a small fraction of 1 penny.
+
 ## Placed last: the founder's own items
 
 11. [ ] **I18: drop both stashes, in person**, because deleting a git ref is the founder's to do: `git stash drop 'stash@{1}' && git stash drop 'stash@{0}'`
