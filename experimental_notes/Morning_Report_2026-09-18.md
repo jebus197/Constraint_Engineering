@@ -53,7 +53,11 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
 
 ## What came in after this was first written
 
-**Authorship and framing.** The revision was written by GPT 6 Astra (OpenAI). This bears on step 3, not on the mathematics: `feedback_framing_confound` — anchoring framing biases model panels, so the panel brief should carry the specification and name no author, in either direction. Naming a frontier model invites deference from some seats and reflex disagreement from others.
+**Authorship and framing.** The revision was written by GPT 6 Astra (OpenAI). This bears on step 3, not on the mathematics.
+
+**CORRECTED:** the no-author suggestion is MINE, and an earlier version of this note presented it as the founder's standing rule. `feedback_framing_confound` is narrower — it records Exp 32, where a panel asked to "evaluate HIL's claim that convergence occurred" unanimously agreed while recommending parameters that made convergence easier. That is hypothesis-anchoring, not author-naming. Whether it extends is his judgement.
+
+**Directive provenance, open for the morning at his request** (*"I have no active memory of making such proclamations!"*). `public-no-model-credit`, `public-methodology-factual` and `public-substance-first` are at `~/.claude/CLAUDE.md:202-206`. `~/.claude` is a git repo and all 3 were present in its first commit, `3e50903` (2026-08-25), so history cannot say who wrote them. They carry no date and no ruling marker, unlike the 2 in that file that do. To be cited as text in his file, not as his rulings, until confirmed.
 
 **An unverified figure, not repeated as fact.** The background sweep reported that changing the Codex seat's `model_id` breaks exactly 2 tests (`test_the_two_seats_share_weights`:557 and `test_the_evaluator_answers_both_ways`:493). I could not reproduce it: an in-memory patch of `launcher_core.load_experiment_config` did not take effect, and the file stayed at 74 passed. **Unmeasured until re-run.** The same sweep's verifiers refuted several of its own counts — 30 tests in a file holding 15, 33 config files where `ls` finds 47 — so its arithmetic needs a second look. CONFIRMED by construction: the 2 seats share an id today, and replacing the Codex seat's id makes the weight-sharing assertion false.
 
