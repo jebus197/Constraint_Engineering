@@ -159,6 +159,6 @@ Producer: `scripts/openrouter_codex_availability_2026-09-17.py`, reading the pub
 
 14. [ ] **Push** the commits this list produces, or run `sv`.
 
-15. [ ] **Z1: rotate the Zenodo token**, last, as the founder asked. Credentials are the founder's to handle, and the assistant never enters them.
+15. [ ] **Z1: rotate the Zenodo token. MOVED TO FIRST, 2026-09-18 02:03 BST**, superseding the earlier ruling that it go last. The founder's sequence, verbatim: *"The sequence will then be Zenodo key rotation, followed by a study of the mathematical model revision and other resources, then a panel review of the maths model, then a simulated run with it in place if it checks out with the study of all fixes we agreed to do and the revised model in place, then back to the other outstanding issues on the runway."* Credentials are the founder's to handle, and the assistant never enters them.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
