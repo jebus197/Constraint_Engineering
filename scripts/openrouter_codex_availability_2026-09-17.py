@@ -59,18 +59,35 @@ def per_million(price: str | None) -> float | None:
 
 
 def rows(cat: dict) -> list[dict]:
+    """Every row this question needs, INCLUDING tool support.
+
+    TOOL SUPPORT WAS ADDED 2026-09-18 AFTER AN ADVERSARIAL CHECK CAUGHT ITS
+    ABSENCE. The first version captured id, name, context and price only, and the
+    assistant then wrote "every one supports tool calling and tool choice" into
+    the action list from a shell command run once and thrown away. That is
+    `measured-rate-travels-with-its-script` broken in the same document that
+    condemned an older claim for breaking it: a figure whose producer does not
+    produce it is a claim about evidence, not evidence. It matters here because
+    the panel's OpenRouter route dispatches WITH tools, so a seat pointed at a
+    model that cannot take them fails at the first call.
+    """
     out = []
     for m in cat.get("data", []):
         blob = f"{m.get('id','')} {m.get('name','')}".lower()
         if not any(w in blob for w in INTERESTING):
             continue
         p = m.get("pricing") or {}
+        supported = m.get("supported_parameters") or []
+        arch = m.get("architecture") or {}
         out.append({
             "id": m.get("id"),
             "name": m.get("name"),
             "context": m.get("context_length"),
             "usd_per_1m_prompt": per_million(p.get("prompt")),
             "usd_per_1m_completion": per_million(p.get("completion")),
+            "supports_tools": "tools" in supported,
+            "supports_tool_choice": "tool_choice" in supported,
+            "modality": arch.get("modality"),
         })
     return sorted(out, key=lambda r: r["id"] or "")
 
@@ -97,13 +114,18 @@ def main(argv: list[str] | None = None) -> int:
 
     for r in (matched if a.all else matched[:40]):
         print(f"{r['id']:<42} ctx {str(r['context']):>8}  "
-              f"${r['usd_per_1m_prompt']}/1M in  ${r['usd_per_1m_completion']}/1M out")
+              f"${r['usd_per_1m_prompt']}/1M in  ${r['usd_per_1m_completion']}/1M out  "
+              f"tools={r['supports_tools']} tool_choice={r['supports_tool_choice']}")
     out = {
         "catalogue": CATALOGUE if not a.offline else str(a.offline),
         "models_listed_in_total": len(cat.get("data", [])),
         "matching_rows": len(matched),
         "codex_ids": codex,
         "a_separate_codex_model_exists": bool(codex),
+        "every_codex_id_takes_tools": all(r["supports_tools"] and r["supports_tool_choice"]
+                                          for r in codex) if codex else None,
+        "seat_candidates_that_cannot_take_tools": [r["id"] for r in matched
+                                                   if not r["supports_tools"]],
         "the_2_seats_point_at": SEAT_IDS,
         "seat_ids_found_in_the_catalogue": seats_resolve_to,
         "the_2_seats_share_1_id": len(set(SEAT_IDS.values())) == 1,
