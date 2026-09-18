@@ -44,6 +44,10 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
 1. **The appendix correction at line 169.** A minute's work once approved.
 2. **Arm C of the simulated run.** Its designed form needs the `codex_exec` route, now dropped for cost, so it cannot be restored. Run it in weak form, re-register it as a 2-model contrast, or retire it. `launch_blocked` is read by a test, not by a runner, so nothing is mechanically prevented either way. Default: stays flagged, and the simulated run uses arms A and B.
 3. **The Codex seat question.** Not urgent: a simulated run uses stand-ins, so it only matters for a paid run. Default: unchanged.
+
+   **CORRECTION to a claim made twice on 2026-09-17/18.** There are 2 separate rosters. The review panel's is `bench/confer_maths_panel_2026-09-05.py:244` and changing the `cx` model id there breaks no test. The experiment runner's is `load_default_config()` in `bench/experiment_11_orchestrator.py:141`, and changing the `Codex` seat there FAILS `test_the_two_seats_share_weights` (`bench/tests/test_d9_d11_configs_valid_2026-09-05.py:557`) by design, because arm C's condition contrast requires identical weights. Proved by construction: `dataclasses.replace(seats['Codex'], model_id='openai/gpt-5.3-codex')` makes the assertion false. The earlier "nothing is mechanically prevented" was true of `launch_blocked` alone. The useful consequence: **the panel can be diversified without touching the experiment.**
+
+   **Also stale:** `.claude/CLAUDE.md` lists the panel as cc2, cx, ge, cgpt, ds. The live maths panel dispatches cx, cgpt, ds, cc2 and fable — no `ge`. Not fixed, per `d`.
 4. **The injection plan.** Recommended for retirement, because runway entry `0C.59` retracted its premise on 2026-09-02: the historic difference was AGENCY, a shell in the working directory, not instruction framing. Default: stays recorded as approved and never built.
 5. **The founder's own 2 actions:** drop the 2 stashes, and push, now 32 commits.
 
