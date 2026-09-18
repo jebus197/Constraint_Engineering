@@ -41,7 +41,7 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
 
 ## What needs a word from the founder
 
-1. **The appendix correction at line 169.** A minute's work once approved.
+1. **The appendix correction at line 169. DONE** at `8a0952a`, on the founder's instruction. Now `(π_k−R_k)/(π_k(1−R_k))`, with the old form quoted in the retraction. SymPy and Wolfram confirm the round-trip independently; the appendix's 2 statements are now symbolically identical; 81 tests pass across the 3 guards that read it. **Instrument note:** `bench/tests/test_appendix_reduction_properties_2026-09-05.py` exists for exactly this class, covers 18 reduction claims, and never touched this inversion. A guard for the inverse is PROPOSED, not built.
 2. **Arm C of the simulated run.** Its designed form needs the `codex_exec` route, now dropped for cost, so it cannot be restored. Run it in weak form, re-register it as a 2-model contrast, or retire it. `launch_blocked` is read by a test, not by a runner, so nothing is mechanically prevented either way. Default: stays flagged, and the simulated run uses arms A and B.
 3. **The Codex seat question.** Not urgent: a simulated run uses stand-ins, so it only matters for a paid run. Default: unchanged.
 
@@ -50,6 +50,16 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
    **Also stale:** `.claude/CLAUDE.md` lists the panel as cc2, cx, ge, cgpt, ds. The live maths panel dispatches cx, cgpt, ds, cc2 and fable — no `ge`. Not fixed, per `d`.
 4. **The injection plan.** Recommended for retirement, because runway entry `0C.59` retracted its premise on 2026-09-02: the historic difference was AGENCY, a shell in the working directory, not instruction framing. Default: stays recorded as approved and never built.
 5. **The founder's own 2 actions:** drop the 2 stashes, and push, now 32 commits.
+
+## What came in after this was first written
+
+**Authorship and framing.** The revision was written by GPT 6 Astra (OpenAI). This bears on step 3, not on the mathematics: `feedback_framing_confound` — anchoring framing biases model panels, so the panel brief should carry the specification and name no author, in either direction. Naming a frontier model invites deference from some seats and reflex disagreement from others.
+
+**An unverified figure, not repeated as fact.** The background sweep reported that changing the Codex seat's `model_id` breaks exactly 2 tests (`test_the_two_seats_share_weights`:557 and `test_the_evaluator_answers_both_ways`:493). I could not reproduce it: an in-memory patch of `launcher_core.load_experiment_config` did not take effect, and the file stayed at 74 passed. **Unmeasured until re-run.** The same sweep's verifiers refuted several of its own counts — 30 tests in a file holding 15, 33 config files where `ls` finds 47 — so its arithmetic needs a second look. CONFIRMED by construction: the 2 seats share an id today, and replacing the Codex seat's id makes the weight-sharing assertion false.
+
+**One sweep claim corrected.** It said no test reads `.claude/CLAUDE.md`'s model table. `bench/tests/test_sim_naming_and_integrity_directive.py` does — `ROSTER_DOC` at line 89, `_TABLE_HEADER` at line 108. The stale `ge` row is therefore guarded, and editing that table is not a free change.
+
+**Self-inflicted, fixed.** A memory file written tonight tripped 2 guards: an index entry at 161 characters against a 150 limit, and the memory ledger stating 142 files against 143 on disk (`resources/MEMORY_EXCLUSIONS.md`, mirrored 85→86). Both corrected, 87 tests green across the 4 guards. The ledger test notes this manual correction has been needed 7 consecutive times and wants deriving inside `sv`.
 
 ## Already in hand
 

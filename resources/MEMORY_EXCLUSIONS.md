@@ -19,11 +19,11 @@ The directory holds **143 files**, of which one is `MEMORY.md` itself
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 85 |
+| Mirrored (in summarised form) in `MEMORY.md` | 86 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 142 |
+| total | 143 |
 
 > **[Correction 2026-09-17.]** Total 141 -> 142, mirrored 84 -> 85, directory 142 -> 143. One memory file was written in the small hours of 2026-09-17: `feedback_no_privately_preamble.md`, recording the founder's ruling that a planning preamble must not open a reply. It is mirrored in `MEMORY.md` at the pointer "No 'Privately' Preamble", so it falls in the residual bucket rather than needing a name under Excluded or Unclassified.
 >
