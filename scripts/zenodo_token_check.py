@@ -86,8 +86,24 @@ def main() -> int:
         headers={"Authorization": f"Bearer {tok}"})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
-            body = r.read(2000)
-            n = len(json.loads(body)) if body.strip().startswith(b"[") else "?"
+            # READ THE WHOLE BODY. This was `r.read(2000)` until 2026-09-19, and
+            # the real response is 3,718 bytes, so it parsed a TRUNCATED array,
+            # raised JSONDecodeError, and the catch-all below reported that as
+            # "could not reach zenodo.org" -- on a run where the server answered
+            # HTTP 200 and the token was perfectly good. An instrument that
+            # truncates its own evidence and then reports the truncation as an
+            # outage is the failure class this project exists to catch: a failed
+            # measurement described as something it is not.
+            body = r.read()
+            try:
+                parsed = json.loads(body)
+                n = len(parsed) if isinstance(parsed, (list, dict)) else "?"
+            except ValueError:
+                # A 200 we cannot parse is NOT a rejection and NOT an outage.
+                print(f"\nLIVE: HTTP {r.status} — the token was ACCEPTED (the "
+                      f"server answered), but the {len(body)}-byte body did not "
+                      f"parse as JSON. The token is fine; the reader is not.")
+                return 4
             print(f"\nLIVE: HTTP {r.status} — the token WORKS. "
                   f"{n} deposition(s) visible.")
             return 0

@@ -36,6 +36,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat as _stat
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
@@ -92,6 +93,43 @@ def rotate(new: str, text: str) -> str:
     return "".join(out)
 
 
+def file_flags(path: pathlib.Path) -> int:
+    """macOS file flags. `uchg` (UF_IMMUTABLE) is the one that matters here."""
+    return getattr(path.stat(), "st_flags", 0)
+
+
+def set_flags(path: pathlib.Path, flags: int) -> None:
+    if hasattr(os, "chflags"):
+        os.chflags(path, flags)
+
+
+def preflight(env: pathlib.Path) -> tuple:
+    """Prove the file can be replaced BEFORE a one-time secret is asked for.
+
+    THE REASON THIS EXISTS, 2026-09-19. The first version asked for the token and
+    THEN made the backup, and the backup step died: `.env` carries the macOS
+    `uchg` immutable flag, `shutil.copy2` faithfully copies that flag to the
+    backup, and `os.chmod` on an immutable file raises EPERM. The rename over
+    `.env` would have failed for the same reason a moment later. Zenodo shows a
+    token exactly once, so a crash after the prompt destroys it. Everything that
+    can fail now happens first, and the prompt is the LAST step.
+
+    Returns (original_flags, backup_path).
+    """
+    flags = file_flags(env)
+    backup = env.with_name(f".env.backup-{dt.datetime.now():%Y%m%d-%H%M%S}")
+    shutil.copy2(env, backup)
+    set_flags(backup, 0)              # copy2 inherits uchg; clear it or nothing can touch it
+    os.chmod(backup, 0o600)
+    if flags & getattr(_stat, "UF_IMMUTABLE", 0):
+        set_flags(env, flags & ~_stat.UF_IMMUTABLE)   # clear, and prove we can
+        set_flags(env, flags)                          # put it straight back
+    probe = env.with_name(".env.writetest")
+    probe.write_text("probe", encoding="utf-8")
+    probe.unlink()
+    return flags, backup
+
+
 def main(argv: list | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--rotate", action="store_true",
@@ -111,6 +149,20 @@ def main(argv: list | None = None) -> int:
         return 0
 
     before_digest, before_keys = others_digest(text), key_names(text)
+
+    # EVERYTHING THAT CAN FAIL HAPPENS BEFORE THE SECRET IS ASKED FOR.
+    try:
+        flags, backup = preflight(ENV)
+    except OSError as exc:
+        print(f"\nCANNOT PREPARE {ENV}: {type(exc).__name__}: {exc}\n"
+              f"Nothing was changed and you have NOT been asked for the token, so "
+              f"nothing is lost. Fix the cause and re-run.")
+        return 5
+    print(f"\n  backup    : {backup}")
+    if flags & getattr(_stat, "UF_IMMUTABLE", 0):
+        print(f"  note      : {ENV.name} is flagged immutable (uchg). It will be "
+              f"unlocked for the write and re-locked straight after.")
+
     print(f"\nPaste the NEW token from zenodo.org. It will not be shown as you type.")
     new = getpass.getpass("  new ZENODO_TOKEN: ").strip()
     if len(new) < MIN_LEN or not new.isalnum():
@@ -119,20 +171,23 @@ def main(argv: list | None = None) -> int:
               f"A Zenodo token is a long alphanumeric string. Nothing was written.")
         return 3
 
-    backup = ENV.with_name(f".env.backup-{dt.datetime.now():%Y%m%d-%H%M%S}")
-    shutil.copy2(ENV, backup)
-    os.chmod(backup, 0o600)
-    print(f"\n  backup    : {backup}")
-
     updated = rotate(new, text)
+    mode = ENV.stat().st_mode & 0o777
     tmp = ENV.with_suffix(".env.tmp")
-    tmp.write_text(updated, encoding="utf-8")
-    os.chmod(tmp, ENV.stat().st_mode & 0o777)
-    tmp.replace(ENV)
+    try:
+        set_flags(ENV, flags & ~getattr(_stat, "UF_IMMUTABLE", 0))
+        tmp.write_text(updated, encoding="utf-8")
+        os.chmod(tmp, mode)
+        tmp.replace(ENV)
+    finally:
+        tmp.unlink(missing_ok=True)
+        set_flags(ENV, flags)          # the lock goes back on, success or failure
 
     after = ENV.read_text(encoding="utf-8")
     if others_digest(after) != before_digest or key_names(after) != before_keys:
+        set_flags(ENV, flags & ~getattr(_stat, "UF_IMMUTABLE", 0))
         shutil.copy2(backup, ENV)
+        set_flags(ENV, flags)
         print("  FAILED: another line changed. The backup has been restored and "
               "nothing is lost. Nothing about your other 9 credentials was altered.")
         return 4

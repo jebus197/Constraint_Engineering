@@ -17,6 +17,8 @@ measures nothing, so `test_it_refuses_a_short_token` and
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import pathlib
 import sys
 
@@ -112,8 +114,13 @@ class TestItCanRefuse:
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: bad)
         before = env.read_text()
         assert m.main(["--rotate"]) == 3
-        assert env.read_text() == before
-        assert list(env.parent.glob(".env.backup-*")) == [], "it backed up before refusing"
+        assert env.read_text() == before, "a refused token still changed the file"
+        # A backup taken before the prompt is EXPECTED and harmless: it is a copy
+        # of the unchanged file. Requiring its absence was an artefact of the
+        # ordering that destroyed a one-time token on 2026-09-19, so the property
+        # held here is the one that matters -- .env did not move.
+        for b in env.parent.glob(".env.backup-*"):
+            assert b.read_text() == before
 
     def test_a_disturbed_neighbour_restores_the_backup(self, mod, monkeypatch, capsys):
         """If the write ever corrupted another line, the file must come BACK."""
@@ -144,3 +151,132 @@ class TestItIsOffline:
         monkeypatch.setattr(socket, "create_connection", boom)
         monkeypatch.setattr(socket, "getaddrinfo", boom)
         assert m.main(["--rotate"]) == 0
+
+
+class TestTheImmutableFlag:
+    """THE DEFECT THAT BROKE THE FIRST LIVE ATTEMPT, 2026-09-19 19:51 BST.
+
+    `.env` carries the macOS `uchg` flag. `shutil.copy2` copies that flag to the
+    backup, and `os.chmod` on an immutable file raises EPERM, so the tool died
+    AFTER the founder had pasted a token Zenodo shows exactly once. Both halves
+    are fixed and both are held here: the flag is handled, and nothing that can
+    fail is allowed to run after the prompt.
+    """
+
+    @pytest.fixture
+    def locked(self, mod):
+        import stat as st
+        m, env = mod
+        os.chflags(env, st.UF_IMMUTABLE)
+        yield m, env
+        os.chflags(env, 0)
+        for b in env.parent.glob(".env.backup-*"):
+            os.chflags(b, 0)
+
+    def test_it_rotates_a_locked_file_and_re_locks_it(self, locked, monkeypatch):
+        import stat as st
+        m, env = locked
+        monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
+        assert m.main(["--rotate"]) == 0
+        assert env.read_text().count(NEW) == 1
+        assert env.stat().st_flags & st.UF_IMMUTABLE, "the lock was not put back on"
+
+    def test_the_backup_is_not_left_immutable(self, locked, monkeypatch):
+        import stat as st
+        m, env = locked
+        monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
+        m.main(["--rotate"])
+        backup = list(env.parent.glob(".env.backup-*"))[0]
+        assert not backup.stat().st_flags & st.UF_IMMUTABLE, "copy2 inherited uchg"
+        assert backup.stat().st_mode & 0o777 == 0o600
+
+    def test_a_failed_preparation_never_asks_for_the_token(self, mod, monkeypatch):
+        """The token-burning bug, stated as a property: if preparation fails,
+        getpass is NOT called, so a one-time secret cannot be destroyed."""
+        m, env = mod
+        asked = []
+        monkeypatch.setattr(m.getpass, "getpass",
+                            lambda *a, **k: asked.append(1) or NEW)
+        monkeypatch.setattr(m, "preflight",
+                            lambda e: (_ for _ in ()).throw(PermissionError("nope")))
+        assert m.main(["--rotate"]) == 5
+        assert asked == [], "it asked for the token before proving it could write"
+        assert env.read_text() == FAKE_ENV
+
+
+class TestTheCheckerDoesNotLieAboutWhyItFailed:
+    """THE FALSE NEGATIVE OF 2026-09-19 19:57 BST.
+
+    The live check reported "could not reach zenodo.org: JSONDecodeError" on a
+    run where Zenodo answered HTTP 200 and the freshly rotated token was valid.
+    Cause: `r.read(2000)` truncated a 3,718-byte response, so a complete JSON
+    array arrived cut in half. The instrument truncated its own evidence and
+    reported the truncation as an outage.
+
+    3 outcomes must stay distinguishable, because they call for 3 different
+    actions: rejected (make a new token), unreachable (wait), unparseable (the
+    token is fine, the reader is not).
+    """
+
+    @pytest.fixture
+    def checker(self, tmp_path, monkeypatch):
+        spec = importlib.util.spec_from_file_location(
+            "zcheck", ROOT / "scripts" / "zenodo_token_check.py")
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        env = tmp_path / ".env"
+        env.write_text("ZENODO_TOKEN=" + "a" * 60 + "\n", encoding="utf-8")
+        monkeypatch.setattr(m, "ENV", env)
+        # `main()` parses sys.argv itself, so the flag is supplied that way.
+        monkeypatch.setattr(sys, "argv", ["zenodo_token_check.py", "--live"])
+        return m
+
+    def _serve(self, monkeypatch, body: bytes, status: int = 200):
+        import urllib.request
+
+        class _R:
+            def __init__(self): self.status = status
+            def read(self, n=None): return body[:n] if n else body
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: _R())
+
+    def test_a_response_over_2000_bytes_is_not_called_an_outage(self, checker,
+                                                                monkeypatch, capsys):
+        """The exact regression: a big, VALID payload."""
+        big = json.dumps([{"id": i, "metadata": {"title": "x" * 80}}
+                          for i in range(40)]).encode()
+        assert len(big) > 2000
+        self._serve(monkeypatch, big)
+        rc = checker.main()
+        out = capsys.readouterr().out
+        assert "could not reach" not in out, "a 200 with valid JSON was called an outage"
+        assert "the token WORKS" in out and "40 deposition" in out
+        assert rc == 0
+
+    def test_an_unparseable_200_is_not_reported_as_unreachable(self, checker,
+                                                               monkeypatch, capsys):
+        self._serve(monkeypatch, b"<html>bot check</html>")
+        rc = checker.main()
+        out = capsys.readouterr().out
+        assert "could not reach" not in out
+        assert "ACCEPTED" in out and "did not" in out
+        assert rc == 4
+
+    def test_a_401_is_still_reported_as_rejected(self, checker, monkeypatch, capsys):
+        import urllib.error, urllib.request
+        def boom(*a, **k):
+            raise urllib.error.HTTPError("u", 401, "Unauthorized", {}, None)
+        monkeypatch.setattr(urllib.request, "urlopen", boom)
+        assert checker.main() == 1
+        assert "REJECTED" in capsys.readouterr().out
+
+    def test_a_real_transport_failure_is_still_an_outage(self, checker, monkeypatch,
+                                                         capsys):
+        import urllib.error, urllib.request
+        def boom(*a, **k):
+            raise urllib.error.URLError("connection refused")
+        monkeypatch.setattr(urllib.request, "urlopen", boom)
+        assert checker.main() == 3
+        assert "could not reach" in capsys.readouterr().out
