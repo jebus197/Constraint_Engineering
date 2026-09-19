@@ -70,3 +70,31 @@ V9 open and scheduled after the model review; the drift detector on the runway a
 **Ordering note.** Zenodo was previously ruled last. The founder has now placed it first, and the record follows the new order.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+## Response sheet, added 2026-09-19 22:10 BST
+
+Answerable in 1 file, 1 line each. Quote the label. Every default in force is non-destructive.
+
+| # | Item | The question | Default |
+|---|---|---|---|
+| 1 | **Arm C of the next simulated run** | Weak form, re-register as a 2-model contrast, or retire? Its designed form held the model constant and varied conditions (same weights, 1 seat carrying OpenAI's agent scaffolding via `codex_exec`, 1 bare). `codex_exec` is dropped for cost, so the designed form is unbuildable. | Stays flagged; the run uses arms A and B |
+| 2 | **The review panel's Codex seat** | Point `cx` at `openai/gpt-5.3-codex`? The panel's `cx` and `cgpt` share 1 model id, so it has 4 architectures and reports 5. This is the PANEL roster (`confer_maths_panel_2026-09-05.py:244`), not the experiment's, and changing it breaks no test. | Unchanged |
+| 3 | **The Codex prompt-injection plan** | Retire it? Runway `0C.59` retracted its premise on 2026-09-02: the measured difference was AGENCY (a shell in the cwd), not instruction framing. | Stays "approved, never built" |
+| 4 | **1 paid probe call** | Everything about the Codex models is catalogue-read; no route is dispatch-proven. 1 short call to `gpt-5.1-codex-mini` settles it for a fraction of 1 penny. | No call |
+| 5 | **The stale panel table in `.claude/CLAUDE.md`** | Fix it? It lists Gemini, which the live panel does not dispatch, and omits Fable, which it does. `test_sim_naming_and_integrity_directive.py` parses that table, so it is not a free edit. | Left as is |
+| 6 | **`public-no-model-credit`** | Your call. `~/.claude/CLAUDE.md:202-206`, present in that repo's first commit `3e50903` (2026-08-25), carrying no date and no ruling marker unlike the 2 that do. Authorship not establishable from history. | Unchanged |
+| 7 | **Your own 2 actions** | Drop the 2 stashes (deleting a git ref is yours in person); push, now **40** commits. | Neither done |
+
+### For reference only — no response needed
+
+**V9, the one you asked about.** Every closed entry names a test as its evidence. V9 asks the harder question of that test: **undo the fix the entry claims to have made — does the same test go red?** One that stays green against its own reverted fix is decorative: it shows the evidence file runs, not that it would fail if the fix were removed. Approved by you 2026-09-18, state OPEN / status PROPOSED, scheduled after the model revision because the entries it audits are the ones the revision may reopen.
+
+**A19** — `S_k` classifies the whole target rather than each element, so a computable fragment inside prose is never scored. Held for the revision, on your ruling (a).
+
+**A8** — the cited `bench/logs/` paths not under version control. You have ruled on it **twice**; it needs nothing further from you. Its entry names its one remaining condition: *"the Section P panel review of `b8dc6fd`, `f22e95e` and the classifier repair"*. That is step 3 of your sequence, so it closes as a by-product.
+
+### The one red test, and why it needs nothing from you
+
+`test_closure_outpaced_discovery_on_the_latest_full_day` fires because on the most recent day with movement the list gained 1 (V9) and closed 0. It is telling the truth and should not be adjusted. In aggregate the picture is strong: **82 closed against 37 added**, exact binomial p = 4.5e-05 against "adding is as common as closing", cross-checked with scipy and statsmodels. The guard reads a single day, which is why a quiet one fails it. It goes green when A8 closes.
+
+Written under CDSFL note standard v1.7 (26 August 2026).
