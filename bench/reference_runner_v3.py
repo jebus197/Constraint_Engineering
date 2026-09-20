@@ -12345,7 +12345,11 @@ def run_preflight(
              f"refusing rather than dispatching unchecked")
         return False
     try:
-        _suite_record.gate(spend="experiment", override_env="RUNNER_SUITE_UNCHECKED")
+        _paid = len([m for m in getattr(exp_config, "models", [])
+                     if getattr(m, "api", "") != "claude_cli"
+                     and getattr(m, "label", "") in set(getattr(cfg, "models", []) or [])])
+        _suite_record.gate(spend="experiment", override_env="RUNNER_SUITE_UNCHECKED",
+                           paid_seats=_paid)
     except SystemExit:
         _log("  PREFLIGHT REFUSED: the last full-suite record is not green. "
              "Set RUNNER_SUITE_UNCHECKED=1 to dispatch anyway.")

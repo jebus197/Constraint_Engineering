@@ -106,11 +106,24 @@ def stale() -> tuple:
 
 def main(argv: list | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("action", choices=("record", "cite", "check"))
+    # `nargs="?"` IS DELIBERATE, and it is the same repair panel_brief_validate.py
+    # already carries. With a REQUIRED positional, argparse reports "the following
+    # arguments are required: action" BEFORE it reaches an unrecognised flag, so
+    # `--fix-timestamps` -- a flag this script does not have -- came back as a
+    # missing-argument error rather than "unrecognized arguments". A script that
+    # silently accepts a retired flag and does nothing with it is the defect the
+    # repository guard exists to catch, so the positional is made optional and the
+    # absence is reported here instead of by argparse.
+    ap.add_argument("action", nargs="?", choices=("record", "cite", "check"))
     ap.add_argument("--log", type=pathlib.Path, help="a finished pytest output file")
     ap.add_argument("--exit-code", type=int)
     ap.add_argument("--clean", action="store_true", help="assert the tree was clean")
     a = ap.parse_args(argv)
+    if a.action is None:
+        ap.print_usage(sys.stderr)
+        print("suite_record.py: error: an action is required "
+              "(record, cite or check)", file=sys.stderr)
+        return 2
     if a.action == "record":
         if not a.log:
             raise SystemExit("record needs --log <pytest output file>")
@@ -129,7 +142,8 @@ if __name__ == "__main__":
     sys.exit(main())
 
 
-def gate(*, spend: str, override_env: str, out=None, err=None) -> None:
+def gate(*, spend: str, override_env: str, paid_seats: int = 1,
+         out=None, err=None) -> None:
     """Refuse a PAID dispatch when the last full-suite record is not green.
 
     FOUNDER, 2026-09-20, as item 2 of 3: the launchers should consult the suite
@@ -144,8 +158,19 @@ def gate(*, spend: str, override_env: str, out=None, err=None) -> None:
     switched off inside a week. RED is a positive statement that something is
     broken. MISSING is neither, and unknown is not a licence to spend.
 
+    A ROUND WITH 0 PAID SEATS IS NOT GATED, and that is the rule working rather
+    than bending. This gate's whole justification is that unknown is not a
+    licence to SPEND; where nothing is spent there is nothing to protect, and a
+    free cc2-and-fable round is exactly how the project's own Section P
+    condition is discharged. Refusing it would mean a red suite could block the
+    review that closes the entry that turns the suite green -- which is not a
+    guard, it is a deadlock. Found 2026-09-20 on the gate's first day, when
+    `test_closure_outpaced_discovery_on_the_latest_full_day` was red precisely
+    because task A8 was waiting on a free Section P review.
+
     Raises SystemExit(2) on red, missing or unreadable, unless `override_env` is
-    set in the environment, in which case it says so on stderr and returns.
+    set in the environment or `paid_seats` is 0, in which case it says so and
+    returns.
     """
     import os
     out = out or sys.stdout
@@ -161,6 +186,14 @@ def gate(*, spend: str, override_env: str, out=None, err=None) -> None:
     if state is not None and state.get("exit_code") == 0:
         print(f"    suite: GREEN at {state['commit']} — {state['passed']:,} passed, "
               f"{state['failed']} failed" + (f"  [{why}]" if is_stale else ""), file=out)
+        return
+
+    if paid_seats == 0:
+        told = (f"exit code {state['exit_code']}, {state.get('failed', '?')} failed"
+                if state else "no record exists")
+        print(f"{spend}: the suite record is NOT green ({told}), but this round "
+              f"has 0 paid seats, so there is no spend to protect. Proceeding.",
+              file=err)
         return
 
     if os.environ.get(override_env):

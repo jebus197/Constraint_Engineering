@@ -590,7 +590,7 @@ def _refuse_if_the_suite_state_is_unknown() -> None:
               file=sys.stderr)
         raise SystemExit(2)
     suite_record.gate(spend=f"panel ({paid_n} of {len(MODELS)} seats paid)",
-                      override_env="PANEL_SUITE_UNCHECKED")
+                      override_env="PANEL_SUITE_UNCHECKED", paid_seats=paid_n)
 
 
 def main() -> int:

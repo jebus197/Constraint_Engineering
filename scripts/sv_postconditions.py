@@ -111,9 +111,11 @@ def working_tree_is_clean(root: Path, pushed: bool) -> tuple[bool | None, str]:
     if rc != 0:
         return None, f"git status failed: {err}"
     if out:
-        n = len(out.splitlines())
-        return False, f"{n} path(s) still uncommitted after the save: " + \
-            ", ".join(line[3:] for line in out.splitlines()[:5])
+        paths = [line[3:] for line in out.splitlines()]
+        shown = paths[:5]
+        more = "" if len(paths) <= 5 else f", and {len(paths) - 5} more not shown"
+        return False, (f"{len(paths)} path(s) still uncommitted after the save: "
+                       + ", ".join(shown) + more)
     return True, "no uncommitted paths"
 
 
@@ -195,7 +197,9 @@ def no_credential_is_tracked(root: Path, pushed: bool) -> tuple[bool | None, str
         return None, f"git ls-files failed: {err}"
     offenders = [f for f in out.splitlines() if _SECRET_NAMES.search(f)]
     if offenders:
-        return False, "tracked credential-shaped file(s): " + ", ".join(offenders[:5])
+        more = "" if len(offenders) <= 5 else f", and {len(offenders) - 5} more not shown"
+        return False, (f"{len(offenders)} tracked credential-shaped file(s): "
+                       + ", ".join(offenders[:5]) + more)
     return True, f"{len(out.splitlines())} tracked files, none credential-shaped"
 
 

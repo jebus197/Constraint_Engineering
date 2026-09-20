@@ -193,24 +193,73 @@ class TestTheExperimentRunnerUsesTheSameGate:
         monkeypatch.delenv("RUNNER_SUITE_UNCHECKED", raising=False)
         return rr, suite_record
 
-    def test_a_red_record_makes_preflight_return_False(self, runner):
+    @staticmethod
+    def _configs(apis):
+        """A roster and the cfg that selects it, as run_preflight reads them."""
+        class _M:
+            def __init__(self, label, api):
+                self.label, self.api = label, api
+
+        class _Exp:
+            pass
+
+        class _Cfg:
+            pass
+
+        exp, cfg = _Exp(), _Cfg()
+        exp.models = [_M(f"S{i}", api) for i, api in enumerate(apis)]
+        cfg.models = [m.label for m in exp.models]
+        return exp, cfg
+
+    def test_a_red_record_makes_preflight_return_False_when_seats_are_paid(self, runner):
         rr, rec = runner
         _write(rec, RED)
-        assert rr.run_preflight(None, "", None) is False, (
-            "preflight passed with a red suite record, so the gate guards nothing")
+        exp, cfg = self._configs(["openrouter", "claude_cli"])
+        assert rr.run_preflight(exp, "", cfg) is False, (
+            "preflight passed with a red suite record and a paid seat, so the "
+            "gate guards nothing")
 
-    def test_a_missing_record_makes_preflight_return_False(self, runner):
+    def test_a_missing_record_makes_preflight_return_False_when_seats_are_paid(self, runner):
         rr, rec = runner
         assert not rec.RECORD.exists()
-        assert rr.run_preflight(None, "", None) is False
+        exp, cfg = self._configs(["deepseek"])
+        assert rr.run_preflight(exp, "", cfg) is False
 
     def test_it_returns_False_rather_than_raising(self, runner):
         """main() reads the bool and exits 1 on it. A SystemExit escaping from
         inside preflight would bypass the runner's own abort message."""
         rr, rec = runner
         _write(rec, RED)
-        result = rr.run_preflight(None, "", None)
+        exp, cfg = self._configs(["openrouter"])
+        result = rr.run_preflight(exp, "", cfg)
         assert result is False and not isinstance(result, BaseException)
+
+    def test_an_all_FREE_roster_is_not_gated_even_on_a_red_record(self, runner):
+        """The deadlock this avoids, and it is not hypothetical: on 2026-09-20
+        the suite was red BECAUSE task A8 was waiting on a Section P review,
+        and Section P is discharged by a free cc2-and-fable round. A gate that
+        refused it would block the review that turns the suite green."""
+        rr, rec = runner
+        _write(rec, RED)
+        exp, cfg = self._configs(["claude_cli", "claude_cli"])
+        # The connectivity probe is stubbed, so this asserts the GATE let the
+        # round through and nothing was actually dispatched to do it.
+        sent = []
+
+        def _fake(mc, prompt, system):
+            sent.append(mc.label)
+            return "STATUS: OK\nMODEL: stub", 0.1
+
+        import pytest as _pytest  # noqa: PLC0415
+        mp = _pytest.MonkeyPatch()
+        mp.setattr(rr, "dispatch_to_model", _fake)
+        try:
+            assert rr.run_preflight(exp, "", cfg) is True, (
+                "a round with 0 paid seats was refused; there is no spend to protect")
+        finally:
+            mp.undo()
+        assert sent == ["S0", "S1"], (
+            f"the gate should have passed the round to the probe; got {sent}")
 
     def test_a_green_record_lets_preflight_reach_the_model_loop(self, runner):
         """ANTI-VACUITY: with no models configured the loop is empty and the
@@ -218,14 +267,8 @@ class TestTheExperimentRunnerUsesTheSameGate:
         not a gate, and nothing would ever run."""
         rr, rec = runner
         _write(rec, GREEN)
-
-        class _Cfg:
-            models: list = []
-
-        class _Exp:
-            models: list = []
-
-        assert rr.run_preflight(_Exp(), "", _Cfg()) is True
+        exp, cfg = self._configs([])
+        assert rr.run_preflight(exp, "", cfg) is True
 
     def test_the_gate_precedes_the_connectivity_dispatch(self):
         import ast
@@ -244,3 +287,37 @@ class TestTheExperimentRunnerUsesTheSameGate:
         assert gate_line and dispatch_line and gate_line < dispatch_line, (
             f"the suite gate is at line {gate_line} and the paid connectivity "
             f"probe at {dispatch_line}; the gate must come first")
+
+
+class TestAFreePanelRoundIsNotGated:
+    """The same rule on the panel side, where PANEL_ONLY=cc2,fable is the
+    ordinary way a free Section P round is dispatched."""
+
+    def test_zero_paid_seats_proceeds_on_a_red_record(self, panel, capsys):
+        mod, rec = panel
+        _write(rec, RED)
+        rec.gate(spend="panel (0 of 2 seats paid)",
+                 override_env="PANEL_SUITE_UNCHECKED", paid_seats=0)
+        err = capsys.readouterr().err
+        assert "0 paid seats" in err and "Proceeding" in err
+
+    def test_one_paid_seat_still_refuses(self, panel):
+        mod, rec = panel
+        _write(rec, RED)
+        with pytest.raises(SystemExit) as e:
+            rec.gate(spend="panel (1 of 2 seats paid)",
+                     override_env="PANEL_SUITE_UNCHECKED", paid_seats=1)
+        assert e.value.code == 2
+
+    def test_the_panel_passes_its_own_count_through(self):
+        """Executed wiring: the call site must forward paid_seats, or the
+        free-round exemption is unreachable from the dispatcher."""
+        import ast
+        tree = ast.parse(PANEL.read_text(encoding="utf-8"))
+        calls = [n for n in ast.walk(tree)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                 and n.func.attr == "gate"]
+        assert calls, "the panel no longer calls the shared gate"
+        assert any(k.arg == "paid_seats" for c in calls for k in c.keywords), (
+            "the panel calls the gate without paid_seats, so every free round "
+            "is gated as though it spent money")
