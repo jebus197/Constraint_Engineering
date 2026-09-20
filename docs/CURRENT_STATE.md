@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 20 September 2026 22:48 BST (2026-09-20T22:48:53+01:00)
+Generated: 20 September 2026 23:12 BST (2026-09-20T23:12:26+01:00)
 
 ---
 
@@ -18,34 +18,22 @@ Generated: 20 September 2026 22:48 BST (2026-09-20T22:48:53+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `f253fa7` Round 3 brief: the definitive way forward, under a new hard constraint
-- **Committed:** 2026-09-20 13:32:49 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 21
+- **Last commit (the PARENT of the commit containing this file):** `e8f5641` sv: 6-round paid panel — the degeneracy was ours (appendix 7.12), 191-claim withdrawn, containment repaired, optimal round count derived
+- **Committed:** 2026-09-20 22:48:54 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/build_experiment_tools.py`
-- `A  bench/directives/universal/paid_dispatch_authorisations.json`
-- `A  bench/directives/universal/section_p_shortfalls.json`
-- `M  bench/experiment_11_orchestrator.py`
-- `M  bench/logs/immune_pipeline.log`
-- `M  bench/openrouter_tools.py`
-- `A  bench/paid_dispatch_authorisations.py`
-- `A  bench/section_p_shortfalls.py`
-- `A  bench/tests/test_confinement_profile_is_not_poisonable_2026-09-20.py`
-- `A  bench/tests/test_empty_seat_defects_2026-09-20.py`
-- `A  bench/tests/test_ffafp_all_five_steps_2026-09-20.py`
-- `M  bench/tests/test_ffafp_audit_hook_2026-09-05.py`
-- `M  bench/tests/test_fresh_clone_suite_2026-09-10.py`
-- `M  bench/tests/test_panel_conditions_are_met_2026-09-10.py`
-- `A  bench/tests/test_panel_producers_2026-09-20.py`
-- … and 96 more, not shown (list capped at 15 of 111 — run `git status --porcelain` for the full set)
+- `M resources/RECOVERY.md`
+- `?? experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md`
+- `?? experimental_notes/Maths_Revision_Review_Synthesis_Plain_English_2026-09-20.md`
+- `?? scripts/maths_review_synthesis_figures_2026-09-20.py`
 
 ---
 
 ## Tests
 
-**8239 tests collected** at 20 September 2026 22:48 BST, HEAD `f253fa7` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**8243 tests collected** at 20 September 2026 23:12 BST, HEAD `e8f5641` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +63,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `e8f5641 sv: 6-round paid panel — the degeneracy was ours (appendix 7.12), 191-claim withdrawn, containment repaired, optimal round count derived`
 - `f253fa7 Round 3 brief: the definitive way forward, under a new hard constraint`
 - `0c4f3e5 A review seat could write to the repository it was reviewing, and I opened that hole this morning`
 - `31537d0 Round 2 setup: Kimi timed out at 904.5 s and the direct routes ignored the iteration budget`
@@ -84,4 +73,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `1f0c383 task list: the Desktop mirror refresh the pre-commit hook applied after staging`
 - `87b55d9 The full suite found 12 failures my 448-test pre-commit hook could not, and an audit found 15 more`
 - `02302cf A8 closes: both seats found a defect the committed suite could not see, and they were different defects`
-- `4bdf606 A8's manifest guard could not see a falsified state column: 78 rows made to lie, 16 tests green`

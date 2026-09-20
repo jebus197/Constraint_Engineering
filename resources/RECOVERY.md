@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 20 September 2026 22:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 20 September 2026 23:12 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -1583,6 +1583,23 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+
+## SESSION STATE 2026-09-20T23:11:51+01:00 — SYNTHESIS WRITTEN, REVIEW CLOSED
+
+**THE 6-ROUND REVIEW IS SYNTHESISED.** `experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md` (technical), its plain-English mirror, and `~/Desktop/CDSFL_tts/Maths_Revision_Review_Synthesis_2026-09-20.txt`. All lint-clean. Every figure regenerates from `scripts/maths_review_synthesis_figures_2026-09-20.py`. 6 rounds, 7 seats, 538,720 characters of seat output.
+
+**THE VERDICT.** Neither adopt-as-a-model nor churn. A correction list — and the falsifiability defect the review spent 5 rounds charging to the revision is in our OWN appendix §7.12, since 31 March 2026. 5 seats re-derived that independently in the open round.
+
+**3 CC1 CLAIMS WENT DOWN.** The 191-refusal claim (0 of 902; the repo already said so, test-pinned). The "measuring b restores forbidding power" gloss (refuted on 4 grounds). The bounded-recursion sketch (2 of 3 steps false, SymPy + z3).
+
+**THE SURVIVING THEOREM IS STRONGER** and inverts the premise: a positive re-injection rate is not needed for convergence, it is what makes the ECONOMIC step robust. Second condition found: above `ν* = qσ/(qσ−q+1)` the only fixed point is certain failure.
+
+**WHERE 7 SEATS CONVERGED INDEPENDENTLY: THE SCORER.** 672 of 902 = 74.5011%, Wilson [71.5570%, 77.2374%] score exactly 1.0; the A term is binary across all 1,247 decisions. The whole over-refusal debate is operationally inert — 0 of 902 fall below either disputed threshold.
+
+**OPEN, FOR THE FOUNDER.** (1) Charge ourselves for §7.12? (2) The scorer repair — start here. (3) Wire `n* = (a/θ)^(1/γ)` as an ADVISORY projection from round 3. (4) Does the corrected theorem belong in §8.5 — 6 seats yes, `ge` dissents alone. (5) A further round, by the project's own stop rule.
+
+**NOT STARTED, DELIBERATELY:** anything touching the explorer. 91 tuneable config fields exist, 48 never set by any shipped config; that needs its own `rg` before design.
+
 
 ## SESSION STATE 2026-09-20T22:45:39+01:00 — 6-ROUND PAID PANEL ON THE MATHS REVISION
 
