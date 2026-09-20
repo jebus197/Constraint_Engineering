@@ -381,3 +381,74 @@ def test_teardown_refuses_to_remove_the_system_temp_root():
     with pytest.raises(ValueError, match="temp root"):
         ps.teardown(Path(_tf.gettempdir()))
     assert Path(_tf.gettempdir()).is_dir(), "the temp root was removed anyway"
+
+
+class TestTheProposalsDiffIsNotAMachineDump:
+    """The 2026-09-20 repair, and the asymmetry is the whole of it.
+
+    `seat_proposals.diff` is mirrored into the TRACKED evidence record. On the
+    A8 round it came out at 7,823,216 bytes and introduced 6,430 of the 7,032
+    unique `bench/logs/...` paths in the entire tracked tree -- 91% of the
+    population the citation census reads -- almost all of it `.scratch` dumps
+    of `git rev-list` output the seats produced while answering a git-history
+    question, plus the git object stores they had cloned in.
+
+    NOTHING IS DISCARDED, which is founder ruling (j) and the reason this is an
+    asymmetry rather than a blanket exclusion. `harvest` writes to the run's own
+    log directory and still takes everything. Getting the 2 the wrong way round
+    would silently drop the seats' working material while looking like a fix, so
+    both values are driven here.
+    """
+
+    @staticmethod
+    def _sandbox(tmp_path):
+        repo = tmp_path / "repo"
+        box = tmp_path / "box"
+        for d in (repo, box):
+            (d / "scripts").mkdir(parents=True)
+            (d / "scripts" / "keep.sh").write_text("original\n", encoding="utf-8")
+        # a real delivered fix, at a real path
+        (box / "scripts" / "keep.sh").write_text("the seat's fix\n", encoding="utf-8")
+        # working-out and machine caches
+        (box / ".scratch").mkdir()
+        (box / ".scratch" / "allpaths.txt").write_text("bench/logs/a\nbench/logs/b\n",
+                                                       encoding="utf-8")
+        (box / ".pytest_cache" / "v").mkdir(parents=True)
+        (box / ".pytest_cache" / "v" / "nodeids").write_text("[]\n", encoding="utf-8")
+        (box / ".git").mkdir()
+        (box / ".git" / "config").write_text("[core]\n", encoding="utf-8")
+        return repo, box
+
+    def test_the_diff_carries_the_delivered_fix(self, tmp_path):
+        repo, box = self._sandbox(tmp_path)
+        got = ps.changes(box, repo)
+        assert "scripts/keep.sh" in got, (
+            "the seat's actual fix is missing from the proposals diff, which is "
+            "the one thing it exists to carry")
+
+    def test_the_diff_drops_scratch_caches_and_cloned_git(self, tmp_path):
+        repo, box = self._sandbox(tmp_path)
+        got = set(ps.changes(box, repo))
+        for unwanted in (".scratch/allpaths.txt",
+                         ".pytest_cache/v/nodeids",
+                         ".git/config"):
+            assert unwanted not in got, f"{unwanted} reached the tracked record"
+
+    def test_the_HARVEST_still_takes_the_scratch(self, tmp_path):
+        """Founder ruling (j): results are not discarded. The harvest is where
+        that guarantee lives, and it must see MORE than the diff."""
+        repo, box = self._sandbox(tmp_path)
+        diff = set(ps.changes(box, repo))
+        harvest = set(ps.changes(box, repo, include_scratch=True))
+        assert ".scratch/allpaths.txt" in harvest, (
+            "the harvest lost the seat's working material; that is the outcome "
+            "founder ruling (j) forbids")
+        assert harvest > diff, "the harvest must be a strict superset of the diff"
+
+    def test_a_cloned_git_is_never_harvested_either(self, tmp_path):
+        """Caches and object stores are not authored by anyone, so unlike
+        scratch they are dropped from BOTH."""
+        repo, box = self._sandbox(tmp_path)
+        harvest = set(ps.changes(box, repo, include_scratch=True))
+        assert ".git/config" not in harvest
+        assert ".pytest_cache/v/nodeids" not in harvest

@@ -408,7 +408,7 @@ frontier model from the panel. Combinable: `cx ge cc2` confers with all three.
 | Cmd | Model | Route | Identifier |
 |-----|-------|-------|---|
 | `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription | `opus` |
-| `cx` | Codex GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `cx` | Codex GPT-5.3 | OpenRouter API | `openai/gpt-5.3-codex` |
 | `ge` | Gemini 3.1 Pro Preview | OpenRouter API | `google/gemini-3.1-pro-preview` |
 | `cgpt` | ChatGPT GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
 | `ds` | DeepSeek V4 Pro | DeepSeek direct API | `deepseek-v4-pro` |
@@ -418,7 +418,7 @@ frontier model from the panel. Combinable: `cx ge cc2` confers with all three.
 `bench/experiment_11_orchestrator.py:139-164`: `ModelConfig(label="Codex")` and
 `ModelConfig(label="ChatGPT")` carry the same `model_id`, the same `api`, the same
 `system_prompt_path`, the same `role`, and the same secondary route
-(`codex_exec` / `gpt-5.5`). The panel is therefore **five seats over four distinct
+(`codex_exec` / `gpt-5.5`). **Superseded 2026-09-20: this describes the panel BEFORE the founder's ruling made the 2 OpenAI seats distinct models and added Fable. The panel is now 6 seats over 6 distinct model identifiers from 4 vendors.** The position it records was: the panel is **five seats over four distinct
 model identifiers from four independent vendors**, not five distinct models. The two
 OpenAI seats differ by label and by the conversation history each accumulates, not by
 weights.

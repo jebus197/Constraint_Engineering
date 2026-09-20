@@ -13,7 +13,7 @@ by `scripts/brief_archive_refusal_rate_2026-09-10.py`, find 43 meeting "requires
 a fix" and 27 meeting "requires the fix to be TESTED" -- a looser test than that
 reading, so the 2 pairs of figures do not measure the same thing.
 
-WHY IT REFUSES RATHER THAN WARNS. 3 of the 5 panel seats are PAID. A defective
+WHY IT REFUSES RATHER THAN WARNS. 4 of the 6 panel seats are PAID. A defective
 brief costs money and returns something unusable, and the project's own record
 holds a case where a briefing defect broke 2 seats and cost a re-dispatch. A
 warning printed above a dispatch that proceeds anyway is a guard that cannot fail.
@@ -522,7 +522,7 @@ def main() -> int:
         for p in problems:
             print(f"  - {p}", file=sys.stderr)
         print(f"\n  The format is {TEMPLATE.relative_to(REPO)}.", file=sys.stderr)
-        print("  3 of the 5 seats are PAID; a defective brief costs money and "
+        print("  4 of the 6 seats are PAID; a defective brief costs money and "
               "returns nothing usable.", file=sys.stderr)
         return 1
     if not a.quiet:

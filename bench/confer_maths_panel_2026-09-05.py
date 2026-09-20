@@ -469,9 +469,21 @@ def dispatch(name, model_id, route):
                                            timeout=300, max_iterations=10)
             resp = r.get("final_text", "")
             tool_log = r.get("tool_calls", [])
+            # WHY THE SEAT RECORD CARRIES THIS (audit finding, 2026-09-20).
+            # The tool budget was raised from 6 to 10 iterations the same night,
+            # and the comment justifying it named the risk exactly: "a seat that
+            # runs out mid-verification returns an UNCHECKED it could have
+            # answered". `call_openrouter_with_tools` RETURNS the field that
+            # answers whether that happened, and it was being discarded -- so a
+            # seat cut off at the cap was recorded identically to one that
+            # finished, and the raise could never be evaluated.
+            stopped_reason = r.get("stopped_reason")
+            tool_iterations = r.get("iterations")
         ok = bool(resp and resp.strip())
         out = {"model": name, "route": route, "ok": ok, "chars": len(resp or ""),
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
+               "stopped_reason": locals().get("stopped_reason"),
+               "tool_iterations": locals().get("tool_iterations"),
                "elapsed_s": round(time.time() - t0, 1), "response": resp or "",
                # RULING (j): "recording the attempt number in the reply". A
                # reader can now tell which tree a verdict was measured in.
@@ -502,8 +514,12 @@ def dispatch(name, model_id, route):
                "elapsed_s": round(time.time() - t0, 1), "response": "",
                "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
     (_logs_dir() / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
+    # A seat that hit the cap says so ON THE CONSOLE LINE, not only in the
+    # JSON, because the console line is what an operator reads during a round.
+    _stopped = out.get("stopped_reason")
+    _cut = f" STOPPED={_stopped}" if _stopped and _stopped != "finish" else ""
     print(f"  [{name}] ok={out['ok']} chars={out.get('chars', 0)} "
-          f"tools={out.get('n_tool_calls', 'native')} {out['elapsed_s']}s"
+          f"tools={out.get('n_tool_calls', 'native')} {out['elapsed_s']}s{_cut}"
           + (f" ERR={out.get('error')}" if not out["ok"] else ""), flush=True)
     return out
 

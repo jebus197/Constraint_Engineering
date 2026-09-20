@@ -49,7 +49,7 @@ reader-facing summary; it must remain aligned with those files.
 |---------|--------|-------|
 | `c` | Any / current default | Mutual P-passes until convergence or diminishing returns |
 | `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription — identifier `opus` |
-| `cx` | Codex GPT-5.5 | OpenRouter API — `openai/gpt-5.5` |
+| `cx` | Codex GPT-5.3 | OpenRouter API — `openai/gpt-5.3-codex` |
 | `ge` | Gemini 3.1 Pro Preview | OpenRouter API — `google/gemini-3.1-pro-preview` (moved off the Google GenAI API on 2026-05-10) |
 | `cgpt` | ChatGPT GPT-5.5 | OpenRouter API — `openai/gpt-5.5` |
 | `ds` | DeepSeek V4 Pro | DeepSeek direct API — `deepseek-v4-pro` (never OpenRouter) |

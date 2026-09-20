@@ -187,13 +187,67 @@ def build(repo: Path) -> Path:
     return dest
 
 
-def changes(sandbox: Path, repo: Path) -> Dict[str, str]:
-    """What the seat changed inside its copy, as {relative path: unified diff}."""
+
+#: A seat's own scratch directory. EXCLUDED FROM THE PROPOSALS DIFF ONLY, never
+#: from the harvest.
+#:
+#: WHY THE ASYMMETRY, MEASURED 2026-09-20. `seat_proposals.diff` is mirrored
+#: into the TRACKED evidence record, and on this round it introduced 6,430 of
+#: the 7,032 unique `bench/logs/...` paths in the whole tracked tree -- 91% of
+#: the population the citation census reads -- entirely from `.scratch` dumps
+#: of `git rev-list` and `git ls-tree` output that the seats produced while
+#: answering a git-history question. A machine dump is not a citation, and a
+#: record that swamps the thing it records is not a record.
+#:
+#: NOTHING IS DISCARDED, which is the founder's ruling (j) and the reason this
+#: is not simply added to `_VCS_DIRS`. `harvest` still takes the whole of
+#: `.scratch` into the run's log directory, so every byte a seat produced
+#: survives on disk. What changes is only what the mirrored DIFF carries.
+#:
+#: IT ALSO MATCHES WHAT THE SEATS WERE TOLD. The brief requires each fix
+#: "delivered as a file in your sandbox repository tree, at a real path", and
+#: `.scratch` is by construction not one. cc2 followed that and delivered
+#: `scripts/a8_shell_crossverify_2026-09-20.sh`; the scratch material either
+#: side of it is working-out, not the work.
+_SCRATCH_DIRS = (".scratch",)
+
+
+def _is_seat_scratch(rel: str) -> bool:
+    """Is this the seat's working-out rather than its delivered proposal?"""
+    return any(d in Path(rel).parts for d in _SCRATCH_DIRS)
+
+
+def changes(sandbox: Path, repo: Path, *, include_scratch: bool = False) -> Dict[str, str]:
+    """What the seat changed inside its copy, as {relative path: unified diff}.
+
+    `include_scratch` DEFAULTS TO FALSE because the common caller is the
+    proposals diff, which is mirrored into the tracked record. `harvest` passes
+    True: it writes to the run's own log directory, where nothing is discarded.
+    Getting this backwards would have silently dropped the seats' working
+    material from the harvest -- the exact outcome founder ruling (j) forbids --
+    while appearing to fix a measurement, so it is a parameter rather than a
+    blanket rule, and a test drives both values.
+    """
     found: Dict[str, str] = {}
     for path in sandbox.rglob("*"):
         if not path.is_file() or path.is_symlink():
             continue
         rel = str(path.relative_to(sandbox))
+        # A CLONED OBJECT STORE IS NOT A SEAT'S PROPOSAL (2026-09-20). The same
+        # rule `harvest` applies, and it belongs here too because THIS is where
+        # the damage was done: on the 2026-09-20 round both seats cloned the
+        # repository's git objects into their sandboxes so the git-dependent
+        # questions in their brief could be answered, and every object then
+        # read as a change. `seat_proposals.diff` came out at 7,823,216 bytes
+        # and opened with diffs of `.git/ORIG_HEAD` and `.git/config`.
+        #
+        # THE COST WAS NOT ONLY SIZE. That file is mirrored into the tracked
+        # evidence record, and it alone contributed 50,297 of the 63,631
+        # `bench/logs/...` path strings in the whole tracked tree -- 79 percent
+        # of the corpus the citation census reads. A transcript of a cloned
+        # object store was about to become the dominant source of "citations".
+        if _is_vcs_metadata(rel) or (not include_scratch and _is_seat_scratch(rel)):
+            continue
         original = repo / rel
         try:
             if original.is_file() and original.read_bytes() == path.read_bytes():
@@ -486,7 +540,21 @@ def teardown(sandbox: Path) -> None:
 
 #: Directories a seat may CREATE but does not AUTHOR. Harvesting them is not
 #: preserving work.
-_VCS_DIRS = (".git", ".hg", ".svn")
+#:
+#: MEASURED ON THE 2026-09-20 ROUND, which is why the list is what it is. The
+#: proposals diff came out at 7,645,357 bytes across 104 files. 15.6% of it was
+#: a single `.pytest_cache/v/cache/nodeids`, which is pytest's own bookkeeping
+#: and nothing a seat wrote. The git stores the seats cloned in, so that the
+#: git-dependent questions in their brief could be answered at all, accounted
+#: for the rest of this list.
+#:
+#: `.scratch` IS DELIBERATELY NOT HERE. It holds 80.3% of that diff, and
+#: dropping it would be the bigger saving -- but a seat can and does deliver
+#: real work there: fable named `.scratch/shell_classifier.sh` as an artefact
+#: in its reply. The founder's ruling (j) is that results must not be
+#: discarded, so the ephemeral caches go and the working material stays.
+_VCS_DIRS = (".git", ".hg", ".svn", ".pytest_cache", "__pycache__",
+             ".mypy_cache", ".ruff_cache")
 
 
 def _is_vcs_metadata(rel: str) -> bool:
@@ -535,7 +603,8 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
     dest = Path(dest)
     files_dir = dest / "files"
     taken, bytes_taken, failed = [], 0, []
-    diffs = changes(Path(sandbox), Path(repo))
+    # include_scratch=True: the harvest is the place nothing is discarded.
+    diffs = changes(Path(sandbox), Path(repo), include_scratch=True)
     skipped_vcs = [r for r in diffs if _is_vcs_metadata(r)]
     for rel in sorted(set(diffs) - set(skipped_vcs)):
         src = Path(sandbox) / rel

@@ -135,6 +135,14 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     kwargs: dict[str, Any] = {
         "experiment_name": exp_cfg["experiment_name"],
         "models": exp_cfg["models"],
+        # THE SECOND INGESTION PATH MUST CARRY IT TOO (2026-09-20). The sentinel
+        # was added to RunnerConfig.from_dict and not here, and
+        # `test_both_ingestion_paths_agree` went red on 4 configs with
+        # "launcher=False runner=True" -- the launcher config-drop class this
+        # project has hit repeatedly, caught by the guard built for it. This
+        # file reads `exp_cfg["models"]` unconditionally, so reaching this line
+        # at all means the config named its seats.
+        "models_were_declared": bool(exp_cfg.get("models")),
         # Target article + context files + domain. Missing these caused
         # the IsADirectoryError on the first launch_exp40.py attempt.
         "test_article": exp_cfg["test_article"],

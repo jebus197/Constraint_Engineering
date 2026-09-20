@@ -39,8 +39,17 @@ APPENDIX = ROOT / "docs" / "MATHEMATICAL_APPENDIX.md"
 #: cannot: line 119's is `π−πR` and line 169's is `π_k(1−R_k)`, and a lazy or
 #: greedy class either stops inside the second or runs past the first into the
 #: prose that follows it.
-INVERSE = re.compile(
-    r"C(?:_k)?\s*=\s*\(\s*(?:π|pi)(?:_k)?\s*[−-]\s*R(?:_k)?\s*\)\s*/\s*\(")
+#: Locates the START of a stated inverse: `C =` or `C_k =` followed by `(`.
+#: BOTH SIDES ARE THEN READ BY BALANCED SCAN, which is the 2026-09-20 repair.
+#: The previous pattern carried the numerator `(pi - R)` inside ITSELF and
+#: `_as_callable` hard-coded the same shape, so the numerator the appendix
+#: actually wrote was never read. A statement whose numerator was flipped to
+#: `(R - pi)` simply stopped matching: the count dropped, and every round-trip
+#: test went on passing because it was testing a numerator supplied by the
+#: guard rather than by the file. Measured, the flipped form's round-trip
+#: residual is `2*(-R**2 + R*pi + R - pi)/(2*R - pi - 1)`, which is not 0 -- so
+#: the defect is real and the instrument was blind to exactly it.
+INVERSE = re.compile(r"C(?:_k)?\s*=\s*\(")
 
 #: The forward map, which is not in dispute and is the thing the inverse must undo.
 FORWARD = "pi*(1-C)/((1-pi)+pi*(1-C))"
@@ -67,24 +76,55 @@ def _balanced(text: str, start: int) -> str:
     raise ValueError(f"unbalanced denominator from offset {start}")
 
 
-def _inverse_denominators() -> list:
-    """Every inverse denominator the appendix states, normalised for SymPy."""
+def _normalise(expr: str) -> str:
+    """Prose notation into something SymPy accepts, without changing the maths."""
+    e = expr.replace("π", "pi").replace("−", "-").replace("·", "*").replace("_k", "")
+    # Implicit multiplication is fine in prose and fatal to SymPy: `pi(1-R)`
+    # and `pi R` both need an explicit operator.
+    e = re.sub(r"(pi)\s*\(", r"\1*(", e)
+    e = re.sub(r"(pi)\s*R\b", r"\1*R", e)
+    return e.strip()
+
+
+def _inverse_statements() -> list:
+    """Every inverse the appendix states, as (numerator, denominator) strings.
+
+    BOTH sides are read from the file. A statement whose `/` and second group
+    cannot be found is skipped here and caught by the anti-vacuity test, which
+    is the only place a drop in the count can mean either "the notation moved"
+    or "somebody wrote something this cannot parse" -- and both need a human.
+    """
     text = _appendix_text()
     out = []
     for m in INVERSE.finditer(text):
-        d = _balanced(text, m.end())
-        d = d.replace("π", "pi").replace("−", "-").replace("·", "*").replace("_k", "")
-        # Implicit multiplication is fine in prose and fatal to SymPy: `pi(1-R)`
-        # and `pi R` both need an explicit operator.
-        d = re.sub(r"(pi)\s*\(", r"\1*(", d)
-        d = re.sub(r"(pi)\s*R\b", r"\1*R", d)
-        out.append(d.strip())
+        try:
+            numerator = _balanced(text, m.end())
+        except ValueError:
+            continue
+        rest = text[m.end() + len(numerator) + 1:]
+        slash = re.match(r"\s*/\s*\(", rest)
+        if not slash:
+            continue
+        try:
+            denominator = _balanced(rest, slash.end())
+        except ValueError:
+            continue
+        out.append((_normalise(numerator), _normalise(denominator)))
     return out
 
 
-def _as_callable(denominator: str):
+def _inverse_denominators() -> list:
+    """Kept as the denominator view, so existing callers keep working."""
+    return [d for _, d in _inverse_statements()]
+
+
+def _as_callable(denominator: str, numerator: str = "pi - R"):
+    """Build the stated inverse. The numerator DEFAULTS to the correct form only
+    so the can-fail controls below can drive a denominator in isolation; every
+    call that reads the appendix passes what the appendix actually wrote."""
     pi, R = sp.symbols("pi R", positive=True)
-    expr = (pi - R) / sp.sympify(denominator, locals={"pi": pi, "R": R})
+    expr = (sp.sympify(numerator, locals={"pi": pi, "R": R})
+            / sp.sympify(denominator, locals={"pi": pi, "R": R}))
     return sp.lambdify((pi, R), expr, "math"), expr
 
 
@@ -107,8 +147,8 @@ class TestEveryStatedInverseRoundTrips:
         pi_s, R_s, C_s = sp.symbols("pi R C", positive=True)
         forward = sp.sympify(FORWARD, locals={"pi": pi_s, "C": C_s})
         offenders = []
-        for denominator in _inverse_denominators():
-            _, inverse_expr = _as_callable(denominator)
+        for numerator, denominator in _inverse_statements():
+            _, inverse_expr = _as_callable(denominator, numerator)
             residual = sp.simplify(forward.subs(C_s, inverse_expr) - R_s)
             if residual != 0:
                 offenders.append((denominator, str(residual)[:80]))
@@ -120,8 +160,8 @@ class TestEveryStatedInverseRoundTrips:
         """A sign error shows up as a NEGATIVE coverage long before anyone
         notices the algebra. -3/4 was what line 169 returned at pi=1/2, R=1/5."""
         offenders = []
-        for denominator in _inverse_denominators():
-            fn, _ = _as_callable(denominator)
+        for numerator, denominator in _inverse_statements():
+            fn, _ = _as_callable(denominator, numerator)
             for pi_v, R_v in GRID:
                 if R_v >= pi_v:
                     continue           # R <= pi by construction; skip the undefined corner
@@ -169,8 +209,8 @@ class TestTheProseClaimMatchesTheArithmetic:
             pytest.skip("the appendix no longer makes that claim anywhere")
         pi_s, R_s, C_s = sp.symbols("pi R C", positive=True)
         forward = sp.sympify(FORWARD, locals={"pi": pi_s, "C": C_s})
-        for denominator in _inverse_denominators():
-            _, inverse_expr = _as_callable(denominator)
+        for numerator, denominator in _inverse_statements():
+            _, inverse_expr = _as_callable(denominator, numerator)
             assert sp.simplify(forward.subs(C_s, inverse_expr) - R_s) == 0, (
                 f"the appendix claims a 0 round-trip residual while stating an "
                 f"inverse with denominator {denominator!r} that does not have one")

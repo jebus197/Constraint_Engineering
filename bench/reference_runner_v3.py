@@ -15853,6 +15853,30 @@ def main():
         time.sleep(5)
     else:
         _log(f"\nRESUME mode — skipping preflight")
+        # THE SPEND GATE IS NOT PART OF THE CONNECTIVITY PROBE, and skipping the
+        # probe must not skip it (audit finding, 2026-09-20). `run_preflight` was
+        # the only caller, so a resumed paid experiment consulted no suite record
+        # at all -- and a resumed run dispatches to the same paid seats for every
+        # remaining round. The probe is genuinely redundant on a resume; the
+        # record check is not.
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        try:
+            import suite_record as _suite_record
+        except Exception as _exc:                                  # noqa: BLE001
+            _log(f"  suite gate unavailable on resume ({type(_exc).__name__}: "
+                 f"{_exc}); refusing rather than dispatching unchecked")
+            sys.exit(1)
+        _paid_resume = len([m for m in getattr(exp_config, "models", [])
+                            if getattr(m, "api", "") != "claude_cli"
+                            and getattr(m, "label", "") in set(getattr(cfg, "models", []) or [])])
+        try:
+            _suite_record.gate(spend="experiment (resumed)",
+                               override_env="RUNNER_SUITE_UNCHECKED",
+                               paid_seats=_paid_resume)
+        except SystemExit:
+            _log("  RESUME REFUSED: the last full-suite record is not green. "
+                 "Set RUNNER_SUITE_UNCHECKED=1 to resume anyway.")
+            sys.exit(1)
 
     result = run_experiment(exp_config, cdsfl_text, cfg)
 
