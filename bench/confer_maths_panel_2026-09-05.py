@@ -455,9 +455,18 @@ def dispatch(name, model_id, route):
         elif route == "deepseek":
             resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
         else:
+            # TOOL BUDGET RAISED AT THE CALL SITE, not in the shared default
+            # (founder's spend approval, 2026-09-20: up to 10 pounds, cheaper
+            # better). MAX_TOOL_ITERATIONS is 6 and every other caller keeps it.
+            # A round-trip can carry SEVERAL tool calls, so 6 is less tight than
+            # it reads -- but this brief asks a seat to run 4 separate check
+            # scripts and verify a collapse both symbolically and numerically,
+            # and a seat that runs out mid-verification returns an UNCHECKED it
+            # could have answered. Estimated worst case at 10: about 2 pounds
+            # for the round, against 0.99 at 6.
             r = call_openrouter_with_tools(model_id, SYSTEM, PROMPT,
                                            tools=TOOL_SPECS, max_tokens=32768,
-                                           timeout=300)
+                                           timeout=300, max_iterations=10)
             resp = r.get("final_text", "")
             tool_log = r.get("tool_calls", [])
         ok = bool(resp and resp.strip())

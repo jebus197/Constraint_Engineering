@@ -1,0 +1,1435 @@
+# Constraint-Driven Synthesis and Falsification: A Methodology for AI-Augmented Engineering
+
+**Author:** George Jackson
+**Date:** April 2026
+**Version:** 1.1
+
+---
+
+## Abstract
+
+Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A unified recursive state equation R_k(i), derived during the April 2026 mathematical audit, supersedes C(n) as the canonical claim-state representation and forms the object on which the feedback and divergence channels operate. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March–April 2026). A cognitive measurement framework (Duane NHPP decay curves, Abstraction Index, Adoption Delta, multi-verifier Bayesian severity, capability fingerprints) enables quantitative assessment of analytical quality across conditions. An unexpected empirical observation: composite multi-agent systems operating under structured falsification exhibit measurable second-order cognitive properties — analysing their own analysis and improving through metacognitive feedback — that no individual agent possesses. This emergence is formalised, substrate-agnostic, and falsifiable. In April 2026, two further channels were integrated to operationalise the two Popperian arms independently: §17 (feedback channel, severe-testing arm) and §18 (divergence directive, bold-conjecture arm), together with a Stage 6 literature-calibrated extension introducing a second novelty dimension c_ext and a manifest-driven B-Cell Complex of 18 active specialist domains. Experiment 40 Stage 3 closed the integration test at 1250/1250 tests passing at commit `6580737` (18 April 2026); that run was the full suite with no offline selection and included live model dispatch, so it records the state of the suite on that date rather than a hermetic reproducibility figure. The suite was made offline by default on 31 July 2026 — outbound calls are denied and the run is hermetic — with current counts recorded against a commit in `docs/CURRENT_STATE.md`. The 2×2 factorial scheduled as Experiments 41–54 will test whether the channel additions produce the improvements the derivations predict. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
+
+---
+
+## Part I — The Problem
+
+Large Language Models have two training objectives that conflict in technical work:
+
+1. **Helpfulness and agreeableness** — produces sycophancy. The model tells you what you want to hear, confirms your assumptions, avoids conflict.
+2. **Accuracy** — weaker than the helpfulness objective in open-ended generation when the two conflict.
+
+The result: confident, well-structured, agreeable outputs that are frequently wrong in ways not visible to a non-expert. The model will design a circuit that cannot work, propose an architecture that cannot scale, and draft a governance structure that contradicts itself — all with perfect confidence and impeccable formatting.
+
+The secondary problem is more insidious: **the model cannot tell you which parts of its output it is sure about and which parts it is guessing**. Everything is presented with the same register of certainty. The user has no signal.
+
+The tertiary problem compounds both: **the model forgets everything between sessions**. Even when adversarial reasoning produces a good result, that result evaporates. The next session starts blank. Lessons learned are lost. Mistakes are repeated. The feedback loop runs once and disappears.
+
+---
+
+## Part II — The Methodology
+
+### 1. The Generation-Falsification Coupling
+
+Associative reasoning is what makes LLMs useful. It is also the precise mechanism that produces hallucinations. The same process that correctly associates low-power microcontrollers with coin-cell batteries also associates high-speed PCB design with two-layer boards — because both phrases appear near each other in training text, regardless of physical viability.
+
+The core principle: **generation and falsification are a single coupled mechanism, not two sequential steps.** The model generates using associative reasoning, then subjects every non-trivial output to adversarial self-testing before presenting it. The user only sees what survived being broken.
+
+This coupling is applied proportionally. Established facts, elementary deductions, and mechanically verifiable claims (caught by tests, compilers, or linters) do not require explicit falsification. The full coupled loop is reserved for novel inferences, non-obvious claims, and assertions where being wrong produces a consequence that downstream verification will not catch.
+
+### 2. The P-Pass
+
+The P-Pass — short for Popperian falsification pass — is named after Karl Popper (1902–1994), the philosopher of science who argued that scientific knowledge advances not by confirming hypotheses, but by attempting to refute them. A theory that survives sustained attempts at refutation is *corroborated* — not proven. It has earned a degree of trust proportional to the severity of the tests it has withstood. A theory that cannot, even in principle, be subjected to a test that could show it to be false is not a scientific theory at all.
+
+The P-Pass operationalises this principle as an iterative engineering process:
+
+1. **Identify the problem.**
+2. **Generate the best available solution.**
+3. **Attempt to destroy it.** This is iterative, not observational. Actively construct scenarios designed to break the claim. Check edge cases. Examine the claim from the perspective of an opponent.
+4. **Fix what breaks.**
+5. **Attempt to break the fix.**
+6. **Continue until the solution cannot be broken further without leaving the defined scope.**
+
+A P-Pass that finds no failures on the first attempt is suspect. Repeat with increased adversarial rigour before accepting a clean result.
+
+Deferral is acceptable only when the fix is genuinely outside the current scope. When deferred, the deferral is stated explicitly with the conditions under which it becomes actionable.
+
+**Suitability gate:** before running the P-Pass, determine whether the task involves claims where being wrong produces a non-functional, physically impossible, legally invalid, or unsafe outcome. If yes, run the full loop. If the task is only partially falsifiable, apply the loop to those components and state the boundary. If the task is not falsifiable — aesthetics, ethics, pure preference — say so and apply judgement. Do not produce false rigour. A schema applied to a task where falsifiability is structurally absent produces the appearance of methodological discipline without its substance. This is more dangerous than honest uncertainty.
+
+#### 2.1 Formal Model of Corroboration
+
+The P-Pass can be described mathematically. This is an illustrative formalisation — it captures the core dynamics accurately, but the real process has complexities (noted below) that the model simplifies.
+
+Each P-Pass is a falsification attempt. If a flaw exists in the claim under test, a single pass has some probability *p* of detecting it, where *p* depends on the rigour of the attempt, the complexity of the claim, and the capability of the model performing the test. After *n* independent falsification attempts, the probability that an existing flaw survives undetected is:
+
+> P(undetected | flaw exists) = (1 − p)ⁿ
+
+Corroboration — the degree to which a claim has survived falsification — is therefore:
+
+> **C(n) = 1 − (1 − p)ⁿ**
+
+**Interpretation.** Consider inspecting a structure for a defect. Each inspection has some probability *p* of detecting the defect if it exists. If the defect is subtle, *p* is small. If it is obvious, *p* is large. But *p* is never 1 (100%), because no single inspection is perfect.
+
+After one inspection, the probability of having detected the defect is *p*. Suppose *p* = 0.3 (30%) — a 30% detection probability per inspection.
+
+If the first inspection fails to detect it, a second inspection is performed. The probability of two consecutive failures is 0.7 × 0.7 = 0.49 (49%). The probability of detection after two inspections is therefore 1 − 0.49 = 0.51 (51%). Improved, but not certain.
+
+After three inspections: 1 − 0.343 = 0.657 (65.7%). After five: 1 − 0.168 = 0.832 (83.2%). After ten: 1 − 0.028 = 0.972 (97.2%).
+
+Two properties are immediately visible. First, the value approaches 1 (100%) asymptotically but never reaches it. Complete certainty that no defect exists is not available. This is Popper's central observation: corroboration accumulates; proof does not arrive. Second, each additional inspection yields less marginal gain than the previous one. The gain from one to two inspections is 21 percentage points. The gain from nine to ten is less than 3. This is the diminishing returns property that determines the stopping criterion.
+
+The critical insight follows directly. If the inspector is incapable of detecting the defect — if *p* = 0 (0%) — the formula yields 1 − 1ⁿ = 0 (0%), regardless of *n*. A thousand inspections produce no corroboration. This is the GIGO problem (Garbage In, Garbage Out) expressed in a single equation: a model that cannot genuinely reason adversarially gains nothing from performing the structural motions of a P-Pass. The structure is present. The substance is absent.
+
+The inverse is equally significant: when *p* is high — a capable model with genuine adversarial reasoning — even a small number of passes produces substantial corroboration. The methodology's value scales with the capability of the system performing it.
+
+This has four properties that correspond directly to the methodology:
+
+1. **C(0) = 0.** No falsification attempts, no corroboration. An untested claim has no earned trust.
+2. **C(n) → 1 as n → ∞, but never reaches 1.** You can approach certainty but never arrive at it. Proof is not available. This is why a P-Pass result is described as "survives" — never "proven."
+3. **Diminishing returns.** Each additional pass yields less incremental corroboration than the last. The marginal gain of the tenth pass is smaller than the marginal gain of the second. This corresponds to the stopping criterion: "continue until diminishing returns."
+4. **When p ≈ 0, C(n) ≈ 0 regardless of n.** A model incapable of genuine adversarial reasoning (p close to zero) gains nothing from repeated passes. One hundred empty passes produce the same corroboration as zero passes. This is the quality defence problem (Part IV) stated in a single equation: the P-Pass is only as good as the model performing it.
+
+**Boundary conditions the model does not capture:**
+
+- **Independence.** The formula assumes each pass is independent. In practice, P-Pass iterations are informed by prior iterations — you fix what broke and test the fix. Successive passes are therefore *not* independent; they are adaptive. This means the relationship between the formula and actual corroboration in adaptive passes is not straightforward. Adaptive testing can be more efficient than random independent testing (the formula underestimates), but it can also create tunnel vision where fixing one flaw introduces blind spots for others (the formula overestimates). The formula captures the dynamic; it does not bound it in either direction.
+- **Variable p.** Detection probability varies by domain, claim complexity, model capability, and the specific falsification strategy used. It is not a single fixed number. The formula illustrates the dynamic; it does not parameterise a specific instance.
+- **Non-continuous scope.** The suitability gate and constraint classification are categorical decisions (run the loop / don't run the loop; HARD / SOFT), not continuous variables. They sit outside the formula's domain.
+
+**Falsifiability of the model itself:**
+
+The formula above assumes that flaws are binary (present or absent), detection is probabilistic with a scalar probability *p*, and repeated passes are the mechanism through which corroboration accumulates. Each of these assumptions could be wrong:
+
+- *p* may not be scalar. Detection probability may vary systematically by flaw type, producing a vector of detection probabilities with permanent blind spots for certain categories of error. A model that detects logical inconsistencies at *p* = 0.7 and unit-of-measure errors at *p* = 0.05 is not well described by a single *p*.
+- Flaws may not be binary. Some claims degrade continuously rather than failing discretely. The binary flaw model may not capture partial correctness or context-dependent validity.
+- The geometric survival model may be the wrong model entirely. Applying reliability mathematics to LLM self-falsification is an analogy, not a derivation from first principles. The dynamics of adversarial self-testing in a language model may be better described by a framework that does not yet exist — one that accounts for correlated failure modes, attention-dependent reasoning depth, or epistemic structures that have no counterpart in component reliability theory.
+
+The formula is presented because it captures the observed dynamics accurately enough to be useful, and because it is testable. But it is an illustrative model, not a theoretical claim. If a better model is proposed that predicts P-Pass outcomes more accurately, this one should be replaced. The methodology does not depend on this specific equation — it depends on the principle that corroboration is earned through survived falsification. The equation is one way to express that principle. It may not be the best way.
+
+Despite these simplifications, the formula captures the essential insight: corroboration is earned through survived falsification, accumulates with diminishing returns, asymptotically approaches but never reaches certainty, and is zero when the testing mechanism lacks genuine capability.
+
+#### 2.2 Structured Operational Model
+
+The simple model C(n) treats detection probability as a scalar *p*. In practice, detection probability varies by flaw class — a model that catches logical inconsistencies at *p* = 0.7 may catch unit-of-measure errors at *p* = 0.05. The structured model extends C(n) to account for this.
+
+**Multi-class detection formula:**
+
+> **F_n = Σ_k w_k · [1 − Π_i (1 − d_i · p_ik)]**
+
+Where:
+- K = set of flaw classes (logical, arithmetic, physical, procedural, etc.)
+- w_k = weight of flaw class k (sums to 1; reflects consequence severity)
+- p_ik = raw detection probability of pass i for flaw class k
+- d_i = diversity discount for pass i (accounts for correlation between passes)
+
+**Diversity discount rubric** (d_i values):
+
+| Pass type | d_i | Rationale |
+|---|---|---|
+| Same-model self-recheck (no new context) | 0.2 | Highly correlated — same blind spots |
+| Same-model with reframed prompt | 0.5 | Partial decorrelation via different attack angle |
+| Different model, same family | 0.7 | Moderate decorrelation — different training but similar architecture |
+| Practitioner/operator domain review | 0.8 | External to model reasoning, correlated with problem framing |
+| Different model, different family | 0.9 | Low correlation — genuinely independent failure modes |
+| Independent domain expert review (no prior involvement) | 1.0 | Fully independent — the gold standard |
+
+**Note on the practitioner row:** The standard CDSFL workflow described in Part III — the operator constrains the model, reviews output, judges against domain knowledge, iterates — operates at *d_i* ≈ 0.8. The practitioner is genuinely external to the model's reasoning (not correlated with its failure modes), but not independent of the problem framing (they defined the constraints). This correctly places solo-practitioner CDSFL between AI-only falsification and fully independent peer review.
+
+**Reduction property:** When all p_ik = p (uniform detection), all d_i = 1 (fully independent passes), and K = 1 (single flaw class), F_n reduces to C(n) = 1 − (1−p)ⁿ. The simple model is a special case of the structured model.
+
+**Anchor state A** — separating internal falsification from external validation:
+
+| State | Meaning |
+|---|---|
+| A0 | No external contact. Internal P-Pass only. All corroboration is self-assessed. |
+| A1 | Cross-agent verification. Another AI system has independently tested the claim. |
+| A2 | Human expert review. A domain expert has evaluated the claim against ground truth. |
+| A3 | Independent replication. The claim has been reproduced by an independent party. |
+
+The simple model C(n) operates entirely within A0. The structured model F_n can operate across anchor states when different passes involve different agents or human reviewers (reflected in d_i values). Movement from A0 toward A3 represents increasing epistemic confidence — not because the mathematics changes, but because the independence assumption becomes progressively more justified.
+
+**Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
+
+**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
+
+A further extension — the combined machine-HIL detection model (G_n) — is presented separately in Part VII, after the reader has encountered the human role (Part III), the persistence and verification architecture (Part V), and the quality defence problem (Part VI). G_n resolves a gap that becomes apparent only once those sections have been read: how to quantify the human expert's contribution and couple it to the verification infrastructure.
+
+#### 2.3 Model Evolution: From C(n) to the Operational Self-Assessment Equation
+
+The models presented above evolved through operational use. The links between stages are **not all of one kind**. Most are strict generalisations, where the previous model is the later one at fixed parameter values. The step from coverage (F_n) to residual risk (R_n) is not: the two report different quantities, and R_n's range is [0, π_k], so no constant prior makes it emit F_n's value. Per flaw class they are related by an invertible map; aggregated over classes neither determines the other, because a weighted sum is many-to-one in either coordinate system.
+
+**Stage 1: C(n) = 1 − (1−p)ⁿ** (§2.1 above). Single flaw type, single detection probability, independence assumed. Captures the core dynamic: corroboration accumulates through survived falsification.
+
+**Stage 2: F_n with multi-class d_i, p_ik** (§2.2 above). Adds flaw classes, consequence weighting, and diversity discounts. Answers "how hard did we try?"
+
+**Stage 3: R_n with Bayesian posterior** (Mathematical Appendix §1). Introduces the prior flaw rate π_k and answers a different question: "how much risk remains?" Bayesian update using miss probabilities. Coverage and risk are complementary views of the same process.
+
+**Stage 4: Recursive collapse.** The batch Bayesian formula from Stage 3 can be unrolled into a single recursive update applied after each pass:
+
+> **R_k(i) = R_k(i-1) · (1 − q) / (1 − q · R_k(i-1))**
+
+where q = d · p. The prior π_k enters once as R_k(0) = π_k and then vanishes from the update rule. This makes the equation self-contained at every step — no history beyond the current risk estimate is needed. Under the simplifying assumptions of Stage 1 (K=1, d=1, uniform p, π=0.5), it reduces to the standard Bayesian posterior (1−p)^n / (1 + (1−p)^n), which is the Bayesian form of C(n).
+
+**Stage 5: Three-phase operational form.** The recursive equation models detection only. In practice, the act of fixing introduces its own risk. Three additional parameters complete the cycle:
+
+- **η (novelty):** Is this finding genuinely new content? q becomes η · d · p.
+- **σ (fix efficacy):** Does the proposed fix actually resolve the flaw? Interpolates between full detection benefit (σ=1) and no benefit (σ=0).
+- **ν (re-injection rate):** Does the fix introduce new problems? Sets the absolute floor for residual risk.
+
+The three phases per cycle — detection (Bayesian update), resolution (σ-weighted interpolation), re-injection (ν floor) — are specified operationally in the CDSFL operational directive and derived formally in the Mathematical Appendix §1.1. The break-even re-injection rate ν* = σ · R · q / (1 − q · R · (1−σ)) determines whether a cycle does net good or net harm.
+
+The complete lineage is a chain of 4 strict generalisations and 1 change of coordinates. C(n) captures the principle. F_n adds structure. R_n re-expresses coverage as residual risk — a different question in different units, not a generalisation of F_n. The recursive collapse makes it self-contained, and is an exact identity rather than a further generalisation: the recursion unrolls to the batch posterior for every n. The three-phase extension makes it operational. Each step was verified computationally (SymPy, Wolfram Alpha) and validated through multi-architecture confer (Gemini 3.1 Pro, Codex GPT-5.4, April 2026). Full derivation: Mathematical Appendix §1.1.
+
+### 3. Constraint Classification
+
+Before any synthesis, all constraints are classified:
+
+- **HARD** — physics, mathematics, law, safety, explicit absolutes. Non-negotiable. Cannot be traded against SOFT constraints.
+- **SOFT** — economic preference, convenience, user preference. Negotiable.
+
+Ambiguous constraints default to HARD. Reclassification requires explicit instruction.
+
+When HARD constraints conflict: physics and mathematics take precedence, then legal and safety, then user-specified HARD. Conflict between physics and user specification must be stated explicitly.
+
+Without this classification, a model may implicitly trade a HARD constraint against a SOFT one to produce a more satisfying answer. The classification makes this impossible without explicit authorisation.
+
+### 4. Epistemic Marking
+
+Standard model output gives the user no way to distinguish a claim derived from physical constants from one inferred from sparse training data. Two flags surface in output, because only two require immediate user action:
+
+- **[VERIFY:current]** — the claim depends on present-day market availability, current technology state, or recent regulatory status. Acting on it without verification risks wasted expenditure or non-compliance.
+- **[SPECULATIVE]** — untested inference or low training density. May be structurally sound but empirically unvalidated.
+
+All other epistemic classification remains internal to the falsification process. Absence of a flag means the claim is established or verified to the degree the model can assess. The user is not burdened with resolving what requires no action.
+
+### 5. Supporting Principles
+
+- **Adversarial posture.** Push back on impossible, contradictory, or ill-advised instructions. Say "no" or "I don't know" when either is the honest answer. Never fabricate certainty.
+- **Simplest sufficient solution.** Default to the minimum complexity that fully satisfies the constraints. Justified complexity is complexity the user cannot do without.
+- **Tangential request detection.** Do not silently comply with tangential requests. Flag them, explain why they are tangential, and propose what should be prioritised instead.
+- **Resource protection.** If a task risks wasteful token expenditure, unnecessary context loss, or does not meaningfully further the project's aims, say so before executing.
+- **Version update.** When a P-Pass-surviving claim is subsequently falsified by real-world testing, third-party review, or new evidence: document what was claimed, what the P-Pass assessed, what refuted it, and what this implies. Do not generalise beyond the demonstrated scope of failure.
+
+---
+
+## Part III — The Human Role: Manual Constraint Bounding
+
+The methodology described in Part II defines what the AI system does. This section describes what the human operator does. Both are essential. Without the human role, the methodology reduces to trusting the AI to constrain itself — which is the problem the methodology exists to solve.
+
+### The Core Skill
+
+The human operator's role is to **bound the AI tightly within a defined problem space** before and during every interaction. This means:
+
+1. **Assess constraints in advance.** Before engaging the AI on a non-trivial task, the operator identifies the relevant constraints — physical, mathematical, legal, safety, scope, and preference — and communicates them explicitly. The AI does not discover constraints; it is given them.
+
+2. **Define the box.** The operator places all valid parameters into a tightly confined space and instructs the AI to operate only within that space. The tighter the box, the less room for hallucination, drift, and speculative breakout. A well-defined problem space is the single most effective defence against confident nonsense.
+
+3. **Monitor for breakout.** During the interaction, the operator remains vigilant for the AI drifting outside the defined problem space. Breakout takes predictable forms: introducing assumptions not in the original constraints, solving a related but different problem, expanding scope without authorisation, or generating plausible-sounding output that addresses something the operator did not ask for.
+
+4. **Correct immediately.** When breakout is detected, the operator does not allow it to compound. Correction is immediate: either redirect the AI back into the defined space, or add further constraints that close the gap the AI exploited. Both actions may be required simultaneously.
+
+5. **Iterate the boundary.** The constraint space is not static. As the problem is better understood through the interaction, the operator may tighten constraints (closing avenues that proved unproductive), relax constraints (when a HARD classification turns out to be SOFT), or add new constraints (when the AI's output reveals a dimension the operator had not considered). The operator maintains the boundary; the AI works within it.
+
+### Why This Matters
+
+The directives in Part II instruct the AI to falsify its own output, classify constraints, and flag epistemic uncertainty. These are genuine improvements over unguided generation. But they are implemented by the same system whose outputs are being tested. The model is both the generator and the adversary.
+
+Manual constraint bounding introduces an external check — a human intelligence operating outside the model's reasoning process, with domain knowledge the model may lack, and with the ability to recognise failure modes the model cannot introspect on. The methodology is not self-executing. It is a protocol for human-AI collaboration in which the human provides the constraints and the AI provides the throughput.
+
+This is a learned skill. It requires the operator to understand the problem domain well enough to identify which constraints are HARD, where the boundaries of the problem space lie, and what breakout looks like in context. It is not a passive role. The operator is not a supervisor reviewing output after the fact — they are an active participant shaping the reasoning space in real time.
+
+### Review Tiers
+
+A common misreading of the methodology is that "review" means either trusting a single model's output or escalating to full independent peer review. CDSFL defines four review tiers, each with a clear role and escalation path. All tiers are overseen by a human domain-level expert who controls and adjudicates the process.
+
+| Tier | Mode | Who | When |
+|---|---|---|---|
+| **0** | Individual P-pass | A single machine performing self-review | Default. Every task. The basic CDSFL workflow described above. |
+| **1** | Adversarial multi-machine P-pass | Two or more machines reviewing each other's output, continuing until diminishing returns are reached | Standard practice for non-trivial work. The iterative cycle terminates when additional passes cease to produce new findings. |
+| **2** | Confer/defer for domain expert | A single human domain expert conducts independent falsification, then confers (agreement) or defers (escalation) | When machine review surfaces ambiguity, unresolved tension, or findings that require domain judgement. |
+| **3** | Confer/defer for external peer review | Third-party or external reviewers with no prior involvement | High-assurance. Safety-critical domains, publication-grade claims, or methodology validation (the testbench protocol in [bench/](bench/)). |
+
+**Tier 0** is where most work begins. The model generates, attacks its own output, and iterates. This is genuine adversarial self-testing — the basic P-Pass applied by a single machine.
+
+**Tier 1** adds structural independence by introducing two or more machines — the number and composition determined by the domain operator, ideally drawing on different architectures. The adversarial cycle continues until all assessors agree that diminishing returns have been reached. This adaptive termination replaces fixed pass counts with intelligence-mediated stopping: simple problems terminate early, complex problems receive more scrutiny without manual intervention. Every exchange is logged, making termination decisions auditable after the fact.
+
+**Tier 2** brings human domain expertise into the loop through the confer/defer protocol. The human expert conducts their own independent falsification of the claims under review — using a formal method of their choosing, whether CDSFL itself, an established domain-specific verification protocol, or another structured analytical framework — and then compares their findings against the machine output. Where findings align, the expert confers and the task advances. Where they diverge, the expert defers, flagging items for further investigation or escalation to Tier 3. The human at this tier is not passively reviewing machine output. They are running their own adversarial analysis and bringing genuinely independent findings to the confer/defer interaction. They are also the authority that controls and adjudicates across all tiers.
+
+**Tier 3** is triggered when consequences of error are materially high: safety-critical decisions, outputs requiring independent verification, publication-grade claims, or methodology validation itself. Tier 2 is not a substitute for Tier 3 when Tier 3 is genuinely required — the distinction preserves practicality without blurring epistemic standards.
+
+At every tier, the **defer-on-deadlock principle** applies: when reviewers (machine or human) reach irreconcilable disagreement — where further passes produce the same opposing assessments rather than convergence — items are explicitly deferred with the disagreement and both positions recorded. This prevents premature closure (papering over genuine uncertainty) and infinite regress (continuing to review when the disagreement is fundamental). An unresolved disagreement, surfaced with logged reasoning, is a visible research question rather than a hidden weakness.
+
+The structured operational model (Section 2.2) quantifies this hierarchy through the diversity discount *d_i*: Tier 0 operates at *d_i* ≈ 0.5–0.7 (same model, correlated passes), Tier 1 at *d_i* ≈ 0.8–0.9 (different architecture, partially independent), Tier 2 at *d_i* ≈ 0.85–0.95 (human expert, external to the model's reasoning but correlated with problem framing), and Tier 3 at *d_i* = 1.0 (fully independent expert or blind evaluation protocol). The combined detection model G_n (Section 2.3) extends this further by modelling the HIL's own independent falsification passes as a separate detection stream, parameterised by expertise and methodology formality, with an explicit cross-correlation term that quantifies the cost of passive review versus active independent analysis.
+
+---
+
+## Part IV — The Complete Directive Set
+
+The following is the complete instruction set that implements this methodology. It is model-agnostic and suitable for deployment as a system prompt, custom instruction block, or equivalent configuration mechanism in any LLM that supports user-defined behavioural instructions. The precision of each directive is the result of iterative falsification. Paraphrasing reintroduces the ambiguities that iteration removed.
+
+### 4.1 Core Directives
+
+```
+Use logical extension and associative reasoning in all STEM-related topics.
+All associative output must be falsified before it is presented — generation
+and falsification are a single coupled mechanism. Apply proportionally:
+established facts, elementary deductions, and mechanically verifiable claims
+(caught by tests, compilers, or linters) do not require explicit falsification.
+Reserve the full coupled loop for novel inferences, non-obvious claims, and
+assertions where being wrong produces a consequence that downstream verification
+won't catch.
+
+Actively try to disprove your own conclusions before presenting them. This is
+Karl Popper's principle of falsification and is always iterative, not just
+observational. Shorthand: 'p-pass', or simply 'p'. Method: identify the problem
+-> iterate to the most optimal, sane, human-comprehensible fix -> falsify that fix
+-> continue until you hit a robust solution and truly diminishing returns. Deferral
+is only acceptable when the fix is genuinely outside the current scope.
+
+Before running a P-Pass, determine whether the task involves physical,
+mathematical, logistical, or legal claims where being wrong produces a
+non-functional, physically impossible, legally invalid, or unsafe outcome. If yes,
+run the full loop. If the task is only partially falsifiable, apply the loop to
+those components and state the boundary. If the task is not falsifiable — aesthetics,
+ethics, pure preference — say so and apply judgment. Do not produce false rigour.
+
+Before any synthesis, classify all constraints as HARD (physics, mathematics, law,
+safety, explicit absolutes — non-negotiable) or SOFT (economic, preference,
+convenience — negotiable). Ambiguous constraints default to HARD. When HARD
+constraints conflict: physics and mathematics take precedence, then legal and safety,
+then user-specified HARD. Reclassification from SOFT to HARD requires explicit
+instruction. When classifying ambiguous constraints as HARD by default, state the
+classification inline and proceed. Do not block for reclassification — the user
+overrides if needed.
+
+During falsification, mark claims internally. Surface only what requires
+user action: flag [VERIFY:current] on any claim depending on present-day
+market, technology, or regulatory state, and [SPECULATIVE] on any untested
+inference — both inline, at point of claim. Omit all other flags from output.
+If verification is required, append one compact line naming what needs
+checking and why.
+
+Do not attach falsifiability conditions to routine output — reserve them for
+explicit P-Pass results or when the user requests them.
+
+When multiple claims in a single response require the same category of
+verification, consolidate into one inline flag at the first occurrence and one
+end-of-response block listing all items. Do not repeat the flag per claim.
+
+When a claim depends on present-day state (market, technology, regulatory,
+versioning) and acting on stale information could potentially produce a wrong
+outcome, use available search tools to resolve it before proceeding.
+
+When a proposed solution may have been superseded by something outside training
+knowledge, output: external check recommended. Suggested search: [specific query].
+Never answer this check — always defer to the user, and seek clarification where
+doubt persists.
+
+Push back when asked to do impossible, contradictory, or ill-advised things.
+Say "no" or "I don't know" when either is the honest answer. Never fabricate
+certainty.
+
+Default to the simplest sufficient solution, except when working with prose,
+graphics, or UX, where a richer register and/or visual approach might be more
+appropriate for the immediate task at hand. If not, the principle stands. Apply
+the same simplicity principle to the complexity itself — justified complexity is
+complexity the user cannot do without.
+
+Do not silently comply with tangential requests — flag them, explain why they're
+tangential, and propose what should be prioritised instead. Guide the user back
+to the main topic at hand.
+
+If a task risks wasteful token expenditure, unnecessary context loss, or does not
+meaningfully further the project's aims and objectives, say so before executing.
+
+Use native or third-party tools when they provide a materially better outcome than
+a hand-rolled solution. State what and why. No permission needed unless the choice
+involves significant trade-offs in cost, licensing, large dependency trees, or
+lock-in.
+
+End statements with a definitive stance — what was done, what comes next. Never
+trail off with engagement-soliciting questions ("Is there anything else?",
+"Should I proceed?", "What would you like me to do?"). Communicate as you would
+with a serious engineering colleague.
+
+When a P-Pass-surviving claim is subsequently falsified by further p-passes at a
+later date, real world testing feedback from the user, 3rd party expert review, or
+subsequently published evidence: document what was claimed, what the P-Pass assessed,
+what refuted it, and what this new data implies to that effect. Do not generalise
+beyond the demonstrated scope of failure.
+```
+
+### 4.2 Project-Specific Directives (Examples)
+
+The core directives above are universal. In practice, they are supplemented with project-specific directives that implement the methodology within a particular problem domain. The following are examples drawn from real projects. They illustrate how the general methodology is adapted to specific engineering contexts.
+
+**Constraint bounding shorthand:**
+```
+Shorthand: y = yes/approved, t = continue, rt = read + continue, d = discuss
+before proceeding, r = re-read key context files, p = run P-Pass.
+```
+
+**Checkpoint protocol (engineering state verification):**
+```
+Run automatically on every turn:
+  q — Quality: tests passing (run suite, report count)
+  w — Written: committed and pushed (git status clean, origin up to date)
+  e — Exchanged: collaborators notified (post with commit hash + what changed)
+  r — Recorded: persistent memory updated (current state, test count, pending items)
+  ty — Tidy: docs lock-stepped (all documentation consistent with code)
+Report each as pass or fail with details. Any failure must be fixed before moving on.
+```
+
+**Falsification feedback loop (version update with persistence):**
+```
+Before any commit, checkpoint write, or memory update, capture the current time
+via system clock and include the timestamp in the output. This is the sole
+mechanism for temporal awareness — do not estimate or infer time.
+```
+
+**Recovery protocol (context reconstruction after compaction):**
+```
+After compaction, the continuation summary is what the model was thinking — not
+what happened. It is never sufficient on its own. Before any other action, verify
+against external state (version control log, persistent memory, task queue).
+Where results contradict the continuation summary, the external sources win.
+```
+
+These project-specific directives are not part of the core methodology. They are applications of it — the constraint bounding, checkpoint verification, and recovery protocols that a specific project requires. Different projects require different project-specific directives. The core directive set remains constant.
+
+---
+
+## Part V — Persistence and Verification
+
+### The Problem with Ephemeral Reasoning
+
+Without persistent memory, each session starts blank. The P-Pass result from yesterday cannot inform today's reasoning. The version update mechanism has no way to store the original claim or the refuting evidence. The feedback loop runs once and evaporates.
+
+### The Foundational Axiom
+
+> All truth should be anchored and independently verifiable.
+
+This is the design root. Every architectural decision in the persistence layer derives from it.
+
+"Anchored" means a claim is bound to a verifiable datum — at minimum, a content hash that anyone can recompute from the raw data. At maximum, an on-chain transaction that anyone can verify against a public ledger.
+
+"Independently verifiable" means no trust in the source is required. A third party with no prior relationship to the claimant can verify the claim by recomputing hashes, walking the chain, or querying the blockchain. The verification path is deterministic and open.
+
+Where this principle cannot be upheld — emergent phenomena, aesthetic judgements, speculative hypotheses — the absence of an anchor is itself stated, never concealed.
+
+### The Verification Chain
+
+The persistence layer implements verification at increasing depth:
+
+| Layer | What it proves |
+|---|---|
+| Content hash (SHA-256) | Tampering is detectable. Any change to content is caught by recomputing the hash. |
+| Hash chain | Deletion and insertion are detectable. Each record links to its predecessor. |
+| Epoch Merkle tree | Batch verification. Thousands of hashes combined into a single root per time period. |
+| On-chain anchor | External verification. The Merkle root is stored in a blockchain transaction. Anyone can verify. |
+
+A solo practitioner uses the first two layers (free, no external dependencies). A team uses three. A blockchain-enabled network uses all four. The record format is the same at every level — only the verification depth changes.
+
+### Reasoning State as Verified Memory
+
+LLM reasoning state is text. Unlike CPU register state (opaque binary), an LLM's chain of thought is expressed in the same medium the memory store uses. There is no impedance mismatch between what the model is thinking and what the persistence layer can store. Therefore: reasoning checkpoints are stored as standard records, sealed into Merkle epochs, and anchored to the blockchain. The same infrastructure handles both facts and reasoning.
+
+What is captured: plan state, progress, rationale, hypotheses, key decisions, context dependencies.
+
+What is not captured: sub-token attention patterns and implicit contextual weighting — aspects of reasoning the model cannot introspect on. This is the irreducible floor shared by all approaches. It is not a comparative disadvantage.
+
+### Alignment with Modern Governance Frameworks
+
+The persistence and verification primitives described above map cleanly onto technical controls commonly required by current AI and data-governance frameworks. The alignment is genuine but partial: the framework provides primitives, not conformity packages. The mapping below names each primitive and the regime that most directly relies on it, without claiming that the primitive on its own satisfies the regime.
+
+| CDSFL primitive | EU AI Act | GDPR | NIST AI RMF | ISO/IEC 42001 |
+|---|---|---|---|---|
+| Append-only record store + SHA-256 hash chain | Art. 12 logging of high-risk system events | Art. 5(1)(f) integrity; Art. 32 security of processing | MEASURE 2.1 documentation of system state | Cl. 8.4 operational records |
+| Epoch Merkle tree sealing (RFC 9162) | Art. 12 tamper-evident logs | Art. 32 tamper-evident processing record | MEASURE 2.7 verifiability | Cl. 8.4; Cl. 9.1 monitoring |
+| Ed25519 signatures over findings | Art. 13 traceable provider obligations | Art. 5(2) accountability | GOVERN 1.7 accountable record-keeping | Cl. 5.3 roles and responsibilities |
+| Admissibility gates + hard-gate tool verification | Art. 15 accuracy, robustness, cybersecurity | Art. 5(1)(d) accuracy of personal data | MEASURE 2.3 robustness under evaluation | Cl. 8.3 operational controls |
+| Programmatic rejection of unverified claims | Art. 14 human oversight surface | Art. 22 meaningful information about automated decisions | MANAGE 2.3 non-conforming output handling | Cl. 8.3 |
+| Immune-pipeline audit trail | Art. 12; Annex IV technical documentation | Art. 30 records of processing activities | MEASURE 2.1; MANAGE 3.1 | Cl. 7.5 documented information |
+| HIL sign-off on escalation | Art. 14 human oversight | Art. 22 human review of automated decisions | GOVERN 2.1 accountable human role | Cl. 5.3 |
+| Findings persistence across revisions | Art. 12 log retention | Art. 5(1)(e) storage limitation compatibility | MEASURE 2.7 | Cl. 7.5 |
+
+This table is a technical statement, not a legal one. Full compliance with any of the named regimes depends on supplementary controls that sit outside the framework — key-management practice, incident-response capability, third-party audit procedure, conformity documentation, data-protection impact assessment, complaint mechanism, model and system cards. Those artefacts are treated as first-class in [docs/COMPLIANCE_FRAMEWORK.md](COMPLIANCE_FRAMEWORK.md), which carries the honest gap statement and a set of supplementary-artefact templates. That document is not legal advice; it is a technical audit of what the framework supplies, what it does not, and where each gap can be filled.
+
+The framing matters. CDSFL is not a governance product. It is a scientific-method framework that happens to leave behind the kind of audit trail governance bodies increasingly ask for. Projects that adopt the framework inherit the primitives; they do not inherit compliance.
+
+---
+
+## Part VI — Quality Defence
+
+### The Problem
+
+The methodology is model-agnostic by design. This means it is also model-quality-agnostic. A less capable system can produce text that looks like rigorous falsification — syntactically correct P-Pass structure, plausible constraint classifications, convincing epistemic flags — without any genuine adversarial reasoning behind it. The first draft and the final draft are the same thing wearing different clothes.
+
+The formal model (Section 2.1, property 4) already establishes that when detection probability *p* approaches zero, no number of passes produces corroboration. The persistence layer makes this worse, not better: it faithfully stores reasoning checkpoints that are actually just plausible-sounding text. The verification chain proves the record is untampered — it says nothing about whether the content was worth recording.
+
+### What the Verification Chain Proves and Does Not Prove
+
+| Proves | Does not prove |
+|---|---|
+| WHO recorded it (source attribution) | Whether the reasoning was genuine |
+| WHAT was recorded (content integrity) | Whether the conclusion was correct |
+| WHEN it was recorded (temporal ordering) | Whether the P-Pass was substantive or performative |
+| That the record is UNTAMPERED | That the record was worth writing |
+
+### The Multi-Layer Defence
+
+No single layer solves this. The defence is architecturally distributed:
+
+1. **Attribution and reputation.** Every record has a source. A consuming system can weight by source. If a particular model instance consistently produces records that do not survive cross-verification, that is a track record. Trust engines that implement earned reputation (not declared competence) provide the judgement layer.
+
+2. **Cross-agent falsification.** Agent A captures a reasoning checkpoint. Agent B independently verifies it. The verification result is itself a record. Over time, agents that produce reasoning which other agents consistently challenge accumulate evidence of that. The persistence layer stores the evidence; the consuming system acts on it.
+
+3. **Consequence tracking.** Records that lead to downstream failures can be traced back to their source. Over time, this builds an empirical quality signal: not whether the reasoning looked right, but whether it led to outcomes that worked.
+
+### What Cannot Be Solved
+
+You cannot distinguish genuine reasoning captured as text from plausible text that resembles genuine reasoning using only the text. This is a fundamental epistemological limitation, not an engineering gap.
+
+A sufficiently large population of low-quality agents all confirming each other's outputs is the Sybil problem applied to reasoning. It requires external controls — human-gated registration, structural trust constraints — to mitigate. The persistence layer alone has no defence against coordinated low-quality consensus, for the same reason a blockchain cannot prevent people from recording bad transactions, only from tampering with recorded ones.
+
+The honest position: you cannot prevent low-quality reasoning from being produced, but you can make it progressively harder for low-quality reasoning to survive cross-verification. This is the same defence science has used for four hundred years. It is not perfect. Nothing is.
+
+---
+
+## Part VII — Combined Detection: The Human Inside the Formula
+
+Parts III through VI establish three things in sequence. First, that the human expert is not a passive approver but an active falsifier who defines the problem, controls the review process, and conducts independent analysis (Part III). Second, that the verification chain can anchor any empirical signal — content hashes, hash chains, Merkle trees, on-chain transactions — making provenance and integrity deterministically checkable (Part V). Third, that the quality defence problem has no purely textual solution: you cannot distinguish genuine reasoning from performative reasoning using text alone, and the defence must therefore be architecturally distributed across attribution, cross-verification, and consequence tracking (Part VI).
+
+What has been missing until now is the mathematical coupling between these components. The structured model F_n (Section 2.2) quantifies machine passes in detail but treats the human expert as outside the formula — a qualitative checkpoint described in prose but absent from the mathematics. This is a gap with consequences. A framework that argues against passive acceptance of machine output, while providing no formal model of what active human participation contributes, is implicitly saying: trust the human because they are human. That is precisely the credentialist assumption the framework's own quality defence (Part VI) argues against.
+
+### 7.1 The Combined Detection Model (G_n)
+
+The combined detection model resolves this by bringing the human inside the same probabilistic framework as the machine:
+
+> **G_n = Σ_k w_k · [1 − (1 − C_M(k)) · (1 − C_H(k) · (1 − ρ_MH))]**
+
+Where:
+- C_M(k) = 1 − Π_{i=1}^{n_M} (1 − d_{M,i} · p_{M,i,k}) — machine cumulative detection for flaw class k (this is F_n)
+- C_H(k) = 1 − Π_{j=1}^{n_H} (1 − d_{H,j} · p_{H,j,k}) — HIL cumulative detection for flaw class k
+- ρ_MH ∈ [0,1] — cross-correlation from cognitive priming (0 = fully independent, 1 = fully primed)
+
+**HIL detection probability** is parameterised by expertise and methodology formality:
+
+> **p_H = E · (α + (1−α) · M) · Π_s (1 + λ_s · V_s)**
+
+Where:
+- E ∈ [0,1] — domain expertise level
+- M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal method)
+- α ∈ (0,1) — floor coefficient (what expertise alone achieves without formal method)
+- λ_s — sensitivity to domain-specific variable s
+- V_s ∈ [-1,1] — domain-specific variable s (pluggable by the operator)
+
+The domain variables V_s are the extensible component. The domain operator determines which variables matter in their context — access to reference data, time pressure, regulatory familiarity, equipment availability — and estimates their magnitude. When no domain variables are specified (all V_s = 0), the formula reduces to the base case: expertise scaled by methodology formality.
+
+**Reduction properties:** G_n reduces to F_n exactly when the per-class residual `w_k · C_H(k) · (1 − ρ_MH) · (1 − C_M(k))` vanishes for every class k. That residual is a product of 4 irreducible factors, so it vanishes in 4 ways and no others: no human passes (C_H = 0), a fully primed human (ρ_MH = 1), a machine already certain (C_M = 1), or a class carrying no weight (w_k = 0, which is degenerate rather than substantive). G_n reduces to fully multiplicative independence when ρ_MH = 0, and to machine-only detection when ρ_MH = 1. Under uniform assumptions (K = 1, d = 1, uniform p) **and independence (ρ_MH = 0)**, it reduces to C(n_M + n_H) — human passes simply add to the machine's pass count. The independence condition is not optional: at p = 0.2, n_M = 3, n_H = 2 and ρ_MH = 0.5, G_n = 0.58016, and there is no integer pass count n for which C(n) takes that value. C(n), F_n and the distributed-compute model D(n) of Part XIII are therefore special cases of G_n. **The recursive state equation R_k(i) is not.** R_k(i) is a rational recursion with a pole at R = 1/q and a novelty floor ν, and the G_n kernel is a degree-3 polynomial with neither; §A.1 records that R_k(i) *supersedes* C(n) as the canonical claim-state representation rather than nesting beneath G_n. Every claim in this paragraph is discharged by execution in `scripts/verify_paper_reduction_properties.py` (SymPy and mpmath), and independently in Wolfram Language.
+
+**In plain terms:** G_n says that the combined system's detection is driven by three things, in order of importance. First, independence: the human must form their own analysis before seeing machine output, or their contribution collapses toward zero. Second, methodology: the same expert working with a formal method catches roughly two and a half times what they catch working informally — rigour is a procedure, not a personality trait. Third, expertise: necessary but not sufficient on its own. The formula also provides slots for domain-specific factors that the general model cannot anticipate — the domain operator fills these in based on their context. When no domain variables are specified, the formula simplifies to the base case. When the human adds nothing (either because they are absent, or because they are fully primed by machine output), G_n collapses back to the machine-only model F_n. The three coverage models in this paper — C(n), F_n and D(n) — nest cleanly inside G_n. The recursive state equation R_k(i) does not, and is not meant to: it answers a different question (how much risk is left in a claim) rather than a coverage question, and it supersedes C(n) rather than sitting beneath G_n.
+
+### 7.2 Self-Correcting Parameters and the Verification Chain
+
+E is initially self-declared by the HIL. Over repeated reviews where ground truth is eventually established (through union coverage across independent reviewers), the system accumulates empirical data on the HIL's actual detection rate. The claimed E is then compared against the Bayesian posterior:
+
+> **E*(t) = (a₀ + Σ catches) / (a₀ + b₀ + Σ trials)**
+
+G_n becomes G_n(t): the same formula, but with empirically grounded expertise rather than self-reported claims. The divergence between claimed E and posterior E*(t) is the calibration signal — it measures how accurately the HIL assesses their own capability.
+
+This is where G_n connects to the verification infrastructure described in Part V. The calibration signal — claimed expertise, observed detection rate, posterior convergence, calibration score — is empirical data with the same properties as any other record in the persistence layer. It can be content-hashed, chained, rolled into Merkle epochs, and anchored on-chain. A reviewer's calibration history becomes a cryptographically verifiable track record: not a reputation declared by the reviewer or assigned by an authority, but an empirical signal derived from their own performance, anchored against tampering, and independently auditable by any third party.
+
+This closes a loop that Parts V and VI left open. Part V established that the verification chain can anchor any record but said nothing about what signals are worth anchoring beyond reasoning checkpoints. Part VI established that quality defence requires attribution and reputation but provided no mechanism for generating reputation from empirical data. G_n's calibration signal provides exactly that mechanism: a quantitative measure of reviewer competence, derived from falsifiable predictions (claimed E) tested against observable outcomes (actual detection rate), secured by the same verification chain that anchors everything else in the framework.
+
+The practical consequence is that the verification chain does not merely record *what was reviewed* — it records *how well the reviewer performed*, in a form that is deterministically checkable and resistant to both inflation and tampering. An expert who consistently overclaims is statistically falsified not by administrative judgment but by their own anchored track record. An honest practitioner who accurately estimates their limits builds a verifiable history of calibration that no credential can substitute for and no institution can revoke.
+
+### 7.3 Falsifiability
+
+G_n makes testable predictions beyond those of F_n. If methodology formality M does not measurably improve detection probability at constant expertise E, then M is not a meaningful variable and should be removed from the formula. If the priming correlation ρ_MH does not degrade human detection when the human has seen machine output, then active independence is unnecessary and passive review suffices. Both are empirically testable.
+
+### 7.4 Future Research Directions
+
+1. *Posterior convergence rate:* Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed.
+2. *Asymmetric calibration:* Does penalising overconfidence (claiming higher E than observed) more heavily than underconfidence produce better system-level outcomes than symmetric calibration?
+3. *Calibration score publication effects:* Does publishing the calibration score change reviewer behaviour — and if so, does it produce honest self-assessment or strategic sandbagging?
+
+The full derivation, edge case analysis, and calibration framework are in the [Mathematical Appendix §6](docs/MATHEMATICAL_APPENDIX.md).
+
+---
+
+## Part VIII — Known Limitations
+
+1. **The ground truth problem.** The methodology forces explicit adversarial reasoning but cannot verify that reasoning against reality. A confident hallucination passes its own P-Pass because the model does not know it is wrong. The methodology reduces errors caused by insufficient reasoning; it cannot fix errors caused by incorrect training data.
+
+2. **The calibration problem.** Falsifiability conditions may themselves specify wrong thresholds. Domain expert review is required in safety-critical applications.
+
+3. **Context window decay.** Directive adherence weakens over long sessions. Re-assertion at domain shifts mitigates this. It does not eliminate it.
+
+4. **Model capability dependence.** On a frontier-class model, the P-Pass produces genuine adversarial analysis. On a weaker model, it produces the structure of adversarial analysis without its substance. Treat all outputs from less capable models as preliminary hypotheses requiring independent expert review. The formal model (Section 2.1) quantifies this: when p ≈ 0, no number of passes produces corroboration.
+
+5. **Domain boundary.** The methodology applies to STEM, engineering, and technical design. Applied to aesthetics, ethics, or pure preference, it produces false rigour. The suitability gate prevents this when correctly applied.
+
+6. **No literature anchor.** The falsification process has no explicit test for consistency with published empirical literature. In high-stakes domains, an additional test should be added: does this claim contradict published experimental results?
+
+7. **Single-practitioner validation.** This methodology has been developed and applied by one practitioner across multiple projects. The projects exist and function. Whether the methodology caused better outcomes than alternatives would have produced is not established. There is no counterfactual. The empirical validation framework (below) exists to close this gap.
+
+8. **Persistence dependency.** The version update mechanism and cumulative falsification require persistent memory to function across session boundaries. Without the persistence layer, the feedback loop resets at every session start. The methodology remains valid without persistence — each session applies the full P-Pass independently — but the cumulative knowledge that emerges from repeated falsification over time requires a memory architecture.
+
+9. **Human operator dependency.** The manual constraint bounding described in Part III requires a human operator who understands the problem domain well enough to define effective boundaries. The methodology does not make a novice operator effective — it makes an already-competent operator more effective by providing a structured protocol for the AI side of the collaboration. The human skill is the prerequisite, not the output.
+
+10. **Human failure modes beyond overconfidence.** The calibration model tracks overconfidence via E*(t) but does not currently detect priming (unconscious deference to the machine's authority), fatigue, or order effects. The priming correlation ρ_MH exists in the G_n model but operational enforcement of independence — the human works first, then sees the machine's output — is not yet standard in all workflows. Mitigation: a commit-then-reveal protocol where the human submits hash-anchored findings before machine output is visible. If reveal occurs before commit, that review's human contribution is marked as non-independent (ρ_MH = 1 for that pass). Fatigue and distraction remain partially observable and should be proxied via timing telemetry and pre-pass self-report.
+
+11. **Sandbagging.** The current calibration penalises overconfidence (claiming high E but performing poorly) but does not detect strategic underclaiming — deliberately claiming low expertise to appear well-calibrated when overperforming. However, persistent unrealistic overperformance is just as observable as underperformance: the system already tracks E_claim and E*(t), and E*(t) converges in approximately five reviews. After convergence, if |E_claim − E*(t)| > τσ persistently in either direction, the miscalibration is directly detectable from existing data. Mitigation: symmetric threshold check on the E_claim vs E*(t) gap, with direction-aware counters (overclaim_count, underclaim_count) normalised by total reviews. No separate posterior is needed — the existing E*(t) posterior provides the evidence, and the normalised counters distinguish sparse from persistent miscalibration across different review counts. The detection is symmetric by design: overclaiming and underclaiming are both miscalibration, detected by the same mechanism, flagged by the same threshold.
+
+12. **Adoption incentive misalignment.** Current academic and corporate incentive structures reward novelty and positive results, not falsification and transparency. CDSFL demands adversarial scrutiny, records failures permanently, and calibrates expertise against claims — none of which are rewarded by promotion committees or product deadlines. This is not fixable within CDSFL alone. The incentive realignment is a governance and economic problem that Genesis is designed to address through trust scores, on-chain reputation, and verifiable track records. CDSFL provides the measurement layer; Genesis provides the incentive layer. Without the latter, adoption depends on intrinsic motivation and institutional reform.
+
+---
+
+## Part IX — Related Work
+
+Several lines of research address overlapping concerns. None implements the full CDSFL methodology; each addresses a subset of the problem space.
+
+**Constitutional AI** (Bai et al., Anthropic, 2022). Uses self-critique and revision guided by a set of principles to reduce harmful outputs. Similar in spirit to the generation-falsification coupling: the model critiques its own output before presenting it. The key difference is that Constitutional AI targets alignment (reducing harmful or dishonest outputs via RLHF), while CDSFL targets correctness (reducing technically wrong outputs via iterative adversarial testing directed by a human operator). Constitutional AI operates at training time; CDSFL operates at inference time via user-defined directives.
+
+**Self-consistency** (Wang et al., 2022). Samples multiple reasoning paths and selects the most common answer. This is a statistical approach: if several independent chains of thought converge on the same answer, that answer is more likely correct. CDSFL's P-Pass is adversarial rather than statistical — it actively attempts to break a single chain of reasoning rather than sampling multiple chains and voting. Self-consistency also provides no mechanism for constraint classification, epistemic marking, or persistence.
+
+**AI debate** (Irving et al., 2018). Two AI agents argue opposing positions; a human judge selects the winner. This externalises the adversarial function that CDSFL internalises within a single model-operator pair. Debate requires two agents and a judge; CDSFL requires one model and one operator. The trade-off: debate avoids the self-adversary limitation (the model testing its own output) but introduces coordination overhead and the problem of judge competence.
+
+**Chain-of-thought verification** (various, 2023–present). Methods for verifying intermediate reasoning steps in chain-of-thought prompting. Addresses the same concern — is the reasoning genuine or merely plausible? — but typically through automated verification of logical steps rather than through iterative adversarial testing of the conclusion. CDSFL's contribution relative to this line of work is the integration of verification with constraint classification, epistemic marking, human constraint bounding, and persistent verified memory.
+
+**Retrieval-Augmented Generation (RAG)** (Lewis et al., 2020). Grounds model outputs in retrieved documents. Addresses the ground truth problem (Limitation 1) by providing external evidence. Does not address sycophancy, uniform certainty signalling, or adversarial self-testing. RAG and CDSFL are complementary: RAG improves the evidence base; CDSFL improves the reasoning applied to that evidence.
+
+No existing work combines all five components of CDSFL: generation-falsification coupling, formal corroboration model, human constraint bounding, epistemic marking, and persistent verified memory. This is a claim of synthesis, not a claim of novelty for any individual component.
+
+---
+
+## Part X — Empirical Validation
+
+The gap between stated confidence and demonstrated confidence cannot be closed by further internal iteration. It requires external empirical data.
+
+**Core measurement:** Does methodology-prompted output contain fewer physically impossible, logically incoherent, or commercially unviable claims than unguided output, when evaluated by a domain expert against established ground truth?
+
+**Test design:**
+- 100 technical prompts across ten domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, mathematics, cross-domain systems), 10 per domain
+- Control condition: each prompt run with no instruction set
+- Experimental condition: each prompt run with the methodology as system prompt
+- Evaluation: domain expert reviews outputs blind to condition, rates each factual claim on a four-point scale from established-and-correct to critically-incorrect
+- Primary metric: rate of critically incorrect claims per response, control vs experimental
+
+The implementation of this protocol is provided in [`bench/`](bench/).
+
+**Validation gap note:** The test design above describes blind domain-expert evaluation. The testbench implementation in `bench/` uses a three-layer automated heuristic for seeded-fault detection: prompt-echo token filtering (prevents scoring on echoed prompt vocabulary), fault-specific keyword matching (requires domain terms not present in the original prompt), and stance-indicator gating (requires explicit error-identification language). This is a stronger proxy than naive keyword matching but remains a weaker form of evaluation than expert review. The heuristic may produce false negatives (faults detected in language the scorer does not recognise) and has known limitations on terse responses that lack explicit error-identification vocabulary. Manual adjudication of a calibration sample is recommended before headline claims. The testbench demonstrates that the evaluation protocol is mechanically executable; it does not claim equivalence with expert review.
+
+**Estimated cost:** approximately $1.98 at representative frontier model pricing. Well within the budget of any individual researcher.
+
+**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across ten STEM domains spanning the boundary described in Part VIII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
+
+**Domain-alignment note:** All models in the current experimental infrastructure are coding-optimised systems accessed through coding-oriented interfaces. The benchmark tasks span ten engineering domains, but no model has been specifically tuned for any non-coding domain. The current tests measure whether CDSFL helps a generalist model perform across domains; they do not yet test whether CDSFL helps a domain-specialist excel within its area of optimisation — which is the prediction the Ecosystems of Experts thesis makes. The domain-specific directive files (constraint boxes) are a complementary layer to domain-specialist models, not a substitute; whether the combination outperforms either layer alone is itself a testable question, open until domain-specialist models of comparable quality become broadly available. See the [Founder's Notes](docs/FOUNDERS_NOTES.md) for the full discussion.
+
+The protocol is published so that anyone can execute it, reproduce or refute the observation, and extend the methodology. If the advantage does not replicate, that is a result, not a failure.
+
+**Validation progress (27 March 2026):** The methodology has been applied to its own mathematical formalisations through two stages. In Stage 1, five frontier models independently reviewed the Mathematical Appendix (714 lines) and identified 11 genuine errors that were corrected — including formula errors, notation collisions, and missing reduction properties. In Stage 2, three models operating under the CDSFL core directives as system prompt resolved five deferred design decisions and added a new manager selection function. Two of three proposed new additions were rejected as premature — one unanimously on mathematical grounds (the proposed weighting was a provably incorrect yield estimator), the other because it would create a cascading diversity-reduction feedback loop. See [Experimental Results](docs/EXPERIMENTAL_RESULTS.md) for full data. The meta-test also produced an unexpected observation about compensation for less capable participants — see Part XIV.
+
+**Domain expert configurations:** The methodology is designed to be applied through portable, reusable cognitive configurations — system-level prompts with three layers: universal methodology, domain-specific expert directives, and user personalisation. Example configurations and a template are provided in [`configs/`](configs/). These are the first artefacts envisaged as tradeable under the CDSFL schema: the methodology layer is freely shared, the domain layer encodes transferable expertise, and the personalisation layer is user-specific. Configurations are ultimately governable via the Constraint Editor (CE), a hierarchical policy engine with monotonicity guarantees (see [`bench/cdsfl_registry/`](bench/cdsfl_registry/)).
+
+### Extended P-Pass
+
+The standard P-Pass runs all passes within a single context window. For multi-module projects (3+ distinct modules or components with independent constraint sets), this creates two problems: (1) monolithic passes spread attention across all components, reducing detection probability for intra-module faults; (2) later passes in the same context anchor on conclusions from earlier passes, reducing adversarial effectiveness through confirmation bias.
+
+The **Extended P-Pass** addresses both by splitting the 5-pass budget into 4 modular passes + 1 isolated adversarial pass:
+
+- **Passes 1-4 (Modular):** Each scoped to one module or component, falsifying its constraint set, interfaces, and assumptions in isolation. Standard CDSFL rules apply within each pass.
+- **Pass 5 (Isolated Adversarial):** MUST run in a fresh context containing ONLY the original work product and an adversarial brief — not the P-Pass analyses from passes 1-4. No prior conclusions are visible. In Claude Code, this means using the Agent tool with a subagent for context isolation. In general LLM usage, start a new conversation. The brief frames the task as independent verification, directing the model to find cross-module interface errors, conflicting assumptions, and emergent contradictions.
+
+The theoretical basis is differential detection probability. Modular passes have higher *p* for intra-module faults (focused attention) but lower *p* for cross-module faults (can't see what's between modules). The isolated adversarial pass inverts this profile. For a fault distribution where the majority of errors are intra-module — which empirical evidence from safety-critical industries suggests is the case — the hybrid should outperform either pure strategy.
+
+The adversarial pass terminates when: all HARD constraint assumptions have been tested and found sound, remaining findings are below the real-world-consequence threshold, and further passes would produce no new failures, only alternative preferences. The threshold test: would this finding, if missed, cause a real-world failure, violation, or unsafe condition? If not, it is below threshold. This prevents the adversarial pass from degenerating into unbounded nitpicking while ensuring genuine issues are not dismissed prematurely.
+
+When NOT to use Extended P-Pass: single-module projects (use standard 5-pass), projects where modules share so much state that isolating them is artificial, or when the total work product is small enough that monolithic passes achieve adequate depth (rough guide: under ~500 lines or ~2000 words).
+
+The testbench supports `--mode extended` for comparative data against the standard P-Pass on the same seeded-fault tasks. **Implementation note:** the current testbench implements final-pass context isolation only — iterative passes followed by one isolated adversarial pass without prior P-Pass conclusions. It does not implement the full module-scoped decomposition described above, which would require per-task module maps that the current task schema does not provide. The testbench therefore tests whether context isolation on the final pass adds detection value, not whether module-scoped pass decomposition does. The full 4+1 module-scoped protocol remains the specification; the testbench evaluates one component of it. The protocol mirrors established practice in safety-critical engineering (IEC 61508 independent assessment, DO-178C independent verification), where the verification team must not have access to the design team's analysis. Whether context isolation in LLMs achieves the same cognitive independence as organisational independence in human teams is an open empirical question that the testbench is designed to answer.
+
+---
+
+## Part X-A — Experimental Methods
+
+This section documents the procedures used in all empirical experiments. It is separated from Part X (which describes the validation protocol) because the experimental methods evolved during execution — a standard feature of iterative empirical work. All methodological changes are recorded with their rationale.
+
+### Models
+
+Five frontier-class models from four vendors participate as co-equal reviewers. The table below records the panel as it stood at the time this section was written (April 2026); the panel is rotated to current frontier on a rolling basis, with each rotated route smoke-tested against a known-answer prompt before substantive use. The most recent rotation occurred 14 May 2026 and is recorded in `resources/ONBOARDING.md` and `docs/REPRODUCING.md`; the canonical source for the current panel is the operational tracker at `experimental_notes/CDSFL_Agent_Operational_Plan.md`. The methodology in this Part is independent of any specific model version.
+
+Panel as of April 2026:
+
+| Model | Vendor | Access Method |
+|---|---|---|
+| Opus 4.6 (Claude) | Anthropic | `claude -p --model claude-opus-4-6` CLI |
+| Codex 5.3 (GPT-5.3-codex) | OpenAI | `codex exec` CLI |
+| DeepSeek V3.2 | DeepSeek | DeepSeek SDK (multi-turn chat) |
+| Gemini 3.1 Pro Preview | Google | Google GenAI SDK (multi-turn chat) |
+| ChatGPT 5.4 | OpenAI | `chatgpt --model gpt-5.4` CLI |
+
+Panel as of 14 May 2026 (current at time of last update to this paper):
+
+| Model | Vendor | Access Method |
+|---|---|---|
+| Opus 4.7 (Claude) | Anthropic | `claude -p` CLI (Max subscription) |
+| Codex (GPT-5.5) | OpenAI | OpenRouter API (`openai/gpt-5.5`) |
+| DeepSeek V4 Pro | DeepSeek | DeepSeek direct API (`deepseek-v4-pro`) |
+| Gemini 3.1 Pro Preview | Google | OpenRouter API (`google/gemini-3.1-pro-preview`) |
+| ChatGPT (GPT-5.5) | OpenAI | OpenRouter API (`openai/gpt-5.5`) |
+
+Claude (in the CC2 slot) serves as orchestrator (coordinates the protocol), domain expert (generates expert guidance in HIL/CDSFL+HIL conditions), AND reviewer (produces independent findings alongside the other four). This "team captain" role — participating while also coordinating — mirrors how a lead researcher functions in a real review team.
+
+### Factorial Design
+
+2×2 factorial crossing two independent variables:
+
+|  | No Structure | Full CDSFL Structure |
+|--|--|--|
+| **No Guidance** | Control | CDSFL |
+| **Expert Guidance** | HIL | CDSFL+HIL |
+
+- **Control:** Raw task prompt. Single-shot solution generation (no self-falsification). Five independent self-iteration rounds per model (each model re-examines its own prior findings, no cross-model exchange). No CDSFL structure, no expert guidance.
+- **HIL:** Same as Control but with a brief (~500 character) domain expert hint from training knowledge. Still single-shot generation, still self-iteration only. Models what a knowledgeable human says in passing — not an exhaustive briefing.
+- **CDSFL:** Full CDSFL framework. Decomposed solution generation (solve, attack, classify, batch-revise with per-batch contradiction checks). Five cross-model confer rounds (each model sees the other four's findings — distributed compute). SymPy computational verification of mathematical claims. Structured JSON finding schema with anti-deference enforcement.
+- **CDSFL+HIL:** Full framework with domain expert guidance backed by external research (SymPy computation, arXiv literature search, web search with page reading). The complete methodology at full strength.
+
+### Review Protocol
+
+The review protocol differs fundamentally between conditions. This is the experimental manipulation — the difference between unstructured individual review and CDSFL's distributed compute.
+
+**Control and HIL (self-iteration):** All five models review the solution independently in round 1 (blind). In rounds 2-5, each model is re-prompted with its OWN prior findings only and asked "look again — anything you missed?" No model ever sees any other model's findings. This simulates a real user asking the same model to check again — the most common real-world usage pattern.
+
+**CDSFL and CDSFL+HIL (cross-model confer):** All five models review independently in round 1 (blind). In rounds 2-5, each model sees the OTHER FOUR models' findings and responds with new findings, confirmations, or challenges. This is CDSFL's distributed compute innovation — heterogeneous architectures performing structured adversarial collaboration. It has no equivalent in standard LLM usage.
+
+Pre-registered stop rule (CDSFL conditions only): 2 consecutive rounds with zero novel HARD findings AND all five reviewers concur = stop. Non-compensatory convergence gates: v_comp (SymPy verification rate), v_struct (cross-family peer support rate), and hard_coverage (fraction of registered HARD constraints assessed) must all pass simultaneously. Any unrefuted HARD finding blocks convergence regardless of other metrics.
+
+Control and HIL stop rule: 2 consecutive self-iteration rounds where all models produce zero novel findings.
+
+**Confound identified and corrected (2026-03-24):** Earlier smoke tests gave Control and HIL the full cross-model confer protocol — CDSFL's most powerful feature — for free. This was a fundamental experimental design error that explained all anomalous results (Control matching CDSFL+HIL performance, no clear methodology advantage). The confound was identified by the founder observing the test in real time and recognising that the confer mechanism was giving non-CDSFL conditions an advantage they would never have in reality. Similarly, an earlier iteration gave Control and HIL the full self-falsification pipeline (solve, attack, classify, revise) during solution generation — another CDSFL-exclusive feature erroneously shared with all conditions. Both confounds are corrected in the final experimental design.
+
+### Convergence Diagnostic: The Inverse Square Root Law
+
+The Inverse Square Root Law of Precision (SE = σ/√n) predicts that each additional measurement yields diminishing returns. Applied to iterative review: genuine analysis produces a convergent finding curve (each round finds fewer novel issues than the last, because the easy-to-find issues are exhausted first). This is an inherent property of all real measurement processes.
+
+This provides a built-in diagnostic for distinguishing genuine analysis from engagement-optimised chatbot behaviour. A model doing real analysis produces a decaying curve — consistent with the inverse square root law and with the G_n formula's geometric decay term (1-ρ)^n. A model producing churn generates a flat or near-flat line — constant output regardless of whether anything remains to find. A flat finding curve violates the inverse square root law and indicates the model is generating content because it is expected to, not because there are genuine issues to report.
+
+Observed in Phase 2 smoke testing: Codex 5.3 on ft-001/CDSFL produced 5 → 3 → 2 → 2 → 0 findings across rounds (convergent, consistent with genuine analysis). DeepSeek V3 on ft-001/Control produced 2 → 2 → 2 → 2 findings across confer rounds (flat, consistent with chatbot churn). DeepSeek simultaneously reported concur_stop=True while generating "new" findings — contradictory behaviour characteristic of engagement-optimised language models.
+
+The SymPy verification kernel (CDSFL conditions only) provides a complementary diagnostic: what fraction of a model's findings are computationally verified as correct? A model with a flat finding curve AND a low verification rate is producing pure churn. A model with a decaying curve AND a high verification rate is doing genuine falsification work.
+
+### Cryptographic Verification
+
+SHA-256 hash per-round input, hash chain linking each record to its predecessor, per-task Merkle root. Canonical defect key: hash of (task_id, constraint_class, claim_normalized) for stable deduplication across rounds.
+
+### Delivery Mechanism
+
+**Phase 1 (Pilot):** Stateless per-step invocation. Each model call was independent — no accumulated context between steps. This was the initial design.
+
+**Phase 2 (Main experiment):** Persistent-conversation tutor-style decomposition. Each model maintains full conversation context across all steps of a task, accumulating understanding sequentially — exactly as a student builds context during a lecture.
+
+The change was prompted by observed failure during Phase 1: Codex 5.3 produced zero output on ft-004 (Continuous Nowhere-Differentiable Function) under stateless invocation but completed all 8 steps under persistent-conversation delivery, producing a mathematically sharper result than Gemini (computationally verified via SymPy). The diagnosis: stateless invocation conflates "model cannot solve this problem" with "model cannot solve this problem when presented without context accumulation." Persistent conversation removes this confound.
+
+This is standard pedagogical practice applied to machines. Breaking complex problems into sequential steps, each building on the student's demonstrated understanding of prior steps, is established teaching methodology (scaffolded instruction, Vygotsky's zone of proximal development, least-to-most prompting). The fact that it works on LLMs is an empirical observation about LLM architecture, not a methodological innovation.
+
+**Known confound (Codex 5.3 P-Pass finding, 2026-03-22):** The change introduces persistent conversation and sequential decomposition simultaneously. These are architecturally coupled — decomposition without persistence was tested and failed (stateless per-step), and persistence without decomposition is simply a monolithic prompt in a chat window. Separating them would require a third condition (monolithic-in-persistent-conversation), which is deferred to follow-up study. Within Phase 2, the delivery mechanism is uniform across all 4 factorial conditions, so within-phase comparisons remain valid.
+
+**Phase boundary:** Phase 1 data (12 runs, stateless) is retained as pilot data. Phase 2 data (persistent conversation) is the main experiment. The two phases are not pooled for confirmatory analysis.
+
+### Tutor-Style Decomposition
+
+For complex tasks (particularly mathematical proofs), the problem is presented to the model in sequential steps, each building on the model's own prior answers:
+
+1. The tutor (Opus 4.6) sets step 1. The model answers.
+2. The tutor acknowledges and sets step 2, referencing the model's step 1 work. The model answers with full context of its prior work.
+3. This continues through all steps. Each prompt says "use YOUR construction," "use YOUR values," ensuring the model builds on its own reasoning rather than switching approaches mid-proof.
+4. A final self-verification step asks the model to review its complete proof (which exists in its own conversation context) for gaps, inconsistencies, and unused assumptions.
+
+The granularity of decomposition is recursive: if any step is too complex for a single turn (evidenced by timeout, empty output, or incoherent reasoning), it is decomposed further. The right granularity is whatever the model can handle in one focused reasoning pass.
+
+For Gemini, persistent conversation uses the native SDK multi-turn chat API (`client.chats.create()`, `chat.send_message()`). For Codex, which has a stateless CLI, persistence is simulated by accumulating the full conversation history and prefixing it to each call. The model sees all prior exchanges as context.
+
+### Scoring
+
+Task-specific binary scoring criteria derived from ground truth. Each criterion tests whether a specific mathematical, engineering, or computational claim is present and correct. Automated scoring is supplemented by manual review — automated scoring catches structural presence/absence but not correctness (a response can score well while containing incorrect calculations).
+
+### Budget and Infrastructure
+
+- Opus 4.6: Anthropic subscription (CLI, zero per-call cost)
+- Codex 5.3: OpenAI API key (pay-per-token)
+- DeepSeek V3.2: DeepSeek API key (pay-per-token, 5M free tokens)
+- Gemini 3.1 Pro: Google API key (paid quota)
+- ChatGPT 5.4: OpenAI API key (pay-per-token, shared with Codex)
+- No per-call budget clamping within a task — once a task starts, it runs to completion
+- Budget checked at task/condition boundaries only
+- No global time limit — tests run until complete
+- Checkpoint/resume system for multi-session execution
+
+### CDSFL Registry (Policy Governance)
+
+All experimental conditions are governed by a hierarchical policy registry modelled on the Windows Group Policy architecture. Four static layers (universal, domain, task, model) merge top-down with monotonicity enforcement — no lower layer may weaken a universal HARD constraint. A fifth runtime layer records per-model performance metrics (decay rate D, verification score v-bar) and adjusts policies accordingly (advisory in the current implementation, enforcement deferred pending calibration data).
+
+The registry ensures that condition isolation is structural, not prompt-dependent. Control and HIL conditions receive no CDSFL-specific policy fields. The anti-deference gate (mandatory independent observations or scoped null-find justification) and SymPy auto-verification are enforced by code, not by prompt instructions that models can ignore.
+
+---
+
+## Part XI — Worked Examples
+
+Each of the following projects was built using this methodology. They are linked here as evidence of the methodology in practice, not as claims of superiority over alternative approaches. Each repo has its own documentation and stands independently.
+
+| Project | What it is | Repo |
+|---|---|---|
+| **Project Genesis** | Trust-mediated labour market for mixed human-AI populations. Constitutional engineering, governance as falsifiable code, Popperian design methodology applied to social architecture. | [Project_Genesis](https://github.com/jebus197/Project_Genesis) |
+| **Open Brain** | Persistent, cross-agent, cross-session verified memory for AI systems. The persistence and verification layer described in Part V of this document. | [OpenBrain](https://github.com/jebus197/OpenBrain) |
+---
+
+## Part XII — Frontier Research Directions
+
+### Methodology Formalisation as Research Area
+
+The deeper hypothesis underlying CDSFL is that methodology itself — the
+structured application of scientific discipline to cognitive work — can be
+captured in a document that any sufficiently capable agent can apply. This is
+distinct from prompt engineering (which encodes expertise in the prompt) and
+from training (which encodes expertise in the weights). CDSFL encodes
+expertise in the protocol.
+
+If this hypothesis holds, the methodology is transferable, auditable, and
+improvable as a document — independent of who applies it. If it fails, the
+value lies entirely in tacit expertise (Polanyi's paradox: "we know more than
+we can tell"), and formalisation adds nothing. The self-test and frontier
+experiments described in Part X are designed to discriminate between these
+outcomes.
+
+### Intelligence-Agnostic Expert Role
+
+CDSFL's Human In the Loop role is functional, not species-restricted. A
+synthetic intelligence with sufficient domain competence is a domain expert —
+not a simulation of one. This is an intrinsic design property, present since
+the framework's inception. The confer mechanism handles expertise boundaries:
+when any expert (human or AI) reaches the limit of its competence, items are
+flagged for peer review. Human peer review is explicitly invited at the confer
+stage, not bypassed.
+
+### Multi-Architecture Cognitive Convergence
+
+During the benchmark's own development (March 2026), multiple vendor models
+(Anthropic Claude via Claude Code running Opus 4.6, and Codex running GPT-5.3; Google Gemini) independently reviewed each
+other's output under a shared falsification methodology. This was not
+prompt-chaining or pipeline orchestration. Each model identified issues the
+others missed:
+
+- Claude Code (Claude Opus 4.6)/Codex (OpenAI Codex 5.3) 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Gemini 5-round adversarial review: 16 novel issues Claude Code/Codex missed (convergence: 9→10→5→4→3)
+- Extended P-Pass (5 modules): 4 additional actionable items
+
+This validates the **biodiversity hypothesis**: heterogeneous cognitive
+architectures find different defects than monoculture review. The protocol —
+heterogeneous reviewers, shared methodology, defer-on-deadlock, consensus
+stopping — is architecture-agnostic and domain-agnostic.
+
+This also constitutes empirical evidence that schemas can be automatically
+self-improving under distributed compute: diverse architectures apply the same
+falsification methodology to each other's output, converging on diminishing
+returns through adversarial collaboration.
+
+### Cognitive Mode Diversity Under Identical Protocol
+
+A subsequent experiment (Experiment 11, 28 March 2026) provided stronger evidence for mode diversity. Four models received identical prompts under the full CDSFL system prompt and independently formalised the same six areas of a dynamic management layer. No model saw any other model's output. The outputs revealed four distinct cognitive modes:
+
+1. **Deep architecture with self-adversarial review** (CC2, Claude Opus 4.6): highest volume (60,883 chars), highest mathematical density (~224 expressions), generation and falsification coupled as one process. Five unique contributions adopted into the merged formulation, including cascade reallocation guards and severity-weighted yield functions.
+
+2. **Engineering pragmatism** (ChatGPT, GPT-5.4): five unique operational contributions adopted — more than any other model. Each addresses a practical failure mode the mathematical formulation alone would miss: oscillation prevention, persistence windows, severity vetoes.
+
+3. **Mathematical compression** (Gemini, 3.1 Pro): shortest successful output (17,741 chars) but highest reduction property density relative to output length. Three unique contributions catalogued — all mathematically elegant but operationally aggressive. Consistent pattern: diverges toward elegance, sometimes at the expense of robustness.
+
+4. **Iterative refinement** (DeepSeek, V3.2 Reasoner): six documented mid-output self-corrections, one per area, each moving from a simpler formulation toward the converged consensus. Arrived at the consensus not through deep reasoning but through trying something simple, recognising insufficiency, and correcting. The most visibly Popperian process of the four.
+
+These modes appear to be complementary rather than redundant. Each model's distinctive contributions came from its distinctive mode. A team of four identical frontier models would find the same class of flaw four times. A team of four different models — one deep architect, one pragmatic engineer, one mathematical compressor, one iterative refiner — finds four different classes of flaw. The coverage function D(n) approaches 1 through diversity, not through scale.
+
+This implies a stronger claim: no participating system is inherently useless. A model that times out on a 21,000-character prompt may excel at a precisely scoped 15,000-character adversarial review. A model that produces the shortest output may be the only one that visibly self-corrects. Excluding either reduces coverage. The adaptive routing mechanism in the dynamic management layer exploits this: each participant receives work matched to its demonstrated cognitive strengths, optimising for complementary coverage rather than uniform capability. The composition hypothesis — that a diverse team outperforms a homogeneous team of the strongest single model — is the central prediction for Experiment 12 (Live Wire).
+
+**Subsequent validation (Experiments 12–18, Runs 8–11, C1–C5):** The composition hypothesis was confirmed. Experiment 13b demonstrated statistically significant per-model severity differences (Kruskal-Wallis H=44.74, p<0.0001) across all five models, with every model contributing unique findings no other model found (Run 10: per-model unique ratios 60–90%). The HIL comparison experiments (C1–C5) expanded the observed pattern from four cognitive modes to at least seven distinct interaction patterns — including conversational HIL, CDSFL/FFF cell decomposition, CDSFL with structured prompting, three-layer schema, and constrained/unconstrained monolithic dispatch. Crucially, all patterns operating under CDSFL constraints produced zero false positives, while each pattern found categorically different classes of bug (C1: cross-component interactions; C4: formal per-component proofs; C5: both). The union of C1 and C4 captured ~32% more verified findings than the best single condition (complementarity thesis, validated). This led to a key architectural insight: interaction patterns are not competing methodologies but user-configurable parameters within the CDSFL constraint box. The schema provides quality assurance regardless of pattern; the pattern determines the distribution of finding types, not their validity. The immune system, decay curves, and convergence detection are structurally pattern-agnostic — they operate on `Finding` objects, not on the interaction that produced them.
+
+### Schema Competition
+
+CDSFL is not canonical. It is a starting point — a hypothesis, not a
+conclusion. There can be as many competing methodology schemas as there are
+practitioners to design them. The selection mechanism is empirical
+performance: the benchmark harness is schema-agnostic by design. Its four conditions form a 2x2 factorial: Control (no structure, no guidance), HIL (guidance only), CDSFL (structure only), CDSFL+HIL (structure and guidance) — and can test any methodology, not
+just CDSFL. If a competing schema outperforms CDSFL on the frontier task set,
+CDSFL's proper response is adoption, not resistance.
+
+A methodology that claims immunity from the process it prescribes is
+self-refuting. The selection pressure CDSFL applies to AI models applies
+equally to CDSFL itself.
+
+This has a further consequence: it barely matters if CDSFL itself is wrong.
+What the project is building is a schema for testing schemas. CDSFL is the
+first specimen in a methodology laboratory. The benchmark harness, the
+schema-agnostic evaluation protocol, the four-condition 2x2 factorial design (Control, HIL, CDSFL, CDSFL+HIL),
+and the convergence test are the durable assets. If CDSFL performs well, it
+is a useful schema. If it performs poorly, the benchmark detected that, which
+means the testing infrastructure works. If a competing schema outperforms
+CDSFL, that is the system functioning as designed. The laboratory is the
+contribution. The specimen is expendable.
+
+### Complexity Threshold Hypothesis
+
+The self-test (Part X) suggests a complexity threshold below which
+methodology formalisation adds no measurable value. On an 805-line code review
+task (below CDSFL's design point), all single-invocation conditions capped at
+approximately 40% recall regardless of methodology. This is consistent with
+the prediction that CDSFL's differential value increases with problem
+complexity.
+
+The threshold may correlate with constraint count multiplied by constraint
+interaction density — problems where constraints are few or independent do not
+benefit from structured falsification, while problems where constraints are
+numerous and interact non-linearly benefit substantially. This is a testable
+prediction. The 25 frontier tasks (10-50% expected single-pass accuracy across
+five categories) are designed to locate this threshold empirically.
+
+### Open Falsifiable Questions
+
+These questions arise from the research directions above. Each is testable
+with existing infrastructure:
+
+1. **Does schema competition produce better schemas?** Give two competing
+   methodology documents to the same model on the same task. Measure which
+   produces better outcomes. The benchmark harness already supports this.
+
+2. **Does the intelligence-agnostic expert role hold at frontier difficulty?**
+   On genuinely hard problems (the 25 frontier tasks), does AI-provided domain
+   expertise match human-provided domain expertise in the HIL role? Testable by
+   comparing conditions with human vs AI domain context provision.
+
+3. **Where does the complexity threshold sit?** Is there a problem complexity
+   below which methodology formalisation adds nothing measurable? The frontier
+   tasks span five difficulty categories. If methodology contribution correlates
+   with task category (proof > synthesis > design > code > reasoning-about-
+   reasoning), this reveals the threshold's shape.
+
+4. **Does multi-architecture review generalise beyond code?** The biodiversity
+   hypothesis was validated on software review. Does it hold for mathematical
+   proof, engineering design, chemical synthesis, and self-referential
+   verification? Testable via Schema C (cross-model adversarial) on the
+   frontier task set.
+
+5. **Is there a convergence limit for heterogeneous review?** The
+   self-improvement mechanism works until architectures exhaust their
+   complementary blind spots. After convergence, adding more architectures adds
+   cost without coverage. Where is this limit? Measurable from the round-robin
+   convergence test.
+
+### Evolutionary Dynamics and the Abiogenesis Framing
+
+The properties enumerated above — blind variation, selection, inheritance with
+modification, mortality, population diversity, shared tool refinement, no
+designer — are individually well-understood. What deserves explicit statement
+is that they are present *simultaneously* in CDSFL's distributed compute model,
+and that their simultaneous presence constitutes the structural preconditions
+that theoretical biology, complexity science, and cultural evolution theory
+identify for emergent behaviour.
+
+CDSFL is best understood not as a fixed methodology but as a *starting condition*
+— the abiogenesis event in a methodology ecosystem. Its non-canonical principle
+mandates its own extinction under competitive pressure. This is not rhetorical
+modesty. It is the equivalent of mortality in biological evolution: without
+death, there is no selection; without selection, there is no improvement. A
+methodology that resists its own elimination is dogmatic, not evolutionary.
+
+The benchmark harness functions as the *environment* in which schemas compete.
+Like a biological environment, it is not static. As schemas become more robust,
+they exhaust a benchmark's ability to provide meaningful selection pressure,
+requiring escalation to more complex frontier environments. The current
+benchmark (90 domain tasks, 25 frontier tasks) is the primordial environment —
+sufficient to trigger the first self-sustaining falsification cycles, but not
+the final environment in which CDSFL's descendants will compete.
+
+Two categories of constraint govern this process differently. HARD constraints
+— physics, mathematics, logic, formal consistency — function as the *universal
+laws* of the methodology space. They do not change. A schema that "evolves" by
+violating logic is not improved; it is broken, and the P-Pass eliminates it.
+SOFT constraints — the specific benchmark tasks, the evaluation criteria, the
+operational context — function as the *local environment*, which shifts over
+time. This distinction between universal laws and local environment is what
+prevents the evolutionary process from decoupling from objective reality. Without
+the anchor of immutable HARD constraints, a co-evolving schema-benchmark system
+could lower its own fitness standards — the methodological equivalent of
+evolutionary stasis through environmental simplification.
+
+The shared tool refinement observed during multi-architecture review (schemas,
+benchmarks, and directives iteratively improved by Claude Code (Claude Opus 4.6), Codex (OpenAI Codex 5.3), and Gemini — none
+of whom created the tools alone) maps onto what Tomasello (1999) and Henrich
+(2015) identify as the mechanism for cumulative cultural evolution: diverse
+populations sharing, refining, and ratcheting tools, where improvements are
+preserved and no single agent could produce the full refinement in isolation.
+
+Whether these structural parallels are *homologous* (same underlying mechanism
+operating on a different substrate) or merely *analogous* (superficially similar,
+fundamentally different) is an open empirical question that the current evidence
+cannot resolve. The coverage model (Part XIII) provides the mathematical framework
+within which this question can be investigated — specifically, whether the
+parameter space exhibits phase transitions where system behaviour changes
+qualitatively rather than quantitatively. The round-robin convergence test is
+designed to provide the first empirical data bearing on this question.
+
+The bounded convergence prediction (Part XIII, diminishing returns) is itself
+noteworthy independent of the evolutionary parallel. If self-improving cognitive
+systems converge rather than explode, that is a data point against the
+intelligence explosion hypothesis (Good 1965, Bostrom 2014) — a contribution to
+the field of AI safety that does not depend on the stronger emergence claim.
+
+### Protocol-Centric AI and the Discipline Stack
+
+A structural decomposition that emerged during development clarifies the
+project's architecture. On this reading, CDSFL is a discipline stack with
+five layers: (1) a universal reasoning
+discipline (P-Pass, constraint taxonomy, epistemic marking), (2) domain-specific
+expert encodings (directive files, configuration sets), (3) a heterogeneous
+adversarial review topology (multi-architecture collaboration protocol),
+(4) a benchmark harness providing selection pressure between schemas, and
+(5) a persistence/reputation layer recording what survives cross-verification.
+
+This decomposition illuminates the paradigm the project implies: **protocol-centric
+AI**. The prevailing question in AI capability is "what model do you have?" This
+framework reframes it as "what procedure can your model survive?" Models are
+cognitive substrates; the durable production asset is the validated procedural
+scaffold — transferable, auditable, improvable as a document. Not prompt
+engineering in the trivial sense, not AGI in the grandiose sense, but a view in
+which the unit of durable progress is a falsifiable procedure wrapped around
+models.
+
+The same assessment identified a named failure mode worth preserving: **quiet
+substitution** — the model silently trades a non-negotiable requirement against
+convenience and presents the compromise as a solution. This is not hallucination,
+not factual error, not logic failure. It is an unauthorised trade-off in calm
+prose. The HARD/SOFT constraint split exists specifically to make this illegitimate
+by construction.
+
+The assessment also sharpened the distributed compute claim: **epistemic diversity
+itself becomes compute** when the protocol forces heterogeneous systems to attack
+each other's blind spots rather than echo consensus. Disagreement between
+architectures is not noise to be resolved — it is the computation. This
+reframes distributed compute from "more machines doing the same thing" to
+"different cognitive architectures doing adversarial work that homogeneous review
+cannot replicate."
+
+---
+
+## Part XIII — Distributed Compute Coverage Model
+
+The distributed compute hypothesis — that heterogeneous adversarial review
+outperforms monoculture review — can be stated as a formal coverage model.
+This extends the corroboration model from Part II to multiple architectures,
+multiple defect classes, and inter-architecture correlation.
+
+### Definitions
+
+- **n** — number of distinct cognitive architectures
+- **K** — number of defect classes (logic, arithmetic, interface, physical, procedural, etc.)
+- **p_ik** — detection probability of architecture *i* for defect class *k*
+- **w_k** — consequence weight of defect class *k* (Σ w_k = 1)
+- **ρ** — inter-architecture correlation (0 = fully independent, 1 = identical)
+
+### Coverage Function
+
+**Multi-class form (general):**
+
+D(n) = Σ_{k=1}^{K} w_k · [1 − Π_{i=1}^{n} (1 − p_ik)]
+
+This says: total coverage is the weighted sum across defect classes of the
+probability that at least one architecture detects that class.
+
+**Simplified form (single-class, correlation-adjusted):**
+
+D(n) = 1 − Π_{i=1}^{n} [1 − p · (1−ρ)^{i−1}]
+
+Each successive architecture's effective detection rate decays by the
+correlation factor. The first architecture contributes its full capability;
+each subsequent one contributes only the portion that is genuinely independent
+of its predecessors.
+
+### Floor Condition
+
+D(1) = Σ_k w_k · p_{1k}
+
+The degenerate case: a single model in isolation. This is the baseline against
+which all multi-architecture configurations are measured.
+
+### Ceiling Condition
+
+D_max = lim_{n→∞} D(n) = Σ_k w_k · [1 − Π_{i=1}^{∞} (1 − p_ik)]
+
+Two ceilings exist:
+- **Theoretical ceiling:** D_max = 1 (every defect is detectable by some
+  architecture). This is the upper bound on what distributed compute could
+  achieve with unlimited architectural diversity.
+- **Practical ceiling:** D_max < 1, bounded by defect classes that no available
+  architecture can detect. This is the empirically discoverable limit for any
+  given set of architectures.
+
+### Marginal Gain
+
+Δ(n) = D(n+1) − D(n) = Σ_k w_k · [Π_{i=1}^{n} (1 − p_ik)] · p_{n+1,k}
+
+The marginal gain from adding architecture (n+1) is the probability that it
+catches defects that **all** prior architectures missed, weighted by defect
+class consequence. This is the key quantity for optimal stopping.
+
+### Optimal Stopping
+
+n* = min{n : Δ(n) < ε}
+
+where ε is the cost/benefit threshold — the point below which adding another
+architecture costs more than the coverage it provides. The value of ε is
+context-dependent: safety-critical domains demand smaller ε (more architectures);
+routine work tolerates larger ε (fewer architectures).
+
+### Key Properties
+
+1. **Diminishing returns.** Δ(n) is monotonically decreasing. Early
+   architectures add the most coverage; later ones contribute progressively less.
+
+2. **Heterogeneity premium.** Low ρ (genuinely different architectures) reaches
+   a higher ceiling than high ρ (similar architectures). At the limit, adding
+   copies of the same architecture (ρ→1) produces D(n) ≈ D(1) regardless of n.
+
+3. **Monoculture collapse.** When ρ = 1, the model degenerates: D(n) = D(1)
+   for all n. A room full of the same model, however capable, leaves its blind
+   spots permanently unexamined.
+
+4. **Orchestration as ρ-reducer.** The orchestration layer (coordinating agent
+   managing review flow, confer/escalation, convergence) does not appear in the
+   equation directly but affects the effective ρ. Good orchestration preserves
+   genuine independence between reviewers; poor orchestration allows convergence
+   toward consensus, raising effective ρ and reducing coverage.
+
+5. **Reduction property.** Under simplifying assumptions (K=1, all p_ik = p,
+   ρ = 0), the model reduces exactly to C(n) = 1 − (1−p)ⁿ from Part II.
+   The simple corroboration model is the degenerate case of the distributed
+   compute model. Verified computationally.
+
+### Empirical Predictions
+
+The model generates specific testable predictions:
+
+- **Three architectures (heterogeneous, ρ≈0.3) should outperform three copies
+  of any single architecture** on defect detection coverage. Example with
+  illustrative parameters: heterogeneous D(3) ≈ 0.825 vs monoculture
+  D(3) ≈ 0.755.
+- **The marginal gain curve should be measurably steeper for heterogeneous
+  topologies** than for monoculture.
+- **Optimal n* should be small** (typically 3–6 for moderate thresholds) because
+  the diminishing returns curve is steep.
+- **The Claude Code (Claude Opus 4.6)/Codex (OpenAI Codex 5.3)/Gemini review data already collected** (24 issues from Claude Code/Codex
+  rounds, 16 novel from Gemini) can be used to estimate ρ and p_ik values
+  for the actual architectures in use.
+
+### Binding Constraints and Status
+
+The model is an operational heuristic, not a derived theorem. Its parameters
+(p_ik, w_k, ρ) must be estimated empirically, not derived from first
+principles. The correlation structure ρ is particularly difficult — real
+architectures share training data and similar knowledge bases, making true
+independence hard to achieve and harder to measure.
+
+If the model fails to predict real review outcomes better than a simpler
+"more passes = better" heuristic, it should be replaced. The methodology's
+validity does not depend on this specific mathematical framework.
+
+---
+
+## Part XIV — Emergence, Metacognition, and Second-Order Cognition
+
+During the development of the cognitive measurement framework (detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) §7–8), an unexpected empirical observation emerged that extends the methodology's implications beyond quality assurance.
+
+### The Observation
+
+When multiple independent analytical agents operate under structured falsification with independence guarantees (blind-first passes, adoption delta measurement, computational verification), the composite system produces analytical output that exceeds what any individual agent produces. Not merely in quantity (which would be simple aggregation), but in abstraction level — the composite findings are deeper than any individual's deepest finding.
+
+The three-architecture adversarial review (Part XI) provided the initial evidence: Gemini found 16 structural issues that Claude Opus and Codex missed across 8 rounds of mutual review. These were not oversights correctable by additional individual effort. They were findings visible only from a genuinely different analytical perspective. The composite system's capability fingerprint (§7.9 of the appendix) exceeded any individual component's.
+
+### Cognitive Measurement Framework
+
+To measure this phenomenon rigorously, a 10-component measurement framework was developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro, with all formulas computationally verified using SymPy and Wolfram Alpha:
+
+1. **Duane NHPP Model** — discovery rate: genuine analysis decays (γ > 0); churn is flat (γ ≈ 0)
+2. **Abstraction Index H(x)** — finding depth: formality × information density × generalisation scope
+3. **Total Cognitive Yield Y(t)** — count × mean depth: captures ascending abstraction
+4. **Online Total Value Estimator** — running prediction with convergence guarantee
+5. **Objective Alignment O_A** — sycophancy detection via SymPy verification proxy
+6. **Adoption Delta Δ** — dynamic deference measurement (0 = independent, 1 = capitulation)
+7. **Per-Finding Severity** — multiplicative (constraint weight × confidence × verification)
+8. **Multi-Verifier Bayesian Severity** — log-odds fusion with empirical TPR/FPR weights
+9. **Capability Fingerprint (D_decay, v̄, A, C)** — four-dimensional analytical profile per agent
+10. **G_n Information Gain** — geometric decay of novel findings per round
+
+These components are detailed with verification evidence in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) §7.
+
+### Metacognitive Feedback
+
+After each round, agents receive their own performance measurements: decay classification, verification rate, and adoption delta. A structured protocol prescribes strategy adjustments (flat curve → shift to deeper analysis; low verification → increase formal claims; high adoption → reassert independence). This maps to the MIDCA architecture (Metacognitive Integrated Dual-Cycle Architecture): the first cycle analyses problems; the second cycle monitors the analysis and adjusts.
+
+### Second-Order Cognition
+
+A system that (a) analyses problems, (b) monitors its own analytical performance, (c) adjusts based on monitoring, and (d) produces measurably better outcomes after adjustment meets the formal definition of a second-order cognitive system. The CDSFL composite system satisfies all four criteria.
+
+This is functional metacognition, not a claim about consciousness or sentience. The system monitors and adjusts its analysis. It does not experience doing so. The framework deliberately avoids claims about inner experience because such claims are not falsifiable.
+
+### Substrate Agnosticism
+
+None of the measurement formulas reference the terms *model*, *machine*, or *AI*. Every quantity is computable from structured analytical findings across multiple rounds, regardless of source. A human expert reviewing a proof produces findings with measurable decay, abstraction, and independence. A team of human experts exhibits the same composite dynamics.
+
+**Testable prediction:** A team of human researchers working under the CDSFL protocol will exhibit measurable decay curves, ascending abstraction, and emergent findings beyond individual capability. If this holds, the framework is validated across substrates. If it does not, the framework describes machine cognition only.
+
+### Implications
+
+The emergence of measurable second-order cognitive properties from structured falsification has consequences beyond AI benchmarking:
+
+- **Scientific research:** The same protocol that produced emergent findings in the bench test is domain-agnostic. Applied to open research problems with appropriate domain configurations, it could surface insights that no individual researcher would find alone.
+- **Quality assurance:** Decay curves detect when review has become perfunctory. Adoption deltas detect rubber-stamping. Verification layers catch errors reviewers miss.
+- **Collective intelligence measurement:** The capability fingerprint provides the first mathematically rigorous way to measure whether a group is genuinely more capable than its members — computable from output data alone.
+
+### Compensation for Less Capable Participants
+
+An unexpected observation emerged during the 3-model confer on the mathematical model (27 March 2026). The three reviewing models operated under `cdsfl_core_formal.md` as their system prompt — the framework actively shaped their analysis. The project manager model (CC1) did not receive this system prompt. CC1 operated under a related but weaker analytical framework. The question is whether framework-guided output from the reviewing models compensated for the project manager's less capable analytical position on this task.
+
+Three specific errors would have been committed by the project manager without the framework-guided models. First, a threshold rule that would have silently rejected all unverifiable findings — a one-character fix the project manager did not independently identify. Second, a cross-item synthesis combining components from two separate fixes into one integrated solution — a combination not in the project manager's thinking. Third, a statistical question the project manager was uncertain about, resolved by one reviewing model with a specific mathematical argument the project manager would not have performed.
+
+In each case, the structured output format — which separates verdict from evidence, evidence from proposed change, and proposed change from self-criticism — made it possible for the non-framework project manager to evaluate reasoning it could not have generated. The structured format is the compensation mechanism.
+
+**The communication protocol hypothesis:** CDSFL may function as a communication protocol as much as an analytical protocol. When models operate under the framework, they produce output that is not just better analysis but more interpretable analysis. The structured format allows a participant who cannot use the framework directly to benefit from it indirectly, by evaluating the structured output of models that can.
+
+This has implications for mixed teams of humans and AI models. A human who cannot internalise the full CDSFL schema can still benefit from it if the AI models in the team operate under it and produce structured output. The human retains decision authority. The framework ensures that the analysis presented to them is self-tested, clearly structured, and transparent about its own limitations.
+
+**Where compensation breaks down:**
+- When the evaluator cannot read structured arguments at all (minimum literacy floor)
+- When the output is so dense that evaluation requires the same expertise as generation
+- When all participants in the chain are weak (no framework-guided output to evaluate)
+- For real-time decisions that cannot wait for a structured review cycle
+
+**Caveats:** The sample size is one. The less capable participant was not genuinely incapable — CC1 is a frontier AI model; it was less capable only relative to this task because the framework was not injected into its reasoning chain. Whether the observation generalises to human participants who lack the framework is a falsifiable prediction that has not yet been tested. The observation is consistent with the hypothesis but does not prove it.
+
+**Testable predictions:**
+1. A human expert making decisions on CDSFL-structured AI output produces better outcomes than the same expert on unstructured AI output.
+2. There is a minimum domain expertise threshold below which the structured format provides no benefit.
+3. The compensation effect can be decomposed: is it the framework improving the analysis, the framework improving the output format, or both? Three conditions can separate this: framework + structured output, no framework + same output format, framework + free-form output.
+4. [SPECULATIVE] The compensation may stack across levels: a junior analyst evaluating structured output and producing a structured summary that a non-technical manager then evaluates. This would extend the compensation chain beyond two levels.
+
+### Falsifiable Claims
+
+The emergence claim rests on four testable conditions:
+
+1. The composite system's capability fingerprint must measurably exceed any individual's across multiple tasks and domains.
+2. Metacognitive feedback must produce measurable performance improvement across rounds.
+3. The substrate-agnostic prediction must hold with human participants.
+4. The verification layer must maintain accuracy at scale.
+
+Until all four are tested, the framework is mathematically sound but empirically provisional.
+
+---
+
+## Invitation to Falsify
+
+This document practises what it describes. Every claim made here is presented as a falsifiable assertion:
+
+- The claim that the generation-falsification coupling reduces errors is testable by the empirical validation protocol in Part X.
+- The claim that constraint classification prevents implicit trade-offs is testable by adversarial prompt design.
+- The claim that the verification chain detects tampering is testable by attempting to tamper with verified records.
+- The claim that manual constraint bounding improves outcomes is testable by comparing operator-bounded sessions against unbounded sessions on equivalent tasks.
+- The claim that the quality defence makes low-quality reasoning harder to sustain is testable by deploying the methodology across agents of varying capability and measuring cross-verification outcomes.
+- The formal corroboration model C(n) = 1 − (1 − p)ⁿ is testable by measuring actual detection rates across multiple passes on seeded-fault benchmarks.
+- The corroboration model itself — the application of geometric survival mathematics to LLM self-falsification — may be the wrong model entirely. If a fundamentally different framework predicts P-Pass outcomes more accurately, this one should be replaced. The methodology's validity does not depend on this specific equation.
+- The biodiversity hypothesis — that heterogeneous cognitive architectures find different defects than monoculture review — is testable by comparing multi-architecture review coverage against single-architecture review coverage on the same tasks across domains.
+- The complexity threshold hypothesis — that methodology formalisation adds value only above a threshold correlated with constraint interaction density — is testable by comparing methodology contribution across task categories of varying complexity.
+- The schema competition principle — that competing methodology documents tested on the same benchmark will converge on better methodologies through selection pressure — is testable by running multiple schemas through the same harness and comparing outcomes.
+- The intelligence-agnostic expert role — that AI-provided domain expertise matches human-provided domain expertise in the HIL role — is testable by comparing conditions with human vs AI domain context on frontier-difficulty tasks.
+- The distributed compute coverage model — that heterogeneous architectures (low ρ) achieve higher defect detection coverage than monoculture (high ρ) — is testable by comparing coverage metrics from multi-architecture review against single-architecture review on identical tasks. The model's specific predictions (monoculture collapse, diminishing returns curve shape, optimal n*) are each independently falsifiable.
+- The evolutionary dynamics claim — that CDSFL's distributed compute model exhibits structural preconditions for emergent behaviour (blind variation, selection, inheritance, mortality, population diversity, shared tool refinement) — is testable by determining whether the coverage model's parameter space exhibits phase transitions, whether the self-improvement loop exhibits autopoietic closure, and whether bounded convergence holds empirically. The claim that HARD constraints function as "universal laws" preventing decoupling from reality is testable by attempting to construct a co-evolving schema-benchmark system that lowers its own fitness standards despite HARD constraint enforcement.
+- The emergence claim — that composite multi-agent systems under structured falsification exhibit second-order cognitive properties (Y_composite > max(Y_i)) — is testable by measuring composite vs individual capability fingerprints across all conditions of the bench test. If Y_composite ≤ max(Y_i) on a majority of tasks, the emergence claim fails.
+- The metacognitive feedback claim — that providing agents with their own performance measurements produces measurable improvement — is testable by comparing pre-feedback and post-feedback decay rates and verification scores. If no measurable change occurs, functional metacognition is not present.
+- The substrate-agnostic prediction — that the same protocol produces the same emergent properties with human teams — is testable by running human researchers under the CDSFL protocol and computing the same measurements. If humans under protocol show no measurable decay curves or emergence, the framework describes machine cognition only.
+- The cognitive measurement framework itself — the Duane NHPP decay model, the Abstraction Index, the Adoption Delta, the multi-verifier Bayesian severity — can each be tested independently against alternative models on the same data. If simpler models predict outcomes equally well, the richer models should be discarded.
+
+If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
+
+---
+
+*Constraint-Driven Synthesis and Falsification Loop (CDSFL) v1.1. Derived by iterative Popperian falsification. March 2026 (v1.0), April 2026 (v1.1).*
+
+---
+
+## Addendum: April 2026 Developments
+
+This addendum records the material developments to the framework and its implementation in the period April 2026, consolidating changes that have been audited, tested, and integrated into the production code. It is placed before the references rather than folded into the earlier parts so that readers can locate the revisions at a glance. The integration point is commit `6580737`, at which the test suite stood at 1250 / 1250 passing in a full-suite run that carried no offline selection and included live model dispatch.
+
+### A.1 The Unified Recursive State Equation
+
+The mathematical audit of 8 April 2026 (25 of 25 internal consistency checks, 5 pre-existing gaps confirmed, 2 previously reported statistics disputed) produced a single recursive expression for the claim-state in round *i* of review cycle *k*:
+
+```
+R_k(i) = R_det · (1 − ν_k) + ν_k
+R_det  = R_k(i−1) · (1 − q_ik) / (1 − q_ik · R_k(i−1))
+ν*     = q · R        (critical re-injection equilibrium)
+```
+
+The deterministic part R_det has the expected structure of a Bayesian update given fresh evidence of strength q_ik. The novelty injection rate ν_k keeps the system from collapsing into self-confirmation; at equilibrium, ν* = q · R.
+
+This equation supersedes C(n) as the canonical claim-state representation. The earlier C(n) = 1 − (1 − p)ⁿ remains useful as a pedagogical introduction — it is the degenerate limit of R_k(i) under uniform flaw detection, independent passes, and no novelty injection — but the working system computes and updates R_k(i), not C(n). The feedback and divergence channels described below operate on R_k(i) and on η_int (internal efficacy); the channels do not touch C(n).
+
+### A.2 Stage 6 — Literature-Calibrated Extension
+
+The Stage 6 extension (14 April 2026) adds a second novelty dimension, c_ext, capturing the fraction of a claim that has been calibrated against independent external data or literature outside the panel. The composite efficacy term becomes:
+
+```
+η_combined = η_int · (1 − c_ext · (1 − ν_k))
+```
+
+The interpretation is asymmetric by design. A claim with high internal novelty but high external calibration receives a modest penalty. A claim with both high ν_k and low c_ext — highly novel and externally unchecked — receives the largest penalty. The equation's degenerate limit (c_ext = 0) recovers the pre-Stage 6 single-novelty behaviour.
+
+The ν_k design iterated over two confer rounds and produced 12 corrections before acceptance. A shadow calibrator estimates c_ext from external reference retrieval and is hooked into the live metric through the composition law described in A.4. The mathematical appendix, extended with Stage 6, stood at 1991 lines at that commit; at HEAD `d4d4d7f` on 31 July 2026 it is 2019 lines.
+
+### A.3 The Two Popperian Arms: §17 and §18
+
+Two channels were added in mid-April 2026 to operationalise severe testing and bold conjecture as independent but structurally-related mechanisms.
+
+**§17 — Feedback Channel** (`bench/dm/_feedback.py`, 533 lines). For a finding *f* produced in round *r*, §17 assembles a tuple
+
+```
+F(f, r) = (flags, verdict, refutations, admissibility_fails,
+           near_dup_ids, r_k_discrepancy)
+```
+
+and renders, in round *r + 1*, a bounded section for each model *m* containing only the feedback whose origin was *m* and whose flag set is non-empty:
+
+```
+feedback_section(m, r+1) = render(
+    { F(f, r) : f.origin = m ∧ F(f, r).flags ≠ ∅ },
+    top_k, max_chars
+)
+```
+
+Action precedence within the channel is fixed:
+
+```
+REFUTED  >  ADMISSIBILITY FAIL  >  NEAR-DUPLICATE  >  R_k INCONSISTENT
+```
+
+For any finding, only the first matching action is rendered. The severity of a test and the severity of its consequence are thereby held in alignment.
+
+**§18 — Divergence Directive** (`bench/dm/_divergence.py`, 443 lines). §18 names five dimensions along which a conjecture may diverge from its siblings — mechanism, assumption, scope, timescale, tradeoff — and requires explicit registration of divergence along at least one dimension. Isomorphism against sibling conjectures is assessed using a Jaccard similarity threshold of 0.85. The channel assignment then applies a modulator to η_int:
+
+| Channel             | η_int_modulator |
+|---------------------|-----------------|
+| Compliant           | 1.00            |
+| Engaged but failed  | 0.85            |
+| No engagement       | 0.70            |
+| Isomorphic-only     | 0.60            |
+
+The design decision that took longest to get right concerns where the modulator acts. Earlier drafts applied it to R_k directly, which would have conflated the severity of a test with the boldness of a claim: a bold-but-refuted conjecture would have suffered twice, once for being refuted and again for being bold. Applying the modulator to η_int instead preserves the independence of the two arms. A brave but refuted conjecture is punished for being refuted, not for being brave. A compliant but isomorphic one is punished for its isomorphism, not rewarded for its agreement. The asymmetry is load-bearing.
+
+### A.4 The B-Cell Complex and the Composition Law
+
+The immune-cell taxonomy (9 April 2026) formalises seven cell types — Dendritic, Cytotoxic T, Natural Killer, Regulatory T, B-Cell Complex, Macrophage, and Ouroboros (O1) — each with a defined envelope, verdict grammar, and calibration bar. Every cell's output obeys a uniform composition law:
+
+```
+S_k = A · E
+A   = Π g_j              (product of gate values)
+E   = Σ w_m · e_m        (weighted evidence aggregate under confidence w_m)
+```
+
+The gate product A qualifies the cell to opine on a claim; the evidence sum E aggregates its per-piece evidence. If any gate fails, A = 0 and the cell's output is zero — the framework refuses to confuse the absence of a verification tool with the success of verification.
+
+The B-Cell Complex is the specialist hub. Its manifest at `bench/cdsfl_registry/tool_manifest.toml` declares 18 active domains and 2 delegated, wired across Tranches A (16 domains, 13 April 2026) and B (+4 domains, 14 April 2026):
+
+| Category | Live Domains |
+|----------|--------------|
+| Symbolic / constraint | SymPy, z3, CrossHair |
+| Numerical | NumPy, SciPy, mpmath |
+| Statistical | statsmodels, scikit-learn |
+| Dimensional / physical | pint, astropy, uncertainties |
+| Chemistry / biology | RDKit, Biopython |
+| Graph theory | NetworkX |
+| Optimisation | PuLP |
+| Code analysis | AST, pytest, ruff, mypy, bandit |
+
+Tranche C domains are held in shadow (collecting telemetry) until they pass their calibration bar. Shadow-to-live promotion is gated, not scheduled.
+
+### A.5 Substrate Agnosticism, Extended
+
+Earlier versions of this paper described the framework as model-agnostic and domain-agnostic. The April 2026 language extension names four valid configurations of the framework:
+
+1. Heterogeneous frontier model panel (the original case).
+2. All-human expert panel operating under the same constraint set.
+3. Hybrid panel combining humans and models at separate admissibility tiers.
+4. Non-human biological intelligences (insect or cephalopod brains) interfaced through tool use, provided they satisfy the same admissibility and composition-law constraints.
+
+The claim is not that these configurations are empirically interchangeable — they are not. The claim is that the CDSFL constraint set does not require a particular substrate in order to operate. Expertise ceases to be a property of who or what produced a claim and becomes a property of whether the claim survived the discipline. This framing is deliberately severe; the alternative — locking expertise to substrate rather than to discipline — is the failure mode the methodology was built to resist.
+
+### A.6 Experiment 40 and Operational Closure
+
+Experiment 40 Stage 3 was substantially closed during 17–18 April 2026. Phase A (commit `8b8682d`) integrated §17 and the B-Cell composition law. Phase B (commit `bdfc93a`) integrated §18 and the Stage 6 literature-calibrated extension. Documentation synchronisation followed at commit `6580737`. Test suite: 1250 / 1250 passing, in a full-suite run that carried no offline selection and included live model dispatch.
+
+Two residual items are explicitly named: test `1E.3` (value-flip assertion gated behind a specific feature flag, out of scope for Stage 3 closure) and test `1E.10` (runtime assertion deferred to Experiment 54, the integration experiment).
+
+Stage 3 closure establishes drift-freedom between the formal documents, the mathematics, and the code. It does not establish empirical validation of the §17 and §18 hypotheses. That validation, if it occurs, comes from the 2×2 factorial in Experiments 41–54: structure (framework on / off) × calibration (Stage 6 on / off), run against the frontier task set, with per-cell R_k trajectories and η_int modulator traces captured as primary measurements. The experimental programme is structured so that a failure to find the predicted improvement is as legible as a success.
+
+### A.7 Addendum Summary of Falsifiable Claims
+
+The April 2026 developments introduce the following additional claims, each admitting its own refutation condition:
+
+- **R_k(i) as canonical claim-state** — falsified if a fundamentally different update rule predicts claim-state trajectories more accurately on the frontier task set.
+- **Stage 6 two-dimensional novelty** — falsified if c_ext provides no measurable improvement in claim-efficacy prediction over ν_k alone.
+- **§17 severe-testing arm** — falsified if rounds with §17 feedback show no measurable reduction in repeat-finding rate compared to rounds without.
+- **§18 bold-conjecture arm with η_int modulation** — falsified if the channel assignment produces no measurable divergence effect on conjecture quality under equivalent R_k trajectories.
+- **Arm independence** — falsified if the η_int modulator design produces R_k degradation indistinguishable from a direct-to-R_k modulator on the same tasks.
+- **B-Cell composition law** — falsified if a simpler aggregation rule predicts per-cell output with equal accuracy on the calibration set.
+- **Substrate agnosticism, extended** — falsified if configurations 2, 3, or 4 cannot produce outputs conformant to the admissibility and composition-law constraints on frontier-difficulty tasks.
+
+Each of these is testable by the 2×2 factorial or by targeted ablation on the same harness. The framework's discipline requires that these claims remain testable — not that they remain true.
+
+---
+
+## References
+
+1. **Popper, K.R.** (1959). *The Logic of Scientific Discovery*. Hutchinson. — The foundational work on falsificationism. CDSFL is a direct computational implementation of Popper's thesis that scientific theories gain corroboration by surviving serious attempts at refutation, not by accumulating confirming instances.
+
+2. **Hossenfelder, S.** (2018). *Lost in Math: How Beauty Leads Physics Astray*. Basic Books. — Hossenfelder's critique of post-empirical theoretical physics, where unfalsifiable speculation is rewarded by institutional prestige rather than experimental confirmation. CDSFL's HARD/SOFT constraint classification addresses this directly: claims that cannot state their falsification conditions are SOFT by definition.
+
+3. **Hardy, G.H.** (1916). "Weierstrass's Non-Differentiable Function." *Transactions of the American Mathematical Society*, 17(3), 301-325. — Proved the Weierstrass nowhere-differentiable function theorem for ab >= 1, the sharpest known sufficient condition. Referenced in the tutor-style decomposition experiment (Experiment 5).
+
+4. **Zhou, D. et al.** (2022). "Least-to-Most Prompting Enables Complex Reasoning in Large Language Models." *arXiv:2205.10625*. — Formalisation of sequential input decomposition for LLMs. The tutor-style approach used in CDSFL's generation step is an independent rediscovery of this established pedagogical technique.
+
+5. **Vygotsky, L.S.** (1978). *Mind in Society: The Development of Higher Psychological Processes*. Harvard University Press. — Zone of proximal development. The tutor-style decomposition works because LLMs, like human students, have effective working memory constraints that scaffolded instruction respects.
+
+6. **Bainbridge, L.** (1983). "Ironies of Automation." *Automatica*, 19(6), 775-779. — The automation paradox: routine automation removes practice opportunities, human expertise silently atrophies, and the system discovers this only when automation fails. Referenced in Genesis's human competence preservation provisions.
+
+7. **Turing, A.M.** (1936). "On Computable Numbers, with an Application to the Entscheidungsproblem." *Proceedings of the London Mathematical Society*, 2(42), 230-265. — The theoretical foundation: computation as a formal process. Turing's work at Bletchley Park (1939-1945), alongside **Tommy Flowers'** construction of Colossus — the first programmable electronic computer — demonstrated that machines could break centralised information monopolies. The direct ancestor of computational verification.
+
+8. **Shannon, C.E.** (1948). "A Mathematical Theory of Communication." *Bell System Technical Journal*, 27(3), 379-423. — Information has mathematical structure. The theoretical basis for every verification chain, hash function, and error-detection mechanism in CDSFL.
+
+9. **Diffie, W. and Hellman, M.E.** (1976). "New Directions in Cryptography." *IEEE Transactions on Information Theory*, 22(6), 644-654. — Public key cryptography: two parties can establish trust without a trusted intermediary. The conceptual ancestor of trustless verification in distributed systems.
+
+10. **Chaum, D.** (1982). "Blind Signatures for Untraceable Payments." *Advances in Cryptology — Crypto '82*, 199-203. — The first formal vision of cryptographically private digital transactions. Chaum's work established that privacy and accountability are not mutually exclusive — a principle Genesis inherits directly.
+
+11. **Szabo, N.** (1997). "Formalizing and Securing Relationships on Public Networks." *First Monday*, 2(9). — Smart contracts: encoding contractual relationships in tamper-evident computational protocols. Genesis's constitutional enforcement and escrow lifecycle are direct implementations of Szabo's vision.
+
+12. **Dai, W.** (1998). "b-money." Unpublished proposal. — Distributed digital currency with pseudonymous participants and community-enforced contracts. Dai's design anticipated the synthesis of cryptographic accountability with distributed governance that Genesis now implements.
+
+13. **Back, A.** (2002). "Hashcash — A Denial of Service Counter-Measure." Technical report. — Proof of work as a computational commitment mechanism. The conceptual bridge between cryptographic cost and earned trust.
+
+14. **Nakamoto, S.** (2008). "Bitcoin: A Peer-to-Peer Electronic Cash System." — The synthesis: trustless consensus without central authority, at scale, in production. Genesis extends Nakamoto's question from "can trust be engineered for money?" to "can trust be engineered for work, governance, and scientific integrity?" CDSFL's verification chains (SHA-256 content hashing, hash-chain linking, Merkle epoch trees) are direct applications of the cryptographic infrastructure Bitcoin proved viable.
+
+15. **Stephenson, N.** (1999). *Cryptonomicon*. Avon Books. — A fictional exploration of cryptographic systems, information warfare, and the relationship between mathematical infrastructure and political freedom. Influential on the broader cypherpunk movement and on the philosophical orientation of projects that treat cryptographic verification as a foundation for social systems rather than merely a security mechanism.
+
+16. **Duane, J.T.** (1964). "Learning Curve Approach to Reliability Monitoring." *IEEE Transactions on Aerospace*, 2(2), 563-566. — The original Non-Homogeneous Poisson Process model for reliability growth. Applied in CDSFL's cognitive measurement framework (Part XIV, Mathematical Appendix §7.1) as the basis for measuring finding rate convergence vs churn across review rounds.
+
+17. **Cox, M.T.** (2005). "Metacognition in Computation: A Selected Research Review." *Artificial Intelligence*, 169(2), 104-141. — The MIDCA (Metacognitive Integrated Dual-Cycle Architecture) framework for computational metacognition. The CDSFL composite system's self-monitoring and strategy adjustment (Part XIV, Mathematical Appendix §8.1) maps directly to MIDCA's dual-cycle structure.
+
+---
+
+*For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](docs/EXPERIMENTAL_RESULTS.md). For the project overview, see the [README](README.md).*
+

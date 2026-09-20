@@ -1,0 +1,177 @@
+{
+  "scope": "Exact consequences of specified probability models; not empirical calibration",
+  "counts": {
+    "conditional_outcome_trees": 5600,
+    "impossible_observations_rejected": 650,
+    "branch_policy_expectations": 2000,
+    "sequential_repair_trees": 125,
+    "reduction_and_expectation_cases": 125,
+    "named_mutations_rejected": 8
+  },
+  "examples": {
+    "repair_counterexample_resolved": {
+      "negative_branch": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      },
+      "positive_repaired": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "expected_cycle": {
+        "exact": "1/10",
+        "decimal": 0.1
+      }
+    },
+    "action_schedule_matters": {
+      "only_detection_triggers_repair": {
+        "exact": "7/50",
+        "decimal": 0.14
+      },
+      "new_flaws_possible_after_every_cycle": {
+        "exact": "19/100",
+        "decimal": 0.19
+      }
+    },
+    "false_positive_aware_update": {
+      "exact": "4/13",
+      "decimal": 0.3076923076923077
+    },
+    "duplicate_vs_replication": {
+      "duplicate": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      },
+      "fresh_replication": {
+        "exact": "1/26",
+        "decimal": 0.038461538461538464
+      }
+    },
+    "scalar_history_insufficiency": [
+      {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      {
+        "exact": "1/2",
+        "decimal": 0.5
+      }
+    ],
+    "private_selection_information": {
+      "ignored": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "conditioned": {
+        "exact": "0",
+        "decimal": 0.0
+      }
+    },
+    "parameter_dependence": {
+      "joint_average": {
+        "exact": "4/25",
+        "decimal": 0.16
+      },
+      "separate_means": {
+        "exact": "1/4",
+        "decimal": 0.25
+      },
+      "correct_conditional_removal": {
+        "exact": "17/25",
+        "decimal": 0.68
+      }
+    },
+    "complementary_tests": {
+      "either_single_test_bits": 0,
+      "both_tests_bits": 1
+    },
+    "free_parameters_can_fit_any_desired_risk": true
+  },
+  "rejected_mutations": {
+    "old_clean_posterior_as_repair_cycle": {
+      "wrong": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      },
+      "correct": {
+        "exact": "1/10",
+        "decimal": 0.1
+      }
+    },
+    "publication_novelty_zeroes_evidence": {
+      "wrong": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "correct": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      }
+    },
+    "positive_result_uses_negative_update": {
+      "wrong": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      },
+      "correct": {
+        "exact": "1",
+        "decimal": 1.0
+      }
+    },
+    "raw_sigma_used_as_net_removal": {
+      "wrong": {
+        "exact": "0",
+        "decimal": 0.0
+      },
+      "correct": {
+        "exact": "1/10",
+        "decimal": 0.1
+      }
+    },
+    "duplicate_treated_as_independent": {
+      "wrong": {
+        "exact": "1/26",
+        "decimal": 0.038461538461538464
+      },
+      "correct": {
+        "exact": "1/6",
+        "decimal": 0.16666666666666666
+      }
+    },
+    "unperformed_actions_get_reinjection": {
+      "wrong": {
+        "exact": "19/100",
+        "decimal": 0.19
+      },
+      "correct": {
+        "exact": "7/50",
+        "decimal": 0.14
+      }
+    },
+    "private_selection_ignored": {
+      "wrong": {
+        "exact": "1/2",
+        "decimal": 0.5
+      },
+      "correct": {
+        "exact": "0",
+        "decimal": 0.0
+      }
+    },
+    "correlated_parameters_replaced_by_means": {
+      "wrong": {
+        "exact": "1/4",
+        "decimal": 0.25
+      },
+      "correct": {
+        "exact": "4/25",
+        "decimal": 0.16
+      }
+    }
+  },
+  "status": "all_checks_passed",
+  "source_sha256": {
+    "CDSFL_revised_core.py": "f951f06b770c286bea472ea7a2eb0800c0e9afac34241f1740bc42837e652411",
+    "CDSFL_revised_model_checks.py": "0dad91f9b60a9462bf535563c10bb44c9c8c8e98e0bbfd80a8a317c06d9c2e86"
+  }
+}
