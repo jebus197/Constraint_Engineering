@@ -12330,6 +12330,26 @@ def run_preflight(
     _log("=" * 60)
     _log("PREFLIGHT: Testing model connectivity")
     _log("=" * 60)
+    # SPEND GATE, BEFORE THE FIRST DISPATCH (founder, 2026-09-20, item 2 of 3).
+    # The connectivity probe below is itself a paid call on every paid route, so
+    # the suite check has to sit above it rather than beside it. Shared with the
+    # panel dispatcher rather than copied: 2 copies of a rule drift, and a
+    # drifted gate reads as protection that is not there.
+    # RED or MISSING refuses; STALE only reports, because every commit ages the
+    # record and a gate that refuses every run gets switched off.
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import suite_record as _suite_record
+    except Exception as _exc:                                      # noqa: BLE001
+        _log(f"  suite gate unavailable ({type(_exc).__name__}: {_exc}); "
+             f"refusing rather than dispatching unchecked")
+        return False
+    try:
+        _suite_record.gate(spend="experiment", override_env="RUNNER_SUITE_UNCHECKED")
+    except SystemExit:
+        _log("  PREFLIGHT REFUSED: the last full-suite record is not green. "
+             "Set RUNNER_SUITE_UNCHECKED=1 to dispatch anyway.")
+        return False
     test_prompt = (
         "This is a connectivity test. Respond with exactly:\n"
         "STATUS: OK\nMODEL: [your model name]\nNothing else."

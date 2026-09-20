@@ -127,3 +127,58 @@ def main(argv: list | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def gate(*, spend: str, override_env: str, out=None, err=None) -> None:
+    """Refuse a PAID dispatch when the last full-suite record is not green.
+
+    FOUNDER, 2026-09-20, as item 2 of 3: the launchers should consult the suite
+    record before dispatching. Written once and called from both spending
+    launchers -- `bench/confer_maths_panel_2026-09-05.py` and
+    `reference_runner_v3.run_preflight` -- because 2 copies of a rule drift, and
+    a drifted gate is worse than no gate: it reads as protection that is not
+    there.
+
+    THE ASYMMETRY IS THE DESIGN. STALE is normal -- every commit ages the record,
+    so refusing on age would refuse nearly every dispatch and the gate would be
+    switched off inside a week. RED is a positive statement that something is
+    broken. MISSING is neither, and unknown is not a licence to spend.
+
+    Raises SystemExit(2) on red, missing or unreadable, unless `override_env` is
+    set in the environment, in which case it says so on stderr and returns.
+    """
+    import os
+    out = out or sys.stdout
+    err = err or sys.stderr
+    try:
+        is_stale, why = stale()
+        state = json.loads(RECORD.read_text(encoding="utf-8")) if RECORD.is_file() else None
+    except Exception as exc:                                       # noqa: BLE001
+        print(f"{spend}: suite record unreadable ({type(exc).__name__}: {exc}); "
+              f"that is a failed lookup, not a green suite", file=err)
+        state, is_stale, why = None, True, "the record could not be read"
+
+    if state is not None and state.get("exit_code") == 0:
+        print(f"    suite: GREEN at {state['commit']} — {state['passed']:,} passed, "
+              f"{state['failed']} failed" + (f"  [{why}]" if is_stale else ""), file=out)
+        return
+
+    if os.environ.get(override_env):
+        told = (f"exit code {state['exit_code']}, {state.get('failed', '?')} failed"
+                if state else "no record exists")
+        print(f"{spend}: the suite record is NOT green ({told}); dispatching anyway "
+              f"because {override_env} is set", file=err)
+        return
+
+    print(f"{spend}: REFUSED — the last full-suite record is not green.", file=err)
+    if state is None:
+        print(f"  no full-suite record exists at {RECORD}", file=err)
+    else:
+        print(f"  recorded at {state['commit']} on {state['when'][:10]}: "
+              f"{state.get('failed', '?')} failed, {state.get('passed', 0):,} passed, "
+              f"pytest exit code {state['exit_code']}", file=err)
+    print(f"  currency: {why}", file=err)
+    print(f"  fix the suite, then: {COMMAND} | tee /tmp/suite.log ; "
+          f"python3 scripts/suite_record.py record --log /tmp/suite.log", file=err)
+    print(f"  to dispatch anyway, deliberately: {override_env}=1", file=err)
+    raise SystemExit(2)

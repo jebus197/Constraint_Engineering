@@ -513,8 +513,9 @@ def _validate_brief_or_refuse() -> None:
     seat, so this is both the correct place and the one that leaves the tests
     honest: neither was edited to accommodate it.
 
-    3 of the 5 seats are PAID, and the record holds a case where a briefing defect
-    broke 2 seats and forced a re-dispatch. Measured when this was wired: all 49
+    4 of the 6 seats are PAID since 2026-09-20 (cx, cgpt, ge, ds; cc2 and fable
+    run on the Max subscription), and the record holds a case where a briefing
+    defect broke 2 seats and forced a re-dispatch. Measured when this was wired: all 49
     archived briefs would be refused, failing 1 to 7 of the checks, mean 2.4 --
     the spread being what shows the rule discriminates rather than rejecting
     uniformly.
@@ -548,10 +549,48 @@ def _validate_brief_or_refuse() -> None:
     raise SystemExit(2)
 
 
+def _refuse_if_the_suite_state_is_unknown() -> None:
+    """Refuse to spend money against a harness whose last suite run was RED.
+
+    FOUNDER, 2026-09-20, approving this as item 2 of 3: the launchers should
+    check the suite record before dispatching.
+
+    THE CASE FOR IT IS THIS PROJECT'S OWN RECORD. On 2026-09-05 a panel round
+    ran with 16 of 17 tool calls erroring, and the errors were read as results.
+    On 2026-09-10 a round-4 brief carried a gamma figure that was wrong in its
+    3rd decimal and 2 seats spent part of their round on it. Both were paid.
+    A suite that is RED is the cheapest available warning that the harness the
+    seats are about to reason over does not currently do what it says.
+
+    STALENESS IS A WARNING, NOT A REFUSAL, and the distinction matters. Every
+    commit makes the record 1 commit older, so refusing on staleness would
+    refuse almost every dispatch and be switched off within a week. A RED
+    record, by contrast, is a positive statement that something is broken.
+    A MISSING record is neither red nor green; it is unknown, and unknown is
+    not a licence to spend, so it refuses.
+
+    Override, deliberately and visibly: PANEL_SUITE_UNCHECKED=1.
+    """
+    sys.path.insert(0, str(_REPO / "scripts"))
+    paid_n = len([m for m in MODELS if m[2] != "claude_cli"])
+    try:
+        import suite_record
+    except Exception as exc:                                       # noqa: BLE001
+        print(f"panel: the suite gate is unavailable ({type(exc).__name__}: {exc}); "
+              f"refusing rather than dispatching {paid_n} paid seats unchecked",
+              file=sys.stderr)
+        raise SystemExit(2)
+    suite_record.gate(spend=f"panel ({paid_n} of {len(MODELS)} seats paid)",
+                      override_env="PANEL_SUITE_UNCHECKED")
+
+
 def main() -> int:
     # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
     resolve_brief()
     _validate_brief_or_refuse()
+    # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
+    # reason the brief check does: main() is the only path to a paid seat.
+    _refuse_if_the_suite_state_is_unknown()
     paid = [m for m in MODELS if m[2] != "claude_cli"]
     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")
     print(f"    PAID seats: {', '.join(n for n, _, _ in paid)}  "
