@@ -433,7 +433,34 @@ def default_tool_executor(name: str, args: dict) -> str:
         from falsifier_verify import execute_python as _exec
         code = args.get("code", "")
         return _exec(code) if code else "[no code provided]"
-    return f"[unknown tool: {name}]"
+    # EVERY OTHER NAME GOES TO THE REAL DISPATCHER (2026-09-20). Before this,
+    # a seat on a DIRECT route -- Moonshot or DeepSeek's own API -- was offered
+    # 10 tools by the panel and could execute exactly 1 of them, because this
+    # function was the executor and it knew only `execute_python`. The
+    # OpenRouter path was unaffected: it routes through
+    # `openrouter_tools.dispatch_tool_call`, which has every handler.
+    #
+    # MEASURED, AND THE SEAT CAUGHT IT ITSELF. In round 2 the Kimi seat made 13
+    # calls across all 10 advertised names and every one returned
+    # `[unknown tool: <name>]`. It reported that as its finding F0, refused to
+    # simulate any output, marked every executed-evidence verdict UNCHECKED and
+    # supplied hand derivations labelled machine-unchecked instead. That is the
+    # correct behaviour and it is why the defect is visible at all; a seat that
+    # had quietly asserted results would have produced a reply indistinguishable
+    # from a working one.
+    try:
+        import json as _json
+        from openrouter_tools import dispatch_tool_call as _dispatch
+        raw = _dispatch(name, _json.dumps(args or {}))
+        try:
+            parsed = _json.loads(raw)
+        except ValueError:
+            return raw
+        if isinstance(parsed, dict) and "error" in parsed and len(parsed) == 1:
+            return f"[tool error: {parsed['error']}]"
+        return parsed.get("result", raw) if isinstance(parsed, dict) else raw
+    except Exception as exc:                                   # noqa: BLE001
+        return f"[tool dispatch failed: {type(exc).__name__}: {exc}]"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
