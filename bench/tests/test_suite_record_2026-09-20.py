@@ -12,6 +12,7 @@ launcher green-light a run against a measurement of a different tree.
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import pathlib
@@ -118,3 +119,52 @@ class TestItWritesNothingUnlessRecording:
         assert not mod.RECORD.exists()
         mod.cite(); mod.stale()
         assert not mod.RECORD.exists()
+
+
+class TestSvCitesItInsteadOfReRunningTheSuite:
+    """The reason this record exists at all. FOUNDER, 2026-09-20: *"sv normally
+    takes minutes? Hopefully we aren't looking at hours?"* It was 23 minutes,
+    because writing a suite figure into the SESSION STATE block was taken to
+    mean re-running the suite. The record removes the reason to re-run, and
+    these 3 tests require sv to actually reach it."""
+
+    @staticmethod
+    def _sv_source() -> str:
+        return (ROOT / "scripts" / "cdsfl_sv.py").read_text(encoding="utf-8")
+
+    def test_sv_main_calls_the_citation_printer(self):
+        tree = ast.parse(self._sv_source())
+        main = next(n for n in tree.body
+                    if isinstance(n, ast.FunctionDef) and n.name == "main")
+        assert any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                   and n.func.id == "_print_suite_citation"
+                   for n in ast.walk(main)), (
+            "main() no longer calls _print_suite_citation, so the record is "
+            "written by nothing and read by nobody")
+
+    def test_the_printer_emits_the_command_the_guard_looks_for(self, capsys):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import cdsfl_sv                                            # noqa: PLC0415
+        cdsfl_sv._print_suite_citation(ROOT)
+        out = capsys.readouterr().out
+        assert "pytest bench/tests/" in out, (
+            "the citation does not name a runnable producer, which is exactly "
+            "what the A23 guard requires of a suite figure")
+        assert "Record currency" in out
+
+    def test_the_printer_never_raises_when_the_record_is_missing(self, tmp_path,
+                                                                 capsys):
+        """A failed lookup must read as a failed lookup, not as a green suite,
+        and must never turn a completed save into a traceback."""
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import cdsfl_sv                                            # noqa: PLC0415
+        import suite_record                                        # noqa: PLC0415
+        original = suite_record.RECORD
+        try:
+            suite_record.RECORD = tmp_path / "absent.json"
+            cdsfl_sv._print_suite_citation(ROOT)
+        finally:
+            suite_record.RECORD = original
+        out = capsys.readouterr().out
+        assert "No full-suite record exists yet" in out
+        assert "GREEN" not in out

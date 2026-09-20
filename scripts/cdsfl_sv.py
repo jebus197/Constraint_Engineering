@@ -1025,6 +1025,30 @@ def _commit_and_push(
 
 
 
+def _print_suite_citation(root) -> None:
+    """Print the last full-suite measurement as a citable sentence. Never raises.
+
+    The sentence comes from `scripts/suite_record.py`, which holds the commit,
+    the counts, the exit code, the wall clock and the exact pytest command. sv
+    does not re-run the suite: a save is a save, not a health check, and the
+    2026-09-19 save that re-ran it took 23 minutes to produce a number that was
+    already true at the previous commit.
+
+    The staleness line is printed beside it rather than hidden, because a record
+    taken 6 commits ago is still a fact about a tree that has since moved, and
+    the reader is entitled to see how far.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import suite_record                                        # noqa: PLC0415
+        is_stale, why = suite_record.stale()
+        print(f"  Suite: {suite_record.cite()}")
+        print(f"         Record currency: {'STALE — ' if is_stale else 'current — '}{why}")
+    except Exception as exc:                                       # noqa: BLE001
+        print(f"  Suite: citation UNAVAILABLE ({type(exc).__name__}: {exc}). "
+              "That is a failed lookup, NOT a statement about the suite.")
+
+
 def _run_postcondition_gate(root, *, push: bool) -> int:
     """Re-take every reading sv printed, and let it DECIDE. Returns 1 on failure.
 
@@ -2643,6 +2667,14 @@ def main() -> None:
     print(f"  Tests: {tests if tests else 'unknown'} COLLECTED "
           f"(collection count only — says NOTHING about pass/fail. "
           f"For health run: python3 -m pytest bench/tests/ -q --netguard-strict)")
+    # FOUNDER, 2026-09-20: "sv normally takes minutes? Hopefully we aren't
+    # looking at hours?" It was 23 minutes, because writing a suite figure into
+    # the SESSION STATE block meant re-running the suite to make that figure
+    # fresh. Nothing required that: the A23 guard wants a figure that NAMES A
+    # PRODUCER a reader can re-run, not a run that happened during this sv.
+    # So the sentence is printed here, already carrying its command, and the
+    # person writing the block pastes it instead of re-measuring.
+    _print_suite_citation(root)
     print(f"  Latest exp: {exp['name'] if exp else 'none'}")
     print(f"  Working tree: {'clean' if gs['clean'] else 'DIRTY'}")
     print(f"  Remote{' BEFORE this sv' if args.commit and not args.dry_run else ''}: "
