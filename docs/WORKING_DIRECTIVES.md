@@ -216,7 +216,7 @@ FFAFP Discipline:
 
 Public-Facing Attribution:
 
-`public-no-model-credit`: In public-facing documents, do not attribute specific observations, framings, or insights to individual AI models.
+`public-model-marking`: Mark significant model contributions where relevant, and do not pepper documents with per-sentence attributions. Founder, 2026-09-20, replacing a `public-no-model-credit` directive he disowned — it carried no date and no ruling marker, and was present in the first commit of the file that held it, so its authorship could not be established. His objection: the removed rule was self-contradictory, since a project cannot report everything it does and never say what resources did it. His rule: do not place unreasonable focus on exactly which model said what and when, which would make the documents unreadable; but where a major revision by a model is made — the mathematical model is his example — mark it clearly and appropriately where relevant. The removed text read: "In public-facing documents, do not attribute specific observations, framings, or insights to individual AI models." The separate position that the formal attribution list is human only is unchanged, and is not what this directive governs.
 
 `public-methodology-factual`: Describe methodology factually where relevant, including which models were used, how they interacted, and what evidence was produced.
 
