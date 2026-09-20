@@ -331,6 +331,27 @@ _TOOL_DISPATCH: Dict[str, Callable[..., Dict[str, Any]]] = {
 }
 
 
+def _access_tool(name: str):
+    """Route the ACCESS tools -- read_file, grep, list_dir, run_python,
+    run_pytest -- to the executor that implements them.
+
+    ADDED 2026-09-20, WITH ITS SPECS, because a spec without a handler is worse
+    than no spec: the model calls the tool, gets `unknown tool: read_file`, and
+    spends an iteration learning that. The panel's seats previously had 5 tools,
+    none of which reads a file or runs a script, so a brief asking them to read
+    the artefact under review was asking for something impossible -- and the
+    seats burned their iteration budget discovering it.
+    """
+    def _run(args):
+        import build_experiment_tools as _bt
+        return {"result": _bt.execute(name, args)}
+    return _run
+
+
+for _access in ("read_file", "grep", "list_dir", "run_python", "run_pytest"):
+    _TOOL_DISPATCH[_access] = _access_tool(_access)
+
+
 def dispatch_tool_call(name: str, arguments_json: str) -> str:
     """Route a tool call to its dispatcher and return a JSON-serialisable
     string result that can be handed back to the model.

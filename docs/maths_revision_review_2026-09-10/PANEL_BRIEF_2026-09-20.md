@@ -68,7 +68,12 @@ The package is at `docs/maths_revision_review_2026-09-10/`, entry point `START_H
 - `outputs/CDSFL_lineage_and_decay_clarification.md`, `outputs/CDSFL_mathematical_review_2026-09-09.md`, `READING_COPY.html`, `work/`.
 - In the repository: `docs/MATHEMATICAL_APPENDIX.md`, `explorer/index.html`, `bench/reference_runner_v3.py` for the live gate, and `scripts/free_parameter_degeneracy_2026-09-20.py`.
 
-**Run the checks rather than reading them:** `VERIFY_PACKAGE.py`, then `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+**Run the checks rather than reading them, and USE `run_python` FOR THEM.** These are standalone scripts, not pytest test files: `run_pytest` returns `no tests ran` on every one of them, which cost a seat 4 of its turns in the first round of this review. Run each with `run_python` and `runpy.run_path("<path>")`:
+
+- `docs/maths_revision_review_2026-09-10/VERIFY_PACKAGE.py` — prints `PASS: 41 files match the package manifest.`
+- `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+
+**Your tools are** `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. Use `read_file` to read the package; do not assume you have a shell.
 
 ## Section 7 — Scope boundaries, which are HARD
 

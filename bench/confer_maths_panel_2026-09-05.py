@@ -169,7 +169,36 @@ from experiment_11_orchestrator import set_panel_cwd  # noqa: E402
 from experiment_11_orchestrator import accept_reply_or_work  # noqa: E402
 from experiment_11_orchestrator import set_tool_log_sink  # noqa: E402
 from openrouter_tools import (  # noqa: E402
-    TOOL_SPECS, call_openrouter_with_tools)
+    TOOL_SPECS as _VERIFY_TOOLS, call_openrouter_with_tools)
+import build_experiment_tools as _ACCESS_TOOLS  # noqa: E402
+
+#: THE SEATS COULD NOT READ THE THING THEY WERE REVIEWING. Found 2026-09-20,
+#: mid-round, by reading a seat's own reply rather than its summary.
+#:
+#: The panel gave its seats 5 tools -- sympy_verify, z3_verify, pytest_run,
+#: ruff_check, mypy_check -- and NOT ONE of them reads a file or runs a Python
+#: script. The brief for that round asked seats to read the revised model's
+#: specification, execute `CDSFL_revised_core.py`, and search `bench/logs/` for
+#: paired repair states. All 3 were structurally impossible, and the seats spent
+#: their budget discovering it: cx ran `pytest_run` against 4 standalone scripts
+#: and got `no tests ran` 4 times, then reported "Most substantive package
+#: claims remain UNVERIFIED in this seat". 2 of 3 paid seats hit the iteration
+#: cap having executed almost nothing.
+#:
+#: WHY IT WENT UNNOTICED. Every seat was verified before dispatch to MAKE tool
+#: calls -- 8 of 8 for DeepSeek via OpenRouter, 1 of 1 for Kimi, and so on --
+#: and not one check asked WHICH tools. A seat calling a tool it cannot use is
+#: still calling a tool, so the pre-flight passed while the capability it was
+#: standing in for was absent. The CLI seats were unaffected: cc2 and fable
+#: reach the tree through Bash, which is why the archive shows them at 2,754 and
+#: 2,530 tool calls against cx's 48.
+#:
+#: THE UNION, because both halves are load-bearing: the symbolic verifiers that
+#: make a claim decidable, and the access tools that let a seat reach the
+#: artefact under review. `pytest_run` and `run_pytest` are near-duplicates and
+#: both are kept -- a seat picking either gets a working tool, which is the
+#: opposite of the failure above.
+TOOL_SPECS = list(_VERIFY_TOOLS) + list(_ACCESS_TOOLS.TOOL_SPECS)
 
 _REPO = Path(__file__).resolve().parent.parent
 _env = _REPO / ".env"
@@ -314,6 +343,26 @@ _ALL = [
 #: another seat found, because an untested instrument agreeing with a tested one
 #: is not independent evidence until the instrument itself has a track record.
 QUARANTINED_SEATS = {"kimi"}
+
+#: RAISED FROM 10 TO 16 on 2026-09-20, after measuring the first round rather
+#: than guessing. 3 of the 4 paid seats hit the cap: cx at 10 iterations with
+#: `max_iterations_harvested`, ge at 10, ds at 10; only cgpt finished, in 5.
+#: And they hit it having executed almost nothing useful, because the seats had
+#: no tool that reads a file or runs a script -- cx spent 4 iterations running
+#: `pytest_run` against standalone scripts and got `no tests ran` each time.
+#:
+#: The cap is raised WITH the tool fix, not instead of it. A seat that can read
+#: the artefact needs more turns to do real work; a seat that cannot needs none.
+#:
+#: 16 IS COUNTED, NOT ROUNDED. What this brief asks of a seat: 3 turns to read
+#: the specification, 1 to run the reference core, 3 for the package's own check
+#: scripts, 5 for the symbolic and z3 checks of the derivations it is asked to
+#: falsify, 2 for the appendix and the live gate, and 2 to search the archive for
+#: paired repair states. Cost scales worse than linearly because the whole
+#: history is re-sent each turn: measured against live OpenRouter pricing, the
+#: worst case across the 4 paid seats is 1.64 pounds at 10, 3.56 at 16 and 5.23
+#: at 20. 16 buys the work; 20 buys 4 spare turns for 1.67 pounds.
+PANEL_TOOL_ITERATIONS = 16
 # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
 # not cost a second full paid round for the 3 that worked.
 MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
@@ -522,7 +571,7 @@ def dispatch(name, model_id, route):
             # for the round, against 0.99 at 6.
             r = call_openrouter_with_tools(model_id, SYSTEM, PROMPT,
                                            tools=TOOL_SPECS, max_tokens=32768,
-                                           timeout=300, max_iterations=10)
+                                           timeout=300, max_iterations=PANEL_TOOL_ITERATIONS)
             resp = r.get("final_text", "")
             tool_log = r.get("tool_calls", [])
             # WHY THE SEAT RECORD CARRIES THIS (audit finding, 2026-09-20).
