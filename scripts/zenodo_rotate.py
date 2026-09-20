@@ -117,7 +117,19 @@ def preflight(env: pathlib.Path) -> tuple:
     Returns (original_flags, backup_path).
     """
     flags = file_flags(env)
-    backup = env.with_name(f".env.backup-{dt.datetime.now():%Y%m%d-%H%M%S}")
+    # OUTSIDE THE REPOSITORY, 2026-09-20. The first version wrote the backup
+    # beside `.env` as `.env.backup-<stamp>`. `.gitignore` covered `.env` and not
+    # its sidecars, so `git add -A` committed a file holding all 10 credentials
+    # and GitHub's push protection blocked the push over the OpenAI key it found.
+    # A file full of credentials does not belong in a working tree at all, however
+    # briefly, so it is written to a 0700 directory outside the repo.
+    # Overridable so the TESTS never write into the founder's real home. The
+    # first version of this fix had them doing exactly that.
+    vault = pathlib.Path(os.environ.get("CDSFL_ENV_BACKUP_DIR")
+                         or pathlib.Path.home() / ".config" / "cdsfl" / "env_backups")
+    vault.mkdir(parents=True, exist_ok=True)
+    os.chmod(vault, 0o700)
+    backup = vault / f"env.backup-{dt.datetime.now():%Y%m%d-%H%M%S}"
     shutil.copy2(env, backup)
     set_flags(backup, 0)              # copy2 inherits uchg; clear it or nothing can touch it
     os.chmod(backup, 0o600)

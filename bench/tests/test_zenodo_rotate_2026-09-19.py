@@ -46,12 +46,17 @@ def mod(tmp_path, monkeypatch):
     env = tmp_path / ".env"
     env.write_text(FAKE_ENV, encoding="utf-8")
     monkeypatch.setattr(m, "ENV", env)
-    return m, env
+    # THE BACKUP VAULT IS REDIRECTED INTO tmp_path. Without this the tests write
+    # credential-shaped files into the founder's real ~/.config, which the first
+    # version of the out-of-repo fix did on its very first run.
+    vault = tmp_path / "vault"
+    monkeypatch.setenv("CDSFL_ENV_BACKUP_DIR", str(vault))
+    return m, env, vault
 
 
 class TestOnlyTheTokenLineMoves:
     def test_every_other_line_is_byte_identical(self, mod, monkeypatch, capsys):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         before = env.read_text().splitlines()
         assert m.main(["--rotate"]) == 0
@@ -62,7 +67,7 @@ class TestOnlyTheTokenLineMoves:
         assert "ZENODO_TOKEN" in after[differing[0]]
 
     def test_it_keeps_the_lines_own_shape(self, mod, monkeypatch):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         m.main(["--rotate"])
         line = [ln for ln in env.read_text().splitlines() if "ZENODO_TOKEN" in ln][0]
@@ -70,7 +75,7 @@ class TestOnlyTheTokenLineMoves:
         assert line.endswith(NEW)
 
     def test_the_other_keys_survive_by_name_and_count(self, mod, monkeypatch):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         before = m.key_names(env.read_text())
         m.main(["--rotate"])
@@ -78,17 +83,17 @@ class TestOnlyTheTokenLineMoves:
             "DEEPSEEK_API_KEY", "GITHUB_TOKEN", "OPENAI_API_KEY", "ZENODO_TOKEN"]
 
     def test_a_backup_exists_before_anything_is_written(self, mod, monkeypatch):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         m.main(["--rotate"])
-        backups = list(env.parent.glob(".env.backup-*"))
+        backups = list(vault.glob("env.backup-*"))
         assert len(backups) == 1
         assert backups[0].read_text() == FAKE_ENV, "the backup is not the ORIGINAL"
 
 
 class TestItNeverEchoesTheToken:
     def test_not_the_old_value_nor_the_new_one(self, mod, monkeypatch, capsys):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         m.main(["--rotate"])
         out = capsys.readouterr().out
@@ -100,7 +105,7 @@ class TestItNeverEchoesTheToken:
         assert NEW[:4] in m.shape(NEW) and NEW[4:] not in m.shape(NEW)
 
     def test_read_only_mode_changes_nothing(self, mod, capsys):
-        m, env = mod
+        m, env, vault = mod
         before = env.read_text()
         assert m.main([]) == 0
         assert env.read_text() == before
@@ -110,7 +115,7 @@ class TestItNeverEchoesTheToken:
 class TestItCanRefuse:
     @pytest.mark.parametrize("bad", ["", "short", "has spaces in it", "tok-with-dashes!!"])
     def test_it_refuses_a_bad_token_and_writes_nothing(self, mod, monkeypatch, bad):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: bad)
         before = env.read_text()
         assert m.main(["--rotate"]) == 3
@@ -119,12 +124,12 @@ class TestItCanRefuse:
         # of the unchanged file. Requiring its absence was an artefact of the
         # ordering that destroyed a one-time token on 2026-09-19, so the property
         # held here is the one that matters -- .env did not move.
-        for b in env.parent.glob(".env.backup-*"):
+        for b in vault.glob("env.backup-*"):
             assert b.read_text() == before
 
     def test_a_disturbed_neighbour_restores_the_backup(self, mod, monkeypatch, capsys):
         """If the write ever corrupted another line, the file must come BACK."""
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         # a rotate() that also mangles an unrelated line, to prove the guard fires
         monkeypatch.setattr(m, "rotate", lambda new, text: text.replace(
@@ -134,7 +139,7 @@ class TestItCanRefuse:
         assert "backup has been restored" in capsys.readouterr().out
 
     def test_a_missing_token_line_is_not_invented(self, mod, monkeypatch):
-        m, env = mod
+        m, env, vault = mod
         env.write_text("OPENAI_API_KEY=sk-fake\n", encoding="utf-8")
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         with pytest.raises(SystemExit):
@@ -143,7 +148,7 @@ class TestItCanRefuse:
 
 class TestItIsOffline:
     def test_rotating_contacts_nothing(self, mod, monkeypatch):
-        m, env = mod
+        m, env, vault = mod
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         import socket
         def boom(*a, **k):
@@ -166,16 +171,16 @@ class TestTheImmutableFlag:
     @pytest.fixture
     def locked(self, mod):
         import stat as st
-        m, env = mod
+        m, env, vault = mod
         os.chflags(env, st.UF_IMMUTABLE)
-        yield m, env
+        yield m, env, vault
         os.chflags(env, 0)
-        for b in env.parent.glob(".env.backup-*"):
+        for b in vault.glob("env.backup-*"):
             os.chflags(b, 0)
 
     def test_it_rotates_a_locked_file_and_re_locks_it(self, locked, monkeypatch):
         import stat as st
-        m, env = locked
+        m, env, vault = locked
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         assert m.main(["--rotate"]) == 0
         assert env.read_text().count(NEW) == 1
@@ -183,17 +188,17 @@ class TestTheImmutableFlag:
 
     def test_the_backup_is_not_left_immutable(self, locked, monkeypatch):
         import stat as st
-        m, env = locked
+        m, env, vault = locked
         monkeypatch.setattr(m.getpass, "getpass", lambda *a, **k: NEW)
         m.main(["--rotate"])
-        backup = list(env.parent.glob(".env.backup-*"))[0]
+        backup = list(vault.glob("env.backup-*"))[0]
         assert not backup.stat().st_flags & st.UF_IMMUTABLE, "copy2 inherited uchg"
         assert backup.stat().st_mode & 0o777 == 0o600
 
     def test_a_failed_preparation_never_asks_for_the_token(self, mod, monkeypatch):
         """The token-burning bug, stated as a property: if preparation fails,
         getpass is NOT called, so a one-time secret cannot be destroyed."""
-        m, env = mod
+        m, env, vault = mod
         asked = []
         monkeypatch.setattr(m.getpass, "getpass",
                             lambda *a, **k: asked.append(1) or NEW)

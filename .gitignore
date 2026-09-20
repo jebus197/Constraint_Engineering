@@ -4,6 +4,13 @@
 *~
 *.pyc
 .env
+# EVERY .env sidecar, not just the file itself (2026-09-20). GitHub push
+# protection blocked a push because `.env.backup-20260919-195510` -- written by
+# the Zenodo rotation tool into the repo root and swept in by `git add -A` --
+# carried all 10 credentials in plaintext, including an OpenAI API key. `.env`
+# was ignored; its backups, its .tmp and its write-probe were not.
+.env.*
+!.env.example
 bench/results/
 PRIVATE_NOTES.md
 docs/SPEC_single_model_integration.md
