@@ -37,6 +37,22 @@ def _git(*args: str) -> str:
                           text=True).stdout
 
 
+#: THE SOURCES A CITATION MAY COME FROM. `bench/logs` is excluded because a log
+#: naming its sibling paths is not a CITATION. THE MANIFEST IS EXCLUDED FOR THE
+#: SAME REASON, AND THE OMISSION WAS THE SAME DEFECT A THIRD TIME (panel Section
+#: P, 2026-09-20): the manifest is a tracked file under `experimental_notes/`,
+#: so from the run after the first every one of its row KEYS was re-read as a
+#: NOTE citation of itself. Measured at c9e7b08: 568 of 575 rows were cited by
+#: the manifest, NOTE-labelling read 575 of 575 -- 100% by construction -- and
+#: 161 rows carried a `cited_by` the manifest had manufactured for itself. The
+#: A8 entry had already named the rule this breaks: "a classifier that
+#: reclassifies a path by being written about is measuring the writing."
+#: Excluding it changes NO row and NO state count -- 0 rows have the manifest as
+#: their only citer -- only the `cited_by` labels, which drop to 414 of 575.
+EXCLUDE = (":(exclude)bench/logs",
+           ":(exclude,glob)experimental_notes/evidence/cited_logs_manifest_*.json")
+
+
 def cited_paths(rev: str | None = None) -> dict[str, set[str]]:
     """Every bench/logs path named by a tracked file, and who names it.
 
@@ -52,7 +68,7 @@ def cited_paths(rev: str | None = None) -> dict[str, set[str]]:
     # which is the defect task A8's own entry records ("206 of 290 -- a figure
     # about the extractor"). Committed 2026-09-17 after making it a second time.
     raw = _git("grep", "-I", "-o", "-E", CITE.pattern, *([rev] if rev else []), "--",
-               ":(exclude)bench/logs", ".")
+               *EXCLUDE, ".")
     for line in raw.splitlines():
         if rev:
             line = line.removeprefix(f"{rev}:")
@@ -88,10 +104,13 @@ def disposition(path: str, tracked_paths: set[str], root: Path = REPO) -> str:
     """Exactly 1 of STATES for a cited path.
 
     REPAIRED 2026-09-17. The first version had 3 states and called anything that
-    was not a file MISSING, "never kept". Of the 335 rows it so labelled, 194
+    was not a file MISSING, "never kept". Of the 339 rows it so labelled, 197
     were directories that exist, 78 were truncated prefixes of existing paths,
-    such as `bench/logs/exp45_` in a glob, and 14 were templates. 49 were
-    absent. A label saying "never kept" about a directory that is on disk is
+    such as `bench/logs/exp45_` in a glob, and 14 were templates. 50 were
+    absent. (CORRECTED by the Section P panel 2026-09-20: this read
+    "335 ... 194 ... 49", which summed to 335 and disagreed with the manifest
+    the same commit produced. Re-running the pre-repair 3-state rule over the
+    same 575 rows gives 184 tracked, 52 local_only, 339 missing.) A label saying "never kept" about a directory that is on disk is
     the false statement the manifest exists to prevent.
 
     `directory` and `prefix` describe THIS machine, as `local_only` always has:

@@ -5,8 +5,11 @@ clone can open them, and label the rest.
 
 THE THIRD STATE IS THE ONE NOBODY HAD COUNTED. A cited path is tracked, present
 but untracked, or MISSING -- the file was never kept, so it cannot be opened on
-any machine, not merely on someone else's. Of 283 note-cited untracked paths,
-only 52 existed on disk.
+any machine, not merely on someone else's. Of 277 note-cited untracked paths,
+only 42 existed on disk. (CORRECTED 2026-09-20: this read "283 ... only 52",
+which matched neither the manifest as committed nor the manifest with the
+self-citation defect repaired. 277 and 42 are read from the repaired manifest
+by the one-liner quoted in the panel record, not typed.)
 
 This test re-derives every disposition from the repository and requires the
 committed manifest to match. A stale manifest is worse than none, because it
@@ -15,8 +18,9 @@ labels a path recoverable when it is not.
 REPAIRED 2026-09-17, AND THE FIRST VERSION SHARED THE PRODUCER'S BLIND SPOT.
 The producer called every cited path that was not a FILE "missing", and
 `test_no_row_claims_missing_when_the_file_is_present` asked the same question,
-`is_file()`, so it could not see the defect: 194 of the 335 "missing" rows were
-directories that exist, 78 prefixes of existing paths, 14 templates. The
+`is_file()`, so it could not see the defect: 197 of the 339 "missing" rows were
+directories that exist, 78 prefixes of existing paths, 14 templates. (The counts
+read 194 of 335 until the Section P panel recomputed them, 2026-09-20.) The
 producer now has 6 states and this test CALLS its `disposition` and
 `cited_paths` rather than restating them. The manifest records the commit it was
 built at, so its rows are compared with the citations at that commit exactly.
@@ -126,30 +130,10 @@ def test_no_row_claims_tracked_when_git_does_not_track_it(manifest, tracked):
 
 
 def test_no_row_claims_missing_when_the_path_is_present(manifest):
-    """`exists()`, not `is_file()`: asking only about files is how 194 existing
+    """`exists()`, not `is_file()`: asking only about files is how 197 existing
     directories came to be labelled "never kept"."""
     wrong = [p for p, r in manifest.items() if r["state"] == "missing" and (REPO / p).exists()]
     assert not wrong, f"manifest says missing, the path exists: {wrong[:8]}"
-
-
-def test_every_row_state_rederives_from_the_classifier(document, producer):
-    """PANEL ADDITION 2026-09-20 (Section P review of A8). The module docstring
-    promises that this file "re-derives every disposition ... and requires the
-    committed manifest to match", but until this test only `tracked` (both
-    directions) and the missing-vs-`exists()` direction were re-derived. A
-    manifest whose 78 `prefix` rows were flipped to "missing" -- the exact
-    false statement the 2026-09-17 repair exists to prevent, restated -- passed
-    all 16 tests, because a truncated prefix names no path that `exists()`.
-    This test closes that: every row's state must equal `disposition()` run
-    against the tracked set at the recorded commit and the tree as it stands.
-    It is deliberately disk-dependent, like the 2 tests above it: a manifest
-    the tree has drifted from is stale, and a stale manifest is worse than none.
-    """
-    at = producer.tracked(document["generated_at_commit"])
-    wrong = [(p, r["state"], producer.disposition(p, at))
-             for p, r in document["rows"].items()
-             if r["state"] != producer.disposition(p, at)]
-    assert not wrong, f"{len(wrong)} rows disagree with re-derivation: {wrong[:8]}"
 
 
 def test_the_note_cited_recoverable_files_are_readable_from_a_clone(manifest):
@@ -189,3 +173,57 @@ def test_missing_paths_are_reported_rather_than_hidden(manifest):
     """A citation to a file nobody kept must stay visible, not be quietly dropped."""
     missing = [p for p, r in manifest.items() if r["state"] == "missing"]
     assert missing, "no missing paths at all is implausible; check the extractor"
+
+
+def test_the_manifest_is_not_an_input_to_its_own_census(producer, document):
+    """THE MANIFEST MAY NOT CITE ITSELF (panel Section P, 2026-09-20).
+
+    The manifest is a tracked file under `experimental_notes/`, so every one of
+    its row KEYS is a `bench/logs/...` string in a NOTE-classified source. Until
+    `EXCLUDE` named it, the producer read them straight back in: 568 of 575 rows
+    were "cited by" the manifest, NOTE-labelling read 575 of 575 -- 100% by
+    construction -- and 161 rows carried a `cited_by` the manifest had
+    manufactured for itself. That is the rule the A8 entry already states, "a
+    classifier that reclassifies a path by being written about is measuring the
+    writing", and it is the rule `cited_paths` already applies to `bench/logs`.
+    """
+    rev = document["generated_at_commit"]
+    manifest = "experimental_notes/evidence/cited_logs_manifest_2026-09-17.json"
+    assert any("cited_logs_manifest" in x for x in producer.EXCLUDE), producer.EXCLUDE
+
+    # CONTROL: the manifest really does name these paths, so this test is not
+    # vacuous -- were it not excluded, there would be something to read back in.
+    raw = subprocess.run(["git", "grep", "-I", "-o", "-E", producer.CITE.pattern,
+                          rev, "--", manifest], cwd=REPO, capture_output=True, text=True).stdout
+    self_named = {l.split(":", 2)[2].strip().rstrip(".,);`'\"") for l in raw.splitlines()
+                  if l.count(":") >= 2}
+    assert len(self_named) > 100, f"control failed: manifest named {len(self_named)} paths"
+
+    # THE GUARD: with the manifest read back in, NOTE is true of every row by
+    # construction. It must not be.
+    derived = producer.cited_paths(rev)
+    note = {p for p, k in derived.items() if "NOTE" in k}
+    assert len(note) < len(derived), (
+        f"every one of {len(derived)} rows is NOTE-cited -- the manifest is "
+        f"being read as a source of citations to itself")
+    assert len(note) == sum(1 for r in document["rows"].values() if "NOTE" in r["cited_by"])
+
+
+def test_every_row_state_rederives_from_the_classifier(document, producer):
+    """PANEL ADDITION 2026-09-20 (Section P review of A8). The module docstring
+    promises that this file "re-derives every disposition ... and requires the
+    committed manifest to match", but until this test only `tracked` (both
+    directions) and the missing-vs-`exists()` direction were re-derived. A
+    manifest whose 78 `prefix` rows were flipped to "missing" -- the exact
+    false statement the 2026-09-17 repair exists to prevent, restated -- passed
+    all 16 tests, because a truncated prefix names no path that `exists()`.
+    This test closes that: every row's state must equal `disposition()` run
+    against the tracked set at the recorded commit and the tree as it stands.
+    It is deliberately disk-dependent, like the 2 tests above it: a manifest
+    the tree has drifted from is stale, and a stale manifest is worse than none.
+    """
+    at = producer.tracked(document["generated_at_commit"])
+    wrong = [(p, r["state"], producer.disposition(p, at))
+             for p, r in document["rows"].items()
+             if r["state"] != producer.disposition(p, at)]
+    assert not wrong, f"{len(wrong)} rows disagree with re-derivation: {wrong[:8]}"
