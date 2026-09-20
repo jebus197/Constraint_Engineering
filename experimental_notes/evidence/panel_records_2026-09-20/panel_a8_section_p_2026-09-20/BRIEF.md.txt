@@ -1,0 +1,65 @@
+# PANEL BRIEF — Section P review of task A8: the cited-logs manifest and its classifier
+
+## Section 1 — The question
+
+Task A8 is the last entry standing between this task list and a green suite, and it is not open on its merits: the founder ruled on it, the work was committed, and what remains is the Section P condition itself — no entry moves to DONE until a panel has reviewed its fix.
+
+**Your job is to decide whether the fix is sound, and to say precisely where it is not.** If it is sound, say so and say what would change your mind. If it is not, fix it.
+
+This round has **0 paid seats**. Both seats run on the Max subscription, so cost is not a reason to cut the work short.
+
+## Section 2 — What you are reviewing
+
+Three commits, in this order:
+
+- **`b8dc6fd`** — force-added 50 files under `bench/logs/` and committed `experimental_notes/evidence/cited_logs_manifest_2026-09-17.json`. **Its message says 51 and `git show --name-status b8dc6fd` lists 50.**
+- **`f22e95e`** — untracked 37 of those 50 and left 13 tracked, deleting nothing from disk, after the founder approved a reversal.
+- **`c9e7b08`** — the classifier repair. `scripts/orphan_citation_era_2026-09-17.py` previously called every cited path that was not a file "missing — never kept". `disposition()` now returns 1 of 6 states.
+
+**The files that carry it:**
+- `scripts/orphan_citation_era_2026-09-17.py` — the classifier. **Run it:** `python3 scripts/orphan_citation_era_2026-09-17.py --at c9e7b08`.
+- `experimental_notes/evidence/cited_logs_manifest_2026-09-17.json` — 575 rows, regenerated with `--at c9e7b08 --manifest`.
+- `bench/tests/test_cited_logs_manifest_2026-09-17.py` — 16 tests. **Run them:** `python3 -m pytest bench/tests/test_cited_logs_manifest_2026-09-17.py -q`.
+- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — entry A8 and Section P itself.
+
+## Section 3 — The claims to falsify
+
+Each of these is asserted in the record. Establish each by execution, or refute it.
+
+1. **The manifest reproduces byte for byte.** Regenerating at `c9e7b08` yields exactly the committed file. Check it, do not assume it.
+2. **The split of the 575 cited paths is: tracked 184; present but untracked 52; an existing directory 197; a truncated prefix of an existing path 78; a template 14; and absent from this machine 50.** Recompute. Do the 6 states sum to 575, and does each row's state match what the filesystem and git say?
+3. **The absent 50 are 8.6957% of 575, Wilson 95% [6.6580%, 11.2815%].** Recompute the proportion and the interval with 2 independent tools — statsmodels and a hand-rolled Wilson, or scipy and mpmath — and say whether the recorded interval is right. A proportion quoted without an interval is not a measurement.
+4. **All 50 are in no git ref's history.** This is the strongest claim in the entry and the most expensive to be wrong about, because it is the difference between "recoverable" and "gone".
+5. **A second, independent classifier written with the shell's `test -f`, `test -d` and `ls` agrees on all 575.** Does it? Write it yourself rather than trusting that one was written.
+6. **The guard can fail.** Removing the directory branch must fail the control that an existing directory is never labelled missing, and dropping 1 manifest row must fail the row test. Reinstate each defect and confirm the test goes red. **A guard that cannot fail measures nothing.**
+7. **The `b8dc6fd` message says 51 where the commit holds 50.** Confirm, and say whether anything downstream reads that number.
+
+## Section 4 — The harness you work under
+
+You are operating under the full CDSFL harness. That means:
+
+1. **Tools decide, not prose.** SymPy, z3, mpmath, SciPy, statsmodels and NumPy are primary. Wolfram is the SECOND falsifier, reached through the serial gate already on your PATH, used to check a result you already hold.
+2. **A failed call is NOT EVIDENCE.** An error, a timeout or a `Name::tag` message verified nothing, and the claim stays UNVERIFIED.
+3. **Cross-verify.** Every computational claim is checked with at least 2 independent tools, and every proportion carries a Wilson interval.
+4. **A number travels with the code that produced it.** A figure with no runnable producer is a claim about evidence, not evidence.
+5. **Where the mathematical model bears on your answer, use it as an instrument** — gamma, the two-sided gate, rho, severity and the S_k threshold — rather than discussing it. Say plainly if it does not bear on this question; a forced application would be worse than none.
+
+## Section 5 — Fixes, and how to deliver them
+
+A finding without a repair is half a contribution.
+
+- **Deliver each fix as a file in your sandbox repository tree**, at a real path. You are confined to your own writable copy; write there. A fix quoted as a diff in prose is not delivered.
+- **Write a falsifier for each fix and execute it.** State the command and its output.
+- Keep the existing notation and file layout rather than introducing your own.
+
+## Section 6 — Output shape
+
+For each claim above: the verdict (HOLDS / FAILS / PARTIAL / UNCHECKED), the evidence with the exact command you ran, the fix if one is needed and the falsifier that tests it, and **what would refute your own verdict**.
+
+Then state, in its own section, **where you disagree with the other seat or with CC1**. Disagreement is preserved as information and is never smoothed into consensus. A section reading "none" is not a disagreement section; if you genuinely disagree with nothing, say what evidence would have made you disagree.
+
+End with a single verdict on the entry: **A8 IS SOUND AND MAY CLOSE / A8 NEEDS THE NAMED CORRECTIONS FIRST / A8 IS NOT SOUND**.
+
+## Section 7 — Termination
+
+Do not wait on a background task. Whatever you have written when your turn ends IS your answer. A partial answer carrying executed evidence is worth everything; a holding note is worth nothing. Stop when further passes produce no new above-threshold findings — diminishing returns is the criterion, not exhaustion.

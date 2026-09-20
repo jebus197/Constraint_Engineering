@@ -1,0 +1,162 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12403,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\\\" && pwd && git log --oneline -6 && git status --porcelain | head -20\", \"description\": \"Orient in repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/jebus/CDSFL 2>/dev/null || cd .; ls; echo \\\"---\\\"; ls experimental_notes/evidence/ 2>/dev/null | head\", \"description\": \"List repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la | head -30; echo \\\"--- .git?\\\"; ls -la .git 2>&1 | head -5; echo \\\"--- find .git upward\\\"; ls -la ..; \", \"description\": \"Check for git dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c scripts/orphan_citation_era_2026-09-17.py experimental_notes/evidence/cited_logs_manifest_2026-09-17.json bench/tests/test_cited_logs_manifest_2026-09-17.py 2>&1\", \"description\": \"Check target files exist\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo/scripts/orphan_citation_era_2026-09-17.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo/bench/tests/test_cited_logs_manifest_2026-09-17.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; which git wolframscript; echo \\\"--- git ver\\\"; git --version; echo \\\"--- any .git under tmp root\\\"; find /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22 -maxdepth 3 -name '.git' 2>/dev/null; echo \\\"--- scratch\\\"; ls .cdsfl_tmp .scratch 2>&1 | head -30; echo \\\"--- bench/"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; python3 - <<'PY'\\nimport json, collections\\nd=json.load(open(\\\"experimental_notes/evidence/cited_logs_manifest_2026-09-17.json\\\"))\\nprint(\\\"keys:\\\", list(d))\\nprint(\\\"commit:\\\", d[\\\"generated_at_commit\\\"])\\nprint(\\\"states:\\\", d[\\\"states\\\"])\\nrows=d[\\\"rows\\\"]\\nprint(\\\"nrows:\\\", len(rows))\\nc=collecti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; python3 - <<'PY'\\nimport numpy as np, scipy.stats as st\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom mpmath import mp, mpf, sqrt as msqrt\\nmp.dps=40\\nk,n=50,575\\nprint(\\\"A statsmodels wilson:\\\", [f\\\"{100*x:.6f}\\\" for x in proportion_confint(k,n,method=\\\"wilson\\\")])\\nz=st.norm.p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; ls -d $R/.git 2>&1; git -C $R log --oneline -3 2>&1 | head -5; echo \\\"=== target commits ===\\\"; for c in b8dc6fd f22e95e c9e7b08; do echo \\\"-- $c\\\"; git -C $R log -1 --format='%H%n%s%n%b' $c 2>&1 | head -12; done\", \"description\": \"Check read access to real repo git history\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; for c in b8dc6fd f22e95e c9e7b08; do echo \\\"===== $c =====\\\"; git -C $R show --name-status --format='' $c | awk '{print $1}' | sort | uniq -c; echo \\\"  total files:\\\"; git -C $R show --name-status --format='' $c | grep -c .; echo \\\"  bench/logs entries:\\\"; git -C $R show --name-status --format='' $c | grep -c 'bench/log"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; echo \\\"=== commits touching the classifier ===\\\"; git -C $R log --all --oneline -- scripts/orphan_citation_era_2026-09-17.py | head -20; echo \\\"=== commits touching the manifest ===\\\"; git -C $R log --all --oneline -- experimental_notes/evidence/cited_logs_manifest_2026-09-17.json | head -20; echo \\\"=== commits touching"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo\\necho \\\"=== is 9c5eea3 an ancestor of HEAD? ===\\\"; git -C $R merge-base --is-ancestor 9c5eea3 HEAD && echo YES || echo NO\\necho \\\"=== order of commits ===\\\"; git -C $R log --oneline --ancestry-path b8dc6fd..HEAD | tail -8\\necho \\\"=== sa"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering && time python3 scripts/orphan_citation_era_2026-09-17.py --at c9e7b08 --manifest /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo/.scratch/regen_manifest.json 2>&1 | tail -40\", \"description\": \"Regenerate manifest at c9e7b08 in real repo\", \"timeout\": 540000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\necho \\\"=== CLAIM 1: byte-for-byte ===\\\"\\ncmp .scratch/regen_manifest.json experimental_notes/evidence/cited_logs_manifest_2026-09-17.json && echo \\\"IDENTICAL\\\" || echo \\\"DIFFERS\\\"\\nmd5 -q .scratch/regen_manifest.json experimental_notes/evidence/cited_logs_manifest_2026-09-17.json\\nwc -c .scrat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering && wolframscript -code 'n=575;k=50;p=N[k/n];z=Quantile[NormalDistribution[0,1],0.975];d=1+z^2/n;c=(p+z^2/(2n))/d;h=z*Sqrt[p(1-p)/n+z^2/(4n^2)]/d;Print[{100*p,100*(c-h),100*(c+h)}//N//InputForm]' 2>&1 | head -20\", \"description\": \"Wolfram second falsifier on Wilson interval\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\ngit -C $R ls-tree -r --name-only c9e7b08 > $S/.scratch/tracked_at_c9e7b08.txt\\nwc -l < $S/.scratch/tracked_at_c9e7b08.txt\\ncat > $S/scripts/a8_shell_crossverify_2026-09-20.sh <<'EOF'\\n#!/bin/bash\\n# A8 CROSS-VERIFICATION, 2026-09-20, p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\npython3 -c 'import json;d=json.load(open(\\\"'$S'/experimental_notes/evidence/cited_logs_manifest_2026-09-17.json\\\"))[\\\"rows\\\"];print(\\\"\\\\n\\\".join(p for p,r in d.items() if r[\\\"state\\\"]==\\\"missing\\\"))' > $S/.scratch/missing50.txt\\nwc -l "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\necho \\\"=== POSITIVE CONTROL: the 37 paths f22e95e DELETED from tracking ===\\\"\\ngit -C $R show --name-status --format='' f22e95e | awk '$1==\\\"D\\\"{print $2}' > $S/.scratch/deleted37.txt\\nwc -l < $S/.scratch/deleted37.txt\\necho \\\"-- are t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\necho \\\"=== the 50 'missing' paths ===\\\"; cat $S/.scratch/missing50.txt\\necho \\\"=== cited_by breakdown of the 50 ===\\\"\\npython3 -c '\\nimport json,collections\\nd=json.load(open(\\\"'$S'/experimental_notes/evidence/cited_logs_manifest_2026-"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\ncd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22\\ngit clone --quiet --no-checkout --local --shared \\\"$R\\\" gitseed 2>&1 | tail -2\\nmv gitseed/.git \\\"$S/.git\\\" && rmdir gitseed\\ngit -C \\\"$S\\\" reset --quiet"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo\\necho \\\"=== why did the object sweep miss them? ===\\\"\\ngit -C $R rev-parse --is-shallow-repository\\nhead -3 $S/.scratch/deleted37.txt\\np=$(head -1 $S/.scratch/deleted37.txt); echo \\\"probe: $p\\\"\\ngit -C $R rev-list --objects --all | grep"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 -m pytest bench/tests/test_cited_logs_manifest_2026-09-17.py -q 2>&1 | tail -15\", \"description\": \"Baseline: run the 16 A8 tests\", \"timeout\": 540000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo\\necho \\\"=== merge commits (method C blind spot) ===\\\"; git -C $R rev-list --all --merges --count\\necho\\necho \\\"=== who cites each of the 50 'missing' paths? ===\\\"\\nwhile IFS= read -r p; do\\n  src=$(git -C $R grep -I -l -F -- \\\"$p\\\" c9e7"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\necho \\\"############ MUTATION 1: delete the directory branch ############\\\"\\npython3 - <<'PY'\\nimport re,pathlib\\nf=pathlib.Path(\\\"scripts/orphan_citation_era_2026-09-17.py\\\"); s=f.read_text()\\nnew=s.replace('    if p.is_dir():\\\\n        return \\\"directory\\\"\\\\n','')\\nassert new!=s, \\\"directory "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\npython3 - <<'PY'\\nimport subprocess, re, collections, json\\nREPO=\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\"\\nCITE=re.compile(r\\\"bench/logs/[A-Za-z0-9_][A-Za-z0-9_./-]*\\\")\\nraw=subprocess.run([\\\"git\\\",\\\"grep\\\",\\\"-I\\\",\\\"-o\\\",\\\"-E\\\",CITE.pattern,\\\"c9e7b08\\\",\\\"--\\\",\\n      "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo\\necho \\\"=== REAL REPO INTEGRITY (must be clean of my edits) ===\\\"\\ngit -C $R status --porcelain scripts/orphan_citation_era_2026-09-17.py experimental_notes/evidence/cited_logs_manifest_2026-09-17.py experimental_notes/evidence/cited_lo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\necho \\\"=== CLAIM 7: does anything downstream read b8dc6fd's '51'? ===\\\"\\ngit -C $R show -s --format=%B b8dc6fd | grep -nE '51|567|220|335|2\\\\.15'\\necho \\\"--- grep the tracked corpus for the 51 figure tied to A8 ---\\\"\\ngit -C $R "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\necho \\\"=== conftest: why the real path showed ===\\\"; grep -nE 'rootdir|chdir|sys.path|REPO|resolve' bench/tests/conftest.py | head -12\\necho \\\"=== prove which producer file the test imports ===\\\"\\npython3 -c \\\"\\nimport importlib"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\npython3 - <<'PY'\\nimport subprocess, re, collections, json\\nREPO=\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\"\\nCITE=re.compile(r\\\"bench/logs/[A-Za-z0-9_][A-Za-z0-9_./-]*\\\")\\nraw=subprocess.run([\\\"git\\\",\\\"grep\\\",\\\"-I\\\",\\\"-o\\\",\\\"-E\\\",CITE.pattern,\\\"c9e7b08\\\",\\\"--\\\",\\n      "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\npython3 - <<'PY'\\nimport pathlib\\nf=pathlib.Path(\\\"scripts/orphan_citation_era_2026-09-17.py\\\"); s=f.read_text()\\nold='''    raw = _git(\\\"grep\\\", \\\"-I\\\", \\\"-o\\\", \\\"-E\\\", CITE.pattern, *([rev] if rev else []), \\\"--\\\",\\n               \\\":(exclude)bench/logs\\\", \\\".\\\")'''\\nnew='''    raw = _git(\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\ncat >> bench/tests/test_cited_logs_manifest_2026-09-17.py <<'EOF'\\n\\n\\ndef test_the_manifest_is_not_an_input_to_its_own_census(producer, document):\\n    \\\"\\\"\\\"THE MANIFEST MAY NOT CITE ITSELF (panel Section P, 2026-09-20).\\n\\n    The manifest is a tracked file under `experimental_notes/`, so e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering\\necho \\\"=== is that modification mine? ===\\\"; ls -l --time-style=full-iso $R/experimental_notes/CDSFL_Agent_Operational_Plan.md 2>/dev/null || stat -f '%Sm %N' -t '%F %T' $R/experimental_notes/CDSFL_Agent_Operational_Plan.md\\necho \\\"session started ~03:45; my first command ~03:46\\\"\\ngit -C $R diff --stat experimental_not"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"R=/Users/georgejackson/Developer_Projects/Constraint_Engineering; S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\necho \\\"=== was the classifier at c9e7b08 the 3-state (pre-repair) version? ===\\\"\\ngit show c9e7b08:scripts/orphan_citation_era_2026-09-17.py | grep -nE 'STATES =|return \\\"(tracked|local_only|directory|template|prefix|missing)\\\"'"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\npython3 -c '\\nimport json\\nm=json.load(open(\\\"experimental_notes/evidence/cited_logs_manifest_2026-09-17.json\\\"))[\\\"rows\\\"]\\nnu=[p for p,r in m.items() if \\\"NOTE\\\" in r[\\\"cited_by\\\"] and r[\\\"state\\\"]!=\\\"tracked\\\"]\\nprint(\\\"note-cited untracked (corrected manifest):\\\",len(nu),\\\"of which local_o"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"S=/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo; cd $S\\npython3 - <<'PY'\\nimport pathlib\\nt=pathlib.Path(\\\"bench/tests/test_cited_logs_manifest_2026-09-17.py\\\"); s=t.read_text()\\ns=s.replace('''any machine, not merely on someone else's. Of 230 note-cited untracked paths,\\nonly 52 existed on disk. (CORRECTED 2026-09-20: this read 283, which matched\\"
+    }
+  ],
+  "n_tool_calls": 36,
+  "elapsed_s": 814.8,
+  "response": "## Section P review \u2014 task A8\n\nSandbox: `/private/var/folders/cc/.../cdsfl_panel_d5wedc22/repo`. It arrived without a `.git`, so I made it a real repo sharing the original object store read-only (`git clone --no-checkout --local --shared` \u2192 `reset --mixed HEAD`; 8,843 files tracked, 0 modified). The three A8 artefacts are byte-identical to the canonical HEAD and to `9c5eea3`, so the sandbox holds the artefact under review. I verified after every mutation that the canonical tree was untouched.\n\n**One honest note on the canonical tree:** a full `git status` at 03:54 showed ` M experimental_notes/CDSFL_Agent_Operational_Plan.md`, a +20-line append. I made no write outside my sandbox, and the three A8 artefacts are byte-identical to HEAD (`git show HEAD:<f> | cmp - <f>`, all three clean). The append is the running session log, not mine \u2014 but its mtime falls inside my window, so I state it rather than claim certainty.\n\n---\n\n### Claim 1 \u2014 the manifest reproduces byte for byte \u2014 **HOLDS**\n\n```\npython3 scripts/orphan_citation_era_2026-09-17.py --at c9e7b08 --manifest .scratch/regen_manifest.json\ncmp .scratch/regen_manifest.json experimental_notes/evidence/cited_logs_manifest_2026-09-17.json\n\u2192 IDENTICAL   md5 0deae2a9fe95eb7d0fa462659f99ac2a (both)   83,648 bytes (both)\n```\n\n**Named scope limit, not a defect.** The pin makes the *citation set* and the *tracked set* reproducible; it does not make the **states** reproducible. `local_only` is defined as *on disk \u2227 not in git* \u2014 so those 52 rows (9.04%) cannot be reproduced from a clone by construction, and `directory`/`prefix`/`missing` read the working tree too. \"Reproduces byte for byte\" is true **on this machine**; it is not a from-git property, and the entry should not be read as claiming one.\n\n*What would refute me:* a clone-only regeneration producing the same bytes.\n\n### Claim 2 \u2014 the 6-state split \u2014 **HOLDS**\n\nThree independent routes agree: the producer's own run, the committed JSON, and a shell classifier I wrote.\n\n```\ntracked 184 \u00b7 local_only 52 \u00b7 directory 197 \u00b7 template 14 \u00b7 prefix 78 \u00b7 missing 50 = 575\n```\n\n### Claim 3 \u2014 8.6957%, Wilson [6.6580%, 11.2815%] \u2014 **HOLDS**\n\nFour tools, 50/575:\n\n| tool | point | lower | upper |\n|---|---|---|---|\n| statsmodels `proportion_confint` | 8.695652 | 6.658022 | 11.281511 |\n| scipy `norm.ppf` + hand-rolled score interval | \u2014 | 6.658022 | 11.281511 |\n| mpmath (`erfinv`, 40 dps) | \u2014 | 6.6580223 | 11.281511 |\n| Wolfram Language (local Wolfram Engine, `wolframscript`) | 8.695652173913043 | 6.658022335673077 | 11.281511406822855 |\n\nThe Wolfram call computed (exit 0, no `Name::tag`, no `$Failed`), so it counts as the second falsifier. The recorded 4-dp figures are correct.\n\n### Claim 4 \u2014 all 50 in no git ref's history \u2014 **HOLDS, on two validated methods; a third was discarded**\n\nThis is the claim the entry itself calls the most expensive to be wrong about, so I ran a **positive control** on each method: the 37 paths `f22e95e` deleted from tracking are known-in-history and known-on-disk.\n\n| method | control (must be 37/37) | the 50 |\n|---|---|---|\n| A \u2014 `git log --all --format=%h -1 -- <path>` (what the producer does) | **37/37** | **0/50** |\n| C \u2014 union of every path any commit touched | **37/37** | **0/50** |\n| B \u2014 `git rev-list --objects --all` name sweep | **1/37** \u274c | 0/50 \u2014 **discarded** |\n\nMethod B returned the right answer for the wrong reason: it is 97.3% false-negative on its own control, so its zero is worthless and I do not count it. The claim stands on A and C. Residual: the repo has 6 merge commits, a theoretical blind spot for path-limited history walks; both methods agree, so I do not treat it as open.\n\n**Interpretive caveat the entry should carry.** \"Absent, and in no ref's history\" reads as *lost evidence*. It is largely not. Of the 50: 7 are `__pycache__/*.pyc`; at least 11 are deliberate negative-test fixtures \u2014 `bench/logs/there-is-no-such-round/nothing.json` (cited by `test_cited_evidence_is_recoverable_2026-09-11.py`), `x`, `x.json`, `x/y.json`, `run/x.json`, `sim/round_00.json`, `simulated_run_x/gemini{,-sim}/round_00.json`, `launcher_transcripts/no_date_here.log` \u2014 paths whose whole job is to not exist; and 3 are the Exp 56 logs the entry already records as \"citations to a future artefact\". The arithmetic is right; the population is a mixture, and the founder's backup question (item 12(g)) is about a strict subset of it.\n\n### Claim 5 \u2014 an independent shell classifier agrees on all 575 \u2014 **HOLDS**\n\nI wrote one rather than trusting that one was written. Delivered at `scripts/a8_shell_crossverify_2026-09-20.sh` \u2014 `test -f`, `test -d`, `ls`, `grep -Fxq` only, sharing no code with the producer, reproducing `disposition()`'s branch order.\n\n```\nbash scripts/a8_shell_crossverify_2026-09-20.sh \"$S\" .scratch/tracked_at_c9e7b08.txt <manifest>\n\u2192 197 directory \u00b7 184 tracked \u00b7 78 prefix \u00b7 52 local_only \u00b7 50 missing \u00b7 14 template\n\u2192 total: 575   DISAGREEMENTS: 0 of 575   EXIT=0\n```\n\n### Claim 6 \u2014 the guard can fail \u2014 **HOLDS**\n\nBaseline `16 passed in 1.22s`. Both named defects reinstated in the sandbox, each red on exactly the named test, each restored green:\n\n| mutation | result |\n|---|---|\n| delete the `p.is_dir()` branch | `TestDisposition::test_an_existing_directory_is_never_missing` **FAILED** (`- directory / + prefix`), 1 failed 15 passed |\n| drop 1 manifest row | `test_the_rows_are_exactly_the_citations_at_the_named_commit` **FAILED**, 1 failed 15 passed |\n\n### Claim 7 \u2014 `b8dc6fd` says 51, holds 50 \u2014 **HOLDS, and nothing downstream reads it**\n\nMessage line 6: *\"51 note-cited files that existed on disk are now tracked\"*. `git show --name-status b8dc6fd` \u2192 56 entries, **50** under `bench/logs`. The same message is stale on four further figures (567 paths / 220 tracked / 12 untracked / 335 missing, vs the committed 575 / 184 / 52 / 339). A `git grep` at HEAD for those figures returns nothing \u2014 the only near-hit was the substring `51 files` inside `7351 files`. Commit messages are immutable; **no live document repeats them**, so this is recorded, not load-bearing.\n\n---\n\n## The material finding: the manifest is an input to its own census\n\n**The manifest is a tracked file under `experimental_notes/`, so from the run after the first, every one of its 575 row keys was re-read as a NOTE citation of itself.** Measured at `c9e7b08`:\n\n- **568 of 575** rows are \"cited by\" the manifest.\n- **NOTE-labelling reads 575 of 575 \u2014 100% by construction.** That is why the producer prints `cited by a NOTE and untracked: 391/575` identically to its overall untracked line.\n- **161 rows (28.0%)** carry a `cited_by` the manifest manufactured for itself.\n\nThe producer's own comment (lines 48\u201353) states the rule this breaks \u2014 *\"a log file naming its own sibling paths is not a CITATION\"* \u2014 and the A8 entry stated it again on 2026-09-11: *\"a classifier that reclassifies a path by being written about is measuring the writing.\"* This is that defect a third time, in the one file guaranteed to name every path in the corpus. It is \u00a710 category 3, verification-integrity corruption: the founder's ruling keys on the NOTE population, and `test_the_note_cited_recoverable_files_are_readable_from_a_clone` gates on `\"NOTE\" in cited_by`, a predicate now true for every row, so it cannot discriminate. It is also a ratchet \u2014 a path can never leave the census once entered, even if its last genuine citation is deleted.\n\n**Fix delivered** (`scripts/orphan_citation_era_2026-09-17.py`): the pathspec becomes a named `EXCLUDE` constant adding `:(exclude,glob)experimental_notes/evidence/cited_logs_manifest_*.json`. It is surgical \u2014 **0 rows vanish, 0 of 575 states change**; only `cited_by` moves, NOTE 575 \u2192 414. Every figure in Claims 2, 3 and 4 is preserved exactly.\n\n**Falsifier delivered** \u2014 a 17th test, `test_the_manifest_is_not_an_input_to_its_own_census`, with a non-vacuity control (the manifest really does name >100 paths, so there is something to exclude) and the guard (NOTE must not be true of every row).\n\n```\npython3 -m pytest bench/tests/test_cited_logs_manifest_2026-09-17.py -q   \u2192 17 passed\n# MUTATION 3: revert EXCLUDE to (\":(exclude)bench/logs\",)\n\u2192 FAILED ...::test_the_manifest_is_not_an_input_to_its_own_census\n  FAILED ...::test_the_rows_are_exactly_the_citations_at_the_named_commit\n  2 failed, 15 passed\n# restored \u2192 17 passed; shell cross-verifier \u2192 0 of 575 disagreements\n# regenerated manifest \u2192 cmp IDENTICAL\n```\n\n*What would refute me:* evidence that `experimental_notes/evidence/` is intended as a citation source on equal footing with prose notes. I think not \u2014 but note the same argument extends to `experimental_notes/evidence/panel_records_*/**.tools.json` and `bench/logs_quarantine/`, which are transcripts and quarantined logs. **192 of 575 rows (33.4%) have no citer outside {manifest, panel transcripts, quarantined logs}.** I did **not** exclude those: unlike the manifest, that is a policy call on what counts as a citation, and it would move the row set and every state count. It is the founder's to rule, and I flag it rather than take it.\n\n## Second finding: the repair's own docstrings are wrong by 4\n\nThe producer docstring says *\"Of the 335 rows it so labelled, 194 were directories \u2026 14 templates. 49 were absent.\"* Re-running the pre-repair 3-state rule over the same 575:\n\n```\npre-repair: {tracked 184, local_only 52, missing 339}\nthe repair splits those 339 as: directory 197 \u00b7 prefix 78 \u00b7 template 14 \u00b7 missing 50  (sum 339)\nDOCSTRING: 335 = 194 + 78 + 14 + 49        MEASURED: 339 = 197 + 78 + 14 + 50\n```\n\nInternally consistent, externally wrong \u2014 it disagrees with the manifest the same commit produced. The test file repeats it twice (`194 of the 335`, `194 existing`) and adds a third stale figure, *\"Of 283 note-cited untracked paths, only 52 existed on disk\"* (measured: 277 and 42). All four corrected in place, additively, each marked with its correction date. `17 passed`.\n\n**I committed this defect myself, mid-review.** I typed 230/52 into that docstring from inference rather than measurement, then measured 277/42 and corrected it. Recorded because the standard is symmetric.\n\n## Where I disagree with the panel brief\n\n**Section 2's third bullet is wrong: `c9e7b08` is not the classifier repair.** It adds 3 files, touches no A8 artefact, and its subject is *\"panel: brief for Question 9, the 34 engineering entries\"*. `git show c9e7b08:scripts/orphan_citation_era_2026-09-17.py` has no `STATES` constant \u2014 it is the **pre-repair 3-state version**. The repair is **`9c5eea3`**, *\"fix: A8's manifest called 197 existing directories 'never kept'; 6 states, pinned to a commit\"*. `c9e7b08` is the commit the manifest is *pinned to*, not the commit that repaired it \u2014 and the task-list entry A8 says exactly that and is **correct**. The brief conflated the two. `f22e95e` likewise carries a subject about entry-body boundaries, but does hold the 37 D / 13 A the brief describes, so that bullet is substantively right.\n\nI have no other seat's output to disagree with. What would have made me disagree with a seat: any verdict on Claim 4 resting on a history search with no positive control \u2014 my method B returned the correct answer while being 97.3% blind, and a seat quoting it as corroboration would have been quoting noise.\n\n## Verdict\n\n**A8 NEEDS THE NAMED CORRECTIONS FIRST.**\n\nAll seven claims hold as stated, and the figures in the entry are correct \u2014 I could not break any of them. But the producer reads its own manifest as a citation source, which makes the NOTE population 100% true by construction and manufactures 161 of 575 `cited_by` labels; and the repair's docstrings misreport its own headline arithmetic in four places. Both are fixed, wired to callers, and covered by an executed falsifier in my sandbox tree:\n\n- `scripts/orphan_citation_era_2026-09-17.py` \u2014 `EXCLUDE`, docstring\n- `bench/tests/test_cited_logs_manifest_2026-09-17.py` \u2014 17th test, docstrings\n- `experimental_notes/evidence/cited_logs_manifest_2026-09-17.json` \u2014 regenerated\n- `scripts/a8_shell_crossverify_2026-09-20.sh` \u2014 new, independent\n\nApply those and A8 may close. The brief's mis-attribution of `c9e7b08` should be corrected in the panel record; the entry itself needs no change on that point. The open policy question \u2014 whether panel transcripts and quarantined logs count as citations, worth 192 of 575 rows \u2014 is the founder's, and I have left it untouched.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_d5wedc22/repo",
+      "built": false
+    }
+  ]
+}

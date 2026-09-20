@@ -51,8 +51,15 @@ def _declared(arm):
 
 
 def _cfg(models):
+    """A config carrying a declaration that CAME FROM A FILE, which these did.
+
+    `_declared` reads the arm's JSON, so `models_were_declared` is True by
+    construction here. Setting the list without the flag modelled a config
+    nobody builds and hid the very exposure this file exists to watch.
+    """
     c = RunnerConfig(test_article="x")
     c.models = list(models)
+    c.models_were_declared = True
     return c
 
 
@@ -79,7 +86,20 @@ def test_the_arm_reaches_exactly_what_it_declares_today(arm):
 #: starts passing -- because the config was reordered, or the default changed --
 #: the suite goes RED and this marker must be removed deliberately. A comment
 #: would rot; an xfail cannot.
-EXPOSED_PENDING_FOUNDER_RULING = {"d9_multi_model_panel.json"}
+#: EMPTIED 2026-09-20, DELIBERATELY, WHICH IS WHAT `strict=True` DEMANDS.
+#:
+#: The exposure is closed, and NOT by the fix that needed a founder ruling. Both
+#: panel seats proposed reordering the frozen pre-registration so list-equality
+#: breaks, and both said that needs his sign-off. `RunnerConfig` now carries
+#: `models_were_declared`, set at ingestion whenever a config FILE names the
+#: seats, and `_declared_models` honours it. A key present in the file is a
+#: declaration whatever it happens to equal, so the arm binds to its 5 seats
+#: against a 6-seat roster with the frozen file untouched and no ruling needed.
+#:
+#: The old heuristic still applies where it belongs: a config carrying NO
+#: `models` key still gets False and still falls back to the roster, which is
+#: the stale-default case the heuristic was written for.
+EXPOSED_PENDING_FOUNDER_RULING: set = set()
 
 
 def _maybe_xfail(arm):
@@ -120,9 +140,13 @@ def test_it_would_still_bind_if_a_sixth_seat_joined(arm):
 def test_at_least_one_arm_is_currently_exposed_so_this_file_is_not_vacuous():
     """Records the state that motivated the file.
 
-    If this ever fails, the exposure was closed — by a config reorder or by a
-    change to the default — and the sibling test above becomes the only guard
-    needed. Update this to assert the new state rather than deleting it."""
+    THE EXPOSURE IS CLOSED AS OF 2026-09-20, and this test still passes because
+    it measures the DECLARATION, which is unchanged: `d9_multi_model_panel.json`
+    is still byte-equal to the default and the frozen file was never touched.
+    What changed is that equality no longer decides. `RunnerConfig
+    .models_were_declared` records whether a file named the seats, so the arm
+    binds regardless. This test therefore now records a state that is no longer
+    an exposure, and the sibling test above is the live guard."""
     default = _runner_config_models_default()
     equal = [a.name for a in ARMS if _declared(a) == default]
     assert equal == ["d9_multi_model_panel.json"], equal

@@ -1209,6 +1209,26 @@ class RunnerConfig:
     models: List[str] = field(
         default_factory=lambda: ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"]
     )
+    #: TRUE when a CONFIG FILE named the seats; FALSE when this object fell back
+    #: to the default above.
+    #:
+    #: THE SENTINEL `_declared_models` SAYS IT LACKS, added 2026-09-20. Its
+    #: docstring records the limit exactly: "An arm that declares exactly the 5
+    #: default labels is byte-identical to one that declared nothing, and is
+    #: read as the latter. No sentinel distinguishes them at this layer." That
+    #: went live the day Fable joined the orchestrator roster: the FROZEN 5-seat
+    #: arm `d9_multi_model_panel.json` declares exactly those 5 labels, so it
+    #: silently became a 6-seat arm with `post_convergence_sweep_rounds: 2`
+    #: iterating every one of them. The commit that added Fable asserted the
+    #: opposite -- "no existing config names Fable, so nothing already designed
+    #: changes composition" -- and that claim is WITHDRAWN: it was false when
+    #: written. Caught twice independently, by the guard written for this exact
+    #: day and by an adversarial audit of the same commits.
+    #:
+    #: A key present in the file is a DECLARATION, whatever it happens to equal.
+    #: That is provenance the filter could not otherwise recover, and recording
+    #: it needs no edit to any frozen pre-registration.
+    models_were_declared: bool = False
 
     # Naming
     experiment_name: str = ""
@@ -1582,6 +1602,9 @@ class RunnerConfig:
         if "take_up_slack_enabled" in d and "routing_enabled" not in d:
             d = {**d, "routing_enabled": d["take_up_slack_enabled"]}
         kwargs = {k: v for k, v in d.items() if k in valid}
+        # A key present in the FILE is a declaration, whatever it equals.
+        if d.get("models"):
+            kwargs["models_were_declared"] = True
         # Capture shadow cell config from underscore-prefixed sections
         shadow = {}
         if "_macrophage" in d:
@@ -5756,7 +5779,9 @@ def _declared_models(exp_config, cfg):
     roster = list(getattr(exp_config, "models", None) or [])
     declared = [str(m).strip() for m in (getattr(cfg, "models", None) or [])
                 if str(m).strip()]
-    if not declared or declared == list(_runner_config_models_default()):
+    explicitly = bool(getattr(cfg, "models_were_declared", False))
+    if not declared or (not explicitly
+                        and declared == list(_runner_config_models_default())):
         # No declaration is not the same as declaring nothing: an arm that names
         # no models -- or that carries the stale hardcoded default untouched --
         # is asking for the roster it was launched with.

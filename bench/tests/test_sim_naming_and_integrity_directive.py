@@ -288,6 +288,69 @@ def _strip_quoted_prose(data: bytes) -> bytes:
     return text.encode("utf-8", errors="replace")
 
 
+
+#: Seat-record routes that only a REAL dispatch produces.
+_REAL_ROUTES = {"claude_cli", "openrouter", "deepseek", "google", "codex_exec"}
+
+
+def _round_is_demonstrably_real(round_dir: Path) -> bool:
+    """Does this round's OWN record prove a real model answered in it?
+
+    Evidence, not assumption: a seat record carries `route` and `model`, and a
+    simulated seat carries a SIM-suffixed label by the 2026-08-08 ruling this
+    file enforces. A round holding at least 1 seat record with a real route and
+    an unsuffixed real model id was a real dispatch.
+    """
+    for record in sorted(round_dir.glob("*.json")):
+        if record.name.endswith(".tools.json"):
+            continue
+        try:
+            blob = json.loads(record.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(blob, dict):
+            continue
+        route = str(blob.get("route", "")).strip()
+        model = str(blob.get("model", "")).strip()
+        if route in _REAL_ROUTES and model and "-sim" not in model.lower():
+            return True
+    return False
+
+
+def _is_harvest_of_a_demonstrably_real_round(path: Path) -> bool:
+    """A seat's harvested working files are the REVIEWER'S OWN MATERIAL.
+
+    THE FALSE POSITIVE, 2026-09-20, and it is this file's own recorded class one
+    level deeper. `_strip_quoted_prose` already exists because on 2026-08-30 the
+    REAL CC2's tool log was classified simulated -- it had grepped for `CC2-SIM`,
+    so the token appeared in its own command -- and the filename `cc2.tools.json`
+    was then read as a bare vendor name. The docstring there states the
+    principle: a real panel that DISCUSSES simulated labels must not be
+    reclassified as a simulated run, "or every future review brief on this
+    subject turns the guard red and the repair is an exclusion list -- i.e. a
+    dead guard, which is the outcome this file exists to prevent."
+
+    The 2026-09-20 round reproduced it exactly. Both seats swept the repository
+    to answer a git-history question, leaving `.scratch/allpaths.txt` and
+    siblings -- listings of every path in this repository, which necessarily
+    include files whose NAMES carry `-SIM`, because the codebase implements
+    simulated labels. Content-marked simulated, the seat directory `cc2` then
+    read as a bare vendor name: 39 hits, all of them the real cc2.
+
+    THIS IS A SCOPE FIX AND NOT A WEAKENING, AND IT IS CONDITIONED ON EVIDENCE.
+    The exemption applies only under a round whose OWN seat records prove a real
+    model answered. A simulated round harvests to the same layout and is NOT
+    exempt, because its seat records carry SIM-suffixed labels -- which is the
+    property the 2026-08-08 ruling exists to guarantee, used here as the
+    discriminator rather than bypassed.
+    """
+    parts = path.parts
+    if "sandbox_harvest" not in parts:
+        return False
+    round_dir = Path(*parts[:parts.index("sandbox_harvest")])
+    return _round_is_demonstrably_real(round_dir)
+
+
 def content_marks_simulated(data: bytes) -> bool:
     if not any(tok in data for tok in _CONTENT_PREFILTER):
         return False
@@ -602,6 +665,8 @@ def survey_artefacts() -> Survey:
             data = path.read_bytes()
         except OSError as exc:
             unreadable.append(f"{relative}: {type(exc).__name__}: {exc}")
+            return
+        if _is_harvest_of_a_demonstrably_real_round(path):
             return
         if name_marks_simulated(relative) or content_marks_simulated(data):
             simulated.append((path, relative, data))
@@ -993,3 +1058,59 @@ class TestAReviewerQuotingSimLabelsIsNotASimulatedArtefact:
             f = REPO_ROOT / rel
             if f.is_file():
                 assert content_marks_simulated(f.read_bytes()), rel
+
+
+class TestTheHarvestExemptionDiscriminates:
+    """The 2026-09-20 scope fix, driven both ways.
+
+    An exemption that applied to every harvest would be a hole in the one guard
+    this project has against a simulated result reading as a real one. It is
+    conditioned on the round's OWN seat records, and these tests require it to
+    say yes to a real round, no to a simulated one, and no when it cannot tell.
+    """
+
+    @staticmethod
+    def _round(tmp_path, name, record):
+        import json as _json
+        r = tmp_path / name
+        (r / "sandbox_harvest" / "cc2" / "attempt-1").mkdir(parents=True)
+        if record is not None:
+            (r / "cc2.json").write_text(_json.dumps(record), encoding="utf-8")
+        f = r / "sandbox_harvest" / "cc2" / "attempt-1" / "notes.txt"
+        f.write_text("a repository path listing mentioning CC2-SIM\n",
+                     encoding="utf-8")
+        return f
+
+    def test_a_real_round_is_exempt(self, tmp_path):
+        f = self._round(tmp_path, "panel_real",
+                        {"model": "cc2", "route": "claude_cli", "ok": True})
+        assert _is_harvest_of_a_demonstrably_real_round(f) is True
+
+    def test_a_SIMULATED_round_is_NOT_exempt(self, tmp_path):
+        """The hole this must not have. A simulated round harvests to the same
+        layout, and its seat records carry the SIM suffix the 2026-08-08 ruling
+        mandates -- which is used here as the discriminator rather than
+        bypassed."""
+        f = self._round(tmp_path, "panel_sim",
+                        {"model": "CC2-SIM", "route": "simulated", "ok": True})
+        assert _is_harvest_of_a_demonstrably_real_round(f) is False
+
+    def test_a_round_with_no_seat_record_is_NOT_exempt(self, tmp_path):
+        """Fails CLOSED. Unknown provenance is not evidence of a real run."""
+        f = self._round(tmp_path, "panel_unknown", None)
+        assert _is_harvest_of_a_demonstrably_real_round(f) is False
+
+    def test_a_path_outside_a_harvest_is_never_exempt(self, tmp_path):
+        d = tmp_path / "panel_real"
+        d.mkdir()
+        (d / "cc2.json").write_text('{"model": "cc2", "route": "claude_cli"}',
+                                    encoding="utf-8")
+        other = d / "somefile.json"
+        other.write_text("CC2-SIM", encoding="utf-8")
+        assert _is_harvest_of_a_demonstrably_real_round(other) is False
+
+    def test_an_unreadable_seat_record_does_not_grant_the_exemption(self, tmp_path):
+        f = self._round(tmp_path, "panel_broken", None)
+        (f.parents[3] / "cc2.json").write_text("{not json", encoding="utf-8")
+        assert _is_harvest_of_a_demonstrably_real_round(f) is False
+

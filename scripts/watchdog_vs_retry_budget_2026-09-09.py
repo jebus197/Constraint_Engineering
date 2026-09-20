@@ -24,8 +24,36 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 ORCH = REPO / "bench" / "experiment_11_orchestrator.py"
 RUNNER = REPO / "bench" / "reference_runner_v3.py"
 
-#: The panel is 5 seats. Named so an omission is loud rather than silent.
-EXPECTED_SEATS = 5
+def _roster_size() -> int:
+    """How many seats the orchestrator ACTUALLY defines, asked of it directly.
+
+    WAS A TYPED 5 UNTIL 2026-09-20, and it went stale the day Fable joined,
+    taking 5 tests with it. The constant existed to make an omission loud: this
+    script slices the seat block from `label="CC2"` to the next `def `, so a
+    seat defined outside that window vanishes and every proportion below gets a
+    smaller denominator in silence.
+
+    A TYPED NUMBER CANNOT DO THAT JOB, because it goes stale for 2 different
+    reasons and the message cannot tell them apart: the parser missed a seat, or
+    the roster legitimately grew. Importing the roster distinguishes them --
+    a mismatch now means the PARSER is short, which is the thing worth shouting
+    about, and a roster change is absorbed without a false alarm.
+
+    Falls back to the historical 5 if the orchestrator cannot be imported, and
+    says so, because a failed lookup is not a measurement.
+    """
+    try:
+        sys.path.insert(0, str(REPO))
+        from bench.experiment_11_orchestrator import load_default_config
+        return len(load_default_config().models)
+    except Exception as exc:                                   # noqa: BLE001
+        print(f"  !! could not read the live roster ({type(exc).__name__}: "
+              f"{exc}); falling back to the historical 5, which may be stale",
+              file=sys.stderr)
+        return 5
+
+
+EXPECTED_SEATS = _roster_size()
 
 SEAT_RE = re.compile(
     r'label="(?P<label>[A-Za-z0-9_-]+)".*?'
@@ -44,8 +72,9 @@ def seats():
     # LOUD ON OMISSION (2026-09-10, panel round 4, fable F3). The block is sliced
     # from `label="CC2"` to the next `def `, so a seat defined outside that window
     # simply vanishes and every proportion silently gets a smaller denominator.
-    # The panel is 5 seats; a different number is a fact about this script's reach,
-    # not about the configuration, and it says so instead of proceeding quietly.
+    # EXPECTED_SEATS is now read from the orchestrator itself, so a mismatch is
+    # a fact about THIS SCRIPT'S REACH rather than about the configuration --
+    # which is what the alarm was always meant to say.
     if len(out) != EXPECTED_SEATS:
         print(f"  !! this script found {len(out)} seat(s), not {EXPECTED_SEATS}: "
               f"{[o[0] for o in out]}\n     the slice window in seats() no longer "

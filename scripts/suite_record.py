@@ -32,9 +32,35 @@ import sys
 REPO = pathlib.Path(__file__).resolve().parents[1]
 RECORD = REPO / "resources" / "suite_record.json"
 COMMAND = "python3 -m pytest bench/tests/ -q --netguard-strict"
-SUMMARY = re.compile(r"(?:(\d+) failed[, ]+)?(\d[\d,]*) passed"
-                     r"(?:[, ]+(\d+) skipped)?(?:[, ]+(\d+) xfailed)?"
-                     r".*?in ([\d.]+)s")
+#: A pytest tail is a list of `<count> <outcome>` tokens and a duration. It is
+#: READ AS TOKENS rather than matched as a fixed sequence, and that is the
+#: repair of 2026-09-20 rather than a style choice.
+#:
+#: THE DEFECT, found by an adversarial audit of the night's own commits and
+#: reproduced before it was touched. The previous pattern hard-coded the order
+#: `failed, passed, skipped, xfailed` and had NO GROUP FOR `error`. pytest
+#: reports a fixture or teardown failure as a separate ERROR category printed
+#: AFTER the passes, so `3 passed, 1 error in 0.17s` parsed as failed=0. record()
+#: then derives `1 if failed else 0`, so a run pytest exited 1 on was recorded
+#: GREEN -- and `gate()` would have released 4 paid seats against it. The same
+#: rigidity read `8126 passed, 12 failed` as 0 failed, because the failed group
+#: only matched BEFORE the passes.
+#:
+#: SO THE RULE IS NOW: read every token, and REFUSE on a token not in the table
+#: below rather than silently scoring it 0. A count the parser cannot name is
+#: exactly how this went wrong, and the next unmodelled outcome must be loud.
+TOKEN = re.compile(r"(\d[\d,]*)\s+(failed|passed|skipped|xfailed|xpassed|"
+                   r"errors?|deselected|warnings?|rerun|reruns)\b")
+DURATION = re.compile(r"\bin ([\d.]+)s")
+COUNT_WORD = re.compile(r"(\d[\d,]*)\s+([A-Za-z]+)")
+
+#: An outcome that makes the run RED. `error` is here because its absence is
+#: what defeated the spend gate.
+RED_OUTCOMES = ("failed", "error", "errors")
+
+#: Counted, reported, and not red.
+GREEN_OUTCOMES = ("passed", "skipped", "xfailed", "xpassed", "deselected",
+                  "warnings", "warning", "rerun", "reruns")
 
 
 def _git(*args: str) -> str:
@@ -43,18 +69,40 @@ def _git(*args: str) -> str:
 
 
 def parse(log_text: str) -> dict:
-    """Counts from a pytest tail. Returns {} when the log has no summary line."""
-    m = None
+    """Counts from a pytest tail. Returns {} when the log has no summary line.
+
+    Raises SystemExit on a summary carrying an outcome word this parser does not
+    model, because scoring an unknown token as 0 is precisely how a red suite
+    was recorded green.
+    """
+    summary = None
     for line in log_text.splitlines():
-        hit = SUMMARY.search(line)
-        if hit:
-            m = hit
-    if not m:
+        if DURATION.search(line) and TOKEN.search(line):
+            summary = line              # the LAST such line is pytest's tail
+    if summary is None:
         return {}
-    failed, passed, skipped, xfailed, secs = m.groups()
-    return {"passed": int(passed.replace(",", "")), "failed": int(failed or 0),
-            "skipped": int(skipped or 0), "xfailed": int(xfailed or 0),
-            "seconds": float(secs)}
+
+    counts = {"passed": 0, "failed": 0, "skipped": 0, "xfailed": 0,
+              "xpassed": 0, "errors": 0, "deselected": 0}
+    for n, word in TOKEN.findall(summary):
+        key = "errors" if word.startswith("error") else word
+        if key in counts:
+            counts[key] += int(n.replace(",", ""))
+
+    # ANYTHING THE TABLE DOES NOT NAME IS LOUD, NOT SILENT.
+    modelled = set(RED_OUTCOMES) | set(GREEN_OUTCOMES)
+    unknown = sorted({w for _, w in COUNT_WORD.findall(summary)
+                      if w.lower() not in modelled and w.lower() != "s"})
+    if unknown:
+        raise SystemExit(
+            f"pytest summary carries outcome word(s) this parser does not "
+            f"model: {unknown}. Refusing to record rather than scoring them 0 "
+            f"-- an unmodelled count is how a red suite was recorded GREEN on "
+            f"2026-09-19. Summary line: {summary.strip()!r}")
+
+    d = DURATION.search(summary)
+    counts["seconds"] = float(d.group(1)) if d else 0.0
+    return counts
 
 
 def record(log: pathlib.Path, exit_code: int | None, clean: bool | None) -> dict:
@@ -63,7 +111,8 @@ def record(log: pathlib.Path, exit_code: int | None, clean: bool | None) -> dict
         raise SystemExit(f"no pytest summary line in {log}: nothing to record")
     if exit_code is None:
         m = re.search(r"PYTEST_EXIT=(\d+)", log.read_text(encoding="utf-8", errors="replace"))
-        exit_code = int(m.group(1)) if m else (1 if counts["failed"] else 0)
+        exit_code = int(m.group(1)) if m else (
+            1 if (counts["failed"] or counts.get("errors")) else 0)
     if clean is None:
         clean = not _git("status", "--short")
     out = {"command": COMMAND, "commit": _git("rev-parse", "--short", "HEAD"),

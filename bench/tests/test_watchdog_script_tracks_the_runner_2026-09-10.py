@@ -76,9 +76,13 @@ class TestItRunsAtHeadAtAll:
         assert r.returncode == 0, (
             f"the instrument task 6.2 cites does not run: exit {r.returncode}\n"
             f"{r.stdout}\n{r.stderr}")
-        assert "truncated: 0 of 5" in r.stdout, (
+        import importlib.util as _il
+        _s = _il.spec_from_file_location("wd_probe", SCRIPT)
+        _m = _il.module_from_spec(_s); _s.loader.exec_module(_m)
+        assert f"truncated: 0 of {_m.EXPECTED_SEATS}" in r.stdout, (
             "at HEAD the runner takes max(multiplier cap, retry budget), so no "
-            "seat can be truncated; the script reported otherwise")
+            "seat can be truncated; the script reported otherwise.\n"
+            f"{r.stdout}")
 
     def test_it_names_the_form_it_found(self, wd):
         _, _, form, op = wd.multipliers()
@@ -100,14 +104,14 @@ class TestTheOperatorIsReadNotTyped:
         assert "TRUNCATED" in out, (
             "with the runner combining by `min`, Gemini's 1500 s budget is cut "
             "to 900 s and the instrument must say so")
-        assert "truncated: 1 of 5" in out, out
+        assert f"truncated: 1 of {wd.EXPECTED_SEATS}" in out, out
 
     def test_a_max_runner_reports_no_truncation(self, wd, tmp_path, capsys):
         """The negative control: the same code path must be able to say 'fits'."""
         _point_at(wd, tmp_path, POST_FORM.format(op="max"))
         wd.main()
         out = capsys.readouterr().out
-        assert "truncated: 0 of 5" in out, out
+        assert f"truncated: 0 of {wd.EXPECTED_SEATS}" in out, out
         assert "TRUNCATED" not in out
 
     def test_the_two_operators_give_different_answers(self, wd, tmp_path, capsys):
@@ -136,9 +140,15 @@ class TestTheOtherFormsStillBehave:
         _point_at(wd, tmp_path, PRE_FORM)
         wd.main()
         out = capsys.readouterr().out
-        assert "truncated: 1 of 5" in out, (
-            "6.2 quotes 1 of 5 truncated before the fix; the script must "
-            "reproduce it against the pre-fix form")
+        # THE NUMERATOR IS THE CLAIM; THE DENOMINATOR IS THE ROSTER SIZE.
+        # Task 6.2 quotes "1 of 5" and that was measured against a 5-seat
+        # panel. Fable joined on 2026-09-20, so the same pre-fix form over the
+        # same runner now reports 1 of 6. The count of TRUNCATED seats -- 1,
+        # Gemini -- is what 6.2 actually established, and it is unchanged.
+        assert f"truncated: 1 of {wd.EXPECTED_SEATS}" in out, (
+            f"6.2 quotes 1 truncated before the fix, over a roster that was 5 "
+            f"seats then and is {wd.EXPECTED_SEATS} now; the script must "
+            f"reproduce the COUNT against the pre-fix form.\n{out}")
         assert "Gemini" in out and "TRUNCATED" in out
 
     def test_an_absent_form_still_refuses(self, wd, tmp_path):
@@ -170,6 +180,6 @@ class TestSeatOmissionIsLoud:
         got = wd.seats()
         err = capsys.readouterr().err
         assert len(got) == 2
-        assert "not 5" in err and "partial" in err, (
+        assert f"not {wd.EXPECTED_SEATS}" in err and "partial" in err, (
             "a partial seat list must be announced; a silent shrinking "
             "denominator is how a proportion becomes wrong without notice")

@@ -484,6 +484,39 @@ def teardown(sandbox: Path) -> None:
     shutil.rmtree(base, ignore_errors=True)
 
 
+#: Directories a seat may CREATE but does not AUTHOR. Harvesting them is not
+#: preserving work.
+_VCS_DIRS = (".git", ".hg", ".svn")
+
+
+def _is_vcs_metadata(rel: str) -> bool:
+    """Is this path inside a version-control store rather than seat-written work?
+
+    MEASURED 2026-09-20, ON THE FIRST ROUND AFTER THE HARVEST LANDED. Both seats
+    reported their sandbox arriving with no `.git` -- `build()` removes it by
+    design -- and each cloned the repository's object store in, read-only, so
+    that the git-dependent claims in their brief could be answered at all. Every
+    object they cloned then read as a CHANGED FILE, so the harvest copied the
+    store back out: 112 MB across 63 files, 15 of them inside `.git`, including
+    pack files already present in the repository 1 directory up.
+
+    IT ALSO TRIPPED A PROVENANCE GUARD, which is how it was found.
+    `test_no_bare_vendor_name_in_any_simulated_artefact` classified the harvest
+    tree as a simulated artefact -- any copy of this repository contains the
+    string `-SIM`, because the codebase implements simulated labels -- and then
+    read the seat directory name `cc2` as a bare vendor name. 44 hits. The same
+    false-positive class this guard's own docstring records for 2026-08-30, one
+    level deeper, and the fix is the same in spirit: do not reclassify a copy of
+    the repository as a statement about the run.
+
+    NOT AN EXCLUSION LIST AND NOT A WEAKENING. Nothing a seat authors is lost:
+    a seat's own files, scripts, tests and data still harvest exactly as before.
+    What stops being copied is a store the seat cloned rather than wrote.
+    """
+    parts = Path(rel).parts
+    return any(d in parts for d in _VCS_DIRS)
+
+
 def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
     """Take everything a seat changed OUT of `sandbox` and put it in `dest`.
 
@@ -503,7 +536,8 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
     files_dir = dest / "files"
     taken, bytes_taken, failed = [], 0, []
     diffs = changes(Path(sandbox), Path(repo))
-    for rel in sorted(diffs):
+    skipped_vcs = [r for r in diffs if _is_vcs_metadata(r)]
+    for rel in sorted(set(diffs) - set(skipped_vcs)):
         src = Path(sandbox) / rel
         try:
             target = files_dir / rel
@@ -514,6 +548,9 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
         except OSError as exc:                                  # noqa: PERF203
             failed.append({"path": rel, "error": str(exc)})
     dest.mkdir(parents=True, exist_ok=True)
+    if skipped_vcs:
+        print(f"    harvest skipped {len(skipped_vcs)} version-control file(s) "
+              f"the seat cloned rather than wrote", flush=True)
     if diffs:
         (dest / "changes.diff").write_text(
             "\n".join(f"### {rel}\n{d}" for rel, d in sorted(diffs.items())),
