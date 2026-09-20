@@ -59,6 +59,8 @@ from cdsfl_utils import (
     timestamp_now,
 )
 
+import sv_postconditions  # noqa: E402 — needs the sys.path line above
+
 
 # ── Experiment summary for ONBOARDING.md ──────────────────────────────────
 
@@ -1021,6 +1023,28 @@ def _commit_and_push(
 
     return True
 
+
+
+def _run_postcondition_gate(root, *, push: bool) -> int:
+    """Re-take every reading sv printed, and let it DECIDE. Returns 1 on failure.
+
+    FOUNDER, 2026-09-20: *"Can't you devise a permanent, definitive fix so it
+    can do exactly as it was originally intended to do, and so that you don't
+    need to keep hand implementing corrections after it runs?"*
+
+    7 of the 13 repairs this script has needed since 2026-08-01 share 1 shape:
+    a reading was taken, printed, and then not acted on, so the exit code said
+    the save succeeded while the printed text said otherwise. `scripts/
+    sv_repair_rate_2026-09-20.py` produces that count and lists every subject.
+
+    The gate runs AFTER the commit is in the object store, so a failure here
+    cannot cost work. What it withdraws is the claim that the save did what it
+    reports.
+    """
+    print()
+    results = sv_postconditions.check_all(root, pushed=push)
+    print(sv_postconditions.report(results))
+    return 1 if any(r.failed for r in results) else 0
 
 
 def _print_final_state(root, push: bool) -> None:
@@ -2650,6 +2674,19 @@ def main() -> None:
                     ),
                     root=root,
                 )
+                # THE POSTCONDITION GATE — founder, 2026-09-20: "Can't you
+                # devise a permanent, definitive fix ... so that you don't need
+                # to keep hand implementing corrections after it runs?"
+                #
+                # Everything above this line MEASURES and PRINTS. 7 of the 13
+                # repairs this script has needed since 2026-08-01 are the same
+                # shape: a reading taken, printed, and then not acted on, so a
+                # human found the problem afterwards. The readings are now
+                # re-taken and they DECIDE. The commit is already in the object
+                # store, so a failure here can never cost work -- it withdraws
+                # the claim that the save did what it says.
+                if _run_postcondition_gate(root, push=args.push):
+                    sys.exit(1)
             else:
                 print("Nothing to commit — all sv files match HEAD.")
         except RuntimeError as e:
