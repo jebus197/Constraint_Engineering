@@ -472,13 +472,74 @@ _DSML_PARAM_RE = _re.compile(
 )
 
 
-def _parse_deepseek_content_toolcalls(content: str):
-    """Return list[(name, args_dict)] if DeepSeek leaked tool-call markup into
-    content (U+FF5C-delimited DSML tokens), else None. Detection sentinel uses
-    the fullwidth pipe, which never appears in genuine ASCII prose answers.
+#: The tag-shaped form. MEASURED 2026-09-20, not hypothesised: asked to evaluate
+#: R(1-p)/(1-pR) with the run_python tool, deepseek-v4-pro replied with the
+#: literal text `<run_python> from fractions import Fraction ... </run_python>`.
+#: No structured `tool_calls` field, and no DSML fullwidth-pipe markup either --
+#: so the existing recovery did not fire, nothing executed, and the model's own
+#: unrun code came back as its FINAL ANSWER. That is why the archive shows
+#: DeepSeek at 0 recorded tool calls across 8 replies while the OpenRouter seats
+#: recorded 5 of 9 and 5 of 7: not a logging hole, a seat whose tool use has
+#: never actually run.
+#:
+#: FOUNDER, 2026-09-20: *"No model gets a free pass on tool use. In this modern
+#: world there shouldn't be a condition in which tool use isn't possible for a
+#: model? Including Kimi and Deepseek?"*
+_TAG_TOOLCALL_RE = _re.compile(
+    r"<(?P<name>run_python|run_pytest|read_file|grep|list_dir)\s*>"
+    r"(?P<body>.*?)</(?P=name)\s*>", _re.DOTALL)
+
+#: The parameter a bare tag body maps onto, per tool. A model emitting
+#: `<run_python>code</run_python>` has given the code and not named the field.
+_TAG_PRIMARY_PARAM = {"run_python": "code", "run_pytest": "path",
+                      "read_file": "path", "grep": "pattern", "list_dir": "path"}
+
+
+def _parse_tag_content_toolcalls(content: str):
+    """Recover tool calls a model wrote as `<tool_name>body</tool_name>` prose.
+
+    Returns list[(name, args)] or None. Deliberately restricted to the tool
+    names this harness actually serves, so ordinary prose containing angle
+    brackets cannot be mistaken for a call: a reply discussing `<html>` or
+    `<foo>` matches nothing.
+
+    A JSON body is read as the full argument dict; anything else is mapped onto
+    the tool's primary parameter, because a model writing the tag form has
+    supplied the value and not the field name.
     """
-    if not content or _DSML_SENTINEL not in content:
+    if not content or "<" not in content:
         return None
+    calls = []
+    for m in _TAG_TOOLCALL_RE.finditer(content):
+        name, body = m.group("name"), m.group("body").strip()
+        args = None
+        if body.startswith("{"):
+            try:
+                loaded = json.loads(body)
+                if isinstance(loaded, dict):
+                    args = loaded
+            except ValueError:
+                args = None
+        if args is None:
+            args = {_TAG_PRIMARY_PARAM.get(name, "code"): body}
+        calls.append((name, args))
+    return calls or None
+
+
+def _parse_deepseek_content_toolcalls(content: str):
+    """Return list[(name, args_dict)] if a model leaked tool-call markup into
+    content, else None.
+
+    2 shapes are recovered. DeepSeek's DSML special tokens, delimited by the
+    fullwidth pipe U+FF5C, which never appears in genuine ASCII prose; and the
+    tag form `<run_python>...</run_python>`, measured on the same model the same
+    day. Both are executed by the caller and fed back, so the model gets real
+    results instead of having its own unrun code returned as an answer.
+    """
+    if not content:
+        return None
+    if _DSML_SENTINEL not in content:
+        return _parse_tag_content_toolcalls(content)
     calls = []
     for m in _DSML_INVOKE_RE.finditer(content):
         args = {
@@ -486,7 +547,7 @@ def _parse_deepseek_content_toolcalls(content: str):
             for pm in _DSML_PARAM_RE.finditer(m.group("body"))
         }
         calls.append((m.group("name"), args))
-    return calls or None
+    return calls or _parse_tag_content_toolcalls(content)
 
 
 # Strip any DeepSeek DSML special-token tag (U+FF5C-delimited) from text,
@@ -513,8 +574,17 @@ def _run_openai_tool_loop(
     max_tokens: int = 32768,
     timeout: int = 300,
     extra_body: dict | None = None,
+    temperature: float = 0.0,
 ) -> str:
     """Run an OpenAI-compatible tool-call loop and return the model's final text.
+
+    `temperature` DEFAULTS TO 0.0, so every existing caller is byte-identical.
+    It exists because kimi-k3 REFUSES any other value: measured 2026-09-20, the
+    direct Moonshot API returns `400 invalid temperature: only 1 is allowed for
+    this model`. That is a real difference between seats and it is recorded
+    rather than smoothed over -- the Kimi seat cannot be run deterministically,
+    so its reproducibility is weaker than the seats pinned at 0.0, and a reader
+    comparing rounds should know that.
 
     Loop shape reused from the validated smoke tests: on each turn, if the model
     requests tool calls, run them via ``tool_executor(name, args)``, append the
@@ -532,7 +602,7 @@ def _run_openai_tool_loop(
             tools=tools,
             tool_choice="auto",
             max_tokens=max_tokens,
-            temperature=0.0,
+            temperature=temperature,
             timeout=timeout,
         )
         if extra_body:
@@ -1483,6 +1553,83 @@ def call_gemini(
     )
 
 
+#: Moonshot's international endpoint. MEASURED 2026-09-20 rather than assumed:
+#: the key in `.env` authenticates here and returns 401 at api.moonshot.cn, and
+#: the model list it serves is kimi-k2.6, kimi-k2.7-code, kimi-k2.7-code-highspeed
+#: and kimi-k3.
+MOONSHOT_BASE_URL = "https://api.moonshot.ai/v1"
+
+#: kimi-k3 REFUSES any other value -- measured, not assumed: the API returns
+#: `400 invalid temperature: only 1 is allowed for this model`. Every other seat
+#: runs at 0.0, so this seat is the only non-deterministic one in the panel.
+MOONSHOT_TEMPERATURE = 1.0
+
+
+def call_moonshot(
+    model_id: str,
+    system_prompt: str | None,
+    user_prompt: str,
+    max_tokens: int = 32768,
+    timeout: int = 300,
+    tools: list | None = None,
+    tool_executor=None,
+    max_tool_iters: int = 6,
+    record: list | None = None,
+) -> str:
+    """Call Kimi on Moonshot's OWN API, not through OpenRouter.
+
+    WHY THE DIRECT ROUTE, founder 2026-09-20: *"Why not use the Kimi K3 credits
+    I already paid for rather than burn more of my OpenAI credits?"* The
+    repository already reaches Kimi at `moonshotai/kimi-k3` through OpenRouter
+    (`OuroborosCell.KIMI_READER_MODEL`), which is a proven route and the wrong
+    one for this: it spends OpenRouter credit on a model whose credits are
+    already bought and held in reserve.
+
+    IT REUSES THE SHARED TOOL LOOP rather than carrying its own. Moonshot's API
+    is OpenAI-compatible, so `_run_openai_tool_loop` drives it unchanged, and
+    Kimi gets the same tools as every other seat -- which the panel's Section P
+    condition P3 requires of every seat, not most of them.
+
+    `record` EXISTS BECAUSE A SEAT WHOSE TOOL CALLS ARE NOT LOGGED IS WEAKER
+    EVIDENCE. P3 is measured FROM the tool logs, and the direct DeepSeek path
+    returns text with no call list, so a seat on that path contributes 0 to a
+    count that decides whether the condition was met. Passing a list here wraps
+    the executor and records every call without altering the shared loop, so no
+    other route's behaviour changes.
+    """
+    import openai
+
+    api_key = os.environ.get("MOONSHOT_API_KEY")
+    if not api_key:
+        raise RuntimeError("MOONSHOT_API_KEY not set")
+
+    client = openai.OpenAI(api_key=api_key, base_url=MOONSHOT_BASE_URL,
+                           timeout=timeout)
+    messages: list = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": user_prompt})
+
+    if not tools:
+        resp = client.chat.completions.create(
+            model=model_id, messages=messages, max_tokens=max_tokens,
+            temperature=MOONSHOT_TEMPERATURE)
+        return (resp.choices[0].message.content or "").strip()
+
+    executor = tool_executor or default_tool_executor
+    if record is not None:
+        def executor(name, args, _inner=(tool_executor or default_tool_executor)):
+            out = _inner(name, args)
+            record.append({"name": name, "arguments": args,
+                           "result": str(out)[:2000]})
+            return out
+
+    return _run_openai_tool_loop(
+        client, model_id, messages, tools, executor,
+        max_iters=max_tool_iters, max_tokens=max_tokens, timeout=timeout,
+        temperature=MOONSHOT_TEMPERATURE)
+
+
 def call_deepseek(
     model_id: str,
     system_prompt: str | None,
@@ -1494,8 +1641,21 @@ def call_deepseek(
     tools: list[dict] | None = None,
     tool_executor=None,
     max_tool_iters: int = 6,
+    record: list | None = None,
 ) -> str:
     """Call DeepSeek via their OpenAI-compatible API.
+
+    `record` EXISTS BECAUSE THIS SEAT HAD BEEN GETTING A FREE PASS ON TOOL USE,
+    and the archive says so. FOUNDER, 2026-09-20: *"No model gets a free pass on
+    tool use. In this modern world there shouldn't be a condition in which tool
+    use isn't possible for a model? Including Kimi and Deepseek?"* Measured
+    across every archived seat reply: cc2 40 of 72 replies with tools and 2,754
+    calls, fable 40 of 70 and 2,530, cgpt 5 of 9, cx 5 of 7 -- and DeepSeek
+    **0 of 8**. Tools were always PASSED to it; the panel simply had nowhere to
+    put the calls, because recording existed only on the claude_cli path (a
+    stream-json sink) and on the OpenRouter path (its own return value). This
+    route had neither, so its tool use was structurally invisible and its
+    contribution to the Section P condition P3 was 0 by construction.
 
     Tool-calling (GATED, default OFF): when ``tools`` is provided the call runs
     an OpenAI tool-call loop (max ``max_tool_iters`` iterations) via
@@ -1579,6 +1739,12 @@ def call_deepseek(
                 # through to the standard retry/error handling below on failure.
                 import concurrent.futures
                 executor_fn = tool_executor or default_tool_executor
+                if record is not None:
+                    def executor_fn(name, args, _inner=executor_fn):   # noqa: F811
+                        out = _inner(name, args)
+                        record.append({"name": name, "arguments": args,
+                                       "result": str(out)[:2000]})
+                        return out
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
                     _future = _pool.submit(
                         _run_openai_tool_loop,

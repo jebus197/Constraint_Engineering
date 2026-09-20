@@ -46,15 +46,50 @@ def _panel_seats():
     return mod._ALL
 
 
-class TestBothRostersCarrySixSeats:
+class TestBothRostersCarryTheirDeclaredSeats:
 
     def test_the_experiment_roster_has_6(self):
         labels = [m.label for m in _roster()]
         assert len(labels) == 6, f"expected 6 experiment seats, got {len(labels)}: {labels}"
 
-    def test_the_panel_roster_has_6(self):
+    def test_the_panel_roster_has_7(self):
+        """7 SINCE 2026-09-20, and the 7th is deliberately not on the experiment
+        roster. The founder added Kimi K3 for the mathematical-model review with
+        its findings QUARANTINED, because the seat is an untested quantity in
+        this harness. Quarantine is a property of the panel, not of the
+        experiment arc, so the experiment roster stays at 6 and the divergence
+        between the 2 lists is intended rather than drift."""
         seats = _panel_seats()
-        assert len(seats) == 6, f"expected 6 panel seats, got {len(seats)}"
+        assert len(seats) == 7, f"expected 7 panel seats, got {len(seats)}"
+        names = [n for n, _, _ in seats]
+        assert "kimi" in names, names
+
+    def test_the_quarantined_seat_is_declared_and_is_only_kimi(self):
+        """A quarantine nothing reads is not a quarantine. This pins the set so
+        a seat cannot be quietly added to it, or quietly removed from it."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("panel_q", PANEL)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        assert mod.QUARANTINED_SEATS == {"kimi"}, mod.QUARANTINED_SEATS
+        assert "kimi" in [n for n, _, _ in mod._ALL]
+
+    def test_every_paid_seat_is_on_a_route_measured_to_MAKE_TOOL_CALLS(self):
+        """FOUNDER, 2026-09-20: "No model gets a free pass on tool use ...
+        Including Kimi and Deepseek?"
+
+        The DeepSeek seat was on DeepSeek's own API, where the identical model
+        made a structured tool call in 0 of 8 replies, Wilson [0.00%, 32.44%],
+        against 8 of 8 through OpenRouter, Wilson [67.56%, 100.00%], Fisher
+        exact p = 1.554002e-04. This pins the route rather than the rate, because
+        a rate needs a live call and this suite is offline."""
+        routes = {n: r for n, _, r in _panel_seats()}
+        assert routes["ds"] == "openrouter", (
+            "the DeepSeek seat is back on the direct API, where it made 0 "
+            "structured tool calls in 8 measured replies")
+        assert routes["kimi"] == "moonshot", (
+            "the Kimi seat must use the founder's own Moonshot credits, not "
+            "OpenRouter credit")
 
     def test_fable_is_on_both(self):
         assert "Fable" in [m.label for m in _roster()], (

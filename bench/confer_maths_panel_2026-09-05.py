@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from experiment_11_orchestrator import (  # noqa: E402
-    call_claude_cli, call_deepseek, call_openrouter)
+    call_claude_cli, call_deepseek, call_moonshot, call_openrouter)
 import panel_sandbox  # noqa: E402
 _PANEL_SANDBOX_CWD: str | None = None
 
@@ -264,10 +264,56 @@ _ALL = [
     ("cx",    "openai/gpt-5.3-codex",          "openrouter"),  # PAID -- Codex, a distinct model
     ("cgpt",  "openai/gpt-5.5",                "openrouter"),  # PAID -- ChatGPT mainline
     ("ge",    "google/gemini-3.1-pro-preview", "openrouter"),  # PAID -- RESTORED 2026-09-20
-    ("ds",    "deepseek-v4-pro",               "deepseek"),    # PAID
+    ("ds",    "deepseek/deepseek-v4-pro",      "openrouter"),  # PAID -- MOVED OFF
+    #   DeepSeek's own API 2026-09-20, keeping the SAME model. Founder: "No model
+    #   gets a free pass on tool use ... Including Kimi and Deepseek?" Measured,
+    #   and it is the SERVING and not the model: deepseek-v4-pro on DeepSeek's
+    #   direct API made a structured tool call in 0 of 8 replies, Wilson
+    #   [0.00%, 32.44%]; the identical model through OpenRouter made one in 8 of
+    #   8, Wilson [67.56%, 100.00%]. Fisher exact p = 1.554002e-04, scipy and an
+    #   mpmath hypergeometric tail agreeing exactly, chi-square with Yates
+    #   p = 4.652582e-04.
+    #
+    #   THE DIRECT API REFUSES TO BE COMPELLED: tool_choice="required" returns
+    #   400 "Thinking mode does not support this tool_choice" on both
+    #   deepseek-v4-pro and deepseek-flash. Through OpenRouter the same model
+    #   honours both "auto" and "required".
+    #
+    #   WHAT THE SEAT WAS DOING INSTEAD, and it is worse than not logging: asked
+    #   to use a tool it either answered from reasoning in LaTeX, or emitted the
+    #   literal text `<run_python> ... </run_python>` as its FINAL ANSWER --
+    #   unexecuted code presented as a result. That is why the archive shows 0
+    #   recorded tool calls across 8 DeepSeek replies. Not a logging hole.
+    #
+    #   The orchestrator's ModelConfig already carried this as the SECONDARY
+    #   route; this promotes it to primary for the panel seat only.
     ("cc2",   "opus",                          "claude_cli"),  # Max, free
     ("fable", "fable",                         "claude_cli"),  # Max, free
+    ("kimi",  "kimi-k3",                       "moonshot"),    # PAID -- the founder's
+    #   OWN Moonshot credits, NOT OpenRouter. Founder, 2026-09-20: "Why not use
+    #   the Kimi K3 credits I already paid for rather than burn more of my
+    #   OpenAI credits?" The repository already reached Kimi at
+    #   `moonshotai/kimi-k3` through OpenRouter, which is a proven route and the
+    #   wrong one: it spends OpenRouter credit on a model whose credits are
+    #   already bought. Direct endpoint measured, not assumed -- api.moonshot.ai
+    #   authenticates and serves kimi-k3; api.moonshot.cn returns 401.
+    #
+    #   ITS FINDINGS ARE QUARANTINED, on the founder's instruction, because the
+    #   seat is an untested quantity in this harness. See QUARANTINED_SEATS.
+    #
+    #   IT IS THE ONLY NON-DETERMINISTIC SEAT: kimi-k3 refuses any temperature
+    #   but 1, measured as `400 invalid temperature: only 1 is allowed for this
+    #   model`, while every other seat runs pinned at 0.0.
 ]
+
+#: Seats whose findings are held separately rather than mixed into the panel's
+#: result. Founder, 2026-09-20, adding Kimi: *"But quarantine its findings
+#: specifically, as it is clearly an untested quantity."* Quarantine is not
+#: exclusion -- the seat runs, its reply is recorded in full, and its findings
+#: are reported -- it means they are not counted as corroboration for anything
+#: another seat found, because an untested instrument agreeing with a tested one
+#: is not independent evidence until the instrument itself has a track record.
+QUARANTINED_SEATS = {"kimi"}
 # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
 # not cost a second full paid round for the 3 that worked.
 MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
@@ -452,8 +498,18 @@ def dispatch(name, model_id, route):
                     tool_log = json.loads(_sink.read_text(encoding="utf-8")).get("calls", [])
                 except (OSError, ValueError) as _e:  # noqa: BLE001
                     print(f"  [{name}] tool log unreadable: {_e}", flush=True)
-        elif route == "deepseek":
-            resp = call_deepseek(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS)
+        elif route in ("deepseek", "moonshot"):
+            # NO SEAT IS INVISIBLE (founder, 2026-09-20: "No model gets a free
+            # pass on tool use"). Both direct-API routes return TEXT, so before
+            # today their tool calls had nowhere to go: the archive shows
+            # DeepSeek at 0 recorded calls across 8 replies while the OpenRouter
+            # seats recorded 5 of 9 and 5 of 7. `record` is passed here and read
+            # straight into `tool_log`, so these seats count toward the Section P
+            # condition P3 on the same footing as every other route.
+            _calls: list = []
+            _fn = call_deepseek if route == "deepseek" else call_moonshot
+            resp = _fn(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS, record=_calls)
+            tool_log = _calls
         else:
             # TOOL BUDGET RAISED AT THE CALL SITE, not in the shared default
             # (founder's spend approval, 2026-09-20: up to 10 pounds, cheaper
