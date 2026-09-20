@@ -139,6 +139,35 @@ def load_default_config() -> ExperimentConfig:
             secondary_model_id="anthropic/claude-opus-4.7",
         ),
         ModelConfig(
+            label="Fable",
+            # ADDED 2026-09-20 on the founder's instruction that panels and paid
+            # experiments should both run 6 models. The panel roster has carried
+            # this seat since the same day; the experiment roster had not, so the
+            # 2 dispatch paths disagreed about what "the panel" means.
+            #
+            # IT IS AVAILABLE, NOT IMPOSED. An experiment uses the seats its own
+            # RunnerConfig names, and no existing config names Fable, so nothing
+            # already designed changes composition by this commit. Whether the
+            # Exp 40-54 arc should ADOPT a 6th seat mid-arc is a comparability
+            # question and it is the founder's, not this file's: a run with 6
+            # seats is not directly comparable with the 5-seat runs before it.
+            model_id="fable",
+            api="claude_cli",
+            role="participant",
+            system_prompt_path=str(cdsfl_path),
+            max_tokens=32768,
+            timeout=900,       # a CLI seat, so the same budget CC2 gets
+            max_retries=1,     # and the same retry count, for the same reason
+            # The founder's rule of 2026-05-22 is that EVERY model carries a
+            # secondary. The preference is the same underlying model on another
+            # route; Fable has no second route, so the secondary is the other
+            # Max-subscription CLI seat. That keeps billing consolidated, which
+            # is the rule's other stated aim, and it is honestly a DIFFERENT
+            # model rather than the same one reached another way.
+            secondary_api="claude_cli",
+            secondary_model_id="opus",
+        ),
+        ModelConfig(
             label="Codex",
             # DISTINCT FROM ChatGPT SINCE 2026-09-20 (founder ruling). These 2
             # seats carried the same identifier, so this roster held 4
