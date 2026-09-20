@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 September 2026 15:23 BST (2026-09-17T15:23:11+01:00)
+Generated: 20 September 2026 01:34 BST (2026-09-20T01:34:19+01:00)
 
 ---
 
@@ -18,13 +18,14 @@ Generated: 17 September 2026 15:23 BST (2026-09-17T15:23:11+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `a2999f1` fix: hold a note to its foot-line's version, failing closed; the 15.8% was a mislabel
-- **Committed:** 2026-09-17 11:22:16 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 25
+- **Last commit (the PARENT of the commit containing this file):** `e5db47d` morning report: a response sheet, so every open item can be answered in 1 file
+- **Committed:** 2026-09-19 22:07:40 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 41
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- `M experimental_notes/Morning_Report_2026-09-18.md`
+- `M resources/MEMORY_EXCLUSIONS.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
@@ -32,7 +33,7 @@ Uncommitted files at snapshot time — the working tree as it stood before the s
 
 ## Tests
 
-**7499 tests collected** at 17 September 2026 15:23 BST, HEAD `a2999f1` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**8041 tests collected** at 20 September 2026 01:34 BST, HEAD `e5db47d` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -62,13 +63,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `a2999f1 fix: hold a note to its foot-line's version, failing closed; the 15.8% was a mislabel`
-- `1c4c84f docs: the green board, and the defects behind it`
-- `725d1f9 fix: one foot-line, with the addendum above it`
-- `cea399c fix: an inert --help on the new producer, and a foot-line for the addendum`
-- `7cc1530 perf: answer citations from 1 index pass, not 1 git grep per path`
-- `f22e95e fix: one boundary for entry bodies, and every interval cross-verified`
-- `75b1163 Panel round 16: the full unfiltered record, and what was verified before adoption`
-- `d673edd A26: three scripts destroyed content under -m --help, not one`
-- `aeda07a A26 shut one entrance: --help still destroyed a panel record under -m`
-- `16ccdf2 The overclaim figure was wrong twice over, and both seats were right`
+- `e5db47d morning report: a response sheet, so every open item can be answered in 1 file`
+- `2f69baf Z1 DONE: the Zenodo token is actually rotated, and doing it found 2 defects`
+- `38d430c Z1: a rotation tool, so the token moves without hand-editing 10 credentials`
+- `674b066 remove the framing I built around the founder's position; keep the plain record`
+- `2ad108f morning report: the no-author advice was mine, not his, and the directives' provenance is untraceable`
+- `b5c0460 morning report: the completed processes folded in, including a figure I could NOT verify`
+- `6a287cb morning report: correct the seat claim -- there are 2 rosters, and 1 of them IS guarded`
+- `8a0952a appendix: the coverage-to-risk inverse at line 169 was the NEGATIVE of the inverse`
+- `1b2e3d6 morning report: the revised model checks out on first inspection, and it found a real error in our appendix`
+- `e99644a codex seat: the producer now measures tool support, and 3 corrections it took an adversarial pass to find`

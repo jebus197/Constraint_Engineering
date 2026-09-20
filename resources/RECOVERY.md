@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 September 2026 15:23 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 20 September 2026 01:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -25,7 +25,31 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
-## SESSION STATE — 2026-09-17 21:02 BST (READ THIS FIRST)
+## SESSION STATE — 2026-09-20 01:10 BST (READ THIS FIRST)
+
+HEAD `e5db47d` plus this save, main, 41 ahead of `origin/main`; this `sv` pushes them on the founder's `sv` command.
+
+**★★★ THE FULL SUITE AT `e5db47d`, run with `python3 -m pytest bench/tests/ -q --netguard-strict`: 8,029 passed, 5 failed, 6 skipped, 1 xfailed, 1692.80 s, pytest exit code 1.** **4 of those 5 failures were self-inflicted and are already gone.** This block was being drafted WHILE the run was in flight, so the guard read a placeholder where the suite figures now sit and correctly refused a newest block that quoted none; `test_recovery_session_state_is_current_2026-09-11.py` and `test_suite_figure_producer_forms_2026-09-17.py` were both reporting that. Re-run after this block was completed, those 4 pass. **Editing the tree during a measurement invalidates the measurement, and this is the 2nd time in 3 days.** The 5th failure is real and is the closure guard described below.
+
+**The remaining figure, cited rather than re-run:** the last CLEAN full-suite measurement is **8,011 passed, 5 skipped, 1 xfailed, 0 failed, 1399.53 s, exit code 0 at `7345a2c`**, from `python3 -m pytest bench/tests/ -q --netguard-strict` against a clean tree on 2026-09-18.
+
+**★★★ WOLFRAM IS ENABLED FOR EVERY SEAT AND EVERY AGENT AS THE SECOND FALSIFIER. THIS REVERSES THE HEADLINE IN THE BLOCK BELOW.** The founder ruled on 2026-09-17: *"So fully enable it ... Wolfram ... should remain the secondary/verification source (a second falsifier)"*, and *"Agents are not exempt from using tools."* The refusing gate is replaced by a QUEUE, because the free Engine is single-kernel and 3 concurrent calls measured on 2026-08-02 gave 1 result and 2 disconnections. `bench/tools/wolfram_gate/serial` takes a machine-wide lock, runs 1 call at a time, passes the exit code through untouched, and appends Wolfram's required attribution or `[NOT EVIDENCE]` with the reason. Measured through the real gate: the second of 2 simultaneous calls waited 5.1 s while the first held the kernel 5.1 s, windows disjoint, both evidence. `deny` is retained and selectable with `CDSFL_WOLFRAM_POLICY`; the falsifier sandbox stays on it, because a STORED falsifier must re-run on a machine with no Wolfram.
+
+**★★★ Z1 IS DONE: THE ZENODO TOKEN IS ACTUALLY ROTATED, after 34 days.** `scripts/zenodo_rotate.py` prompts through `getpass`, changes only the token line, digests every other line either side, and restores the backup if any of them moved. Verified live: HTTP 200 with 1 deposition visible. **Doing it found 2 defects that describing it for a month did not.** `.env` carries the macOS `uchg` flag, `copy2` copies it to the backup, and `chmod` on an immutable file raises EPERM — the first attempt died there AFTER the founder had pasted a token Zenodo shows once. And `zenodo_token_check.py` read only the first 2,000 bytes of a 3,718-byte reply, parsed the truncated JSON, and reported that as *"could not reach zenodo.org"* on a run where the token was valid.
+
+**★★★ THE REVISED MATHEMATICAL MODEL IS IN HAND AND CHECKS OUT ON FIRST INSPECTION.** Written by GPT 6 Astra, at `~/Developer_Projects/Responses/Codex, ChatGPT & Grok resources/CDSFL_Mathematical_Review_Suite_2026-09-10`. Package integrity PASSes on all 41 files. **It does not demote the decay curve or gamma**: with removal and introduction set to 0 and a clean review of sensitivity `p`, it collapses to `R(1-p)/(1-pR)`, the original recursion, verified by SymPy, by Wolfram, and by executing the package's own function for 7 rounds against the closed form with 0 mismatches. z3 and Wolfram both prove the post-action risk cannot leave [0,1]. Its honest limit, which the package reports itself: with the action parameters free, any risk in [0,1] is reachable, so it has no predictive content until they are pinned by evidence.
+
+**★★★ THE APPENDIX CARRIED AN INVERSE SIGN ERROR, NAMED BY THE REVISION AND CONFIRMED HERE.** `docs/MATHEMATICAL_APPENDIX.md` stated the coverage-to-risk inverse twice and the 2 disagreed: line 119 correct, line 169 exactly its negative, returning a coverage of −3/4 at π = 1/2, R = 1/5 while claiming a round-trip residual of 0. Corrected on the founder's instruction. The guard built for that class, `test_appendix_reduction_properties_2026-09-05.py`, exists because the appendix carried 18 claims of the form "X reduces to Y" verified only in prose. It has 35 tests and not 1 of them touched this inversion.
+
+**★★★ A PANEL RETRY NOW GETS A TREE OF ITS OWN, AND NOTHING IS DELETED ON THE WAY OUT.** In round 17 a seat's retry reran in the sandbox its timed-out attempt had been editing, so 14 of its 19 files had no reply behind them. Every attempt now asks for its own copy, the attempt travels with the reply, and whole changed FILES are harvested into the run's log directory before any copy is removed — removal being opt-in and refused when a harvest fails. `scripts/sandbox_deletion_audit_2026-09-17.py` found 3 runners destroying seat work with no harvest, including the simulated one; all 3 fixed, 0 remaining.
+
+**★★★ THE P5 CLAUSE ABOUT CC1 HAS AN INSTRUMENT.** `scripts/p5_cc1_position_2026-09-17.py` derives the RANGE from the seats' own verdict tokens and reports which of those entries CC1 answered. Round 17 measured NO_CC1_POSITION with 2 disagreements; the record now carries CC1's position on both, and the instrument returns SATISFIED.
+
+**★★★ 1 TEST IS RED AND IT IS TELLING THE TRUTH.** `test_closure_outpaced_discovery_on_the_latest_full_day` fires because on the last day with movement the list gained V9 and closed nothing. In aggregate the claim it guards holds well: 82 closed against 37 added, exact p = 4.5e-05. It reads a single day, so a quiet one fails it. It goes green when A8 closes, and A8 waits only on a Section P panel review.
+
+**Where to pick up.** The founder's sequence, set 2026-09-18: Zenodo rotation (DONE), then the study of the revised model and the other resources, then a panel review of the model, then a simulated run if it checks out, then the runway. 7 items await his word and are listed as a response sheet at the end of `experimental_notes/Morning_Report_2026-09-18.md`. V9 is OPEN and scheduled after the revision; A19 is held for the same reason; A8 needs no further ruling.
+
+## SESSION STATE — 2026-09-17 21:02 BST
 
 HEAD `def8eae` plus this save, main, 15 ahead of `origin/main` — NOT PUSHED. The push is item 14 of the action list and is the founder's to run, or `sv`.
 

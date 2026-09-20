@@ -41,7 +41,7 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
 
 ## What needs a word from the founder
 
-1. **The appendix correction at line 169. DONE** at `8a0952a`, on the founder's instruction. Now `(π_k−R_k)/(π_k(1−R_k))`, with the old form quoted in the retraction. SymPy and Wolfram confirm the round-trip independently; the appendix's 2 statements are now symbolically identical; 81 tests pass across the 3 guards that read it. **Instrument note:** `bench/tests/test_appendix_reduction_properties_2026-09-05.py` exists for exactly this class, covers 18 reduction claims, and never touched this inversion. A guard for the inverse is PROPOSED, not built.
+1. **The appendix correction at line 169. DONE** at `8a0952a`, on the founder's instruction. Now `(π_k−R_k)/(π_k(1−R_k))`, with the old form quoted in the retraction. SymPy and Wolfram confirm the round-trip independently; the appendix's 2 statements are now symbolically identical; 81 tests pass across the 3 guards that read it. **Instrument note:** `bench/tests/test_appendix_reduction_properties_2026-09-05.py` exists for exactly this class, was written because the appendix carried 18 reduction claims verified only in prose; its 35 tests never touched this inversion. A guard for the inverse is PROPOSED, not built.
 2. **Arm C of the simulated run.** Its designed form needs the `codex_exec` route, now dropped for cost, so it cannot be restored. Run it in weak form, re-register it as a 2-model contrast, or retire it. `launch_blocked` is read by a test, not by a runner, so nothing is mechanically prevented either way. Default: stays flagged, and the simulated run uses arms A and B.
 3. **The Codex seat question.** Not urgent: a simulated run uses stand-ins, so it only matters for a paid run. Default: unchanged.
 
@@ -61,7 +61,7 @@ Confirmed by SymPy and by Wolfram independently. The fix is 1 character class an
 
 **One sweep claim corrected.** It said no test reads `.claude/CLAUDE.md`'s model table. `bench/tests/test_sim_naming_and_integrity_directive.py` does — `ROSTER_DOC` at line 89, `_TABLE_HEADER` at line 108. The stale `ge` row is therefore guarded, and editing that table is not a free change.
 
-**Self-inflicted, fixed.** A memory file written tonight tripped 2 guards: an index entry at 161 characters against a 150 limit, and the memory ledger stating 142 files against 143 on disk (`resources/MEMORY_EXCLUSIONS.md`, mirrored 85→86). Both corrected, 87 tests green across the 4 guards. The ledger test notes this manual correction has been needed 7 consecutive times and wants deriving inside `sv`.
+**Self-inflicted, fixed.** A memory file written tonight tripped 2 guards: an index entry at 161 characters against a 150 limit, and the memory ledger stating 142 files against 143 on disk (`resources/MEMORY_EXCLUSIONS.md`, mirrored 85→86). Both corrected, 87 tests green across the 4 guards. The ledger test complains that this manual correction has been needed 7 consecutive times and wants deriving inside `sv` -- and that remedy now EXISTS: `_update_memory_exclusions_ledger` recounts it during `sv`, so the manual bump was redundant.
 
 ## Already in hand
 

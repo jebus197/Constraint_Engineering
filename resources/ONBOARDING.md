@@ -1,11 +1,23 @@
 # CDSFL Project Onboarding
 
-Last updated: 17 September 2026 15:23 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 20 September 2026 01:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
 
-## CURRENT STATE — 2026-09-17 15:21 BST
+## CURRENT STATE — 2026-09-20 01:10 BST
+
+**HEAD `e5db47d` before this save, main; this `sv` pushes 41 commits.** The full suite at `e5db47d` under `python3 -m pytest bench/tests/ -q --netguard-strict`: 8,029 passed, 5 failed, 1692.80 s, exit 1 — 4 of the 5 caused by this document being edited during the run and since verified green, the 5th the closure guard. The last clean measurement remains 8,011 passed, 0 failed at `7345a2c`.
+
+**Wolfram is enabled for every seat and every agent as the second falsifier**, queued against the single licensed kernel rather than refused. The open-source tools stay primary, nothing depends on Wolfram, and a stored falsifier still may not call it.
+
+**Z1 is done: the Zenodo token is rotated and verified live**, after 34 days. Doing it found 2 defects — an immutable-flag crash that destroyed a one-time token, and a checker that truncated a 3,718-byte reply and called the resulting parse error an outage.
+
+**The revised mathematical model is in hand and survives a first check.** It recovers the original residual-risk recursion exactly as a special case, confirmed 3 independent ways, so the decay curve and gamma are not demoted. Its honest limit is that the action parameters are free until evidence pins them. It also named a real inverse sign error in our own appendix, now corrected.
+
+**Next: the study of the revised model, then a panel review of it, then the simulated run.** 7 items await the founder's word; they are listed as a response sheet at the end of `experimental_notes/Morning_Report_2026-09-18.md`.
+
+## CURRENT STATE — 2026-09-17 15:21 BST (SUPERSEDED by the block above)
 
 **HEAD `a2999f1` before this save, main; this `sv` pushes 25 commits. Suite 7,493 passed, 5 skipped, 1 xfailed, 0 failed under `--netguard-strict`, pytest exit code 0, in about 23 minutes.**
 
