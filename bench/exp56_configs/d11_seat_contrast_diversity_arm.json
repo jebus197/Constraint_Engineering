@@ -82,8 +82,8 @@
     "paid_seats": 2,
     "free_seats": 0,
     "_paid_seats_note": "Both seats bill through OpenRouter against openai/gpt-5.5.",
-    "launch_blocked": true,
-    "_launch_blocked_note": "TRUE because the strong form of the contrast is not present at HEAD: the Codex seat's `api` is `openrouter`, not `codex_exec`. The flag must be flipped to false in the SAME change that restores the route, and bench/tests/test_d9_d11_configs_valid_2026-09-05.py asserts `launch_blocked == (not precondition_met)` by measuring the live ModelConfigs, so the two cannot drift apart. Arm C may be run in its WEAK form with the flag left true only on an explicit founder ruling, recorded in the note."
+    "launch_blocked": false,
+    "_launch_blocked_note": "FALSE since 2026-09-20: the arm is re-registered as a model contrast and its precondition is met at HEAD. It was TRUE while the arm still asked for `codex_exec`, a route the founder retired for cost. See _seat_contrast.re_registered_2026-09-20 for what changed and the confound that came with it."
   },
   "_seat_contrast": {
     "designed_as": "Diversity Axis 2 of the original panel design, bench/EXECUTION_PLAN_EXPERIMENT_11.md: \"Configuration: Codex (factory + CDSFL) vs ChatGPT (bare + CDSFL). Same weights, different operating conditions.\" The Codex seat ran through `codex exec`, carrying OpenAI's own hidden agent prompt, with CDSFL delivered as elevated directives in the prompt body; the ChatGPT seat ran bare through OpenRouter with CDSFL as the system message.",
@@ -102,26 +102,27 @@
       {
         "seat": "Codex",
         "field": "api",
-        "must_equal": "codex_exec",
-        "why": "the designed contrast is OpenAI's own agent prompt, which only `codex exec` carries"
+        "must_equal": "openrouter",
+        "why": "both seats take the same route now; the contrast is the model, not the route"
       },
       {
         "seat": "ChatGPT",
         "field": "api",
         "must_equal": "openrouter",
-        "why": "the other half of the designed contrast is the bare route with CDSFL as the system message"
+        "why": "the other half of the re-registered contrast"
       },
       {
         "seat": "Codex",
         "field": "model_id",
-        "must_equal": "openai/gpt-5.5",
-        "why": "same weights on both seats is what makes this a CONDITION contrast rather than a vendor contrast"
+        "must_equal": "openai/gpt-5.3-codex",
+        "why": "a DISTINCT model is what makes this a contrast at all after 2026-09-20"
       }
     ],
     "weak_form_vs_strong_form": "WEAK FORM, runnable today: two seats differing only in composed phenotype, a 1371-character directive delta, plus different capability priors. That is a real but small contrast and it is NOT the designed one. STRONG FORM, and what D11 asks for: the Codex seat restored to api=\"codex_exec\" so it carries OpenAI's own agent prompt and its own native tool loop, against ChatGPT bare on OpenRouter. Only the strong form tests operating-condition diversity as designed.",
     "restore_requires": "A change to bench/experiment_11_orchestrator.py, which this design does not own and has not made. The exact change is in the design note under SHARED-MODULE CHANGES.",
     "known_cost_of_restoring": "The reason for the 2026-04-02 change has not gone away. `codex exec` has no --system-prompt flag, so CDSFL is delivered in the prompt body, and the route previously drove a 45-to-80-minute decomposed fallback. Restoring it restores that risk. The wall_clock_cap_s of 21600 gives room for it; a seat that stalls must be reported as a stall, not silently dropped.",
-    "confound_that_survives_restoration": "Pre-lapse the Codex seat was dispatched DECOMPOSED -- chunked target -- far more often than ChatGPT, so the historical route change altered dispatch mechanics and output length as well as the instruction condition. A restored arm inherits the same entanglement: `codex exec` differs from bare OpenRouter in agent prompt AND in tool loop AND in output-length behaviour, and this design cannot separate them."
+    "confound_that_survives_restoration": "Pre-lapse the Codex seat was dispatched DECOMPOSED -- chunked target -- far more often than ChatGPT, so the historical route change altered dispatch mechanics and output length as well as the instruction condition. A restored arm inherits the same entanglement: `codex exec` differs from bare OpenRouter in agent prompt AND in tool loop AND in output-length behaviour, and this design cannot separate them.",
+    "re_registered_2026-09-20": "The DESIGNED contrast -- same weights, 2 operating conditions -- is unbuildable: it required the Codex seat's `codex exec` route, which the founder dropped for cost and is not restoring. His ruling, verbatim, 2026-09-20: \"we just run with a normal recent version of ChatGPT and with a separate instance of Codex 5.3 from this point on, until project completion. We mark the potential confound, state our reasons for this choice, and ensure that this choice stick through all future paid panel reviews and experiments.\" The arm is therefore re-registered as a MODEL contrast: openai/gpt-5.3-codex against openai/gpt-5.5, both through OpenRouter. THE CONFOUND, MARKED AS HE ASKED: a difference between these seats can no longer be attributed to operating conditions, because the weights differ too. The reason for accepting it is that the alternative was 2 seats on 1 model, which measures nothing and reported 5 architectures where there were 4."
   },
   "_convergence_criteria": {
     "description": "TWO-SIDED GATE (founder ruling 2026-06-10; hardened_gate_enabled=false). gamma is ACTIVE and LOAD-BEARING. Converged iff ALL of: (1) gamma_critical >= 0.30 on the location-keyed critical series; AND (2) 3 consecutive rounds with zero NEW genuine critical (settled, verifier-filtered, location-keyed); AND (3) no unverified critical candidate pending (A4 fail-safe); AND (4) not contested, where un-demonstrated sub-criticals are a logged NON-GATING residual queue per FIX 1; AND (5) not churning; AND (6) irreducible queue within bound.",

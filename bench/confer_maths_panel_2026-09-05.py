@@ -240,12 +240,33 @@ def resolve_brief(argv=None) -> None:
 
 import os as _os
 _ONLY = _os.environ.get("PANEL_ONLY", "")
+# 6 SEATS, AND GEMINI IS BACK (founder ruling, 2026-09-20). Verbatim: *"There is
+# no reason why you shouldn't include Gemini! Gemini has traditionally been
+# present for most of the project. If you dropped it in a runner for the
+# experiments, or in a panel review process, then that is clearly an error on
+# your part."* It was absent from this table while the project instructions
+# listed it, so the instructions described a panel that had not been running.
+#
+# THE 2 OPENAI SEATS NO LONGER SHARE A MODEL. Both were `openai/gpt-5.5`: 1
+# architecture wearing 2 labels, 4 architectures reported as 5. His ruling,
+# verbatim: *"we just run with a normal recent version of ChatGPT and with a
+# separate instance of Codex 5.3 from this point on, until project completion. We
+# mark the potential confound, state our reasons for this choice, and ensure that
+# this choice stick through all future paid panel reviews and experiments."*
+#
+# THE CONFOUND, MARKED AS HE ASKED. Codex 5.3 and ChatGPT 5.5 are different
+# MODELS, not the same weights under different operating conditions, so a
+# difference between these 2 seats cannot be attributed to conditions alone. The
+# reason for accepting it: the alternative was 2 identical seats, which measure
+# nothing, and a system-prompt injection scheme whose premise runway 0C.59
+# retracted on 2026-09-02.
 _ALL = [
-    ("cx",    "openai/gpt-5.5",  "openrouter"),   # PAID
-    ("cgpt",  "openai/gpt-5.5",  "openrouter"),   # PAID
-    ("ds",    "deepseek-v4-pro", "deepseek"),     # PAID
-    ("cc2",   "opus",            "claude_cli"),   # Max, free
-    ("fable", "fable",           "claude_cli"),   # Max, free
+    ("cx",    "openai/gpt-5.3-codex",          "openrouter"),  # PAID -- Codex, a distinct model
+    ("cgpt",  "openai/gpt-5.5",                "openrouter"),  # PAID -- ChatGPT mainline
+    ("ge",    "google/gemini-3.1-pro-preview", "openrouter"),  # PAID -- RESTORED 2026-09-20
+    ("ds",    "deepseek-v4-pro",               "deepseek"),    # PAID
+    ("cc2",   "opus",                          "claude_cli"),  # Max, free
+    ("fable", "fable",                         "claude_cli"),  # Max, free
 ]
 # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
 # not cost a second full paid round for the 3 that worked.

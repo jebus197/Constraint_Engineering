@@ -497,16 +497,22 @@ class TestSeatContrastArm:
         always says no."""
         required = self._c()["_seat_contrast"]["required_seat_state"]
         seats = _live_seats()
-        restored = {k: dataclasses.replace(v) for k, v in seats.items()}
-        restored["Codex"] = dataclasses.replace(restored["Codex"], api="codex_exec")
-        lapsed = {k: dataclasses.replace(v) for k, v in seats.items()}
-        lapsed["Codex"] = dataclasses.replace(lapsed["Codex"], api="openrouter")
+        # UPDATED 2026-09-20 with the re-registered precondition. The satisfying
+        # roster is now 2 DISTINCT models on the same route; the failing one is
+        # the old shape, both seats on openai/gpt-5.5, which is exactly what the
+        # arm was re-registered to stop being.
+        meets = {k: dataclasses.replace(v) for k, v in seats.items()}
+        meets["Codex"] = dataclasses.replace(
+            meets["Codex"], api="openrouter", model_id="openai/gpt-5.3-codex")
+        fails = {k: dataclasses.replace(v) for k, v in seats.items()}
+        fails["Codex"] = dataclasses.replace(
+            fails["Codex"], api="openrouter", model_id="openai/gpt-5.5")
 
-        met_restored, _ = precondition_met(restored, required)
-        met_lapsed, unmet_lapsed = precondition_met(lapsed, required)
-        assert met_restored is True
-        assert met_lapsed is False
-        assert any("Codex.api" in u for u in unmet_lapsed), unmet_lapsed
+        met_ok, _ = precondition_met(meets, required)
+        met_bad, unmet_bad = precondition_met(fails, required)
+        assert met_ok is True
+        assert met_bad is False
+        assert any("Codex.model_id" in u for u in unmet_bad), unmet_bad
 
     def test_launch_blocked_matches_the_measured_seat_state(self):
         """The forcing function. Whoever restores the Codex seat to `codex exec`
@@ -554,14 +560,28 @@ class TestSeatContrastArm:
             f"{rec['seat_a']}={CONTEXT_CHAR_BUDGET[rec['seat_a']]}, "
             f"{rec['seat_b']}={CONTEXT_CHAR_BUDGET[rec['seat_b']]}")
 
-    def test_the_two_seats_share_weights(self):
-        """A CONDITION contrast requires identical weights. If the seats ever
-        point at different models, Arm C stops splitting vendor diversity from
-        condition diversity and becomes a second copy of Arm B."""
+    def test_the_two_seats_do_not_share_weights(self):
+        """INVERTED 2026-09-20 ON THE FOUNDER'S RULING, and the inversion is the
+        finding rather than a weakening.
+
+        It required the 2 seats to carry IDENTICAL weights, because arm C was a
+        CONDITION contrast: 1 model, with 1 seat carrying OpenAI's own agent
+        route. That route is retired for cost and is not returning, so the
+        requirement could only be satisfied by 2 seats that were the same model
+        under the same conditions -- which measures nothing, and which made the
+        roster report 5 architectures where it had 4.
+
+        The founder, on a guard that blocks swapping a model: a harness whose
+        central claim is substrate agnosticism cannot carry a test that forbids
+        changing the substrate. The arm is re-registered as a MODEL contrast.
+
+        The property still has teeth in the other direction: 2 seats pointing at
+        1 model would make arm C a duplicate of arm B, and this fails then."""
         seats = _live_seats()
         a, b = self._c()["models"]
-        assert seats[a].model_id == seats[b].model_id, seat_field_diff(
-            seats[a], seats[b])
+        assert seats[a].model_id != seats[b].model_id, (
+            f"{a} and {b} both point at {seats[a].model_id}: arm C is a MODEL "
+            f"contrast since 2026-09-20, and 2 identical seats measure nothing")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

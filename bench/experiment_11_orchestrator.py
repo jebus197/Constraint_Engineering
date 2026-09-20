@@ -140,7 +140,12 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="Codex",
-            model_id="openai/gpt-5.5",
+            # DISTINCT FROM ChatGPT SINCE 2026-09-20 (founder ruling). These 2
+            # seats carried the same identifier, so this roster held 4
+            # architectures and reported 5. The condition-contrast design that
+            # justified identical weights required `codex exec`, which he dropped
+            # for cost and is not restoring.
+            model_id="openai/gpt-5.3-codex",
             api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),

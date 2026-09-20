@@ -28,10 +28,11 @@ On `rs` (recover): run `python3 scripts/cdsfl_recover.py --record-restore` and r
 Panel composition (current as of 2026-05-10, smoke-tested):
 
 - `cc2` = Claude Opus 4.7 via CLI piped mode (`claude -p`), Max subscription
-- `cx` = Codex GPT-5.5 via OpenRouter API (`openai/gpt-5.5`)
+- `cx` = Codex GPT-5.3 via OpenRouter API (`openai/gpt-5.3-codex`) — a DISTINCT model from `cgpt` since 2026-09-20, on the founder's ruling. Before that both pointed at `openai/gpt-5.5`, so the panel had 4 architectures and reported 5.
 - `ge` = Gemini 3.1 Pro Preview via OpenRouter API (`google/gemini-3.1-pro-preview`) — moved from direct Google API to OpenRouter on 2026-05-10 to draw on existing OpenRouter credits at identical pricing
 - `cgpt` = ChatGPT GPT-5.5 via OpenRouter API (`openai/gpt-5.5`)
 - `ds` = DeepSeek V4 Pro via DeepSeek direct API (`deepseek-v4-pro`) — upgraded from R1-0528 on 2026-05-10; the older `deepseek-reasoner` is no longer listed by DeepSeek
+- `fable` = Fable 5.1 via CLI piped mode, Max subscription — a 6th seat, free, and undocumented here until 2026-09-20
 
 All models run under latest CDSFL directives as system prompt. Combinable: `cx ge cc2`.
 CDSFL directives: `bench/directives/universal/cdsfl_core_formal.md`
@@ -75,10 +76,11 @@ Single-letter and short commands that direct model behaviour. Combinable
 | Cmd | Model | Route | Identifier |
 |-----|-------|-------|---|
 | `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription | `opus` |
-| `cx` | Codex GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `cx` | Codex GPT-5.3 | OpenRouter API | `openai/gpt-5.3-codex` |
 | `ge` | Gemini 3.1 Pro Preview | OpenRouter API | `google/gemini-3.1-pro-preview` |
 | `cgpt` | ChatGPT GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
 | `ds` | DeepSeek V4 Pro | DeepSeek direct API | `deepseek-v4-pro` |
+| `fable` | Fable 5.1 | CLI piped mode (`claude -p`), Max subscription | `fable` |
 
 Example: `cx ge cc2` = confer with all three on current task. Updated 2026-05-10 (panel rotation: 4.6→4.7, 5.4→5.5, R1-0528→V4 Pro, Gemini route Google direct→OpenRouter).
 
