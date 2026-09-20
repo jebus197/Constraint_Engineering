@@ -193,6 +193,34 @@ def untracked_cited_paths(prefix: str = "bench/logs/"):
         for p in base.rglob("*"):
             if p.suffix not in (".md", ".py", ".json", ".sh"):
                 continue
+            # A MIRRORED SEAT REPLY IS EVIDENCE, NOT A DOCUMENT MAKING A
+            # CITATION (2026-09-20).
+            #
+            # `experimental_notes/evidence/panel_records_*/` holds verbatim
+            # copies of what each model returned, mirrored out of the ignored
+            # bench/logs so a clone can read them. Those replies QUOTE paths in
+            # their prose -- a seat saying which file it grepped. Counting a
+            # path a model happened to type as a CITATION this project must make
+            # recoverable is both wrong and unbounded: the set is decided by
+            # what the models mention, not by what the project claims.
+            #
+            # MEASURED: mirroring the 2026-09-20 rounds took the
+            # unrecoverable-and-present set from 20 to 40, and every one of the
+            # newcomers came from a seat reply quoting another round's sandbox
+            # harvest. 0 came from the 4 notes written the same day.
+            #
+            # This is the same distinction `_QUOTATION_KEYS` draws in
+            # bench/tests/test_sim_naming_and_integrity_directive.py: a
+            # reviewer's own words inside a record are not the record asserting
+            # something. It is also the second time mirroring machine output has
+            # polluted this census -- the first was a 7.8 MB dump that became
+            # 91% of it.
+            #
+            # The notes that CITE this evidence are still scanned in full, so
+            # nothing a human wrote escapes the check.
+            rel = p.relative_to(REPO).as_posix()
+            if "/evidence/panel_records_" in "/" + rel:
+                continue
             try:
                 cited |= set(pat.findall(p.read_text(encoding="utf-8",
                                                      errors="replace")))

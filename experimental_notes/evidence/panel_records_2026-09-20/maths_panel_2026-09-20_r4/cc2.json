@@ -1,0 +1,172 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15488,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp 2>/dev/null; pwd; ls ~ 2>/dev/null | head -30; find / -maxdepth 4 -name \\\"reference_runner_v3.py\\\" -not -path \\\"*/proc/*\\\" 2>/dev/null | head\", \"description\": \"Locate the repository\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la; echo \\\"---PWD---\\\"; pwd\", \"description\": \"List working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -iE \\\"2026-09-20|sk_verdict|free_parameter|degeneracy|seat_checks\\\" \", \"description\": \"Find named producer scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"model_params\\\" --include=*.py bench/ scripts/ | head -40\", \"description\": \"Find model_params references\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"print('py ok')\\\"; which wolframscript; ls bench/dm/ 2>/dev/null | head -40\", \"description\": \"Check python and wolfram availability\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"model_params\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"*.py\", \"head_limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/sk_verdict_never_fired_2026-09-20.py 2>&1 | tail -40; echo \\\"EXIT=$?\\\"\", \"description\": \"Run sk verdict producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/sk_verdict_never_fired_2026-09-20.py 2>&1 | tail -45; echo \\\"EXIT=${pipestatus[1]}\\\"\", \"description\": \"Run sk verdict producer script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/free_parameter_degeneracy_2026-09-20.py 2>&1 | tail -30\", \"description\": \"Run degeneracy producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11880,11960p bench/reference_runner_v3.py\", \"description\": \"Read the shipped Phase 2 region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11990,12040p bench/reference_runner_v3.py\", \"description\": \"Read structural guard region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def apply_sk_to_rk\\\" -A 60 bench/reference_runner_v3.py | head -80\", \"description\": \"Read apply_sk_to_rk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def sk_threshold_shadow\\\" -A 70 bench/reference_runner_v3.py | head -90; echo \\\"=====SSTAR=====\\\"; grep -n \\\"s_star = \\\\|def _shipped\\\\|def compute_s_star\\\\|s_star\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Read threshold shadow and s_star\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11490,11540p bench/reference_runner_v3.py; echo \\\"=====CORRECTED=====\\\"; grep -n \\\"def check_sk_threshold_corrected\\\" -A 60 bench/reference_runner_v3.py | sed -n 1,70p\", \"description\": \"Read both threshold functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_rk\\\" -A 75 bench/reference_runner_v3.py | sed -n 1,100p\", \"description\": \"Read compute_rk shipped recurrence\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_sk\\\" -A 25 bench/reference_runner_v3.py | head -35\", \"description\": \"Check compute_sk signature for model params\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12040,12115p bench/reference_runner_v3.py\", \"description\": \"Read the tristate branch and rejection path\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p .scratch/w && cat > .scratch/w/split.py <<'EOF'\\nimport json,glob,os,collections\\nfrom statsmodels.stats.proportion import proportion_confint\\nfiles=[p for p in glob.glob('bench/logs/**/*.json',recursive=True)]\\nrec=[]\\ndef walk(o):\\n    if isinstance(o,dict):\\n        if 'tristate' in o and ('sk' in o or 'A' in o): rec.append(o)\\n        for v in o.values(): walk(v)\\n    eli"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,80p scripts/sk_verdict_never_fired_2026-09-20.py\", \"description\": \"Read CC1 producer corpus selection\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/split2.py <<'EOF'\\nimport json,glob,os\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom math import sqrt\\nROOT='.'\\nrej=[];tri={}\\ndef walk(o):\\n    if isinstance(o,dict):\\n        sk=o.get(\\\"sk_result\\\")\\n        if isinstance(sk,dict) and \\\"tristate\\\" in sk:\\n            t=str(sk.get(\\\"tristate\\\")); tri[t]=tri.get(t,0)+1\\n            if t==\\\"REJECT"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/math.py <<'EOF'\\nimport sympy as sp\\nR,q,s,nb,nf = sp.symbols('R q s nu_b nu_f', nonnegative=True)\\n\\n# ---- A: the parameter-map identity (E3 question A) ----\\nB,sig,nu = sp.symbols('B sigma nu')\\nlhs = (1-sig*(1-nu))*B + nu*(1-B)      # (1-s)B + b(1-B) at s=sig(1-nu), b=nu\\nrhs = nu + (1-nu)*(1-sig)*B            # appendix line 215\\nprint(\\\"A) parameter map identity"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mv .scratch/w/math.py .scratch/w/derive.py && python3 .scratch/w/derive.py 2>&1 | tail -25\", \"description\": \"Run derivation (renamed off math.py)\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 11702,11712p bench/reference_runner_v3.py\", \"description\": \"Read the corrected gate decision rule\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/num.py <<'EOF'\\nfrom fractions import Fraction as F\\nimport mpmath as mp\\nmp.mp.dps=50\\ndef shipped(R,q,s):\\n    Rd = R*(1-q)/(1-q*R)\\n    return s*Rd+(1-s)*R\\ndef exact(R,q,s): return R*(1-q*s)\\ndef appx(R,q,s): return (1-s)*R*(1-q)/(1-q*R)\\n# exact rationals, 4000+ samples\\nn=0;bad_se=0;bad_sa=0;mx=F(0)\\nfor i in range(1,17):\\n  for j in range(1,17):\\n    for k in r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/grid.py <<'EOF'\\nimport sys, importlib.util\\nfrom statsmodels.stats.proportion import proportion_confint\\nspec=importlib.util.spec_from_file_location(\\\"rr\\\",\\\"bench/reference_runner_v3.py\\\")\\n# import only the pure functions without executing the whole runner\\nimport ast, types\\nsrc=open(\\\"bench/reference_runner_v3.py\\\").read()\\ntree=ast.parse(src)\\nwant={\\\"compute_rk"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/opline.py <<'EOF'\\nimport ast,types,math\\nfrom typing import Optional,Tuple,Dict,Any\\nsrc=open(\\\"bench/reference_runner_v3.py\\\").read();tree=ast.parse(src)\\nwant={\\\"compute_rk\\\",\\\"check_sk_threshold\\\",\\\"check_sk_threshold_corrected\\\",\\\"sk_break_even\\\"}\\nmod=types.ModuleType(\\\"rr\\\");mod.__dict__.update({\\\"math\\\":math,\\\"os\\\":__import__(\\\"os\\\"),\\n \\\"Optional\\\":Optional,\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF' 2>&1 | tail -12\\nimport json,glob,os\\nruns=[]\\ndef walk(o,acc):\\n    if isinstance(o,dict):\\n        if \\\"novel_critical_history\\\" in o and isinstance(o[\\\"novel_critical_history\\\"],list):\\n            acc.append(o[\\\"novel_critical_history\\\"])\\n        for v in o.values(): walk(v,acc)\\n    elif isinstance(o,list):\\n        for v in o: walk(v,acc)\\nfor f in sorted(glob"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > .scratch/w/fit.py <<'EOF'\\nimport json,glob,os,numpy as np\\nfrom scipy.optimize import minimize\\nfrom scipy.stats import chi2\\nruns=[]\\ndef walk(o,acc):\\n    if isinstance(o,dict):\\n        if isinstance(o.get(\\\"novel_critical_history\\\"),list): acc.append(o[\\\"novel_critical_history\\\"])\\n        for v in o.values(): walk(v,acc)\\n    elif isinstance(o,list):\\n        for v in o: w"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(dirname \\\"$(which wolframscript)\\\")\\\" 2>/dev/null; wolframscript -code 'Rd=R(1-q)/(1-q R); ship=s Rd+(1-s)R; ex=R(1-q s); d=FullSimplify[ship-ex];\\nPrint[\\\"shipped-exact = \\\",Together[d]];\\nPrint[\\\"nonneg on box: \\\",Resolve[ForAll[{R,q,s},0<R<1&&0<q<1&&0<s<1,ship-ex>=0],Reals]];\\nnb=5/100; nf=20/100; ne[sk_]:=1-(1-nb)(1-(1-sk)nf);\\nrkS[sk_]:=(sk (1/2)(1-1/2)/(1-(1/2)(1/2))+(1-s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'nb=5/100;nf=20/100;ne[sk_]:=1-(1-nb)(1-(1-sk)nf);\\nrkS[sk_]:=(sk (1/2)(1-1/2)/(1-(1/2)(1/2))+(1-sk)(1/2))(1-ne[sk])+ne[sk];\\nrkE[sk_]:=((1/2)(1-(1/2)sk))(1-ne[sk])+ne[sk];\\nPrint[\\\"shipped roots in [0,1]: \\\",N[Select[sk/.Solve[rkS[sk]==1/2,sk],0<=#<=1&],10]];\\nPrint[\\\"exact   roots in [0,1]: \\\",N[Select[sk/.Solve[rkE[sk]==1/2,sk],0<=#<=1&],10]];' 2>&1 | tail -4\", "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/phase2_mixes_probability_spaces_2026-09-20.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: compute_rk Phase 2 interpolates between two DIFFERENT probability\\nspaces, and the error is one-signed (it always OVERSTATES residual risk).\\n\\nTHE DEFECT. bench/reference_runner_v3.py:10985-10993 computes\\n\\n    Phase 1:  R_det  = R_old*(1-q)/(1-q*R_old)      # P(flaw | NOT"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re,pathlib\\np=pathlib.Path(\\\"scripts/phase2_mixes_probability_spaces_2026-09-20.py\\\")\\ns=p.read_text()\\ndead = \\\"\\\"\\\"    over = [s for s in band\\n            if exact_phase12(R, q, s) * (1 - (1 - NB) * (1 - (1 - s) * NF))\\n            + (1 - (1 - NB) * (1 - (1 - s) * NF)) * 0  # noqa: placeholder\\n            or True]\\n\\\"\\\"\\\"\\nassert dead in s, \\\"placeholder "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff check scripts/phase2_mixes_probability_spaces_2026-09-20.py 2>&1|head -20\", \"description\": \"Show ruff errors\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff check --fix scripts/phase2_mixes_probability_spaces_2026-09-20.py 2>&1|tail -3; python3 -m ruff check scripts/phase2_mixes_probability_spaces_2026-09-20.py 2>&1|tail -8\", \"description\": \"Apply ruff fixes and recheck\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/phase2_mixes_probability_spaces_2026-09-20.py\\\");s=p.read_text()\\nold=\\\"    worthless_shipped = compute_rk(R, q, 0.0, NB, NF)\\\\n\\\"\\nassert old in s; s=s.replace(old,\\\"\\\")\\n# compute_rk is still used for the real-import assertion; keep a live use of it\\ns=s.replace(\\\"    compute_rk = rr.compute_rk\\\\n\\\",\\\"\\\")\\ns=s.replace(\\\"   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/rejected_is_two_causes_conflated_2026-09-20.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: the archived `REJECTED` token conflates TWO causes, and 0 of them\\nare the unmeasured constants.\\n\\nTHE CLAIM UNDER TEST is the round-4 panel brief, Section 3:\\n\\n    \\\"191 fixes were refused on the strength of a constant nobody measured.\\\"\\n\\nIt is false, and the error is "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"score_exam\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v \\\"logs/\\\" | head -10; echo \\\"--- defs ---\\\"; grep -n \\\"^def \\\\|recall\\\\|false_positive\\\" bench/score_exam.py 2>/dev/null | head -15\", \"description\": \"Check score_exam wiring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"NO PLAINTEXT SCORING KEY\\\\|vault_keys.sh status\\\\|REFUSE\\\" bench/reference_runner_v3.py | head -8; echo \\\"--- score() key use ---\\\"; sed -n 177,190p bench/score_exam.py\", \"description\": \"Verify refuse-start control and key dependency\"}"
+    }
+  ],
+  "n_tool_calls": 38,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 517.3,
+  "response": "---\n\n# Seat verdict \u2014 round 4\n\nI am a CLI seat. I have `Write`/`Edit` in my toolset, contrary to Section 7's description, but I delivered through Bash heredocs to real paths anyway \u2014 the route the corrected brief prescribes. **That is itself a small E4 residual: the brief's tool inventory does not match what was dispatched.**\n\nI have **no round-3 answer to restate**. I will not manufacture one. What follows is a fresh verdict.\n\n**Headline: the brief's own Section 3 is wrong, and it is wrong by the same mechanism it congratulates itself for escaping.**\n\n---\n\n## F1 \u2014 The brief's Section 3 attribution is false. 0 of 191, not 191 of 191.\n\n**Claim under test (brief, \u00a73):** *\"191 fixes were refused on the strength of a constant nobody measured.\"*\n\n**Verdict: FAILS.**\n\n`REJECTED` is written at **two** sites, and they are different causes:\n\n- **(a)** `compute_sk` returns `SK_REJECTED` \u2014 patch would not apply, or a hard gate failed. Signature at `reference_runner_v3.py:10685` is `compute_sk(fix_text, source, source_path, baseline=, test_cmd=, declared_target_kind=, score_prose_listings=)`. **It takes no model parameters.** The constants decide nothing here.\n- **(b)** Line **12106** *overwrites* the tristate: `entry[\"sk_result\"][\"tristate\"] = SK_REJECTED`, after the S\\* gate refused. This is the site the constants decide.\n\nBoth write the same five bytes. They are separable, because (b) passes line 11998 (`passes_threshold = passes`) and (a) never reaches it.\n\n```\n$ python3 scripts/rejected_is_two_causes_conflated_2026-09-20.py\ncorpus bench/logs/*/runner_state.json           : 47 files\nREJECTED (CC1 reports 191)                      : 191\n  reached the S* gate (has passes_threshold)    : 0\n  refused BY THE CONSTANTS                      : 0\n  refused by compute_sk, which takes no params  : 191\n  share attributable to the constants           : 0.0000%  Wilson [0.0000%, 1.9716%]\n  statsmodels Wilson agrees to 1e-12            : True\ngate records carrying s_star                    : 902\n  with a NON-ZERO s_star                        : 0   (the threshold never bound)\n```\n\nWidened to all 7,239 archived JSON files: 520 `REJECTED`, **0** carrying `passes_threshold`, Wilson [0.0000%, 0.7333%]; 4,142 `s_star` records, **0** non-zero.\n\nCC1 correctly stopped reading the constant *name* and read the recorded *value* \u2014 and then attributed the union of two causes to one of them. **The trap was one level up, and the fix for the first trap did not reach it.** This is the same shape as the Section 6 harness defects and the shape of the defect under review: a value correct at each end, wrong across the join.\n\n**Consequence: `cc2`'s residual stands and CC1's closure of it is withdrawn.** For the archive, **change nothing** is the correct verdict. The Phase 2 defect (F2) is real, but it is **entirely prospective \u2014 it has no archival body count.**\n\n**What would refute me:** one archived `sk_result` with `tristate == \"REJECTED\"` and `passes_threshold == False`. My falsifier asserts `k == 0` and fails loudly if one appears.\n\n---\n\n## F2 \u2014 `compute_rk` Phase 2 interpolates between two different probability spaces (Q2, Q5, Q6)\n\n**Verdict: HOLDS.** `reference_runner_v3.py:10985\u201310993`:\n\n```\nPhase 1:  R_det  = R_old(1-q)/(1-q\u00b7R_old)   # P(flaw | NOT detected)  \u2014 CONDITIONAL\nPhase 2:  R_base = sk\u00b7R_det + (1-sk)\u00b7R_old  # mixed with R_old        \u2014 UNCONDITIONAL\n```\n\nA convex combination of a conditional posterior and an unconditional prior is not an expectation over any partition. `R_base` is not a probability of anything.\n\n**The exact answer, derived by total expectation over three disjoint branches:**\n\n| branch | mass | flaw survives |\n|---|---|---|\n| present & detected | `R\u00b7q` | `1-sk` |\n| present & not detected | `R(1-q)` | `1` |\n| absent | `1-R` | `0` |\n\n`R_after = R\u00b7q(1-sk) + R(1-q) = **R(1 \u2212 q\u00b7sk)**`\n\nSymPy (`.scratch/w/derive.py`): `Exact unconditional post-repair risk : -R*(q*s - 1)`, and\n\n```\nshipped - exact = R**2*q*s*(q - 1)/(R*q - 1)     \u2265 0\n```\n\n**Wolfram second falsifier** (local Wolfram Engine, exit 0, `Out` values returned, no `Name::tag`) \u2014 result computed with **Wolfram Language**:\n\n```\nshipped-exact = ((-1 + q)*q*R^2*s)/(-1 + q*R)\nnonneg on box: True                       \u2190 Resolve[ForAll[...]], quantifier elimination\nshipped roots in [0,1]: {0.50493117097042334623...}\nexact   roots in [0,1]: {0.39504282586739753934...}\n```\n\nWolfram **proved** one-sidedness over the whole open box \u2014 strictly stronger than my 4,352-point exact-rational sweep and 16,250-point mpmath sweep, both of which found 0 sign violations.\n\nThe error is **one-signed**: shipped always *overstates* residual risk. The gate is the sign test `compute_rk(R,q,sk) <= R` (line 11708), so a one-signed overstatement is a one-signed **over-refusal**.\n\n```\n$ python3 scripts/phase2_mixes_probability_spaces_2026-09-20.py\n[2] at the operating point R=q=0.5, over 1001 sk values:\n    net-beneficial fixes the live gate REFUSES  : 109 (10.8891%)\n    harmful fixes the live gate ADMITS          : 0\n    refused band                                : sk in [0.396, 0.504]\n```\n\nBreak-even moves **0.504931 \u2192 0.395043**. Those are the brief's Q6 numbers, reproduced to 6 dp from a first-principles derivation I did before reading them as targets, by two independent tools (scipy `brentq`, Wolfram `Solve`).\n\n---\n\n## F3 \u2014 The revision's own Phase 2 is *also* wrong, and worse at a point the shipped one gets right\n\n**This is my sharpest disagreement with the brief.** Brief Q2 offers a binary: \"fix the Phase 2 arithmetic\" or \"re-label the parameters\". **Both options are wrong**, because the arithmetic the revision would install is defective.\n\n| | `sk = 0` (worthless fix) | `sk = 1` (perfect fix) |\n|---|---|---|\n| shipped `sk\u00b7R_det+(1-sk)R` | **R** \u2713 | `R_det` \u2717 (never reaches 0) |\n| appendix `(1-\u03c3)\u00b7R_det` | **`R_det` \u2717** | `0` \u2713 |\n| **exact `R(1-q\u00b7sk)`** | **R** \u2713 | `R(1-q)` \u2713 |\n\nAt `R=q=0.5`: a fix that does *nothing* is credited by the appendix form with a drop from **0.500000 \u2192 0.333333**. Only the exact form is right at both endpoints.\n\n**Answer to Q2: fix the arithmetic \u2014 to `R(1 \u2212 q\u00b7sk)`, NOT to the appendix form.** E3's table asks question A (parameter map, identity, residual 0 \u2014 `ds` and `fable` right) and question B (shipped recurrence, not identical \u2014 `cc2` right). Both are correct and CC1's synthesis is sound. But there is a **question C the brief does not ask**: *is the revision's target form itself right?* It is not.\n\n**Answer to Q5:** yes, sequential \u2014 `ds` (stricter) and `fable`/`cc2` (over-refuses) are both right, in order. The gate went too-permissive \u2192 too-strict. A second move **is** warranted, because the over-refusal is one-signed with **0 harmful-direction disagreements** at every resolution I measured (operating line 109/1001; grid 3,372/31,941 = 10.5570%, Wilson [10.2247%, 10.8987%], harmful = 0). Moving it costs nothing in the harmful direction.\n\n**Answer to Q6: I disagree with `cc2`.** `cc2` says swapping 0.504931 for 0.395043 trades one `q=0.5`-derived constant for another. True but not the point: **0.395043 is derived from a correct expectation and 0.504931 from an incorrect one, at the same `q`.** The improvement is in the *functional form*, which is `q`-independent \u2014 Wolfram's `ForAll` proof holds for every `q \u2208 (0,1)`. Fixing an arithmetic error does not require first measuring its inputs. The `q` objection applies to the *magnitude*, not the *direction*.\n\n---\n\n## F4 \u2014 Q1: which comparison is operationally correct\n\n**The defensible figure is ~10.5\u201310.9% over-refusal, against the exact-expectation Phase 2, with 0 harmful-direction disagreements.** Reproduced independently at two slicings.\n\n- **75.8%** \u2014 no producer, confirmed. `fable`'s delivered script runs 23/23 green and does not compute it. **Must not be quoted.**\n- **59.66%** \u2014 compares against a no-reinjection 2-phase model. Phase 3 ships and is live. **Wrong baseline; not the operationally relevant comparison.**\n- **~10.5%** \u2014 correct comparison, and robust to slicing.\n\n**But the brief's framing of even this figure is loose.** The 28,880-point grid integrates uniformly over an `(R,q,sk)` box the system **never visits**. `model_params` has 0 writers (grep: 2 readers at `reference_runner.py:3156`, `reference_runner_v3.py:11921`; the only write is a test fixture at `test_ouroboros_loop_close.py:391`), so every run sits at the single point `R=q=0.5`. The operationally correct figure is the **operating-line** one: **10.8891%**, the band `sk \u2208 (0.395043, 0.504931)`. The grid figure agrees by coincidence of scale, not by construction.\n\n---\n\n## F5 \u2014 Q4: `b` is estimable, and it is not identified. Both camps are right.\n\nI ran `fable`'s proposed fit. 36 archived runs carry `novel_critical_history`; 16 have \u22656 rounds. Poisson MLE, `A\u00b7\u03c1^t` vs `A\u00b7\u03c1^t + b`:\n\n```\nlikelihood-ratio 2*Delta = 32.2310 on 16 extra df   p = 0.009329\nAIC pure-decay -145.51   AIC constant+decay -145.74\nper-run b-hat: median 0.0000  IQR [0.0000, 0.5692]  max 3.7452\nruns where b-hat < 0.01 (indistinguishable from 0): 10/16\n```\n\n**Resolution: estimable \u2260 estimated.** The instrument exists and the data is on disk \u2014 `fable` is right. The estimate is unusable \u2014 `cgpt`/`ds`/`cx` are right about what the model needs. Median `b\u0302` is exactly 0; it is identified in 6 of 16 runs; the AIC margin is **0.23 on ~146**, a tie; the IQR straddles zero. The LRT `p` is driven by the 6 large-`b\u0302` runs and the pooling is across heterogeneous experiments, so I weight it low.\n\n**`b` adds 0 practitioner parameters. Do not adopt it.** Running the fit is a week's work that returns \"not identified on the current archive\" \u2014 a useful answer, not a parameter with content.\n\n---\n\n## F6 \u2014 Q3: `cc2`'s A1 is NOT adoptable as stated. It is a key-access path.\n\n`bench/score_exam.py:177`: `def score(run_dir: Path, key_path: Path)` \u2192 `key = json.loads(key_path.read_text())`. **It requires the answer key.** Wiring it into the live runner to supply `model_params` means the runner reads the scoring key *during* a run \u2014 the Exp 48 failure mode, written into the runner instead of into a falsifier.\n\n`cc2` is right that `score_exam.py` is dead (called only from `bench/tests/test_score_exam.py`) and right that this is the \"addition nothing reaches\" class. But the fix must run **post-hoc, against a vaulted key, after dispatch**, and feed the *next* run's prior \u2014 never the current one. As written, A1 is not the top item; it is not adoptable at all.\n\n**So: no, 191 archived refusals do not change my order, because there were 0 of them.**\n\n---\n\n## Ordered adoption list\n\n**1. Replace `compute_rk` Phases 1+2 with `R_base = R_old\u00b7(1 \u2212 q\u00b7sk)`.**\n- *Live defect:* mixes conditional posterior with unconditional prior; one-signed overstatement of `R_k`.\n- *Evidence:* `scripts/phase2_mixes_probability_spaces_2026-09-20.py`, exit 1, `FALSIFIED`. SymPy residual `R\u00b2qs(q-1)/(Rq-1)`; Wolfram `Resolve[ForAll[...]] \u2192 True`; 3,375/3,600 exact-rational mismatches, 0 sign violations.\n- *Cost:* **\u22121 structure, 0 parameters.** It deletes the denominator. Simpler than what ships.\n- *Measure first:* **nothing.** The correction is `q`-independent and proved over the whole box.\n- *Blast radius:* 1 boolean per finding (fix admission), per E2 \u2014 which I confirm: `_check_gamma_alt_convergence` takes no risk term, and the `sk_evaluated` flat boolean at 12026 preserves the guard's invariant.\n\n**2. Split the `REJECTED` token at the write site.** Write `SK_REJECTED_GATE` at line 12106, leaving `SK_REJECTED` for `compute_sk`. Cost: 0 parameters. This defect cost CC1 a wrong conclusion in this very round, and `passes_threshold` only separates them by accident of a key that happens to be absent.\n\n**3. Post-hoc `score_exam.py` wiring \u2014 deferred, not adopted.** Requires a vaulted-key, after-dispatch route that does not exist. Must be designed before it is costed.\n\n## NOT adopted\n\n- **The appendix/revision Phase 2 `(1\u2212\u03c3)R_det`** \u2014 F3: credits a no-op fix with the full detection gain. Strictly worse than what ships at `sk=0`.\n- **Re-labelling parameters at `s=\u03c3(1\u2212\u03bd), b=\u03bd`** \u2014 the map is a true identity (residual exactly 0) and therefore changes no computed value. Decoration.\n- **Any introduction-rate parameter `b`** \u2014 F5: not identified; median estimate 0.\n- **`cc2`'s A1 as written** \u2014 F6: key-access path.\n- **The 75.8% and 59.66% figures** \u2014 no producer / wrong baseline.\n- **Anything justified by the 191 archived refusals** \u2014 F1: there were none.\n\n## Practitioner parameter count: **1**\n\n`R_new = R(1 \u2212 q\u00b7sk)`, then re-injection. One free parameter, `q`; `sk` is measured by the gate. A competent reader follows it in one line and can check it on paper: *\"the risk survives unless the flaw was both found and fixed.\"* My recommendation **lowers** the reading cost \u2014 it removes the `1/(1\u2212qR)` denominator from the update path. The collapsed model `R(1\u2212p)/(1\u2212pR)` remains exactly correct as the *conditional* statement and is unchanged.\n\n---\n\n## Where I disagree\n\n- **With the brief, Section 3 (strongest).** The 191-refusal inversion is false. 0 of 191, Wilson [0%, 1.9716%]. The brief built its Q3 on it and asked whether it reorders the adoption list; it does not, because it did not happen. `cc2`'s uncertainty was the correct epistemic state and closing it was premature.\n- **With the brief, Q2's framing.** It offers two options and the right answer is neither. The revision's target arithmetic is independently defective.\n- **With `cc2` on Q6.** The `q=0.5` objection bites on magnitude, not on the functional form. An arithmetic error can be fixed before its inputs are measured.\n- **With `ds`/`fable` on E3-A's *significance*.** They are right that the identity holds. But a parameter map with residual exactly 0 changes no computed value \u2014 proving it is not an adoption item.\n- **With the brief, Section 7.** My dispatched toolset includes `Write`/`Edit`, which Section 7 states CLI seats do not have. E4 is corrected in prose but not in the dispatch.\n- **Partially with `fable` on Q4.** Right that the instrument exists; the data does not support the parameter, and \"estimable\" was doing work in that answer that \"estimated\" cannot.\n\n## What would refute me\n\n1. **F1** \u2014 one archived `sk_result` with `tristate==\"REJECTED\"` and `passes_threshold==False`. My falsifier asserts `k==0` and fails loudly.\n2. **F2/F3** \u2014 a statement of what `R_k` *is* that makes the conditional/unconditional mix legitimate: if `R_k` is defined as \"risk conditional on the observation actually made\", my exact form is the wrong space and Phase 2 should be deleted rather than replaced. **This is my largest open residual and I do not close it.** It needs a founder ruling on which quantity `R_k` denotes. My recommendation assumes *unconditional*, because Phase 3 adds unconditional re-injection mass to it \u2014 mixing spaces again if `R_k` were conditional.\n3. **F2 magnitude** \u2014 any writer to `model_params` reaching production would move the operating point off `R=q=0.5` and the 10.8891% would need re-measuring on the real distribution.\n4. **F5** \u2014 a paired action cohort, or ~3\u00d7 the round-depth on the existing runs, could identify `b` and reverse \"do not adopt\".\n\n**Delivered:** `scripts/phase2_mixes_probability_spaces_2026-09-20.py`, `scripts/rejected_is_two_causes_conflated_2026-09-20.py`. Both exit 1 with `FALSIFIED`, both import the real target, both pass `ruff`. Ruff caught an unused variable in my own first draft \u2014 an addition nothing reached \u2014 and I removed it before delivery.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo",
+      "built": false
+    }
+  ]
+}

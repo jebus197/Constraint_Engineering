@@ -1,0 +1,156 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10682,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-09-20*\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/*.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -60; echo ---; ls bench/dm/ 2>/dev/null; echo ---; ls logs/ | head -30\", \"description\": \"List scripts, bench/dm, and logs directories\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_check_gamma_alt_convergence\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 20}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/scripts/sk_verdict_never_fired_2026-09-20.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/sk_verdict_never_fired_2026-09-20.py 2>&1 | tail -30\", \"description\": \"Run the sk-verdict archive producer script\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def _check_gamma_alt_convergence\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 15}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/reference_runner_v3.py\", \"offset\": 11990, \"limit\": 70}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"10\\\\.4882|28,?880|28880\", \"path\": \".\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 15}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"R_det|r_det\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"sk_threshold_shadow|def sk_threshold\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 15}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/reference_runner_v3.py\", \"offset\": 12059, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_R3_2026-09-20.md\", \"offset\": 200, \"limit\": 120}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -E \\\"phase2|gate_collapses|maths_revision_seat|sk_break|overstat\\\" ; echo \\\"exit=$?\\\"; ls bench/logs/maths_panel_2026-09-20_r3/ 2>/dev/null; ls bench/logs/maths_panel_2026-09-20_r4/ 2>/dev/null\", \"description\": \"Check for round-3 delivered producer scripts and panel log dirs\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def compute_rk\\\\(|def compute_rk_with_eta_channel|def check_sk_threshold_corrected\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -R bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest | head -40\", \"description\": \"List harvested sandbox files from round 3\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/reference_runner_v3.py\", \"offset\": 10930, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -60 bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/cc2/attempt-1/files/scripts/phase2_interpolation_overstates_risk_2026-09-20.py; grep -nE \\\"import|open\\\\(|glob|answer|key\\\" bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/cc2/attempt-1/files/scripts/phase2_interpolation_overstates_risk_2026-09-20.py | head -20\", \"description\": \"Inspect harvested phase2 producer for ad"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\n\\ns, v, B, sig, R, q, sk, nb, nf = sp.symbols('s v B sigma R q sk nu_b nu_f', positive=True)\\n\\n# CLAIM A: (1-s)B + b(1-B) at s=sigma*(1-v), b=v  vs  v + (1-v)(1-sigma)B\\nlhs = (1 - sig*(1-v))*B + v*(1-B)\\nrhs = v + (1-v)*(1-sig)*B\\nprint(\\\"A residual:\\\", sp.simplify(sp.expand(lhs - rhs)))\\n\\n# CLAIM B: shipped pipeline vs revision action step ap"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/cc2/attempt-1/files/scripts/phase2_interpolation_overstates_risk_2026-09-20.py 2>&1 | tail -20; echo \\\"EXIT=$?\\\"\", \"description\": \"Run harvested phase2 over-refusal producer to reproduce 10.4882%\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/reference_runner_v3.py\", \"offset\": 11643, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# model_params: writers vs readers, AST over production code (tests excluded)\\nimport ast, glob\\nwriters, readers = [], []\\nfor f in glob.glob(\\\"bench/**/*.py\\\", recursive=True) + glob.glob(\\\"scripts/*.py\\\"):\\n    if \\\"/tests/\\\" in f or \\\"/logs/\\\" in f: continue\\n    try: tree = ast.parse(open(f, errors=\\\"ignore\\\").read())\\n    except SyntaxError: continue\\n    for "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Q4: collect per-round novel_critical_history series from archived runner states\\nimport glob, json, os\\nseries = []\\nfor f in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    if os.path.getsize(f) > 60_000_000: continue\\n    try: d = json.load(open(f, errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    found = []\\n    def walk(o):\\n        if isins"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"model_params\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"!**/tests/**\", \"head_limit\": 10}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/reference_runner_v3.py\", \"offset\": 11910, \"limit\": 80}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/scripts/b_fit_novel_decay_2026-09-20.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Is the introduction rate `b` estimable AT DETECTABLE SCOPE from data already on disk?\\n\\nPanel round 4, Q4. fable (round 3) claimed YES: fit constant-plus-decay against\\npure decay on the per-round novel-critical serie"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/b_fit_novel_decay_2026-09-20.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is the introduction rate `b` estimable AT DETECTABLE SCOPE from data already on disk?\\n\\nPanel round 4, Q4. fable (round 3) claimed YES: fit constant-plus-decay against\\npure decay on the per-round novel-critical series, because at steady state\\ndetections per round equal `b` exactly. cgpt/ds/cx sai"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/free_parameter_degeneracy_2026-09-20.py 2>&1 | tail -8; echo \\\"EXIT=$?\\\"; echo ---; find bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/fable -name \\\"*.py\\\" | head; grep -rn \\\"75.8\\\\|maths_revision_seat_checks\\\" bench/logs/maths_panel_2026-09-20_r3/fable.json 2>/dev/null | head -3\", \"description\": \"Run degeneracy producer; locate fable round-3 script and 75.8% tr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'Simplify[((1-sk)*(R*(1-q)/(1-q*R)) + (1-sk)*0) - 0]; FullSimplify[(sk*(R*(1-q)/(1-q*R)) + (1-sk)*R)*(1-nu) + nu - (nu + (1-nu)*(1-sk)*(R*(1-q)/(1-q*R)))]' 2>&1 | head -5 || echo \\\"WOLFRAM ABSENT\\\"\", \"description\": \"Wolfram second falsifier on the shipped-vs-revision residual\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"75\\\\.8|59\\\\.66|16800|16,800\", \"path\": \".\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"*.py\", \"head_limit\": 10}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# fable's E_corr claim, independently: E_corr - R = R*q*sigma*(nu-1) <= 0 ?\\nimport sympy as sp\\nR,q,sig,nu = sp.symbols('R q sigma nu', positive=True)\\n# branch-correct semantics, repair after confirmed detection, nu on repair branch only:\\n# detected w.p. qR -> repaired w.p. sigma (survives (1-sigma)), re-injection nu on repair\\nE_corr = q*R*(sig*nu + (1-sig)) + ("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"tool-less retry\\\\|toolless\\\\|empty visible\\\\|retry\\\" bench/openrouter_tools.py | head -8; grep -rln \\\"temperature\\\" bench/openrouter_tools.py | head -2; ls bench/tests/ | grep -iE \\\"openrouter|empty|synthesis|temperature\\\" | head\", \"description\": \"Spot-check Section 6 harness fixes and their tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/cc2/attempt-1/files/scripts/phase2_interpolation_overstates_risk_2026-09-20.py scripts/ && cp bench/logs/maths_panel_2026-09-20_r3/sandbox_harvest/cc2/attempt-1/files/scripts/gate_collapses_to_one_constant_2026-09-20.py scripts/ && python3 scripts/phase2_interpolation_overstates_risk_2026-09-20.py 2>&1 | grep -E \\\"REFUSES|ADMITS\\"
+    }
+  ],
+  "n_tool_calls": 34,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 385.6,
+  "response": "All evidence is in. Final report.\n\n---\n\n# ROUND 4 \u2014 SEAT VERDICT\n\n**Attribution:** one Wolfram result below computed with **Wolfram Language** (local Wolfram Engine via `wolframscript`); it exited with output, no `Name::tag`, no `$Failed`. Every Wolfram claim was first obtained with SymPy.\n\n## 1. Verdict, and the effect of E1\u2013E5\n\n**ADOPT THE NAMED CORRECTIONS, practitioner parameter count 1.** I did not assume any round-3 record, mine included \u2014 every load-bearing claim below was re-executed this round.\n\n| Error | Did the correction change the answer? |\n|---|---|\n| **E1** | **Yes \u2014 it changes which figure the recommendation cites, not its direction.** The 75.8% must be struck: no producer exists anywhere in this tree (`grep -rn \"75.8\" --include=*.py` finds only the provenance scripts *about* it), and I additionally established the comparator behind it is degenerate (Q1 below). The 10.4882% replaces it; I reproduced it, exit 0. |\n| **E2** | **Yes \u2014 it removes a hedge, adds nothing.** Verified at both ends: `_check_gamma_alt_convergence` (line 6860) takes `novel_critical_history, unresolved_critical, contested, rho_churn, irreducible_queue, gamma_critical, total_findings` \u2014 no risk term \u2014 and the line-12020 structural guard is real. Blast radius of any R_k change is 1 boolean per finding (fix admission, line 12107). Any round-3 caution grounded in a \"risk-threshold stop\" was hedging against nothing. |\n| **E3** | **Yes \u2014 it flips the adoption item from re-labelling to arithmetic** (Q2 below). I derived both halves independently. |\n| **E4** | **Confirmed live on this very seat**: my `Write` call was refused mid-round; the Bash-heredoc channel worked. fable's NOT DELIVERED was the correct report; the brief was the defect. |\n| **E5** | **Changed my method, not a conclusion**: nothing here was accepted on authority. Notably, the brief's own Section 5 figure re-executed green (`free_parameter_degeneracy_2026-09-20.py`, 1 free direction, EXIT=0) \u2014 the no-SETTLED policy is working. |\n\n## 2. Q1\u2013Q6, each with executed evidence\n\n**Q1 \u2014 The defensible over-refusal figure is 10.4882%, Wilson [10.1401%, 10.8469%], and the operationally correct comparison is the minimal exact-expectation Phase 2.** The three figures are three *comparators*, and two of them disqualify themselves:\n\n- **75.8%** \u2014 comparator is the revision's full re-semantics. I derived its gate condition: `E_corr = qR(\u03c3\u03bd + (1\u2212\u03c3)) + (1\u2212qR)\u00b7R(1\u2212q)/(1\u2212qR)`, and SymPy gives **`E_corr \u2212 R = Rq\u03c3(\u03bd\u22121) \u2264 0` identically** \u2014 that comparator admits *every* fix with \u03c3>0. Over-refusal measured against a gate that refuses nothing is large by construction and calibrates nothing. No producer besides. **FAILS** twice over.\n- **59.66%** \u2014 no producer in this tree (`grep -rn \"59.66|16800\"` \u2192 0 hits in any `.py`). Drops re-injection entirely, so it is not the stated process either. **UNVERIFIED.**\n- **10.4882%** \u2014 holds `q, R, \u03bd_b, \u03bd_f` fixed, replaces only the interpolation `sk\u00b7R_det+(1\u2212sk)\u00b7R` with the branch-enumerated expectation `R(1\u2212q\u03c3)`, which is provably what the appendix's prose describes. Preserves the gate's function (at defaults, sk=0.10 still REFUSES under it). Reproduced by me: `python3 scripts/phase2_interpolation_overstates_risk_2026-09-20.py` \u2192 `3029/28880 = 10.4882% \u2026 harmful 0/28880`, EXIT=0. **HOLDS.**\n\n**Q2 \u2014 Fix the Phase 2 arithmetic; do not re-label parameters. Gated behind a measured `q` (see Q6).** My independent SymPy pass (command in transcript):\n- **A residual = 0 exactly**: `(1\u2212\u03c3(1\u2212\u03bd))B + \u03bd(1\u2212B) \u2212 [\u03bd + (1\u2212\u03bd)(1\u2212\u03c3)B] \u2261 0`. ds and fable right on the map.\n- **B residual \u2260 0**: shipped pipeline minus revision action-step = `R(\u03bd_b\u22121)(\u03bd_f\u00b7sk\u2212\u03bd_f+1)(Rq\u00b7sk\u2212Rq\u22122q\u00b7sk+q+sk)/(Rq\u22121)`; cc2's published D1 expression matches mine to 0. **Wolfram second falsifier** (bare-\u03bd form): `((-1+\u03bd)R(q+qR(sk\u22121)+sk\u22122q\u00b7sk))/(\u22121+qR)` \u2014 non-zero. The parameters exist in Stage 5; the arithmetic does not. Re-labelling fixes nothing; the interpolation does not equal the expectation of any stated process (gap `R\u00b2q\u03c3(q\u22121)/(Rq\u22121) \u2265 0` on 0/891 exact-rational box points negative).\n\n**Q3 \u2014 Yes, and it puts A1 (wire `score_exam.py` \u2192 `model_params`) at the top.** Reproduced: `python3 scripts/sk_verdict_never_fired_2026-09-20.py` \u2192 **1247 verdicts across 39 runs, 191 REJECTED (15.3168%, Wilson [13.4246%, 17.4220%])**, statsmodels agrees to 1e-12. My own AST pass independently confirms `model_params` has **0 writers**; readers at `reference_runner_v3.py:11921` and `reference_runner.py:3156`. The constant is not hypothetical \u2014 it refused 191 fixes on the record. Supplying it is the highest-value zero-parameter change available, and every other item (the Phase-2 swap, the threshold question) is *blocked on it*. Order changes: A1 first, unconditionally.\n\n**Q4 \u2014 One answer, two scopes; both camps right; and I ran the fit nobody had run.** Delivered `scripts/b_fit_novel_decay_2026-09-20.py` (heredoc channel; executed, exit 0): Poisson MLE of constant-plus-decay vs pure decay on the 16 archived runs with \u22656 rounds, boundary-corrected LRT, optimiser cross-checked by an independent grid search (16/16 `grid_ok`). Result: **3/16 runs reject pure decay** (exp42_takeupslack p\u22480.0000, \u0394AIC 19.5, b\u0302=1.52; exp40_gate p=0.0145, b\u0302=3.75; exp48 p=0.0115, b\u0302=0.40); 13/16 sit at b\u0302=0. So: **estimable at detectable scope, today, on a minority of runs that ran long enough** \u2014 fable's instrument works \u2014 while the parameter the *gate* consumes (\u03bd_b as a per-fix probability) still needs the paired re-score cohort cgpt/ds/cx demanded, because b\u0302 here is in units of detected-introductions/round with no denominator of fixes. Reconciled, not split.\n\n**Q5 \u2014 Yes, sequential, and the gate should sit where it is until A1 lands.** From code: the corrected gate is **live** at line 11978 (`check_sk_threshold_corrected`, promoted from shadow 2026-09-07, founder ruling quoted at 11959), old gate demoted to `shipped_verdict_now_shadow`; the 297/297 permissive-bias measurement is recorded at the call site (11966\u201311970). So ds described the first move; fable/cc2 describe the current state. A second move now would swap threshold 0.504931\u21920.395043 with both computed from invented `q=0.5` \u2014 and the cost asymmetry decides it: over-refusal costs rounds (0 harmful-direction flips in 28,880 points); under-refusal admits risk-raising fixes. **HOLDS: no second move before a measured q.**\n\n**Q6 \u2014 Agree with cc2, with fable's sharpening.** Both thresholds are functions of the placeholder; swapping constants under a fabricated input is not a committable improvement (and per Q1, \"full re-derivation\" is not calibration but gate deletion \u2014 `E_corr \u2212 R = Rq\u03c3(\u03bd\u22121)`). Record the signed gap now (done \u2014 producer now at its real path); swap only after A1 delivers `q`.\n\n## 3. Ordered adoption list\n\n1. **A1 \u2014 Wire `bench/score_exam.py` to `model_params`.** Live defect: 0 writers (AST, mine + cc2's + CC1's agree), 191 archived refusals decided by the unmeasured constant. Cost: **0 parameters**. Measure first: nothing \u2014 both halves exist.\n2. **A2 \u2014 Promote the round-3 producers to their real paths.** Live defect: the brief's headline figure's producer existed only in `sandbox_harvest/`; `measured-rate-travels-with-its-script` was violated by the tree itself. **Done this round**: both copied to `scripts/`, both re-executed green from the real path. Cost: 0.\n3. **A3 \u2014 The Phase-2 exact-expectation swap, gated on A1.** Evidence live: 10.4882% over-refusal, 0 harmful, algebra three-tool-verified. Cost: 0 parameters. Measure first: `q` (from A1), plus the conditioning question in cc2's residual 4.\n4. **A4 \u2014 b as a measured report quantity at detectable scope.** Instrument delivered and run this round (`b_fit_novel_decay_2026-09-20.py`). Report b\u0302 per run where the LRT fires; \"unestimated\" elsewhere \u2014 never a dial. Cost: 0 practitioner parameters.\n\n## 4. NOT ADOPTED\n\n| Item | Reason |\n|---|---|\n| Revision's full core, \u00a77 multi-state, \u00a78 decision-value | 4 parameters, 2 per-observation; no live decision named in 4 rounds; hard constraint. |\n| Full comparator re-semantics (the 75.8% direction) | `E_corr \u2212 R = Rq\u03c3(\u03bd\u22121) \u2264 0` \u2014 deletes the gate's function; a removal with no committed dominance measurement. |\n| Threshold swap today | Q6. |\n| Second gate move | Q5. |\n| Any change to \u03b3/\u03c1/two-sided gate | Out of scope; R_k cannot reach it (E2, verified). |\n\n## 5. Parameter count\n\n**1** (p, in `R(1\u2212p)/(1\u2212pR)`), with q/f becoming *supplied* by A1 and b a *reported* quantity. A competent reader holds the whole model in two sentences \u2014 admit a fix iff it does not raise residual risk; a flat discovery tail means churn at rate b, not exhaustion \u2014 with no machine.\n\n## 6. What would refute this\n\n1. A producer for 59.66% or 75.8% surfacing **with** a non-degenerate comparator \u2014 reopens Q1.\n2. `model_params` gaining a writer \u2014 collapses my Q3/Q5/Q6 reasoning as stated (and is the *goal*, via A1).\n3. The two-branch conditioning being ruled wrong for R_k's event definition \u2014 voids A3's replacement while leaving its measurement intact.\n4. A harmful-direction disagreement appearing anywhere in the 28,880-point grid \u2014 inverts Q5's cost asymmetry.\n\n## 7. Disagreements, preserved\n\n- **With the brief's Q1 framing**: it presents the three figures as three answers to one question. Two of the three comparators are not candidate answers at all \u2014 one is unproduced *and* gate-deleting, one is unproduced and drops \u03bd. The table's neutrality overstates the live disagreement; only one figure was ever admissible.\n- **With ds** (softly): the 59.66% cannot be discussed until its producer lands. Direction-agreement is not a substitute.\n- **With fable on emphasis**: \"over-refusal costs rounds, not safety\" is right today, but 191 archived REJECTED verdicts show the cost is *counted*, not abstract \u2014 15.3% of all admission decisions. That materiality is why A1 outranks the documentation items fable ordered first.\n- **With CC1's E3 wording**: \"cc2 is right about the SHIPPED RECURRENCE\" is correct but understated \u2014 the residual is not merely non-zero, it is *signed* everywhere reachable, which is what makes the defect directional and the 0-harmful result structural rather than lucky.\n\n**Convergence: I declare none.** Two material items remain open by construction \u2014 A1 is unwired, and the exact-Phase-2 conditioning question (cc2 residual 4) is undecided. Both are named, bounded, and blocked on work, not on further review.\n\n**Delivered files** (real paths, all executed this round, all exit 0): `scripts/b_fit_novel_decay_2026-09-20.py` (new), `scripts/phase2_interpolation_overstates_risk_2026-09-20.py` and `scripts/gate_collapses_to_one_constant_2026-09-20.py` (promoted from harvest).",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo",
+      "built": false
+    }
+  ]
+}

@@ -1,0 +1,1408 @@
+### cc2:attempt-1:bench/logs/maths_panel_2026-09-20_r4/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20_r4/dispatch.log	2026-09-20 16:41:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo/bench/logs/maths_panel_2026-09-20_r4/dispatch.log	2026-09-20 16:30:27
+@@ -1,34 +0,0 @@
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3enk50rb/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ovaaqtij/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_q1zgb_co/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l7wzxgx7/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5r_vqtjg/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-[16:31:40]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-    suite: GREEN at f253fa7 — 8,200 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 17,121 chars, about 4,280 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3enk50rb/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_q1zgb_co/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ovaaqtij/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5r_vqtjg/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l7wzxgx7/repo
+-  [cx] ok=True chars=11800 tools=20 117.4s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=16466 tools=25 223.3s
+-  [ge] ok=True chars=6703 tools=16 279.2s STOPPED=max_iterations_harvested
+-  [ds] ok=True chars=17328 tools=26 378.7s STOPPED=max_iterations_harvested
+-[16:38:05]   [claude-cli:fable] 34 tool call(s) this attempt, 34 in total
+-[16:38:05]   [claude-cli:fable] done (385.5s, 10682 chars)
+-  [fable] ok=True chars=10682 tools=34 385.6s
+-[16:40:17]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[16:40:17]   [claude-cli:opus] done (517.2s, 15488 chars)
+-  [cc2] ok=True chars=15488 tools=38 517.3s
+-  [kimi] ok=True chars=23428 tools=34 560.5s
+-[16:41:00] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-20 16:38:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo/hooks/ffafp_audit.py	2026-09-17 17:05:50
+@@ -102,15 +102,9 @@
+    file while leaving no shell redirect and no Edit tool call. Such a turn is invisible here
+    and is not counted as work at all. This is the largest known hole and it is unavoidable
+    without executing the body.
+-4. FIND IS NOW MODELLED, AND THIS ITEM RECORDS WHAT IT USED TO SAY (2026-09-20). It read:
+-   "FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
+-   carry no structural marker. No attempt is made to detect it." The founder reported that only
+-   the P-PASS element had been wired; measured, 3 of 5 were, and this item is the admission that
+-   FIND was not among them. What IS detectable is the structural half: a read, a search naming
+-   the file, or a failing check run BEFORE the first edit. The reasoning half stays invisible,
+-   so FIND is one-sided like every other signal here. What remains undetectable is a FIND made
+-   entirely in prose with no tool call at all, and a turn that edits nothing is still not
+-   examined.
++4. FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
++   carry no structural marker. No attempt is made to detect it; a claim made with no edit and
++   no tool call is not examined at all.
+ 5. UNQUOTED-GREP CONFUSION. `grep -n pytest file` credits a test run. The lookbehind rejects
+    the quoted form, not the bare one.
+ 
+@@ -229,39 +223,9 @@
+     r"sed\s+-n|git\s+(?:log|show|diff|blame|grep))\b"
+ )
+ 
+-#: A shell search that asks WHO DEPENDS ON THIS rather than what one file says.
+-#: `grep -r`, `rg` (recursive by default), `find`, and `git grep` all walk a tree;
+-#: `cat`, `head`, `sed -n` and `git show` open one named thing and cannot answer
+-#: a blast-radius question. That distinction is the whole of FOLLOW, and before
+-#: 2026-09-20 this module did not draw it.
+-#: A Python-level file write, as it appears INSIDE a heredoc body. Deliberately
+-#: narrow: each of these unambiguously writes, so a body that merely mentions a
+-#: path cannot fire. `open(...)` requires an explicit write/append mode, because
+-#: a bare `open(p)` is a read.
+-_PY_WRITE = re.compile(
+-    r"\.write_text\s*\(|\.write_bytes\s*\(|\.writelines\s*\(|"
+-    r"open\s*\([^)]*,\s*[\"'][wa]\+?b?[\"']|"
+-    r"shutil\.(?:copy|copy2|copyfile|move)\s*\(|os\.(?:replace|rename|remove|unlink)\s*\(|"
+-    r"json\.dump\s*\(|\.to_csv\s*\(|\.savefig\s*\("
+-)
+-
+-#: A quoted path in a heredoc body, used to name the heredoc write where it can
+-#: be named rather than recording it as unknown.
+-_PY_WRITE_PATH = re.compile(r"[\"']([\w./-]+\.[A-Za-z0-9]{1,6})[\"']")
+-
+-_TREE_SCAN = re.compile(
+-    r"(?<![\w-])(?:grep\s+(?:-\w*[rR]\w*\s|--recursive)|rg\b|find\s+\S|"
+-    r"git\s+grep|Glob|glob\.)"
+-)
+-
+ _READ_TOOLS = {"Read", "Grep", "Glob", "NotebookRead",
+                "mcp__Desktop_Commander__read_file", "mcp__Desktop_Commander__read_multiple_files",
+                "mcp__Desktop_Commander__start_search"}
+-#: The subset of `_READ_TOOLS` that SEARCHES THE TREE rather than opening one
+-#: named file. These are the FOLLOW instruments: they can answer "what depends
+-#: on this". `Read` cannot, which is why it is deliberately absent.
+-_SCAN_TOOLS = {"Grep", "Glob", "mcp__Desktop_Commander__start_search"}
+-
+ _EDIT_TOOLS = {"Edit": "file_path", "Write": "file_path", "MultiEdit": "file_path",
+                "NotebookEdit": "notebook_path",
+                "mcp__Desktop_Commander__write_file": "path",
+@@ -278,20 +242,6 @@
+     return [(m.start(3), m.end(3)) for m in _HEREDOC.finditer(cmd)]
+ 
+ 
+-def _is_test_path(path: str) -> bool:
+-    """True for a test file. Used by the FIX signal.
+-
+-    "Only the test changed" is the shape this project guards hardest against --
+-    a guard weakened to go green instead of a defect repaired. It is often the
+-    correct action (a predicate really can be the defect), so the FIX signal
+-    REPORTS it and never blocks.
+-    """
+-    base = os.path.basename(path or "")
+-    return ("/tests/" in (path or "")
+-            or base.startswith("test_")
+-            or base.endswith("_test.py"))
+-
+-
+ def classify_path(path: str) -> str:
+     """One of 'code', 'doc', 'transient', 'other'.
+ 
+@@ -359,34 +309,6 @@
+         # (BSD sed needs an extension argument, GNU sed does not), so the mutation is
+         # recorded with an unknown path rather than guessed wrongly.
+         out.append("<in-place>")
+-
+-    # A WRITE INSIDE A HEREDOC BODY IS STILL A WRITE (closed 2026-09-20).
+-    #
+-    # This was the module's largest self-declared hole: `python3 - <<'PY'` with
+-    # `p.write_text(s)` in the body mutates a file while leaving no shell
+-    # redirect and no Edit tool call, so the turn was not counted as work AT
+-    # ALL -- no FOLLOW, no ANALYSE, no P-PASS, silence. The docstring called it
+-    # "unavoidable without executing the body". That is wrong: the body does not
+-    # need EXECUTING, only PARSING, which is what the redirect scan above
+-    # already does for shell syntax.
+-    #
+-    # WHY IT MATTERED IN PRACTICE, measured 2026-09-20: this is the shape used
+-    # to patch bench/openrouter_tools.py and this very file during the session
+-    # in which the founder reported "even the p-pass element alone doesn't
+-    # always fire". Driven through the real `audit`, the heredoc form returned
+-    # 0 mutations and is_work False while an equivalent `sed -i` returned 1
+-    # mutation and 2 flags. The detector was blind, not lenient.
+-    #
+-    # Only the BODIES are scanned, so a `write_text(` appearing in ordinary
+-    # shell text cannot fire, and a quoted path is preferred over a guess --
+-    # falling back to `<heredoc-write>` exactly as `sed -i` falls back to
+-    # `<in-place>` rather than naming the wrong file.
+-    for start, end in bodies:
+-        body = cmd[start:end]
+-        if not _PY_WRITE.search(body):
+-            continue
+-        named = [p for p in _PY_WRITE_PATH.findall(body) if "/" in p or p.endswith(".py")]
+-        out.extend(named or ["<heredoc-write>"])
+     return out
+ 
+ 
+@@ -435,7 +357,7 @@
+     return {"id": uuid, "ts": ts, "prompt": (prompt or "")[:160], "n_tools": 0,
+             "mutations": [], "first_mut": None, "last_mut": None,
+             "stem": [], "test_idx": [], "failable_idx": [],
+-            "searches": [], "scans": [], "read_paths": []}
++            "searches": [], "read_paths": []}
+ 
+ 
+ def record_tool(turn: dict, name: str, inp: dict) -> None:
+@@ -456,17 +378,6 @@
+         blob = " ".join(str(inp.get(k) or "") for k in ("file_path", "path", "pattern", "glob", "paths"))
+         if len(turn["searches"]) < SEARCH_CAP:
+             turn["searches"].append([idx, blob[:400]])
+-        # A TREE SCAN IS NOT THE SAME ACT AS OPENING A FILE (2026-09-20).
+-        #
+-        # `_READ_TOOLS` lumps `Read` together with `Grep` and `Glob`, so before
+-        # today the audit could not tell "I opened the file I am about to
+-        # change" from "I searched the tree for everything that depends on it".
+-        # Those are 2 DIFFERENT steps of the founder's protocol: FIND locates the
+-        # issue, FOLLOW maps the blast radius. Conflating them meant the signal
+-        # labelled FOLLOW was in fact measuring FIND, and FOLLOW proper -- who
+-        # calls this, what breaks downstream -- was never measured at all.
+-        if name in _SCAN_TOOLS and len(turn["scans"]) < SEARCH_CAP:
+-            turn["scans"].append([idx, blob[:400]])
+         _add_read_paths(turn, _paths_in(blob))
+         return
+ 
+@@ -490,11 +401,6 @@
+         if sig["search"]:
+             if len(turn["searches"]) < SEARCH_CAP:
+                 turn["searches"].append([idx, cmd[:400]])
+-            # A RECURSIVE shell search is a FOLLOW instrument, the same as Grep.
+-            # A `cat`/`sed -n` of one named file is not: it opens a file, it does
+-            # not ask who depends on it. See `_SCAN_TOOLS`.
+-            if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
+-                turn["scans"].append([idx, cmd[:400]])
+             _add_read_paths(turn, _paths_in(cmd))
+         for p in sig["mutations"]:
+             if classify_path(p) != "transient":
+@@ -544,60 +450,17 @@
+ 
+     analysed = bool(turn.get("stem")) or bool(turn.get("test_idx"))
+     verified_after = last is not None and any(i > last for i in (turn.get("failable_idx") or []))
+-
+-    # ── ALL 5 STEPS ARE NOW REPORTED (2026-09-20) ────────────────────────────
+-    #
+-    # THE FOUNDER'S COMPLAINT AND WHAT THE FILE ACTUALLY SAID. He reported that
+-    # only the P-PASS element was wired. Measured: 3 of 5 were -- FOLLOW,
+-    # ANALYSE and P-PASS -- and the docstring's own false-negative list, item 4,
+-    # states "FIND is not modelled ... No attempt is made to detect it". So the
+-    # substance of the complaint was right and the count was not, and the count
+-    # matters less than the gap.
+-    #
+-    # THE DEEPER DEFECT, WHICH IS WHY 2 STEPS WERE MISSING RATHER THAN 1.
+-    # `_READ_TOOLS` lumps `Read` with `Grep` and `Glob`, so the signal LABELLED
+-    # `FOLLOW` was computed from "did you look at the file you edited" -- which
+-    # is FIND, locating the issue. FOLLOW proper, "what depends on this, what
+-    # breaks downstream", was never measured at all. Splitting the tree scans
+-    # out (see `_SCAN_TOOLS` and `_TREE_SCAN`) makes both measurable, and the
+-    # old signal is retained under the name it was really computing.
+-    #
+-    # FIND. Evidence that the issue is real, gathered BEFORE the change: a read
+-    # or search naming the file about to be edited, or something failable run
+-    # before the first mutation. Prose reasoning still cannot be seen, so this
+-    # remains one-sided like every other signal here -- absence is evidence,
+-    # presence is not.
+-    found = targeted or (first is not None
+-                         and any(i < first for i in (turn.get("failable_idx") or [])))
+ 
+-    # FOLLOW. A TREE SCAN naming the changed file or its stem, before the edit.
+-    scans = turn.get("scans") or []
+-    scan_text = " ".join(t for i, t in scans if first is None or i < first)
+-    followed = any(b and b in scan_text for b in bases) if bases else bool(scan_text)
+-
+-    # FIX. A change was actually made, and it was not confined to the tests.
+-    # "Only the test changed" is the shape this project guards hardest against:
+-    # a guard weakened to go green rather than a defect repaired. It is often
+-    # legitimate -- a predicate really can be the defect -- so it is REPORTED,
+-    # never blocked, and the turn's own account is what settles it.
+-    test_only = bool(muts) and all(_is_test_path(m) for m in muts)
+-
+     missing = []
+-    if code_touched and not found:
+-        missing.append("FIND")
+-    if code_touched and not followed:
++    if is_work and follow == "none":
+         missing.append("FOLLOW")
+     if is_work and not doc_only and not analysed:
+         missing.append("ANALYSE")
+-    if code_touched and test_only:
+-        missing.append("FIX")
+     if code_touched and not verified_after:
+         missing.append("P-PASS")
+ 
+     return {"is_work": is_work, "doc_only": doc_only, "code": code_touched,
+-            "follow": follow, "found": found, "followed": followed,
+-            "test_only": test_only, "analysed": analysed,
+-            "verified_after": verified_after,
++            "follow": follow, "analysed": analysed, "verified_after": verified_after,
+             "stem": list(turn.get("stem") or []), "missing": missing,
+             "files": sorted({m for m in muts})[:6], "n_files": len(set(muts)),
+             "id": turn.get("id"), "ts": turn.get("ts")}
+@@ -691,16 +554,8 @@
+ # --------------------------------------------------------------------------------------
+ 
+ _WHY = {
+-    "FIND": "the file was changed with no read, search or failing check naming it first. "
+-            "FIND establishes WHAT is wrong and WHAT the evidence is; an edit made before "
+-            "the defect is evidenced is a guess wearing a fix's clothes.",
+-    "FOLLOW": "nothing SEARCHED THE TREE for what depends on this before the edit -- no "
+-              "Grep, Glob, `grep -r`, `rg` or `find` naming it. Reading the file you are "
+-              "about to change is FIND, not FOLLOW: FOLLOW asks who CALLS this and what "
+-              "breaks downstream. Find without Follow produces shallow patches.",
+-    "FIX": "the only files changed were TESTS. That is sometimes exactly right -- a "
+-           "predicate really can be the defect -- but it is also the shape of a guard "
+-           "weakened to go green. Say which of the 2 this was.",
++    "FOLLOW": "no read, grep or search of ANY kind ran before the first edit. FOLLOW comes "
++              "before FIX: the blast radius is mapped first, or the fix is a guess.",
+     "ANALYSE": "no STEM tool and no test ran in the whole turn. The tool output IS the "
+                "evidence (`sy` is a standing hard constraint, 2026-08-30); prose is not.",
+     "P-PASS": "code changed and NOTHING failable ran afterwards -- no pytest, no assert. "
+
+### cc2:attempt-1:scripts/phase2_mixes_probability_spaces_2026-09-20.py
+--- /dev/null	2026-09-20 16:41:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo/scripts/phase2_mixes_probability_spaces_2026-09-20.py	2026-09-20 16:38:00
+@@ -0,0 +1,152 @@
++#!/usr/bin/env python3
++"""FALSIFIER: compute_rk Phase 2 interpolates between two DIFFERENT probability
++spaces, and the error is one-signed (it always OVERSTATES residual risk).
++
++THE DEFECT. bench/reference_runner_v3.py:10985-10993 computes
++
++    Phase 1:  R_det  = R_old*(1-q)/(1-q*R_old)      # P(flaw | NOT detected)  -- CONDITIONAL
++    Phase 2:  R_base = sk*R_det + (1-sk)*R_old      # mixes it with R_old     -- UNCONDITIONAL
++
++R_det is a posterior conditioned on non-detection; R_old is an unconditional
++prior. A convex combination of the two is not an expectation over any partition
++of the sample space, so R_base is not a probability of anything.
++
++THE EXACT ANSWER, by total expectation over the three disjoint branches:
++    present & detected     R_old*q      -> flaw survives w.p. (1-sk)
++    present & not detected R_old*(1-q)  -> flaw survives w.p. 1
++    absent                 1-R_old      -> stays absent
++    =>  R_after = R_old*q*(1-sk) + R_old*(1-q) = R_old*(1 - q*sk)
++
++RESIDUAL, derived with SymPy and independently proved non-negative over the open
++unit box by Wolfram Language `Resolve[ForAll[...]]` (quantifier elimination):
++
++    shipped - exact = R^2*q*sk*(1-q)/(1-q*R)  >= 0
++
++So the shipped pipeline is biased in ONE direction only. Because the admission
++gate (check_sk_threshold_corrected:11708) is the sign test
++`compute_rk(R,q,sk) <= R`, a one-signed overstatement of R_k is a one-signed
++OVER-REFUSAL of fixes. At the frozen operating point every archived run used
++(R_old=0.5, q=0.5, nu_b=0.05, nu_f=0.20 -- `model_params` has 0 writers) the
++break-even moves from 0.395043 (exact) to 0.504931 (shipped): fixes scoring in
++that band are net-beneficial and are refused.
++
++NOTE ON THE APPENDIX FORM. The revision's Phase 2, (1-sigma)*R_det, is NOT the
++repair either: at sigma=0 it returns R_det < R_old, crediting a fix that does
++nothing with the full detection gain. The shipped form and the exact form both
++correctly return R_old there. Only the exact form is right at BOTH endpoints.
++
++Exits cleanly if the defect is absent. Raises AssertionError if it is present.
++Run:  python3 scripts/phase2_mixes_probability_spaces_2026-09-20.py
++"""
++from __future__ import annotations
++import ast
++import math
++import os
++import sys
++import types
++from fractions import Fraction as F
++from pathlib import Path
++from typing import Any, Dict, Optional, Tuple
++
++ROOT = Path(__file__).resolve().parents[1]
++TARGET = ROOT / "bench" / "reference_runner_v3.py"
++
++
++def load_real_functions() -> types.ModuleType:
++    """Import the REAL shipped functions from the REAL target file.
++
++    Executed by AST extraction rather than `import`, because importing
++    reference_runner_v3 as a module runs several thousand lines of unrelated
++    top-level setup. The function bodies are the file's own bytes, unmodified:
++    nothing here retypes or paraphrases the code under test.
++    """
++    src = TARGET.read_text()
++    tree = ast.parse(src)
++    want = {"compute_rk", "check_sk_threshold_corrected", "sk_break_even",
++            "check_sk_threshold"}
++    mod = types.ModuleType("rr_real")
++    mod.__dict__.update({"math": math, "os": os, "Optional": Optional,
++                         "Tuple": Tuple, "Dict": Dict, "Any": Any})
++    found = set()
++    for node in tree.body:
++        if isinstance(node, ast.FunctionDef) and node.name in want:
++            exec(compile(ast.Module([node], []), str(TARGET), "exec"), mod.__dict__)
++            found.add(node.name)
++    missing = want - found
++    assert not missing, f"target changed shape; not found in {TARGET}: {sorted(missing)}"
++    return mod
++
++
++def exact_phase12(R: float, q: float, sk: float) -> float:
++    """R_old*(1 - q*sk): the total-expectation replacement for Phases 1+2."""
++    return R * (1.0 - q * sk)
++
++
++def main() -> int:
++    rr = load_real_functions()
++    gate = rr.check_sk_threshold_corrected
++    assert callable(rr.compute_rk), 'compute_rk missing from the real target'
++    NB, NF = 0.05, 0.20
++
++    # ---- 1. the shipped Phase 2 is not the exact expectation -----------------
++    # Re-derived in exact rational arithmetic straight off the shipped source
++    # lines, so no floating point enters the identity claim.
++    mismatches, worst = 0, F(0)
++    total = 0
++    for i in range(1, 16):
++        for j in range(1, 16):
++            for k in range(0, 16):
++                R, q, s = F(i, 16), F(j, 16), F(k, 15)
++                total += 1
++                shipped_base = s * (R * (1 - q) / (1 - q * R)) + (1 - s) * R
++                d = shipped_base - R * (1 - q * s)
++                assert d >= 0, (
++                    f"FALSIFIED the one-sidedness claim at R={R} q={q} s={s}: "
++                    f"shipped - exact = {d} < 0")
++                if d != 0:
++                    mismatches += 1
++                worst = max(worst, d)
++    print(f"[1] exact-rational samples                      : {total}")
++    print(f"    shipped Phase 2 != exact expectation        : {mismatches}")
++    print(f"    max(shipped - exact), always >= 0           : {float(worst):.6f}")
++
++    # ---- 2. the error reaches the admission gate ----------------------------
++    R = q = 0.5   # the frozen literals: model_params has 0 writers
++    band = [x / 1000.0 for x in range(1001)]
++    over = [s for s in band
++            if _rk_exact(R, q, s, NB, NF) <= R and not gate(s, NB, NF, q, R, 0.0)[0]]
++    harmful = [s for s in band
++               if _rk_exact(R, q, s, NB, NF) > R and gate(s, NB, NF, q, R, 0.0)[0]]
++    print("[2] at the operating point R=q=0.5, over 1001 sk values:")
++    print(f"    net-beneficial fixes the live gate REFUSES  : {len(over)} "
++          f"({100.0 * len(over) / len(band):.4f}%)")
++    print(f"    harmful fixes the live gate ADMITS          : {len(harmful)}")
++    if over:
++        print(f"    refused band                                : "
++              f"sk in [{min(over):.3f}, {max(over):.3f}]")
++
++    # ---- 3. the endpoint the appendix form gets wrong ------------------------
++    appendix_base_at_zero = (1 - 0.0) * R * (1 - q) / (1 - q * R)
++    print(f"[3] a WORTHLESS fix (sk=0.0), R_old={R}:")
++    print(f"    exact/shipped Phase-2 base                  : {R:.6f}  (correct: unchanged)")
++    print(f"    the revision's (1-sigma)*R_det base         : {appendix_base_at_zero:.6f}"
++          f"  (credits a no-op fix)")
++
++    assert mismatches > 0 and len(over) > 0, (
++        "defect NOT demonstrated: shipped Phase 2 agrees with the exact "
++        "expectation and the gate refuses nothing net-beneficial")
++    print("\nFALSIFIED: compute_rk Phase 2 mixes a conditional posterior with an "
++          "unconditional prior;\nthe resulting one-signed overstatement of R_k "
++          "makes the admission gate refuse net-beneficial fixes.")
++    return 1
++
++
++def _rk_exact(R: float, q: float, sk: float, nu_b: float, nu_f: float) -> float:
++    """Phases 1+2 replaced by the exact expectation; Phase 3 UNCHANGED."""
++    base = exact_phase12(R, q, sk)
++    nu_eff = 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
++    return max(0.0, min(1.0, base * (1.0 - nu_eff) + nu_eff))
++
++
++if __name__ == "__main__":
++    sys.exit(0 if main() == 0 else 1)
+
+### cc2:attempt-1:scripts/rejected_is_two_causes_conflated_2026-09-20.py
+--- /dev/null	2026-09-20 16:41:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo/scripts/rejected_is_two_causes_conflated_2026-09-20.py	2026-09-20 16:38:30
+@@ -0,0 +1,141 @@
++#!/usr/bin/env python3
++"""FALSIFIER: the archived `REJECTED` token conflates TWO causes, and 0 of them
++are the unmeasured constants.
++
++THE CLAIM UNDER TEST is the round-4 panel brief, Section 3:
++
++    "191 fixes were refused on the strength of a constant nobody measured."
++
++It is false, and the error is one level above the parsing trap the brief itself
++records. CC1 correctly stopped reading the constant NAME `SK_REJECTED` and read
++the recorded VALUE "REJECTED" instead -- 191 real verdicts, reproduced here
++exactly. It then attributed all 191 to the S* threshold, which is the gate the
++frozen literals (q, R_old, nu_b, nu_f) feed. But `REJECTED` is written at TWO
++sites in bench/reference_runner_v3.py:
++
++  (a) compute_sk returns SK_REJECTED     -- the patch would not apply, or a hard
++      gate failed. `compute_sk(fix_text, source, source_path, baseline=,
++      test_cmd=, declared_target_kind=, score_prose_listings=)` takes NO model
++      parameters at all (line 10685). The constants decide NOTHING here.
++
++  (b) line 12106 OVERWRITES the tristate:  entry["sk_result"]["tristate"] =
++      SK_REJECTED, after check_sk_threshold_corrected refused. THIS is the site
++      the constants decide.
++
++Both write the same five bytes, so the token alone cannot tell them apart. They
++are separable on the record, because (b) passes through line 11998,
++`entry["sk_result"]["passes_threshold"] = passes`, and (a) never reaches it. So
++a (b)-refusal carries the key `passes_threshold`; an (a)-refusal does not.
++
++MEASURED: 0 of 191 carry it. Every archived refusal is cause (a). Corroborating,
++all 4142 archived gate records carry s_star == 0 -- the threshold never bound.
++
++This reinstates the residual the cc2 seat raised and declined to close:
++"If none did, then the one constant decides nothing on the record either, and
++CHANGE NOTHING becomes the correct verdict for the archive." It is the correct
++verdict for the archive. The Phase 2 defect is real and prospective; it has no
++archival body count.
++
++Exits cleanly if the brief's attribution is right (some refusal is gate-caused).
++Raises AssertionError if the attribution is wrong.
++
++Run:  python3 scripts/rejected_is_two_causes_conflated_2026-09-20.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++import sys
++from math import sqrt
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++MAX_BYTES = 60_000_000
++
++
++def wilson(k: int, n: int) -> tuple[float, float]:
++    if n == 0:
++        return (0.0, 0.0)
++    z = 1.959963984540054
++    p = k / n
++    d = 1 + z * z / n
++    c = p + z * z / (2 * n)
++    h = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return ((c - h) / d, (c + h) / d)
++
++
++def collect(pattern: str) -> tuple[int, list[dict]]:
++    """Walk archived runner states, returning every sk_result dict."""
++    out: list[dict] = []
++
++    def walk(o: object) -> None:
++        if isinstance(o, dict):
++            sk = o.get("sk_result")
++            if isinstance(sk, dict) and "tristate" in sk:
++                out.append(sk)
++            for v in o.values():
++                walk(v)
++        elif isinstance(o, list):
++            for v in o:
++                walk(v)
++
++    files = 0
++    for f in sorted(glob.glob(str(ROOT / pattern))):
++        if os.path.getsize(f) > MAX_BYTES:
++            continue
++        try:
++            walk(json.loads(open(f, errors="ignore").read()))
++        except Exception:
++            continue
++        files += 1
++    return files, out
++
++
++def main() -> int:
++    # CC1's exact corpus, so the 191 is reproduced rather than re-derived on a
++    # corpus of my choosing.
++    files, recs = collect("bench/logs/*/runner_state.json")
++    rejected = [r for r in recs if str(r.get("tristate")) == "REJECTED"]
++    reached_gate = [r for r in rejected if "passes_threshold" in r]
++    by_constants = [r for r in reached_gate
++                    if r.get("passes_threshold") in (False, "False", 0)]
++    n, k = len(rejected), len(by_constants)
++    lo, hi = wilson(k, n)
++
++    print(f"corpus bench/logs/*/runner_state.json           : {files} files")
++    print(f"sk_result records                               : {len(recs)}")
++    print(f"REJECTED (CC1 reports 191)                      : {n}")
++    print(f"  reached the S* gate (has passes_threshold)    : {len(reached_gate)}")
++    print(f"  refused BY THE CONSTANTS                      : {k}")
++    print(f"  refused by compute_sk, which takes no params  : {n - len(reached_gate)}")
++    print(f"  share attributable to the constants           : {100.0 * k / n:.4f}%"
++          f"  Wilson [{100.0 * lo:.4f}%, {100.0 * hi:.4f}%]")
++
++    try:
++        from statsmodels.stats.proportion import proportion_confint
++        slo, shi = proportion_confint(k, n, 0.05, method="wilson")
++        agree = abs(slo - lo) < 1e-12 and abs(shi - hi) < 1e-12
++        print(f"  statsmodels Wilson agrees to 1e-12            : {agree}")
++    except ImportError:
++        print("  statsmodels unavailable; closed form only")
++
++    s_stars = [r.get("s_star") for r in recs if "s_star" in r]
++    nonzero = sum(1 for v in s_stars if v is not None and float(v) != 0.0)
++    print(f"gate records carrying s_star                    : {len(s_stars)}")
++    print(f"  with a NON-ZERO s_star                        : {nonzero}"
++          f"   (the threshold never bound)")
++
++    assert n > 0, "no REJECTED verdicts found; corpus is not what the brief describes"
++    assert k == 0, (
++        f"the brief's attribution SURVIVES: {k} of {n} archived refusals were "
++        f"decided by the constants")
++    print("\nFALSIFIED: 0 of "
++          f"{n} archived refusals were decided by q / R_old / nu_b / nu_f. "
++          "The brief's\nSection 3 attributes all of them to the constants. "
++          "cc2's residual stands: for the\nARCHIVE, change nothing.")
++    return 1
++
++
++if __name__ == "__main__":
++    sys.exit(0 if main() == 0 else 1)
+
+### fable:attempt-1:bench/logs/maths_panel_2026-09-20_r4/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20_r4/dispatch.log	2026-09-20 16:41:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/bench/logs/maths_panel_2026-09-20_r4/dispatch.log	2026-09-20 16:30:27
+@@ -1,34 +0,0 @@
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3enk50rb/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ovaaqtij/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_q1zgb_co/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l7wzxgx7/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5r_vqtjg/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-[16:31:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-[16:31:40]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-    suite: GREEN at f253fa7 — 8,200 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 17,121 chars, about 4,280 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3enk50rb/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_q1zgb_co/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ovaaqtij/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5r_vqtjg/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zy85g2x9/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l7wzxgx7/repo
+-  [cx] ok=True chars=11800 tools=20 117.4s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=16466 tools=25 223.3s
+-  [ge] ok=True chars=6703 tools=16 279.2s STOPPED=max_iterations_harvested
+-  [ds] ok=True chars=17328 tools=26 378.7s STOPPED=max_iterations_harvested
+-[16:38:05]   [claude-cli:fable] 34 tool call(s) this attempt, 34 in total
+-[16:38:05]   [claude-cli:fable] done (385.5s, 10682 chars)
+-  [fable] ok=True chars=10682 tools=34 385.6s
+-[16:40:17]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[16:40:17]   [claude-cli:opus] done (517.2s, 15488 chars)
+-  [cc2] ok=True chars=15488 tools=38 517.3s
+-  [kimi] ok=True chars=23428 tools=34 560.5s
+-[16:41:00] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-20 16:38:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/hooks/ffafp_audit.py	2026-09-17 17:05:50
+@@ -102,15 +102,9 @@
+    file while leaving no shell redirect and no Edit tool call. Such a turn is invisible here
+    and is not counted as work at all. This is the largest known hole and it is unavoidable
+    without executing the body.
+-4. FIND IS NOW MODELLED, AND THIS ITEM RECORDS WHAT IT USED TO SAY (2026-09-20). It read:
+-   "FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
+-   carry no structural marker. No attempt is made to detect it." The founder reported that only
+-   the P-PASS element had been wired; measured, 3 of 5 were, and this item is the admission that
+-   FIND was not among them. What IS detectable is the structural half: a read, a search naming
+-   the file, or a failing check run BEFORE the first edit. The reasoning half stays invisible,
+-   so FIND is one-sided like every other signal here. What remains undetectable is a FIND made
+-   entirely in prose with no tool call at all, and a turn that edits nothing is still not
+-   examined.
++4. FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
++   carry no structural marker. No attempt is made to detect it; a claim made with no edit and
++   no tool call is not examined at all.
+ 5. UNQUOTED-GREP CONFUSION. `grep -n pytest file` credits a test run. The lookbehind rejects
+    the quoted form, not the bare one.
+ 
+@@ -229,39 +223,9 @@
+     r"sed\s+-n|git\s+(?:log|show|diff|blame|grep))\b"
+ )
+ 
+-#: A shell search that asks WHO DEPENDS ON THIS rather than what one file says.
+-#: `grep -r`, `rg` (recursive by default), `find`, and `git grep` all walk a tree;
+-#: `cat`, `head`, `sed -n` and `git show` open one named thing and cannot answer
+-#: a blast-radius question. That distinction is the whole of FOLLOW, and before
+-#: 2026-09-20 this module did not draw it.
+-#: A Python-level file write, as it appears INSIDE a heredoc body. Deliberately
+-#: narrow: each of these unambiguously writes, so a body that merely mentions a
+-#: path cannot fire. `open(...)` requires an explicit write/append mode, because
+-#: a bare `open(p)` is a read.
+-_PY_WRITE = re.compile(
+-    r"\.write_text\s*\(|\.write_bytes\s*\(|\.writelines\s*\(|"
+-    r"open\s*\([^)]*,\s*[\"'][wa]\+?b?[\"']|"
+-    r"shutil\.(?:copy|copy2|copyfile|move)\s*\(|os\.(?:replace|rename|remove|unlink)\s*\(|"
+-    r"json\.dump\s*\(|\.to_csv\s*\(|\.savefig\s*\("
+-)
+-
+-#: A quoted path in a heredoc body, used to name the heredoc write where it can
+-#: be named rather than recording it as unknown.
+-_PY_WRITE_PATH = re.compile(r"[\"']([\w./-]+\.[A-Za-z0-9]{1,6})[\"']")
+-
+-_TREE_SCAN = re.compile(
+-    r"(?<![\w-])(?:grep\s+(?:-\w*[rR]\w*\s|--recursive)|rg\b|find\s+\S|"
+-    r"git\s+grep|Glob|glob\.)"
+-)
+-
+ _READ_TOOLS = {"Read", "Grep", "Glob", "NotebookRead",
+                "mcp__Desktop_Commander__read_file", "mcp__Desktop_Commander__read_multiple_files",
+                "mcp__Desktop_Commander__start_search"}
+-#: The subset of `_READ_TOOLS` that SEARCHES THE TREE rather than opening one
+-#: named file. These are the FOLLOW instruments: they can answer "what depends
+-#: on this". `Read` cannot, which is why it is deliberately absent.
+-_SCAN_TOOLS = {"Grep", "Glob", "mcp__Desktop_Commander__start_search"}
+-
+ _EDIT_TOOLS = {"Edit": "file_path", "Write": "file_path", "MultiEdit": "file_path",
+                "NotebookEdit": "notebook_path",
+                "mcp__Desktop_Commander__write_file": "path",
+@@ -278,20 +242,6 @@
+     return [(m.start(3), m.end(3)) for m in _HEREDOC.finditer(cmd)]
+ 
+ 
+-def _is_test_path(path: str) -> bool:
+-    """True for a test file. Used by the FIX signal.
+-
+-    "Only the test changed" is the shape this project guards hardest against --
+-    a guard weakened to go green instead of a defect repaired. It is often the
+-    correct action (a predicate really can be the defect), so the FIX signal
+-    REPORTS it and never blocks.
+-    """
+-    base = os.path.basename(path or "")
+-    return ("/tests/" in (path or "")
+-            or base.startswith("test_")
+-            or base.endswith("_test.py"))
+-
+-
+ def classify_path(path: str) -> str:
+     """One of 'code', 'doc', 'transient', 'other'.
+ 
+@@ -359,34 +309,6 @@
+         # (BSD sed needs an extension argument, GNU sed does not), so the mutation is
+         # recorded with an unknown path rather than guessed wrongly.
+         out.append("<in-place>")
+-
+-    # A WRITE INSIDE A HEREDOC BODY IS STILL A WRITE (closed 2026-09-20).
+-    #
+-    # This was the module's largest self-declared hole: `python3 - <<'PY'` with
+-    # `p.write_text(s)` in the body mutates a file while leaving no shell
+-    # redirect and no Edit tool call, so the turn was not counted as work AT
+-    # ALL -- no FOLLOW, no ANALYSE, no P-PASS, silence. The docstring called it
+-    # "unavoidable without executing the body". That is wrong: the body does not
+-    # need EXECUTING, only PARSING, which is what the redirect scan above
+-    # already does for shell syntax.
+-    #
+-    # WHY IT MATTERED IN PRACTICE, measured 2026-09-20: this is the shape used
+-    # to patch bench/openrouter_tools.py and this very file during the session
+-    # in which the founder reported "even the p-pass element alone doesn't
+-    # always fire". Driven through the real `audit`, the heredoc form returned
+-    # 0 mutations and is_work False while an equivalent `sed -i` returned 1
+-    # mutation and 2 flags. The detector was blind, not lenient.
+-    #
+-    # Only the BODIES are scanned, so a `write_text(` appearing in ordinary
+-    # shell text cannot fire, and a quoted path is preferred over a guess --
+-    # falling back to `<heredoc-write>` exactly as `sed -i` falls back to
+-    # `<in-place>` rather than naming the wrong file.
+-    for start, end in bodies:
+-        body = cmd[start:end]
+-        if not _PY_WRITE.search(body):
+-            continue
+-        named = [p for p in _PY_WRITE_PATH.findall(body) if "/" in p or p.endswith(".py")]
+-        out.extend(named or ["<heredoc-write>"])
+     return out
+ 
+ 
+@@ -435,7 +357,7 @@
+     return {"id": uuid, "ts": ts, "prompt": (prompt or "")[:160], "n_tools": 0,
+             "mutations": [], "first_mut": None, "last_mut": None,
+             "stem": [], "test_idx": [], "failable_idx": [],
+-            "searches": [], "scans": [], "read_paths": []}
++            "searches": [], "read_paths": []}
+ 
+ 
+ def record_tool(turn: dict, name: str, inp: dict) -> None:
+@@ -456,17 +378,6 @@
+         blob = " ".join(str(inp.get(k) or "") for k in ("file_path", "path", "pattern", "glob", "paths"))
+         if len(turn["searches"]) < SEARCH_CAP:
+             turn["searches"].append([idx, blob[:400]])
+-        # A TREE SCAN IS NOT THE SAME ACT AS OPENING A FILE (2026-09-20).
+-        #
+-        # `_READ_TOOLS` lumps `Read` together with `Grep` and `Glob`, so before
+-        # today the audit could not tell "I opened the file I am about to
+-        # change" from "I searched the tree for everything that depends on it".
+-        # Those are 2 DIFFERENT steps of the founder's protocol: FIND locates the
+-        # issue, FOLLOW maps the blast radius. Conflating them meant the signal
+-        # labelled FOLLOW was in fact measuring FIND, and FOLLOW proper -- who
+-        # calls this, what breaks downstream -- was never measured at all.
+-        if name in _SCAN_TOOLS and len(turn["scans"]) < SEARCH_CAP:
+-            turn["scans"].append([idx, blob[:400]])
+         _add_read_paths(turn, _paths_in(blob))
+         return
+ 
+@@ -490,11 +401,6 @@
+         if sig["search"]:
+             if len(turn["searches"]) < SEARCH_CAP:
+                 turn["searches"].append([idx, cmd[:400]])
+-            # A RECURSIVE shell search is a FOLLOW instrument, the same as Grep.
+-            # A `cat`/`sed -n` of one named file is not: it opens a file, it does
+-            # not ask who depends on it. See `_SCAN_TOOLS`.
+-            if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
+-                turn["scans"].append([idx, cmd[:400]])
+             _add_read_paths(turn, _paths_in(cmd))
+         for p in sig["mutations"]:
+             if classify_path(p) != "transient":
+@@ -544,60 +450,17 @@
+ 
+     analysed = bool(turn.get("stem")) or bool(turn.get("test_idx"))
+     verified_after = last is not None and any(i > last for i in (turn.get("failable_idx") or []))
+-
+-    # ── ALL 5 STEPS ARE NOW REPORTED (2026-09-20) ────────────────────────────
+-    #
+-    # THE FOUNDER'S COMPLAINT AND WHAT THE FILE ACTUALLY SAID. He reported that
+-    # only the P-PASS element was wired. Measured: 3 of 5 were -- FOLLOW,
+-    # ANALYSE and P-PASS -- and the docstring's own false-negative list, item 4,
+-    # states "FIND is not modelled ... No attempt is made to detect it". So the
+-    # substance of the complaint was right and the count was not, and the count
+-    # matters less than the gap.
+-    #
+-    # THE DEEPER DEFECT, WHICH IS WHY 2 STEPS WERE MISSING RATHER THAN 1.
+-    # `_READ_TOOLS` lumps `Read` with `Grep` and `Glob`, so the signal LABELLED
+-    # `FOLLOW` was computed from "did you look at the file you edited" -- which
+-    # is FIND, locating the issue. FOLLOW proper, "what depends on this, what
+-    # breaks downstream", was never measured at all. Splitting the tree scans
+-    # out (see `_SCAN_TOOLS` and `_TREE_SCAN`) makes both measurable, and the
+-    # old signal is retained under the name it was really computing.
+-    #
+-    # FIND. Evidence that the issue is real, gathered BEFORE the change: a read
+-    # or search naming the file about to be edited, or something failable run
+-    # before the first mutation. Prose reasoning still cannot be seen, so this
+-    # remains one-sided like every other signal here -- absence is evidence,
+-    # presence is not.
+-    found = targeted or (first is not None
+-                         and any(i < first for i in (turn.get("failable_idx") or [])))
+ 
+-    # FOLLOW. A TREE SCAN naming the changed file or its stem, before the edit.
+-    scans = turn.get("scans") or []
+-    scan_text = " ".join(t for i, t in scans if first is None or i < first)
+-    followed = any(b and b in scan_text for b in bases) if bases else bool(scan_text)
+-
+-    # FIX. A change was actually made, and it was not confined to the tests.
+-    # "Only the test changed" is the shape this project guards hardest against:
+-    # a guard weakened to go green rather than a defect repaired. It is often
+-    # legitimate -- a predicate really can be the defect -- so it is REPORTED,
+-    # never blocked, and the turn's own account is what settles it.
+-    test_only = bool(muts) and all(_is_test_path(m) for m in muts)
+-
+     missing = []
+-    if code_touched and not found:
+-        missing.append("FIND")
+-    if code_touched and not followed:
++    if is_work and follow == "none":
+         missing.append("FOLLOW")
+     if is_work and not doc_only and not analysed:
+         missing.append("ANALYSE")
+-    if code_touched and test_only:
+-        missing.append("FIX")
+     if code_touched and not verified_after:
+         missing.append("P-PASS")
+ 
+     return {"is_work": is_work, "doc_only": doc_only, "code": code_touched,
+-            "follow": follow, "found": found, "followed": followed,
+-            "test_only": test_only, "analysed": analysed,
+-            "verified_after": verified_after,
++            "follow": follow, "analysed": analysed, "verified_after": verified_after,
+             "stem": list(turn.get("stem") or []), "missing": missing,
+             "files": sorted({m for m in muts})[:6], "n_files": len(set(muts)),
+             "id": turn.get("id"), "ts": turn.get("ts")}
+@@ -691,16 +554,8 @@
+ # --------------------------------------------------------------------------------------
+ 
+ _WHY = {
+-    "FIND": "the file was changed with no read, search or failing check naming it first. "
+-            "FIND establishes WHAT is wrong and WHAT the evidence is; an edit made before "
+-            "the defect is evidenced is a guess wearing a fix's clothes.",
+-    "FOLLOW": "nothing SEARCHED THE TREE for what depends on this before the edit -- no "
+-              "Grep, Glob, `grep -r`, `rg` or `find` naming it. Reading the file you are "
+-              "about to change is FIND, not FOLLOW: FOLLOW asks who CALLS this and what "
+-              "breaks downstream. Find without Follow produces shallow patches.",
+-    "FIX": "the only files changed were TESTS. That is sometimes exactly right -- a "
+-           "predicate really can be the defect -- but it is also the shape of a guard "
+-           "weakened to go green. Say which of the 2 this was.",
++    "FOLLOW": "no read, grep or search of ANY kind ran before the first edit. FOLLOW comes "
++              "before FIX: the blast radius is mapped first, or the fix is a guess.",
+     "ANALYSE": "no STEM tool and no test ran in the whole turn. The tool output IS the "
+                "evidence (`sy` is a standing hard constraint, 2026-08-30); prose is not.",
+     "P-PASS": "code changed and NOTHING failable ran afterwards -- no pytest, no assert. "
+
+### fable:attempt-1:scripts/b_fit_novel_decay_2026-09-20.py
+--- /dev/null	2026-09-20 16:41:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/scripts/b_fit_novel_decay_2026-09-20.py	2026-09-20 16:35:24
+@@ -0,0 +1,155 @@
++#!/usr/bin/env python3
++"""Is the introduction rate `b` estimable AT DETECTABLE SCOPE from data already on disk?
++
++Panel round 4, Q4. fable (round 3) claimed YES: fit constant-plus-decay against
++pure decay on the per-round novel-critical series, because at steady state
++detections per round equal `b` exactly. cgpt/ds/cx said NO without a paired
++action cohort. This script RUNS the fit fable named, on the archive fable named.
++
++MODELS, per run, t = 0..T-1, n_t = novel critical findings in round t:
++    M0 (pure decay)          n_t ~ Poisson(A * r^t)
++    M1 (constant-plus-decay) n_t ~ Poisson(b + A * r^t)
++M1 nests M0 at b=0. Because b sits on the boundary under H0, the LRT null
++distribution is the 50:50 mixture chi2_0 : chi2_1 (Self & Liang 1987), so the
++p-value is HALF the chi2_1 tail. Both fits are MLE; every optimiser result is
++cross-checked by an independent coarse grid search sharing no code path.
++
++SCOPE CAVEAT, stated up front: this estimates b at DETECTABLE scope only.
++A flaw class with detection probability ~0 never enters n_t, so no fit on n_t
++can see it. That is fable's own second claim and it is conceded, not contested.
++
++Run:  python3 scripts/b_fit_novel_decay_2026-09-20.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++from pathlib import Path
++
++import numpy as np
++from scipy.optimize import minimize
++from scipy.stats import chi2
++
++ROOT = Path(__file__).resolve().parents[1]
++MAX_BYTES = 60_000_000
++MIN_LEN = 6  # a 2-vs-3 parameter comparison on <6 points is noise
++
++
++def collect():
++    out = []
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        if os.path.getsize(f) > MAX_BYTES:
++            continue
++        try:
++            d = json.load(open(f, errors="ignore"))
++        except Exception:
++            continue
++        found = []
++
++        def walk(o):
++            if isinstance(o, dict):
++                h = o.get("novel_critical_history")
++                if isinstance(h, list) and h and all(isinstance(x, int) for x in h):
++                    found.append(h)
++                for v in o.values():
++                    walk(v)
++            elif isinstance(o, list):
++                for v in o:
++                    walk(v)
++
++        walk(d)
++        if found:
++            out.append((Path(f).parent.name, max(found, key=len)))
++    return out
++
++
++def nll_m0(theta, n):
++    A, r = theta
++    if A < 0 or not (0.0 < r < 1.0):
++        return 1e18
++    lam = np.maximum(A * r ** np.arange(len(n)), 1e-12)
++    return float(np.sum(lam - n * np.log(lam)))
++
++
++def nll_m1(theta, n):
++    b, A, r = theta
++    if b < 0 or A < 0 or not (0.0 < r < 1.0):
++        return 1e18
++    lam = np.maximum(b + A * r ** np.arange(len(n)), 1e-12)
++    return float(np.sum(lam - n * np.log(lam)))
++
++
++def fit(n):
++    n = np.asarray(n, float)
++    starts0 = [[n[0] + 0.5, 0.7], [max(n.mean(), 0.5), 0.9], [n.max() + 1, 0.5]]
++    starts1 = [[0.1, n[0] + 0.5, 0.7],
++               [max(n[-3:].mean(), 0.01), max(n[0] - n[-3:].mean(), 0.5), 0.6],
++               [n.mean() / 2 + 0.01, n.max() + 1, 0.5]]
++    best0 = min((minimize(nll_m0, x0, args=(n,), method="Nelder-Mead",
++                          options={"xatol": 1e-8, "fatol": 1e-10, "maxiter": 4000})
++                 for x0 in starts0), key=lambda r: r.fun)
++    best1 = min((minimize(nll_m1, x0, args=(n,), method="Nelder-Mead",
++                          options={"xatol": 1e-8, "fatol": 1e-10, "maxiter": 4000})
++                 for x0 in starts1), key=lambda r: r.fun)
++    return best0, best1
++
++
++def grid_check(n, nll, dims):
++    """Independent coarse grid search: no optimiser, no shared path."""
++    n = np.asarray(n, float)
++    if dims == 2:
++        pts = ((A, r) for A in np.linspace(0.1, n.max() + 5, 60)
++               for r in np.linspace(0.05, 0.99, 60))
++    else:
++        pts = ((b, A, r) for b in np.linspace(0, max(n.mean(), 2), 25)
++               for A in np.linspace(0.1, n.max() + 5, 25)
++               for r in np.linspace(0.05, 0.99, 25))
++    return min(nll(th, n) for th in pts)
++
++
++def main() -> int:
++    series = collect()
++    long_runs = [(name, s) for name, s in series if len(s) >= MIN_LEN]
++    print(f"Archived runs with novel_critical_history : {len(series)}")
++    print(f"Runs with >= {MIN_LEN} rounds (fittable)       : {len(long_runs)}")
++    print()
++    print(f"{'run':46s} {'T':>3s} {'b_hat':>7s} {'p(LRT)':>8s} {'AIC0-AIC1':>9s} grid_ok")
++    rows = []
++    for name, s in long_runs:
++        best0, best1 = fit(s)
++        ll0, ll1 = -best0.fun, -best1.fun
++        lrt = max(0.0, 2 * (ll1 - ll0))
++        p = 0.5 * chi2.sf(lrt, df=1)  # boundary mixture
++        d_aic = (2 * 2 + 2 * best0.fun) - (2 * 3 + 2 * best1.fun)
++        g0 = grid_check(s, nll_m0, 2)
++        g1 = grid_check(s, nll_m1, 3)
++        ok = (best0.fun <= g0 + 1e-6) and (best1.fun <= g1 + 1e-6)
++        b_hat = best1.x[0]
++        rows.append((name, len(s), b_hat, p, d_aic, ok))
++        print(f"{name:46s} {len(s):3d} {b_hat:7.3f} {p:8.4f} {d_aic:9.2f} {ok}")
++
++    sig = [r for r in rows if r[3] < 0.05 and r[4] > 0]
++    print()
++    print(f"Runs where constant-plus-decay beats pure decay (p<0.05 AND AIC): "
++          f"{len(sig)}/{len(rows)}")
++    if sig:
++        bs = sorted(r[2] for r in sig)
++        print(f"b_hat over those runs: min={bs[0]:.3f} median={bs[len(bs)//2]:.3f} "
++              f"max={bs[-1]:.3f}")
++    print()
++    print("Second instrument, tail mean of last 4 rounds (steady-state detections = b):")
++    for name, s in sorted(long_runs, key=lambda x: -len(x[1]))[:5]:
++        tail = s[-4:]
++        print(f"  {name:46s} T={len(s):3d} tail={tail} mean={np.mean(tail):.2f}")
++    print()
++    verdict = "ESTIMABLE" if sig else "NOT SEPARABLE ON THIS ARCHIVE"
++    print(f"VERDICT at detectable scope: {verdict}")
++    print("Scope caveat: undetectable classes never enter n_t (fable's own limit),")
++    print("and b_hat counts NOVEL CRITICALS PER ROUND -- the detected part of")
++    print("introduction only. It is an instrument, not the parameter.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/gate_collapses_to_one_constant_2026-09-20.py
+--- /dev/null	2026-09-20 16:41:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/scripts/gate_collapses_to_one_constant_2026-09-20.py	2026-09-20 16:36:53
+@@ -0,0 +1,188 @@
++#!/usr/bin/env python3
++"""The live fix-admission gate is ONE CONSTANT, and an unmeasured input decides it.
++
++THE CLAIM, IN FOUR PARTS, EACH ASSERTED BELOW SO THIS FILE IS ITS OWN FALSIFIER.
++Run it: `python3 scripts/gate_collapses_to_one_constant_2026-09-20.py`.
++It exits 0 iff every part holds and raises AssertionError naming the part that fails.
++
++PART 1 -- THE PARAMETERS ARE FROZEN.
++  `check_sk_threshold_corrected` reads q, R_old, nu_b, nu_f from
++  `entry["model_params"]` (reference_runner_v3.py:11921). `model_params` has NO
++  WRITER anywhere in the repository -- the only two occurrences are `.get()`
++  reads in reference_runner.py:3156 and reference_runner_v3.py:11921. So on every
++  real run the gate is called at exactly
++      q = 0.5, R_old = RK0_PI_BASE = 0.5, nu_b = 0.05, nu_f = 0.20
++  and the ONLY varying argument is `sk`.
++
++PART 2 -- SO THE GATE IS A SCALAR THRESHOLD.
++  Sweeping sk across [0,1] at those frozen values produces exactly ONE verdict
++  flip. The five-parameter, three-phase apparatus decides precisely one thing:
++      ADMIT iff sk >= 0.504931170970423  ( = -7/2 + sqrt(23161)/38, exact )
++  That number is the whole operational content of the risk model today.
++
++PART 3 -- ITS LOCATION IS GOVERNED BY AN UNMEASURED CONSTANT.
++  nu_b = 0.05 is the introduction rate b. It carries no measurement. The three
++  figures the panel has for b are not the same quantity and span a wide range,
++  and the threshold is steeply sensitive to which is used:
++      nu_b = 0.0154  (cc2 F7, Wilson UPPER on 0 of 246 paired) -> admit sk >= 0.4350
++      nu_b = 0.05    (SHIPPED, no provenance)                  -> admit sk >= 0.5049
++      nu_b = 0.2089  (cc2 F7 lint channel, Wilson LOWER)       -> admit sk >= 0.8830
++      nu_b = 0.3077  (cc2 F7 lint channel, point estimate)     -> ADMITS NOTHING
++
++PART 4 -- THE GATE CLOSES COMPLETELY AT nu_b > 1/4, EXACTLY.
++  Solving compute_rk(1/2, 1/2, sk=1, nu_b, 1/5) = 1/2 for nu_b gives the exact
++  rational 1/4 (SymPy). Above it, not even a perfect fix (sk = 1) is admitted.
++  So the answer to "does naming the introduction rate change a decision?" is YES,
++  and the decision is fix admission: the range of defensible b spans
++  "admit sk >= 0.435" to "admit nothing at all".
++
++WHAT THIS DOES NOT CLAIM. It does not claim 0.05 is the wrong value; nobody knows
++the right one. It claims the value decides, and is unmeasured. That is the finding.
++
++TWO TOOLS PER CLAIM: SymPy for the exact roots, and bisection on the LIVE
++`check_sk_threshold_corrected` function (no shared code with SymPy) for each one.
++"""
++from __future__ import annotations
++
++import subprocess
++import sys
++
++import sympy as sp
++
++sys.path.insert(0, ".")
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++FAILED = False
++
++
++def live_threshold(nu_b, nu_f=0.20, q=0.5, R=0.5):
++    """Smallest sk the LIVE gate admits; None if it admits nothing."""
++    if not rr.check_sk_threshold_corrected(1.0, nu_b, nu_f, q, R)[0]:
++        return None
++    lo, hi = 0.0, 1.0
++    for _ in range(60):
++        m = (lo + hi) / 2
++        if rr.check_sk_threshold_corrected(m, nu_b, nu_f, q, R)[0]:
++            hi = m
++        else:
++            lo = m
++    return hi
++
++
++def part1_parameters_are_frozen():
++    """AST, not grep: find any real WRITE to model_params in production code."""
++    import ast
++    import pathlib
++    writes, reads = [], []
++    for f in sorted(pathlib.Path(".").rglob("*.py")):
++        s = str(f)
++        if "/tests/" in s or s.startswith("scripts/gate_collapses"):
++            continue
++        try:
++            tree = ast.parse(f.read_text())
++        except SyntaxError:
++            continue
++        for node in ast.walk(tree):
++            # entry["model_params"] = ... / entry["model_params"][k] = ...
++            if isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
++                tgts = node.targets if isinstance(node, ast.Assign) else [node.target]
++                for t in tgts:
++                    for sub in ast.walk(t):
++                        if (isinstance(sub, ast.Subscript)
++                                and isinstance(sub.slice, ast.Constant)
++                                and sub.slice.value == "model_params"):
++                            writes.append(f"{s}:{node.lineno}")
++            # {"model_params": ...} dict literal in production code
++            if isinstance(node, ast.Dict):
++                for k in node.keys:
++                    if isinstance(k, ast.Constant) and k.value == "model_params":
++                        writes.append(f"{s}:{node.lineno} (dict literal)")
++            if (isinstance(node, ast.Call)
++                    and isinstance(node.func, ast.Attribute)
++                    and node.func.attr == "get" and node.args
++                    and isinstance(node.args[0], ast.Constant)
++                    and node.args[0].value == "model_params"):
++                reads.append(f"{s}:{node.lineno}")
++    print(f"[part 1] AST over production .py (tests excluded): "
++          f"{len(writes)} writes, {len(reads)} reads")
++    for r in reads:
++        print("          READ ", r)
++    for w in writes:
++        print("          WRITE", w)
++    assert len(writes) == 0, (
++        f"FALSIFIED part 1: model_params now HAS a writer in production code: "
++        f"{writes}. The parameters are no longer frozen and parts 2-4 do not "
++        f"describe the live gate.")
++    assert len(reads) >= 1, "FALSIFIED part 1: nothing reads model_params at all"
++    assert rr.RK0_PI_BASE == 0.5, "FALSIFIED part 1: RK0_PI_BASE moved"
++
++
++def part2_scalar_threshold():
++    vals = [rr.check_sk_threshold_corrected(i / 2000, 0.05, 0.20, 0.5, 0.5)[0]
++            for i in range(2001)]
++    flips = sum(1 for a, b in zip(vals, vals[1:]) if a != b)
++    t_live = live_threshold(0.05)
++    s = sp.Symbol("s")
++    R = q = sp.Rational(1, 2)
++    nb, nf = sp.Rational(5, 100), sp.Rational(1, 5)
++    R_det = R * (1 - q) / (1 - q * R)
++    ne = 1 - (1 - nb) * (1 - (1 - s) * nf)
++    Rk = (s * R_det + (1 - s) * R) * (1 - ne) + ne
++    exact = [r for r in sp.solve(sp.Eq(Rk, R), s) if r.is_real and 0 <= r <= 1]
++    print(f"[part 2] verdict flips across sk in [0,1]: {flips} (1 == pure threshold)")
++    print(f"[part 2] live bisection threshold : {t_live!r}")
++    print(f"[part 2] sympy exact root         : {exact[0]} = {float(exact[0])!r}")
++    assert flips == 1, f"FALSIFIED part 2: {flips} flips, the gate is not a threshold"
++    assert abs(t_live - float(exact[0])) < 1e-9, (
++        "FALSIFIED part 2: bisection and SymPy disagree on the threshold")
++
++
++def part3_sensitivity():
++    table = [(0.0154, "cc2 F7 Wilson UPPER, 0 of 246 paired"),
++             (0.0500, "SHIPPED DEFAULT, no provenance"),
++             (0.2089, "cc2 F7 lint channel, Wilson LOWER"),
++             (0.3077, "cc2 F7 lint channel, point estimate")]
++    print("[part 3]  nu_b      source                                   admit-threshold")
++    got = {}
++    for nb, lab in table:
++        t = live_threshold(nb)
++        got[nb] = t
++        print(f"          {nb:.4f}  {lab:<40s} "
++              f"{'ADMITS NOTHING' if t is None else f'sk >= {t:.6f}'}")
++    assert got[0.0154] is not None and got[0.05] is not None
++    assert got[0.0154] < got[0.05] < got[0.2089], (
++        "FALSIFIED part 3: the threshold is not monotone increasing in nu_b")
++    assert got[0.3077] is None, (
++        "FALSIFIED part 3: the gate still admits something at the lint-channel "
++        "point estimate; the sensitivity claim overstates the effect")
++
++
++def part4_gate_closes_at_quarter():
++    s, nb = sp.symbols("s nu_b")
++    R = q = sp.Rational(1, 2)
++    nf = sp.Rational(1, 5)
++    R_det = R * (1 - q) / (1 - q * R)
++    ne = 1 - (1 - nb) * (1 - (1 - s) * nf)
++    Rk = (s * R_det + (1 - s) * R) * (1 - ne) + ne
++    roots = sp.solve(sp.Eq(Rk.subs(s, 1), R), nb)
++    lo, hi = 0.0, 1.0
++    for _ in range(60):
++        m = (lo + hi) / 2
++        if rr.check_sk_threshold_corrected(1.0, m, 0.20, 0.5, 0.5)[0]:
++            lo = m
++        else:
++            hi = m
++    print(f"[part 4] sympy exact closing nu_b : {roots}")
++    print(f"[part 4] live bisection closing   : {lo!r}")
++    assert sp.Rational(1, 4) in roots, (
++        f"FALSIFIED part 4: exact closing nu_b is {roots}, not 1/4")
++    assert abs(lo - 0.25) < 1e-9, (
++        "FALSIFIED part 4: the live gate does not close at nu_b = 1/4")
++
++
++if __name__ == "__main__":
++    for fn in (part1_parameters_are_frozen, part2_scalar_threshold,
++               part3_sensitivity, part4_gate_closes_at_quarter):
++        fn()
++    print("\nALL FOUR PARTS HOLD. The live risk model decides exactly one "
++          "number, and an unmeasured constant decides where it sits.")
+
+### fable:attempt-1:scripts/phase2_interpolation_overstates_risk_2026-09-20.py
+--- /dev/null	2026-09-20 16:41:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h9oancdf/repo/scripts/phase2_interpolation_overstates_risk_2026-09-20.py	2026-09-20 16:36:53
+@@ -0,0 +1,190 @@
++#!/usr/bin/env python3
++"""The three-phase Phase 2 interpolation OVERSTATES residual risk. Derivation + measurement.
++
++WHAT IS CLAIMED, PRECISELY
++--------------------------
++`compute_rk` (bench/reference_runner_v3.py) implements the appendix "Three-Phase
++Extension" Phase 2 as
++
++    R_base = sk * R_det + (1 - sk) * R_old,      R_det = R(1-q)/(1-qR)
++
++i.e. it interpolates between the NON-DETECTION posterior and the PRIOR.
++
++The exact expected post-review, pre-re-injection risk for the process the
++appendix describes in words -- "a pass with detection probability q; where the
++flaw is detected, a fix that removes it with probability sigma" -- is obtained
++by enumerating the two actual branches:
++
++    detected      w.p. q*R        -> flaw survives w.p. (1 - sigma)
++    not detected  w.p. 1 - q*R    -> flaw survives w.p. R(1-q)/(1-qR)
++
++    E[R] = q*R*(1-sigma) + (1-q*R) * R(1-q)/(1-qR) = R * (1 - q*sigma)
++
++The difference is exact and signed:
++
++    R_base - R*(1 - q*sigma) = R^2 * q * sigma * (q - 1) / (R*q - 1)
++
++Numerator <= 0 (q <= 1); denominator <= 0 (R,q <= 1); so the quotient is >= 0,
++strictly positive whenever 0 < q < 1, sigma > 0, R > 0. Shipped Phase 2 is
++ALWAYS >= the exact expectation and never below it.
++
++WHY IT MATTERS OPERATIONALLY
++----------------------------
++`check_sk_threshold_corrected` -- the LIVE fix-admission gate, promoted from
++shadow 2026-09-07 -- decides by `compute_rk(R,q,sk,nu_b,nu_f) <= R`. An
++overstated R_k makes that inequality harder to satisfy, so the live gate REFUSES
++fixes the exact expectation calls net-beneficial. This script measures how often,
++over the reachable parameter box, and in which direction.
++
++TWO TOOLS PER CLAIM. SymPy for the algebra; an independent brute-force branch
++enumeration in floating point (no shared code with SymPy) for the identity;
++statsmodels + a closed-form mpmath Wilson for every proportion.
++
++NOTHING HERE CHANGES A LIVE VERDICT. This script measures; it does not patch.
++"""
++from __future__ import annotations
++
++import sys
++
++import mpmath as mp
++import sympy as sp
++from statsmodels.stats.proportion import proportion_confint
++
++sys.path.insert(0, ".")
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++
++def wilson_mpmath(k, n, z=1.959963984540054):
++    """Closed-form Wilson interval; shares no code with statsmodels."""
++    if n == 0:
++        return (mp.mpf(0), mp.mpf(1))
++    p = mp.mpf(k) / n
++    z = mp.mpf(z)
++    d = 1 + z**2 / n
++    centre = (p + z**2 / (2 * n)) / d
++    half = (z / d) * mp.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))
++    return (max(mp.mpf(0), centre - half), min(mp.mpf(1), centre + half))
++
++
++def _nu_eff(sk, nu_b, nu_f):
++    return 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
++
++
++def compute_rk_exact_phase2(R, q, sk, nu_b=0.05, nu_f=0.20):
++    """compute_rk with Phase 2 replaced by the exact branch expectation.
++
++    IDENTICAL parameter list. NO new free parameter. Only Phase 2 changes:
++        R_base = R * (1 - q * sk)        instead of   sk*R_det + (1-sk)*R
++    Phases 1 and 3 and the nu_b+nu_f<=1 rescale are the shipped behaviour, so
++    the two are comparable at every point.
++    """
++    R = max(0.0, min(1.0, float(R)))
++    q = max(0.0, min(1.0, float(q)))
++    sk = max(0.0, min(1.0, float(sk)))
++    nu_b = max(0.0, min(1.0, float(nu_b)))
++    nu_f = max(0.0, min(1.0, float(nu_f)))
++    if nu_b + nu_f > 1.0:
++        scale = 1.0 / (nu_b + nu_f)
++        nu_b *= scale
++        nu_f *= scale
++    R_base = R * (1.0 - q * sk)
++    ne = _nu_eff(sk, nu_b, nu_f)
++    return max(0.0, min(1.0, R_base * (1.0 - ne) + ne))
++
++
++def symbolic_check():
++    R, q, s = sp.symbols("R q sigma", nonnegative=True)
++    R_det = R * (1 - q) / (1 - q * R)
++    shipped = s * R_det + (1 - s) * R
++    exact = q * R * (1 - s) + (1 - q * R) * R_det
++    print("[sympy] exact branch enumeration simplifies to:", sp.simplify(exact))
++    diff = sp.factor(sp.simplify(shipped - exact))
++    print("[sympy] shipped_phase2 - exact =", diff)
++    num, den = sp.fraction(sp.together(diff))
++    print("[sympy] numerator  =", sp.factor(num), " (<= 0 for q<=1)")
++    print("[sympy] denominator=", sp.factor(den), " (<= 0 for R,q<=1)")
++    bad = 0
++    tot = 0
++    for Rv in [i / 20 for i in range(21)]:
++        for qv in [i / 20 for i in range(21)]:
++            for sv in [i / 20 for i in range(21)]:
++                if abs(1 - qv * Rv) < 1e-12:
++                    continue
++                tot += 1
++                d = float(diff.subs({R: Rv, q: qv, s: sv}))
++                if d < -1e-12:
++                    bad += 1
++    print(f"[sympy-sample] points where shipped < exact: {bad} of {tot}")
++
++
++def brute_force_identity():
++    """Confirm E[R] = R(1-q*sigma) by explicit two-branch arithmetic in floats."""
++    worst = 0.0
++    n = 0
++    for Ri in range(1, 20):
++        R = Ri / 20
++        for qi in range(1, 20):
++            q = qi / 20
++            for si in range(0, 21):
++                s = si / 20
++                det = q * R
++                surv_miss = R * (1 - q) / (1 - q * R)
++                e = det * (1 - s) + (1 - det) * surv_miss
++                worst = max(worst, abs(e - R * (1 - q * s)))
++                n += 1
++    print(f"[brute-force] max |two-branch E[R] - R(1-q*sigma)| over {n} pts = {worst:.3e}")
++
++
++def gate_disagreement():
++    """How often does the LIVE gate disagree with exact-Phase-2 semantics, and how?"""
++    grid_R = [i / 20 for i in range(1, 20)]
++    grid_q = [i / 20 for i in range(1, 20)]
++    grid_sk = [i / 20 for i in range(1, 21)]
++    nu_pairs = [(0.05, 0.20), (0.02, 0.10), (0.10, 0.30), (0.05, 0.05)]
++
++    n = live_refuse_exact_admit = live_admit_exact_refuse = agree = 0
++    overstates = 0
++    for nb, nf in nu_pairs:
++        for R in grid_R:
++            for q in grid_q:
++                for sk in grid_sk:
++                    n += 1
++                    live_r = rr.compute_rk(R, q, sk, nb, nf)
++                    exact_r = compute_rk_exact_phase2(R, q, sk, nb, nf)
++                    if live_r >= exact_r - 1e-12:
++                        overstates += 1
++                    live_pass = live_r <= R
++                    exact_pass = exact_r <= R
++                    if live_pass == exact_pass:
++                        agree += 1
++                    elif exact_pass and not live_pass:
++                        live_refuse_exact_admit += 1
++                    else:
++                        live_admit_exact_refuse += 1
++
++    def report(label, k):
++        lo, hi = proportion_confint(k, n, method="wilson")
++        mlo, mhi = wilson_mpmath(k, n)
++        ok = abs(float(mlo) - lo) < 1e-9 and abs(float(mhi) - hi) < 1e-9
++        print(f"  {label:<46} {k:6d}/{n} = {100*k/n:7.4f}%  "
++              f"Wilson [{100*lo:7.4f}%, {100*hi:7.4f}%]  mpmath agrees={ok}")
++
++    print(f"\n[gate] reachable grid points: {n}")
++    report("live R_k >= exact R_k (overstatement)", overstates)
++    report("verdicts agree", agree)
++    report("LIVE REFUSES, exact-Phase-2 ADMITS", live_refuse_exact_admit)
++    report("LIVE ADMITS, exact-Phase-2 REFUSES (harmful)", live_admit_exact_refuse)
++
++    print("\n[gate] the SHIPPED DEFAULT operating point "
++          "(R=0.5 uniform prior, q=0.5, nu_b=0.05, nu_f=0.20):")
++    for sk in (0.1, 0.3, 0.5, 0.7, 0.9, 1.0):
++        lr = rr.compute_rk(0.5, 0.5, sk)
++        er = compute_rk_exact_phase2(0.5, 0.5, sk)
++        print(f"   sk={sk:4.2f}  live R_k={lr:.6f} -> {'ADMIT' if lr<=0.5 else 'REFUSE':6s}"
++              f"   exact R_k={er:.6f} -> {'ADMIT' if er<=0.5 else 'REFUSE':6s}")
++
++
++if __name__ == "__main__":
++    symbolic_check()
++    brute_force_identity()
++    gate_disagreement()

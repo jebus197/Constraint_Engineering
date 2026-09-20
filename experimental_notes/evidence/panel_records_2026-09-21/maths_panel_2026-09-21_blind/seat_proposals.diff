@@ -1,0 +1,945 @@
+### cc2:attempt-1:bench/logs/maths_panel_2026-09-21_blind/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-21_blind/dispatch.log	2026-09-20 20:50:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo/bench/logs/maths_panel_2026-09-21_blind/dispatch.log	2026-09-20 20:39:46
+@@ -1,34 +0,0 @@
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uet95kqy/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__w1n7gm1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s1msr3x6/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pirk4lz_/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_787lqq6i/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-[20:40:59]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 11,405 chars, about 2,851 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s1msr3x6/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uet95kqy/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pirk4lz_/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__w1n7gm1/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_787lqq6i/repo
+-  [ge] ok=True chars=7601 tools=16 120.8s STOPPED=max_iterations_harvested
+-  [cx] ok=True chars=9487 tools=20 158.4s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=15623 tools=31 220.9s STOPPED=max_iterations_harvested
+-  [ds] ok=True chars=13738 tools=24 442.4s STOPPED=max_iterations_harvested
+-  [kimi] ok=True chars=18776 tools=27 445.7s
+-[20:50:24]   [claude-cli:fable] 37 tool call(s) this attempt, 37 in total
+-[20:50:24]   [claude-cli:fable] done (565.2s, 12835 chars)
+-  [fable] ok=True chars=12835 tools=37 565.3s
+-[20:50:43]   [claude-cli:opus] 34 tool call(s) this attempt, 34 in total
+-[20:50:43]   [claude-cli:opus] done (583.7s, 25247 chars)
+-  [cc2] ok=True chars=25247 tools=34 583.7s
+-[20:50:43] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:scripts/panel_blind_cc_2026-09-20.py
+--- /dev/null	2026-09-20 20:50:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo/scripts/panel_blind_cc_2026-09-20.py	2026-09-20 20:48:01
+@@ -0,0 +1,390 @@
++#!/usr/bin/env python3
++"""Blind-round seat: three executed results on the founder's framing.
++
++F1  The width-z band that CC1 reports for the revised action step is EXACTLY the
++    width of the existing collapse model's own reachable set. Measuring the
++    introduction rate buys back the status quo's forbidding power -- no more.
++F2  Appendix 7.12's re-injection model D_{n+1} = nu*D_n + eps_n carries the SAME
++    1-dimensional degeneracy, by an exact reparameterisation nu = 1-s,
++    eps = b(1-z). CC1's Section 4 distinction does not survive.
++F3  The fix score has an ALGEBRAIC FLOOR. Three of five gates emitted a constant
++    1.0 over 902 of 902 archived scored fixes, so E >= 0.4 (all gates available)
++    or E >= 2/3 (regression gate unavailable) whatever the fix does. The lower
++    disputed threshold 0.395043 sits BELOW that floor and is therefore
++    unreachable by construction, not merely unreached by accident.
++
++Read-only over the repository. SymPy + z3 + mpmath + NumPy + statsmodels.
++Run:  python3 scripts/panel_blind_cc_2026-09-20.py
++"""
++from __future__ import annotations
++
++import argparse, glob, json, math, os, sys
++from collections import Counter, defaultdict
++from fractions import Fraction as F
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++MAX_BYTES = 60_000_000
++FAIL: list[str] = []
++
++
++def ck(name: str, cond: bool) -> bool:
++    print(f"   [{'PASS' if cond else 'FAIL'}] {name}")
++    if not cond:
++        FAIL.append(name)
++    return cond
++
++
++def wilson(k: int, n: int) -> tuple[float, float]:
++    if n == 0:
++        return (0.0, 0.0)
++    z = 1.959963984540054
++    p = k / n
++    d = 1 + z * z / n
++    c = p + z * z / (2 * n)
++    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return ((c - h) / d, (c + h) / d)
++
++
++# ---------------------------------------------------------------- F1
++def f1_reachable_sets() -> None:
++    """SymPy: reachable set of the action step with b fixed, vs the old model."""
++    import sympy as sp
++    z, s, b, p, R = sp.symbols("z s b p R", nonnegative=True)
++
++    act = (1 - s) * z + b * (1 - z)                 # revised action step
++    # s in [0,1] and the step is affine, strictly decreasing in s (coeff -z<=0).
++    hi = sp.simplify(act.subs(s, 0))                # s=0  -> upper end
++    lo = sp.simplify(act.subs(s, 1))                # s=1  -> lower end
++    width_new = sp.simplify(hi - lo)
++
++    old = R * (1 - p) / (1 - p * R)                 # existing collapse form
++    old_hi = sp.simplify(old.subs(p, 0))            # p=0 -> R
++    old_lo = sp.simplify(sp.limit(old, p, 1))       # p=1 -> 0
++    width_old = sp.simplify(old_hi - old_lo)
++
++    print("F1  REACHABLE SETS (SymPy)")
++    print(f"   revised, b fixed : [{lo}, {hi}]   width = {width_new}")
++    print(f"   existing, p free : [{old_lo}, {old_hi}]   width = {width_old}")
++    ck("revised band width is exactly z, free of b", sp.simplify(width_new - z) == 0)
++    ck("existing band width is exactly R (=z)", sp.simplify(width_old - R) == 0)
++    ck("the two widths are the SAME function of prior risk",
++       sp.simplify(width_new.subs(z, R) - width_old) == 0)
++    # the translation is b(1-z): revised band = existing band + b(1-z)
++    ck("revised band = existing band translated by b(1-z)",
++       sp.simplify(lo - b * (1 - z)) == 0 and sp.simplify(hi - (z + b * (1 - z))) == 0)
++    # the existing model can never raise risk; the revised one can, iff b>0
++    ck("existing model forbids risk increase (upper end == prior)",
++       sp.simplify(old_hi - R) == 0)
++    ck("revised model permits risk increase exactly when b>0",
++       sp.simplify(hi - z - b * (1 - z)) == 0)
++    # with b ALSO free the union is all of [0,1]
++    ck("b free => union over b reaches 0 and 1",
++       sp.simplify(lo.subs(b, 0)) == 0 and sp.simplify(hi.subs(b, 1)) == 1)
++
++    # z3: no (s,b) with b pinned can escape the band. Second, independent tool.
++    from z3 import Reals, Solver, And, Or, unsat
++    zz, ss, bb, dd = Reals("z s b d")
++    S = Solver()
++    S.add(And(zz >= 0, zz <= 1, ss >= 0, ss <= 1, bb >= 0, bb <= 1))
++    S.add(dd == (1 - ss) * zz + bb * (1 - zz))
++    S.add(Or(dd < bb * (1 - zz), dd > zz + bb * (1 - zz)))   # outside the band
++    ck("z3: no action outcome lies outside the width-z band", S.check() == unsat)
++
++    # mpmath, 40 digits, third check on the width.
++    import mpmath as mp
++    mp.mp.dps = 40
++    worst_mp = mp.mpf(0)
++    worst_ex = F(0)
++    for i in range(21):
++        for j in range(21):
++            zv, bv = mp.mpf(i) / 20, mp.mpf(j) / 20
++            w = ((1 - 0) * zv + bv * (1 - zv)) - ((1 - 1) * zv + bv * (1 - zv))
++            worst_mp = max(worst_mp, abs(w - zv))
++            ze, be = F(i, 20), F(j, 20)
++            we = ((1 - 0) * ze + be * (1 - ze)) - ((1 - 1) * ze + be * (1 - ze))
++            worst_ex = max(worst_ex, abs(we - ze))
++    ck(f"exact rationals: worst |width - z| = {worst_ex}", worst_ex == 0)
++    ck(f"mpmath 40dp: worst |width - z| = {mp.nstr(worst_mp, 5)} (rounding only, < 1e-35)",
++       worst_mp < mp.mpf("1e-35"))
++    print()
++
++
++# ---------------------------------------------------------------- F2
++def f2_appendix_712_has_the_same_degeneracy() -> None:
++    """SymPy: 7.12 IS the revised action step reparameterised, degeneracy and all."""
++    import sympy as sp
++    z, s, b, nu, eps, D = sp.symbols("z s b nu eps D", nonnegative=True)
++
++    revised = (1 - s) * z + b * (1 - z)
++    appendix = nu * D + eps                           # 7.12 state transition
++    mapped = appendix.subs({nu: 1 - s, eps: b * (1 - z), D: z})
++
++    print("F2  APPENDIX 7.12 UNDER THE SUBSTITUTION nu = 1-s, eps = b(1-z)")
++    print(f"   revised action step : {sp.expand(revised)}")
++    print(f"   7.12 mapped         : {sp.expand(mapped)}")
++    ck("7.12's recursion IS the revised action step, exactly",
++       sp.simplify(sp.expand(revised - mapped)) == 0)
++
++    # fixed points, both ways
++    fp_rev = sp.solve(sp.Eq(revised.subs(z, D), D), D)[0]
++    fp_app = sp.simplify((eps / (1 - nu)).subs({nu: 1 - s, eps: b * (1 - fp_rev)}))
++    print(f"   revised fixed point : {sp.simplify(fp_rev)}")
++    print(f"   7.12  D* = eps*/(1-nu), eps* = b(1-D*) : {sp.simplify(fp_app)}")
++    ck("fixed points agree exactly (b/(s+b))",
++       sp.simplify(fp_rev - sp.Rational(1) * b / (s + b)) == 0
++       and sp.simplify(fp_rev - fp_app) == 0)
++
++    # THE DEGENERACY, in 7.12's OWN coordinates: for any target D* and any nu<1
++    # there is an eps* reaching it. Same 1 free direction CC1 charges to the
++    # revision alone.
++    Dstar, nuv = sp.symbols("Dstar nuv", nonnegative=True)
++    eps_sol = sp.solve(sp.Eq(eps / (1 - nuv), Dstar), eps)[0]
++    print(f"   7.12 solved for eps* given ANY nu : eps* = {sp.simplify(eps_sol)}")
++    ck("7.12 reaches any target D* along a 1-parameter line, exactly as the revision does",
++       sp.simplify(eps_sol - Dstar * (1 - nuv)) == 0)
++    ck("that line is inside 7.12's own stated domain nu in [0,1), eps >= 0",
++       sp.simplify(eps_sol.subs({Dstar: sp.Rational(1, 3), nuv: sp.Rational(1, 2)})) > 0)
++    print()
++
++
++# ---------------------------------------------------------------- F3
++def load_sk() -> list[dict]:
++    rows: list[dict] = []
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        if os.path.getsize(f) > MAX_BYTES:
++            continue
++        try:
++            raw = open(f, errors="ignore").read()
++        except OSError:
++            continue
++        if "sk_result" not in raw:
++            continue
++        try:
++            d = json.loads(raw)
++        except Exception:
++            continue
++
++        def walk(o):
++            if isinstance(o, dict):
++                sk = o.get("sk_result")
++                if isinstance(sk, dict) and "tristate" in sk:
++                    rows.append(sk)
++                for v in o.values():
++                    walk(v)
++            elif isinstance(o, list):
++                for v in o:
++                    walk(v)
++        walk(d)
++    return rows
++
++
++def f3_score_floor() -> None:
++    rows = load_sk()
++    adm = [r for r in rows if r.get("tristate") == "ADMISSIBLE"]
++    n = len(adm)
++    print(f"F3  THE FIX SCORE, MEASURED ({len(rows)} decisions, {n} scored)")
++
++    A = Counter(r.get("A") for r in rows)
++    ck(f"A is binary over the whole archive: {dict(A)}", set(A) <= {0.0, 1, 1.0})
++
++    for g in ("e4_bandit", "g1_ast", "g2_compile", "e3_ruff", "e2_regression"):
++        c = Counter((r.get("gate_details") or {}).get(g, {}).get("score") for r in adm)
++        const = len(c) == 1
++        k = sum(v for key, v in c.items() if key is not None and float(key) == 1.0)
++        lo, hi = wilson(k, n)
++        print(f"   {g:14s} distinct={len(c):2d}  score==1.0 in {k}/{n} "
++              f"= {k/n:8.4%} Wilson [{lo:.4%}, {hi:.4%}]{'   CONSTANT' if const else ''}")
++    ck("e4_bandit (weight 2.0) emitted a constant 1.0 on every scored fix",
++       len(Counter((r.get("gate_details") or {}).get("e4_bandit", {}).get("score")
++                   for r in adm)) == 1)
++
++    # THE ALGEBRAIC FLOOR, derived with SymPy then proved unreachable with z3.
++    import sympy as sp
++    e2, e3, e4 = sp.symbols("e2 e3 e4", nonnegative=True)
++    E_all = sp.Rational(2, 5) * e2 + sp.Rational(1, 5) * e3 + sp.Rational(2, 5) * e4
++    E_noe2 = sp.Rational(1, 3) * e3 + sp.Rational(2, 3) * e4
++    floor_all = sp.simplify(E_all.subs({e2: 0, e3: 0, e4: 1}))
++    floor_noe2 = sp.simplify(E_noe2.subs({e3: 0, e4: 1}))
++    print(f"   E (all gates, w=2,1,2) = {E_all};  floor at e4=1 is {floor_all}")
++    print(f"   E (e2 unavailable)     = {E_noe2};  floor at e4=1 is {floor_noe2}")
++    ck("floor with all gates available is exactly 2/5", floor_all == sp.Rational(2, 5))
++    ck("floor with the regression gate unavailable is exactly 2/3",
++       floor_noe2 == sp.Rational(2, 3))
++
++    # The algebra predicts the OBSERVED minima. This is the falsifiable part.
++    grp = defaultdict(list)
++    for r in adm:
++        un = tuple(sorted((r.get("gate_details") or {}).get("_unavailable", [])))
++        grp[un].append(r)
++    for un, v in sorted(grp.items(), key=lambda t: -len(t[1])):
++        sks = [x["sk"] for x in v]
++        print(f"   group unavailable={un or '(none)'}: n={len(v)} min sk={min(sks)} "
++              f"max={max(sks)} distinct={len(set(sks))}")
++    # Predict EVERY recorded sk from the recorded per-gate scores and weights.
++    # This is the falsifiable core of F3: if the weights or the renormalisation
++    # were not what the source says, these reconstructions would disagree.
++    bad = 0
++    for r in adm:
++        g = r.get("gate_details") or {}
++        parts = []
++        for name, w in (("e2_regression", 2), ("e3_ruff", 1), ("e4_bandit", 2)):
++            sc = (g.get(name) or {}).get("score")
++            if sc is not None:
++                parts.append((F(str(sc)) if not isinstance(sc, int) else F(sc), w))
++        W = sum(w for _, w in parts)
++        Ehat = sum(F(w, W) * sc for sc, w in parts)
++        if abs(float(Ehat) - r["sk"]) > 5e-5:   # sk is round(.,4)
++            bad += 1
++    ck(f"every archived sk reconstructs from its own gate scores at weights 2/1/2 "
++       f"({n - bad}/{n} exact to 4dp)", bad == 0)
++
++    # z3: with e4 available and equal to 1, E can NEVER reach 0.395043.
++    from z3 import Reals, Solver, And, unsat
++    a2, a3, a4, Ev = Reals("a2 a3 a4 Ev")
++    S = Solver()
++    S.add(And(a2 >= 0, a2 <= 1, a3 >= 0, a3 <= 1, a4 == 1))
++    S.add(Ev == a2 * 2 / 5 + a3 * 1 / 5 + a4 * 2 / 5)
++    S.add(Ev < 0.395043)
++    ck("z3: threshold 0.395043 is UNREACHABLE while e4_bandit returns 1 (unsat)",
++       S.check() == unsat)
++    S2 = Solver()
++    S2.add(And(a2 >= 0, a2 <= 1, a3 >= 0, a3 <= 1, a4 == 1))
++    S2.add(Ev == a2 * 2 / 5 + a3 * 1 / 5 + a4 * 2 / 5)
++    S2.add(Ev < 0.504931)
++    ck("z3: threshold 0.504931 IS reachable in principle (sat)", S2.check() != unsat)
++
++    # Extensional identity of the two gates on the archive.
++    sks = [r["sk"] for r in adm]
++    mn = min(sks)
++    ck(f"both disputed thresholds sit below the observed minimum {mn}",
++       0.504931 < mn and 0.395043 < mn)
++    ones = sum(1 for s in sks if s == 1.0)
++    lo, hi = wilson(ones, n)
++    c = Counter(sks)
++    H = -sum((k / n) * math.log2(k / n) for k in c.values())
++    print(f"   sk == 1.0 exactly: {ones}/{n} = {ones/n:.4%} Wilson [{lo:.4%}, {hi:.4%}]")
++    print(f"   distinct levels {len(c)}, Shannon H = {H:.4f} bits, "
++          f"effective levels 2^H = {2**H:.4f}, sd = {(sum((x-sum(sks)/n)**2 for x in sks)/n)**0.5:.6f}")
++
++    try:
++        from statsmodels.stats.proportion import proportion_confint
++        l2, h2 = proportion_confint(ones, n, alpha=0.05, method="wilson")
++        ck("statsmodels Wilson agrees with the local closed form",
++           abs(l2 - lo) < 1e-12 and abs(h2 - hi) < 1e-12)
++    except ImportError:
++        print("   [SKIP] statsmodels unavailable")
++    try:
++        import numpy as np
++        ck("NumPy agrees on the tie-at-ceiling count",
++           int((np.array(sks) == 1.0).sum()) == ones)
++    except ImportError:
++        print("   [SKIP] numpy unavailable")
++    print()
++
++
++# ---------------------------------------------------------------- F4
++def f4_stopping_rule_test_is_not_runnable() -> None:
++    """The founder's point-10 test needs 2 numbers per run. They are not
++    co-located, and the only available proxy is unsound in BOTH directions."""
++    import ast
++    print("F4  CAN THE FOUNDER'S STOPPING-RULE TEST BE RUN ON THIS ARCHIVE?")
++    src = (ROOT / "bench/reference_runner_v3.py").read_text(errors="ignore")
++
++    state_keys = set()
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        try:
++            state_keys |= set(json.loads(open(f, errors="ignore").read()).keys())
++        except Exception:
++            pass
++    print(f"   union of runner_state.json top-level keys: {sorted(state_keys)}")
++    ck("runner_state.json persists NO rounds-executed count",
++       not any(k in state_keys for k in ("rounds_executed", "n_rounds", "round_count")))
++    ck("runner_state.json persists NO termination reason",
++       not any(k in state_keys for k in
++               ("termination_reason", "termination", "stop_reason", "outcome")))
++    ck("runner_state.json persists NO ceiling",
++       "max_rounds" not in state_keys and "extension_cap" not in state_keys)
++
++    # Why the only proxy (len(gamma_history)) cannot substitute.
++    ck("gamma_history has exactly 1 append site (so it counts rounds...)",
++       src.count("gamma_history.append(") == 1)
++    ck("...but is CLEARED on phase transitions, so it undercounts",
++       src.count("gamma_history.clear()") >= 1)
++    ck("...and is RESTORED from checkpoint on resume, so it overcounts",
++       'ckpt_data.get("gamma_history"' in src)
++    ck("...and cfg (hence max_rounds) is replaced mid-run by phase overrides",
++       "cfg = replace(cfg, **overrides)" in src)
++
++    # The proxy, reported ONLY to show it disagrees with itself.
++    runs = {}
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        try:
++            d = json.loads(open(f, errors="ignore").read())
++        except Exception:
++            continue
++        runs[os.path.basename(os.path.dirname(f))] = len(d.get("gamma_history") or [])
++    over = 0
++    comp = 0
++    for run, glen in runs.items():
++        mr = None
++        for g in glob.glob(str(ROOT / f"bench/logs/{run}/*.json")):
++            if g.endswith("runner_state.json"):
++                continue
++            try:
++                d = json.loads(open(g, errors="ignore").read())
++            except Exception:
++                continue
++
++            def find(o):
++                if isinstance(o, dict):
++                    if isinstance(o.get("max_rounds"), int):
++                        return o["max_rounds"]
++                    for v in o.values():
++                        r = find(v)
++                        if r is not None:
++                            return r
++                elif isinstance(o, list):
++                    for v in o:
++                        r = find(v)
++                        if r is not None:
++                            return r
++                return None
++            mr = find(d)
++            if mr is not None:
++                break
++        if mr is None:
++            continue
++        comp += 1
++        cap = None
++        if glen > mr:
++            over += 1
++    print(f"   runs with both a series and a launch ceiling: {comp}")
++    print(f"   runs whose series EXCEEDS the launch ceiling: {over}  "
++          f"<- impossible if the series were a round count")
++    ck("the proxy is self-refuting: some series exceed the run's own ceiling",
++       over > 0)
++    print("   => the test is NOT runnable on this archive. VERDICT: UNCHECKED,")
++    print("      and the fix is 1 persisted field, not new apparatus.")
++    print()
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.parse_args(argv)
++    f1_reachable_sets()
++    f2_appendix_712_has_the_same_degeneracy()
++    f3_score_floor()
++    f4_stopping_rule_test_is_not_runnable()
++    print("-" * 70)
++    if FAIL:
++        print(f"FALSIFIED: {len(FAIL)} check(s) failed:")
++        for f in FAIL:
++            print("   -", f)
++        return 1
++    print("All checks passed. No claim in this seat's answer is asserted unexecuted.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/sk_verdict_never_fired_2026-09-20.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/sk_verdict_never_fired_2026-09-20.py	2026-09-20 20:49:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo/scripts/sk_verdict_never_fired_2026-09-20.py	2026-09-20 14:50:15
+@@ -148,37 +148,20 @@
+     print()
+ 
+     rejected = tri.get("REJECTED", 0)
+-    lo, hi = wilson(rejected, entries) if entries else (0.0, 0.0)
+     print("-" * 70)
+-    print("WHAT THIS SCRIPT ESTABLISHES, AND THE CLAIM IT USED TO MAKE AND DOES NOT")
+-    print("MAKE ANY MORE (corrected 2026-09-20, found by the kimi seat in the blind")
+-    print("round by RUNNING a figure this project's own brief cited).")
+-    print()
+-    print(f"  ESTABLISHED: the fix-admission verdict fired {entries} times across")
+-    print(f"  {len(runs)} archived runs, and {rejected} of those were refusals")
+-    print(f"  ({rejected/entries:.4%}, Wilson [{lo:.4%}, {hi:.4%}]) -- so the machinery")
+-    print("  ran on the record. That half stands.")
+-    print()
+-    print("  WITHDRAWN: this block used to continue \"fixes were refused on the")
+-    print("  strength of a constant nobody measured\". That is FALSE and it was")
+-    print("  CC1's claim, put to 7 paid seats as settled evidence before being")
+-    print("  checked. Measured on both refusal paths by")
+-    print("  scripts/split_the_191_refusals_2026-09-20.py:")
+-    print()
+-    print("     ALL of the refusals are STRUCTURAL -- the proposed fix parsed no")
+-    print("     usable blocks, scored 0, and reference_runner_v3.py refuses at")
+-    print("     sk == 0 before any constant is read;")
+-    print("     0 of the 902 SCORED fixes that reached the gate were refused by it.")
+-    print()
+-    print("  So the unmeasured constants decided NOTHING on the archive. The")
+-    print("  repository already recorded this, pinned by a committed test, in")
+-    print("  sk_threshold_shadow's docstring in bench/reference_runner_v3.py:")
+-    print("  \"passes_threshold reads false 0 times under every method and every")
+-    print("  corpus tried. The gate has never rejected a fix.\"")
+-    print()
+-    print("  THE CASE FOR WIRING MEASURED PARAMETERS THEREFORE RESTS ON FUTURE")
+-    print("  RUNS, not on this archive, which contains no constant-driven refusal.")
+-    print("  Run split_the_191_refusals_2026-09-20.py for the split itself.")
++    if rejected > 0:
++        lo, hi = wilson(rejected, entries)
++        print("cc2's residual 2 is CLOSED, and it closes AGAINST 'change nothing':")
++        print(f"  The fix-admission verdict fired {entries} times across {len(runs)} archived runs.")
++        print(f"  {rejected} fixes were REFUSED ({rejected/entries:.4%}, Wilson [{lo:.4%}, {hi:.4%}]).")
++        print()
++        print("  Every one of those decisions used q=0.5, R_old=0.5, nu_b=0.05, nu_f=0.20 --")
++        print("  frozen literals with 0 writers in production code. So the correction is")
++        print("  not a future-runs precaution. Fixes were refused on the strength of a")
++        print("  constant nobody measured, and the archive holds the count.")
++    else:
++        print("The verdict never refused anything on the record; 'change nothing' stands"
++              " for the archive.")
+     return 0
+ 
+ 
+
+### fable:attempt-1:bench/logs/maths_panel_2026-09-21_blind/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-21_blind/dispatch.log	2026-09-20 20:50:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo/bench/logs/maths_panel_2026-09-21_blind/dispatch.log	2026-09-20 20:39:46
+@@ -1,34 +0,0 @@
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uet95kqy/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__w1n7gm1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s1msr3x6/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pirk4lz_/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_787lqq6i/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-[20:40:59] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-[20:40:59]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 11,405 chars, about 2,851 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s1msr3x6/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uet95kqy/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pirk4lz_/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__w1n7gm1/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jtkqjru1/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_787lqq6i/repo
+-  [ge] ok=True chars=7601 tools=16 120.8s STOPPED=max_iterations_harvested
+-  [cx] ok=True chars=9487 tools=20 158.4s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=15623 tools=31 220.9s STOPPED=max_iterations_harvested
+-  [ds] ok=True chars=13738 tools=24 442.4s STOPPED=max_iterations_harvested
+-  [kimi] ok=True chars=18776 tools=27 445.7s
+-[20:50:24]   [claude-cli:fable] 37 tool call(s) this attempt, 37 in total
+-[20:50:24]   [claude-cli:fable] done (565.2s, 12835 chars)
+-  [fable] ok=True chars=12835 tools=37 565.3s
+-[20:50:43]   [claude-cli:opus] 34 tool call(s) this attempt, 34 in total
+-[20:50:43]   [claude-cli:opus] done (583.7s, 25247 chars)
+-  [cc2] ok=True chars=25247 tools=34 583.7s
+-[20:50:43] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:scripts/panel_blind_action_step_reachability_2026-09-20.py
+--- /dev/null	2026-09-20 20:50:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo/scripts/panel_blind_action_step_reachability_2026-09-20.py	2026-09-20 20:46:40
+@@ -0,0 +1,148 @@
++#!/usr/bin/env python3
++"""Blind-round falsifiers: what the revised action step forbids, and when.
++
++Attacks CC1's calibration claim from the 2026-09-20 blind brief, Section 3:
++"with the introduction rate fixed the reachable set collapses to a band of
++width exactly z ... Measuring the parameter restores the model's power to
++forbid outcomes."
++
++Six executed claims, each cross-checked by 2 independent tools (SymPy exact /
++z3 proof / NumPy random / mpmath high precision):
++
++  A. s,b both free: reachable set of (1-s)z + b(1-z) is all of [0,1].
++  B. b fixed, s free: band [b(1-z), b(1-z)+z], width exactly z, any b. (CC1: HOLDS)
++  C. ATTACK 1: the forbidden measure is 1-z, so the restored power VANISHES
++     as z -> 1 -- weakest exactly where residual risk is highest.
++  D. ATTACK 2: fixing s instead gives width 1-z. Which parameter is measured
++     decides where any forbidding power survives; CC1 names only b.
++  E. STRONGER THAN CC1: under the package's own sequential mapping
++     (CDSFL_revised_core.sequential_repair_parameters: s = sigma*(1-nu), b = nu),
++     measuring the re-injection rate nu ALONE gives band [nu, z + nu(1-z)],
++     width z(1-nu), with a hard floor: risk_after >= nu for every sigma, z.
++     That floor is the action-step analogue of appendix section 7.12's
++     D* = eps*/(1-nu), and it is a genuine forbidden zone.
++  F. The package's own uninformative-evidence recursion R' = b + (1-s-b)R
++     has fixed point b/(s+b) (spec line 302), NOT b/p; b/p belongs to the
++     detection-thinned recursion R' = R(1-p) + b. Both verified.
++
++Read-only. Standard library + sympy, numpy, mpmath, z3. Contacts nothing.
++Run: python3 scripts/panel_blind_action_step_reachability_2026-09-20.py
++"""
++from __future__ import annotations
++
++import sys
++
++
++def fail(msg):
++    print(f"FALSIFIED: {msg}")
++    sys.exit(1)
++
++
++def main():
++    import numpy as np
++    import sympy as sp
++    import z3
++
++    z, s, b, p, nu, sigma, R = sp.symbols(
++        "z s b p nu sigma R", real=True, nonnegative=True)
++    after = (1 - s) * z + b * (1 - z)
++
++    # --- A. both free: all of [0,1] -------------------------------------
++    lo = after.subs({s: 1, b: 0})
++    hi = after.subs({s: 0, b: 1})
++    assert sp.simplify(lo) == 0 and sp.simplify(hi) == 1, "A endpoints"
++    rng = np.random.default_rng(20260920)
++    zs, ss, bs = (rng.uniform(0, 1, 200_000) for _ in range(3))
++    vals = (1 - ss) * zs + bs * (1 - zs)
++    if not ((vals >= -1e-12).all() and (vals <= 1 + 1e-12).all()):
++        fail("A: value outside [0,1]")
++    print("A HOLDS  s,b free: reachable = [0,1]  (SymPy endpoints + 200k NumPy)")
++
++    # --- B. b fixed: band of width exactly z ----------------------------
++    lo_b = sp.simplify(after.subs(s, 1))
++    hi_b = sp.simplify(after.subs(s, 0))
++    width = sp.simplify(hi_b - lo_b)
++    assert width == z, f"B width: {width}"
++    Z, S, B = z3.Reals("Z S B")
++    box = z3.And(0 <= Z, Z <= 1, 0 <= S, S <= 1, 0 <= B, B <= 1)
++    aft = (1 - S) * Z + B * (1 - Z)
++    solver = z3.Solver()
++    solver.add(box, z3.Or(aft < B * (1 - Z), aft > Z + B * (1 - Z)))
++    if solver.check() != z3.unsat:
++        fail("B: z3 found a point outside the band")
++    print("B HOLDS  b fixed: band [b(1-z), b(1-z)+z], width exactly z "
++          "(SymPy + z3 UNSAT), independent of b -- CC1's claim is TRUE as stated")
++
++    # --- C. attack 1: forbidding power vanishes as z -> 1 ---------------
++    assert sp.simplify(1 - width) == 1 - z
++    at_z1 = (sp.simplify(lo_b.subs(z, 1)), sp.simplify(hi_b.subs(z, 1)))
++    assert at_z1 == (0, 1), f"C: {at_z1}"
++    print("C ATTACK forbidden measure = 1-z; at z=1 the band is [0,1]: with b "
++          "measured the model STILL forbids nothing at high starting risk")
++
++    # --- D. attack 2: fixing s instead gives width 1-z ------------------
++    width_s = sp.simplify(after.subs(b, 1) - after.subs(b, 0))
++    assert width_s == 1 - z, f"D: {width_s}"
++    print("D ATTACK s fixed instead: width 1-z. WHICH parameter is measured "
++          "decides where power survives; CC1 names only b")
++
++    # --- E. sequential mapping: floor at nu ------------------------------
++    seq = after.subs({s: sigma * (1 - nu), b: nu})
++    lo_e = sp.simplify(seq.subs(sigma, 1))
++    assert sp.simplify(lo_e - nu) == 0, f"E lo: {lo_e}"
++    hi_e = sp.simplify(seq.subs(sigma, 0))
++    width_e = sp.simplify(hi_e - lo_e)
++    assert sp.simplify(width_e - z * (1 - nu)) == 0, f"E width: {width_e}"
++    N, SG = z3.Reals("N SG")
++    seqz = (1 - SG * (1 - N)) * Z + N * (1 - Z)
++    solver = z3.Solver()
++    solver.add(0 <= Z, Z <= 1, 0 <= N, N <= 1, 0 <= SG, SG <= 1, seqz < N)
++    if solver.check() != z3.unsat:
++        fail("E: z3 found risk_after < nu")
++    print("E STRONGER: under the package's own sequential mapping, measuring "
++          "nu alone gives band [nu, z+nu(1-z)], width z(1-nu), and a PROVED "
++          "floor risk_after >= nu (z3 UNSAT) -- the action-step analogue of "
++          "section 7.12's D* = eps*/(1-nu)")
++
++    # --- F. fixed points: b/(s+b) vs b/p ---------------------------------
++    fp_spec = sp.solve(sp.Eq(b + (1 - s - b) * R, R), R)
++    assert fp_spec and sp.simplify(fp_spec[0] - b / (s + b)) == 0, fp_spec
++    fp_det = sp.solve(sp.Eq(R * (1 - p) + b, R), R)
++    assert fp_det and sp.simplify(fp_det[0] - b / p) == 0, fp_det
++    import mpmath as mp
++    mp.mp.dps = 40
++    bv, sv, pv = mp.mpf("0.03"), mp.mpf("0.4"), mp.mpf("0.4")
++    r1 = r2 = mp.mpf("0.5")
++    for _ in range(4000):
++        r1 = bv + (1 - sv - bv) * r1
++        r2 = r2 * (1 - pv) + bv
++    if abs(r1 - bv / (sv + bv)) > mp.mpf("1e-30"):
++        fail(f"F: spec recursion converged to {r1}")
++    if abs(r2 - bv / pv) > mp.mpf("1e-30"):
++        fail(f"F: detection recursion converged to {r2}")
++    print("F HOLDS  R'=b+(1-s-b)R -> b/(s+b) (spec line 302); R'=R(1-p)+b -> "
++          "b/p (T4's form). Two DIFFERENT recursions; both verified SymPy+mpmath")
++
++    # --- appendix line-169 inverse, round trip ---------------------------
++    pi_, C_ = sp.symbols("pi_ C_", positive=True)
++    Rk = pi_ * (1 - C_) / ((1 - pi_) + pi_ * (1 - C_))
++    C_back = sp.simplify((pi_ - Rk) / (pi_ * (1 - Rk)))
++    assert sp.simplify(C_back - C_) == 0, C_back
++    wrong = sp.Rational(1, 2) - sp.Rational(1, 5)
++    wrong = sp.simplify(wrong / (sp.Rational(1, 2) * (sp.Rational(1, 5) - 1)))
++    assert wrong == sp.Rational(-3, 4), wrong
++    print("G HOLDS  corrected inverse round-trips to 0 exactly; the pre-fix "
++          "form gives -3/4 at pi=1/2, R=1/5, as the appendix records")
++
++    # --- T3: rule of three, quiet rounds needed --------------------------
++    lam0 = sp.Rational(1, 10)
++    n_needed = sp.log(20) / lam0
++    print(f"H        T3 scale: to reject a flat rate >= 0.1/round at 95% "
++          f"requires {sp.N(n_needed, 4)} consecutive quiet rounds "
++          f"(exp(-n*0.1) <= 0.05) -- a researcher's budget call, not a gate's")
++    print("\nALL CHECKS PASSED")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/sk_ceiling_regression_absent_2026-09-20.py
+--- /dev/null	2026-09-20 20:50:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo/scripts/sk_ceiling_regression_absent_2026-09-20.py	2026-09-20 20:48:50
+@@ -0,0 +1,128 @@
++#!/usr/bin/env python3
++"""Does the fix score discriminate? The ceiling pile-up, decomposed.
++
++Blind panel round 2026-09-20, Section 6.1. Measured on the archived record:
++
++  * 902 ADMISSIBLE fixes; 672 score exactly 1.0 -- the gate's ceiling.
++  * E is a renormalised weighted mean over AVAILABLE gates
++    (bench/reference_runner_v3.py, compute_sk): a gate returning None is
++    silently DROPPED from the mean rather than counted against the fix.
++  * e2_regression -- the only gate that observes behaviour -- is the dropped
++    gate in every such case here, mostly via the 120s pytest timeout.
++
++So a subset of the 1.0 scores are 'ruff + bandit alone passed, the regression
++suite never executed', printed indistinguishably from 'everything passed'.
++This script counts that subset, with Wilson intervals, and counts which gate
++drives every below-ceiling deduction. It changes nothing; it measures.
++
++Run: python3 scripts/sk_ceiling_regression_absent_2026-09-20.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++from collections import Counter
++from math import sqrt
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++MAX_BYTES = 60_000_000
++
++
++def wilson(k: int, n: int) -> tuple[float, float]:
++    if n == 0:
++        return (0.0, 0.0)
++    z = 1.959963984540054
++    p = k / n
++    d = 1 + z * z / n
++    c = p + z * z / (2 * n)
++    h = z * sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return ((c - h) / d, (c + h) / d)
++
++
++def collect() -> list[dict]:
++    recs: list[dict] = []
++
++    def walk(o):
++        if isinstance(o, dict):
++            sk = o.get("sk_result")
++            if isinstance(sk, dict) and sk.get("tristate") == "ADMISSIBLE":
++                recs.append(sk)
++            for v in o.values():
++                walk(v)
++        elif isinstance(o, list):
++            for v in o:
++                walk(v)
++
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        if os.path.getsize(f) > MAX_BYTES:
++            continue
++        try:
++            raw = open(f, errors="ignore").read()
++        except OSError:
++            continue
++        if "sk_result" not in raw:
++            continue
++        try:
++            walk(json.loads(raw))
++        except Exception:
++            continue
++    return recs
++
++
++def main() -> int:
++    adm = collect()
++    n = len(adm)
++    ones = [r for r in adm if float(r.get("sk", 0)) == 1.0]
++    lo, hi = wilson(len(ones), n)
++    print("THE FIX-SCORE CEILING, DECOMPOSED (archived ADMISSIBLE records)")
++    print()
++    print(f"ADMISSIBLE fixes                 : {n}")
++    print(f"score exactly 1.0                : {len(ones)}  "
++          f"({len(ones)/n:.4%}, Wilson [{lo:.4%}, {hi:.4%}])")
++
++    def e2_absent(r):
++        gd = r.get("gate_details") or {}
++        e2 = gd.get("e2_regression") or {}
++        return e2.get("score", 0) is None
++
++    abs_ceiling = [r for r in ones if e2_absent(r)]
++    lo2, hi2 = wilson(len(abs_ceiling), len(ones))
++    print(f"of those, e2_regression ABSENT   : {len(abs_ceiling)}  "
++          f"({len(abs_ceiling)/len(ones):.4%} of ceiling scores, "
++          f"Wilson [{lo2:.4%}, {hi2:.4%}])")
++    tos = Counter()
++    for r in abs_ceiling:
++        d = str((r["gate_details"]["e2_regression"] or {}).get("detail", ""))
++        tos["timeout" if "timed out" in d else d[:50]] += 1
++    for cause, k in tos.most_common(5):
++        print(f"    absence cause: {cause:30s} {k:4d}")
++
++    below = [r for r in adm if float(r.get("sk", 0)) < 1.0]
++    drivers = Counter()
++    for r in below:
++        gd = r.get("gate_details") or {}
++        low = tuple(k for k in ("e2_regression", "e3_ruff", "e4_bandit")
++                    if isinstance(gd.get(k), dict)
++                    and gd[k].get("score") is not None and gd[k]["score"] < 1.0)
++        drivers[low] += 1
++    print()
++    print(f"below-ceiling ADMISSIBLE         : {len(below)}")
++    for gates, k in drivers.most_common():
++        print(f"    deduction driven by {','.join(gates) or '(none)'}: {k}")
++    e2_driven = sum(k for g, k in drivers.items() if "e2_regression" in g)
++    lo3, hi3 = wilson(e2_driven, len(below))
++    print(f"  e2_regression appears in the driver set: {e2_driven}/{len(below)} "
++          f"({e2_driven/len(below):.4%}, Wilson [{lo3:.4%}, {hi3:.4%}])")
++    print()
++    print("READING: within ADMISSIBLE, e2_regression is effectively the only")
++    print("discriminating gate -- and it is also the only gate permitted to go")
++    print("silently absent at the ceiling. The pile-up at 1.0 is therefore part")
++    print("measurement ('nothing objected') and part non-measurement ('the one")
++    print("behavioural gate never ran'), and the score does not distinguish them.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/sk_verdict_never_fired_2026-09-20.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/sk_verdict_never_fired_2026-09-20.py	2026-09-20 20:49:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kjgwq9m2/repo/scripts/sk_verdict_never_fired_2026-09-20.py	2026-09-20 20:49:00
+@@ -33,7 +33,6 @@
+ import glob
+ import json
+ import os
+-import re
+ from collections import Counter
+ from pathlib import Path
+ 
+@@ -91,6 +90,62 @@
+     return entries, tri, runs
+ 
+ 
++def refusal_causes() -> tuple[Counter, int, int]:
++    """Walk REJECTED records only: (cause counter, sk==0 count, total).
++
++    CORRECTION, blind panel round 2026-09-20. The first conclusion this script
++    printed said the 191 refusals were made 'on the strength of a constant
++    nobody measured'. That inference was wrong, and this function is the
++    measurement that refutes it: every REJECTED record carries sk == 0.0 and a
++    STRUCTURAL cause in its own gate_details (apply/parse failure or a hard
++    gate), recorded before any of q, R_old, nu_b, nu_f could be read.
++    `compute_sk` (bench/reference_runner_v3.py) reads none of those constants;
++    they parameterise the R_k update, not the admission verdict.
++    """
++    causes: Counter = Counter()
++    zero_sk = 0
++    total = 0
++
++    def walk(o):
++        nonlocal zero_sk, total
++        if isinstance(o, dict):
++            sk = o.get("sk_result")
++            if (isinstance(sk, dict) and "tristate" in sk
++                    and str(sk.get("tristate")) == "REJECTED"):
++                total += 1
++                if float(sk.get("sk", 1)) == 0.0:
++                    zero_sk += 1
++                gd = sk.get("gate_details") or {}
++                if "error" in gd:
++                    causes[f"apply/parse: {gd['error']}"] += 1
++                elif (gd.get("g1_ast") or {}).get("score") == 0:
++                    causes["hard gate: g1_ast"] += 1
++                elif (gd.get("g2_compile") or {}).get("score") == 0:
++                    causes["hard gate: g2_compile"] += 1
++                else:
++                    causes["other"] += 1
++            for v in o.values():
++                walk(v)
++        elif isinstance(o, list):
++            for v in o:
++                walk(v)
++
++    for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
++        if os.path.getsize(f) > MAX_BYTES:
++            continue
++        try:
++            raw = open(f, errors="ignore").read()
++        except OSError:
++            continue
++        if "sk_result" not in raw:
++            continue
++        try:
++            walk(json.loads(raw))
++        except Exception:
++            continue
++    return causes, zero_sk, total
++
++
+ def name_vs_value() -> tuple[int, int]:
+     """The parsing trap, measured: hits on the NAME vs hits on the VALUE."""
+     name_hits = 0
+@@ -148,37 +203,26 @@
+     print()
+ 
+     rejected = tri.get("REJECTED", 0)
+-    lo, hi = wilson(rejected, entries) if entries else (0.0, 0.0)
+     print("-" * 70)
+-    print("WHAT THIS SCRIPT ESTABLISHES, AND THE CLAIM IT USED TO MAKE AND DOES NOT")
+-    print("MAKE ANY MORE (corrected 2026-09-20, found by the kimi seat in the blind")
+-    print("round by RUNNING a figure this project's own brief cited).")
+-    print()
+-    print(f"  ESTABLISHED: the fix-admission verdict fired {entries} times across")
+-    print(f"  {len(runs)} archived runs, and {rejected} of those were refusals")
+-    print(f"  ({rejected/entries:.4%}, Wilson [{lo:.4%}, {hi:.4%}]) -- so the machinery")
+-    print("  ran on the record. That half stands.")
+-    print()
+-    print("  WITHDRAWN: this block used to continue \"fixes were refused on the")
+-    print("  strength of a constant nobody measured\". That is FALSE and it was")
+-    print("  CC1's claim, put to 7 paid seats as settled evidence before being")
+-    print("  checked. Measured on both refusal paths by")
+-    print("  scripts/split_the_191_refusals_2026-09-20.py:")
+-    print()
+-    print("     ALL of the refusals are STRUCTURAL -- the proposed fix parsed no")
+-    print("     usable blocks, scored 0, and reference_runner_v3.py refuses at")
+-    print("     sk == 0 before any constant is read;")
+-    print("     0 of the 902 SCORED fixes that reached the gate were refused by it.")
+-    print()
+-    print("  So the unmeasured constants decided NOTHING on the archive. The")
+-    print("  repository already recorded this, pinned by a committed test, in")
+-    print("  sk_threshold_shadow's docstring in bench/reference_runner_v3.py:")
+-    print("  \"passes_threshold reads false 0 times under every method and every")
+-    print("  corpus tried. The gate has never rejected a fix.\"")
+-    print()
+-    print("  THE CASE FOR WIRING MEASURED PARAMETERS THEREFORE RESTS ON FUTURE")
+-    print("  RUNS, not on this archive, which contains no constant-driven refusal.")
+-    print("  Run split_the_191_refusals_2026-09-20.py for the split itself.")
++    if rejected > 0:
++        lo, hi = wilson(rejected, entries)
++        causes, zero_sk, total_rej = refusal_causes()
++        print("cc2's residual 2 is CLOSED, and it closes FOR 'change nothing' on the archive:")
++        print(f"  The fix-admission verdict fired {entries} times across {len(runs)} archived runs.")
++        print(f"  {rejected} fixes were REFUSED ({rejected/entries:.4%}, Wilson [{lo:.4%}, {hi:.4%}]).")
++        print()
++        print("  CORRECTED CONCLUSION (2026-09-20 blind round; the earlier text here was")
++        print("  wrong and is withdrawn). Every refusal was STRUCTURAL, measured per record:")
++        print(f"    refusals with sk == 0.0 at the gate: {zero_sk} of {total_rej}")
++        for cause, k in causes.most_common():
++            print(f"      {cause:38s} {k:4d}")
++        print("  The frozen literals q=0.5, R_old=0.5, nu_b=0.05, nu_f=0.20 parameterise the")
++        print("  R_k UPDATE, not the admission verdict; compute_sk reads none of them, so no")
++        print("  archived refusal rested on an unmeasured constant. The unmeasured-constant")
++        print("  correction remains a future-runs concern for R_k, not a past-refusals one.")
++    else:
++        print("The verdict never refused anything on the record; 'change nothing' stands"
++              " for the archive.")
+     return 0
+ 
+ 

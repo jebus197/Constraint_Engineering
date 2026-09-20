@@ -8,22 +8,22 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-09-20 01:34 BST)
+## Accounting (counted 2026-09-20 22:48 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **144 files**, of which one is `MEMORY.md` itself
-(the index), leaving **143 individual memory files**. They partition as:
+The directory holds **147 files**, of which one is `MEMORY.md` itself
+(the index), leaving **146 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 86 |
+| Mirrored (in summarised form) in `MEMORY.md` | 89 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 143 |
+| total | 146 |
 
 > **[Correction 2026-09-17.]** Total 141 -> 142, mirrored 84 -> 85, directory 142 -> 143. One memory file was written in the small hours of 2026-09-17: `feedback_no_privately_preamble.md`, recording the founder's ruling that a planning preamble must not open a reply. It is mirrored in `MEMORY.md` at the pointer "No 'Privately' Preamble", so it falls in the residual bucket rather than needing a name under Excluded or Unclassified.
 >

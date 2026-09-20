@@ -254,10 +254,23 @@ class TestNoPaidSeatWasDispatched:
         spec.loader.exec_module(m)
         return m.round_date(name)
 
-    def test_no_round_since_the_ruling_holds_a_paid_seat_reply(self, mod):
+    def test_no_UNAUTHORISED_round_since_the_ruling_holds_a_paid_seat_reply(self, mod):
+        """AUTHORISATION, NOT ABSENCE (changed 2026-09-20, and it got stronger).
+
+        `RULING_CUT` is deliberately NOT moved. Moving it would green this test
+        by making it ask "is this recent?" instead of "was this authorised?",
+        and the next unauthorised spend would pass silently. Instead a paid
+        reply is an offence unless its round is named in
+        bench/directives/universal/paid_dispatch_authorisations.json, which
+        carries the founder's verbatim authorisation and the ceiling.
+        """
+        from bench.paid_dispatch_authorisations import is_authorised
+
         _requires_the_archive(mod)
         offenders = []
         for r in self._after_the_cut(mod):
+            if is_authorised(r.name):
+                continue
             for name in PAID_SEATS:
                 if (r / name).exists():
                     offenders.append(f"{r.name}/{name}")
@@ -265,8 +278,7 @@ class TestNoPaidSeatWasDispatched:
                     offenders.append(f"mirror {r.name}/{name}")
         assert not offenders, (
             f"a paid seat reply exists in a round dated after "
-            f"{self.RULING_CUT}, so a paid dispatch happened under the "
-            f"free-seat discipline: {offenders}")
+            f"{self.RULING_CUT} that the founder did not authorise: {offenders}")
 
     def test_the_cut_is_not_in_the_future(self, mod):
         """ANTI-VACUITY. If the cut drifted past every directory the test above
@@ -297,13 +309,23 @@ class TestNoPaidSeatWasDispatched:
             f"cut carry a free-seat reply, so the paid-seat assertion is "
             f"running on nearly empty directories")
 
-    def test_no_round_since_the_ruling_is_paid_only(self, mod):
+    def test_no_UNAUTHORISED_round_since_the_ruling_is_paid_only(self, mod):
         """The sharper form: a directory holding ONLY paid replies since the cut
-        would be a paid dispatch however the counting is done."""
+        would be a paid dispatch however the counting is done.
+
+        Authorised rounds are exempt from the OFFENCE, not from the record: the
+        founder's 2026-09-20 review dispatched 5 paid seats alongside 2 free
+        ones, so it would not trip this even without the exemption -- but a
+        future authorised round might legitimately be paid-only, and the
+        question this test asks is about authorisation, not composition.
+        """
+        from bench.paid_dispatch_authorisations import is_authorised
+
         _requires_the_archive(mod)
         offenders = [
             r.name for r in self._after_the_cut(mod)
-            if any((r / n).exists() for n in PAID_SEATS)
+            if not is_authorised(r.name)
+            and any((r / n).exists() for n in PAID_SEATS)
             and not any((r / n).exists() for n in ("cc2.json", "fable.json"))]
         assert not offenders, offenders
 

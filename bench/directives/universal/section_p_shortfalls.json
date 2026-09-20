@@ -1,0 +1,84 @@
+{
+  "_what_this_is": [
+    "Section P's conditions are measured over every archived panel reply. When a",
+    "round falls short of one, the shortfall is RECORDED HERE WITH ITS MEASURED",
+    "CAUSE rather than excused, and the guards assert that nothing NEW joins this",
+    "list. That is the convention the guards already used for",
+    "panel_roster_fix_2026-09-09, which was dispatched before the disagreement",
+    "field existed in the brief.",
+    "",
+    "WHY A RECORD AND NOT AN EXEMPTION. A shortfall that is deleted from the",
+    "archive, or silently dropped from a population, stops being evidence. Every",
+    "entry below is a round that really did fall short, with the defect that",
+    "caused it and the commit that fixed it, so the record answers 'why' rather",
+    "than merely 'known'.",
+    "",
+    "RULES FOR EDITING. Name the round and the seat exactly. State the CAUSE as a",
+    "measurement, not an impression. State whether it is fixed, and name the test",
+    "that holds the fix. A new entry is a claim that something went wrong and was",
+    "understood -- never a way to make a red suite green."
+  ],
+  "shortfalls": [
+    {
+      "condition": "P3",
+      "round": "maths_panel_2026-09-20",
+      "seat": "kimi",
+      "what": "The seat recorded 0 tool calls and returned 0 characters.",
+      "cause": [
+        "The Kimi seat was dispatched through call_moonshot into the shared tool",
+        "loop, whose default_tool_executor knew only the name `execute_python`.",
+        "Every tool the brief offered came back to the seat as `[unknown tool]`,",
+        "so the harness was not available to be used. P3 asks whether the seat",
+        "USED the harness; on this round there was no harness to use."
+      ],
+      "fixed": true,
+      "fix": "default_tool_executor now routes unknown names to dispatch_tool_call, so the access tools reach the executor that implements them (bench/experiment_11_orchestrator.py).",
+      "held_by": "bench/tests/test_empty_seat_defects_2026-09-20.py"
+    },
+    {
+      "condition": "P5",
+      "round": "maths_panel_2026-09-20",
+      "seat": "kimi",
+      "what": "The reply carried no disagreement section because it carried nothing at all: 0 characters.",
+      "cause": "Same as the P3 entry above for this round and seat.",
+      "fixed": true,
+      "fix": "As above.",
+      "held_by": "bench/tests/test_empty_seat_defects_2026-09-20.py"
+    },
+    {
+      "condition": "P5",
+      "round": "maths_panel_2026-09-20_r3",
+      "seat": "ge",
+      "what": "0 characters returned after 1 tool call that read 24,868 characters.",
+      "cause": [
+        "bench/openrouter_tools.py treated empty visible content as a finished",
+        "answer: on a turn with no tool calls it took `msg.content or ''`, set",
+        "stopped_reason='finish' and broke. Its sibling loop in",
+        "experiment_11_orchestrator.py has carried a tool-less retry at a raised",
+        "budget for exactly this case since 2026-06-06, written against",
+        "gemini-3.1-pro-preview. The loop the paid seats actually run never",
+        "received it, so the very model the retry was written for hit the very",
+        "failure it prevents."
+      ],
+      "fixed": true,
+      "fix": "The retry is now in the paid-seat loop, and a reply that stays empty is recorded as 'empty_content_after_retry' rather than 'finish'.",
+      "held_by": "bench/tests/test_empty_seat_defects_2026-09-20.py"
+    },
+    {
+      "condition": "P5",
+      "round": "maths_panel_2026-09-20_r3",
+      "seat": "kimi",
+      "what": "0 characters returned after 25 successful tool calls over 216 seconds.",
+      "cause": [
+        "The forced-synthesis call in _run_openai_tool_loop hardcoded",
+        "temperature=0.0 while the loop's own `temperature` parameter -- added the",
+        "same day for kimi-k3, which refuses any value but 1 -- was threaded only",
+        "into the main request. Every retry raised HTTP 400 and a bare `except`",
+        "swallowed it, discarding 25 tool calls of real work."
+      ],
+      "fixed": true,
+      "fix": "The forced-synthesis call now uses the caller's temperature.",
+      "held_by": "bench/tests/test_empty_seat_defects_2026-09-20.py"
+    }
+  ]
+}

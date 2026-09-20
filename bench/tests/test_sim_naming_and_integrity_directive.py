@@ -228,8 +228,31 @@ def name_marks_simulated(relative_path: str) -> bool:
 #: Fields in a REVIEW record that hold a reviewer's own words or commands.
 #: A `-SIM` string inside one of these is the reviewer TALKING ABOUT simulated
 #: labels, not an artefact declaring itself simulated.
+#: `result` and `arguments` ADDED 2026-09-20, completing an omission rather than
+#: introducing a new idea. They are the 2 free-text fields the OpenRouter tool
+#: record has carried since 2026-04-17 (bench/openrouter_tools.py, the returned
+#: tool_calls entries): `arguments` holds the command a reviewer asked for and
+#: `result` holds its raw output. They are the same category as `input_preview`
+#: and `stdout`, which were already here.
+#:
+#: WHAT WENT WRONG WITHOUT THEM. `bench/logs/maths_panel_2026-09-20_r2/cgpt.json`
+#: is the REAL paid ChatGPT seat of the authorised 7-model review -- its own
+#: record reads route='openrouter', ok=True, 16,938 characters, 30 tool calls.
+#: A real dispatch is ALLOWED to carry a bare vendor name; only a SIMULATED one
+#: must be labelled SIM-A..SIM-E. Because the seat's grep output landed in
+#: `result`, which this list did not cover, the guard read the reply as an
+#: artefact declaring itself simulated and demanded the -SIM form of a real
+#: model's real reply.
+#:
+#: THE DIRECTIVE IS UNTOUCHED. This narrows the SELECTION predicate so the guard
+#: stops misfiring on real dispatches; it does not relax what the guard requires
+#: of a genuinely simulated artefact. An exclusion list for the offending round
+#: was the alternative and was rejected: it would de-select the same artefacts
+#: the guard exists to police, which is the dead-guard outcome this file was
+#: written to prevent after the 2026-08-04 provenance failure.
 _QUOTATION_KEYS = ("response", "input_preview", "command", "prompt", "text",
-                   "brief", "evidence", "detail", "description", "stdout")
+                   "brief", "evidence", "detail", "description", "stdout",
+                   "result", "arguments")
 
 
 def _strip_quoted_prose(data: bytes) -> bytes:

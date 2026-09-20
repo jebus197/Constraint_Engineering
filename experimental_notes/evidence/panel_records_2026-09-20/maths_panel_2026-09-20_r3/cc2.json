@@ -1,0 +1,192 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15806,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Locate repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls docs/maths_revision_review_2026-09-10/outputs/ 2>/dev/null; echo \\\"---\\\"; ls scripts/ 2>/dev/null | head -50\", \"description\": \"List revision outputs and scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l docs/maths_revision_review_2026-09-10/outputs/*.md docs/maths_revision_review_2026-09-10/outputs/*.py docs/MATHEMATICAL_APPENDIX.md scripts/free_parameter_degeneracy_2026-09-20.py scripts/who_catches_the_defects_2026-09-09.py bench/reference_runner_v3.py\", \"description\": \"Size up the files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat docs/maths_revision_review_2026-09-10/outputs/CDSFL_revised_core.py\", \"description\": \"Read revised core\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,200p' docs/maths_revision_review_2026-09-10/outputs/CDSFL_revised_model_specification.md\", \"description\": \"Read spec part 1\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat docs/maths_revision_review_2026-09-10/outputs/CDSFL_revised_model_validation_plan.md\", \"description\": \"Read validation plan\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"check_sk_threshold_corrected\\\\|def compute_rk\\\\|def check_sk_threshold\\\\|model_params\\\\|_check_gamma_alt_convergence\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Find gate functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '190,260p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Read appendix line 215 area\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10930,11060p' bench/reference_runner_v3.py\", \"description\": \"Read compute_rk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11493,11700p' bench/reference_runner_v3.py\", \"description\": \"Read sk threshold functions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11700,11760p' bench/reference_runner_v3.py; echo \\\"=== call site ===\\\"; sed -n '11900,12000p' bench/reference_runner_v3.py\", \"description\": \"Read rest of corrected gate + call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport runpy, sys\\nsys.path.insert(0,'docs/maths_revision_review_2026-09-10/outputs')\\nfrom CDSFL_revised_core import update, expected_binary_review, sequential_repair_parameters, action_gain\\nfrom fractions import Fraction as F\\n# Fixed point drive: Bayesian review with f=0, negative branch only? Brief says driving update() converges to b/p\\np=F(35,100); b=F(10,100)\\nr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\nR,q,s,nu,nub,nuf = sp.symbols('R q sigma nu nu_b nu_f', nonnegative=True)\\n\\n# --- Appendix / live compute_rk three-phase (nu_b=0, nu_f=nu, sk=s -> nu_eff = (1-s)*nu)\\nR_det = R*(1-q)/(1-q*R)\\nR_base = s*R_det + (1-s)*R\\nnu_eff = 1-(1-nub)*(1-(1-s)*nuf)\\nappendix = sp.simplify(R_base*(1-nu_eff)+nu_eff)\\n\\n# --- Correct expected post-cycle risk: r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 -c \\\"\\nimport runpy\\nrunpy.run_path('scripts/who_catches_the_defects_2026-09-09.py', run_name='__main__')\\n\\\" 2>&1 | tail -40\", \"description\": \"Run who_catches_the_defects\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport runpy\\nrunpy.run_path('scripts/who_catches_the_defects_2026-09-09.py', run_name='__main__')\\n\\\" 2>&1 | tail -45\", \"description\": \"Run who_catches_the_defects\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' scripts/who_catches_the_defects_2026-09-09.py\", \"description\": \"Read who_catches head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd scripts && python3 who_catches_the_defects_2026-09-09.py 2>&1 | tail -30\", \"description\": \"Run who_catches from scripts dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,124p' scripts/who_catches_the_defects_2026-09-09.py\", \"description\": \"Rest of who_catches\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_sk\\\" bench/reference_runner_v3.py\", \"description\": \"Find compute_sk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"SK_ADMISSIBLE\\\\|REFUTED\\\" bench/reference_runner_v3.py | grep -i \\\"fix\\\\|apply\\\\|admiss\\\" | head -30\", \"description\": \"Fix admission vs refuted\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9s1bjzr6/repo && grep -n \\\"def compute_sk\\\" bench/reference_runner_v3.py && grep -n \\\"baseline\\\" bench/reference_runner_v3.py | sed -n '1,40p'\", \"description\": \"Find compute_sk and baseline\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10685,10930p' bench/reference_runner_v3.py\", \"description\": \"Read compute_sk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"test_cmd\\\" bench/reference_runner_v3.py | head -25; echo \\\"=== configs ===\\\"; grep -rn \\\"test_cmd\\\" configs/ 2>/dev/null | head -20\", \"description\": \"Check e2 availability\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, math\\nsys.path.insert(0,'bench')\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"rr\\\",\\\"bench/reference_runner_v3.py\\\")\\nm=importlib.util.module_from_spec(spec)\\ntry:\\n    spec.loader.exec_module(m)\\n    print(\\\"imported OK\\\")\\nexcept Exception as e:\\n    print(\\\"IMPORT FAILED:\\\", type(e).__name__, e)\\nEOF\", \"description\": \"Try impo"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench import reference_runner_v3 as rr\\nprint('ok', rr.RK0_PI_BASE)\\nprint(rr.check_sk_threshold_corrected(0.5, 0.05, 0.20, 0.5, 0.5))\\nprint(rr.compute_rk(0.5,0.5,0.5))\\n\\\"\", \"description\": \"Import runner as package module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls configs | head; grep -rn \\\"test_cmd\\\" configs/*.json configs/*.yaml configs/*.yml 2>/dev/null | head\", \"description\": \"Check configs for test_cmd\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9s1bjzr6/repo/scripts/phase2_interpolation_overstates_risk_2026-09-20.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The three-phase Phase 2 interpolation OVERSTATES residual risk. Derivation + measurement.\\n\\nWHAT IS CLAIMED, PRECISELY\\n--------------------------\\n`compute_rk` (bench/reference_runner_v3.py) implem"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9s1bjzr6/repo/scripts/phase2_interpolation_overstates_risk_2026-09-20.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The three-phase Phase 2 interpolation OVERSTATES residual risk. Derivation + measurement.\\n\\nWHAT IS CLAIMED, PRECISELY\\n--------------------------\\n`compute_rk` (bench/reference_runner_v3.py) imple"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"R_new\\\\|R_k\\\\b\\\" bench/reference_runner_v3.py | grep -vi \\\"^.*#\\\" | grep -i \\\"stop\\\\|converg\\\\|threshold\\\\|gate\\\\|decide\\\\|exit\\\" | head -20; echo \\\"=== what reads R_new ===\\\"; grep -n \\\"R_new\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find what R_k drives\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'Reduce[R^2*q*s*(q-1)/(R*q-1) >= 0 && 0<R<1 && 0<q<1 && 0<=s<=1, {R,q,s}, Reals]' 2>&1 | head -5\", \"description\": \"Wolfram second falsifier on sign\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '12010,12035p' bench/reference_runner_v3.py; echo \\\"=== gamma gate ===\\\"; sed -n '6860,6935p' bench/reference_runner_v3.py\", \"description\": \"R_new usage and gamma gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"model_params\\\"\\\\|\\\\[.model_params.\\\\]\\\\|model_params=' bench/*.py scripts/*.py 2>/dev/null | head -20; echo \\\"--- any writer? ---\\\"; grep -rn \\\"model_params\\\" --include=*.py . | grep -v \\\"get(\\\" | head -20\", \"description\": \"Check model_params writers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nimport sympy as sp\\nfrom bench import reference_runner_v3 as rr\\ns=sp.Symbol('s')\\nR=sp.Rational(1,2); q=sp.Rational(1,2); nb=sp.Rational(5,100); nf=sp.Rational(20,100)\\nR_det=R*(1-q)/(1-q*R)\\nR_base=s*R_det+(1-s)*R\\nne=1-(1-nb)*(1-(1-s)*nf)\\nRk=sp.simplify(R_base*(1-ne)+ne)\\nprint(\\\"live R_k(s) at frozen defaults =\\\", sp.nsimplif"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench import reference_runner_v3 as rr\\ndef thresh(nb,nf,q=0.5,R=0.5):\\n    lo,hi=0.0,1.0\\n    if not rr.check_sk_threshold_corrected(1.0,nb,nf,q,R)[0]: return None\\n    for _ in range(60):\\n        m=(lo+hi)/2\\n        if rr.check_sk_threshold_corrected(m,nb,nf,q,R)[0]: hi=m\\n        else: lo=m\\n    return hi\\nprint(\\\"T2: se"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ | head -40; echo \\\"=== control arm? ===\\\"; grep -rln \\\"clean_control\\\\|control_arm\\\\|unplanted\\\\|no_defect\\\" bench/*.py scripts/*.py 2>/dev/null | head\", \"description\": \"Look for a clean-control arm\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nimport sympy as sp\\nfrom bench import reference_runner_v3 as rr\\n# nu_b at which the LIVE gate admits nothing: compute_rk(0.5,0.5,1.0,nb,0.20) > 0.5\\ns,nb=sp.symbols('s nu_b')\\nR=sp.Rational(1,2); q=sp.Rational(1,2); nf=sp.Rational(1,5)\\nR_det=R*(1-q)/(1-q*R); R_base=s*R_det+(1-s)*R\\nne=1-(1-nb)*(1-(1-s)*nf); Rk=sp.simplify(R_base"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"clean_control\\\\|control_arm\\\\|unplanted\\\\|no_defect\\\\|false_positive\\\\|planted\\\" bench/score_exam.py | head -25\", \"description\": \"Check exam scoring for a clean control arm\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"score_exam\\\" --include=\\\"*.py\\\" bench scripts 2>/dev/null | grep -v \\\"^bench/score_exam.py\\\" | head -10; echo \\\"=== post-fix rescore? ===\\\"; grep -rn \\\"apply_fixes_back\\\\|_apply_back_gate\\\\|apply_back\\\" bench/reference_runner_v3.py | head -12\", \"description\": \"Check for post-fix rescoring\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9s1bjzr6/repo/scripts/gate_collapses_to_one_constant_2026-09-20.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The live fix-admission gate is ONE CONSTANT, and an unmeasured input decides it.\\n\\nTHE CLAIM, IN FOUR PARTS, EACH ASSERTED BELOW SO THIS FILE IS ITS OWN FALSIFIER.\\nRun it: `python3 scripts/gate_collapse"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re,io\\np='scripts/gate_collapses_to_one_constant_2026-09-20.py'\\nsrc=open(p).read()\\nold=src[src.index('def part1_parameters_are_frozen():'):src.index('def part2_scalar_threshold():')]\\nnew='''def part1_parameters_are_frozen():\\n    \\\"\\\"\\\"AST, not grep: find any real WRITE to model_params in production code.\\\"\\\"\\\"\\n    import ast\\n    import pathlib\\n    write"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,55p' scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py\", \"description\": \"Check prior nu-sensitivity work\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"passes_threshold\\\\|admissible\\\\\\\"\\\\]\\\\|stats\\\\[.rejected\\\" bench/reference_runner_v3.py | head -15\", \"description\": \"Trace the gate verdict downstream\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '12092,12125p' bench/reference_runner_v3.py\", \"description\": \"See what the gate verdict actually does\"}"
+    }
+  ],
+  "n_tool_calls": 43,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 562.6,
+  "response": "All checks executed. Writing the recommendation.\n\n## RECOMMENDATION\n\n### 1. The verdict\n\n**ADOPT THE NAMED CORRECTIONS \u2014 and the list is one wiring job plus two records. Not a rewrite. Not \"change nothing.\"**\n\nThe reason both alternatives are wrong is a single executed fact that I do not think any seat has put on the table in this form:\n\n> **On every real run, the entire three-phase risk model decides exactly one thing: whether a scalar `sk` clears `0.504931170970423`. And the constant that decides *where* that threshold sits is the introduction rate `b` \u2014 which has no measurement, and whose panel-plausible range includes values at which the gate admits nothing at all.**\n\nREWRITE is wrong because you cannot justify adding two per-observation likelihoods to a pipeline that has never supplied even the one parameter it already has. CHANGE NOTHING is wrong because the one live constant is unmeasured and sits `0.2` away from a value that closes the gate completely.\n\n**Command / output (this file is its own falsifier; exit 0 iff all four parts hold):**\n\n```\n$ python3 scripts/gate_collapses_to_one_constant_2026-09-20.py ; echo EXIT=$?\n[part 1] AST over production .py (tests excluded): 0 writes, 2 reads\n          READ  bench/reference_runner.py:3156\n          READ  bench/reference_runner_v3.py:11921\n[part 2] verdict flips across sk in [0,1]: 1 (1 == pure threshold)\n[part 2] live bisection threshold : 0.504931170970423\n[part 2] sympy exact root         : -7/2 + sqrt(23161)/38 = 0.5049311709704234\n[part 3]  nu_b      source                                   admit-threshold\n          0.0154  cc2 F7 Wilson UPPER, 0 of 246 paired     sk >= 0.435049\n          0.0500  SHIPPED DEFAULT, no provenance           sk >= 0.504931\n          0.2089  cc2 F7 lint channel, Wilson LOWER        sk >= 0.883029\n          0.3077  cc2 F7 lint channel, point estimate      ADMITS NOTHING\n[part 4] sympy exact closing nu_b : [1/4]\n[part 4] live bisection closing   : 0.2500000000000001\nALL FOUR PARTS HOLD.\nEXIT=0\n```\n\nPart 1 is AST over production `.py` (tests excluded), not grep \u2014 my first grep version false-positived on comments and test fixtures and the assertion correctly fired. Every threshold is computed twice: SymPy exact root and bisection on the **live** `check_sk_threshold_corrected`, no shared code.\n\n---\n\n### 2. Ordered list of what to adopt\n\n#### A1 \u2014 Wire `bench/score_exam.py` to `model_params`. **THE ONLY ITEM THAT NEEDS NEW WORK.**\n\n- **Live defect it fixes:** `model_params` has **0 writers in production code** (AST-confirmed above, 2 readers). So `q=0.5`, `R_old=0.5`, `nu_b=0.05`, `nu_f=0.20` on every run from Exp 37 to Exp 49. The risk model has never been given a number it did not invent.\n- **Evidence the defect is live:** part 1 output above; `reference_runner_v3.py:11931` records the same fact in its own comment.\n- **Cost in free parameters: ZERO.** This supplies parameters that already exist and are already read. It adds no symbol.\n- **What must be measured first: nothing \u2014 the instrument already exists and already runs.** `bench/score_exam.py` computes `recall = found/planted` (that **is** `q`) at line 284, `false_positive_rate` at 273, and carries `is_control = len(planted)==0` at 185 and `false_positives_in_clean_control_clusters` at 280. It is called from **nothing but its own test** (`grep -rn score_exam --include=*.py bench scripts` \u2192 only `bench/tests/test_score_exam.py`). The measurement is computed and discarded.\n- **Additive-standard note:** this is wiring an existing capability to a caller, which is exactly what the standard demands of anything that currently reaches nothing. It is not new apparatus.\n\n#### A2 \u2014 Record that Phase 2 is an underived interpolation, with the signed gap.\n\n`compute_rk` Phase 2 is `R_base = sk\u00b7R_det + (1-sk)\u00b7R_old` \u2014 an interpolation between the **non-detection posterior** and the **prior**. It is not the expectation of the process the appendix describes in words. Enumerating that process's two branches:\n\n```\ndetected     w.p. qR      \u2192 flaw survives w.p. (1-\u03c3)\nnot detected w.p. 1-qR    \u2192 flaw survives w.p. R(1-q)/(1-qR)\nE[R] = qR(1-\u03c3) + (1-qR)\u00b7R(1-q)/(1-qR) = R(1 - q\u03c3)\n```\n\nand the shipped form exceeds it by an **exactly signed** amount:\n\n```\nR_base \u2212 R(1\u2212q\u03c3)  =  R\u00b2\u00b7q\u00b7\u03c3\u00b7(q\u22121) / (R\u00b7q\u22121)     numerator \u2264 0, denominator \u2264 0  \u21d2  \u2265 0\n```\n\n**Command / output:**\n```\n$ python3 scripts/phase2_interpolation_overstates_risk_2026-09-20.py\n[sympy] exact branch enumeration simplifies to: R*(-q*sigma + 1)\n[sympy] shipped_phase2 - exact = R**2*q*sigma*(q - 1)/(R*q - 1)\n[sympy-sample] points where shipped < exact: 0 of 9240\n[brute-force] max |two-branch E[R] - R(1-q*sigma)| over 7581 pts = 2.220e-16\n[gate] reachable grid points: 28880\n  live R_k >= exact R_k (overstatement)   28880/28880 = 100.0000%  Wilson [99.9867%, 100.0000%]  mpmath agrees=True\n  verdicts agree                          25851/28880 =  89.5118%  Wilson [89.1531%, 89.8599%]\n  LIVE REFUSES, exact-Phase-2 ADMITS       3029/28880 =  10.4882%  Wilson [10.1401%, 10.8469%]\n  LIVE ADMITS, exact-Phase-2 REFUSES        0/28880 =   0.0000%  Wilson [ 0.0000%,  0.0133%]\n```\n\nThree tools, not two: SymPy for the algebra; an independent float branch-enumeration sharing no code with SymPy (max error 2.22e-16); and **Wolfram** as the second falsifier on the sign \u2014\n\n```\n$ wolframscript -code 'Reduce[R^2*q*s*(q-1)/(R*q-1) >= 0 && 0<R<1 && 0<q<1 && 0<=s<=1, {R,q,s}, Reals]'\nInequality[0, Less, R, Less, 1] && Inequality[0, Less, q, Less, 1] && Inequality[0, LessEqual, s, LessEqual, 1]\n```\nIt returned the full box unrestricted \u2014 i.e. the inequality holds everywhere on it. Computed with **Wolfram Language** (local Wolfram Engine via `wolframscript`); it exited 0, printed no `Name::tag`, no `$Failed`, no `$Aborted`.\n\n- **Cost: ZERO parameters** (the exact form uses the same `R, q, \u03c3`).\n- **What must be measured first: `q`.** Which is A1. The exact-Phase-2 threshold is `0.395043` instead of `0.504931` \u2014 but **both numbers are functions of `q=0.5`, a placeholder.** Swapping one underived constant for another better-derived constant *computed from a fabricated input* is not an improvement you can commit to. **Record the gap now; swap the formula only after A1 delivers a real `q`.**\n\n#### A3 \u2014 Record the `b`-sensitivity beside the gate.\n\nAlready half-done: `scripts/nu_carries_complexity_moves_the_gate_2026-09-10.py` established 570/676 = 84.3% of the \u03bd box moves the verdict at `sk=0.60`. **I credit that as prior and claim only the delta:** the gate is a *pure scalar threshold* (1 flip), its exact location is `\u22127/2 + \u221a23161/38`, it **closes completely at exactly `nu_b > 1/4`** (SymPy exact rational, confirmed by bisection on the live function at `0.2500000000000001`), and the panel's own lint-channel point estimate `0.3077` is **above** that.\n\n- **Cost: ZERO parameters.**\n\n---\n\n### 3. NOT ADOPTED\n\n| Item | Reason |\n|---|---|\n| **The revision's full core as \"the new model\"** (`(1-s)\u2113\u2081R + b\u2113\u2080(1-R)` / `(\u2113\u2081R + \u2113\u2080(1-R))`) | Takes the practitioner from 1 nominal parameter to 4, two of them per-observation likelihoods. The pipeline has never supplied the 1 it has. Adding 3 more to a machine whose existing inputs are all frozen placeholders is an addition nothing reaches. |\n| **\u00a77 multi-state transitions, \u00a78 decision-value / information-gain** | Section 2's hard constraint, and nothing in the repo consumes them. No live decision named. |\n| **Swapping Phase 2 for `R(1-q\u03c3)` *today*** | Moves the one live constant `0.5049 \u2192 0.3950` \u2014 strictly more permissive, 10.49% of the grid, 0 harmful-direction flips. But the new number is computed from `q=0.5`, which is invented. Gate it behind A1. |\n| **Re-deriving the comparator against the revision's `s=\u03c3(1-\u03bd), b=\u03bd` action step** | The revision's action step applies to the **posterior** `B`; Phase 2 applies to a mixture of posterior and prior. I verified by SymPy that these are **not** algebraically identical: `R_base \u2212 (1-\u03c3)R_det = R(\u2212Rq\u03c3+Rq+2q\u03c3\u2212q\u2212\u03c3)/(Rq\u22121) \u2260 0`. The brief's Section 4 T4 line \"algebraically identical to appendix line 215 at s=\u03c3(1-\u03bd), b=\u03bd\" is **not true of the recurrences** \u2014 it is true only of the *parameter map*. See \u00a75. |\n| **Any change to \u03b3, \u03c1, or the two-sided gate** | Out of scope by Section 7, and unnecessary: I traced the boundary and `R_k` **cannot reach** the convergence gate. `_check_gamma_alt_convergence` takes `novel_critical_history, unresolved_critical, contested, rho_churn` \u2014 no risk term \u2014 and `reference_runner_v3.py:12021` records a structural guard keeping `sk_result` unread outside the S_k function \"so that R_k(0) cannot reach the convergence gate.\" |\n\n**This retires the brief's T3 hazard clause.** Section 4 T3 warns that lowering risk figures \"makes every risk-threshold stop easier to satisfy.\" **There is no risk-threshold stop.** `R_k` gates fix admission (`entry[\"sk_result\"][\"tristate\"] = SK_REJECTED`, line 12108) and nothing else. That is the whole blast radius, and it is one boolean per finding.\n\n---\n\n### 4. Parameter count, and can a human follow it\n\n**A practitioner is left with ZERO free parameters \u2014 which is exactly the problem, not the achievement.** All four of `q, R, \u03bd_b, \u03bd_f` are frozen literals with no writer. The \"1 free parameter\" credited to the existing collapsed model in Section 2 is **aspirational**: it is not supplied either.\n\nAfter A1, the practitioner has **two supplied quantities** (`q` and `f` from `score_exam`) and **one that remains unmeasured** (`b`). Three, none of them per-observation, all named in plain English.\n\n**Can a competent reader follow it without a machine?** Yes \u2014 and after this review the model is *more* followable, not less, because its whole operational content is now one sentence: **\"admit a fix if its score clears 0.50, and that 0.50 moves to 0.88 if the introduction rate is 0.21 and vanishes above 0.25.\"** A reader can hold that.\n\n---\n\n### 5. Where I disagree \u2014 with the brief, with CC1, and with fable\n\n**D1 \u2014 I disagree with the brief's Section 4 T4 characterisation of the appendix identity.** \"Its action step is algebraically identical to appendix line 215 at `s = \u03c3(1\u2212\u03bd)`, `b = \u03bd`\" is true of the *symbol map* and false of the *recurrence*. SymPy: `shipped_Phase2 \u2212 revision(\u03bd=0, B=R_det) = R(\u2212Rq\u03c3+Rq+2q\u03c3\u2212q\u2212\u03c3)/(Rq\u22121)`, not identically zero. Consequence: the revision's repair semantics is **not** already present in Stage 5. Stage 5 has the *parameters*; it does not have the *arithmetic*, and the difference is signed and non-zero. This strengthens fable's T4 position on scale (\"corrections, not a new model\") while correcting its supporting claim (\"most of its capability already exists in Stage 5\") \u2014 the \u03bd/\u03c3 *capability* exists; the Phase-2 *arithmetic* is wrong in a way Stage 5 does not contain the fix for.\n\n**D2 \u2014 I disagree with fable F4's magnitude.** fable measured 75.8% over-refusal, Wilson [74.2%, 77.3%], 2880 points. I measure **10.4882%**, Wilson [10.1401%, 10.8469%], 28880 points. These are not reconcilable as sampling noise; the intervals are disjoint by 63 percentage points. They are different *corrections*: fable compared against the revision's full re-semantics (posterior-based, `R_next = \u03bd + (1\u2212\u03bd)(1\u2212\u03c3)B`, which at `\u03c3=1` returns `\u03bd` regardless of `R`); I compared against the minimal exact-expectation substitution that holds `q, R, \u03bd_b, \u03bd_f` fixed. Mine is the smaller, more defensible correction and it is the one I recommend gating. **I agree with fable's direction and sign (0 harmful-direction disagreements in both measurements); I do not accept its magnitude as the figure for the minimal correction.**\n\n**D3 \u2014 I disagree that T2 is answerable as \"decoration\".** The brief frames `b` as an undetectable quantity whose representation may change nothing. It changes the only live decision in the apparatus, and the panel's own three figures for it straddle the value at which the gate stops functioning. The decision is fix admission; the threshold is `nu_b = 1/4`. That is not decoration \u2014 it is the single load-bearing constant in the model.\n\n**D4 \u2014 Partial agreement with CC1 on T1's reconciliation, with an amendment.** CC1 is right that the three figures are different scopes. But the useful answer is not \"they disagree by scope\"; it is that **the instrument for the missing scope already exists and is unplugged at both ends.** `apply_fixes_back_enabled` (line 1312) produces the post-fix artefact; `score_exam.py` can label it against the same key; **nothing runs the second on the output of the first.** The single smallest measurement for `b` at the model's own scope is therefore: *re-score the post-fix artefact against the same answer key, and count claims that were true pre-fix and false post-fix.* Numerator and denominator both fall out. **The data does not exist today; both halves of the instrument do.** That is a wiring job, not new instrumentation.\n\n**D5 \u2014 On fable F5's 19 defects.** Executed (`cd scripts && python3 who_catches_the_defects_2026-09-09.py`): 19 caught defects, mechanism caught 8/19 = 42.1%, Wilson [23.1%, 63.7%]. The list is a **hard-coded literal** in the script. It is a caught-only numerator with no denominator of repairs and the script says so itself. It is not an estimate of `b` and should not be cited as one in any recommendation.\n\n---\n\n### 6. What would refute my recommendation\n\n1. **`model_params` gains a production writer.** Then `q`, `R`, `\u03bd` vary per finding, the gate is not a constant, and my entire argument collapses. `part1_parameters_are_frozen()` in the delivered script fires an `AssertionError` naming the writer the moment this happens. This is the load-bearing dependency and it is guarded.\n2. **A run is produced where the S_k verdict changes no downstream outcome.** I traced the verdict to `entry[\"sk_result\"][\"tristate\"] = SK_REJECTED` (line 12108) and to `_apply_back_promote` (line 8769), which is only reachable when `apply_fixes_back_enabled` is on \u2014 **default `False`** (line 1312). **I did not trace whether any archived run had it on.** If none did, then the one constant decides nothing on the record either, and **CHANGE NOTHING becomes the correct verdict for the archive** (though not for future runs). This is the largest residual in my answer and I am flagging it rather than closing it. [VERIFY:current]\n3. **`score_exam`'s `recall` is shown not to estimate `q` at the gate's scope.** It estimates detection of *planted* defects of *planted types*; the revision's own validation plan \u00a73 warns that seeded prevalence does not establish natural priors. If the scope gap is judged fatal, A1 degrades from \"supplies `q`\" to \"supplies a bounded proxy for `q`\", and A2 must stay unswapped indefinitely.\n4. **The exact two-branch expectation is shown to be the wrong conditioning.** If `R_k`'s event is \"any flaw in class k remains\" rather than \"this scoped flaw remains\", then `\u03c3` is not the removal probability for that event (the revision spec says this explicitly), and `R(1\u2212q\u03c3)` is no more derived than the interpolation it replaces. In that case A2's *measurement* stands (the shipped form is not the expectation of any stated process) but A2's *replacement* is void. **This is why I gate the swap rather than ship it.**\n\n---\n\n### Convergence\n\nI am **not** declaring convergence. Residual 2 above is a material open dependency \u2014 whether the one live constant decides anything on the archived record \u2014 and I did not resolve it. My recommendation is sound for future runs regardless; its force for the archive is contingent on that check.\n\n**Delivered files** (real paths, both executed, both exit 0):\n- `scripts/gate_collapses_to_one_constant_2026-09-20.py` \u2014 four asserted claims, self-falsifying.\n- `scripts/phase2_interpolation_overstates_risk_2026-09-20.py` \u2014 SymPy + brute-force + Wilson/mpmath measurement of the signed Phase-2 gap.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9s1bjzr6/repo",
+      "built": false
+    }
+  ]
+}

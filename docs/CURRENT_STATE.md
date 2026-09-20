@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 20 September 2026 01:34 BST (2026-09-20T01:34:19+01:00)
+Generated: 20 September 2026 22:48 BST (2026-09-20T22:48:53+01:00)
 
 ---
 
@@ -18,22 +18,34 @@ Generated: 20 September 2026 01:34 BST (2026-09-20T01:34:19+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `e5db47d` morning report: a response sheet, so every open item can be answered in 1 file
-- **Committed:** 2026-09-19 22:07:40 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 41
+- **Last commit (the PARENT of the commit containing this file):** `f253fa7` Round 3 brief: the definitive way forward, under a new hard constraint
+- **Committed:** 2026-09-20 13:32:49 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 21
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/Morning_Report_2026-09-18.md`
-- `M resources/MEMORY_EXCLUSIONS.md`
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
+- `M  bench/build_experiment_tools.py`
+- `A  bench/directives/universal/paid_dispatch_authorisations.json`
+- `A  bench/directives/universal/section_p_shortfalls.json`
+- `M  bench/experiment_11_orchestrator.py`
+- `M  bench/logs/immune_pipeline.log`
+- `M  bench/openrouter_tools.py`
+- `A  bench/paid_dispatch_authorisations.py`
+- `A  bench/section_p_shortfalls.py`
+- `A  bench/tests/test_confinement_profile_is_not_poisonable_2026-09-20.py`
+- `A  bench/tests/test_empty_seat_defects_2026-09-20.py`
+- `A  bench/tests/test_ffafp_all_five_steps_2026-09-20.py`
+- `M  bench/tests/test_ffafp_audit_hook_2026-09-05.py`
+- `M  bench/tests/test_fresh_clone_suite_2026-09-10.py`
+- `M  bench/tests/test_panel_conditions_are_met_2026-09-10.py`
+- `A  bench/tests/test_panel_producers_2026-09-20.py`
+- … and 96 more, not shown (list capped at 15 of 111 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**8041 tests collected** at 20 September 2026 01:34 BST, HEAD `e5db47d` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**8239 tests collected** at 20 September 2026 22:48 BST, HEAD `f253fa7` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -63,13 +75,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `e5db47d morning report: a response sheet, so every open item can be answered in 1 file`
-- `2f69baf Z1 DONE: the Zenodo token is actually rotated, and doing it found 2 defects`
-- `38d430c Z1: a rotation tool, so the token moves without hand-editing 10 credentials`
-- `674b066 remove the framing I built around the founder's position; keep the plain record`
-- `2ad108f morning report: the no-author advice was mine, not his, and the directives' provenance is untraceable`
-- `b5c0460 morning report: the completed processes folded in, including a figure I could NOT verify`
-- `6a287cb morning report: correct the seat claim -- there are 2 rosters, and 1 of them IS guarded`
-- `8a0952a appendix: the coverage-to-risk inverse at line 169 was the NEGATIVE of the inverse`
-- `1b2e3d6 morning report: the revised model checks out on first inspection, and it found a real error in our appendix`
-- `e99644a codex seat: the producer now measures tool support, and 3 corrections it took an adversarial pass to find`
+- `f253fa7 Round 3 brief: the definitive way forward, under a new hard constraint`
+- `0c4f3e5 A review seat could write to the repository it was reviewing, and I opened that hole this morning`
+- `31537d0 Round 2 setup: Kimi timed out at 904.5 s and the direct routes ignored the iteration budget`
+- `afa218f The panel's paid seats could not read the thing they were reviewing`
+- `7c9609a No model gets a free pass on tool use: DeepSeek's had never actually run`
+- `abc0e5e A mirrored machine dump became 91% of the citation census, and I put it there`
+- `1f0c383 task list: the Desktop mirror refresh the pre-commit hook applied after staging`
+- `87b55d9 The full suite found 12 failures my 448-test pre-commit hook could not, and an audit found 15 more`
+- `02302cf A8 closes: both seats found a defect the committed suite could not see, and they were different defects`
+- `4bdf606 A8's manifest guard could not see a falsified state column: 78 rows made to lie, 16 tests green`

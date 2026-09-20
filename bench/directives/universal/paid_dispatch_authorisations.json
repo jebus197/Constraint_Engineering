@@ -1,0 +1,71 @@
+{
+  "_what_this_is": [
+    "The founder reserves spending money on a paid model seat to himself. Until",
+    "2026-09-20 that constraint was enforced as an ABSENCE predicate: 'no round",
+    "dated after the cut holds a paid seat reply'. That is the wrong proposition.",
+    "It is false the moment he authorises a paid review, and the only ways to make",
+    "it green again are to move the date cut forward or to delete the guard --",
+    "both of which silently license the NEXT unauthorised spend.",
+    "",
+    "This file replaces it with an AUTHORISATION predicate, which is strictly",
+    "stronger: every paid seat reply must fall inside a round named here. A paid",
+    "dispatch in any round NOT named here fails the guard, whatever its date, so",
+    "the check now also covers rounds before the old cut, which it did not.",
+    "",
+    "RULES FOR EDITING. Rounds are named EXACTLY and individually. Never a date",
+    "range, never a name prefix, never a wildcard: the guard must keep asking",
+    "'was this authorised?' and must never drift into asking 'is this recent?'.",
+    "Every entry carries the founder's own words, so a reader can check the",
+    "authorisation rather than trust the entry."
+  ],
+  "authorisations": [
+    {
+      "id": "maths-revision-review-2026-09-20",
+      "date": "2026-09-20",
+      "what": "A commissioned 7-model panel review of the proposed mathematical revision 1.1, deciding whether it is needed or is unbounded model churn.",
+      "founder_verbatim": [
+        "OK launch the panel. But this is not a 4 model panel review. Its CC2 and Fable (via my Max subscription) Gemini, ChatGPT and (seperately) Codex (5.3) via Open Router, Deepseek API calls and Kimi K3 via API too. So 7 models.",
+        "Remember your budget for this review (via OpenRouter in particular) is no more than \u00a310 max",
+        "New max budget is \u00a312 if needed.",
+        "Yes, re-run the paid seats with the fixed tools.",
+        "You can put any collective findings and tensions back to the panel and ask how to solve them",
+        "You can correct your brief with any errors you find, including your own and put these back to the panel.",
+        "Fix the containment for the paid seats first. (indeed for all seats.) Then run one blind round and one open round of the review - under what should probably have been the fully correct configuration from the outset.",
+        "OK, do it. But I don't see why you can't put these additional issues to the panel too."
+      ],
+      "ceiling_gbp": 12,
+      "paid_seats": [
+        "cx",
+        "cgpt",
+        "ge",
+        "ds",
+        "kimi"
+      ],
+      "free_seats": [
+        "cc2",
+        "fable"
+      ],
+      "rounds": [
+        "maths_panel_2026-09-20",
+        "maths_panel_2026-09-20_r2",
+        "maths_panel_2026-09-20_r3",
+        "maths_panel_2026-09-20_r4",
+        "maths_panel_2026-09-21_blind",
+        "maths_panel_2026-09-21_open"
+      ],
+      "notes": [
+        "Section P (founder ruling 2026-09-09) does NOT forbid paid reviews. Its",
+        "final sentence reads: 'this format should then be saved as the standard",
+        "for all future 6 full paid model reviews also.' Section P sets the FORMAT",
+        "a review must take; it never contained a zero-paid clause. The guard that",
+        "asserted one was encoding a proposition Section P does not make.",
+        "",
+        "Rounds 1 to 3 are dispatched and archived. Round 4 is authorised by the",
+        "last 2 quotations above and had not been dispatched when this file was",
+        "written.",
+        "",
+        "BLIND AND OPEN ROUNDS ADDED 2026-09-20 on the founder's explicit instruction, quoted above. Same commissioned review, same 12 pound ceiling; spend to date across rounds 1 to 4 is about 1.49 pounds plus round 4."
+      ]
+    }
+  ]
+}

@@ -745,10 +745,24 @@ def _run_openai_tool_loop(
                     "python block."
                 ),
             })
+            # TEMPERATURE IS THE CALLER'S, NOT A HARDCODED 0.0 (fixed 2026-09-20).
+            # This read `temperature=0.0` from the day the loop was written, which
+            # was correct while every seat ran at 0.0. When `temperature` became a
+            # parameter (2026-09-20, for kimi-k3, which REFUSES any value but 1),
+            # it was threaded into the main request and NOT into this one. The
+            # forced-synthesis call therefore sent 0.0 for a model that 400s on it:
+            # `invalid temperature: only 1 is allowed for this model`. All 3
+            # retries raised, the bare `except` below swallowed them, and the seat
+            # returned "" after 25 successful tool calls and 216 seconds of real
+            # work. Measured in panel round 3: kimi 0 chars, 25 tool calls.
+            #
+            # This is the failure mode the round it broke was reviewing: a
+            # parameter added at one end and not carried to the other, where each
+            # end reads as correct on its own.
             final_kwargs = dict(
                 model=model_id, messages=messages,
                 max_tokens=max(max_tokens, 65536),
-                temperature=0.0, timeout=max(timeout, 300),
+                temperature=temperature, timeout=max(timeout, 300),
             )
             if extra_body:
                 final_kwargs["extra_body"] = extra_body

@@ -1,0 +1,153 @@
+# PANEL BRIEF, ROUND 4 — CC1's brief was wrong in 5 places. Here are the corrections, and what they change.
+
+## Section 1 — What this round is for, and why you are being asked again
+
+Round 3 produced a verdict from 5 of 7 seats and they agreed: **ADOPT THE NAMED CORRECTIONS**, practitioner parameter count stays at 1. That is not in question here.
+
+This round exists because **the round-3 brief carried 5 errors, all CC1's**, and because closing 1 seat's open residual **inverted a conclusion**. The founder's instruction, verbatim: *"You can correct your brief with any errors you find, including your own and put these back to the panel."*
+
+Each error is named below with its correction. **Where a correction changes your round-3 answer, say so and say how.** Where it does not, say that too — an error that changed nothing is worth knowing about, because it tells us which parts of your reasoning were load-bearing.
+
+**2 seats returned 0 characters in round 3 and both causes were defects in this harness, now fixed** (Section 6). If you are `ge` or `kimi`, you are not repeating work: your round-3 answer does not exist.
+
+## Section 2 — CC1's 5 errors, corrected
+
+### E1. The 75.8% over-refusal figure was presented as settled evidence. It has no producer.
+
+The round-3 brief, Section 4 T3, stated: *"the live gate refuses fixes that corrected semantics call net-beneficial at 75.8%, Wilson [74.2%, 77.3%]"* over 2,880 grid points, as **settled, executed** evidence.
+
+**It cannot be reproduced.** It came from the `fable` seat's round-1 prose. fable's delivered script, `maths_revision_seat_checks_2026-09-20.py`, runs 23 of 23 checks green and **does not compute that figure at all**. In round 3 fable itself wrote that its own 75.8% was *"accepted as settled per the brief, not re-executed here"*. `cx` and `cgpt` both correctly marked it UNVERIFIED and accepted it only on the brief's authority.
+
+So an unreproducible number was promoted into a brief as settled and travelled to 7 seats. **The seats behaved correctly. The brief did not.** Under this project's rule `measured-rate-travels-with-its-script`, it should never have been stated.
+
+**What replaces it.** There are now 3 over-refusal figures and they are **not the same measurement**:
+
+| figure | points | comparison being made | reproducible |
+|---|---|---|---|
+| 75.8% | 2,880 | live gate vs the revision's **full** re-semantics | **NO — no producer** |
+| 59.66% | 16,800 | corrected gate vs a **no-reinjection 2-phase** model | ds round 3, producer not delivered |
+| **10.4882%**, Wilson [10.1401%, 10.8469%] | 28,880 | live gate vs the **minimal exact-expectation** Phase 2 | **YES — reproduced by CC1 on a clean machine, exit 0** |
+
+**Answer this (Q1):** which comparison is the operationally correct one, and what is the defensible over-refusal figure? All 3 agree on direction and on 0 harmful-direction disagreements. They disagree by up to 65 percentage points on magnitude. A recommendation that says "over-refusal" without saying *against what* is not actionable.
+
+### E2. The brief's T3 hazard clause was false. There is no risk-threshold stop.
+
+The round-3 brief warned that adopting the repair-semantics correction *"lowers every reported risk figure and so makes every risk-threshold stop easier to satisfy — which under this project's additive standard is removing a safety margin."*
+
+**cc2 refuted this by tracing the code, and CC1 confirms it.** `R_k` **cannot reach the convergence gate**. `_check_gamma_alt_convergence` takes `novel_critical_history`, `unresolved_critical`, `contested` and `rho_churn` — no risk term — and `bench/reference_runner_v3.py:12021` carries a structural guard keeping `sk_result` unread outside the S_k function precisely so that `R_k(0)` cannot reach the convergence gate.
+
+**The blast radius is 1 boolean per finding: fix admission.** Nothing else. Any round-3 reasoning that hedged on the safety-margin grounds was hedging against a hazard that does not exist, and should be revisited.
+
+### E3. The brief's T4 identity claim conflated 2 different questions. Both cc2 and ds were right.
+
+The round-3 brief asserted the revision's action step *"is algebraically identical to appendix line 215 at `s = σ(1-ν)`, `b = ν`"*. `ds` and `fable` agreed. `cc2` disagreed (its D1), giving a non-zero SymPy residual.
+
+**CC1 has now settled it with 3 tools, and the disagreement dissolves — the 2 seats answered 2 different questions:**
+
+| question | answer |
+|---|---|
+| **A.** Is `(1-s)B + b(1-B)` at `s = σ(1-ν)`, `b = ν` identical to `ν + (1-ν)(1-σ)B`? | **YES.** SymPy difference exactly 0; 0 mismatches over 4,000 exact-rational samples; mpmath at 40 digits worst difference 5.7e-42. **ds and fable are right about the PARAMETER MAP.** |
+| **B.** Is the **shipped pipeline** — Phase 2 interpolation `R_base = sk·R_det + (1-sk)·R_old`, then Phase 3 `R_base(1-ν) + ν` — the same thing? | **NO.** Non-zero residual; 3,959 of 4,000 exact-rational samples differ; mpmath worst difference 0.917. **cc2 is right about the SHIPPED RECURRENCE.** |
+
+**The brief's sentence was true of A and false of B, and it did not distinguish them.** The consequence matters: the revision's repair semantics is **not** already present in the shipped code. Stage 5 has the parameters; the shipped arithmetic is a different recurrence.
+
+**Answer this (Q2):** given A is true and B is false, is the correct adoption item "fix the Phase 2 arithmetic" rather than "re-label the parameters"? Say which, with executed evidence.
+
+### E4. The brief told you to deliver fixes as files. The CLI seats are not permitted to write files.
+
+Round-3 Section 8 said: *"Deliver each fix as a file at a real path."* The `cc2` and `fable` seats are dispatched with `--allowedTools Bash Read Grep Glob WebFetch WebSearch` — **Write and Edit are deliberately withheld.**
+
+Measured across both rounds: `fable` made 3 direct Write/Edit attempts in round 3, every one refused, and **landed 0 files**, honestly reporting its fix as NOT DELIVERED. `cc2` landed 2 files by routing around the refusal through a Bash heredoc — a workaround the brief never named. In round 1 the same split: cc2 landed 9, fable landed 7 but 2 into `.scratch`, which the brief forbade.
+
+**So compliance depended on a seat inventing an undocumented workaround.** Corrected in Section 7 below. This was a brief defect, not a seat failure, and fable's NOT DELIVERED was the correct report.
+
+### E5. "SETTLED" in the round-3 brief suppressed re-examination, and that is how E1 propagated.
+
+Round-3 Section 3 marked items SETTLED and told seats not to re-litigate them. That was deliberate and mostly right — it stopped 3 rounds of re-deriving the same algebra. But it is also exactly how an unreproducible figure reached 7 seats unchallenged.
+
+**This round has no SETTLED section.** Every figure quoted below is declared to the validator and re-executed before dispatch. If a number here is wrong, the dispatch refuses rather than spending your time.
+
+## Section 3 — NEW EVIDENCE, which inverts a round-3 conclusion
+
+`cc2` established, and CC1 independently confirmed with its own AST pass, that **`model_params` has 0 writers and exactly 2 readers in production code** (`bench/reference_runner.py:3156`, `bench/reference_runner_v3.py:11921`). Every run therefore used frozen literals: `q=0.5`, `R_old=0.5`, `nu_b=0.05`, `nu_f=0.20`.
+
+cc2 then flagged its own largest residual and explicitly did **not** close it: *"I did not trace whether any archived run had it on. If none did, then the one constant decides nothing on the record either, and CHANGE NOTHING becomes the correct verdict for the archive."*
+
+**CC1 closed it, and it closes AGAINST "change nothing".**
+
+<!-- figure: archived fix-admission verdicts | scripts/sk_verdict_never_fired_2026-09-20.py | 1247 -->
+<!-- figure: archived refusals, proportion | scripts/sk_verdict_never_fired_2026-09-20.py | 15.3168 -->
+
+Across 39 archived runner states the fix-admission verdict fired **1247 times**: 902 ADMISSIBLE, **191 REJECTED (15.3168%, Wilson [13.4246%, 17.4220%])**, 154 ESCALATE. Cross-checked: statsmodels Wilson agrees with the closed form to 1e-12.
+
+**191 fixes were refused on the strength of a constant nobody measured.** This is not a future-runs precaution. It is archival, and it is counted.
+
+**A parsing trap nearly inverted this, and it is recorded because this project has been plagued by exactly this class.** `SK_REJECTED` is the **name** of a Python constant; the **value** written to the record is the bare string `REJECTED`. CC1's first version of the producer searched for the name, found 10 occurrences — every one a panel model quoting the token in its own reply, 0 real verdicts — and concluded the verdict had never fired. That conclusion was false and would have supported "change nothing". Parsing the recorded **value** finds 191 real refusals.
+
+**Answer this (Q3):** does 191 archived refusals on unmeasured constants change your round-3 recommendation, and specifically its ORDER? `cc2`'s A1 — wire `bench/score_exam.py`, which already computes recall and false-positive rate and is called from nothing but its own test, to `model_params` — costs 0 free parameters and supplies 2 quantities that are already read. Is that now the top item?
+
+## Section 4 — The questions still open after round 3
+
+**Q4. Is the introduction rate estimable, and at what scope?** The round-3 seats split, and CC1 believes they are reconcilable rather than contradictory:
+
+- `fable`: **YES at *detectable* scope**, by fitting constant-plus-decay against pure-decay to the per-round novel-finding series, because at steady state detections per round equal `b` exactly. It names the existing telemetry as the instrument and claims the data exists today. **CC1 verified the data exists: 36 archived runs carry `novel_critical_history`.**
+- `fable`, same answer: **impossible in principle beyond that** — at any-flaw scope no observation-based instrument can estimate `b`, because a class with detection probability near 0 never enters any channel.
+- `cgpt`, `ds`, `cx`: **NO**, not at the scope the model needs, without a paired action cohort that does not exist.
+
+**Is that one answer or two?** Resolve it. If `b` is estimable at detectable scope from data already on disk, that is a measurement someone can run this week, and it is the difference between a parameter with content and a parameter with freedom. Run the fit if you can.
+
+**Q5. The gate has already been moved once. Should it move again?** `ds` reports the correction made the gate **stricter**, fixing a permissive bias measured at 297 of 297 reachable points. `fable` and `cc2` report the gate, **as it now stands**, **over-refuses**. These are not contradictory if they are sequential — a gate corrected from too-permissive to too-strict. **Establish whether that is what happened**, and if so, whether a second move is warranted or whether over-refusal is the correct place to sit given that 0 harmful-direction disagreements were found in any measurement.
+
+**Q6. `q` is invented, so is a threshold computed from it an improvement?** `cc2` declined to swap the Phase 2 formula today on the grounds that the corrected threshold (0.395043 against the live 0.504931) is *also* computed from `q=0.5`, a placeholder — *"swapping one underived constant for another better-derived constant computed from a fabricated input is not an improvement you can commit to."* Agree or disagree, with evidence.
+
+## Section 5 — The hard constraint, unchanged and still binding
+
+The founder, verbatim: *"our maths **must** remain human comprehensible. It must retain the simplicity of our original collapsed model. There is no point in a maths model that only machines can understand and no human can follow."*
+
+<!-- figure: the degeneracy is a line, not a point | scripts/free_parameter_degeneracy_2026-09-20.py | 1 free direction -->
+
+The existing collapsed model `R(1-p)/(1-pR)` has **1** free parameter. The revision's full core has **4**, 2 of them per-observation likelihoods. Every seat in round 3 kept the count at 1 and every seat rejected the revision's multi-state and decision-value machinery. **Nothing in this round reopens that.** If a correction raises the practitioner's count, justify each parameter by a live decision it changes.
+
+**Gamma is not up for demotion.** It is a ruler: it measures the discovery trajectory and does not decide when to stop. Settled, and not in question.
+
+## Section 6 — 2 seats returned nothing in round 3, and both causes were ours
+
+Stated so you can judge the round-3 record for what it is, and so `ge` and `kimi` know their silence was not their own.
+
+- **`ge`**: 1 tool call, read 24,868 characters, returned 0. Cause: `bench/openrouter_tools.py` treated empty visible content as a finished answer. Its sibling loop in `bench/experiment_11_orchestrator.py` has carried a tool-less retry for that exact case since 2026-06-06, written against this very model. **The loop the paid seats run never received it.** Fixed, with 3 tests that go red against the old code.
+- **`kimi`**: 25 successful tool calls over 216 seconds, returned 0. Cause: the forced-synthesis call hardcoded `temperature=0.0` while the loop's `temperature` parameter — added the same day for `kimi-k3`, which refuses any value but 1 — was threaded only into the main request. Every retry raised HTTP 400 and a bare `except` swallowed it. Fixed and tested.
+
+**Both are the same shape as the defect under review**: a value supplied at one end and not carried to the other, each end correct when read alone.
+
+## Section 7 — Delivery, CORRECTED
+
+**If you are `cc2` or `fable`** (CLI seats): you have `Bash`, `Read`, `Grep`, `Glob`. **You do NOT have `Write` or `Edit` — those calls will be refused.** Deliver a fix by writing it through Bash into the sandbox repository tree at its **real path**, for example a heredoc to `scripts/<name>_2026-09-20.py`. Do not write to `.scratch`: work there if you like, but anything left there is destroyed at teardown and is not delivered.
+
+**If you are a paid seat** (`cx`, `cgpt`, `ge`, `ds`, `kimi`): you have `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. `run_python` is confined read-only by the kernel and **cannot** write to the repository; that is deliberate. Deliver your fix as the complete file content in your answer, at its real path, and say plainly that you could not write it.
+
+**Wolfram**: reachable from the CLI seats through Bash. It was **not** reachable from the paid seats' sandbox in round 3 — `cgpt` correctly reported *"A WolframKernel location could not be determined"* and marked it NOT EVIDENCE, which is the right handling. Do the same. A failed call verified nothing.
+
+**The package's check scripts are standalone, not pytest files**: use `run_python` with `runpy.run_path`, not `run_pytest`, which returns `no tests ran` on every one of them.
+
+## Section 8 — What you must produce
+
+1. **Your round-3 verdict, restated or revised**, and for each of E1 to E5: did the correction change your answer, and how?
+2. **Answers to Q1 through Q6**, each with the exact command you ran and its output.
+3. **An ordered adoption list.** For each item: the live defect, the executed evidence it is live, its cost in free parameters, and what must be measured first.
+4. **An explicit NOT-ADOPTED list** with a reason each.
+5. **The practitioner parameter count**, and 1 sentence on whether a competent reader can still follow the model without a machine.
+6. **What would refute your own recommendation.**
+
+## Section 9 — Output shape
+
+For every finding: the claim, the executed evidence with the exact command, the **verdict** (HOLDS / FAILS / PARTIAL / UNCHECKED), the **fix**, its **falsifier** and that falsifier's output, and what would **refute** your own verdict.
+
+Then a section recording **where you disagree** with the other seats, with CC1, or with this brief. Disagreement is preserved as information and never smoothed. A section reading "none" is not a disagreement section; if you genuinely disagree with nothing, say what evidence would have changed that.
+
+**A failed call is NOT evidence.** An error, a timeout or a `Name::tag` message verified nothing and the claim stays UNCHECKED. Cross-verify every computational claim with 2 independent tools. Every proportion carries a Wilson interval. **Repair what is patently wrong, and test the fix with a falsifier you have executed.**
+
+## Section 10 — Termination
+
+Whatever you have written when your turn ends IS your answer. **Stop when further passes produce no new above-threshold findings** — diminishing returns is this project's own criterion. The founder's stopping rule: *"we stop when the results prove definitively useful"*, not when a budget is exhausted.
+
+**Nothing is to be recommended for decoration.** The founder, verbatim: *"only with sane justification. Nothing should be done for decoration - and 'just because LLMs have to say something'."* **"Change nothing" remains a permitted and respectable answer** for any item, and for the whole.

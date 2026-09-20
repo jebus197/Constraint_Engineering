@@ -1,0 +1,96 @@
+# PANEL BRIEF, BLIND ROUND — does the founder's framing dissolve the tensions, and what survives of the revision inside it?
+
+## Section 1 — This round is BLIND, and that is enforced rather than requested
+
+You cannot see any other seat's answer to this brief. Each seat works in its own copy of the repository, taken before any seat replied, so this round's answers do not exist in the tree you can read. Do not speculate about what another seat will say. An open round follows this one, in which every seat is shown every answer and may revise.
+
+**Why this is stated.** In the previous round one seat ran a recursive search across `bench/` and pulled in 4.7945% of another seat's reply, Wilson [2.8772%, 7.8858%], because the live tree accumulates each answer as its seat finishes. That is now impossible. The defect was never about what a seat could write; it was about what it could read.
+
+## Section 2 — THE FRAMING. This is the spine of the round, not a scope note.
+
+The previous 4 rounds asked one question: adopt the proposed mathematical revision, or not. That was too narrow, and the narrowing was CC1's. The founder's own framing was carried in rounds 1 and 2 and then dropped: measured across the 4 briefs, "bounded recursion", "stopping is a researcher's decision" and "consolidated notes" appear in rounds 1 and 2 and **0 times** in rounds 3 and 4, where the recommendation was actually decided. The founder's question — *does this framing resolve the tensions?* — was asked **0 times in all 4 briefs.**
+
+It is the question of this round.
+
+**The founder, verbatim, from his consolidated notes, point 11, dated 2026-09-20:**
+
+> "A declining discovery rate can be a strong indication that the currently accessible problem space is becoming depleted. It does not prove that every possible error has been found, or that an entirely different method could not reveal something new. The interpretation remains a hypothesis, informed by the observed trajectory and by what we know about the capability and scope of the examinations being performed. **I do not see that as a weakness. It seems to me a more scientific description of what the instrument is actually doing.**"
+
+> "A ruler does not decide what length is acceptable for a particular purpose. It provides a measurement that somebody can use to make that decision. Similarly, gamma can help a researcher understand where an investigation appears to sit on its discovery curve, but it cannot independently decide how much further effort that researcher should invest."
+
+> "That decision depends on the likely value of another finding, its possible significance, the cost of further work, the time and resources available, and what the researcher is trying to achieve. **Two researchers could agree entirely about the measured discovery trajectory and still reasonably decide to stop at different points.**"
+
+> "But recursion is not intrinsically valuable merely because it continues. Another experiment is worthwhile because there is something sufficiently important or useful that it might reveal, not because the researcher has an obligation to keep experimenting indefinitely."
+
+> "A research question that appears to be exhausted under one method may become productive again when a better method, a new instrument or a different line of reasoning becomes available. **A decision to stop today does not have to be a declaration that nothing remains to be discovered.**"
+
+**And from point 10, dated 2026-09-15:**
+
+> "If the stopping rules are doing real work, then increasing the ceiling should eventually cease to change the amount of work actually performed. That seems to me a much more meaningful test of recursive improvement than asking whether a system can simply keep running indefinitely."
+
+## Section 3 — The tensions 4 rounds uncovered, and the question about them
+
+Under the adopt/reject framing these read as defects. Under the framing above they may read as correct statements of what the instrument is. **Decide which, for each, and say why.**
+
+| # | The tension, as previously stated | The question |
+|---|---|---|
+| T1 | The revision's action step can be parameterised to hit any target risk, so it forbids no outcome | Does the framing dissolve this, or is it a real falsifiability defect? |
+| T2 | No gate reading observations can fire on a flaw class that is never observed | Is this a defect, or the correct scope of a measuring instrument? |
+| T3 | A discovery rate flat at a small constant is indistinguishable from exhaustion at any realistic noise floor | Defect, or a researcher's judgement call under bounded recursion? |
+| T4 | At the fixed point the residual risk is the introduction rate over the detection rate, so a flat curve is consistent with substantial remaining risk | Defect, or exactly what the ruler is for? |
+
+**CC1's position, for you to attack.** T2, T3 and T4 dissolve under the framing, because each is a statement about what a measurement can and cannot license rather than an error in the measurement. T1 does **not** dissolve, but it changes character: it becomes a calibration requirement. Executed with SymPy, cross-checked at 200,000 random points with NumPy (0 violations) and at 40 digits with mpmath: with the introduction rate FREE the action step reaches all of `[0,1]`; with it fixed at any measured value the reachable set collapses to a band of **width exactly z, independent of that value**. Measuring the parameter restores the model's power to forbid outcomes. **Attack this.**
+
+<!-- figure: the degeneracy is a line, not a point | scripts/free_parameter_degeneracy_2026-09-20.py | 1 free direction -->
+
+## Section 4 — The founder's second question, in his own words
+
+> "Is it not the case that we already admit that introducing any new fix/proof might expose that fix to any number of potential additional issues, which might require new fixes/proofs of their own? I don't know if this is the same as saying that the model can be made to fit any degree of risk."
+
+**Answer it.** CC1's answer, for you to falsify: they are not the same. The first is the re-injection term, a mechanism with a measurable rate, already formalised in `docs/MATHEMATICAL_APPENDIX.md` §7.12 with fixed point `D* = ε*/(1−ν)`. The second is a degeneracy in the parameters. They differ — but the second collapses into the first once the rate is measured rather than chosen.
+
+## Section 5 — What the previous 4 rounds established, and 2 things CC1 got wrong
+
+Do not re-derive these. **Both errors are CC1's and both were caught by seats.**
+
+- **WITHDRAWN: "191 fixes were refused on the strength of an unmeasured constant."** Measured on both refusal paths: all 191 refusals were structural, refused at a score of 0 before any constant was read; and of 902 scored fixes reaching the gate, the gate refused **0**. The repository already recorded this in `bench/reference_runner_v3.py`, pinned by a committed test. CC1 contradicted it without looking.
+- **The over-refusal correction is right and currently inert.** Every threshold under dispute sits below the entire observed score distribution: lowest observed score 0.740000, thresholds 0.504931 and 0.395043, **0 of 902** archived fixes below either.
+- **Settled:** the revision recovers the existing collapsed model exactly; the fixed point is `b/p` under the recursion the package actually uses; the parameter map to the appendix is an exact identity while the shipped recurrence is not.
+
+<!-- figure: archived fix-admission verdicts | scripts/sk_verdict_never_fired_2026-09-20.py | 1247 -->
+
+## Section 6 — The wider questions, which 4 rounds never asked
+
+Say for each whether a panel can settle it, or only name what would.
+
+1. **Does the fix score discriminate at all?** Of 902 archived scored fixes, **672 score exactly 1.0**. A gate cannot separate within a distribution piled at its ceiling, whatever its threshold. Run the numbers and say whether the scorer is measuring anything.
+2. **The founder's own stopping-rule test** (point 10). Design it: what exactly would be varied, what measured, and what result would falsify "the stopping rules are doing real work"?
+3. **Which calibration tasks can this project do unaided?** The introduction rate, the detection rate and the false-positive rate are all unsupplied. Name the smallest experiment for each, and say which need a human and which do not.
+4. **Is the revision worth keeping at all, given the framing?** It already caught a genuine sign error in the appendix's inverse, named first by the revision and recorded at line 169. Weigh that against everything else it proposes.
+
+## Section 7 — Scope, HARD
+
+- **Gamma is a ruler and is not up for demotion.** You may examine what it can and cannot license. You may not propose making it reported-only.
+- **Human comprehensibility binds.** The existing collapsed model has 1 free parameter. Any recommendation must state the practitioner's parameter count and whether a competent reader can still follow the model without a machine.
+- **Do not propose new apparatus.** Corrections to what exists, or nothing.
+- **"Change nothing" is a permitted and respectable answer**, for any item and for the whole.
+
+## Section 8 — How to work, and how to deliver
+
+Your tools are `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. **Every claim is falsified before it is presented. Tools decide, not prose.** Cross-verify every computational claim with 2 independent tools, and give every proportion a Wilson interval. **A failed call is NOT evidence** — mark the claim UNCHECKED rather than asserting it.
+
+Where something is patently wrong, **fix it, and deliver each fix as a file at a real path** inside your own sandbox tree, not in scratch space. Write a falsifier for each and execute it, stating the command and its output. If you are a command-line seat you have no Write or Edit tool: write through Bash. If you are reached over the network your execution tool is confined read-only and cannot write at all — deliver the complete file content in your answer and say plainly that you could not write it.
+
+The package's check scripts are standalone, not pytest files: use `run_python` with `runpy.run_path`.
+
+## Section 9 — Output shape
+
+For every finding: the claim, the executed evidence with the exact command, the **verdict** (HOLDS / FAILS / PARTIAL / UNCHECKED), the **fix**, its **falsifier** and that falsifier's output, and what would **refute your own verdict**.
+
+Then, in its own section, **where you disagree** with CC1 or with this brief. Disagreement is preserved as information and never smoothed. A section reading "none" is not a disagreement section; if you genuinely disagree with nothing, say what evidence would have changed that.
+
+End with: your answer to Section 2's question in one sentence, your practitioner **parameter count**, and an ordered **adoption list** with an explicit NOT-ADOPTED list beside it.
+
+## Section 10 — Termination
+
+Whatever you have written when your turn ends IS your answer. **Stop when further passes produce no new above-threshold findings** — diminishing returns is this project's own criterion, and this round is partly about that criterion itself. The founder's stopping rule: *"we stop when the results prove definitively useful"*, not when a budget is exhausted. Nothing is to be recommended for decoration.

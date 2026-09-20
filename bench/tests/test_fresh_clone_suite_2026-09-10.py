@@ -453,12 +453,32 @@ class TestASafetyClaimIsNeverGatedByTheCorpus:
         # explains why the gate was removed -- the substring-versus-token defect,
         # recurrence 7 in this project, inside a control written to prevent a
         # different recurrence 2 hours earlier. An AST walk sees calls.
+        # RENAMED 2026-09-20, AND THE RENAME CORRECTLY TRIPPED THIS GUARD.
+        #
+        # The money test became `test_zero_UNAUTHORISED_paid_replies_...` when
+        # its predicate changed from ABSENCE ("no paid seat was ever dispatched")
+        # to AUTHORISATION ("every paid reply falls in a round the founder named
+        # in bench/directives/universal/paid_dispatch_authorisations.json"). The
+        # old proposition was one Section P never contained -- its ruling ends
+        # "this format should then be saved as the standard for all future 6
+        # full paid model reviews also" -- and it went red the moment a paid
+        # review was authorised.
+        #
+        # `_calls` raised "test_zero_paid_replies_... is gone", which is exactly
+        # what should happen when a money guard is renamed: loudly, in another
+        # file, rather than silently. The brittleness is the feature. The name is
+        # updated here rather than softened to a pattern, so the NEXT rename
+        # trips it too.
+        #
+        # What is asserted is unchanged: the safety claim must never consult a
+        # corpus gate, because a checkout holding 1 to 9 replies would otherwise
+        # skip past a constraint the founder reserves to himself.
         assert not _calls(ROOT / "bench" / "tests"
                           / "test_panel_conditions_are_met_2026-09-10.py",
-                          "test_zero_paid_replies_in_any_round_under_section_p",
+                          "test_zero_unauthorised_paid_replies_in_any_round_under_section_p",
                           {"shortfall", "skip"}), (
-            "the no-paid-seat check calls a corpus gate or skips; a checkout "
-            "with 1 to 9 replies would skip past a money constraint")
+            "the unauthorised-paid-seat check calls a corpus gate or skips; a "
+            "checkout with 1 to 9 replies would skip past a money constraint")
 
     def test_the_vacuity_sibling_is_still_allowed_to_skip(self):
         """The distinction, from the other side. The RATE claim may skip.

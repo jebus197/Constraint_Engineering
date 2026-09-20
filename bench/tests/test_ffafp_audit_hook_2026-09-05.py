@@ -89,6 +89,12 @@ BASH = "Bash"
 EDIT_PY = ("Edit", {"file_path": "bench/immune_agents.py"})
 READ_PY = ("Read", {"file_path": "bench/immune_agents.py"})
 RUN_TESTS = (BASH, {"command": "python3 -m pytest bench/tests/test_x.py -q"})
+#: ADDED 2026-09-20. FOLLOW became a distinct signal from FIND: opening the
+#: file you are about to edit is FIND, and only a TREE SCAN can answer "who
+#: depends on this". The fixtures below that represent a COMPLETE cycle now
+#: include one, because a turn without it genuinely has not done FOLLOW.
+#: The assertions are unchanged -- what changed is the example of good practice.
+SCAN_PY = ("Grep", {"pattern": "immune_agents"})
 
 
 # --------------------------------------------------------------------------------------
@@ -287,7 +293,7 @@ def test_code_edit_with_no_check_afterwards_is_flagged_ppass():
 def test_the_same_turn_with_a_trailing_test_is_silent():
     """Differs from the previous test by ONE tool call. If the detector ignored the check,
     both would be flagged; if it flagged nothing, neither would be."""
-    v = fa.audit(turn_of(READ_PY, EDIT_PY, RUN_TESTS))
+    v = fa.audit(turn_of(SCAN_PY, READ_PY, EDIT_PY, RUN_TESTS))
     assert v["missing"] == [], f"unexpected flags: {v['missing']}"
     assert fa.render(v, []) == ""
 
@@ -310,9 +316,14 @@ def test_follow_is_graded_none_generic_and_targeted():
     none_ = fa.audit(turn_of(EDIT_PY, RUN_TESTS))
     generic = fa.audit(turn_of(("Read", {"file_path": "docs/REPRODUCING.md"}), EDIT_PY, RUN_TESTS))
     targeted = fa.audit(turn_of(READ_PY, EDIT_PY, RUN_TESTS))
-    assert none_["follow"] == "none" and "FOLLOW" in none_["missing"]
-    assert generic["follow"] == "generic" and "FOLLOW" not in generic["missing"]
-    assert targeted["follow"] == "targeted" and "FOLLOW" not in targeted["missing"]
+    # THE LABEL CHANGED, THE GRADING DID NOT (2026-09-20). The `follow` key has
+    # always been computed from "did you look at the file you are editing", which
+    # is the FIND step. FOLLOW -- who depends on this -- was never measured until
+    # the tree scans were split out. So this asserts the grading as before, under
+    # the name it was really computing.
+    assert none_["follow"] == "none" and "FIND" in none_["missing"]
+    assert generic["follow"] == "generic" and "FIND" not in generic["missing"]
+    assert targeted["follow"] == "targeted" and "FIND" not in targeted["missing"]
     # The three are genuinely distinguished, not collapsed to one value.
     assert len({none_["follow"], generic["follow"], targeted["follow"]}) == 3
 
@@ -344,7 +355,7 @@ def test_writing_only_to_tmp_is_not_a_work_turn():
 
 
 def test_render_is_silent_on_a_clean_verdict_and_names_every_flag_otherwise():
-    clean = fa.audit(turn_of(READ_PY, EDIT_PY, RUN_TESTS))
+    clean = fa.audit(turn_of(SCAN_PY, READ_PY, EDIT_PY, RUN_TESTS))
     dirty = fa.audit(turn_of(EDIT_PY))
     assert fa.render(clean, []) == ""
     msg = fa.render(dirty, [])
@@ -388,7 +399,7 @@ def test_hook_end_to_end_is_silent_when_the_traces_are_there(tmp_path):
     the previous test."""
     tp = write_transcript(tmp_path / "t.jsonl", [
         human("u-1"),
-        assistant(READ_PY, EDIT_PY, RUN_TESTS),
+        assistant(SCAN_PY, READ_PY, EDIT_PY, RUN_TESTS),
         tool_result(),
     ])
     r = run_hook(tmp_path, tp)

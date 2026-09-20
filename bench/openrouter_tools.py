@@ -448,6 +448,60 @@ def call_openrouter_with_tools(
         if not tool_calls:
             final_text = (msg.content or "").strip()
             stopped_reason = "finish"
+            if not final_text:
+                # EMPTY VISIBLE CONTENT IS NOT AN ANSWER, AND THIS LOOP USED TO
+                # TREAT IT AS ONE (fixed 2026-09-20).
+                #
+                # A reasoning model can burn its whole output budget on
+                # chain-of-thought and return finish_reason 'stop' with no visible
+                # content. Recording that as `finish` reports a seat as having
+                # answered when it said nothing.
+                #
+                # THE GUARD ALREADY EXISTED -- IN THE OTHER LOOP. The sibling
+                # `_run_openai_tool_loop` in experiment_11_orchestrator.py has
+                # carried a tool-less retry at a raised budget for this exact case
+                # since 2026-06-06, written against gemini-3.1-pro-preview. This
+                # loop, which is the one the paid OpenRouter seats actually run,
+                # never received it. So in panel round 3 the very model the retry
+                # was written for hit the very failure it prevents: ge made 1
+                # tool call, read 24,868 characters, and returned 0.
+                #
+                # Two loops doing the same job, each internally consistent, and
+                # the divergence invisible to any check that reads only one of
+                # them. Dropping `tools` forces a content answer rather than
+                # another tool call; the accumulated tool results stay in
+                # `messages`, so the model answers with everything it gathered.
+                retry_kwargs = dict(create_kwargs)
+                retry_kwargs["max_tokens"] = max(max_tokens, 65536)
+                retry_kwargs.pop("tools", None)
+                retry_kwargs.pop("tool_choice", None)
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "Your last reply returned no visible content. Write your "
+                        "COMPLETE findings now as your final answer, using the "
+                        "tool results you already have. Do not call any further "
+                        "tools. Where a check did not complete, say so and mark "
+                        "that claim UNVERIFIED rather than asserting it."
+                    ),
+                })
+                retry_kwargs["messages"] = messages
+                for _retry in range(2):
+                    try:
+                        retry_response = client.chat.completions.create(**retry_kwargs)
+                    except Exception:  # noqa: BLE001
+                        retry_response = None
+                    if retry_response and retry_response.choices:
+                        cand = (retry_response.choices[0].message.content or "").strip()
+                        if cand:
+                            final_text = cand
+                            stopped_reason = "finish_after_empty_retry"
+                            break
+                    time.sleep(2.0)
+                else:
+                    if not final_text:
+                        # Say so rather than reporting a silent seat as finished.
+                        stopped_reason = "empty_content_after_retry"
             break
 
         # Model wants to invoke tools. Append the assistant-with-tool-calls

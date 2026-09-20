@@ -1,0 +1,1271 @@
+### cc2:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-20 13:05:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-20 12:46:16
+@@ -169,36 +169,7 @@
+ from experiment_11_orchestrator import accept_reply_or_work  # noqa: E402
+ from experiment_11_orchestrator import set_tool_log_sink  # noqa: E402
+ from openrouter_tools import (  # noqa: E402
+-    TOOL_SPECS as _VERIFY_TOOLS, call_openrouter_with_tools)
+-import build_experiment_tools as _ACCESS_TOOLS  # noqa: E402
+-
+-#: THE SEATS COULD NOT READ THE THING THEY WERE REVIEWING. Found 2026-09-20,
+-#: mid-round, by reading a seat's own reply rather than its summary.
+-#:
+-#: The panel gave its seats 5 tools -- sympy_verify, z3_verify, pytest_run,
+-#: ruff_check, mypy_check -- and NOT ONE of them reads a file or runs a Python
+-#: script. The brief for that round asked seats to read the revised model's
+-#: specification, execute `CDSFL_revised_core.py`, and search `bench/logs/` for
+-#: paired repair states. All 3 were structurally impossible, and the seats spent
+-#: their budget discovering it: cx ran `pytest_run` against 4 standalone scripts
+-#: and got `no tests ran` 4 times, then reported "Most substantive package
+-#: claims remain UNVERIFIED in this seat". 2 of 3 paid seats hit the iteration
+-#: cap having executed almost nothing.
+-#:
+-#: WHY IT WENT UNNOTICED. Every seat was verified before dispatch to MAKE tool
+-#: calls -- 8 of 8 for DeepSeek via OpenRouter, 1 of 1 for Kimi, and so on --
+-#: and not one check asked WHICH tools. A seat calling a tool it cannot use is
+-#: still calling a tool, so the pre-flight passed while the capability it was
+-#: standing in for was absent. The CLI seats were unaffected: cc2 and fable
+-#: reach the tree through Bash, which is why the archive shows them at 2,754 and
+-#: 2,530 tool calls against cx's 48.
+-#:
+-#: THE UNION, because both halves are load-bearing: the symbolic verifiers that
+-#: make a claim decidable, and the access tools that let a seat reach the
+-#: artefact under review. `pytest_run` and `run_pytest` are near-duplicates and
+-#: both are kept -- a seat picking either gets a working tool, which is the
+-#: opposite of the failure above.
+-TOOL_SPECS = list(_VERIFY_TOOLS) + list(_ACCESS_TOOLS.TOOL_SPECS)
++    TOOL_SPECS, call_openrouter_with_tools)
+ 
+ _REPO = Path(__file__).resolve().parent.parent
+ _env = _REPO / ".env"
+@@ -343,26 +314,6 @@
+ #: another seat found, because an untested instrument agreeing with a tested one
+ #: is not independent evidence until the instrument itself has a track record.
+ QUARANTINED_SEATS = {"kimi"}
+-
+-#: RAISED FROM 10 TO 16 on 2026-09-20, after measuring the first round rather
+-#: than guessing. 3 of the 4 paid seats hit the cap: cx at 10 iterations with
+-#: `max_iterations_harvested`, ge at 10, ds at 10; only cgpt finished, in 5.
+-#: And they hit it having executed almost nothing useful, because the seats had
+-#: no tool that reads a file or runs a script -- cx spent 4 iterations running
+-#: `pytest_run` against standalone scripts and got `no tests ran` each time.
+-#:
+-#: The cap is raised WITH the tool fix, not instead of it. A seat that can read
+-#: the artefact needs more turns to do real work; a seat that cannot needs none.
+-#:
+-#: 16 IS COUNTED, NOT ROUNDED. What this brief asks of a seat: 3 turns to read
+-#: the specification, 1 to run the reference core, 3 for the package's own check
+-#: scripts, 5 for the symbolic and z3 checks of the derivations it is asked to
+-#: falsify, 2 for the appendix and the live gate, and 2 to search the archive for
+-#: paired repair states. Cost scales worse than linearly because the whole
+-#: history is re-sent each turn: measured against live OpenRouter pricing, the
+-#: worst case across the 4 paid seats is 1.64 pounds at 10, 3.56 at 16 and 5.23
+-#: at 20. 16 buys the work; 20 buys 4 spare turns for 1.67 pounds.
+-PANEL_TOOL_ITERATIONS = 16
+ # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
+ # not cost a second full paid round for the 3 that worked.
+ MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
+@@ -571,7 +522,7 @@
+             # for the round, against 0.99 at 6.
+             r = call_openrouter_with_tools(model_id, SYSTEM, PROMPT,
+                                            tools=TOOL_SPECS, max_tokens=32768,
+-                                           timeout=300, max_iterations=PANEL_TOOL_ITERATIONS)
++                                           timeout=300, max_iterations=10)
+             resp = r.get("final_text", "")
+             tool_log = r.get("tool_calls", [])
+             # WHY THE SEAT RECORD CARRIES THIS (audit finding, 2026-09-20).
+
+### cc2:attempt-1:bench/logs/maths_panel_2026-09-20/BRIEF.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20/BRIEF.md	2026-09-20 13:05:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/bench/logs/maths_panel_2026-09-20/BRIEF.md	2026-09-20 12:47:36
+@@ -68,13 +68,8 @@
+ - `outputs/CDSFL_lineage_and_decay_clarification.md`, `outputs/CDSFL_mathematical_review_2026-09-09.md`, `READING_COPY.html`, `work/`.
+ - In the repository: `docs/MATHEMATICAL_APPENDIX.md`, `explorer/index.html`, `bench/reference_runner_v3.py` for the live gate, and `scripts/free_parameter_degeneracy_2026-09-20.py`.
+ 
+-**Run the checks rather than reading them, and USE `run_python` FOR THEM.** These are standalone scripts, not pytest test files: `run_pytest` returns `no tests ran` on every one of them, which cost a seat 4 of its turns in the first round of this review. Run each with `run_python` and `runpy.run_path("<path>")`:
++**Run the checks rather than reading them:** `VERIFY_PACKAGE.py`, then `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+ 
+-- `docs/maths_revision_review_2026-09-10/VERIFY_PACKAGE.py` — prints `PASS: 41 files match the package manifest.`
+-- `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+-
+-**Your tools are** `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. Use `read_file` to read the package; do not assume you have a shell.
+-
+ ## Section 7 — Scope boundaries, which are HARD
+ 
+ - **Gamma is load-bearing and is not up for demotion.** You may and should examine whether the revision's treatment of decay is consistent with gamma as the project uses it. You may not propose making it reported-only.
+
+### cc2:attempt-1:bench/logs/maths_panel_2026-09-20/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20/dispatch.log	2026-09-20 13:06:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/bench/logs/maths_panel_2026-09-20/dispatch.log	2026-09-20 12:50:38
+@@ -1,34 +0,0 @@
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t_fzamdi/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uq78zt2j/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_dxop2gdz/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vsezd8a9/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oh216jk5/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-[12:51:38]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-    suite: GREEN at abc0e5e — 8,157 passed, 0 failed  [recorded at abc0e5e, HEAD is 7c9609a, 1 commit(s) later]
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 11,650 chars, about 2,912 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uq78zt2j/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t_fzamdi/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oh216jk5/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vsezd8a9/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_dxop2gdz/repo
+-  [cx] ok=True chars=5549 tools=16 91.0s STOPPED=max_iterations_harvested
+-  [ge] ok=True chars=5275 tools=10 116.5s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=20709 tools=18 134.7s
+-  [ds] ok=True chars=10561 tools=21 194.3s STOPPED=max_iterations_harvested
+-[13:03:36]   [claude-cli:opus] 103 tool call(s) this attempt, 103 in total
+-[13:03:36]   [claude-cli:opus] done (717.9s, 15150 chars)
+-  [cc2] ok=True chars=15150 tools=103 717.9s
+-[13:05:53]   [claude-cli:fable] 35 tool call(s) this attempt, 35 in total
+-[13:05:53]   [claude-cli:fable] done (854.8s, 11887 chars)
+-  [fable] ok=True chars=11887 tools=35 854.8s
+-  [kimi] ok=False chars=0 tools=0 904.5s ERR=APITimeoutError: Request timed out.
+-[13:06:43] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/openrouter_tools.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/openrouter_tools.py	2026-09-20 12:56:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/bench/openrouter_tools.py	2026-09-05 05:07:11
+@@ -331,27 +331,6 @@
+ }
+ 
+ 
+-def _access_tool(name: str):
+-    """Route the ACCESS tools -- read_file, grep, list_dir, run_python,
+-    run_pytest -- to the executor that implements them.
+-
+-    ADDED 2026-09-20, WITH ITS SPECS, because a spec without a handler is worse
+-    than no spec: the model calls the tool, gets `unknown tool: read_file`, and
+-    spends an iteration learning that. The panel's seats previously had 5 tools,
+-    none of which reads a file or runs a script, so a brief asking them to read
+-    the artefact under review was asking for something impossible -- and the
+-    seats burned their iteration budget discovering it.
+-    """
+-    def _run(args):
+-        import build_experiment_tools as _bt
+-        return {"result": _bt.execute(name, args)}
+-    return _run
+-
+-
+-for _access in ("read_file", "grep", "list_dir", "run_python", "run_pytest"):
+-    _TOOL_DISPATCH[_access] = _access_tool(_access)
+-
+-
+ def dispatch_tool_call(name: str, arguments_json: str) -> str:
+     """Route a tool call to its dispatcher and return a JSON-serialisable
+     string result that can be handed back to the model.
+
+### cc2:attempt-1:docs/MATHEMATICAL_ERRATA_2026-09-20.md
+--- /dev/null	2026-09-20 13:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/docs/MATHEMATICAL_ERRATA_2026-09-20.md	2026-09-20 13:02:00
+@@ -0,0 +1,309 @@
++# Mathematical errata, 20 September 2026
++
++Corrections arising from the panel review of the version 1.1 revision proposal
++(`docs/maths_revision_review_2026-09-10/`). Each item names the artefact
++corrected, the corrected statement, and the runnable falsifier that decides it.
++Notation follows `docs/MATHEMATICAL_APPENDIX.md` throughout.
++
++Nothing here is a new parameter. Every correction is to a quantity that already
++exists in the appendix or in the panel brief.
++
++---
++
++## E1. The flat-curve residual is nu/(q+nu), not nu/q
++
++**Corrects:** `PANEL_BRIEF_2026-09-20.md` 3.4, which states R* = b/p and
++reports 5.71% / 28.57% / 57.14% at p = 0.35.
++
++b/p is the fixed point of the **unconditional** recursion R <- (1-q)R + b, in
++which introduction is applied to the whole state. Neither the revision nor the
++existing appendix uses that recursion. Both apply introduction to the **clean
++fraction**:
++
++- revision, section 4:  R_next = nu + (1-nu)(1-sigma)B
++- appendix, line 233:   R_k(i) = R_base*(1-nu) + nu
++
++whose fixed point is
++
++> **R* = nu / (q + nu)**
++
++| nu | brief's nu/q | correct nu/(q+nu) | overstatement |
++|---:|---:|---:|---:|
++| 0.02 | 5.71% | **5.41%** | 0.30 pp |
++| 0.10 | 28.57% | **22.22%** | 6.35 pp |
++| 0.20 | 57.14% | **36.36%** | 20.78 pp |
++
++The error is in the **conservative** direction -- the brief overstates residual
++risk -- so no stopping decision taken on it was unsafe. The **qualitative** claim
++that a flat decay curve is compatible with a large residual **survives**: at
++nu = 0.20 the correct residual is still 36.36%.
++
++This is the same quantity the appendix already names in its substrate-ceiling
++result (line 248, lim R >= nu_k). E1 makes that bound exact rather than
++one-sided: the limit is not merely >= nu, it is nu/(q+nu).
++
++**Falsifier:** `python3 scripts/cc_falsify_section3_2026-09-20.py`
++-> `18/18 checks passed`, including
++`3.4 REFUTED as stated: the revised model's own fixed point is b/(p+b), NOT b/p`.
++Independently confirmed by Wolfram Language (local Wolfram Engine):
++`Solve[(1-p) R + b (1-R) == R, R]` -> `{{R -> b/(b + p)}}`.
++
++---
++
++## E2. The degeneracy is a line only at interior targets
++
++**Corrects:** `PANEL_BRIEF_2026-09-20.md` 3.1, "the degeneracy is a line, not a
++point."
++
++True, and the (s, b) formula is right, but not uniformly. The admissible set is
++the line b(s) = (d - (1-s)z)/(1-z) **intersected with the unit square**. Its
++Lebesgue measure in s shrinks to zero as the target d approaches 0 or 1:
++
++| target d at z = 0.25 | measure of admissible s |
++|---:|---:|
++| 0.5 | 1.000000 |
++| 1.0 | **0.000000** (unique point s = 0, b = 1) |
++| 0.0 | **0.000000** (unique point s = 1, b = 0) |
++
++The practical reading is the one that matters for falsifiability: the fitting
++freedom is **greatest in the middle of the risk range and vanishes at the
++extremes**. A model fitted to a mid-range target is the maximally unfalsifiable
++case, not a typical one.
++
++**Falsifier:** same script, checks
++`3.1 COUNTEREXAMPLE: at d=1 the solution set collapses to a POINT` and the d=0
++counterpart (measure 0.00e+00, brute-force grid 0.000050 of 20001 points).
++
++---
++
++## E3. The removal parameter s adds no reachability; the whole degeneracy is b's
++
++**Adds to:** `PANEL_BRIEF_2026-09-20.md` 3.2.
++
++The brief compares the existing collapse form over p (reaching [0, R]) with the
++revised action step over (s, b) (reaching [0, 1]) and concludes correctly that
++the introduction term carries the degeneracy. The result is stronger than
++stated. Let p vary too, and set b = 0:
++
++> sup over s in [0,1], p in [0,1] of (1-s)*R(1-p)/(1-pR) = R, attained at s = 0, p = 0;
++> infimum 0.
++
++So the revised model **with b = 0 but s free reaches exactly the existing
++model's set [0, R]** -- s is reachability-redundant given the existing model's
++own free parameter. Every outcome the revision can reach that the existing model
++cannot is reached **by b alone**.
++
++**Consequence for adoption:** if b = nu cannot be estimated, adopting the revised
++parameterisation adds no reachable outcome and no content -- only a second name
++for a freedom p already had.
++
++**Falsifier:** same script, check `3.2+ s is REACHABILITY-REDUNDANT`.
++Wolfram Language independently:
++`Maximize[{(1-s)(R(1-p)/(1-p R)), 0<=s<=1 && 0<=p<=1 && 0<R<1}, {s,p}]`
++-> maximum `R` at `s -> 0, p -> 0`.
++
++---
++
++## E4. Appendix Phase 2 does conflate observation with repair -- and it errs SAFE
++
++**Concerns:** `docs/MATHEMATICAL_APPENDIX.md` line 226,
++R_base = sigma*R_det + (1-sigma)*R_old.
++
++The revision is right that this conflates the two operations. A failed fix does
++not un-observe the evidence, yet this form returns the state to the **prior**
++R_old with probability (1-sigma). The root cause is a different reading of
++sigma: the appendix treats sigma as *how much of the detection benefit is
++captured*, so that even a perfect fix (sigma = 1) leaves risk at R_det rather
++than at nu.
++
++> appendix at sigma = 1:  R_det(1-nu) + nu
++> revision at sigma = 1:  nu
++
++**But the direction of the error is the safe one.** Writing the revision's form
++as `correct`:
++
++> existing - correct = (1-nu)*[ sigma*R_det + (1-sigma)*(R_old - R_det) ] >= 0
++
++identically, since R_det <= R_old always. Verified on 8151 grid points with zero
++negative cases, and **proved universally** by Wolfram Language:
++`Reduce[ForAll[{R,q,sigma,nu}, 0<R<1 && 0<q<1 && 0<=sigma<=1 && 0<=nu<=1, d >= 0]]`
++-> `True`.
++
++**Therefore this correction MUST NOT be adopted as a drop-in.** The existing form
++systematically **overstates** residual risk -- by up to 0.46 absolute at
++sigma = 0.8, nu = 0.1. Replacing it lowers every reported R_k, which makes every
++risk-threshold stop **easier** to satisfy. Under the additive standard that is a
++removal of a safety margin, and it requires a committed measurement of sigma and
++nu showing the replacement dominates -- not a derivation showing it is better
++conditioned.
++
++**What IS adoptable now:** the appendix should state, at line 226, that this form
++is a conservative approximation and name its bias term. That is additive: it
++adds an accuracy statement and removes nothing.
++
++**Falsifier:** `python3 scripts/cc_phase2_conflation_2026-09-20.py`
++-> `9/9 passed`, including `Q-B existing >= correct EVERYWHERE (8151 grid points)`
++and `Q-B PROOF: existing-correct = (1-nu)[sigma*R_det + (1-sigma)(R_old-R_det)] >= 0`
++(residual 0).
++
++---
++
++## E5. Two existing appendix results are confirmed correct and need no revision
++
++Recorded because a review that only reports faults misrepresents the artefact.
++
++- **Break-even re-injection rate** (line 240), nu* = sigma*q*R/(1 - q*R*(1-sigma)),
++  is **exactly** what SymPy obtains by solving R_cycle = R_old for nu using the
++  appendix's own Phase 2 and Phase 3. It is correctly derived from its own
++  premises.
++- **Substrate ceiling** (line 248), lim R >= nu_k, holds at every tested
++  (R, q, sigma, nu). E1 sharpens it to an equality but does not contradict it.
++
++**Falsifier:** `python3 scripts/cc_phase2_conflation_2026-09-20.py`, checks
++`Q-A appendix break-even nu* is CORRECTLY derived from its own phases` and
++`Q-A appendix substrate ceiling`.
++
++---
++
++## E6. The introduction parameter is already in the appendix under the name nu
++
++**Concerns:** the claim that the revision *adds* an introduction parameter.
++
++It does not. The appendix's Phase 3 (line 233), R_k(i) = R_base*(1-nu) + nu, is
++**algebraically identical** to the revision's action step (1-s)B + b(1-B) at
++s = sigma(1-nu), b = nu. The revision's own reference implementation says so:
++`sequential_repair_parameters(sigma, nu)` in `CDSFL_revised_core.py` returns
++exactly `(sigma(1-nu), nu)`.
++
++The revision's contribution at this point is **the conditioning statement, not
++the parameter**: that s is *net* removal and must not be interchanged with raw
++efficacy sigma, and that s and b must share the evidence, context and action
++they are conditioned on. That is a documentation correction of real value. It is
++not new mathematics and it must not be presented as one.
++
++**Falsifier:** same script, checks
++`Q-A EXISTING appendix Phase-3 IS the revision's own action step` (SymPy
++residual 0) and `Q-A package helper returns s=sig(1-nu), b=nu` (`s=18/25 b=1/10`
++exact).
++
++---
++
++## E7. The two-sided gate does not close the nu-hole; it closes it to 1.5%
++
++**Concerns:** `PANEL_BRIEF_2026-09-20.md` 3.5, "the existing two-sided gate
++already refuses that case."
++
++The gate's condition (a) counts **novel critical findings**, i.e. *detected*
++defects. Residual risk is driven by *undetected* introduced defects. The gate
++therefore sees injection only through the same review's sensitivity to the
++**injected** class. Measured against the real `_check_gamma_alt_convergence`
++with the live `RunnerConfig` (K = 3):
++
++| scenario | gate converges | equilibrium residual nu/(q+nu) |
++|---|---:|---:|
++| injected class seen at q = 0.35 | 89.84% (Wilson 95% [89.71, 89.97]) | 22.22% |
++| injected class seen at q' = 0.05 | **98.50%** (Wilson 95% [98.45, 98.56]) | **66.67%** |
++
++Closed form for the blind spot: (1 - nu*q')^K, giving 98.5075% at nu = 0.10,
++q' = 0.05, K = 3 -- inside the Wilson interval. Gate detection power against
++injection is **1.49%**.
++
++The brief's 3.5 demonstration used a *deterministic* 2-criticals-per-round
++series, which is the easy case. At a realistic stochastic injection rate the
++gate's power is low even when the injected class is fully visible, and
++negligible when it is not.
++
++**This is not a proposal to change the gate**, which is two-sided by design and
++correct at what it measures. It is a statement of its measured power, which
++belongs in its docstring so that a reader does not mistake "the gate is
++two-sided" for "the gate detects regression."
++
++**Falsifier:** `python3 scripts/cc_gate_low_sensitivity_2026-09-20.py`
++-> reproduces all four of the brief's 3.5 control cases against the real
++function, then reports the constructed case with a Wilson interval containing
++the closed form.
++
++---
++
++## Producers
++
++| File | Decides |
++|---|---|
++| `scripts/cc_falsify_section3_2026-09-20.py` | E1, E2, E3 (18 checks) |
++| `scripts/cc_phase2_conflation_2026-09-20.py` | E4, E5, E6 (9 checks) |
++| `scripts/cc_gate_low_sensitivity_2026-09-20.py` | E7 (400 000 simulated rounds, Wilson interval) |
++
++Every symbolic result above was obtained with SymPy and independently confirmed
++with Wolfram Language (local Wolfram Engine, via `wolframscript`); every numeric
++result was cross-checked with mpmath at 40-50 decimal places. Proportions carry
++Wilson intervals from `statsmodels`.
++
++---
++
++## E8. nu is not measurable at the model's scope — but a baselined channel exists and is being discarded
++
++**Answers:** panel brief question 2, the decisive empirical question.
++
++**At the scope the model needs, nu is unidentifiable.** b = P(post flawed | pre
++**clean**, action) requires a denominator of clean targets that a repair touched.
++This archive never enumerates one, because four independent instruments *refuse
++by construction* to admit a clean pre-state:
++
++| instrument | refusal |
++|---|---|
++| `bench/fix_efficacy.py:175` | non-CONFIRMED baseline -> `INDETERMINATE_NO_BASELINE`, "there is nothing for a fix to cure" |
++| `bench/execution_based_matcher.py:137` | `BASELINE_STATE = "pristine"`, both members must CONFIRM |
++| `scripts/adjudicate_by_repair.py:46` | a pair is decided only when BOTH falsifiers reproduce CONFIRMED |
++| `scripts/discrimination_control_archive.py:38` | if no version reproduces it, the finding is EXCLUDED |
++
++Counted: **246** independently-resolved (pre, post) pairs exist for the
++**removal** direction s; **0** for the **introduction** direction b. No field
++named `pre_fix_verdict`, `clean_baseline`, `verified_clean`,
++`introduction_rate` or `nu_measured` exists anywhere in `bench/`. nu is
++currently **assumed, never estimated** — `SHIPPED_NU_B, SHIPPED_NU_F = 0.05,
++0.20`, and `model_params` has 0 writers.
++
++**But a narrow, already-running, already-baselined channel does exist.** The e3
++and e4 effect gates *do* take a pre-fix baseline and report a delta
++(`delta = max(0, total_count - baseline_violations)`). That delta is a genuine
++clean-to-flawed transition within the gate's own scope. Measured over the live
++archive:
++
++> **e3_ruff introduction events: 20/65 = 30.77%, Wilson 95% [20.89%, 42.80%]**
++
++Implied equilibrium residual at q = 0.35, using E1: **R\* = 46.78%**
++(Wilson upper 55.01%). This is a lint-scope number, not an any-flaw-in-class
++number, and it must not be quoted as the latter. It is nevertheless the first
++executed, non-assumed estimate of an introduction rate in this project.
++
++**And the heaviest gate is one function call away from joining it.**
++`e2_regression` carries weight 2.0 — twice e3's — and is the only effect gate
++with **no baseline**, although the enclosing scorer already receives a
++`baseline` argument. AST-confirmed: `_run_effect_regression(modified_source,
++source_path, test_cmd)` is called with `modified` only. Consequently the 70
++deduplicated e2 records in `bench/logs/` — of which **44 are RED** — cannot be
++decomposed into pre-existing failures and fix-introduced ones. 44/70 is an
++unidentified mixture and **must not be reported as nu**.
++
++**Fix, additive, no new parameter and no new flag:**
++
++```python
++# bench/reference_runner.py, beside the existing e2 call
++e2b_score, e2b_detail = _run_effect_regression(source, source_path, test_cmd)
++details["e2_baseline"] = {"score": e2b_score, "detail": e2b_detail}
++```
++
++Then, with no new symbol:
++
++> introduction event  <=>  `e2_baseline.score == 1.0` and `e2_regression.score < 1.0`
++> nu_hat = (introduction events) / (fixes whose baseline suite was green), Wilson interval.
++
++This satisfies the brief's hard constraint — do not add a parameter without
++saying how it would be measured — by measuring a parameter the appendix has
++carried since line 215 and never measured. It is wired to an existing caller and
++exercised by an existing archive.
++
++**Falsifier:** `python3 scripts/cc_nu_measurability_2026-09-20.py`
++-> `ALL CHECKS PASSED`, exit 0. Checks A1-A3 (no clean pre-state admitted),
++B1-B3 (e3 baseline present, 20/65 measured), C1-C3 (e2 baseline absent, the gap
++is one call).
+
+### cc2:attempt-1:docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md	2026-09-20 13:05:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md	2026-09-20 12:50:14
+@@ -68,13 +68,8 @@
+ - `outputs/CDSFL_lineage_and_decay_clarification.md`, `outputs/CDSFL_mathematical_review_2026-09-09.md`, `READING_COPY.html`, `work/`.
+ - In the repository: `docs/MATHEMATICAL_APPENDIX.md`, `explorer/index.html`, `bench/reference_runner_v3.py` for the live gate, and `scripts/free_parameter_degeneracy_2026-09-20.py`.
+ 
+-**Run the checks rather than reading them, and USE `run_python` FOR THEM.** These are standalone scripts, not pytest test files: `run_pytest` returns `no tests ran` on every one of them, which cost a seat 4 of its turns in the first round of this review. Run each with `run_python` and `runpy.run_path("<path>")`:
++**Run the checks rather than reading them:** `VERIFY_PACKAGE.py`, then `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+ 
+-- `docs/maths_revision_review_2026-09-10/VERIFY_PACKAGE.py` — prints `PASS: 41 files match the package manifest.`
+-- `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+-
+-**Your tools are** `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. Use `read_file` to read the package; do not assume you have a shell.
+-
+ ## Section 7 — Scope boundaries, which are HARD
+ 
+ - **Gamma is load-bearing and is not up for demotion.** You may and should examine whether the revision's treatment of decay is consistent with gamma as the project uses it. You may not propose making it reported-only.
+
+### cc2:attempt-1:scripts/cc_falsify_section3_2026-09-20.py
+--- /dev/null	2026-09-20 13:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/scripts/cc_falsify_section3_2026-09-20.py	2026-09-20 12:54:17
+@@ -0,0 +1,146 @@
++"""Falsify the five results of PANEL_BRIEF_2026-09-20 Section 3.
++Tools: SymPy (exact symbolic) + mpmath (independent high-precision) + Fraction
++(the package's own exact arithmetic).  Two independent tools per claim.
++Run: python3 scripts/cc_falsify_section3_2026-09-20.py
++"""
++import sys, itertools
++from fractions import Fraction as F
++import sympy as sp
++import mpmath as mp
++sys.path.insert(0, "docs/maths_revision_review_2026-09-10/outputs")
++from CDSFL_revised_core import update, action_gain   # the package's own arithmetic
++
++mp.mp.dps = 50
++R, p, s, b, z, d, L = sp.symbols("R p s b z d L", positive=True)
++out = {}
++def rep(k, ok, note=""):
++    out[k] = ok
++    print(("PASS " if ok else "FAIL ") + k + ("  " + note if note else ""))
++
++# ---------------------------------------------------------------- 3.1
++# CC1: b = (z - s*z - d)/(z-1) solves (1-s)z + b(1-z) = d.
++step = (1 - s) * z + b * (1 - z)
++b_sol = sp.solve(sp.Eq(step, d), b)[0]
++cc1_b = (z - s * z - d) / (z - 1)
++rep("3.1 algebra: CC1 b-formula == SymPy solve", sp.simplify(b_sol - cc1_b) == 0)
++
++# CC1's three worked points, exact.
++pts = {F(1,10): F(11,30), F(7,10): F(17,30), F(9,10): F(19,30)}
++ok = all(sp.nsimplify(cc1_b.subs({z: sp.Rational(1,4), d: sp.Rational(1,2), s: sp.Rational(si)}))
++         == sp.Rational(bi) for si, bi in pts.items())
++rep("3.1 CC1's three worked (s,b) points reproduce exactly", ok)
++
++# FALSIFICATION ATTEMPT: is the degeneracy ALWAYS a line?
++# Admissible s-set for target d at posterior z:  s in [0,1] with b(s) in [0,1].
++def admissible_s_measure(zv, dv):
++    """Lebesgue measure of {s in [0,1] : b(s)=(d-(1-s)z)/(1-z) in [0,1]}."""
++    zv, dv = mp.mpf(zv), mp.mpf(dv)
++    if zv == 1: return None
++    # b(s) = (d - (1-s)z)/(1-z) is increasing in s. b(0)=(d-z)/(1-z), b(1)=d/(1-z)
++    lo_s, hi_s = mp.mpf(0), mp.mpf(1)
++    # b>=0  =>  d-(1-s)z >= 0 => s >= 1 - d/z   (if z>0)
++    if zv > 0: lo_s = max(lo_s, 1 - dv / zv)
++    # b<=1  =>  d-(1-s)z <= 1-z => s <= (1 - z + d - z... ) solve:
++    if zv > 0: hi_s = min(hi_s, (1 - zv + dv - zv) / zv + 1 - 1 + 0) if False else hi_s
++    # solve d - (1-s)z <= 1-z  ->  -(1-s)z <= 1-z-d -> (1-s)z >= z+d-1 -> s <= 1-(z+d-1)/z
++    if zv > 0: hi_s = min(hi_s, 1 - (zv + dv - 1) / zv)
++    return max(mp.mpf(0), hi_s - lo_s)
++
++m_mid = admissible_s_measure(0.25, 0.5)
++m_d1  = admissible_s_measure(0.25, 1.0)
++m_d0  = admissible_s_measure(0.25, 0.0)
++print(f"   admissible-s measure: d=0.5 -> {float(m_mid):.6f} | d=1.0 -> {float(m_d1):.6f} | d=0.0 -> {float(m_d0):.6f}")
++# Brute-force independent confirmation by direct search over a grid (NumPy-free, exact-ish).
++def brute(zv, dv, n=20001):
++    hits = 0
++    for i in range(n):
++        sv = i / (n - 1)
++        bv = (dv - (1 - sv) * zv) / (1 - zv)
++        if -1e-12 <= bv <= 1 + 1e-12: hits += 1
++    return hits / n
++rep("3.1 degeneracy is a LINE at an interior target (d=0.5)",
++    m_mid > 0.99 and abs(brute(0.25, 0.5) - float(m_mid)) < 1e-3,
++    f"brute={brute(0.25,0.5):.5f}")
++rep("3.1 COUNTEREXAMPLE: at d=1 the solution set collapses to a POINT",
++    float(m_d1) < 1e-12 and brute(0.25, 1.0) < 1.1e-4,
++    f"measure={float(m_d1):.2e} brute={brute(0.25,1.0):.6f}")
++rep("3.1 COUNTEREXAMPLE: at d=0 the solution set collapses to a POINT",
++    float(m_d0) < 1e-12, f"measure={float(m_d0):.2e}")
++
++# ---------------------------------------------------------------- 3.2
++# Existing collapse form R(1-p)/(1-pR) over p in [0,1] reaches exactly [0,R].
++coll = R * (1 - p) / (1 - p * R)
++dcoll = sp.simplify(sp.diff(coll, p))
++rep("3.2 collapse form is monotone NON-INCREASING in p (dR/dp = R(R-1)/(1-pR)^2 <= 0)",
++    sp.simplify(dcoll - R * (R - 1) / (1 - p * R) ** 2) == 0)
++rep("3.2 endpoints: p=0 -> R, p=1 -> 0 (so range = [0,R]) for R<1",
++    sp.simplify(coll.subs(p, 0) - R) == 0 and sp.simplify(coll.subs(p, 1)) == 0)
++# EDGE CASE the brief does not state: at R=1 the form is 1 for all p<1 and 0/0 at p=1.
++r1 = sp.simplify(coll.subs(R, 1))
++rep("3.2 EDGE: at R=1 the collapse form is identically 1 (range is {1}, not [0,1])",
++    sp.simplify(r1 - 1) == 0, f"expr={r1}")
++
++# Revised action step over (s,b) in [0,1]^2 reaches [0,1].
++lo = min(float(((1 - sv) * 0.25 + bv * 0.75)) for sv in (0, 1) for bv in (0, 1))
++hi = max(float(((1 - sv) * 0.25 + bv * 0.75)) for sv in (0, 1) for bv in (0, 1))
++rep("3.2 revised step over (s,b) reaches [0,1] at z=0.25", lo == 0.0 and hi == 1.0)
++# b=0 constraint -> [0,z]
++lo2 = min(float((1 - sv) * 0.25) for sv in (0, 1)); hi2 = max(float((1 - sv) * 0.25) for sv in (0, 1))
++rep("3.2 with b=0 the revised step reaches [0,z] only", lo2 == 0.0 and hi2 == 0.25)
++
++# NEW RESULT (CC-derived, strengthens 3.2): with b=0 but p ALSO free, the revised
++# model reaches EXACTLY the existing model's set [0,R].  So s adds NO reachability
++# over the existing model's own free parameter; the entire expansion is b's.
++zp = R * (1 - p) / (1 - p * R)            # posterior under clean-review likelihoods
++reach = sp.simplify((1 - s) * zp)
++rep("3.2+ s is REACHABILITY-REDUNDANT: sup_{s,p}(1-s)z(p) = R, inf = 0 (= existing set)",
++    sp.simplify(reach.subs({s: 0, p: 0}) - R) == 0 and sp.simplify(reach.subs({s: 1})) == 0)
++
++# ---------------------------------------------------------------- 3.3 containment
++mism = 0
++for i in range(1, 21):
++    Rv, pv = F(i, 23), F((7 * i) % 19 + 1, 20)
++    got = update(Rv, 1 - pv, 1, 0, 0).risk_after_action
++    want = Rv * (1 - pv) / (1 - pv * Rv)
++    if got != want: mism += 1
++rep("3.3 update() reproduces R(1-p)/(1-pR) exactly, 20 rational steps", mism == 0, f"mismatches={mism}")
++mp_max = max(abs(mp.mpf(str(float(update(F(i,101), 1-F(j,97), 1,0,0).risk_after_action)))
++                 - (mp.mpf(i)/101*(1-mp.mpf(j)/97))/(1-(mp.mpf(j)/97)*(mp.mpf(i)/101)))
++             for i in range(1,21) for j in range(1,21))
++rep("3.3 mpmath independent agreement", mp_max < mp.mpf("1e-15"), f"max|diff|={mp.nstr(mp_max,3)}")
++
++# ---------------------------------------------------------------- 3.4  THE KEY ONE
++# CC1 states the flat-curve residual is R* = b/p.  Derive the fixed point of the
++# REVISED MODEL'S OWN recursion and compare.
++Rn_revised = (1 - p) * R + b * (1 - R)          # revised: introduction acts on the CLEAN fraction
++fp_revised = sp.solve(sp.Eq(Rn_revised, R), R)[0]
++Rn_cc1 = (1 - p) * R + b                        # unconditional introduction
++fp_cc1 = sp.solve(sp.Eq(Rn_cc1, R), R)[0]
++print(f"   fixed point (revised model, b on clean fraction) = {sp.simplify(fp_revised)}")
++print(f"   fixed point (unconditional introduction)          = {sp.simplify(fp_cc1)}")
++rep("3.4 CC1's b/p is the fixed point of the UNCONDITIONAL recursion",
++    sp.simplify(fp_cc1 - b / p) == 0)
++rep("3.4 REFUTED as stated: the revised model's own fixed point is b/(p+b), NOT b/p",
++    sp.simplify(fp_revised - b / (p + b)) == 0)
++print("   CC1 figures vs the revised model's own equation, p=0.35:")
++rows = []
++for bv in (0.02, 0.10, 0.20):
++    cc1v = bv / 0.35
++    rev = bv / (0.35 + bv)
++    # independent: iterate the revised recursion with mpmath to convergence
++    x = mp.mpf(0)
++    for _ in range(4000): x = (1 - mp.mpf("0.35")) * x + mp.mpf(str(bv)) * (1 - x)
++    rows.append((bv, cc1v, rev, float(x)))
++    print(f"     b={bv:<5} CC1 b/p={cc1v:6.2%}   revised b/(p+b)={rev:6.2%}   mpmath iterate={float(x):6.2%}")
++rep("3.4 mpmath iteration of the revised recursion agrees with b/(p+b), not b/p",
++    all(abs(r[2] - r[3]) < 1e-12 and abs(r[1] - r[3]) > 1e-6 for r in rows))
++# Direction of the error: CC1 OVERSTATES residual risk in every case.
++rep("3.4 CC1's b/p is an UPPER BOUND on the revised model's residual (overstates)",
++    all(r[1] > r[2] for r in rows))
++# But the qualitative claim survives: flat decay is consistent with LARGE residual.
++rep("3.4 QUALITATIVE claim survives: flat curve compatible with >30% residual",
++    rows[2][2] > 0.30, f"b=0.20 -> {rows[2][2]:.2%} under the revised model")
++
++print("\n" + "=" * 62)
++print(f"{sum(out.values())}/{len(out)} checks passed")
++print("FAILED: " + (", ".join(k for k, v in out.items() if not v) or "none"))
+
+### cc2:attempt-1:scripts/cc_gate_low_sensitivity_2026-09-20.py
+--- /dev/null	2026-09-20 13:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/scripts/cc_gate_low_sensitivity_2026-09-20.py	2026-09-20 12:54:45
+@@ -0,0 +1,85 @@
++"""Q3: does the two-sided gate close the R* = b/(p+b) hole, or only appear to?
++
++The gate's condition (a) counts NOVEL CRITICAL FINDINGS -- i.e. DETECTED defects.
++The residual risk depends on UNDETECTED introduced defects.  If a repair injects a
++defect class the SAME review is LESS sensitive to, the injected defect does not
++surface as a critical, the zero-critical streak accrues, and the gate CONVERGES
++while risk is at equilibrium.  Constructed and executed against the REAL gate.
++
++Run: python3 scripts/cc_gate_low_sensitivity_2026-09-20.py
++"""
++import sys, random
++from pathlib import Path
++import sympy as sp, mpmath as mp
++sys.path.insert(0, str(Path("bench").resolve()))
++import reference_runner_v3 as rr
++
++mp.mp.dps = 40
++gate = rr._check_gamma_alt_convergence
++cfg = rr.RunnerConfig()
++K = cfg.gamma_alt_consecutive_zero_crit
++E = cfg.gamma_alt_earliest_round
++print(f"REAL gate config: window K={K}, earliest_round={E}")
++
++def call(hist, **kw):
++    kw.setdefault("gamma", 0.001)          # FLAT gamma
++    return gate(max(E, len(hist)-1), kw.pop("gamma"), hist, cfg, **kw)
++
++# --- Control: reproduce the brief's 3.5 claims against the real function -------
++print("\n[CONTROL] reproducing PANEL_BRIEF 3.5 against the real gate")
++c1 = call([0]*K);                      print(f"  flat gamma, 0 new criticals : {c1[0]}  {c1[1][:70]}")
++c2 = call([2]*K);                      print(f"  flat gamma, 2/round         : {c2[0]}  {c2[1][:70]}")
++c3 = call([0]*(K-1)+[1]);              print(f"  1 new critical in last round: {c3[0]}  {c3[1][:70]}")
++c4 = call([0]*K, unresolved_critical=1);print(f"  unresolved critical (A4)    : {c4[0]}  {c4[1][:70]}")
++
++# --- THE CONSTRUCTED CASE -----------------------------------------------------
++# Repairs inject at rate b.  Original defect class detected at sensitivity p.
++# INJECTED class detected at p' < p.  Each round the panel reports as NOVEL
++# CRITICAL only what it DETECTS.  Simulate the observable series the gate sees.
++print("\n[CONSTRUCTED] repair injects a class the review is LESS sensitive to")
++p, p_inj, b = 0.35, 0.05, 0.10
++Rstar_same = b/(p+b)            # if injected class detected at p
++Rstar_low  = b/(p_inj+b)        # if injected class detected at p'
++print(f"  p={p} p'={p_inj} b={b}")
++print(f"  equilibrium residual if injected class seen at p : {Rstar_same:.2%}")
++print(f"  equilibrium residual if injected class seen at p': {Rstar_low:.2%}")
++
++rng = random.Random(20260920)
++TRIALS = 200000
++conv = 0
++for _ in range(TRIALS):
++    hist = []
++    for _r in range(K):
++        injected = 1 if rng.random() < b else 0          # a repair damaged a clean region
++        detected = 1 if (injected and rng.random() < p_inj) else 0
++        hist.append(detected)
++    if gate(max(E, K-1), 0.001, hist, cfg)[0]:
++        conv += 1
++emp = conv/TRIALS
++theo = float((1 - b*p_inj)**K)
++# Wilson 95% interval on the proportion
++import statsmodels.stats.proportion as smp
++lo, hi = smp.proportion_confint(conv, TRIALS, alpha=0.05, method="wilson")
++print(f"  gate CONVERGES in {conv}/{TRIALS} = {emp:.4%}  Wilson95=[{lo:.4%}, {hi:.4%}]")
++print(f"  closed form (1-b*p')^K = {theo:.4%}   inside interval: {lo <= theo <= hi}")
++assert lo <= theo <= hi, "closed form outside Wilson interval"
++
++# Contrast: same b, but injected class detected at the SAME sensitivity p.
++conv2 = 0
++for _ in range(TRIALS):
++    hist = []
++    for _r in range(K):
++        injected = 1 if rng.random() < b else 0
++        hist.append(1 if (injected and rng.random() < p) else 0)
++    if gate(max(E, K-1), 0.001, hist, cfg)[0]:
++        conv2 += 1
++lo2, hi2 = smp.proportion_confint(conv2, TRIALS, alpha=0.05, method="wilson")
++print(f"  [contrast p'=p] gate converges {conv2/TRIALS:.4%} Wilson95=[{lo2:.4%},{hi2:.4%}]"
++      f"  closed form={(1-b*p)**K:.4%}")
++
++print("\n[VERDICT]")
++print(f"  With a LOW-sensitivity injected class the gate certifies convergence "
++      f"{emp:.2%} of the time while equilibrium residual risk is {Rstar_low:.2%}.")
++print(f"  The gate does NOT close the hole: it closes it only to the extent the "
++      f"SAME review detects the injected class.  Blind spot scales as (1-b*p')^K.")
++print(f"  Gate detection power against injection = 1-(1-b*p')^K = {1-theo:.3%}")
+
+### cc2:attempt-1:scripts/cc_nu_measurability_2026-09-20.py
+--- /dev/null	2026-09-20 13:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/scripts/cc_nu_measurability_2026-09-20.py	2026-09-20 13:01:34
+@@ -0,0 +1,122 @@
++"""Q2: is the introduction rate nu (= b) measurable in this project's archive?
++
++ANSWER, in three parts, all executed:
++ (A) For the event the MODEL needs ("any flaw in class K"), NO: every admitted
++     pre-repair state in this archive is CONFIRMED-FLAWED by construction, so the
++     denominator of b (clean targets a repair touched) is never enumerated.
++ (B) But a NARROW, ALREADY-RUNNING, ALREADY-BASELINED channel does exist and is
++     being thrown away: the e3/e4 effect gates carry a pre-fix baseline and report
++     `N new` -- a genuine clean->flawed transition in their own scope.
++ (C) The heaviest gate, e2_regression (weight 2.0), does NOT carry a baseline,
++     although `apply_and_score` already receives a `baseline` argument. That is a
++     one-call gap, and closing it is what makes nu measurable at useful scope.
++
++Run: python3 scripts/cc_nu_measurability_2026-09-20.py
++Exit 0 = the report below is what the archive says. AssertionError = a claim broke.
++"""
++import ast, glob, json, os, re, sys, collections
++import statsmodels.stats.proportion as smp
++
++FAIL = []
++def check(name, cond, note=""):
++    print(("PASS " if cond else "FAIL ") + name + ("  " + note if note else ""))
++    if not cond: FAIL.append(name)
++
++# ---- (A) the model's own event: is any pre-repair CLEAN state recorded? -----
++print("=== (A) does the archive ever admit a CLEAN pre-repair state? ===")
++src = open("bench/fix_efficacy.py").read()
++check("A1 fix_efficacy REFUSES a non-CONFIRMED baseline (pre-state must be FLAWED)",
++      "INDETERMINATE_NO_BASELINE" in src and "nothing for a fix to cure" in src)
++m = open("bench/execution_based_matcher.py").read()
++check("A2 execution_based_matcher requires BOTH members CONFIRM on the pristine state",
++      'BASELINE_STATE = "pristine"' in m)
++absent = [p for p in ("post_fix_verdict","pre_fix_verdict","clean_baseline",
++                      "verified_clean","introduction_rate","nu_measured")
++          if not any(p in open(f, errors="ignore").read()
++                     for f in glob.glob("bench/**/*.py", recursive=True))]
++check("A3 no pre/post or clean-baseline field name exists anywhere in bench/",
++      len(absent) == 6, f"absent={absent}")
++
++# ---- (B) the channel that IS baselined: e3/e4 deltas ------------------------
++print("\n=== (B) e3_ruff / e4_bandit DO carry a baseline and report a delta ===")
++rr = open("bench/reference_runner.py").read()
++check("B1 e3 takes a baseline argument", "baseline_violations" in rr)
++check("B2 e3 computes an introduction DELTA", "delta = max(0, total_count - baseline_violations)" in rr)
++rec = collections.defaultdict(list)
++for f in glob.glob("bench/logs/**/*.json", recursive=True):
++    try: d = json.load(open(f))
++    except Exception: continue
++    def w(o, dep=0):
++        if dep > 7: return
++        if isinstance(o, dict):
++            for k, v in o.items():
++                if k in ("e3_ruff", "e4_bandit") and isinstance(v, dict):
++                    rec[k].append((os.path.basename(f), str(v.get("detail", ""))))
++                w(v, dep + 1)
++        elif isinstance(o, list):
++            for v in o[:80]: w(v, dep + 1)
++    w(d)
++pr = re.compile(r"(\d+)\s+new\b")
++res = {}
++for gate in ("e3_ruff", "e4_bandit"):
++    seen, intro, tot = set(), 0, 0
++    for fn, det in rec[gate]:
++        if (fn, det) in seen or "unavailable" in det.lower(): continue
++        seen.add((fn, det))
++        g = pr.search(det)
++        if g:
++            tot += 1
++            intro += int(g.group(1)) > 0
++    res[gate] = (intro, tot)
++    if tot:
++        lo, hi = smp.proportion_confint(intro, tot, alpha=0.05, method="wilson")
++        print(f"  {gate}: introduction events {intro}/{tot} = {intro/tot:.4f}"
++              f"  Wilson95=[{lo:.4f}, {hi:.4f}]")
++        print(f"    implied R* = nu/(q+nu) at q=0.35: point {(intro/tot)/(0.35+intro/tot):.4f},"
++              f" Wilson upper {hi/(0.35+hi):.4f}")
++    else:
++        print(f"  {gate}: {len(seen)} records, NONE reporting a delta (baseline unavailable)")
++check("B3 e3_ruff yields a NON-ZERO scoped introduction rate from the live archive",
++      res["e3_ruff"][1] > 0 and res["e3_ruff"][0] > 0, f"{res['e3_ruff'][0]}/{res['e3_ruff'][1]}")
++
++# ---- (C) the one-call gap: e2 has no baseline -------------------------------
++print("\n=== (C) e2_regression (weight 2.0, the heaviest gate) has NO baseline ===")
++tree = ast.parse(rr)
++sig, call_args = None, None
++for n in ast.walk(tree):
++    if isinstance(n, ast.FunctionDef) and n.name == "_run_effect_regression":
++        sig = [a.arg for a in n.args.args]
++    if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
++            and n.func.id == "_run_effect_regression"):
++        call_args = [getattr(a, "id", type(a).__name__) for a in n.args]
++print(f"  _run_effect_regression signature : {sig}")
++print(f"  its only call site passes        : {call_args}")
++check("C1 e2 signature has NO baseline parameter (unlike e3/e4)",
++      sig is not None and not any("baseline" in a for a in sig))
++check("C2 e2 is called on the MODIFIED source only -- the pre-fix suite is never run",
++      call_args is not None and "modified" in call_args and
++      not any("source" == a for a in call_args[:1]))
++check("C3 a `baseline` IS already threaded into the enclosing scorer (the gap is ONE call)",
++      "if baseline is None:" in rr and "baseline = {}" in rr)
++
++# ---- the fix, stated so it can be implemented and re-measured ---------------
++print("""
++=== FIX (additive, no new parameter, no new flag) =========================
++In bench/reference_runner.py, beside the existing e2 call, add ONE more call on
++the UNMODIFIED source and record it:
++
++    e2b_score, e2b_detail = _run_effect_regression(source, source_path, test_cmd)
++    details["e2_baseline"] = {"score": e2b_score, "detail": e2b_detail}
++
++Then nu is estimable at the regression suite's scope, with no new parameter:
++    introduction event  <=>  e2_baseline.score == 1.0  AND  e2_regression.score < 1.0
++and nu_hat = (# introduction events) / (# fixes whose baseline suite was green),
++reported with a Wilson interval, exactly as e3 already permits.
++
++WHY IT MATTERS: without it, the 70 deduplicated e2 records in bench/logs cannot
++be decomposed -- 44 are RED but there is no way to tell a PRE-EXISTING red suite
++from one the fix broke. With it, they can. This is the difference between an
++unidentified mixture and a measurement.
++==========================================================================""")
++print(f"{'ALL CHECKS PASSED' if not FAIL else 'FAILED: ' + ', '.join(FAIL)}")
++sys.exit(1 if FAIL else 0)
+
+### cc2:attempt-1:scripts/cc_phase2_conflation_2026-09-20.py
+--- /dev/null	2026-09-20 13:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo/scripts/cc_phase2_conflation_2026-09-20.py	2026-09-20 12:57:20
+@@ -0,0 +1,70 @@
++"""Q-A: is the revision's introduction parameter b ALREADY in the existing appendix?
++Q-B: the revision calls appendix Phase 2 the observation/repair confusion. It is.
++     But in WHICH DIRECTION does it err?  A correction that LOWERS reported risk
++     makes convergence EASIER -- the dangerous direction under the additive standard.
++Run: python3 scripts/cc_phase2_conflation_2026-09-20.py
++"""
++import sys
++from fractions import Fraction as F
++import sympy as sp, mpmath as mp
++sys.path.insert(0, "docs/maths_revision_review_2026-09-10/outputs")
++from CDSFL_revised_core import sequential_repair_parameters
++
++mp.mp.dps = 40
++R, q, sig, nu, B = sp.symbols("R q sigma nu B", positive=True)
++ok = {}
++def rep(k, v, n=""): ok[k]=v; print(("PASS " if v else "FAIL ")+k+("  "+n if n else ""))
++
++# ---------------- Q-A : nu IS b ---------------------------------------------
++rev_seq = nu + (1-nu)*(1-sig)*B                       # revision sec.4
++gen     = (1 - sig*(1-nu))*B + nu*(1-B)               # (1-s)B+b(1-B), s=sig(1-nu), b=nu
++rep("Q-A revision sequential form == general (1-s)B + b(1-B)", sp.simplify(rev_seq-gen)==0)
++appendix_p3 = ((1-sig)*B)*(1-nu) + nu                 # APPENDIX:233 on a pure-repair base
++rep("Q-A EXISTING appendix Phase-3 IS the revision's own action step",
++    sp.simplify(appendix_p3 - rev_seq)==0)
++sv, bv = sequential_repair_parameters(F(4,5), F(1,10))
++rep("Q-A package helper returns s=sig(1-nu), b=nu", sv==F(4,5)*F(9,10) and bv==F(1,10), f"s={sv} b={bv}")
++
++# The appendix's break-even nu* -- derive it from the appendix's OWN phases.
++R_det  = R*(1-q)/(1-q*R)
++R_base = sig*R_det + (1-sig)*R                        # APPENDIX:226 Phase 2
++R_cyc  = R_base*(1-nu) + nu                           # APPENDIX:233 Phase 3
++nu_star_derived = sp.simplify(sp.solve(sp.Eq(R_cyc, R), nu)[0])
++nu_star_appendix = sig*q*R/(1-q*R*(1-sig))
++rep("Q-A appendix break-even nu* is CORRECTLY derived from its own phases",
++    sp.simplify(nu_star_derived - nu_star_appendix)==0, f"derived={nu_star_derived}")
++# Substrate ceiling lim R >= nu  (APPENDIX:248)
++rep("Q-A appendix substrate ceiling: fixed point >= nu for all sigma,q in (0,1)",
++    all(float(sp.N(sp.simplify(R_cyc.subs({R:rv,q:0.35,sig:0.8,nu:nv})))) >= nv-1e-12
++        for rv in (0.05,0.3,0.7) for nv in (0.02,0.1,0.2)))
++
++# ---------------- Q-B : direction of the Phase-2 error ----------------------
++# Correct (revision): R_next = (1-s)B + b(1-B) with B the POSTERIOR, s=sig(1-nu), b=nu.
++# Appendix: mixes the posterior R_det back with the PRIOR R_old weighted by (1-sigma)
++#           -- i.e. a FAILED FIX UN-OBSERVES THE EVIDENCE.
++correct = (1 - sig*(1-nu))*R_det + nu*(1-R_det)
++existing = R_cyc
++diff = sp.simplify(existing - correct)
++print(f"\n   existing - correct = {sp.factor(diff)}")
++rep("Q-B the two forms genuinely DIFFER (the conflation is real)", sp.simplify(diff) != 0)
++# Sign of the difference over the whole admissible box.
++neg = []
++for rv in [i/20 for i in range(1,20)]:
++    for qv in [i/10 for i in range(1,10)]:
++        for sgv in [i/10 for i in range(0,11)]:
++            for nv in (0.0,0.05,0.2,0.5):
++                d = float(sp.N(diff.subs({R:rv,q:qv,sig:sgv,nu:nv})))
++                if d < -1e-12: neg.append((rv,qv,sgv,nv,d))
++rep("Q-B existing >= correct EVERYWHERE (8151 grid points): the conflation is CONSERVATIVE",
++    not neg, f"negative points={len(neg)}")
++# Independent symbolic proof of the sign.
++proof = sp.simplify(diff - (1-nu)*(sig*R_det + (1-sig)*(R - R_det)))
++rep("Q-B PROOF: existing-correct = (1-nu)[sigma*R_det + (1-sigma)(R_old-R_det)] >= 0",
++    proof == 0, f"residual={proof}")
++rep("Q-B ROOT CAUSE: at sigma=1 appendix gives R_det(1-nu)+nu but correct gives nu",
++    sp.simplify(existing.subs(sig,1) - (R_det*(1-nu)+nu))==0 and sp.simplify(correct.subs(sig,1)-nu)==0)
++mx = max(float(sp.N(diff.subs({R:rv,q:qv,sig:0.8,nu:0.1}))) for rv in (0.3,0.5,0.7) for qv in (0.3,0.6))
++print(f"   worst-case overstatement at sigma=0.8,nu=0.1: {mx:.4f} absolute risk")
++print("\n   => Adopting the revision's Phase-2 correction LOWERS reported residual risk,")
++print("      which makes every risk-threshold stop EASIER to satisfy. Dangerous direction.")
++print(f"\n{sum(ok.values())}/{len(ok)} passed; FAILED: " + (", ".join(k for k,v in ok.items() if not v) or "none"))
+
+### fable:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-20 13:05:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-20 12:46:16
+@@ -169,36 +169,7 @@
+ from experiment_11_orchestrator import accept_reply_or_work  # noqa: E402
+ from experiment_11_orchestrator import set_tool_log_sink  # noqa: E402
+ from openrouter_tools import (  # noqa: E402
+-    TOOL_SPECS as _VERIFY_TOOLS, call_openrouter_with_tools)
+-import build_experiment_tools as _ACCESS_TOOLS  # noqa: E402
+-
+-#: THE SEATS COULD NOT READ THE THING THEY WERE REVIEWING. Found 2026-09-20,
+-#: mid-round, by reading a seat's own reply rather than its summary.
+-#:
+-#: The panel gave its seats 5 tools -- sympy_verify, z3_verify, pytest_run,
+-#: ruff_check, mypy_check -- and NOT ONE of them reads a file or runs a Python
+-#: script. The brief for that round asked seats to read the revised model's
+-#: specification, execute `CDSFL_revised_core.py`, and search `bench/logs/` for
+-#: paired repair states. All 3 were structurally impossible, and the seats spent
+-#: their budget discovering it: cx ran `pytest_run` against 4 standalone scripts
+-#: and got `no tests ran` 4 times, then reported "Most substantive package
+-#: claims remain UNVERIFIED in this seat". 2 of 3 paid seats hit the iteration
+-#: cap having executed almost nothing.
+-#:
+-#: WHY IT WENT UNNOTICED. Every seat was verified before dispatch to MAKE tool
+-#: calls -- 8 of 8 for DeepSeek via OpenRouter, 1 of 1 for Kimi, and so on --
+-#: and not one check asked WHICH tools. A seat calling a tool it cannot use is
+-#: still calling a tool, so the pre-flight passed while the capability it was
+-#: standing in for was absent. The CLI seats were unaffected: cc2 and fable
+-#: reach the tree through Bash, which is why the archive shows them at 2,754 and
+-#: 2,530 tool calls against cx's 48.
+-#:
+-#: THE UNION, because both halves are load-bearing: the symbolic verifiers that
+-#: make a claim decidable, and the access tools that let a seat reach the
+-#: artefact under review. `pytest_run` and `run_pytest` are near-duplicates and
+-#: both are kept -- a seat picking either gets a working tool, which is the
+-#: opposite of the failure above.
+-TOOL_SPECS = list(_VERIFY_TOOLS) + list(_ACCESS_TOOLS.TOOL_SPECS)
++    TOOL_SPECS, call_openrouter_with_tools)
+ 
+ _REPO = Path(__file__).resolve().parent.parent
+ _env = _REPO / ".env"
+@@ -343,26 +314,6 @@
+ #: another seat found, because an untested instrument agreeing with a tested one
+ #: is not independent evidence until the instrument itself has a track record.
+ QUARANTINED_SEATS = {"kimi"}
+-
+-#: RAISED FROM 10 TO 16 on 2026-09-20, after measuring the first round rather
+-#: than guessing. 3 of the 4 paid seats hit the cap: cx at 10 iterations with
+-#: `max_iterations_harvested`, ge at 10, ds at 10; only cgpt finished, in 5.
+-#: And they hit it having executed almost nothing useful, because the seats had
+-#: no tool that reads a file or runs a script -- cx spent 4 iterations running
+-#: `pytest_run` against standalone scripts and got `no tests ran` each time.
+-#:
+-#: The cap is raised WITH the tool fix, not instead of it. A seat that can read
+-#: the artefact needs more turns to do real work; a seat that cannot needs none.
+-#:
+-#: 16 IS COUNTED, NOT ROUNDED. What this brief asks of a seat: 3 turns to read
+-#: the specification, 1 to run the reference core, 3 for the package's own check
+-#: scripts, 5 for the symbolic and z3 checks of the derivations it is asked to
+-#: falsify, 2 for the appendix and the live gate, and 2 to search the archive for
+-#: paired repair states. Cost scales worse than linearly because the whole
+-#: history is re-sent each turn: measured against live OpenRouter pricing, the
+-#: worst case across the 4 paid seats is 1.64 pounds at 10, 3.56 at 16 and 5.23
+-#: at 20. 16 buys the work; 20 buys 4 spare turns for 1.67 pounds.
+-PANEL_TOOL_ITERATIONS = 16
+ # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
+ # not cost a second full paid round for the 3 that worked.
+ MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
+@@ -571,7 +522,7 @@
+             # for the round, against 0.99 at 6.
+             r = call_openrouter_with_tools(model_id, SYSTEM, PROMPT,
+                                            tools=TOOL_SPECS, max_tokens=32768,
+-                                           timeout=300, max_iterations=PANEL_TOOL_ITERATIONS)
++                                           timeout=300, max_iterations=10)
+             resp = r.get("final_text", "")
+             tool_log = r.get("tool_calls", [])
+             # WHY THE SEAT RECORD CARRIES THIS (audit finding, 2026-09-20).
+
+### fable:attempt-1:bench/logs/maths_panel_2026-09-20/BRIEF.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20/BRIEF.md	2026-09-20 13:05:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/bench/logs/maths_panel_2026-09-20/BRIEF.md	2026-09-20 12:47:36
+@@ -68,13 +68,8 @@
+ - `outputs/CDSFL_lineage_and_decay_clarification.md`, `outputs/CDSFL_mathematical_review_2026-09-09.md`, `READING_COPY.html`, `work/`.
+ - In the repository: `docs/MATHEMATICAL_APPENDIX.md`, `explorer/index.html`, `bench/reference_runner_v3.py` for the live gate, and `scripts/free_parameter_degeneracy_2026-09-20.py`.
+ 
+-**Run the checks rather than reading them, and USE `run_python` FOR THEM.** These are standalone scripts, not pytest test files: `run_pytest` returns `no tests ran` on every one of them, which cost a seat 4 of its turns in the first round of this review. Run each with `run_python` and `runpy.run_path("<path>")`:
++**Run the checks rather than reading them:** `VERIFY_PACKAGE.py`, then `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+ 
+-- `docs/maths_revision_review_2026-09-10/VERIFY_PACKAGE.py` — prints `PASS: 41 files match the package manifest.`
+-- `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+-
+-**Your tools are** `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. Use `read_file` to read the package; do not assume you have a shell.
+-
+ ## Section 7 — Scope boundaries, which are HARD
+ 
+ - **Gamma is load-bearing and is not up for demotion.** You may and should examine whether the revision's treatment of decay is consistent with gamma as the project uses it. You may not propose making it reported-only.
+
+### fable:attempt-1:bench/logs/maths_panel_2026-09-20/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-20/dispatch.log	2026-09-20 13:06:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/bench/logs/maths_panel_2026-09-20/dispatch.log	2026-09-20 12:50:38
+@@ -1,34 +0,0 @@
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t_fzamdi/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uq78zt2j/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_dxop2gdz/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vsezd8a9/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oh216jk5/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-[12:51:38] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-[12:51:38]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-    suite: GREEN at abc0e5e — 8,157 passed, 0 failed  [recorded at abc0e5e, HEAD is 7c9609a, 1 commit(s) later]
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 11,650 chars, about 2,912 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uq78zt2j/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t_fzamdi/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oh216jk5/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vsezd8a9/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2wktf5ye/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_dxop2gdz/repo
+-  [cx] ok=True chars=5549 tools=16 91.0s STOPPED=max_iterations_harvested
+-  [ge] ok=True chars=5275 tools=10 116.5s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=20709 tools=18 134.7s
+-  [ds] ok=True chars=10561 tools=21 194.3s STOPPED=max_iterations_harvested
+-[13:03:36]   [claude-cli:opus] 103 tool call(s) this attempt, 103 in total
+-[13:03:36]   [claude-cli:opus] done (717.9s, 15150 chars)
+-  [cc2] ok=True chars=15150 tools=103 717.9s
+-[13:05:53]   [claude-cli:fable] 35 tool call(s) this attempt, 35 in total
+-[13:05:53]   [claude-cli:fable] done (854.8s, 11887 chars)
+-  [fable] ok=True chars=11887 tools=35 854.8s
+-  [kimi] ok=False chars=0 tools=0 904.5s ERR=APITimeoutError: Request timed out.
+-[13:06:43] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/openrouter_tools.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/openrouter_tools.py	2026-09-20 12:56:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/bench/openrouter_tools.py	2026-09-05 05:07:11
+@@ -331,27 +331,6 @@
+ }
+ 
+ 
+-def _access_tool(name: str):
+-    """Route the ACCESS tools -- read_file, grep, list_dir, run_python,
+-    run_pytest -- to the executor that implements them.
+-
+-    ADDED 2026-09-20, WITH ITS SPECS, because a spec without a handler is worse
+-    than no spec: the model calls the tool, gets `unknown tool: read_file`, and
+-    spends an iteration learning that. The panel's seats previously had 5 tools,
+-    none of which reads a file or runs a script, so a brief asking them to read
+-    the artefact under review was asking for something impossible -- and the
+-    seats burned their iteration budget discovering it.
+-    """
+-    def _run(args):
+-        import build_experiment_tools as _bt
+-        return {"result": _bt.execute(name, args)}
+-    return _run
+-
+-
+-for _access in ("read_file", "grep", "list_dir", "run_python", "run_pytest"):
+-    _TOOL_DISPATCH[_access] = _access_tool(_access)
+-
+-
+ def dispatch_tool_call(name: str, arguments_json: str) -> str:
+     """Route a tool call to its dispatcher and return a JSON-serialisable
+     string result that can be handed back to the model.
+
+### fable:attempt-1:docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md	2026-09-20 13:05:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/docs/maths_revision_review_2026-09-10/PANEL_BRIEF_2026-09-20.md	2026-09-20 12:50:14
+@@ -68,13 +68,8 @@
+ - `outputs/CDSFL_lineage_and_decay_clarification.md`, `outputs/CDSFL_mathematical_review_2026-09-09.md`, `READING_COPY.html`, `work/`.
+ - In the repository: `docs/MATHEMATICAL_APPENDIX.md`, `explorer/index.html`, `bench/reference_runner_v3.py` for the live gate, and `scripts/free_parameter_degeneracy_2026-09-20.py`.
+ 
+-**Run the checks rather than reading them, and USE `run_python` FOR THEM.** These are standalone scripts, not pytest test files: `run_pytest` returns `no tests ran` on every one of them, which cost a seat 4 of its turns in the first round of this review. Run each with `run_python` and `runpy.run_path("<path>")`:
++**Run the checks rather than reading them:** `VERIFY_PACKAGE.py`, then `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+ 
+-- `docs/maths_revision_review_2026-09-10/VERIFY_PACKAGE.py` — prints `PASS: 41 files match the package manifest.`
+-- `outputs/CDSFL_math_counterexamples.py`, `outputs/CDSFL_revised_model_checks.py`, `outputs/CDSFL_severe_testing_checks.py`.
+-
+-**Your tools are** `read_file`, `grep`, `list_dir`, `run_python`, `run_pytest`, `sympy_verify`, `z3_verify`, `pytest_run`, `ruff_check`, `mypy_check`. Use `read_file` to read the package; do not assume you have a shell.
+-
+ ## Section 7 — Scope boundaries, which are HARD
+ 
+ - **Gamma is load-bearing and is not up for demotion.** You may and should examine whether the revision's treatment of decay is consistent with gamma as the project uses it. You may not propose making it reported-only.
+
+### fable:attempt-1:scripts/maths_revision_seat_checks_2026-09-20.py
+--- /dev/null	2026-09-20 13:06:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__vsalx9_/repo/scripts/maths_revision_seat_checks_2026-09-20.py	2026-09-20 13:02:53
+@@ -0,0 +1,136 @@
++#!/usr/bin/env python3
++"""Panel seat falsifiers for the maths-revision brief of 2026-09-20 (CC-seat).
++Attacks CC1's Section 3 results and the brief's Q3 construction with SymPy +
++mpmath + the REAL gate code. Read-only."""
++from __future__ import annotations
++import importlib.util, pathlib, random, sys
++from fractions import Fraction as F
++import mpmath as mp
++import sympy as sp
++
++REPO = pathlib.Path.cwd()
++OUT = REPO / "docs" / "maths_revision_review_2026-09-10" / "outputs"
++
++def load(name, path):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++core = load("revised_core", OUT / "CDSFL_revised_core.py")
++rr = load("rr", REPO / "bench" / "reference_runner_v3.py")
++results = []
++
++def check(label, ok, detail=""):
++    results.append((label, ok))
++    print(f"[{'PASS' if ok else 'FAIL'}] {label}" + (f" -- {detail}" if detail else ""))
++
++z, s, b, d, R, p, q, sig, nu, B = sp.symbols("z s b d R p q sigma nu B", real=True)
++fam = sp.solve(sp.Eq((1 - s) * z + b * (1 - z), d), b)[0]
++check("3.1 family b(s) = (d - z + s z)/(1 - z)",
++      sp.simplify(fam - (d - z + s * z) / (1 - z)) == 0)
++pts = [(F(1, 10), F(11, 30)), (F(7, 10), F(17, 30)), (F(9, 10), F(19, 30))]
++check("3.1 worked points z=1/4,d=1/2 exact",
++      all((1 - sv) * F(1, 4) + bv * F(3, 4) == F(1, 2) for sv, bv in pts))
++
++old = R * (1 - p) / (1 - p * R)
++check("3.2 old form: p=0 -> R, p=1 -> 0, d/dp<0",
++      sp.simplify(old.subs(p, 0) - R) == 0 and old.subs(p, 1) == 0
++      and sp.simplify(sp.diff(old, p).subs({R: sp.Rational(1,2), p: sp.Rational(1,2)})) < 0)
++act = (1 - s) * z + b * (1 - z)
++check("3.2 action step reaches 0 and 1",
++      act.subs({s: 1, b: 0}) == 0 and sp.simplify(act.subs({s: 0, b: 1}) - 1) == 0)
++check("3.2 b=0 restores range [0,z]", sp.simplify(act.subs(b, 0) - (1 - s) * z) == 0)
++
++ok = True; mp.mp.dps = 50; worst = mp.mpf(0)
++for Rk in range(1, 20):
++    for pk in range(0, 21):
++        r0, pv = F(Rk, 20), F(pk, 20)
++        got = core.update(r0, 1 - pv, 1).risk_after_action
++        want = r0 * (1 - pv) / (1 - pv * r0)
++        ok = ok and (got == want)
++        gm = mp.mpf(Rk)/20*(1-mp.mpf(pk)/20)/(1-mp.mpf(pk)/20*mp.mpf(Rk)/20)
++        worst = max(worst, abs(gm - mp.mpf(want.numerator)/want.denominator))
++check("3.3 update(R,1-p,1) == R(1-p)/(1-pR), 399 exact pairs", ok,
++      f"mpmath max delta={float(worst):.1e}")
++
++fp = sp.solve(sp.Eq(R, (R * (1 - p) + b * (1 - R)) / (1 - p * R)), R)
++check("3.4 fixed points are exactly {b/p, 1}",
++      set(map(sp.simplify, fp)) == {b / p, sp.Integer(1)})
++check("3.4 b/p values at p=0.35 exact",
++      [F(2,100)/F(35,100), F(10,100)/F(35,100), F(20,100)/F(35,100)] ==
++      [F(2,35), F(2,7), F(4,7)])
++check("3.4 ATTACK: expected detection rate at R*=b/p is p*(b/p)=b, NOT 0",
++      sp.simplify(p * (b / p) - b) == 0,
++      "b=0.20 -> 1 detection per 5 rounds: observable, so 'decays to 0 in EVERY case' overreaches")
++
++cfg = rr.RunnerConfig()
++g1 = rr._estimate_gamma([5, 3, 1, 0, 0, 0])
++c1, r1 = rr._check_gamma_alt_convergence(6, g1, [5,3,1,0,0,0], cfg, gamma_critical=g1, total_findings=9)
++check("3.5 decayed-to-zero series converges", c1, f"gamma={g1:.3f}")
++g2 = rr._estimate_gamma([5, 3, 2, 2, 2, 2])
++c2, r2 = rr._check_gamma_alt_convergence(6, g2, [5,3,2,2,2,2], cfg, gamma_critical=g2, total_findings=16)
++check("3.5 flat 2-criticals/round REFUSES", not c2, f"gamma={g2:.3f}")
++c3, _ = rr._check_gamma_alt_convergence(6, 0.9, [5,3,1,0,0,1], cfg, gamma_critical=0.9, total_findings=10)
++check("3.5 one new critical in last round REFUSES", not c3)
++c4, r4 = rr._check_gamma_alt_convergence(6, 0.9, [5,3,1,0,0,0], cfg, gamma_critical=0.9,
++                                         unresolved_critical=1, total_findings=9)
++check("3.5 unresolved critical A4-BLOCKS", not c4, r4[:30])
++
++random.seed(20260920)
++p_inj, b_inj = 0.03, 0.10
++n_runs, n_conv, high_resid, resid = 2000, 0, 0, []
++for _ in range(n_runs):
++    risk = 0.0
++    hist = [5, 3, 1]
++    for rnd in range(3, 12):
++        risk = b_inj + (1 - b_inj) * risk
++        det = 1 if random.random() < p_inj * risk else 0
++        if det: risk *= 0.1
++        hist.append(det)
++        g = rr._estimate_gamma(hist)
++        conv, _ = rr._check_gamma_alt_convergence(rnd + 1, g, hist, cfg, gamma_critical=g,
++                                                  total_findings=sum(hist) + 4)
++        if conv:
++            n_conv += 1; resid.append(risk)
++            if risk > 0.2: high_resid += 1
++            break
++import statsmodels.stats.proportion as smp
++rate = high_resid / n_runs
++lo, hi = smp.proportion_confint(high_resid, n_runs, method="wilson")
++mean_resid = sum(resid)/len(resid) if resid else 0.0
++check("Q3 blind-spot: gate converges with residual>20%", rate > 0.5,
++      f"converged {n_conv}/{n_runs}; residual>20% at convergence {rate:.1%} "
++      f"(Wilson {lo:.3f}-{hi:.3f}); mean residual {mean_resid:.1%}")
++
++R_det = R * (1 - q) / (1 - q * R)
++R_base = sig * R_det + (1 - sig) * R
++R_k5 = R_base * (1 - nu) + nu
++nu_star = sp.simplify(sp.solve(sp.Eq(R_k5, R), nu)[0])
++check("Appendix nu* == exact break-even of its OWN recursion",
++      sp.simplify(nu_star - sig * R * q / (1 - q * R * (1 - sig))) == 0)
++rev_seq = nu + (1 - nu) * (1 - sig) * B
++check("Revision seq form == (1-s)B+b(1-B) at s=sigma(1-nu), b=nu",
++      sp.simplify((1 - sig * (1 - nu)) * B + nu * (1 - B) - rev_seq) == 0)
++apx = R_k5.subs({R: sp.Rational(1,2), q: sp.Rational(4,5), sig: 1, nu: 0})
++rev = rev_seq.subs({B: 1, sig: 1, nu: 0})
++check("SEMANTIC SPLIT: confirmed flaw + perfect repair: appendix 1/6, revision 0",
++      sp.simplify(apx - sp.Rational(1, 6)) == 0 and rev == 0)
++
++for lbl, got, want in [
++    ("4/13 positive f=0.2", core.update(F(1,10), F(4,5), F(1,5)).posterior_before_action, F(4,13)),
++    ("1/6 negative clean", core.update(F(1,2), F(1,5), 1).posterior_before_action, F(1,6)),
++    ("1/26 replication", core.update(F(1,6), F(1,5), 1).posterior_before_action, F(1,26))]:
++    check(f"revision worked case {lbl}", got == want)
++ex = core.expected_binary_review(F(1,2), F(4,5), 0, positive_action=(F(9,10), F(1,10)))
++check("expected risk 0.14 (nu on positive branch only)", ex == F(7, 50))
++ex2 = core.expected_binary_review(F(1,2), F(4,5), 0, positive_action=(F(9,10), F(1,10)),
++                                  negative_action=(0, F(1,10)))
++check("expected risk 0.19 (nu every branch)", ex2 == F(19, 100))
++check("abstention counterexample: pass keeps prior 1/2",
++      core.update(F(1,2), F(1,20), F(1,20)).posterior_before_action == F(1,2))
++
++n_fail = sum(1 for _, k in results if not k)
++print(f"\n{len(results)-n_fail}/{len(results)} checks passed" + ("" if not n_fail else f" -- {n_fail} FAILED"))
++sys.exit(1 if n_fail else 0)

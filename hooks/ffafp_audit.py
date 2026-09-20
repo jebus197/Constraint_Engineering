@@ -102,9 +102,15 @@ FALSE NEGATIVES -- it stays silent and FFAFP did not happen
    file while leaving no shell redirect and no Edit tool call. Such a turn is invisible here
    and is not counted as work at all. This is the largest known hole and it is unavoidable
    without executing the body.
-4. FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
-   carry no structural marker. No attempt is made to detect it; a claim made with no edit and
-   no tool call is not examined at all.
+4. FIND IS NOW MODELLED, AND THIS ITEM RECORDS WHAT IT USED TO SAY (2026-09-20). It read:
+   "FIND is not modelled. The evidence for an issue lives in prose and thinking blocks, which
+   carry no structural marker. No attempt is made to detect it." The founder reported that only
+   the P-PASS element had been wired; measured, 3 of 5 were, and this item is the admission that
+   FIND was not among them. What IS detectable is the structural half: a read, a search naming
+   the file, or a failing check run BEFORE the first edit. The reasoning half stays invisible,
+   so FIND is one-sided like every other signal here. What remains undetectable is a FIND made
+   entirely in prose with no tool call at all, and a turn that edits nothing is still not
+   examined.
 5. UNQUOTED-GREP CONFUSION. `grep -n pytest file` credits a test run. The lookbehind rejects
    the quoted form, not the bare one.
 
@@ -223,9 +229,39 @@ _SEARCH = re.compile(
     r"sed\s+-n|git\s+(?:log|show|diff|blame|grep))\b"
 )
 
+#: A shell search that asks WHO DEPENDS ON THIS rather than what one file says.
+#: `grep -r`, `rg` (recursive by default), `find`, and `git grep` all walk a tree;
+#: `cat`, `head`, `sed -n` and `git show` open one named thing and cannot answer
+#: a blast-radius question. That distinction is the whole of FOLLOW, and before
+#: 2026-09-20 this module did not draw it.
+#: A Python-level file write, as it appears INSIDE a heredoc body. Deliberately
+#: narrow: each of these unambiguously writes, so a body that merely mentions a
+#: path cannot fire. `open(...)` requires an explicit write/append mode, because
+#: a bare `open(p)` is a read.
+_PY_WRITE = re.compile(
+    r"\.write_text\s*\(|\.write_bytes\s*\(|\.writelines\s*\(|"
+    r"open\s*\([^)]*,\s*[\"'][wa]\+?b?[\"']|"
+    r"shutil\.(?:copy|copy2|copyfile|move)\s*\(|os\.(?:replace|rename|remove|unlink)\s*\(|"
+    r"json\.dump\s*\(|\.to_csv\s*\(|\.savefig\s*\("
+)
+
+#: A quoted path in a heredoc body, used to name the heredoc write where it can
+#: be named rather than recording it as unknown.
+_PY_WRITE_PATH = re.compile(r"[\"']([\w./-]+\.[A-Za-z0-9]{1,6})[\"']")
+
+_TREE_SCAN = re.compile(
+    r"(?<![\w-])(?:grep\s+(?:-\w*[rR]\w*\s|--recursive)|rg\b|find\s+\S|"
+    r"git\s+grep|Glob|glob\.)"
+)
+
 _READ_TOOLS = {"Read", "Grep", "Glob", "NotebookRead",
                "mcp__Desktop_Commander__read_file", "mcp__Desktop_Commander__read_multiple_files",
                "mcp__Desktop_Commander__start_search"}
+#: The subset of `_READ_TOOLS` that SEARCHES THE TREE rather than opening one
+#: named file. These are the FOLLOW instruments: they can answer "what depends
+#: on this". `Read` cannot, which is why it is deliberately absent.
+_SCAN_TOOLS = {"Grep", "Glob", "mcp__Desktop_Commander__start_search"}
+
 _EDIT_TOOLS = {"Edit": "file_path", "Write": "file_path", "MultiEdit": "file_path",
                "NotebookEdit": "notebook_path",
                "mcp__Desktop_Commander__write_file": "path",
@@ -240,6 +276,20 @@ _CODE_EXT = {".py", ".js", ".ts", ".tsx", ".jsx", ".sh", ".bash", ".zsh", ".toml
 def heredoc_spans(cmd: str):
     """Character ranges of heredoc BODIES in a shell command."""
     return [(m.start(3), m.end(3)) for m in _HEREDOC.finditer(cmd)]
+
+
+def _is_test_path(path: str) -> bool:
+    """True for a test file. Used by the FIX signal.
+
+    "Only the test changed" is the shape this project guards hardest against --
+    a guard weakened to go green instead of a defect repaired. It is often the
+    correct action (a predicate really can be the defect), so the FIX signal
+    REPORTS it and never blocks.
+    """
+    base = os.path.basename(path or "")
+    return ("/tests/" in (path or "")
+            or base.startswith("test_")
+            or base.endswith("_test.py"))
 
 
 def classify_path(path: str) -> str:
@@ -309,6 +359,34 @@ def bash_mutations(cmd: str):
         # (BSD sed needs an extension argument, GNU sed does not), so the mutation is
         # recorded with an unknown path rather than guessed wrongly.
         out.append("<in-place>")
+
+    # A WRITE INSIDE A HEREDOC BODY IS STILL A WRITE (closed 2026-09-20).
+    #
+    # This was the module's largest self-declared hole: `python3 - <<'PY'` with
+    # `p.write_text(s)` in the body mutates a file while leaving no shell
+    # redirect and no Edit tool call, so the turn was not counted as work AT
+    # ALL -- no FOLLOW, no ANALYSE, no P-PASS, silence. The docstring called it
+    # "unavoidable without executing the body". That is wrong: the body does not
+    # need EXECUTING, only PARSING, which is what the redirect scan above
+    # already does for shell syntax.
+    #
+    # WHY IT MATTERED IN PRACTICE, measured 2026-09-20: this is the shape used
+    # to patch bench/openrouter_tools.py and this very file during the session
+    # in which the founder reported "even the p-pass element alone doesn't
+    # always fire". Driven through the real `audit`, the heredoc form returned
+    # 0 mutations and is_work False while an equivalent `sed -i` returned 1
+    # mutation and 2 flags. The detector was blind, not lenient.
+    #
+    # Only the BODIES are scanned, so a `write_text(` appearing in ordinary
+    # shell text cannot fire, and a quoted path is preferred over a guess --
+    # falling back to `<heredoc-write>` exactly as `sed -i` falls back to
+    # `<in-place>` rather than naming the wrong file.
+    for start, end in bodies:
+        body = cmd[start:end]
+        if not _PY_WRITE.search(body):
+            continue
+        named = [p for p in _PY_WRITE_PATH.findall(body) if "/" in p or p.endswith(".py")]
+        out.extend(named or ["<heredoc-write>"])
     return out
 
 
@@ -357,7 +435,7 @@ def new_turn(uuid: str = "", ts: str = "", prompt: str = "") -> dict:
     return {"id": uuid, "ts": ts, "prompt": (prompt or "")[:160], "n_tools": 0,
             "mutations": [], "first_mut": None, "last_mut": None,
             "stem": [], "test_idx": [], "failable_idx": [],
-            "searches": [], "read_paths": []}
+            "searches": [], "scans": [], "read_paths": []}
 
 
 def record_tool(turn: dict, name: str, inp: dict) -> None:
@@ -378,6 +456,17 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
         blob = " ".join(str(inp.get(k) or "") for k in ("file_path", "path", "pattern", "glob", "paths"))
         if len(turn["searches"]) < SEARCH_CAP:
             turn["searches"].append([idx, blob[:400]])
+        # A TREE SCAN IS NOT THE SAME ACT AS OPENING A FILE (2026-09-20).
+        #
+        # `_READ_TOOLS` lumps `Read` together with `Grep` and `Glob`, so before
+        # today the audit could not tell "I opened the file I am about to
+        # change" from "I searched the tree for everything that depends on it".
+        # Those are 2 DIFFERENT steps of the founder's protocol: FIND locates the
+        # issue, FOLLOW maps the blast radius. Conflating them meant the signal
+        # labelled FOLLOW was in fact measuring FIND, and FOLLOW proper -- who
+        # calls this, what breaks downstream -- was never measured at all.
+        if name in _SCAN_TOOLS and len(turn["scans"]) < SEARCH_CAP:
+            turn["scans"].append([idx, blob[:400]])
         _add_read_paths(turn, _paths_in(blob))
         return
 
@@ -401,6 +490,11 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
         if sig["search"]:
             if len(turn["searches"]) < SEARCH_CAP:
                 turn["searches"].append([idx, cmd[:400]])
+            # A RECURSIVE shell search is a FOLLOW instrument, the same as Grep.
+            # A `cat`/`sed -n` of one named file is not: it opens a file, it does
+            # not ask who depends on it. See `_SCAN_TOOLS`.
+            if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
+                turn["scans"].append([idx, cmd[:400]])
             _add_read_paths(turn, _paths_in(cmd))
         for p in sig["mutations"]:
             if classify_path(p) != "transient":
@@ -451,16 +545,68 @@ def audit(turn: dict, prior_reads=None) -> dict:
     analysed = bool(turn.get("stem")) or bool(turn.get("test_idx"))
     verified_after = last is not None and any(i > last for i in (turn.get("failable_idx") or []))
 
+    # ── ALL 5 STEPS ARE NOW REPORTED (2026-09-20) ────────────────────────────
+    #
+    # THE FOUNDER'S COMPLAINT AND WHAT THE FILE ACTUALLY SAID. He reported that
+    # only the P-PASS element was wired. Measured: 3 of 5 were -- FOLLOW,
+    # ANALYSE and P-PASS -- and the docstring's own false-negative list, item 4,
+    # states "FIND is not modelled ... No attempt is made to detect it". So the
+    # substance of the complaint was right and the count was not, and the count
+    # matters less than the gap.
+    #
+    # THE DEEPER DEFECT, WHICH IS WHY 2 STEPS WERE MISSING RATHER THAN 1.
+    # `_READ_TOOLS` lumps `Read` with `Grep` and `Glob`, so the signal LABELLED
+    # `FOLLOW` was computed from "did you look at the file you edited" -- which
+    # is FIND, locating the issue. FOLLOW proper, "what depends on this, what
+    # breaks downstream", was never measured at all. Splitting the tree scans
+    # out (see `_SCAN_TOOLS` and `_TREE_SCAN`) makes both measurable, and the
+    # old signal is retained under the name it was really computing.
+    #
+    # FIND. Evidence that the issue is real, gathered BEFORE the change: a read
+    # or search naming the file about to be edited, or something failable run
+    # before the first mutation. Prose reasoning still cannot be seen, so this
+    # remains one-sided like every other signal here -- absence is evidence,
+    # presence is not.
+    #
+    # FIND INHERITS THE OLD THRESHOLD EXACTLY, and that is deliberate. A first
+    # version required `targeted` -- a look at the very file being edited -- and
+    # so ALSO flagged the "generic" grade, which the 2026-09-05 design had
+    # decided was an acceptable-if-weaker trace ("searched, but not for this").
+    # Tightening 2 things at once would have made it impossible to tell which
+    # change caused a new flag. So: FIND is the old signal under its true name,
+    # and every bit of the new strictness lives in FOLLOW, which is measuring
+    # something that was never measured before.
+    found = (follow != "none") or (first is not None
+                                   and any(i < first for i in (turn.get("failable_idx") or [])))
+
+    # FOLLOW. A TREE SCAN naming the changed file or its stem, before the edit.
+    scans = turn.get("scans") or []
+    scan_text = " ".join(t for i, t in scans if first is None or i < first)
+    followed = any(b and b in scan_text for b in bases) if bases else bool(scan_text)
+
+    # FIX. A change was actually made, and it was not confined to the tests.
+    # "Only the test changed" is the shape this project guards hardest against:
+    # a guard weakened to go green rather than a defect repaired. It is often
+    # legitimate -- a predicate really can be the defect -- so it is REPORTED,
+    # never blocked, and the turn's own account is what settles it.
+    test_only = bool(muts) and all(_is_test_path(m) for m in muts)
+
     missing = []
-    if is_work and follow == "none":
+    if code_touched and not found:
+        missing.append("FIND")
+    if code_touched and not followed:
         missing.append("FOLLOW")
     if is_work and not doc_only and not analysed:
         missing.append("ANALYSE")
+    if code_touched and test_only:
+        missing.append("FIX")
     if code_touched and not verified_after:
         missing.append("P-PASS")
 
     return {"is_work": is_work, "doc_only": doc_only, "code": code_touched,
-            "follow": follow, "analysed": analysed, "verified_after": verified_after,
+            "follow": follow, "found": found, "followed": followed,
+            "test_only": test_only, "analysed": analysed,
+            "verified_after": verified_after,
             "stem": list(turn.get("stem") or []), "missing": missing,
             "files": sorted({m for m in muts})[:6], "n_files": len(set(muts)),
             "id": turn.get("id"), "ts": turn.get("ts")}
@@ -554,8 +700,16 @@ def prior_read_paths(state: dict) -> set:
 # --------------------------------------------------------------------------------------
 
 _WHY = {
-    "FOLLOW": "no read, grep or search of ANY kind ran before the first edit. FOLLOW comes "
-              "before FIX: the blast radius is mapped first, or the fix is a guess.",
+    "FIND": "the file was changed with no read, search or failing check naming it first. "
+            "FIND establishes WHAT is wrong and WHAT the evidence is; an edit made before "
+            "the defect is evidenced is a guess wearing a fix's clothes.",
+    "FOLLOW": "nothing SEARCHED THE TREE for what depends on this before the edit -- no "
+              "Grep, Glob, `grep -r`, `rg` or `find` naming it. Reading the file you are "
+              "about to change is FIND, not FOLLOW: FOLLOW asks who CALLS this and what "
+              "breaks downstream. Find without Follow produces shallow patches.",
+    "FIX": "the only files changed were TESTS. That is sometimes exactly right -- a "
+           "predicate really can be the defect -- but it is also the shape of a guard "
+           "weakened to go green. Say which of the 2 this was.",
     "ANALYSE": "no STEM tool and no test ran in the whole turn. The tool output IS the "
                "evidence (`sy` is a standing hard constraint, 2026-08-30); prose is not.",
     "P-PASS": "code changed and NOTHING failable ran afterwards -- no pytest, no assert. "

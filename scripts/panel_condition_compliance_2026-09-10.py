@@ -46,12 +46,39 @@ RULING = "2026-09-09"
 #: Cache and build artefacts are not deliverables.
 CACHE = re.compile(r"__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|\.pyc$|\.db$")
 #: A round is one directory holding at least 1 seat reply.
-SEATS = ("cc2", "fable", "cx", "cgpt", "ds")
+#: `ge` and `kimi` ADDED 2026-09-20, and their absence was a real blind spot
+#: rather than a tidy-up.
+#:
+#: This list is the population every Section-P condition is measured over. It
+#: read ("cc2", "fable", "cx", "cgpt", "ds"): the Gemini seat was missing from
+#: the day this script was written, and the Kimi seat from the day it joined the
+#: roster on 2026-09-20. So the compliance script counted 49 replies where the
+#: guard, which globs the directory instead of consulting a list, counted 55 --
+#: and `TestP5TheGuardIsNotVacuous` exists precisely to notice that the 2 are no
+#: longer measuring the same thing. It fired correctly.
+#:
+#: THE SHARPER HALF IS BELOW: `PAID_SEATS` omitted the same 2, and BOTH of them
+#: cost money -- `ge` rides OpenRouter and `kimi` is billed to the founder's
+#: Moonshot credits. That list is the fallback the money guard uses when a reply
+#: records no route at all, so for any such reply the guard could not see a
+#: Gemini or Kimi dispatch. A money constraint the founder reserves to himself
+#: was blind to 2 of the 5 paid seats.
+#:
+#: This is the "addition that nothing reaches" half of the additive standard,
+#: in its most expensive form: the roster was extended to 7 seats and the
+#: instrument that audits the roster still knew 5.
+SEATS = ("cc2", "fable", "cx", "cgpt", "ds", "ge", "kimi")
 
 #: Seats that cost money, per this project's own routing table: `cx` and `cgpt`
 #: ride OpenRouter and `ds` is DeepSeek direct. Used ONLY as the fallback when a
 #: reply records no route, never in place of a route the file actually carries.
-PAID_SEATS = ("cx", "cgpt", "ds")
+#: `ge` and `kimi` ADDED 2026-09-20. `ge` is Gemini on OpenRouter and has been
+#: paid since 2026-05-10, when the seat moved off the direct Google API; `kimi`
+#: is billed to the founder's own Moonshot credits. Both were absent, so this
+#: fallback -- the thing the money guard consults when a reply carries no route
+#: field, which 20 of 30 paid-named files in the archive do not -- could not see
+#: a Gemini or a Kimi dispatch at all.
+PAID_SEATS = ("cx", "cgpt", "ds", "ge", "kimi")
 
 
 def rounds() -> list[pathlib.Path]:
@@ -155,10 +182,31 @@ def source_files(d: pathlib.Path) -> list[str]:
 #: the round-8 brief asked for the same field as "WHERE I DISAGREE WITH THE
 #: OTHER SEAT OR WITH CC1", both seats supplied it, and a literal-phrase guard
 #: reported both as misses.
+#: WIDENED 2026-09-20, AND IT WAS A PARSING DEFECT, NOT A MISSING RULE.
+#:
+#: The heading alternative read `disagreement\b`. The trailing `\b` CANNOT match
+#: the plural: in "Disagreements" the character after "disagreement" is `s`,
+#: a word character, so there is no boundary there and the alternative simply
+#: fails. Every seat that titled its section "Disagreements" was recorded as
+#: having preserved none. The pattern also had no room for a numbered heading,
+#: so "## 7) Disagreements preserved" and "## 8. Disagreements preserved" missed
+#: on a second, independent count.
+#:
+#: MEASURED against the 2026-09-20 rounds, whose replies were read in full and
+#: DO carry the section: 4 false negatives -- ds r2 "## Disagreements",
+#: cgpt r3 "## 8. Disagreements preserved", cx r3 "## 7) Disagreements
+#: preserved", fable r3 "## Disagreements, preserved". Each was reported as a
+#: round that "lost its disagreement" when the text was plainly there.
+#:
+#: This is the same shape as the 2 other parsing defects found the same day: a
+#: producer and a consumer that disagree about a string, where each is
+#: individually correct and neither can see the other. The rule was never
+#: "singular only"; the brief asks for a disagreement section and does not
+#: dictate its heading.
 DISAGREEMENT_RE = re.compile(
-    r"strongest[_ ]disagreement"
+    r"strongest[_ ]disagreements?"
     r"|where\s+i\s+disagree"
-    r"|(?:^|\n)\s*#{0,4}\s*\**\s*disagreement\b"
+    r"|(?:^|\n)\s*#{0,4}\s*\**\s*(?:\d+[.)]\s*)?disagreements?\b"
     r"|i\s+disagree\s+with",
     re.I)
 
@@ -194,11 +242,38 @@ def _introduced_body(text: str, m: re.Match) -> str:
     inline = rest.strip(_MARKUP)
     if inline and not _is_label_line(text[line_start:eol]):
         return inline
+    # A SUB-HEADING IS STRUCTURE, NOT AN EMPTY SECTION (fixed 2026-09-20).
+    #
+    # This read `if ln.lstrip().startswith("#"): return ""` -- ANY following
+    # heading made the body empty. The 2026-09-17 tightening that added it was
+    # aimed at a genuinely empty section, where the next heading starts the NEXT
+    # section at the same level. But a seat that writes
+    #
+    #     ## Disagreements
+    #     ### With CC1
+    #     None that survive verification. CC1's five results all hold...
+    #     ### With the revision package
+    #     ...
+    #
+    # has written a structured disagreement section, and this returned "" for it.
+    # Measured on bench/logs/maths_panel_2026-09-20_r2/ds.json, whose section runs
+    # to several hundred words under sub-headings and was recorded as a round
+    # that "lost its disagreement".
+    #
+    # So the level decides: a heading DEEPER than the matched one is this
+    # section's own content and we descend past it; a heading at the SAME or a
+    # SHALLOWER level ends the section, and an end reached with no prose is the
+    # empty section the tightening exists to catch.
+    head = re.match(r"^\s*(#{1,6})\s", text[line_start:eol])
+    level = len(head.group(1)) if head else 0
     for ln in text[eol + 1:].split("\n"):
         if not ln.strip():
             continue
-        if ln.lstrip().startswith("#"):
-            return ""
+        sub = re.match(r"^\s*(#{1,6})\s", ln)
+        if sub:
+            if level and len(sub.group(1)) > level:
+                continue          # a sub-heading of this section: keep looking
+            return ""             # the next section began: this one is empty
         return ln.strip(_MARKUP)
     return ""
 

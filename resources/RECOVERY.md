@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 20 September 2026 01:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 20 September 2026 22:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -1583,6 +1583,25 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+
+## SESSION STATE 2026-09-20T22:45:39+01:00 — 6-ROUND PAID PANEL ON THE MATHS REVISION
+
+**WHERE THE REVIEW GOT TO.** 6 rounds dispatched (`maths_panel_2026-09-20`, `_r2`, `_r3`, `_r4`, `_2026-09-21_blind`, `_2026-09-21_open`), 7 seats: cc2 + fable free, cx/cgpt/ge/ds/kimi paid. Blind and open rounds both returned 7/7. Open-round intake was RUNNING at session end and its results are NOT yet read.
+
+**THE HEADLINE.** The cc2 seat, blind, showed that the falsifiability degeneracy the review spent 5 rounds charging to the proposed revision is ALREADY in appendix §7.12 and has been since 31 March 2026 — same object, fixed points coinciding at `b/(b+s)`, SymPy residual 0. Consequence: rejecting the revision on those grounds requires rejecting our own §7.12 on identical grounds.
+
+**CC1's HEADLINE CLAIM IS WITHDRAWN.** "191 fixes refused on an unmeasured constant" is false: all 191 are structural (`sk == 0`), and 0 of 902 scored fixes were gate-refused. `reference_runner_v3.py:11820` already said so, pinned by a test. Both producers corrected.
+
+**THE FOUNDER'S FRAMING HOLDS, 7/7.** Gamma as a ruler dissolves T2/T3/T4. T1 becomes a calibration requirement. 4 of 7 seats refuted CC1's T1 argument on 4 independent grounds.
+
+**THE SCORER IS THE LIVE FINDING, 7/7.** 672 of 902 = 74.5011%, Wilson [71.5570%, 77.2374%] score exactly 1.0; `A` is binary across all 1,247 decisions.
+
+**CONTAINMENT REPAIRED.** 7 sandboxes were built per round and 5 never entered; `build_experiment_tools` now roots tool paths in the calling seat's copy. 7 tests, 5 red against the old code. Blindness is now structural.
+
+**OPEN, FOR THE FOUNDER.** (1) Wire `n* = (a/theta)^(1/gamma)` as an ADVISORY projection from round 3 — proposed, not built. (2) The CDSFL explorer as the surface for it. (3) Whether to charge ourselves for §7.12. (4) The scorer repair. (5) A third panel round — decide by the project's own stop rule, not pre-committed.
+
+**SUITE.** GREEN at 8,233 passed, 0 failed, recorded at `f253fa7`.
+
 ## Current Pending Work (2026-06-03, post-divergence-study) — DECISION: AUTONOMOUS BUILD MODE
 
 **FOUNDER DECISION 2026-06-03: stop deferring, build CDSFL autonomously, replicate the working pattern with the fixes in place. After a point-update + restart, CC1's FIRST step is to bring the concrete build-out plan (no execution until that plan is presented). Founder flagged flagging health/will — the goal is to make this autonomous so they can step back.**

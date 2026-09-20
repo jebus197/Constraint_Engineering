@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import tempfile
-import pathlib
 import subprocess
 from pathlib import Path
 
@@ -76,7 +74,33 @@ _SANDBOX_PROFILE = """(version 1)
 (allow file-write* (subpath "/private/tmp") (subpath "/tmp") (subpath "/dev"))
 """
 
-_SANDBOX_PROFILE_PATH = pathlib.Path(tempfile.gettempdir()) / "cdsfl_tool_readonly.sb"
+# THE PROFILE IS PASSED INLINE AND NEVER WRITTEN TO DISK (2026-09-20, second
+# pass, after a panel agent found the first pass had opened an escape).
+#
+# The first version cached the profile at
+# `pathlib.Path(tempfile.gettempdir()) / "cdsfl_tool_readonly.sb"` and passed it
+# as `sandbox-exec -f <path>`, reusing it whenever the file existed WITHOUT
+# verifying its contents. `tempfile.gettempdir()` returns `/tmp` whenever TMPDIR
+# is unset, and the profile below GRANTS the confined child write access to
+# `/tmp`. So a seat could overwrite the cached profile on one call and run
+# completely unconfined on the next.
+#
+# MEASURED END TO END rather than argued: call 1 "REPO WRITE: DENIED
+# PermissionError"; call 2 overwrites the cached profile with "(allow default)";
+# call 3 "REPO WRITE: ALLOWED". Two tool calls take a seat from confined to
+# unconfined. On this machine TMPDIR is set to a /var/folders path outside the
+# allow-list, so it was not live HERE -- which is the point: the guard's
+# integrity rested on an environment variable, and a guard that silently
+# degrades to no guard is the exact defect this module's docstring says it
+# exists to prevent.
+#
+# `sandbox-exec -p <profile-string>` takes the profile on the command line and
+# needs no file at all. Measured identical on the property that matters: the
+# inline form returns the same "DENIED PermissionError" on a repository write.
+# Removing the write also restores the module's bright line -- no write appears
+# in it anywhere -- which the source-text guard in
+# bench/tests/test_build_experiment_tools.py checks as a second layer beside the
+# executing guard in test_seat_tools_are_read_only_2026-09-20.py.
 
 
 def _confined(argv: list):
@@ -106,18 +130,80 @@ def _confined(argv: list):
                       "which is not available on this platform. Running unconfined "
                       "would let a review seat modify the repository it is "
                       "reviewing, so the call is refused rather than downgraded.")
-    try:
-        if not _SANDBOX_PROFILE_PATH.is_file():
-            _SANDBOX_PROFILE_PATH.write_text(_SANDBOX_PROFILE, encoding="utf-8")
-    except OSError as exc:
-        return None, f"[REFUSED] could not write the confinement profile: {exc}"
-    return ["sandbox-exec", "-f", str(_SANDBOX_PROFILE_PATH), *argv], ""
+    return ["sandbox-exec", "-p", _SANDBOX_PROFILE, *argv], ""
+
+
+def _root() -> Path:
+    """The tree this seat's tools may see: its OWN sandbox, or the repo.
+
+    WHY THIS EXISTS, AND IT IS THE PROJECT'S SIGNATURE FAILURE ONE LAYER DOWN
+    (2026-09-20). The panel dispatcher builds a sandbox copy FOR EVERY SEAT --
+    measured in round 4: 7 copies for 7 seats, including all 5 paid ones -- and
+    sets the calling thread's working directory to it via `set_panel_cwd`.
+    The CLI seats honour that, because their tools are a subprocess with a cwd.
+
+    This module did not. `_safe()` resolved every path against the module-level
+    `REPO` constant, so the HTTP seats' `read_file`, `grep`, `list_dir`,
+    `run_python` and `run_pytest` all reached the LIVE repository while the
+    seat's own private copy sat untouched. 5 of 7 sandboxes were built and
+    never used.
+
+    WHAT THAT COST, MEASURED. In round 4 the `ge` seat ran
+    `grep -rn 10.4882 bench` and swept in 4.7945% of the `cx` seat's reply,
+    Wilson [2.8772%, 7.8858%] -- because `bench/logs/<round>/` in the LIVE tree
+    accumulates each seat's answer as it finishes. Seats that were supposed to
+    be independent were reading each other mid-round. Read-only confinement
+    could not prevent it: the defect was never about what they could WRITE.
+
+    The dispatcher's own comment records the same shape one level up: "The cwd
+    mechanism has existed since August ... and was never called ... describing
+    the confinement half as unbuilt when in fact it was built and unwired".
+
+    FAILS SAFE. When no panel cwd is set -- ordinary experiment runs, the test
+    suite, direct use -- this returns `REPO` exactly as before, so every
+    existing caller is unchanged. A panel cwd that is not a directory is
+    refused by `set_panel_cwd` itself rather than silently ignored.
+    """
+    # BOTH IMPORT NAMES ARE CONSULTED, AND THAT IS NOT PEDANTRY (2026-09-20).
+    #
+    # The dispatcher puts `bench/` on sys.path and imports the orchestrator
+    # bare; a caller that imports it as `bench.experiment_11_orchestrator` gets
+    # a SECOND module object with its OWN thread-local, and a working directory
+    # set through one is invisible to the other. Found by this module's own test
+    # on the day it was written: `set_panel_cwd` was called, `_root()` returned
+    # the live repository, and the seat would have been unconfined.
+    #
+    # A containment control must not depend on which spelling a caller happened
+    # to use. Both are checked, and the first that carries a value wins.
+    cwd = None
+    import sys as _sys
+    for _name in ("experiment_11_orchestrator", "bench.experiment_11_orchestrator"):
+        mod = _sys.modules.get(_name)
+        if mod is None:
+            continue
+        try:
+            cwd = mod.get_panel_cwd()
+        except Exception:  # noqa: BLE001 - not initialised
+            cwd = None
+        if cwd:
+            break
+    if not cwd:
+        return REPO
+    p = Path(cwd)
+    return p if p.is_dir() else REPO
 
 
 def _safe(rel: str) -> Path:
-    p = (REPO / (rel or "").lstrip("/")).resolve()
-    if not str(p).startswith(str(REPO)):
-        raise ValueError(f"path escapes the repository: {rel}")
+    root = _root()
+    p = (root / (rel or "").lstrip("/")).resolve()
+    if not str(p).startswith(str(root)):
+        raise ValueError(
+            # The wording names BOTH, because the confined tree is the
+            # repository on an ordinary run and the seat's own sandbox copy
+            # during a panel round. Saying only one of them would be wrong
+            # half the time, and the existing guard in
+            # bench/tests/test_build_experiment_tools.py checks this string.
+            f"path escapes the repository or this seat's sandbox tree: {rel}")
     return p
 
 
@@ -153,7 +239,7 @@ def execute(name: str, args: dict) -> str:
                 ["grep", "-rnE", "--", args["pattern"], target],
                 capture_output=True, text=True, timeout=60)
             out = "\n".join(
-                ln.replace(str(REPO) + "/", "") for ln in r.stdout.splitlines()[:n])
+                ln.replace(str(_root()) + "/", "") for ln in r.stdout.splitlines()[:n])
             return _clip(out) or "[no matches]"
 
         if name == "list_dir":
@@ -167,7 +253,7 @@ def execute(name: str, args: dict) -> str:
             cmd = ["python3", "-m", "pytest", args["path"], "-q", "--netguard-strict"]
             if args.get("expression"):
                 cmd += ["-k", args["expression"]]
-            r = subprocess.run(cmd, cwd=str(REPO), capture_output=True, text=True,
+            r = subprocess.run(cmd, cwd=str(_root()), capture_output=True, text=True,
                                timeout=600)
             return _clip(((r.stdout or "") + (r.stderr or ""))[-6000:])
 
@@ -175,7 +261,7 @@ def execute(name: str, args: dict) -> str:
             cmd, note = _confined(["python3", "-c", args["code"]])
             if cmd is None:
                 return note
-            r = subprocess.run(cmd, cwd=str(REPO), capture_output=True,
+            r = subprocess.run(cmd, cwd=str(_root()), capture_output=True,
                                text=True, timeout=180)
             return _clip(((r.stdout or "") + (r.stderr or ""))[-6000:])
 
