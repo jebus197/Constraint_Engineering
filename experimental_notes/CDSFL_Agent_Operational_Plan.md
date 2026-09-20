@@ -65,6 +65,26 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-20 03:54 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `d17ab01`, main, working tree CLEAN, **11 ahead of `origin/main` — NOT PUSHED**. `rs` ran at 03:35 with `--full` (exit code 0) and again at 03:35 with `--record-restore` (exit code 0), after a compaction at 01:47 that the compaction hook announced on every turn until the founder issued the command.
+
+**THE SUITE IS NOT GREEN AND THE REASON IS RECORDED RATHER THAN OUTSTANDING.** The last full run, in an isolated worktree at `3fd65fb` with 4 xdist workers and `--dist loadfile`, was **6 failed, 8052 passed, 38 skipped, 1 xfailed, 931.90 s**. Every failure was reproduced SERIALLY at HEAD before being touched, which is what separates a real defect from a parallelism artefact. 5 reproduced and were real; the 6th, the Wolfram LaunchAgent plist check, passes at HEAD and failed only in the throwaway worktree, where the installed plist points at the main checkout. **4 of the 5 were introduced the same night and are FIXED** at `cf9c40a`: 2 silent truncations in `scripts/sv_postconditions.py`, a new script reached by nothing (`scripts/codex_route_probe_2026-09-20.py`, now cited as runway row 0C.29a), and `scripts/suite_record.py` failing to reject an unknown flag loudly. **The 5th is `test_closure_outpaced_discovery_on_the_latest_full_day` and it is telling the truth:** on 2026-09-18 the master task list gained 1 entry and closed 0. It goes green when task A8 closes, and A8 waits only on a Section P panel review.
+
+**THAT PANEL IS RUNNING NOW**, dispatched 03:45:49, PID 77487, log `bench/logs/panel_a8_section_p_2026-09-20/dispatch.log`, 2 free seats (cc2 and fable), 0 paid. Its brief passes all 8 checks of `scripts/panel_brief_validate.py`. **Monitor it with** `tail -f bench/logs/panel_a8_section_p_2026-09-20/dispatch.log`.
+
+**PARALLEL TESTING IS MEASURED AND NOT YET ADOPTED.** 4 workers gave **931.90 s against the serial record's 1692.80 s, a 1.82x speedup**, consistent with 1.87x measured earlier on a 504-test slice; 8 workers were worse. Identical pass counts. Whether it becomes the default is the founder's call and is in the morning report.
+
+**2 GATES LANDED, AND THE SECOND ONE CAUGHT A DEADLOCK IN THE FIRST.** `scripts/sv_postconditions.py` re-takes the 6 readings `sv` already prints and turns them into its exit code, because 7 of the last 13 repairs to `scripts/cdsfl_sv.py` were the same shape: a reading taken, printed, and then ignored. `suite_record.gate` refuses a paid dispatch on a red suite record. The deadlock: Section P is discharged by a FREE cc2-and-fable round, so a red suite blocked the review that closes the entry that turns the suite green. `gate` now takes `paid_seats` and proceeds, loudly, when it is 0 — and that ran in production on its first use at 03:45:49.
+
+**WHAT IS STILL IN FLIGHT OR WAITING:**
+* The A8 Section P round (running).
+* A clean full-suite run at final HEAD, to be recorded with `python3 scripts/suite_record.py record --log <file>`.
+* **The 6-model paid panel review of the revised mathematical model.** Brief written and validated at `bench/logs/maths_panel_2026-09-20_revised_model/BRIEF.md`, mirrored into the record at `docs/maths_revision_review_2026-09-10/PANEL_BRIEF_AS_DISPATCHED_2026-09-20.md`. **It is gated on the suite being green, correctly.** Founder's spend authority: up to 10 pounds, cheaper better; estimated worst case about 2 pounds at the raised 10-iteration tool budget.
+* The morning report pair.
+
+**THE PANEL SEATS COULD NOT HAVE READ THE PACKAGE WHERE IT SAT, AND THAT WAS FOUND BY MEASURING BEFORE DISPATCHING.** 4 of the 6 seats are paid HTTP routes reaching the repository through 5 tools, and both gates behind those tools refuse any path outside the repository root. The package is therefore copied to `docs/maths_revision_review_2026-09-10/`, 42 files, 1.8 MB, and re-measured: all 5 access shapes permitted, and the reference core loads and runs end to end through the seat sandbox.
+
+---
+
 **★ RESUME POINTER (2026-09-17 21:02 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `def8eae` plus the close-out save, main, 15 ahead of `origin/main`, NOT PUSHED. The full suite is green under `--netguard-strict` at `def8eae`: 7,936 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0, 2526.06 s. Items 1 to 10 of `experimental_notes/Action_List_2026-09-17.md` are DONE and each carries its evidence there; items 11 to 15 are the founder's (2 stash drops, 8 verdicts, Tailscale SSH, the push, the Zenodo rotation last). Panel round 17 ran on 2 free seats with 0 paid dispatches and its intake is complete. All 31 Question 7 entries carry dated corrections. Experiment 56 stays deferred until the revised mathematical model is reviewed.
 
 **★ RESUME POINTER (2026-09-17 15:21 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `a2999f1` before this `sv`, which pushes 25 commits on the founder's `sv` command. Working tree clean. The full suite is green under `--netguard-strict` at `a2999f1`: 7,493 passed, 5 skipped, 1 xfailed, 0 failed, exit code 0.

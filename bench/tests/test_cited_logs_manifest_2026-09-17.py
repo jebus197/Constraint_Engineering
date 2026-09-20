@@ -132,6 +132,26 @@ def test_no_row_claims_missing_when_the_path_is_present(manifest):
     assert not wrong, f"manifest says missing, the path exists: {wrong[:8]}"
 
 
+def test_every_row_state_rederives_from_the_classifier(document, producer):
+    """PANEL ADDITION 2026-09-20 (Section P review of A8). The module docstring
+    promises that this file "re-derives every disposition ... and requires the
+    committed manifest to match", but until this test only `tracked` (both
+    directions) and the missing-vs-`exists()` direction were re-derived. A
+    manifest whose 78 `prefix` rows were flipped to "missing" -- the exact
+    false statement the 2026-09-17 repair exists to prevent, restated -- passed
+    all 16 tests, because a truncated prefix names no path that `exists()`.
+    This test closes that: every row's state must equal `disposition()` run
+    against the tracked set at the recorded commit and the tree as it stands.
+    It is deliberately disk-dependent, like the 2 tests above it: a manifest
+    the tree has drifted from is stale, and a stale manifest is worse than none.
+    """
+    at = producer.tracked(document["generated_at_commit"])
+    wrong = [(p, r["state"], producer.disposition(p, at))
+             for p, r in document["rows"].items()
+             if r["state"] != producer.disposition(p, at)]
+    assert not wrong, f"{len(wrong)} rows disagree with re-derivation: {wrong[:8]}"
+
+
 def test_the_note_cited_recoverable_files_are_readable_from_a_clone(manifest):
     """The ruling's action half: what a note cites must be readable from a clone.
 
