@@ -557,7 +557,17 @@ def dispatch(name, model_id, route):
             # condition P3 on the same footing as every other route.
             _calls: list = []
             _fn = call_deepseek if route == "deepseek" else call_moonshot
-            resp = _fn(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS, record=_calls)
+            # KIMI NEEDS LONGER THAN THE 300 s DEFAULT. Round 1 of this review
+            # lost the seat entirely to `APITimeoutError: Request timed out`
+            # after 904.5 s with 0 tool calls, on a brief of about 2,900 tokens
+            # with a 16-iteration tool budget. The short probe that verified the
+            # route used a 1-line question and answered in seconds, so it
+            # measured the route and not the workload -- which is exactly the
+            # gap between "the seat works" and "the seat can do this job".
+            _timeout = 1500 if route == "moonshot" else 300
+            resp = _fn(model_id, SYSTEM, PROMPT, tools=TOOL_SPECS,
+                       record=_calls, timeout=_timeout,
+                       max_tool_iters=PANEL_TOOL_ITERATIONS)
             tool_log = _calls
         else:
             # TOOL BUDGET RAISED AT THE CALL SITE, not in the shared default
