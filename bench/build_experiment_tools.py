@@ -14,6 +14,9 @@ worktree.
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
+import pathlib
 import subprocess
 from pathlib import Path
 
@@ -63,6 +66,52 @@ TOOL_SPECS = [
         "parameters": {"type": "object", "properties": {"code": {"type": "string"}},
                        "required": ["code"]}}},
 ]
+
+
+
+#: A read-only execution profile. Reads anywhere, writes only to scratch.
+_SANDBOX_PROFILE = """(version 1)
+(allow default)
+(deny file-write*)
+(allow file-write* (subpath "/private/tmp") (subpath "/tmp") (subpath "/dev"))
+"""
+
+_SANDBOX_PROFILE_PATH = pathlib.Path(tempfile.gettempdir()) / "cdsfl_tool_readonly.sb"
+
+
+def _confined(argv: list):
+    """Wrap `argv` so it CANNOT write to the repository. (cmd, refusal_note).
+
+    WHY THIS EXISTS, MEASURED 2026-09-20. When the panel's paid seats were given
+    `run_python`, the tool ran `python3 -c <code>` with `cwd=REPO` and no
+    confinement whatever. A probe wrote a file into the repository root and into
+    /tmp, and both succeeded. The tool's own description says "Run a short
+    read-only Python snippet ... Do not write files", which is an INSTRUCTION
+    AND NOT A GUARD -- and this project has twice recorded panel agents editing
+    the repository mid-run.
+
+    The paid seats reach the real tree, not a sandbox copy: `panel_sandbox`
+    confines the CLI seats by working directory, and an HTTP seat has no working
+    directory to confine. So before today the confinement rested entirely on
+    those seats having no filesystem tool at all. Giving them one removed the
+    only thing that was stopping them.
+
+    IT FAILS CLOSED. If `sandbox-exec` is unavailable the call is REFUSED rather
+    than run unconfined, because a guard that silently degrades to no guard is
+    the defect it was written to prevent. That costs the tool on platforms
+    without it, and the refusal says so plainly instead of pretending.
+    """
+    if not shutil.which("sandbox-exec"):
+        return None, ("[REFUSED] execution is confined read-only via sandbox-exec, "
+                      "which is not available on this platform. Running unconfined "
+                      "would let a review seat modify the repository it is "
+                      "reviewing, so the call is refused rather than downgraded.")
+    try:
+        if not _SANDBOX_PROFILE_PATH.is_file():
+            _SANDBOX_PROFILE_PATH.write_text(_SANDBOX_PROFILE, encoding="utf-8")
+    except OSError as exc:
+        return None, f"[REFUSED] could not write the confinement profile: {exc}"
+    return ["sandbox-exec", "-f", str(_SANDBOX_PROFILE_PATH), *argv], ""
 
 
 def _safe(rel: str) -> Path:
@@ -123,8 +172,11 @@ def execute(name: str, args: dict) -> str:
             return _clip(((r.stdout or "") + (r.stderr or ""))[-6000:])
 
         if name == "run_python":
-            r = subprocess.run(["python3", "-c", args["code"]], cwd=str(REPO),
-                               capture_output=True, text=True, timeout=180)
+            cmd, note = _confined(["python3", "-c", args["code"]])
+            if cmd is None:
+                return note
+            r = subprocess.run(cmd, cwd=str(REPO), capture_output=True,
+                               text=True, timeout=180)
             return _clip(((r.stdout or "") + (r.stderr or ""))[-6000:])
 
         return f"[unknown tool: {name}]"
