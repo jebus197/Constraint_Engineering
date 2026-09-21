@@ -1,5 +1,13 @@
 # Outstanding queue to Bench Run 2
 
+> ## ⚠ SUPERSEDED — DO NOT READ THIS AS CURRENT STATE
+>
+> **This file was last written 2026-08-23. As of 2026-09-21 that is 29 days, during which the founder sent 577 messages.** A document written before he spoke cannot record what he said in it, and that is the exact mechanism by which a decision he HAS made keeps reappearing as one he has not — measured by `scripts/decision_label_staleness_2026-09-09.py`, which reports 5 of 5 canonical sources in this condition, 100.0%, Wilson [56.6%, 100.0%].
+>
+> **The current work list is `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.** Its `## NOW.` section carries the founder's live ordered sequence. **The current state snapshot is `resources/RECOVERY.md`, newest SESSION STATE block.**
+>
+> This file is kept because its items and their evidence are a real record of the 2026-08-01 arc. It is not kept as a statement about today. Read it as history.
+
 **Opened 2026-08-01 11:45 BST. Updated 2026-08-01 21:30 BST at commit `0a15138`.**
 **Target: BR2 within 7 days, sooner if possible.**
 
