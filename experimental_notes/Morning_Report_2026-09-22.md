@@ -143,7 +143,7 @@ Two faults, both in the resume-pointer check from section 1, found by running it
 
 Round 0 of arm 1 closed at 23:09, and the falsifier gate, the corrected-copy splicer, the discrimination control and the scorer all ran end to end: **8 CONFIRMED, 0 REFUTED, 3 to HIL** from the falsifier gate, tools deciding rather than models voting; 17 corrected copies accepted with 0 refused, 0 unmatched and 0 dropped; the discrimination control returning DISCRIMINATES=5, INDETERMINATE_ERROR=2, NO_DISCRIMINATION=1; and one mechanical fault escalated to a human rather than silently closed. **`e1_efficacy` fired in a live run** — `FIX_CURES_ITS_OWN_FALSIFIER` on C0007 — so tonight's scorer repair is commissioned in practice and not only in tests.
 
-Then the R_k validation rejected 17 self-reported proofs:
+Then the R_k validation flagged 17 self-reported proofs. **It did not reject them.** Its own docstring says "Advisory only — logs discrepancies, never rejects findings", and an earlier draft of this report said "rejected", which was wrong:
 
 | seat | result |
 |---|---|
@@ -157,9 +157,13 @@ Then the R_k validation rejected 17 self-reported proofs:
 
 A seat making arithmetic slips errs in both directions. **A perfectly one-sided result is a systematic difference between what the seats compute and what the runner computes** — a formula or input discrepancy, not sloppiness. The direction is the informative part: the seats report *lower* residual risk than the runner derives, which in the model's own terms means overstating how much a fix accomplished.
 
-**Why this matters beyond tidiness.** `severity_is_proven`, the 2026-09-06 interlock, requires a stamped R_k proof that recomputes before a severity demotion is permitted. If self-reported proofs routinely fail to recompute, that interlock is never satisfied and the severity-calibration machinery this run exists to exercise cannot reach its demotion path — for a reason that has nothing to do with severity. That is exactly the class of thing a commissioning run is for.
+**Why this matters beyond tidiness, stated precisely.** `severity_is_proven` accepts PASS *and* WARN — WARN being a rounding-scale gap inside a 0.05 tolerance — and rejects FAIL. Every one of the 17 deltas runs from 0.059 to 0.348, so all 17 are beyond the WARN tolerance and all 17 make `severity_is_proven` false. Those entries are then skipped for demotion as unproven. So of the 23 entries validated this round, **5 are eligible for severity demotion and 18 are not** (17 FAIL plus 1 SKIP). The interlock is not globally unsatisfiable — Codex-SIM's 5 passed — but on this round roughly 3 entries in 4 cannot reach the demotion path the severity-calibration study item exists to exercise, for a reason that has nothing to do with severity. That is exactly the class of thing a commissioning run is for.
 
-**Not explained here, and deliberately so.** Codex-SIM passed 5 of 5 while the other 4 seats failed, and every seat is the same underlying stand-in model, so this is not a capability difference between models. It depends on the findings or their inputs. The producer establishes that a cause exists and that it is one-directional; identifying it is the next question and is not answered tonight.
+**The leading candidate cause is PARSING, and that is not a neutral guess.** `_validate_rk_computation` does not receive structured parameters. It extracts `R_old` and the model's stated final `R_k` **out of the model's own prose** with regular expressions, then recomputes. So a systematic one-directional gap is at least as consistent with the extractor picking up a different number than the model used as it is with the models mis-applying a formula they themselves quoted. This project's standing warning is that parsing errors have plagued it, and prose-to-parameter extraction is exactly where that bites.
+
+**Not resolved here, and deliberately so.** Codex-SIM passed 5 of 5 while the other 4 seats failed, and every seat is the same underlying stand-in model, so this is not a capability difference between models. The producer establishes that a cause exists and that it is one-directional; distinguishing a parsing fault from a computation fault is the next question and is not answered tonight.
+
+**One methodological note for whoever takes it up.** The log's `delta` field is `abs(model_rk - recomputed)` and therefore carries **no sign**. The direction reported above was recovered from the `model=` and `recomputed=` values themselves, not from that field. A reader who took the logged delta at face value could not have found the one-sidedness at all.
 
 Producer: `scripts/rk_self_report_bias_2026-09-21.py`.
 

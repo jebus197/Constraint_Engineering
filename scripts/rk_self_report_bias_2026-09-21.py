@@ -3,7 +3,7 @@
 
 WHAT WAS OBSERVED. In round 0 of commissioning arm 1 (2026-09-21, 5 simulated
 seats against `bench/cdsfl_registry/engine.py`), the runner recomputed each
-seat's self-reported `R_k` and rejected 17 of them. Per seat:
+seat's self-reported `R_k` and FLAGGED 17 of them. Per seat:
 
     CC2-SIM       FAIL=4, SKIP=1
     Gemini-SIM    FAIL=4
@@ -20,19 +20,41 @@ sloppiness.
 
 WHY IT MATTERS BEYOND TIDINESS. `severity_is_proven`, the 2026-09-06 interlock,
 requires a stamped `R_k` proof that RECOMPUTES before a severity demotion is
-allowed. If self-reported proofs routinely fail to recompute, that interlock is
-never satisfied, and the severity-calibration machinery the simulated run exists
-to exercise cannot reach its demotion path for a reason that has nothing to do
-with severity.
+allowed. Of the 23 entries validated this round, 5 satisfy it and 18 do not (17
+FAIL plus 1 SKIP), so roughly 3 entries in 4 cannot reach the demotion path the
+severity-calibration study item exists to exercise -- for a reason that has
+nothing to do with severity. The interlock is NOT globally unsatisfiable:
+Codex-SIM's 5 passed.
 
 THE DIRECTION IS THE INFORMATIVE PART. The seats report LOWER risk than the
 runner derives. A seat that understates residual risk is, in the model's own
 terms, overstating how much a fix accomplished.
 
+THE VALIDATION IS ADVISORY. `_validate_rk_computation` says so in its own
+docstring -- "Advisory only -- logs discrepancies, never rejects findings" -- so
+nothing was rejected. What the FAIL status does do is make `severity_is_proven`
+false, because that predicate accepts PASS and WARN (a 0.05 rounding tolerance)
+and refuses FAIL. All 17 deltas run from 0.059 to 0.348, all beyond WARN, so all
+17 entries are skipped as unproven when severity calibration tries to demote.
+
+THE SIGN IS NOT IN THE LOG. The logged `delta` field is
+`abs(model_rk - recomputed)` and carries NO direction. The one-sidedness below
+is recovered from the `model=` and `recomputed=` values themselves. A reader
+taking the logged delta at face value could not have found it at all.
+
+THE LEADING CANDIDATE CAUSE IS PARSING, AND THAT IS NOT A NEUTRAL GUESS.
+`_validate_rk_computation` receives no structured parameters. It extracts
+`R_old` and the stated final `R_k` OUT OF THE MODEL'S OWN PROSE with regular
+expressions and then recomputes. A systematic one-directional gap is therefore
+at least as consistent with the extractor picking up a different number than the
+model used as with the models mis-applying a formula they themselves quoted.
+This project's standing warning is that parsing errors have plagued it, and
+prose-to-parameter extraction is exactly where that bites.
+
 WHAT THIS SCRIPT DOES NOT ESTABLISH. It does not identify the cause. It
-establishes that a cause exists and that it is one-directional. Whether the
-seats use a different formula, different inputs, or an older form of the
-equation is the next question, and it is not answered here.
+establishes that a cause exists and that it is one-directional. Distinguishing a
+parsing fault from a computation fault is the next question, and it is not
+answered here.
 
 Every figure is cross-verified on 2 independent tools.
 
