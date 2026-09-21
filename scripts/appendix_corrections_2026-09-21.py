@@ -207,6 +207,24 @@ def main() -> None:
     print("   R        per-cycle gain   verdict at theta=0.05")
     for r, v in sp_["samples"]:
         print(f"      {r:<8.4f} {v:<16.6f} {'CONTINUE' if v > 0.05 else 'STOP'}")
+    # THE DECISION-RELEVANT QUANTITY, added 2026-09-21 after an external review
+    # observed that Delta R is the CONDITIONAL change on the non-detection
+    # branch while the decision is taken BEFORE the branch is known. With
+    # perfect repair after detection the expected improvement is exactly R*q --
+    # monotone, with no peak and no premature-stop band at all.
+    import sympy as _sp
+    _R, _q = _sp.symbols('R q', positive=True)
+    _exact = _sp.simplify(_R * _q)
+    print(f"   exact expected improvement over BOTH branches : {_exact}")
+    for _r in ('0.99', '0.95', '0.80'):
+        _v = float(_exact.subs({_R: _sp.nsimplify(_r), _q: _sp.Rational(3, 10)}))
+        _c = float(sp_["samples"][0][1]) if _r == '0.99' else None
+        print(f"      at R={_r}, q=0.3 : expected {_v:.6f}"
+              + (f"   against conditional {_c:.6f}"
+                 f"   ratio {_v/_c:.2f}x" if _c else ""))
+    print("   -> the expectation is MONOTONE in R, so it has NO premature-stop")
+    print("      band. The band above is an artefact of the conditional form.")
+
     if sp_["band"]:
         print(f"   PREMATURE-STOP BAND above the peak: R in "
               f"[{sp_['band'][0]:.6f}, {sp_['band'][1]:.6f}], width {sp_['band_width']:.6f}")
