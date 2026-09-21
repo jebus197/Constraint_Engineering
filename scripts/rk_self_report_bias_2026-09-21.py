@@ -151,4 +151,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # ANSWER `--help` BEFORE DOING THE WORK. Without this the flag is
+    # silently ignored, the whole measurement runs -- a git walk, in this
+    # family -- and exiting 0 is indistinguishable from having answered.
+    # The founder's ruling on this class is that a `--help` must never
+    # cost money, and 30 scripts were measured ignoring it on 2026-09-11.
+    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    answer_help(__doc__, __file__)
     sys.exit(main())

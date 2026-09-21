@@ -25,6 +25,7 @@ substring reject.
 from __future__ import annotations
 
 import importlib.util
+import re
 import subprocess
 import sys
 import time
@@ -46,9 +47,34 @@ def m():
 
 
 def _git_grep(path: str) -> list[str]:
-    """The slow answer, taken the way the code took it before the index."""
-    r = subprocess.run(["git", "grep", "-l", "--", path], cwd=ROOT,
-                       capture_output=True, text=True)
+    """The slow answer, as a WHOLE TOKEN rather than a bare substring.
+
+    CORRECTED 2026-09-21. This ran `git grep -l -- <path>`, a substring search,
+    and compared it against an index built by EXTRACTING whole
+    `bench/logs/[\w./-]+` tokens. Those two agree on every path except one that
+    is a PREFIX of another, and they must disagree there by construction: the
+    substring search reports every file containing the longer path as well.
+
+    It surfaced on
+    `.../sim45_canary_v2_20260901T214242Z_report.j` -- note the `.j`, a path
+    TRUNCATED at a column boundary, which genuinely appears that way in 3
+    tracked files dated 2026-09-01 and 2026-09-17. `git grep` matched it inside
+    every mention of the real `...report.json`; the index, correctly, listed
+    only the files where the truncated token actually appears.
+
+    THE INDEX WAS RIGHT AND THE ORACLE WAS WRONG. Claiming a citation of
+    `report.j` because `report.json` is present is a false citation, so the
+    comparison is now made on the same terms the index uses: the path must not
+    be followed by another path character.
+
+    THIS WAS PRE-EXISTING AND WAS EXPOSED, NOT CAUSED, BY A CHANGE ELSEWHERE.
+    The test samples every 19th path, so mirroring 11 panel-record files on
+    2026-09-21 shifted the sample onto this one. It would have fired on any
+    change that moved the list.
+    """
+    r = subprocess.run(
+        ["git", "grep", "-lP", "--", re.escape(path) + r"(?![\w./-])"],
+        cwd=ROOT, capture_output=True, text=True)
     return sorted(f for f in r.stdout.split() if f)
 
 

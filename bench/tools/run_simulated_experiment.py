@@ -580,12 +580,18 @@ def main() -> int:
                   f"      {_rc.stderr.strip()[:300]}", flush=True)
             shutil.rmtree(_wt_parent, ignore_errors=True)
             return 2
-        # `bench/logs` is excluded because the blinding already removed the
-        # answer surface from this tree and re-copying run output per seat is
-        # pure cost; `.git` cannot be present here by construction, and the
-        # wrapper asserts that before handing control over.
+        # `secret_ignore`, NOT a bare `shutil.ignore_patterns`. The first
+        # version of this used the bare form and was caught by
+        # `test_no_repo_copy_in_bench_still_uses_the_secret_blind_exclusion_list`,
+        # whose whole reason for existing is that the same leak had already
+        # reached 6 separate copy sites. A pattern list built from `.git`,
+        # `logs` and `__pycache__` is about SIZE AND NOISE and says nothing
+        # about secrets, so it happily materialises `.env` in a directory the
+        # panel can read. `secret_ignore` keeps those exclusions and adds the
+        # credential patterns, so the rule lives in 1 place instead of 5.
+        from panel_sandbox import secret_ignore
         shutil.copytree(REPO, _wt, symlinks=True,
-                        ignore=shutil.ignore_patterns(".git", "logs", "__pycache__"))
+                        ignore=secret_ignore(".git", "logs", "__pycache__"))
         print("    panel confined to a disposable COPY (sandbox has no git history,\n"
               f"      which is deliberate): {_wt}", flush=True)
     else:
