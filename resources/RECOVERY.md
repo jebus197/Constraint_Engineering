@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 20 September 2026 23:12 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 21 September 2026 21:30 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -1583,6 +1583,25 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+
+## SESSION STATE 2026-09-21T21:30:28+01:00 — COMMISSIONING SET, ASTRA ADJUDICATED, 3 OF MY OWN CLAIMS WITHDRAWN
+
+**THE COMMISSIONING DECISION IS MADE AND VERIFIED.** 5 flags enabled in `bench/tools/run_simulated_experiment.py`, 3 deliberately NOT enabled with reasons in code and task list. Commit `7f7a443`. Verified by execution, not assertion: all 8 in the intended state.
+ * ENABLED: `discrimination_control_ask`, `severity_calibration_enabled`, `latent_tagger_enabled` (all 3 were ALREADY on — my sweep summary wrongly said "armed by nothing" because it counted JSON configs only), plus `hierarchical_novelty_convergence` and `sk_score_prose_listings` added 2026-09-21.
+ * NOT ENABLED: `discrimination_control_blocks` (REFUTED 2026-08-12, FAILS GREEN — study the dependence-based replacement, not the refuted design); `immune_memory_consume_rk0` (memory is 1 persistent file, couples the 2x2 factorial — study it with the file RESET); `hil_review` (operator stepping mode, does NOT change the stopping condition — I was wrong to say it makes a run impossible).
+
+**`sk_score_prose_listings` IS INERT ON THE DEFAULT TARGET.** `--target` defaults to `bench/dm/_memory.py`, a PYTHON file. Verified: .py returns unchanged, .md with a fenced block extracts 1 listing. **TO COMMISSION A19 THE STUDY NEEDS A PROSE ARM.** The 2026-09-17 programme of study already flagged this independently at its item 5.
+
+**ASTRA'S REVIEW ADJUDICATED, 3 CORRECT HITS, 2 AGAINST ME.** (1) My "the revision returns identically 0 at sigma=1, nu=0" is WITHDRAWN as mis-scoped — its `expected_binary_review` returns **1/10**, averaging BOTH branches; the 0 is the single-branch `update()`. The revision also already carries a `false_positive` parameter, so the phi fix is an ADOPTION not an invention. (2) Its stopping finding is DEEPER than mine: the decision-relevant quantity is the EXPECTED improvement `R*q`, monotone with NO band; at R=0.99,q=0.3 that is 0.297000 against the conditional 0.004225, a factor of **70.30**. (3) My scorer "after" statistics were CIRCULAR and their producer did not exist. Both fixed; `scripts/scorer_separation_is_circular_2026-09-21.py` is the missing producer.
+
+**THE NON-CIRCULAR TEST WAS RUN AND IS UNDERPOWERED.** 14 of 192 admitted entries later attracted an extension; mean sk 0.964300 extended vs 0.951370 not — the WRONG direction — p = 0.161004, smallest detectable d = 0.7776 against observed 0.3616. **A non-circular validation of the repaired scorer REQUIRES A NEW RUN.**
+
+**THE SWEEP: 48 agents, 0 errors, 40 mechanisms verified.** 20 ENABLED, 12 WIRED_BUT_OFF, 5 UNREACHED, 2 DORMANT, 1 ABSENT. Biggest find: **routing ladder positions 3-5 are NEVER entered** — `max_rungs` defaults to 2 in `bench/routing.py:183` with NO config surface; archive confirms only 3 distinct models ever routed to against 6 declared.
+
+**THE WRITE-BACK IS THE NEXT TASK AND IT IS THE ROOT CAUSE OF REPEATED ASKING.** `scripts/decision_label_staleness_2026-09-09.py`, executed: 5 of 5 canonical sources written BEFORE a later founder message, 100.0%, Wilson [56.6%, 100.0%]. `OUTSTANDING_QUEUE_to_BR2.md` is 29 days stale with 577 of his messages since.
+
+**NEXT, IN ORDER (founder, 2026-09-21):** write-back -> full scope for the study programme (base: `~/Desktop/CDSFL_Programme_of_Study_2026-09-17.txt`, 161 lines) -> panel brief -> paid panel review (£12 ceiling) -> fix what it finds -> simulated runs under FULL `cy` with cc2 and Fable in full CDSFL panel review mode.
+
 
 ## SESSION STATE 2026-09-21T01:58:07+01:00 — THE APPENDIX WON. NOW-1 to NOW-5 WORKED THROUGH OVERNIGHT.
 
