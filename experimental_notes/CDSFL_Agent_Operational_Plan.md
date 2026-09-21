@@ -73,7 +73,7 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 **WHAT THIS RUN CANNOT CONCLUDE.** No canary catalogue is seeded, so convergence by finding nothing cannot distinguish a clean target from a dead panel. The catalogue is answer-key material and is the founder's in person; generating one alone is refused by design, because `detection_rate` will not report on a single-generator held-out set. The route that works is cc2 and fable as independent generators, free, and it follows.
 
-**SUITE.** 8 failed, 8286 passed at `2b56916`, all 8 reproduced serially and all 8 now fixed — see `experimental_notes/Morning_Report_2026-09-22.md`. **A full clean run at a fixed commit has NOT yet been recorded** and is the first thing to do.
+**SUITE IS GREEN AND RECORDED.** `2b936f9`, clean tree, **no commits made while it ran**: **8,357 passed, 5 skipped, 0 failed, exit code 0, 1559.08 s.** Two earlier runs the same night were degraded because the tree moved under them — one had files change during collection, the other was correctly refused by `test_fresh_clone_is_actually_run` after 4 commits landed mid-run. **A suite result is only a measurement of a commit if the commit holds still.** The 6 failures of the previous run are confirmed resolved, not merely asserted. Full account: `experimental_notes/Morning_Report_2026-09-22.md`.
 
 **OPEN FOR A RULING.** Whether `e1_efficacy` should carry a weight that lets it reject alone (4.9024 on a Python target, 2.9414 on prose), or whether efficacy belongs in the hard-gate product `A` rather than the effect mean `E`. Both move admission on every target ever run.
 
