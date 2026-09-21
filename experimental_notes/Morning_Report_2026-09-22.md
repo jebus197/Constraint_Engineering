@@ -32,7 +32,7 @@ This is the `execute-do-not-grep` principle applied to a document rather than a 
 
 **The producer's first version over-reported, and was corrected before it was believed.** It charged `resources/RECOVERY.md` with naming a HEAD 399 commits behind, and `docs/CURRENT_STATE.md` with naming one 5 behind. Both were doing exactly the right thing: the RECOVERY block opens `[HISTORICAL — this block describes commit b6a2032 and is NOT current state]`, and `CURRENT_STATE.md`'s header states that its git block is by construction the **parent** of the commit carrying it and is "NOT CURRENT TRUTH". Recording history has to stay cost-free, or a future session comes under pressure to delete accurate history to get the suite green. A disclaimer test was added, and 2 of the new tests hold it shut from both sides — a `HISTORICAL` label 40 lines below a live pointer must **not** excuse it, and a correctly labelled historical block must **not** be charged.
 
-7 new tests, 11 with the sister suite, exit code 0. The revert check reconstructs the stale pointer verbatim and requires all 3 of its false claims to be found. The stale pointer was demoted in place rather than deleted, because the tracker is a record and now carries the account of its own defect.
+9 new tests, exit code 0. The revert check reconstructs the stale pointer verbatim and requires the 2 claims it made about the *present* — `NOT PUSHED` and `11 ahead` — to be found, plus the ancestor note. It originally required 3, and section 5 records why that was wrong and how the test was passing for the wrong reason. The stale pointer was demoted in place rather than deleted, because the tracker is a record and now carries the account of its own defect.
 
 Commit `f372f0b`.
 
@@ -113,7 +113,31 @@ It now runs the launcher with both config constructors intercepted and compares 
 
 ---
 
-## 5. What the commissioning run cannot conclude, stated in advance
+## 5. Two safety mechanisms that deadlocked, and a guard of mine that would have gone red on every commit
+
+### The deadlock
+
+Arm 1 of the study failed to start, exit code 2 at 22:51:57 BST, and the reason is worth keeping.
+
+A simulated run happens inside a **disposable copy** of the repository whose git history is **deliberately severed**, so a seat cannot ask `git diff` which lines were recently changed and read the answers off. Separately, the runner **confines the panel to a disposable git worktree** so a seat's relative writes cannot reach the live target, and **refuses to run** if it cannot build one. That worktree is built with git.
+
+So the copy removes the history, the confinement requires it, and the runner correctly refuses rather than running unprotected. Both mechanisms are right on their own. Together they made **every sandboxed simulated run unlaunchable.**
+
+The repair recognises that what the confinement protects against — a write reaching the *live* target — is already impossible inside a throwaway tree, and builds the same isolated directory by copying instead. The wrapper exports the directory it created; the runner **resolves and compares it against its own root** rather than trusting it, so a stale or hostile value naming another directory unlocks nothing. 12 tests, most of them on the lock rather than the key. One records where the protection actually rests: inside a real checkout `git worktree add` succeeds, the fallback is never reached, and that test asserts the live repo is still a git checkout — because the day it is not, the declaration becomes load-bearing alone.
+
+### The guard I wrote at 22:14 was wrong by 22:59, and executing it is what showed that
+
+Two faults, both in the resume-pointer check from section 1, found by running it again after 6 further commits rather than by re-reading it.
+
+**It required the pointer to name the current HEAD.** A resume pointer is written once; HEAD moves with every commit. So it failed on the next commit and would have failed on every commit after, including ones with nothing to do with project state. **A check that is red by default is one that gets disabled, and a disabled check is worse than none.** What a resume pointer legitimately does is record where a session stopped, so the named commit must now be real and an **ancestor** of HEAD — still catching a fabricated hash, a rewritten history or another branch — with its distance reported as information. The original defect is still caught by the part that always should have carried it: `11 ahead of origin/main — NOT PUSHED` are claims about the state **right now**, and both were false.
+
+**`git merge-base --is-ancestor` conflates "no" with "git failed".** It exits 0 for ancestor, 1 for not, and other codes for errors. Reading any non-zero as "not an ancestor" produced a confident false statement — *"it is on another branch or from a rewritten history"* — about a repository git had merely failed to read.
+
+**And the revert test was green for exactly that reason.** It monkeypatches the repo root to a temporary directory and redirected only the `git` helper, not the raw subprocess call, so `merge-base` ran against a non-repository, errored, and was counted as a refutation. It asserted 3 failures and got 3 — **the wrong 3.** The two helpers now redirect together, and the test asserts the 2 present-tense claims plus the ancestor note *by name* rather than counting. 9 tests.
+
+---
+
+## 6. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.
 
@@ -121,7 +145,7 @@ The catalogue is answer-key material and is the founder's in person. Generating 
 
 ---
 
-## 6. Outstanding, with the decisions taken in the founder's absence
+## 7. Outstanding, with the decisions taken in the founder's absence
 
 Of the 4 items the study scope listed as needing a ruling, 1 was resolved by the panel. The other 3 were given safe defaults rather than left to block, and each is reversible:
 
