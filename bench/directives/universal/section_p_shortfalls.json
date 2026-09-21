@@ -79,6 +79,38 @@
       "fixed": true,
       "fix": "The forced-synthesis call now uses the caller's temperature.",
       "held_by": "bench/tests/test_empty_seat_defects_2026-09-20.py"
+    },
+    {
+      "condition": "P5",
+      "round": "final_review_2026-09-21",
+      "seat": "kimi",
+      "what": "The reply carried no disagreement because it carried nothing at all: 0 characters, ok=False, after 29 SUCCESSFUL tool calls over 1116.8 seconds. The other 6 seats of this round all carried a disagreement, so the round was not smoothed to consensus; 1 seat died.",
+      "cause": [
+        "NOT DETERMINED FROM THE RECORD, AND THAT IS ITSELF THE DEFECT. The seat's",
+        "last tool call succeeded and returned real analysis -- it had just computed",
+        "expected_binary_review(1/2, 4/5, 0, (1,0), (0,0)) = 1/10 against the revised",
+        "specification -- so the work was in flight and the final synthesis returned",
+        "nothing.",
+        "",
+        "Why the cause cannot be recovered: in bench/confer_maths_panel_2026-09-05.py",
+        "`stopped_reason` and `tool_iterations` are assigned ONLY in the openrouter",
+        "branch. The moonshot and deepseek branch never assigns them, and the record",
+        "is built with `locals().get('stopped_reason')`, so those fields are None BY",
+        "CONSTRUCTION on this route rather than because nothing went wrong. The",
+        "1116.8s elapsed is well inside the route's 1500s timeout, so it was not a",
+        "timeout, and `attempts` is empty, so no retry was recorded either.",
+        "",
+        "This is NOT a recurrence of the 2026-09-20_r3 kimi defect. That one was the",
+        "forced-synthesis call hardcoding temperature=0.0 against a model that",
+        "refuses any value but 1, and it is fixed; `call_moonshot` drives",
+        "`_run_openai_tool_loop`, so that fix does reach this route. Nor is it the",
+        "P3 entry's cause: tools were available here and 29 of them ran.",
+        "",
+        "It is the same SHAPE as the 2026-09-20_r3 `ge` entry -- a diagnostic that",
+        "exists on one sibling path and not on the one the paid seat actually runs."
+      ],
+      "fixed": false,
+      "fix": "OUTSTANDING. The actionable item is the instrumentation, not a guess at the failure: the moonshot and deepseek branch must record a stopped_reason so that a 0-character paid reply is diagnosable at all. Deliberately not attempted on 2026-09-21, because validating a change to a paid dispatch path requires a paid dispatch, and the founder was asleep. It does not block the commissioning study, which is simulated and spends nothing."
     }
   ]
 }
