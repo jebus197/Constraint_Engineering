@@ -315,6 +315,35 @@ def main() -> int:
         # The half of the overnight severity work a simulated run could not reach.
         severity_calibration_enabled=not args.no_severity_calibration,
         latent_tagger_enabled=not args.no_severity_calibration,
+        # ── COMMISSIONED 2026-09-21 ON THE FOUNDER'S INSTRUCTION ───────────
+        # He ruled: "enable it all now and test it in the next simulated run
+        # and add them all to the programme of study". These 2 are the only
+        # members of that set not already armed here -- `discrimination_
+        # control_ask`, `severity_calibration_enabled` and `latent_tagger_
+        # enabled` were already on, above.
+        #
+        # hierarchical_novelty_convergence: promotes a measure that has been
+        # RECORDED IN SHADOW on every round at no cost since 2026-08-04 to
+        # GATING. This genuinely changes what the convergence gate reads, so
+        # it is a STUDY VARIABLE rather than a safe default -- which is the
+        # point: the founder's position is that a facility whose benefit is
+        # unmeasured is what the programme of study is FOR.
+        hierarchical_novelty_convergence=True,
+        # sk_score_prose_listings: TASK A19, his design point of 2026-09-10 --
+        # "it should simply mark a purely prose input as 'inadmissible', while
+        # still solving any computationally reducible elements within that
+        # prose! This is STEM."
+        #
+        # ⚠ SET HERE BUT INERT ON THE DEFAULT TARGET, AND THAT IS STATED
+        # RATHER THAN LEFT TO BE DISCOVERED. `--target` defaults to
+        # `bench/dm/_memory.py`, a PYTHON file, and `_gateable_source` returns
+        # python source unchanged, so the flag cannot bite. Verified by
+        # execution: .py -> unchanged, .md with a fenced block -> 1 listing
+        # extracted. TO COMMISSION A19 THE STUDY MUST RUN A PROSE TARGET
+        # CARRYING FENCED CODE. Setting the flag on a .py target would report
+        # "enabled" while proving nothing, which is the precise difference
+        # between a flag being set and a capability being exercised.
+        sk_score_prose_listings=True,
     )
 
     print(f"=== SIMULATED EXPERIMENT (runner {R.RUNNER_VERSION}) ===", flush=True)
