@@ -177,6 +177,16 @@ A seat making arithmetic slips errs in both directions. **A perfectly one-sided 
 
 Producer: `scripts/rk_self_report_bias_2026-09-21.py`.
 
+### UPDATED AT 00:15 WITH ROUNDS 0 TO 3, AND BOTH HEADLINE FIGURES MOVED
+
+The figures above are from **round 0 alone** and are superseded. The run kept going, and checking the whole set rather than the first slice of it changes 2 things — which is the point of checking the whole set.
+
+**The one-sidedness is no longer perfect.** Across 19 validation failures, **18** have the recomputed value higher, not 19: one case now runs the other way. That is 94.7368%, Wilson [75.3613%, 99.0648%], with the exact sign test at **p = 7.629394531e-05**. Still decisive, no longer absolute, and the honest statement is "overwhelmingly one-directional" rather than "every single one". Mean delta 0.212158.
+
+**The proof picture is markedly better than round 0 implied.** Rounds 1 to 3 produced PASS and WARN results where round 0 produced almost none. Over all 34 validations so far: **PASS 10, WARN 1, FAIL 18, SKIP 5.** Since `severity_is_proven` accepts PASS and WARN, it is satisfied for **11 of 34 = 32.3529%**, Wilson [19.1316%, 49.1571%], Clopper-Pearson [17.3883%, 50.5265%] — roughly 1 entry in 3, not the 5-in-23 the first round suggested.
+
+**These remain interim.** Arm 1 is still running at the time of writing, so the denominator will grow again. Anything quoted from a run in flight is a snapshot, and this one has already moved once.
+
 ### Two smaller observations from the same run
 
 **The old 900s seat cap really was marginal, and fresh data says so.** Over the 25 dispatches recorded by 00:14, the median is 600 s, the mean 489 s and the maximum **870 s**. None would have died at the old 900 s ceiling — but the slowest sits at **96.7% of it**. That is the same "ceiling inside the distribution" pattern measured on 2026-09-08, when the largest success was 94% of the cap and 3 of 6 seats were killed at exactly 900 s. The raise to 3600 s is vindicated rather than merely asserted: the slowest dispatch here uses 24.2% of the current cap.
