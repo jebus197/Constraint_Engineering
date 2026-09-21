@@ -80,9 +80,50 @@ BRIEF_FILES = ("BRIEF.md",)
 
 
 def holds_review_output(d: Path) -> bool:
+    """Is there ANYTHING here worth preserving -- a reply OR a brief?
+
+    Deliberately inclusive, and it must stay that way: a brief whose dispatch
+    failed is still evidence of what was asked, and the mirror exists so that no
+    panel artefact lives only in an ignored directory. Use `was_dispatched` when
+    the question is whether a ROUND HAPPENED. See that function for why the 2
+    questions were conflated and what it cost.
+    """
     if not d.is_dir():
         return False
     return any((d / n).is_file() for n in SEAT_FILES + BRIEF_FILES)
+
+
+def was_dispatched(d: Path) -> bool:
+    """Did this round actually RUN -- is there at least 1 seat reply?
+
+    THE CIRCULARITY THIS BREAKS. `holds_review_output` is true for a BRIEF
+    ALONE, and the Section-P full-record guard used it to decide which rounds owe
+    a FULL RECORD note. So a round whose dispatch failed -- brief written, 0
+    replies -- was required to publish a full, unfiltered record of replies that
+    do not exist. It is not a demand that can be met, and the only ways to make
+    it green are to delete the brief or to fake the record, both of which destroy
+    evidence. Rounds 1 to 3 of the 2026-09-20 maths review each lost seats to
+    dispatch defects; a total failure was 1 defect away.
+
+    MEASURED 2026-09-21, before this function existed. 1 of 88 live round
+    directories held a brief and 0 replies, `panel_todays_fixes_20260906T175435Z`
+    -- Wilson [0.2009%, 6.1595%] -- and it escaped the guard only because it
+    predates the 2026-09-09 ruling the guard is scoped to. Executed against a
+    probe directory dated after the ruling, the guard DID demand a record: the
+    defect was latent by luck of the calendar, not by design.
+
+    AND IT WAS ALREADY MIS-LABELLING A FIGURE REPORTED TO THE FOUNDER.
+    `scripts/panel_condition_compliance_2026-09-10.py` printed "panel rounds with
+    at least 1 seat reply: 89" from this same inclusive set, when 87 hold a reply.
+    The label was the correct proposition; the set was the wrong one.
+
+    THE MIRROR IS NOT CHANGED. Preserving a brief is right, and narrowing
+    `holds_review_output` to fix the guard would have stopped preserving briefs --
+    a removal, to repair an addition's misuse. 2 questions, 2 predicates.
+    """
+    if not d.is_dir():
+        return False
+    return any((d / n).is_file() for n in SEAT_FILES)
 
 
 def rounds() -> list[Path]:

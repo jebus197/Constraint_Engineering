@@ -173,7 +173,7 @@ where q = d · p. The prior π_k enters once as R_k(0) = π_k and then vanishes 
 
 - **η (novelty):** Is this finding genuinely new content? q becomes η · d · p.
 - **σ (fix efficacy):** Does the proposed fix actually resolve the flaw? Interpolates between full detection benefit (σ=1) and no benefit (σ=0).
-- **ν (re-injection rate):** Does the fix introduce new problems? Sets the absolute floor for residual risk.
+- **ν (re-injection rate):** Does the fix introduce new problems? Sets a lower bound on residual risk. **The reachable floor is higher: ν/q at σ = 1** (corrected 21 September 2026), so ν alone understates it whenever detection is imperfect.
 
 The three phases per cycle — detection (Bayesian update), resolution (σ-weighted interpolation), re-injection (ν floor) — are specified operationally in the CDSFL operational directive and derived formally in the Mathematical Appendix §1.1. The break-even re-injection rate ν* = σ · R · q / (1 − q · R · (1−σ)) determines whether a cycle does net good or net harm.
 

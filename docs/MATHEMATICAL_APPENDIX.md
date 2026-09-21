@@ -204,6 +204,17 @@ Substituting m_k = Π_j(1 − q_jk) and unrolling the product one factor at a ti
 
 The (1 − R_k) factor encodes diminishing returns: the less risk remains, the less there is to gain. The stopping rule follows naturally — continue while Σ_k w_k · ΔR_k > θ, where θ is the consequence threshold.
 
+**THAT GLOSS HOLDS ONLY BELOW THE PEAK, AND THE GREEDY RULE HAS A PREMATURE-STOP BAND AT HIGH RISK (qualified 2026-09-21).** ΔR_k is **not** monotone in R_k. It is unimodal, and SymPy locates its maximum at
+
+> R\* = (1 − √(1 − q)) / q
+
+with second derivative −2q/√(1−q) < 0 there, and z3 returning unsatisfiable for any R that beats it. Above that peak the relationship **inverts**: as risk falls towards R\*, the per-cycle gain *rises*. "The less risk remains, the less there is to gain" is true below the peak and false above it.
+
+The operational consequence bites at the worst moment. At q = 0.3 the peak gain is 0.088933 at R = 0.544467, but at R = 0.99 the gain is only 0.004225 and at R = 0.95 it is 0.019930. With a consequence threshold θ = 0.05, the greedy rule "continue while ΔR > θ" therefore says **STOP** across R ∈ [0.855089, 0.999999] — a band 0.144910 wide, **at the highest-risk states in the whole interval**, where continuing a few cycles would reach a gain 21 times larger. z3 confirms the region exists; a 200,000-point sweep locates its edges.
+
+A practitioner using this rule should either start it only once R has fallen below R\*, or read a low ΔR at high R as "not yet past the peak" rather than as exhaustion. The formula above is unchanged and correct; only the sentence attached to it needed the qualification. [DERIVED, with the band located by exhaustive search]
+
+
 **Reduction.** Under K=1, d=1, all q=p, π=0.5, the recursive form produces R_n = (1−p)^n / (1 + (1−p)^n), the standard Bayesian posterior for repeated Bernoulli non-detection. This is the white paper §2.1 model **expressed in risk coordinates**, not C(n) itself: the two are related by R = (1−C)/(2−C) and are numerically different. At p = 0.1, n = 3 the coverage is 0.271 and the risk is 0.421631, a gap of 0.150631. (Corrected 2026-09-06; the previous wording called it the simplified model, which conflates a quantity with its remapping.)
 
 ### Three-Phase Extension (Stage 4 → 5)
@@ -228,6 +239,20 @@ The three phases per cycle are:
 
 When σ = 1, the full detection benefit is captured. When σ = 0, risk stays at R_old — the fix failed and the pre-detection risk level applies.
 
+**WHY σ = 0 RETURNS THE PRIOR, DERIVED RATHER THAN ASSERTED (added 2026-09-21).** The sentence above states the endpoint without showing it, and that invited a reading in which Phase 2 discards the evidence that produced `R_det`. It does not. `R_det` is the posterior given **no detection**, which presupposes `P(detect | flaw) = q` and `P(detect | no flaw) = 0`, and those same assumptions determine the other branch. Detection occurs with probability `q · R_old`, leaves the posterior at 1 under no false positives, and leaves risk at `1 − σ` after the repair attempt. Averaging both branches:
+
+> (1 − q·R_old) · R_det + q·R_old · (1 − σ) = R_old · (1 − q·σ)
+
+which is exactly `R_old` at σ = 0. The observation happens on **both** branches — sometimes reporting "clean" and sometimes "flaw found" — and with no repair they average back to the prior. That is the tower property, `E[posterior] = prior`. So reverting to the prior is a consequence of the law of total probability, not a loss of information: it is the model declining to bank reassurance it did not earn. Verified with SymPy and z3; producer `scripts/phase2_prior_vs_posterior_2026-09-21.py`. [DERIVED]
+
+**PHASE 2 IS CONSERVATIVE, AND THE DIRECTION IS DELIBERATE (added 2026-09-21).** The blend interpolates between a quantity conditional on non-detection (at σ = 1) and a marginal expectation (at σ = 0), which are different measures, so it is exact only at σ = 0. The gap is
+
+> R_base − R_old·(1 − q·σ) = R_old² · q · σ · (q − 1) / (R_old·q − 1) ≥ 0
+
+on the open unit cube, with z3 returning unsatisfiable for any point where the blend falls **below** the exact mixture. The blend therefore never understates risk. For a gate whose purpose is to decide when it is safe to stop looking, overstating residual risk is the correct bias, and a reader should treat `R_k` as a conservative bound rather than a calibrated probability. [MEASURED, by exhaustive search over 200,000 sampled points and by satisfiability over the whole cube]
+
+**How this entry came about.** The assistant proposed that Phase 2 wrongly reverts to the prior, and put it to a 2-seat free panel review on 2026-09-21. Both seats refuted it independently, by different derivations, and both established the conservatism result. The equations are unchanged; only this justification is new.
+
 **Phase 3 — Re-injection.** Modifying the system can introduce new problems:
 
 > R_k(i) = R_base · (1 − ν) + ν
@@ -246,6 +271,20 @@ When σ = 1: ν* = q · R. When σ = 0: ν* = 0 (any re-injection is harmful sin
 
 > lim_{n→∞} R_{n,k} ≥ ν_k
 
+**THAT BOUND IS TRUE AND LOOSE BY A FACTOR OF 1/q (corrected 2026-09-21).** It is a valid lower bound, but it is not the floor the recursion actually reaches. At σ = 1 the composite map has exactly 2 fixed points, `{1, ν/q}`, and the attracting one is **ν/q**, not ν. Since q < 1 the true floor is strictly higher than the stated one, so the appendix has been **optimistic about how far a review loop can drive residual risk down**.
+
+Worked, and confirmed against the shipped `compute_rk` rather than derived only on paper:
+
+| q | ν | stated floor ν | true floor ν/q | orbit of `compute_rk`, 20,000 cycles |
+|---|---|---|---|---|
+| 0.2 | 0.05 | 0.05 | 0.25 | 0.2500000000 |
+| 0.1 | 0.02 | 0.02 | 0.20 | 0.2000000000 |
+| 0.5 | 0.10 | 0.10 | 0.20 | 0.2000000000 |
+
+At q = 0.2, ν = 0.05 the reachable floor is **5 times** the stated one. Fixed points obtained with SymPy; the orbits are the implementation's own, run to 20,000 cycles. Found by the cc2 seat in the free panel round of 2026-09-21 and reproduced before being recorded. [DERIVED, and checked against the implementation]
+
+**A RUN AT THE CRITICAL RATE LOOKS LIKE SLOW CONVERGENCE, NOT DIVERGENCE, AND THE HARD EXIT WILL MISREAD IT (recorded 2026-09-21).** The interior fixed point leaves the unit interval when ν exceeds `ν_c = qσ/(qσ − q + 1)`, which is **exactly this section's own break-even ν\* evaluated at R = 1** — a coherence result, not a new condition. At σ = 1 that reduces to ν_c = q. Exactly at ν = q the derivative of the map at R = 1 is `(ν−1)/(q−1) = 1`: the fixed point is **parabolic**, so the approach to certainty is O(1/n) rather than geometric. A run there converges to R = 1 so slowly that successive differences look like a flattening curve. Since the Hard Exit above fires on ΔR_n = 0 over successive passes, **it will read approach-to-certain-failure as a substrate ceiling reached**, which is the opposite conclusion. This was found by a falsifier that failed: an assertion of 1e-6 after 4,000 iterations returned 0.9953. [MEASURED]
+
 This is consistent with §1's substrate ceiling result but more precise — the floor is set by fix quality, not just detection capability.
 
 ### Reduction Properties (All Verified)
@@ -256,9 +295,12 @@ This is consistent with §1's substrate ceiling result but more precise — the 
 | Additionally K=1, d=1, p uniform, π=0.5 | Stage 1 **in risk coordinates**, R = (1−C)/(2−C) — not C(n) itself | All simplifications applied |
 | σ = 0, ν = 0 | R unchanged | Fix failed, no side effects |
 | σ = 0, ν > 0 | R increases | Fix failed and introduced new problems |
-| η = 0 | q = 0, R unchanged | Redundant finding adds nothing |
+| η = 0, ν = 0 | q = 0, R unchanged | Redundant finding adds nothing |
+| η = 0, ν > 0 | q = 0, R = R(1−ν) + ν, so **R increases** | A redundant finding still mutates the artefact |
 | ν = 1 | R = 1 | Fix always breaks something |
 | q = 1, σ = 1, ν > 0 | R = ν | Perfect detection, re-injection is the floor |
+
+**THE η = 0 ROW WAS SPLIT ON 2026-09-21, BECAUSE THE TABLE CONTRADICTED ITS OWN PROSE.** It read *"η = 0 | q = 0, R unchanged"* with no condition on ν, while the 2 rows above it already qualify σ = 0 by ν. At η = 0 the detection term vanishes, so the resolution phase is a no-op — but Phase 3 is not, and §1.1 says so explicitly: *"Re-injection applies to the result of the attempt, not the success. A failed fix that modifies code still carries re-injection risk."* The cycle therefore returns `R(1−ν) + ν`, which is strictly greater than R for every R < 1 and ν > 0. Confirmed by SymPy and by z3, which returns unsatisfiable for any point where `R(1−ν)+ν ≤ R` under ν > 0, R < 1. A redundant finding is not free: proposing a fix for something already known still touches the artefact. Found by a read-only audit of the 2026-09-10 revision package. [DERIVED]
 
 The complete lineage from C(n) to the three-phase operational form is a chain of 4 strict generalisations, 1 exact identity (the recursive collapse) and 1 change of coordinates (F_n to R_n), each step adding one mechanistic dimension that the previous stage assumed away, except the coordinate change, which adds the prior and changes the reported quantity.
 

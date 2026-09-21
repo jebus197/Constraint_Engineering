@@ -81,6 +81,21 @@ SEATS = ("cc2", "fable", "cx", "cgpt", "ds", "ge", "kimi")
 PAID_SEATS = ("cx", "cgpt", "ds", "ge", "kimi")
 
 
+def _mirror_module():
+    """The 1 module that decides what a review round IS, loaded the same way
+    `rounds()` and `_round_date()` already load it. Added 2026-09-21 so the new
+    dispatched/brief-only split delegates rather than reimplementing the
+    predicate -- 2 definitions of "a round happened" is exactly the shape
+    `execute-do-not-grep` names.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mirror_records", REPO / "scripts" / "mirror_panel_records_2026-09-11.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def rounds() -> list[pathlib.Path]:
     """Every directory holding review output, selected by CONTENT.
 
@@ -318,7 +333,18 @@ def main() -> int:
         print(f"      Clopper-Pearson [{c[0]:.4%}, {c[1]:.4%}]")
 
     rs = rounds()
-    print(f"panel rounds with at least 1 seat reply: {len(rs)}\n")
+    # THE LABEL WAS THE CORRECT PROPOSITION AND THE SET WAS THE WRONG ONE
+    # (2026-09-21). `rounds()` is true for a BRIEF ALONE, so this printed 89
+    # under a label claiming a seat reply when 87 hold one. A figure reported to
+    # the founder under a label it does not satisfy is the defect this project
+    # keeps finding, and it is 2 lines from being a correct figure.
+    _dispatched = [d for d in rs if _mirror_module().was_dispatched(d)]
+    _brief_only = len(rs) - len(_dispatched)
+    print(f"panel rounds with at least 1 seat reply: {len(_dispatched)}")
+    if _brief_only:
+        print(f"  (+{_brief_only} directory/ies hold a BRIEF and 0 replies: a round "
+              f"that was never dispatched. Preserved, not counted as a round.)")
+    print()
     print(f"  {'round':38s} {'seats':>5} {'tool calls':>11} {'src files':>10} {'disagree':>9}")
     tool_ok = disagree_ok = seatn = 0
     delivered = []

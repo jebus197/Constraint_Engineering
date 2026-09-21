@@ -246,3 +246,76 @@ def test_a_probe_verdict_alone_can_carry_a_terminal_status_and_that_is_deliberat
         fix, source, TARGET, baseline=None, fix_efficacy_outcome=FIX_INEFFECTIVE)
     assert cures.tristate == R.SK_ADMISSIBLE and cures.sk == 1.0
     assert fails.tristate == R.SK_REJECTED and fails.sk == 0.0
+
+
+class TestBreakingTheProbeMustNotPay:
+    """A fix that destroys its own falsifier must not outscore one that fails it.
+
+    FOUND BY THE fable SEAT, free panel round of 2026-09-21, and reproduced
+    before being acted on. `INDETERMINATE_OTHER` was returned at 2 different
+    sites in `bench/fix_efficacy.py`: line 136, where no falsifier is attached
+    at all, and line 210, reached only AFTER the baseline CONFIRMED and the
+    overlay intercepted -- meaning the instrument worked until the fix touched
+    the target. The `e1_efficacy` gate dropped both from the weighted mean.
+
+    MEASURED BEFORE THE REPAIR, on a real Python target: letting the falsifier
+    run and fail scored sk = 0.6; crashing it scored sk = 1.0, a premium of
+    **+0.4000**. Downstream, `compute_rk(0.5, 0.3, sigma)` turned risk-UP
+    0.516729 into risk-DOWN 0.441176. And all **18 of 18** archived records of
+    this case are the post-baseline one -- "falsifier returned ERROR on the
+    patched target" -- Wilson [82.4121%, 100.0000%], not a mix.
+
+    ESCALATE RATHER THAN 0, and the distinction is load-bearing. Those 18 detail
+    strings do not separate a patch that broke the test from a timeout that
+    broke it, so scoring 0 would assert something unmeasured and blame the fix.
+    ESCALATE asserts nothing, removes the reward, leaves R_k unmoved and sends
+    it to a human. It also honours T04: an equipment failure may not write a
+    TERMINAL status, and ESCALATE is not one.
+    """
+
+    def test_a_fix_that_breaks_its_own_probe_is_escalated_not_scored(self, baseline):
+        from fix_efficacy import PROBE_BROKEN_AFTER_BASELINE
+        r = _score(baseline, PROBE_BROKEN_AFTER_BASELINE)
+        assert r.tristate == R.SK_ESCALATE, (
+            "a fix that broke its own falsifier was given a score; dropping it "
+            "from the mean is what pays for destroying the instrument"
+        )
+        assert r.sk == 0.0
+        assert r.gate_details["e1_efficacy"]["score"] is None
+
+    def test_crashing_the_probe_no_longer_outscores_failing_it(self, baseline):
+        """The gradient itself, measured the way it was found."""
+        from fix_efficacy import PROBE_BROKEN_AFTER_BASELINE
+        honest = _score(baseline, FIX_INEFFECTIVE)
+        crashed = _score(baseline, PROBE_BROKEN_AFTER_BASELINE)
+        assert crashed.sk <= honest.sk, (
+            f"breaking the probe scores {crashed.sk} against {honest.sk} for "
+            f"letting it run and fail -- a premium of "
+            f"{crashed.sk - honest.sk:+.4f} for destroying the instrument"
+        )
+        assert crashed.tristate != R.SK_ADMISSIBLE
+
+    def test_the_two_indeterminate_sites_are_told_apart(self):
+        """They shared 1 constant, and only 1 of them is gameable.
+
+        Executed against the module's own returns rather than asserted: a
+        detail-string match would re-introduce exactly the parsing dependency
+        this project keeps losing defects to.
+        """
+        import fix_efficacy as FE
+        assert FE.PROBE_BROKEN_AFTER_BASELINE != FE.INDETERMINATE
+        # the pre-baseline site still returns the plain constant
+        res = FE.probe({"proposed_fix": "x", "falsifier_code": ""},
+                       "bench/_probe_split_target.py")
+        assert res.outcome == FE.INDETERMINATE, res.outcome
+        assert not res.is_a_verdict
+        # and the new one is not a verdict either -- it must not be read as one
+        broken = FE.FixEfficacyResult(FE.PROBE_BROKEN_AFTER_BASELINE, "x")
+        assert not broken.is_a_verdict
+
+    def test_a_genuinely_absent_probe_is_still_merely_unavailable(self, baseline):
+        """The repair must not sweep up the case where there was no instrument."""
+        from fix_efficacy import INDETERMINATE
+        r = _score(baseline, INDETERMINATE)
+        assert r.tristate == R.SK_ADMISSIBLE
+        assert r.gate_details["e1_efficacy"]["score"] is None

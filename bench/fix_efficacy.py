@@ -77,6 +77,26 @@ NO_FIX = "INDETERMINATE_NO_APPLICABLE_FIX"          # fix did not apply
 #: and "the probe is unreachable" looked identical in the artefact.
 NO_FALSIFIER = "NOT_PROBED_NO_FALSIFIER"
 INDETERMINATE = "INDETERMINATE_OTHER"
+#: THE FIX BROKE THE PROBE, AND THAT IS NOT THE SAME AS THE PROBE BEING ABSENT.
+#: Found by the fable seat in the free panel round of 2026-09-21 and reproduced
+#: before being acted on. Until now this case returned plain `INDETERMINATE`,
+#: which `compute_sk`'s `e1_efficacy` gate drops from the weighted mean -- and
+#: dropping it CREATES A GRADIENT THAT PAYS FOR DESTROYING THE INSTRUMENT.
+#: Measured: letting the falsifier run and fail scores sk = 0.6; crashing it
+#: scores sk = 1.0, a premium of +0.4000, and downstream `compute_rk(0.5, 0.3)`
+#: turns risk-UP 0.516729 into risk-DOWN 0.441176.
+#:
+#: It is a DISTINCT CONSTANT rather than a detail-string match because parsing
+#: has repeatedly cost this project real defects, and a name cannot be misread
+#: the way a sentence can.
+#:
+#: IT IS NOT SCORED 0, WHICH WOULD BLAME THE FIX. All 18 archived records of
+#: this case read "falsifier returned ERROR on the patched target", which does
+#: not distinguish a patch that broke the test from a timeout that broke it, so
+#: 0 would assert something unmeasured. `compute_sk` returns ESCALATE instead:
+#: no verdict, no reward, and a human looks. That also honours T04 -- an
+#: equipment failure may not write a TERMINAL status, and ESCALATE is not one.
+PROBE_BROKEN_AFTER_BASELINE = "INDETERMINATE_PROBE_BROKEN_AFTER_BASELINE"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -207,7 +227,13 @@ def probe(finding: dict, target_rel: str, *,
     if after == "REFUTED":
         return FixEfficacyResult(
             FIX_CURES, "the finding's own falsifier goes quiet once the fix is applied")
-    return FixEfficacyResult(INDETERMINATE, f"falsifier returned {after} on the patched target")
+    # POST-BASELINE. Reaching here means the baseline CONFIRMED and the overlay
+    # intercepted, so the instrument was working until the fix touched the
+    # target. That is a different fact from "there is no falsifier" (line 136
+    # above), and it now carries its own name so the scorer cannot reward it.
+    return FixEfficacyResult(
+        PROBE_BROKEN_AFTER_BASELINE,
+        f"falsifier returned {after} on the patched target")
 
 
 #: The model-facing line, for the feedback channel that already exists in

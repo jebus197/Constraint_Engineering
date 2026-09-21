@@ -60,8 +60,18 @@ def _post_ruling_rounds() -> list[str]:
     m = _mirror()
     if not LOGS.is_dir():
         return []
+    # `was_dispatched`, NOT `holds_review_output` (2026-09-21). The inclusive
+    # predicate is true for a BRIEF ALONE, so a round whose dispatch failed --
+    # brief written, 0 replies -- was required to publish a full, unfiltered
+    # record of replies that do not exist. That demand cannot be met: the only
+    # ways to make it green are to delete the brief or to fake the record, and
+    # both destroy evidence. Rounds 1 to 3 of the 2026-09-20 maths review each
+    # lost seats to dispatch defects, so a total failure was 1 defect away.
+    # Measured: 2 brief-only rounds in the archive, and `maths_panel_2026-09-20_
+    # revised_model` POSTDATES this ruling -- it escaped only because this walk
+    # reads the live directory and that copy lives in the mirror.
     return [d.name for d in sorted(p for p in LOGS.iterdir() if p.is_dir())
-            if m.holds_review_output(d) and (m.round_date(d.name) or "") >= RULING]
+            if m.was_dispatched(d) and (m.round_date(d.name) or "") >= RULING]
 
 
 def _all_record_text() -> str:

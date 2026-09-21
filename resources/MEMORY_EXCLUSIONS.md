@@ -15,15 +15,19 @@ The source index lives privately at
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
 The directory holds **148 files**, of which one is `MEMORY.md` itself
-(the index), leaving **147 individual memory files**. They partition as:
+(the index), leaving **149 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 90 |
+| Mirrored (in summarised form) in `MEMORY.md` | 92 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 147 |
+| total | 149 |
+
+> **[Correction 2026-09-21.]** Total 147 -> 149, mirrored 90 -> 92, directory 148 -> 150. Two memory files were written overnight on 2026-09-21: `cdsfl_the_appendix_won_2026-09-21.md`, recording that the assistant attacked the model's Phase 2 and was refuted by both free seats in a single round, and `cdsfl_scorer_measured_absence_of_harm_2026-09-21.md`, recording that S_k filled the appendix's sigma slot while every gate measured absence of harm. Both are mirrored in `MEMORY.md` under the pointers "THE APPENDIX WON" and "SCORER MEASURED ABSENCE OF HARM", so both fall in the residual bucket rather than needing a name under Excluded or Unclassified.
+>
+> **This is the 9th consecutive manual correction to a figure the 2026-08-17 remedy said should be derived inside `sv` rather than typed.** The guard caught it at the suite gate again, which is the mechanism working. The underlying remedy is still not built, and 9 consecutive manual corrections is now the strongest evidence in the record that it should be.
 
 > **[Correction 2026-09-17.]** Total 141 -> 142, mirrored 84 -> 85, directory 142 -> 143. One memory file was written in the small hours of 2026-09-17: `feedback_no_privately_preamble.md`, recording the founder's ruling that a planning preamble must not open a reply. It is mirrored in `MEMORY.md` at the pointer "No 'Privately' Preamble", so it falls in the residual bucket rather than needing a name under Excluded or Unclassified.
 >

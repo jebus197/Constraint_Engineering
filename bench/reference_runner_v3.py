@@ -10561,13 +10561,21 @@ def _run_effect_fix_efficacy(
     Producer for every figure above: `scripts/scorer_discrimination_2026-09-20.py`.
     """
     try:
-        from fix_efficacy import FIX_CURES, FIX_INEFFECTIVE
+        from fix_efficacy import (
+            FIX_CURES, FIX_INEFFECTIVE, PROBE_BROKEN_AFTER_BASELINE,
+        )
     except ImportError:  # pragma: no cover - the module ships beside this one
         return None, "fix-efficacy module unavailable"
     if outcome == FIX_CURES:
         return 1.0, "the fix cures its own falsifier (probe verdict)"
     if outcome == FIX_INEFFECTIVE:
         return 0.0, "the fix does NOT cure its own falsifier (probe verdict)"
+    if outcome == PROBE_BROKEN_AFTER_BASELINE:
+        # Handled by the caller, which ESCALATES. Returning None here would
+        # silently drop it from the mean, which is the defect itself.
+        return None, (
+            "the fix broke its own falsifier after the baseline confirmed; "
+            "no verdict is available and none is inferred")
     return None, (
         f"fix efficacy not measured: {outcome or 'no probe result on this entry'}"
     )
@@ -10927,7 +10935,27 @@ def compute_sk(
     details["e2_regression"] = {"score": e2_score, "detail": e2_detail}
     if e2_score is not None:
         effect_gates.append(("e2_regression", e2_score, 2.0))
-    elif test_cmd:  # configured but unavailable
+    else:
+        # SILENT EVIDENCE LOSS. Found by the cc2 seat in the open panel round of
+        # 2026-09-20, reproduced independently before being applied.
+        #
+        # This read `elif test_cmd:`, so e2's absence was recorded ONLY when a
+        # test command existed and the run failed. With no test command
+        # configured, the single most informative effect gate was dropped from
+        # the renormalised mean leaving NO entry in `_unavailable`, and the
+        # resulting 2-gate E is numerically indistinguishable from a 3-gate one.
+        # A reader of the archive cannot tell which gates were consulted.
+        #
+        # MEASURED over the archive, and the seat's figures reproduce exactly:
+        # of 902 ADMISSIBLE records, 140 have `e2_score is None`; 121 carry
+        # `_unavailable: ['e2_regression']` and **19 carry nothing at all** --
+        # 13.5714%, Wilson [8.8635%, 20.2251%]. All 19 read "no test command
+        # configured". Those 19 are not recoverable from the persisted record.
+        #
+        # ADDITIVE, and that is checked by execution rather than asserted:
+        # `unavailable_gates` never enters the E computation, which sums over
+        # `effect_gates` alone, so no archived or future verdict moves. It adds
+        # a record and removes nothing.
         unavailable_gates.append("e2_regression")
 
     # e3: ruff non-regression
@@ -10947,6 +10975,37 @@ def compute_sk(
         effect_gates.append(("e4_bandit", e4_score, 2.0))
     else:
         unavailable_gates.append("e4_bandit")
+
+    # A FIX THAT BREAKS ITS OWN FALSIFIER GETS NO SCORE AT ALL (2026-09-21).
+    #
+    # Found by the fable seat in the free panel round and reproduced before
+    # acting: dropping this case from the weighted mean PAYS FOR DESTROYING THE
+    # INSTRUMENT. Measured on a real target -- letting the falsifier run and
+    # fail gives sk = 0.6, crashing it gives sk = 1.0, a premium of +0.4000, and
+    # `compute_rk(0.5, 0.3, sigma)` turns risk-UP 0.516729 into risk-DOWN
+    # 0.441176. In a project whose archive already holds a finding about gaming
+    # a gate, that gradient would be found.
+    #
+    # ESCALATE RATHER THAN 0. All 18 archived records read "falsifier returned
+    # ERROR on the patched target", which does not separate a patch that broke
+    # the test from a timeout that broke it, so scoring 0 would assert something
+    # unmeasured and blame the fix. ESCALATE asserts nothing, removes the
+    # reward, leaves R_k unmoved, and sends it to a human -- and it honours T04,
+    # because an equipment failure may not write a TERMINAL status.
+    #
+    # Placed AFTER every gate has recorded itself, so the archive still shows
+    # what the other gates saw.
+    try:
+        from fix_efficacy import PROBE_BROKEN_AFTER_BASELINE as _PROBE_BROKEN
+    except ImportError:  # pragma: no cover
+        _PROBE_BROKEN = None
+    if _PROBE_BROKEN is not None and fix_efficacy_outcome == _PROBE_BROKEN:
+        details["_unavailable"] = unavailable_gates
+        return SkResult(
+            sk=0.0, A=A, E=0.0, tristate=SK_ESCALATE,
+            gate_details=details,
+            blocks_parsed=len(blocks), blocks_applied=applied,
+        )
 
     # ESCALATE if no effect gates produced evidence
     if not effect_gates:

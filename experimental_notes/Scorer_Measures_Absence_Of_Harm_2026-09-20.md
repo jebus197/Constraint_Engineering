@@ -4,7 +4,7 @@
 
 ## What was found
 
-`compute_sk` in `bench/reference_runner_v3.py:10752` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
+`compute_sk` in `bench/reference_runner_v3.py:10760` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
 
 Every gate feeding `sk` measured absence of harm instead. `e2_regression` asks whether the existing suite still passes. `e3_ruff` asks whether the fix added lint findings. `e4_bandit` asks whether it added security findings. None asks whether the flaw is gone.
 
@@ -70,7 +70,7 @@ This does not breach T04, the rule that an equipment failure may not write a ter
 
 ## A second, smaller defect in the same path
 
-`_rejection_lines` at `bench/reference_runner_v3.py:12251` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+`_rejection_lines` at `bench/reference_runner_v3.py:12310` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
 
 ## A third, found by the suite
 

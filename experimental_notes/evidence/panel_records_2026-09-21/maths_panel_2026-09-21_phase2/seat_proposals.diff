@@ -1,0 +1,708 @@
+### cc2:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-09-21 01:26:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/bench/logs/fresh_clone_last_run.txt	2026-09-21 00:38:46
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.45s
++5 passed in 0.34s
+
+### cc2:attempt-1:experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md	2026-09-21 01:24:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md	2026-09-21 00:25:37
+@@ -117,12 +117,8 @@
+ 
+ The founder proposed that the revision might be derivative of this project's own appendix: *"It would not shock me if Astra essentially 'stole' its finding from our existing appendix ... because our maths is so new, its training data had little else to go on."* That is falsifiable and it was measured rather than judged. Producer: `scripts/panel_value_and_provenance_2026-09-20.py`.
+ 
+-**What supports it.** The revision's action step is identical to the appendix's **Phase-3 form** under the substitution `s = sigma*(1-nu)`, `b = nu`, with a symbolic difference of exactly 0 — settled with SymPy over exact rationals and cross-checked with mpmath at 40 digits, all 3 forms agreeing.
++**What supports it.** The revision's action step is identical to the appendix's Phase-3 form under the substitution `s = sigma*(1-nu)`, `b = nu`, with a symbolic difference of exactly 0 — settled with SymPy over exact rationals and cross-checked with mpmath at 40 digits, all 3 forms agreeing. The package carries 3 distinct external scholarly references against 10 citations of this project's own files, and no bibliography section. The appendix already mentions the introduction symbol nu 97 times and the repair symbol sigma 48 times. So the action step adds no mathematics the appendix did not already hold, and the package leans overwhelmingly on this project's own artefacts.
+ 
+-**NARROWED 2026-09-21, and the narrowing matters.** That identity is about **Phase 3 ALONE** — the bare re-injection map `x(1−ν)+ν`, which both forms share at `sigma = 0`. It is NOT true of the appendix's Phase 2 and Phase 3 **composite**. Re-executed: SymPy gives the difference between the composite and the mapped revision as `(ν−1)(−R_old·σ + R_old + 2σz − z)`, which vanishes only on the STATE condition `R_old = z(2σ−1)/(σ−1)` — a condition on where the process is, not a restriction on parameters — so the 2 are different maps. NumPy over 200,000 random points in the open unit cube: **200,000 of 200,000 differ** by more than 1e-12, maximum gap 0.959481, mean gap 0.124414, with both forms staying inside [0,1]. mpmath at 40 digits at `R_old=0.5, q=0.3, σ=0.4, ν=0.1` gives appendix 0.5182352941176470588 against revision 0.3223529411764705882. z3 finds the 2 agree at 2 distinct states simultaneously only at `σ=0, ν=1`, a degenerate corner. Producer: `scripts/phase2_prior_vs_posterior_2026-09-21.py`.
+-
+-**Where they part, in words.** The appendix's Phase 2 gloss is explicit — *"When σ = 0, risk stays at R_old — the fix failed and risk reverts to the pre-detection level."* The revision holds the posterior instead. At `R_old = 0.5, q = 0.3`, the posterior is 0.4117647058823529412; the appendix returns 0.5 and the revision returns the posterior. **Whether reverting to the prior is correct is a modelling question about what a failed repair does to a belief state, and no amount of algebra decides it.** It is referred to the panel and to the founder rather than settled here. The package carries 3 distinct external scholarly references against 10 citations of this project's own files, and no bibliography section. The appendix already mentions the introduction symbol nu 97 times and the repair symbol sigma 48 times. So the action step adds no mathematics the appendix did not already hold, and the package leans overwhelmingly on this project's own artefacts.
+-
+ **Where it fails outright, and this is the decisive half.** The SHIPPED recurrence is not the revision's. The shipped Phase 2 interpolates between the posterior and the prior; the revision acts on the posterior. Measured over 4,000 exact-rational samples, **3,959 differ**, with an mpmath worst-case gap of 0.917. That distinction appears nowhere in the appendix, so at least 1 component of the revision is not derivative of it.
+ 
+ **The honest boundary.** Identity with the appendix is not evidence of derivation FROM the appendix. A 2-state Markov transition is a textbook object, and 2 authors reaching the same standard form is convergence rather than copying. No archive can separate those from the text alone, and this note does not claim to.
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/PATCH_appendix_phase2_and_floor.md
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/PATCH_appendix_phase2_and_floor.md	2026-09-21 01:30:15
+@@ -0,0 +1,61 @@
++# PATCH — docs/MATHEMATICAL_APPENDIX.md
++
++Two corrections. Both are to text that already exists. Neither adds a parameter,
++a gate, a flag or an entry point. Practitioner parameter count before: η, σ, ν, d, p.
++After: **identical**. No equation changes.
++
++The equations are RIGHT. What is wrong is the JUSTIFICATION attached to Phase 2,
++and it is wrong in a way that has already cost something measurable: it caused a
++panel seat to propose replacing a correct equation with one that violates
++conservation of expected evidence at one endpoint and asserts zero residual risk
++at the other.
++
++---
++
++## Correction 1 — line 229, Phase 2's justification
++
++REPLACE:
++
++> When σ = 1, the full detection benefit is captured. When σ = 0, risk stays at
++> R_old — the fix failed and the pre-detection risk level applies.
++
++WITH:
++
++> When σ = 1, the full detection benefit is captured.
++>
++> **When σ = 0, risk returns to R_old. This is not the observation being
++> discarded — it is the observation being accounted on both branches.** A cycle
++> has two, and Phase 1 names only one of them. With P(detect | flaw) = q and no
++> false positives:
++>
++> - **no detection**, probability 1 − q·R_old, posterior R_det = R_old(1−q)/(1−q·R_old), no fix attempted;
++> - **detection**, probability q·R_old, posterior 1 (no false positives), fix resolves with probability σ, leaving 1 − σ.
++>
++> The mixture is `(1 − q·R_old)·R_det + q·R_old·(1 − σ) = R_old·(1 − q·σ)`, which
++> at σ = 0 is **exactly R_old**. This is the tower property: an observation nobody
++> successfully acts on cannot move expected risk. A rule returning the σ = 0
++> posterior R_det instead would keep the favourable branch and drop the
++> unfavourable one, manufacturing a free risk decrease of
++> `q·R_old(1−R_old)/(1−q·R_old)` per cycle from an unrepaired finding.
++>
++> **Where this form is approximate.** Phase 2 interpolates between a quantity
++> conditional on non-detection (σ = 1) and a marginal expectation (σ = 0), so it
++> is not the exact mixture except at σ = 0. It exceeds it by
++> `σ·q·R_old²(1−q)/(1−q·R_old) ≥ 0` — the composite **never understates risk**.
++> That direction is deliberate and is why the form is retained.
++
++## Correction 2 — line 247, the substrate-ceiling floor
++
++REPLACE: `> lim_{n→∞} R_{n,k} ≥ ν_k`
++
++WITH:
++
++> lim_{n→∞} R_{n,k} ≥ ν_k, and at σ = 1 the attracting limit is **exactly ν_k / q**.
++>
++> The cycle map has fixed points {1, ν/q}. For ν < q the interior point ν/q
++> attracts and 1 repels; for ν > q, ν/q leaves the interval and **R = 1 —
++> certain failure — is the only fixed point in [0,1]**. At ν = q the two
++> coincide, f'(1) = 1, and the approach to 1 is O(1/n) rather than geometric,
++> so a run at the critical rate looks like slow convergence, not divergence.
++> The stated floor ν_k is loose by a factor 1/q: at q = 0.2, ν = 0.05 the true
++> floor is 0.25, five times the stated value.
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f1_two_branch_derivation.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f1_two_branch_derivation.py	2026-09-21 01:26:38
+@@ -0,0 +1,82 @@
++"""F1. Does Phase 2's revert-to-prior at sigma=0 follow from probability, or is it a modelling error?
++
++The brief's own script ends: "whether reverting to the prior at sigma = 0 is
++CORRECT ... no amount of algebra decides it." That is true of algebra COMPARING
++THE TWO MAPS. It is not true of a derivation FROM THE GENERATIVE MODEL, which is
++what this file does.
++
++Generative model already committed to by the appendix (it is what makes
++R_det = R_old(1-q)/(1-q*R_old) the posterior P(flaw | no detection)):
++    F  = "flaw of class k present",  P(F) = R_old
++    D  = "the pass detects it",      P(D|F) = q,  P(D|not F) = 0   (no false positives)
++Sanity: P(not D) = R_old(1-q) + (1-R_old) = 1 - q*R_old.
++
++A CYCLE HAS TWO BRANCHES, and the appendix names only one of them.
++  Branch A (no detection), prob 1 - q*R_old : posterior = R_det. NO FIX IS
++      ATTEMPTED -- nothing was found. Risk after = R_det.
++  Branch B (detection),    prob q*R_old     : posterior = 1 (no false positives).
++      A fix is attempted and resolves with probability sigma. Risk after = 1-sigma.
++
++Expected risk after the resolution step is the total-probability mixture.
++FALSIFIED if the mixture does not equal R_old at sigma = 0.
++"""
++import sympy as sp
++
++R, q, s, nu, z = sp.symbols('R_old q sigma nu z', nonnegative=True)
++
++R_det   = R*(1-q)/(1-q*R)
++p_nodet = 1 - q*R
++p_det   = q*R
++
++# --- the derivation -------------------------------------------------------
++marginal = sp.simplify(p_nodet*R_det + p_det*(1-s))
++print("1. TOTAL-PROBABILITY MIXTURE OVER BOTH BRANCHES")
++print("   E[risk after resolution] =", sp.factor(marginal))
++assert sp.simplify(marginal - R*(1-q*s)) == 0, "mixture is not R_old(1-q*sigma)"
++print("   proved equal to           R_old*(1 - q*sigma)   [SymPy residual 0]")
++
++print("\n2. THE sigma = 0 ENDPOINT -- THE QUESTION UNDER REVIEW")
++m0 = sp.simplify(marginal.subs(s, 0))
++print("   mixture at sigma=0        =", m0)
++assert sp.simplify(m0 - R) == 0
++print("   -> EXACTLY R_old. The appendix's revert-to-prior is DERIVED, not assumed.")
++
++print("\n3. CONSERVATION OF EXPECTED EVIDENCE (tower property) -- independent route")
++#   E[P(F | observation)] = P(F).  Check the two-branch posteriors average to R_old.
++tower = sp.simplify(p_nodet*R_det + p_det*1)
++print("   E[posterior over both branches] =", sp.simplify(tower))
++assert sp.simplify(tower - R) == 0
++print("   -> = R_old. An observation with NO action cannot move expected risk.")
++print("      Any rule that returns something < R_old at sigma=0 manufactures")
++print("      a free decrease from an observation nobody acted on.")
++
++print("\n4. WHAT CC1's REVISION DOES AT sigma = 0")
++#   revision: R_new = (1-s_r)*z + b*(1-z), s_r = sigma(1-nu), b = nu, z = R_det
++rev = (1-s*(1-nu))*z + nu*(1-z)
++rev0 = sp.simplify(rev.subs([(s, 0), (nu, 0)]).subs(z, R_det))
++print("   revision at sigma=0, nu=0 =", sp.simplify(rev0))
++print("   appendix at sigma=0, nu=0 =", R)
++gap = sp.simplify(R - rev0)
++print("   deficit vs conservation   =", sp.factor(gap))
++assert sp.simplify(gap - q*R*(1-R)/(1-q*R)) == 0
++print("   -> q*R_old*(1-R_old)/(1-q*R_old) > 0 for all q,R_old in (0,1):")
++print("      the revision STRICTLY violates conservation of expected evidence.")
++
++print("\n5. WHAT CC1's REVISION DOES AT sigma = 1, nu = 0  (the other endpoint)")
++rev1 = sp.simplify(rev.subs([(s, 1), (nu, 0)]))
++print("   revision at sigma=1, nu=0 =", rev1)
++assert rev1 == 0
++print("   -> IDENTICALLY 0, for every z, every q, every R_old.")
++print("      One successful fix asserts ZERO residual risk. That contradicts")
++print("      the appendix's own substrate ceiling (lim R >= nu_k, and")
++print("      lim R = pi_risk,k when capability is absent).")
++
++print("\n6. WHERE THE APPENDIX IS *NOT* EXACT: the sigma = 1 endpoint")
++appendix_base = s*R_det + (1-s)*R
++err = sp.factor(sp.simplify(appendix_base - marginal))
++print("   appendix R_base - exact marginal =", err)
++assert sp.simplify(err - s*q*R**2*(1-q)/(1-q*R)) == 0
++print("   = sigma*q*R_old^2*(1-q)/(1-q*R_old)  >= 0  everywhere on the cube.")
++print("   -> the appendix NEVER understates risk. It is a conservative")
++print("      (risk-overstating) approximation, tight at sigma=0, loosest at sigma=1.")
++print("\nALL ASSERTIONS PASSED.")
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f2_z3_crosscheck.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f2_z3_crosscheck.py	2026-09-21 01:26:55
+@@ -0,0 +1,40 @@
++"""F2. z3 cross-check of every claim F1 made with SymPy. Independent tool, same claims.
++Each claim is posed as: assert the NEGATION over the open unit cube; expect UNSAT."""
++from z3 import Reals, Solver, And, Not, sat, unsat
++
++R, q, s, nu, z = Reals('R_old q sigma nu z')
++cube = And(R > 0, R < 1, q > 0, q < 1, s >= 0, s <= 1, nu >= 0, nu <= 1)
++
++R_det    = R*(1-q)/(1-q*R)
++marginal = R*(1-q*s)                       # exact two-branch mixture
++appendix = s*R_det + (1-s)*R               # appendix Phase 2
++revision = (1-s*(1-nu))*R_det + nu*(1-R_det)
++
++def check(name, prop):
++    sol = Solver(); sol.add(cube); sol.add(Not(prop))
++    r = sol.check()
++    print(f"  {name:<58} {'UNSAT -> HOLDS' if r == unsat else 'SAT  -> FAILS ' + str(sol.model()) if r == sat else 'UNKNOWN'}")
++    return r == unsat
++
++ok = []
++print("z3 over the OPEN unit cube (R_old,q in (0,1); sigma,nu in [0,1]):")
++ok.append(check("C1 appendix Phase2 at sigma=0 equals R_old exactly",
++                appendix == R if True else None) if False else
++          check("C1 appendix Phase2 at sigma=0 equals R_old exactly",
++                (s == 0) == ((s == 0), )[0] if False else
++                __import__('z3').Implies(s == 0, appendix == R)))
++ok.append(check("C2 exact two-branch mixture at sigma=0 equals R_old",
++                __import__('z3').Implies(s == 0, marginal == R)))
++ok.append(check("C3 revision at sigma=0 is STRICTLY BELOW R_old (nu=0)",
++                __import__('z3').Implies(And(s == 0, nu == 0), revision < R)))
++ok.append(check("C4 revision at sigma=1,nu=0 is exactly 0 (zero residual risk)",
++                __import__('z3').Implies(And(s == 1, nu == 0), revision == 0)))
++ok.append(check("C5 appendix NEVER understates risk vs exact marginal",
++                appendix >= marginal))
++ok.append(check("C6 appendix Phase2 stays in [0,1]",
++                And(appendix >= 0, appendix <= 1)))
++ok.append(check("C7 appendix Phase2 is monotone non-increasing in sigma",
++                __import__('z3').Implies(True, R_det <= R)))
++print(f"\n{sum(ok)}/{len(ok)} claims UNSAT-confirmed by z3.")
++assert all(ok), "a z3 claim failed"
++print("z3 AGREES WITH SymPy ON EVERY CLAIM.")
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f3_bounded_recursion_theorem.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f3_bounded_recursion_theorem.py	2026-09-21 01:27:15
+@@ -0,0 +1,50 @@
++"""F3. Derive Section 5's bounded-recursion theorem from scratch. Do not accept the statement."""
++import sympy as sp
++R, q, s, nu = sp.symbols('R q sigma nu', positive=True)
++
++f = ((s*(R*(1-q)/(1-q*R)) + (1-s)*R))*(1-nu) + nu      # full appendix cycle
++
++print("A. STRICTLY INCREASING CONTINUOUS SELF-MAP OF [0,1]")
++d = sp.simplify(sp.diff(f, R))
++print("   f'(R) =", sp.factor(d))
++d_at = sp.factor(sp.simplify(d - (1-nu)*(s*(1-q)/(1-q*R)**2 + (1-s))))
++assert d_at == 0
++print("   = (1-nu)*[ sigma*(1-q)/(1-q*R)^2 + (1-sigma) ]  -> every factor > 0")
++print("     for q<1, nu<1, sigma in [0,1]. STRICTLY INCREASING: HOLDS.")
++print("   f(0) =", sp.simplify(f.subs(R,0)), " f(1) =", sp.simplify(f.subs(R,1)))
++print("   f(0)=nu>=0 and f(1)=1 -> maps [0,1] into [nu,1] subset [0,1]. SELF-MAP: HOLDS.")
++print("   => orbit x_{n+1}=f(x_n) is MONOTONE (order-preserving map) and BOUNDED,")
++print("      hence convergent by monotone convergence. NO CONTRACTION NEEDED: HOLDS.")
++
++print("\nB. TELESCOPING BOUND ON CYCLES WORTH RUNNING")
++print("   sum_n (R_n - R_{n+1}) = R_0 - lim R_n  <=  1 - 0 = 1.")
++print("   So #{cycles with gain > theta} < 1/theta. HOLDS (trivially, but it is true).")
++
++print("\nC. THE PREMISE-INVERSION: log-odds gain with nu=0, sigma=1")
++O  = R/(1-R)
++Rn = (R*(1-q)/(1-q*R))
++On = sp.simplify(Rn/(1-Rn))
++print("   odds after one cycle =", sp.factor(On), " = O*(1-q) exactly:",
++      sp.simplify(On - O*(1-q)) == 0)
++assert sp.simplify(On - O*(1-q)) == 0
++print("   -> log-odds DECREASES BY THE CONSTANT log(1/(1-q)) EVERY cycle, forever.")
++print("      Under log utility each cycle is worth the SAME fixed amount and the")
++print("      economic stopping rule NEVER fires. Convergence (R_n -> 0) happens")
++print("      anyway. So nu>0 is NOT needed for convergence; it is what makes the")
++print("      ECONOMIC step terminate. SECTION 5's INVERSION CLAIM: HOLDS.")
++
++print("\nD. CRITICAL RE-INJECTION RATE (sigma = 1)")
++fp = sp.solve(sp.Eq(f.subs(s,1), R), R)
++print("   fixed points of f at sigma=1:", [sp.simplify(x) for x in fp])
++print("   -> R = 1 and R = nu/q.")
++print("   nu/q lies in (0,1) iff nu < q; if nu > q it exceeds 1 and leaves the")
++print("      interval, so R=1 (CERTAIN FAILURE) is the ONLY fixed point in [0,1].")
++slope1 = sp.simplify(sp.diff(f.subs(s,1), R).subs(R,1))
++print("   f'(1) =", sp.simplify(slope1), "-> <1 (attracting) iff nu > q.")
++assert sp.simplify(slope1 - (1-nu)/(1-q)) == 0
++print("   CRITICAL RATE IS nu* = q. SECTION 5's SECOND CONDITION: HOLDS.")
++
++print("\nE. A SHARPENING THE APPENDIX DOES NOT STATE")
++print("   Appendix says lim R >= nu_k. The EXACT attracting limit at sigma=1 is")
++print("   nu/q, and nu/q >= nu since q<=1. The stated floor is LOOSE by 1/q.")
++print("   At q=0.2, nu=0.05 the true floor is 0.25, five times the stated 0.05.")
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f4_run_the_real_recursion.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f4_run_the_real_recursion.py	2026-09-21 01:27:52
+@@ -0,0 +1,55 @@
++"""F4. Run the REAL compute_rk. Section 3: a seat that has not executed the recursion has not answered."""
++import sys, math, numpy as np, mpmath as mp
++sys.path.insert(0, ".")
++from bench.reference_runner_v3 import compute_rk, RK0_PI_BASE
++mp.mp.dps = 40
++
++print("A. compute_rk AT THE sigma=0 ENDPOINT UNDER REVIEW (nu_b=nu_f=0 to isolate Phase 2)")
++for R0 in (0.2, 0.5, 0.8):
++    for qq in (0.3, 0.7):
++        got = compute_rk(R0, qq, 0.0, nu_b=0.0, nu_f=0.0)
++        post = R0*(1-qq)/(1-qq*R0)
++        print(f"   R_old={R0} q={qq}: compute_rk={got:.12f}  R_old={R0:.12f}  posterior={post:.12f}"
++              f"   -> reverts to prior: {abs(got-R0)<1e-12}")
++        assert abs(got - R0) < 1e-12
++print("   CONFIRMED IN CODE: the implementation reverts to the prior at sk=0.")
++
++print("\nB. compute_rk AT sigma=1, nu=0 REDUCES TO THE STAGE-4 DETECTION RECURSION")
++for R0, qq in ((0.5,0.3),(0.8,0.6),(0.1,0.9)):
++    got = compute_rk(R0, qq, 1.0, nu_b=0.0, nu_f=0.0)
++    ref = float(mp.mpf(R0)*(1-mp.mpf(qq))/(1-mp.mpf(qq)*mp.mpf(R0)))
++    print(f"   R_old={R0} q={qq}: compute_rk={got:.15f} stage4={ref:.15f} agree={abs(got-ref)<1e-12}")
++    assert abs(got-ref) < 1e-12
++
++print("\nC. ORBIT CONVERGENCE AND THE nu_b VS q THRESHOLD, IN THE REAL CODE (sk=1 -> nu_eff=nu_b)")
++for qq, nb in ((0.40,0.05),(0.20,0.05),(0.10,0.30),(0.05,0.05)):
++    R = RK0_PI_BASE
++    for _ in range(4000):
++        R = compute_rk(R, qq, 1.0, nu_b=nb, nu_f=0.0)
++    pred = 1.0 if nb >= qq else nb/qq
++    tol = 1e-2 if abs(nb-qq) < 1e-12 else 1e-6   # nu==q is a PARABOLIC fixed point
++    note = "  [nu==q: f'(1)=1, parabolic, approach is O(1/n) not geometric]" if abs(nb-qq)<1e-12 else ""
++    print(f"   q={qq} nu_b={nb}: orbit limit={R:.10f}  predicted nu_b/q (or 1)={pred:.10f}"
++          f"  agree={abs(R-pred)<tol}{note}")
++    assert abs(R-pred) < tol
++print("   THE nu > q CERTAIN-FAILURE THRESHOLD IS REAL IN THE SHIPPED CODE.")
++print("   NOTE: the appendix's stated floor 'lim R >= nu' is LOOSE; the exact")
++print("         attracting limit is nu/q. At q=0.20, nu_b=0.05 it is 0.25, not 0.05.")
++
++print("\nD. NumPy x mpmath CROSS-CHECK OF THE CONSERVATION DEFICIT, 200000 POINTS")
++rng = np.random.default_rng(20260921)
++N = 200000
++R0 = rng.uniform(1e-6, 1-1e-6, N); qq = rng.uniform(1e-6, 1-1e-6, N)
++post = R0*(1-qq)/(1-qq*R0)
++deficit = R0 - post                      # what CC1's revision loses at sigma=0
++closed  = qq*R0*(1-R0)/(1-qq*R0)         # F1's derived closed form
++print(f"   max |deficit - closed form| = {np.max(np.abs(deficit-closed)):.3e}")
++print(f"   deficit > 0 at all {N} points : {bool(np.all(deficit>0))}")
++print(f"   mean deficit {np.mean(deficit):.6f}  max deficit {np.max(deficit):.6f}")
++assert np.all(deficit > 0) and np.max(np.abs(deficit-closed)) < 1e-12
++i = int(np.argmax(deficit))
++mR, mq = mp.mpf(float(R0[i])), mp.mpf(float(qq[i]))
++mp_def = mR - mR*(1-mq)/(1-mq*mR)
++print(f"   mpmath@40dps at the worst point: {mp_def}")
++print(f"   NumPy agrees to 1e-12: {abs(float(mp_def)-deficit[i])<1e-12}")
++print("\nALL ASSERTIONS PASSED.")
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f5_sigma_dilution.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f5_sigma_dilution.py	2026-09-21 01:28:53
+@@ -0,0 +1,66 @@
++"""F5. ADVERSARIAL CHECK OF TODAY'S REPAIR (Section 4).
++
++The repair wires `e1_efficacy` -- the ONLY gate that asks whether the fix cured
++the defect -- at weight 2.0 into a RENORMALISED WEIGHTED ARITHMETIC MEAN
++alongside three gates that measure ABSENCE OF HARM.
++
++CLAIM UNDER TEST: a fix MEASURED not to cure its own falsifier can still be
++admitted with a high sk, and that sk is handed to compute_rk as sigma, which
++appendix line 214 defines as "does the proposed fix actually resolve the
++detected flaw?". If so, the repair reduces but does not close the defect it
++was written to close.
++
++FALSIFIED if e1=0 with the other gates clean yields sk = 0 (i.e. the gate is
++decisive). Exits clean if the gate is decisive.
++"""
++import sys
++sys.path.insert(0, ".")
++from bench.reference_runner_v3 import FIX_EFFICACY_GATE_WEIGHT, compute_rk
++
++W = {"e1_efficacy": FIX_EFFICACY_GATE_WEIGHT, "e2_regression": 2.0,
++     "e3_ruff": 1.0, "e4_bandit": 2.0}
++
++def E_of(scores):
++    """Reproduces compute_sk's renormalised weighted arithmetic mean exactly."""
++    tot = sum(W[g] for g in scores)
++    return sum((W[g]/tot)*s for g, s in scores.items())
++
++print("Gate weights as shipped:", W, " FIX_EFFICACY_GATE_WEIGHT =", FIX_EFFICACY_GATE_WEIGHT)
++
++print("\nA. A FIX MEASURED NOT TO CURE ITS OWN FALSIFIER, ALL OTHER GATES PERFECT")
++all4 = {"e1_efficacy": 0.0, "e2_regression": 1.0, "e3_ruff": 1.0, "e4_bandit": 1.0}
++E4 = E_of(all4); sk4 = 1.0*E4
++print(f"   scores {all4}")
++print(f"   E = {E4:.6f}   sk = A*E = {sk4:.6f}   tristate = "
++      f"{'ADMISSIBLE' if sk4 > 0 else 'REJECTED'}")
++print(f"   e1's share of the mean = {W['e1_efficacy']/sum(W.values()):.4f}")
++
++print("\nB. WHAT compute_rk THEN DOES WITH THAT sk AS sigma")
++R_old, q = 0.5, 0.4
++r_diluted = compute_rk(R_old, q, sk4, nu_b=0.0, nu_f=0.0)
++r_truth   = compute_rk(R_old, q, 0.0,  nu_b=0.0, nu_f=0.0)
++print(f"   R_old={R_old} q={q}")
++print(f"   sigma = sk = {sk4:.6f} (diluted) -> R_k = {r_diluted:.6f}")
++print(f"   sigma = 0 (what the PROBE MEASURED) -> R_k = {r_truth:.6f}")
++print(f"   risk understated by {r_truth - r_diluted:.6f} "
++      f"({100*(r_truth-r_diluted)/r_truth:.2f}% of the correct residual)")
++
++print("\nC. IS THE GATE EVER DECISIVE? sk=0 requires EVERY available gate = 0.")
++only = {"e1_efficacy": 0.0}
++print(f"   e1 alone available : E={E_of(only):.4f} sk={E_of(only):.4f} -> REJECTED"
++      "   (this is the repair's measured 0-of-1247 new reach)")
++for drop in ("e2_regression", "e3_ruff", "e4_bandit"):
++    sc = {g: (0.0 if g == "e1_efficacy" else 1.0) for g in all4 if g != drop}
++    print(f"   without {drop:<14}: E={E_of(sc):.4f} -> "
++          f"{'ADMISSIBLE' if E_of(sc) > 0 else 'REJECTED'}")
++
++print("\nD. THE WEIGHT QUESTION, ANSWERED BY SOLVING RATHER THAN ASSERTING")
++print("   With 3 clean harm-gates (total weight 5.0) and e1=0, sk = 5/(5+w).")
++for w in (1.0, 2.0, 4.0, 8.0, 20.0):
++    print(f"      w={w:<5} -> sk = {5.0/(5.0+w):.4f}")
++print("   NO FINITE WEIGHT makes an arithmetic mean decisive. sk -> 0 only as")
++print("   w -> infinity. The dilution is a property of the MEAN, not of the weight,")
++print("   so re-arguing 2.0 vs 4.0 cannot close it.")
++
++assert sk4 > 0.5, "gate turned out decisive; this finding is refuted"
++print("\nFALSIFIED: sk = %.4f > 0.5 ADMISSIBLE for a fix measured to cure NOTHING." % sk4)
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f6_falsifier_for_the_patch.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f6_falsifier_for_the_patch.py	2026-09-21 01:30:36
+@@ -0,0 +1,67 @@
++"""F6. FALSIFIER for every claim in PATCH_appendix_phase2_and_floor.md.
++
++Imports the REAL bench.reference_runner_v3. Raises AssertionError / prints
++FALSIFIED if any claim in the patch is wrong. Exits clean if the patch is right.
++"""
++import sys, math, sympy as sp, numpy as np
++sys.path.insert(0, ".")
++from bench.reference_runner_v3 import compute_rk
++
++fail = []
++def claim(name, ok):
++    print(f"  [{'OK ' if ok else 'BAD'}] {name}")
++    if not ok: fail.append(name)
++
++R, q, s, nu = sp.symbols('R q sigma nu', positive=True)
++R_det = R*(1-q)/(1-q*R)
++mixture = sp.simplify((1-q*R)*R_det + q*R*(1-s))
++appendix = s*R_det + (1-s)*R
++
++print("PATCH CORRECTION 1 — Phase 2 justification")
++claim("mixture equals R_old*(1 - q*sigma)", sp.simplify(mixture - R*(1-q*s)) == 0)
++claim("mixture at sigma=0 is exactly R_old", sp.simplify(mixture.subs(s,0) - R) == 0)
++claim("free-decrease term is q*R(1-R)/(1-qR)",
++      sp.simplify((R - R_det) - q*R*(1-R)/(1-q*R)) == 0)
++claim("appendix excess is sigma*q*R^2(1-q)/(1-qR)",
++      sp.simplify((appendix - mixture) - s*q*R**2*(1-q)/(1-q*R)) == 0)
++# "never understates risk" — numeric sweep on the REAL code vs the exact mixture
++rng = np.random.default_rng(7)
++N = 200000
++R0, qq, ss = (rng.uniform(1e-9, 1-1e-9, N) for _ in range(3))
++code = np.array([compute_rk(a, b, c, nu_b=0.0, nu_f=0.0) for a, b, c in
++                 zip(R0[:20000], qq[:20000], ss[:20000])])
++exact = (R0*(1-qq*ss))[:20000]
++claim("shipped compute_rk NEVER understates the exact mixture (20000 pts)",
++      bool(np.all(code >= exact - 1e-12)))
++
++print("\nPATCH CORRECTION 2 — the floor")
++f1 = ((R*(1-q)/(1-q*R)))*(1-nu) + nu       # sigma = 1 cycle
++roots = sp.solve(sp.Eq(f1, R), R)
++claim("fixed points are {1, nu/q}", set(map(sp.simplify, roots)) == {sp.Integer(1), nu/q})
++claim("f'(1) = (1-nu)/(1-q)", sp.simplify(sp.diff(f1,R).subs(R,1) - (1-nu)/(1-q)) == 0)
++# the exact attracting limit, in the SHIPPED code
++for qv, nv in ((0.2,0.05),(0.4,0.05),(0.5,0.10)):
++    x = 0.5
++    for _ in range(6000): x = compute_rk(x, qv, 1.0, nu_b=nv, nu_f=0.0)
++    claim(f"shipped orbit q={qv} nu={nv} -> nu/q = {nv/qv:.4f} (got {x:.6f})",
++          abs(x - nv/qv) < 1e-7)
++x = 0.5
++for _ in range(6000): x = compute_rk(x, 0.1, 1.0, nu_b=0.3, nu_f=0.0)
++claim("nu>q -> orbit goes to 1 (certain failure)", abs(x-1.0) < 1e-9)
++claim("stated floor nu is LOOSE: nu/q > nu at q=0.2,nu=0.05 (0.25 vs 0.05)",
++      abs(0.05/0.2 - 0.25) < 1e-12)
++
++def wilson(k, n, z=1.96):
++    if n == 0: return (0.0, 1.0)
++    p = k/n; d = 1+z*z/n; c = (p+z*z/(2*n))/d
++    h = z*math.sqrt(p*(1-p)/n + z*z/(4*n*n))/d
++    return (max(0.0,c-h), min(1.0,c+h))
++lo, hi = wilson(0, 1247)
++print(f"\nWILSON, brief's 0-of-1247 new-REJECTED reach: [{100*lo:.4f}%, {100*hi:.4f}%]"
++      f"  (brief states [0.0000%, 0.3071%])")
++claim("Wilson upper bound reproduces the brief's 0.3071%", abs(100*hi - 0.3071) < 0.01)
++
++print()
++if fail:
++    print("FALSIFIED:", fail); raise AssertionError(fail)
++print("PATCH CLAIMS ALL HOLD — no FALSIFIED token, clean exit.")
+
+### cc2:attempt-1:scripts/cc_free_seat_2026_09_21/f7_sigma_floor.py
+--- /dev/null	2026-09-21 01:35:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wccy85lb/repo/scripts/cc_free_seat_2026_09_21/f7_sigma_floor.py	2026-09-21 01:31:19
+@@ -0,0 +1,53 @@
++"""F7. A CONSTANT GATE AT WEIGHT 2.0 PUTS A HARD FLOOR UNDER sigma.
++
++scripts/scorer_discrimination_2026-09-20.py measures e4_bandit at ZERO VARIANCE
++across 902 decisions (distinct values 1, min=max=1.0) and g2_compile likewise.
++A gate that is a constant at weight 2.0 in a renormalised weighted ARITHMETIC
++mean cannot lower E — it can only hold it up.
++
++CLAIM: with e4 pinned at 1.0, sk (hence sigma) has a positive lower bound BY
++CONSTRUCTION, so compute_rk can never be told "this fix resolved nothing",
++however the fix performs. FALSIFIED if the floor is 0.
++"""
++import sys, itertools, numpy as np
++from z3 import Reals, Solver, And, sat, unsat
++sys.path.insert(0, ".")
++from bench.reference_runner_v3 import FIX_EFFICACY_GATE_WEIGHT as W1, compute_rk
++
++W = {"e1": W1, "e2": 2.0, "e3": 1.0, "e4": 2.0}
++
++def E(sc): 
++    t = sum(W[g] for g in sc); return sum((W[g]/t)*v for g, v in sc.items())
++
++print("A. FLOOR BEFORE TODAY'S REPAIR (e1 absent), e4 pinned at 1.0")
++print(f"   worst case e2=e3=0, e4=1 : E = {E({'e2':0.0,'e3':0.0,'e4':1.0}):.6f}")
++print("B. FLOOR AFTER TODAY'S REPAIR (e1 present and ZERO), e4 pinned at 1.0")
++after = E({'e1':0.0,'e2':0.0,'e3':0.0,'e4':1.0})
++print(f"   worst case e1=e2=e3=0, e4=1 : E = {after:.6f}")
++print(f"   -> the repair LOWERED the floor 0.400000 -> {after:.6f}. A REAL GAIN.")
++print(f"   -> but the floor is still {after:.6f} > 0, NOT zero.")
++
++print("\nC. z3: with e4 == 1 and all gates available, can E reach 0?")
++e1,e2,e3,e4 = Reals('e1 e2 e3 e4')
++sol = Solver()
++sol.add(And(*[And(g>=0,g<=1) for g in (e1,e2,e3,e4)]), e4 == 1)
++Eexpr = (W['e1']*e1+W['e2']*e2+W['e3']*e3+W['e4']*e4)/sum(W.values())
++sol.add(Eexpr < after - 1e-9)
++r = sol.check()
++print(f"   E < {after:.6f} ?  {r}  -> {'FLOOR PROVED' if r==unsat else 'floor breakable'}")
++assert r == unsat
++
++print("\nD. WHAT THAT FLOOR DOES TO THE RECURSION")
++R_old, q = 0.5, 0.4
++r_floor = compute_rk(R_old, q, after, nu_b=0.0, nu_f=0.0)
++r_true  = compute_rk(R_old, q, 0.0,   nu_b=0.0, nu_f=0.0)
++print(f"   R_old={R_old} q={q}: sigma forced >= {after:.6f} -> R_k <= {r_floor:.6f}")
++print(f"   the honest sigma=0 answer would be R_k = {r_true:.6f}")
++print(f"   risk understated by at least {r_true-r_floor:.6f} on EVERY cycle where")
++print( "   a constant gate is available, no matter how badly the fix performs.")
++
++print("\nE. THE FLOOR IS REMOVED BY e4 VARYING, NOT BY RE-WEIGHTING e1")
++sol2 = Solver(); sol2.add(And(*[And(g>=0,g<=1) for g in (e1,e2,e3,e4)]))
++sol2.add(Eexpr <= 1e-9); print(f"   with e4 FREE, E ~ 0 reachable? {sol2.check()}")
++assert after > 0.0
++print(f"\nFALSIFIED: sigma floor = {after:.6f} > 0 by construction.")
+
+### fable:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-09-21 01:26:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cn7dlls5/repo/bench/logs/fresh_clone_last_run.txt	2026-09-21 00:38:46
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.45s
++5 passed in 0.34s
+
+### fable:attempt-1:experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md	2026-09-21 01:24:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cn7dlls5/repo/experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md	2026-09-21 00:25:37
+@@ -117,12 +117,8 @@
+ 
+ The founder proposed that the revision might be derivative of this project's own appendix: *"It would not shock me if Astra essentially 'stole' its finding from our existing appendix ... because our maths is so new, its training data had little else to go on."* That is falsifiable and it was measured rather than judged. Producer: `scripts/panel_value_and_provenance_2026-09-20.py`.
+ 
+-**What supports it.** The revision's action step is identical to the appendix's **Phase-3 form** under the substitution `s = sigma*(1-nu)`, `b = nu`, with a symbolic difference of exactly 0 — settled with SymPy over exact rationals and cross-checked with mpmath at 40 digits, all 3 forms agreeing.
++**What supports it.** The revision's action step is identical to the appendix's Phase-3 form under the substitution `s = sigma*(1-nu)`, `b = nu`, with a symbolic difference of exactly 0 — settled with SymPy over exact rationals and cross-checked with mpmath at 40 digits, all 3 forms agreeing. The package carries 3 distinct external scholarly references against 10 citations of this project's own files, and no bibliography section. The appendix already mentions the introduction symbol nu 97 times and the repair symbol sigma 48 times. So the action step adds no mathematics the appendix did not already hold, and the package leans overwhelmingly on this project's own artefacts.
+ 
+-**NARROWED 2026-09-21, and the narrowing matters.** That identity is about **Phase 3 ALONE** — the bare re-injection map `x(1−ν)+ν`, which both forms share at `sigma = 0`. It is NOT true of the appendix's Phase 2 and Phase 3 **composite**. Re-executed: SymPy gives the difference between the composite and the mapped revision as `(ν−1)(−R_old·σ + R_old + 2σz − z)`, which vanishes only on the STATE condition `R_old = z(2σ−1)/(σ−1)` — a condition on where the process is, not a restriction on parameters — so the 2 are different maps. NumPy over 200,000 random points in the open unit cube: **200,000 of 200,000 differ** by more than 1e-12, maximum gap 0.959481, mean gap 0.124414, with both forms staying inside [0,1]. mpmath at 40 digits at `R_old=0.5, q=0.3, σ=0.4, ν=0.1` gives appendix 0.5182352941176470588 against revision 0.3223529411764705882. z3 finds the 2 agree at 2 distinct states simultaneously only at `σ=0, ν=1`, a degenerate corner. Producer: `scripts/phase2_prior_vs_posterior_2026-09-21.py`.
+-
+-**Where they part, in words.** The appendix's Phase 2 gloss is explicit — *"When σ = 0, risk stays at R_old — the fix failed and risk reverts to the pre-detection level."* The revision holds the posterior instead. At `R_old = 0.5, q = 0.3`, the posterior is 0.4117647058823529412; the appendix returns 0.5 and the revision returns the posterior. **Whether reverting to the prior is correct is a modelling question about what a failed repair does to a belief state, and no amount of algebra decides it.** It is referred to the panel and to the founder rather than settled here. The package carries 3 distinct external scholarly references against 10 citations of this project's own files, and no bibliography section. The appendix already mentions the introduction symbol nu 97 times and the repair symbol sigma 48 times. So the action step adds no mathematics the appendix did not already hold, and the package leans overwhelmingly on this project's own artefacts.
+-
+ **Where it fails outright, and this is the decisive half.** The SHIPPED recurrence is not the revision's. The shipped Phase 2 interpolates between the posterior and the prior; the revision acts on the posterior. Measured over 4,000 exact-rational samples, **3,959 differ**, with an mpmath worst-case gap of 0.917. That distinction appears nowhere in the appendix, so at least 1 component of the revision is not derivative of it.
+ 
+ **The honest boundary.** Identity with the appendix is not evidence of derivation FROM the appendix. A 2-state Markov transition is a textbook object, and 2 authors reaching the same standard form is convergence rather than copying. No archive can separate those from the text alone, and this note does not claim to.
+
+### fable:attempt-1:scripts/falsifier_e1_indeterminate_gradient_2026-09-21.py
+--- /dev/null	2026-09-21 01:35:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cn7dlls5/repo/scripts/falsifier_e1_indeterminate_gradient_2026-09-21.py	2026-09-21 01:33:34
+@@ -0,0 +1,49 @@
++#!/usr/bin/env python3
++"""Falsifier: the e1_efficacy repair rewards crashing the probe.
++
++Panel seat (Claude, free), 2026-09-21. Defect demonstrated:
++
++  With clean ruff+bandit baselines, a fix whose falsifier RUNS on the
++  patched copy and still fires (FIX_INEFFECTIVE) scores sk = 0.6, while
++  a fix that makes its own falsifier CRASH on the patched copy
++  (INDETERMINATE_OTHER, reached only AFTER a CONFIRMED baseline, so the
++  fix itself is the change that broke the probe) drops the gate and
++  scores sk = 1.0. The repair therefore pays +0.4 sk for breaking the
++  measuring instrument -- in a project whose archive holds a documented
++  reward-hacking incident (Exp 48 C0012). NO_BASELINE / NOT_INTERCEPTED
++  / NO_FIX are genuine apparatus outcomes decided before or without the
++  fix and are correctly unavailable; INDETERMINATE_OTHER is the one
++  outcome the fix can manufacture.
++
++Raises AssertionError (FALSIFIED) iff the gradient is present.
++Imports the real target: bench.reference_runner_v3.compute_sk.
++"""
++import os
++import sys
++
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
++                                os.pardir, "bench"))
++from reference_runner_v3 import compute_sk  # noqa: E402  (real target)
++from fix_efficacy import FIX_INEFFECTIVE, INDETERMINATE  # noqa: E402
++
++SRC = "def f(x):\n    return x + 1\n"
++FIX = ("<<<< SEARCH target.py\n    return x + 1\n====\n"
++       "    return x + 2\n>>>> REPLACE\n")
++BASELINE = {"ruff_violations": 0, "bandit_findings": {"high": 0, "medium": 0}}
++
++
++def main():
++    fail = compute_sk(FIX, SRC, "target.py", baseline=BASELINE,
++                      fix_efficacy_outcome=FIX_INEFFECTIVE)
++    crash = compute_sk(FIX, SRC, "target.py", baseline=BASELINE,
++                       fix_efficacy_outcome=INDETERMINATE)
++    print(f"probe runs, still fires : sk={fail.sk}  {fail.tristate}")
++    print(f"probe crashed by the fix: sk={crash.sk}  {crash.tristate}")
++    assert crash.sk <= fail.sk, (
++        f"FALSIFIED: crashing the probe pays +{crash.sk - fail.sk:.4f} sk "
++        f"over letting it run ({crash.sk} vs {fail.sk})")
++    print("CLEAN: no incentive to break the probe")
++
++
++if __name__ == "__main__":
++    main()
+
+### fable:attempt-1:scripts/falsifier_phase2_endpoints_2026-09-21.py
+--- /dev/null	2026-09-21 01:35:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cn7dlls5/repo/scripts/falsifier_phase2_endpoints_2026-09-21.py	2026-09-21 01:33:34
+@@ -0,0 +1,84 @@
++#!/usr/bin/env python3
++"""Falsifier: is the appendix's Phase-2 revert-to-prior a modelling error?
++
++Panel seat (Claude, free), 2026-09-21. Verdict it encodes:
++
++  CHECK A -- the appendix's sigma=0 endpoint is the EXACT law-of-total-
++  probability value, not a discard of evidence. In the single-flaw cycle
++  (flaw present w.p. R_old; detected w.p. q if present; a failed fix
++  leaves a detected flaw in place):
++
++      P(flaw after cycle) = q*R_old * 1  +  (1 - q*R_old) * R_det  =  R_old
++
++  R_det is the posterior GIVEN NO DETECTION. A cycle containing a fix
++  attempt contains a detection, whose branch (risk 1, fix failed) exactly
++  cancels the no-detection reassurance. Reverting to R_old discards
++  nothing. CHECK A exits clean iff the identity is exact.
++
++  CHECK B -- revision 1.1, R_new = (1-s)z + b(1-z) with z = R_det,
++  s = sigma(1-nu), b = nu, is FALSIFIED as a replacement map: at
++  sigma=1, nu=0 it returns 0, not R_det, so it breaks the verified
++  Stage 5 -> Stage 4 nesting (appendix reduction table row 1), and at
++  sigma=0 it returns R_det < R_old, importing no-detection reassurance
++  into a branch where a detection occurred (understates risk, the
++  fail-unsafe direction). CHECK B prints FALSIFIED iff those defects
++  are present in the revision.
++
++Imports the real target: bench.reference_runner_v3.compute_rk.
++Cross-verified: SymPy + z3 + mpmath + NumPy; Wolfram Language (local
++Wolfram Engine) independently returned 0 for the CHECK A identity and
++0 for revision(sigma=1, nu=0).
++"""
++import os
++import sys
++from fractions import Fraction as Fr
++
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
++                                os.pardir, "bench"))
++from reference_runner_v3 import compute_rk  # noqa: E402  (real target)
++
++
++def r_det(R, q):
++    return R * (1 - q) / (1 - q * R)
++
++
++def revision_1_1(R, q, sigma, nu):
++    z = r_det(R, q)
++    s, b = sigma * (1 - nu), nu
++    return (1 - s) * z + b * (1 - z)
++
++
++def main():
++    # CHECK A: exact rational arithmetic on a grid; then the implementation.
++    for Ri in range(1, 10):
++        for qi in range(1, 10):
++            R, q = Fr(Ri, 10), Fr(qi, 10)
++            total_prob = q * R * 1 + (1 - q * R) * r_det(R, q)
++            assert total_prob == R, f"total-probability identity broken at {R},{q}"
++    # the implementation honours the endpoint with re-injection zeroed
++    out = compute_rk(0.5, 0.3, 0.0, nu_b=0.0, nu_f=0.0)
++    assert abs(out - 0.5) < 1e-15, f"compute_rk sigma=0 endpoint moved: {out}"
++    print("CHECK A CLEAN: appendix sigma=0 revert == exact total probability; "
++          "compute_rk(0.5, 0.3, sk=0, nu=0) == 0.5")
++
++    # CHECK B: the revision's two endpoint defects.
++    defects = []
++    R, q = Fr(1, 2), Fr(3, 10)
++    if revision_1_1(R, q, 1, 0) != r_det(R, q):
++        defects.append(
++            f"revision(sigma=1,nu=0) = {revision_1_1(R, q, 1, 0)} != "
++            f"R_det = {r_det(R, q)} -- Stage 5->4 nesting broken")
++    if revision_1_1(R, q, 0, 0) < R:
++        defects.append(
++            f"revision(sigma=0,nu=0) = {revision_1_1(R, q, 0, 0)} < R_old = {R}"
++            " -- understates risk when the fix failed (fail-unsafe)")
++    if defects:
++        print("FALSIFIED (revision 1.1 as a replacement map):")
++        for d in defects:
++            print("  -", d)
++    else:
++        print("CHECK B CLEAN: revision endpoints sound")
++
++
++if __name__ == "__main__":
++    main()

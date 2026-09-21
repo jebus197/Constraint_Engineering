@@ -1584,6 +1584,31 @@ context" regain had compressed five confer-round combined logs into a
 
 <!-- SV:PENDING_START -->
 
+## SESSION STATE 2026-09-21T01:58:07+01:00 — THE APPENDIX WON. NOW-1 to NOW-5 WORKED THROUGH OVERNIGHT.
+
+**THE FOUNDER'S QUESTION, ANSWERED.** *"the core of the model itself remains largely unchanged? These are just corrections and qualifications?"* — **YES, with 2 corrections rather than 1.** Before tonight exactly 1 line of the appendix had changed across the whole arc (`8a0952a`, the line-169 sign). Tonight added a second: the stated substrate ceiling `lim R >= nu` is TRUE BUT LOOSE BY 1/q. No equation was changed; the appendix gained 42 lines and lost 0.
+
+**CC1 ATTACKED THE MODEL AND LOST, WHICH IS THE HEADLINE.** CC1 proposed that Phase 2 wrongly reverts to the prior at sigma=0. A free 2-seat panel (cc2 + fable, `PANEL_ONLY`, **zero spend**) refuted it independently by 2 different derivations in 1 round. The 2-branch mixture is `R_old*(1-q*sigma)`, exactly `R_old` at sigma=0 — the tower property. CC1's premise ("the evidence still happened") was right and is PRECISELY WHY the answer is the prior; the revision keeps only the non-detection branch. Verified again afterwards on SymPy + z3. A 2nd defect in the revision CC1 missed: at sigma=1, nu=0 it returns identically **0**, asserting certainty.
+
+**NOW-1 SCORER: DONE, COMMITTED `f802512`, THEN REPAIRED AGAIN.** `sk` fills the appendix's sigma slot but all 3 gates measured ABSENCE OF HARM. Executed: a repair, a no-op, a `/`->`*` corruption and a gutted function ALL scored 1.0. Over 135 archived entries `sk` is statistically independent of whether the fix worked (4 tests, p 0.42-0.90). Wired the EXISTING `fix_efficacy` probe as `e1_efficacy` at weight 2.0; after, p = 1.4e-18 / 9.3e-50 / 6.3e-31. **Then fable found the repair PAID FOR BREAKING THE INSTRUMENT** (+0.4000 for crashing the probe; 18 of 18 archived records are the gameable site). Fixed with a distinct `PROBE_BROKEN_AFTER_BASELINE` outcome + ESCALATE. Crashing now costs -0.6000.
+
+**STILL OPEN ON THE SCORER, 2 ITEMS, BOTH THE FOUNDER'S.** (1) The repair does NOT close its own defect: a non-curing fix scores `5/(5+w)` and **no finite weight makes an arithmetic mean decisive**; sigma is floored at 2/7 = 0.285714 while `e4_bandit` is constant (z3 unsat). The repair LOWERED that floor from 2/5. The only in-apparatus route is the hard gates, which are multiplicative. (2) Attaching NO falsifier scores 1.0 while attaching one that FAILS scores 0.6 — omission pays. 29 of 198, 14.6465%, Wilson [10.3954%, 20.2433%]; `falsifier_gate_enabled` is False by default.
+
+**NOW-2 RUNNERS: DONE.** The round-record circularity is closed (`was_dispatched` added; the mirror still preserves briefs). `panel_condition_compliance` printed 89 under a label true of 87. Adopted the cc2 seat's `e2_regression` silent-loss fix after reproducing it (19 of 140 recorded nothing).
+
+**NOW-3 DOCS: 4 APPENDIX ADDITIONS, 0 EQUATIONS TOUCHED.** The sigma=0 endpoint now DERIVED; Phase 2's conservatism recorded (never understates risk, z3 unsat); the floor tightened to `nu/q` with 3 executed orbits; the parabolic point at nu=q recorded — **the Hard Exit will misread approach-to-certain-failure as a substrate ceiling reached**. Also split a FALSE row in the Reduction Properties table (eta=0 said "R unchanged" with no nu condition, contradicting the appendix's own Phase 3 prose). README and PAPER corrected for the loose floor.
+
+**NOW-4 QC: RUN, exit 0.** 357 checks, 350 broken refs (standing baseline; 1 was mine and is fixed), 1 warning (its own pass-count measurement was starved by a competing suite run).
+
+**NOW-5 EXPLORER: THE PREMISE IS REFUTED.** There is **no revised explorer on this machine** — `explorer/index.html` and the standalone copy are byte-identical (same md5). `work/math-review/` holds the INPUT COPIES Astra was given: across README, appendix, PAPER and EXPERIMENTAL_RESULTS the only substantive difference from today is the line-169 sign. The maths review MENTIONS the explorer and CLEARS it. The founder's caution was right and measurable — Astra read the repo as of 2026-09-10, 11 days stale.
+
+**AN 8-DOCUMENT AUDIT OF THE REVISION PACKAGE.** 25 claims verified against the LIVE repo with SymPy + a 2nd tool each: **21 ACTIONABLE, 1 WRONG, 2 ALREADY DONE, 1 STALE.** 1 applied (the false table row); the rest REPORTED, because they change what the model says about its own assumptions. **Strongest theme, verified by CC1 independently: the appendix's detection posterior is the `phi = 0` (no false alarms) special case, and the assumption is nowhere stated.** So the appendix carries 2 biases in OPPOSITE directions — Phase 2 conservative, detection optimistic.
+
+**DELIVERABLES.** `experimental_notes/Morning_Report_2026-09-21.md` + `~/Desktop/CDSFL_tts/Morning_Report_2026-09-21.txt`, both lint-clean. Producers: `scripts/scorer_discrimination_2026-09-20.py`, `scripts/scorer_gate_limits_2026-09-21.py`, `scripts/phase2_prior_vs_posterior_2026-09-21.py`. Tests: 3 new files, 27 tests, most red against their parents.
+
+**NEXT:** NOW-6, the next simulated run. And 4 founder decisions are in the morning report.
+
+
 ## SESSION STATE 2026-09-20T23:11:51+01:00 — SYNTHESIS WRITTEN, REVIEW CLOSED
 
 **THE 6-ROUND REVIEW IS SYNTHESISED.** `experimental_notes/Maths_Revision_Review_Synthesis_2026-09-20.md` (technical), its plain-English mirror, and `~/Desktop/CDSFL_tts/Maths_Revision_Review_Synthesis_2026-09-20.txt`. All lint-clean. Every figure regenerates from `scripts/maths_review_synthesis_figures_2026-09-20.py`. 6 rounds, 7 seats, 538,720 characters of seat output.
