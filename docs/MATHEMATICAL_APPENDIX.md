@@ -212,7 +212,17 @@ with second derivative −2q/√(1−q) < 0 there, and z3 returning unsatisfiabl
 
 The operational consequence bites at the worst moment. At q = 0.3 the peak gain is 0.088933 at R = 0.544467, but at R = 0.99 the gain is only 0.004225 and at R = 0.95 it is 0.019930. With a consequence threshold θ = 0.05, the greedy rule "continue while ΔR > θ" therefore says **STOP** across R ∈ [0.855089, 0.999999] — a band 0.144910 wide, **at the highest-risk states in the whole interval**, where continuing a few cycles would reach a gain 21 times larger. z3 confirms the region exists; a 200,000-point sweep locates its edges.
 
-A practitioner using this rule should either start it only once R has fallen below R\*, or read a low ΔR at high R as "not yet past the peak" rather than as exhaustion. The formula above is unchanged and correct; only the sentence attached to it needed the qualification. [DERIVED, with the band located by exhaustive search]
+A practitioner using this rule should either start it only once R has fallen below R\*, or read a low ΔR at high R as "not yet past the peak" rather than as exhaustion.
+
+**AND THE DEEPER READING: ΔR_k IS THE WRONG QUANTITY FOR THIS DECISION (added 2026-09-21).** The entry above diagnoses a symptom. The cause is that `ΔR_k` is the change **conditional on the non-detection branch**, while a decision about whether to run another cycle is a decision taken **before** the branch is known, and therefore needs the EXPECTED improvement across both. With perfect repair after detection that expectation is, remarkably,
+
+> E[improvement] = R_k · q
+
+— monotone increasing in `R_k`, with **no peak and no premature-stop band at all**. The pathology above is an artefact of using the conditional quantity where the expectation belongs.
+
+The gap between them is not marginal. At `R = 0.99`, `q = 0.3` the conditional `ΔR` is 0.004225 while the exact expected improvement is 0.297000 — a factor of **70.30**. Under a threshold θ = 0.05 the 2 rules disagree outright: the conditional says STOP at `R = 0.99` and at `R = 0.95`, the expectation says CONTINUE at both. z3 confirms a non-empty region where they disagree, returning a witness at `R = 1/2, q = 1/8`.
+
+**Found by an external review on 2026-09-21 and confirmed here by execution.** It also bounds the conservatism result recorded under Phase 2: that Phase 2 never understates risk is true, and it does **not** follow that a stopping rule built on it is therefore safe. A bound that moves little can still be a bound on the wrong thing. [DERIVED, cross-checked with SymPy and z3] The formula above is unchanged and correct; only the sentence attached to it needed the qualification. [DERIVED, with the band located by exhaustive search]
 
 
 **Reduction.** Under K=1, d=1, all q=p, π=0.5, the recursive form produces R_n = (1−p)^n / (1 + (1−p)^n), the standard Bayesian posterior for repeated Bernoulli non-detection. This is the white paper §2.1 model **expressed in risk coordinates**, not C(n) itself: the two are related by R = (1−C)/(2−C) and are numerically different. At p = 0.1, n = 3 the coverage is 0.271 and the risk is 0.421631, a gap of 0.150631. (Corrected 2026-09-06; the previous wording called it the simplified model, which conflates a quantity with its remapping.)

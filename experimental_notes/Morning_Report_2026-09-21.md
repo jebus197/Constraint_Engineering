@@ -36,6 +36,9 @@ Two free seats reached this independently, by different derivations, in one roun
 
 **A second defect in the revision, which the assistant missed entirely.** At σ = 1, ν = 0 the revision returns identically 0 for every state — one successful fix asserting certainty of no residual risk, contradicting the appendix's own substrate ceiling. And at σ = 0 it returns `R_det < R_old`, understating risk exactly when fixes fail, which is the worst direction for a verification framework.
 
+
+**WITHDRAWN 2026-09-21, MIS-SCOPED.** Executed against the revision's own `expected_binary_review`, the procedure returns **1/10** on its worked example, not 0: it averages BOTH observation branches. The `returns 0` result is true of `update()`, the single-branch action step, and false of the revision's §4 procedure. CC1 adopted it from the seats without running the revision's own code. The revision also already carries a `false_positive` parameter, so the φ gap CC1 reported as missing is **already specified there**.
+
 **A methodological criticism worth keeping.** One seat observed that the assistant's 200,000-point sweep, maximum-gap and satisfiability analysis were all correct and all beside the point: they established that the two maps differ, which was never in dispute, and were silent on which is right. The deciding evidence was a 3-line identity the sweep cannot see. Volume of cross-verified numerics is not a substitute for the right derivation.
 
 ## What changed in the appendix, and it is documentation only
