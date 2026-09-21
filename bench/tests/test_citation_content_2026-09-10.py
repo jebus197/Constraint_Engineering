@@ -52,9 +52,17 @@ class TestNoCitationPointsOutsideTheSymbolItNames:
     def test_every_anchored_citation_is_inside_its_symbol(self, guard):
         for target in guard.CITED:
             good, bad, _unchecked, _past, _n = guard.check(target)
+            # 7 FIELDS, NOT 5 (2026-09-20). `check()` appends
+            # ``(path, line, anchor, lo, hi, start, end)`` -- the last 2 are the
+            # digit offsets `repair` splices at -- and this unpacked 5. The
+            # mismatch is only reachable when `bad` is NON-EMPTY, so the guard
+            # passed for as long as nothing drifted and raised
+            # ``ValueError: too many values to unpack`` the first time something
+            # did, reporting a crash instead of the drift it had correctly found.
+            # A guard that cannot say what it found is not a guard.
             assert not bad, "\n".join(
                 f"{p.relative_to(ROOT)}:{line} names `{a}`, which spans {lo}-{hi} "
-                f"(off by {lo - line:+d})" for p, line, a, lo, hi in bad)
+                f"(off by {lo - line:+d})" for p, line, a, lo, hi, _s, _e in bad)
             assert good, (
                 f"no citation into {target} could be checked at all; the guard "
                 f"would pass vacuously")

@@ -10506,6 +10506,73 @@ def _run_effect_ruff(
         os.unlink(tmp_path)
 
 
+FIX_EFFICACY_GATE_WEIGHT: float = 2.0
+#: Weight of `e1_efficacy` in E. Set equal to the heaviest EXISTING gate rather
+#: than above it: this gate answers the question the appendix actually defines
+#: S_k to answer, which argues for more, but "it deserves more" is a judgement
+#: and the additive standard does not accept a judgement as evidence. 2.0 needs
+#: no new justification because `e2_regression` and `e4_bandit` already carry it.
+
+
+def _run_effect_fix_efficacy(
+    outcome: Optional[str],
+) -> Tuple[Optional[float], str]:
+    """e1: DOES THE FIX ACTUALLY CURE THE DEFECT? The only gate that asks.
+
+    THE DEFECT THIS CLOSES, MEASURED 2026-09-20 OVER THE WHOLE ARCHIVE.
+    `docs/MATHEMATICAL_APPENDIX.md` line 214 defines sigma as *"Does the proposed
+    fix actually resolve the detected flaw?"*, and line 377 makes sigma admissible
+    only when `sigma = g(V_pre, V_post)` for a mapping that COMPARES pre-fix and
+    post-fix tool output. `compute_rk` fills that sigma slot with `sk`, term for
+    term -- `R_base = sk * R_det + (1 - sk) * R_old` against the appendix's
+    `R_base = sigma*R_det + (1-sigma)*R_old`.
+
+    Every gate that fed `sk` measured ABSENCE OF HARM instead: does the suite
+    still pass, did the fix add lint findings, did it add security findings. None
+    asks whether the flaw is gone. Executed, not inferred: a real repair, a no-op
+    that leaves the bug untouched, a fix that silently corrupts every answer and
+    one that guts the function to `return None` all returned **sk = 1.0
+    ADMISSIBLE**, identical to 4 decimal places.
+
+    And on real data, across the 136 archived entries carrying both a verdict and
+    a probe result, `sk` is STATISTICALLY INDEPENDENT of whether the fix worked:
+    105 fixes that cure their own falsifier mean sk = 0.941091, 31 that do not
+    mean sk = 0.950206 -- the failing ones score HIGHER -- with identical medians
+    at 0.978200. Mann-Whitney p = 0.746836, Welch t p = 0.421469, KS p = 0.900813,
+    and a seeded 20,000-resample permutation test p = 0.627119. 4 tests, none
+    rejecting. **31 of 31 fixes measured NOT to cure their own falsifier were
+    admitted**, Wilson [88.9745%, 100.0000%].
+
+    NO NEW APPARATUS. The instrument already existed and was already running:
+    `bench/fix_efficacy.py`'s probe applies the fix to a disposable copy and
+    re-runs the finding's OWN falsifier against it, which is precisely the
+    `g(V_pre, V_post)` line 377 requires. It was "contributory, never gating" and
+    its only consumer was a model-facing feedback line, so the project measured
+    the right quantity and then computed sigma from something else. This wires
+    the measurement it already takes into the number the appendix says it is.
+
+    ONLY 2 OUTCOMES ARE VERDICTS, which is `fix_efficacy.ProbeResult.is_verdict`'s
+    own rule and is inherited rather than restated. The 5 INDETERMINATE and
+    NOT_PROBED outcomes return None and the gate is dropped from the weighted
+    mean, exactly as an unavailable `e2_regression` already is. An instrument that
+    could not look must not be read as a reading -- that is this project's
+    `Wolfram: a failed call is NOT a result` rule applied at a second site.
+
+    Producer for every figure above: `scripts/scorer_discrimination_2026-09-20.py`.
+    """
+    try:
+        from fix_efficacy import FIX_CURES, FIX_INEFFECTIVE
+    except ImportError:  # pragma: no cover - the module ships beside this one
+        return None, "fix-efficacy module unavailable"
+    if outcome == FIX_CURES:
+        return 1.0, "the fix cures its own falsifier (probe verdict)"
+    if outcome == FIX_INEFFECTIVE:
+        return 0.0, "the fix does NOT cure its own falsifier (probe verdict)"
+    return None, (
+        f"fix efficacy not measured: {outcome or 'no probe result on this entry'}"
+    )
+
+
 def _run_effect_bandit(
     modified_source: str, baseline_findings: Optional[Dict[str, int]],
     source_path: str = "",
@@ -10690,6 +10757,7 @@ def compute_sk(
     test_cmd: Optional[str] = None,
     declared_target_kind: Optional[str] = None,
     score_prose_listings: bool = False,
+    fix_efficacy_outcome: Optional[str] = None,
 ) -> SkResult:
     """Full S_k computation pipeline for a proposed fix.
 
@@ -10843,6 +10911,16 @@ def compute_sk(
     # Gate weights (from Python expert encoding)
     effect_gates: List[Tuple[str, float, float]] = []  # (name, score, weight)
     unavailable_gates: List[str] = []
+
+    # e1: fix efficacy -- the only gate that asks whether the fix WORKED.
+    # Default None keeps every existing caller byte-identical: an unsupplied
+    # outcome is an unavailable gate, dropped from the mean, not a zero.
+    e1_score, e1_detail = _run_effect_fix_efficacy(fix_efficacy_outcome)
+    details["e1_efficacy"] = {"score": e1_score, "detail": e1_detail}
+    if e1_score is not None:
+        effect_gates.append(("e1_efficacy", e1_score, FIX_EFFICACY_GATE_WEIGHT))
+    else:
+        unavailable_gates.append("e1_efficacy")
 
     # e2: regression suite
     e2_score, e2_detail = _run_effect_regression(modified, source_path, test_cmd)
@@ -11903,6 +11981,13 @@ def _evaluate_sk_for_findings(
             # TASK A19. Default False; a run turns it on deliberately. Read with
             # getattr so an older config object cannot break this call.
             score_prose_listings=score_prose_listings,
+            # THE PROBE'S VERDICT REACHES THE SCORE, 2026-09-20. `_update_finding_
+            # statuses` runs at line 13867 of `run_experiment` and this evaluator
+            # at 14376, so the outcome is already on the entry when the gate reads
+            # it -- ordering verified by AST rather than assumed. An entry that was
+            # never probed carries no outcome, the gate reports unavailable, and
+            # the weighted mean drops it.
+            fix_efficacy_outcome=(entry.get("fix_efficacy") or {}).get("outcome"),
         )
         stats["evaluated"] += 1
 
@@ -12175,9 +12260,22 @@ def _rejection_lines(entry: dict) -> list:
     tri = sk.get("tristate")
     if tri == SK_REJECTED:
         details = sk.get("gate_details") or {}
+        # READ THE SCORE, NOT THE CONTAINER (2026-09-20). Every gate is recorded
+        # as ``{"score": ..., "detail": ...}``, and a dict is never ``== 0``, so
+        # this list was ALWAYS EMPTY and the message ALWAYS fell through to the
+        # generic "hard gate returned 0". Executed on an unparseable fix: the
+        # details carried ``g1_ast score=0 "ParseError: '(' was never closed"``
+        # and the model was told none of it. The detail string is the only part a
+        # model can act on, so it travels with the gate name.
         failed = [k for k, v in details.items()
-                  if v is False or v == 0 or v == 0.0]
-        why = ", ".join(sorted(failed)) if failed else "hard gate returned 0"
+                  if v is False or v == 0 or v == 0.0
+                  or (isinstance(v, dict) and v.get("score") == 0)]
+        _reasons = []
+        for k in sorted(failed):
+            v = details.get(k)
+            d = v.get("detail") if isinstance(v, dict) else None
+            _reasons.append(f"{k} ({d})" if d else k)
+        why = "; ".join(_reasons) if _reasons else "hard gate returned 0"
         # The OUTCOME and the failed gate, never the S_k value. The panel can
         # act on "the syntax gate rejected it"; it cannot act on "0.0", and a
         # score in the discovery prompt is a channel from the fix-admission

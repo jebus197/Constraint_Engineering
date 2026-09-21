@@ -1,0 +1,839 @@
+### cc2:attempt-1:bench/logs/maths_panel_2026-09-21_open/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-21_open/dispatch.log	2026-09-20 22:22:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo/bench/logs/maths_panel_2026-09-21_open/dispatch.log	2026-09-20 22:07:35
+@@ -1,34 +0,0 @@
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_g4bw63c2/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9kj3oqbx/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r4fk0hyo/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_zn85u4/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_y5q9xlsu/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-[22:08:40]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 116,503 chars, about 29,125 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r4fk0hyo/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_g4bw63c2/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9kj3oqbx/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_y5q9xlsu/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_zn85u4/repo
+-  [cx] ok=True chars=11745 tools=30 140.0s STOPPED=max_iterations_harvested
+-  [ge] ok=True chars=7217 tools=16 149.6s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=20525 tools=21 152.2s
+-[22:16:10]   [claude-cli:fable] 22 tool call(s) this attempt, 22 in total
+-[22:16:10]   [claude-cli:fable] done (449.6s, 16026 chars)
+-  [fable] ok=True chars=16026 tools=22 449.6s
+-  [ds] ok=True chars=22462 tools=29 449.9s STOPPED=max_iterations_harvested
+-  [kimi] ok=True chars=13696 tools=30 815.5s
+-[22:22:42]   [claude-cli:opus] 37 tool call(s) this attempt, 37 in total
+-[22:22:42]   [claude-cli:opus] done (841.5s, 26563 chars)
+-  [cc2] ok=True chars=26563 tools=37 841.5s
+-[22:22:42] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-20 10:57:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo/bench/reference_runner_v3.py	2026-09-20 22:15:37
+@@ -10849,7 +10849,20 @@
+     details["e2_regression"] = {"score": e2_score, "detail": e2_detail}
+     if e2_score is not None:
+         effect_gates.append(("e2_regression", e2_score, 2.0))
+-    elif test_cmd:  # configured but unavailable
++    else:
++        # SILENT EVIDENCE LOSS, FIXED 2026-09-20 (open panel round).
++        # This was `elif test_cmd:`, so e2's absence was recorded ONLY when a
++        # test command existed and the run failed. When no test command was
++        # configured, the single informative effect gate was dropped from the
++        # renormalised mean with NO entry in `_unavailable` -- the resulting
++        # 2-gate E is numerically indistinguishable from a 3-gate E.
++        # MEASURED on the archive before the change: 140 of 902 ADMISSIBLE
++        # fixes had e2_score None (121 pytest timeouts, 19 unconfigured), but
++        # only 121 carried `_unavailable: ['e2_regression']`. The other 19 are
++        # unrecoverable from the persisted record.
++        # This is ADDITIVE: `unavailable_gates` is never read by the E
++        # computation (E sums over `effect_gates` only), so no archived or
++        # future verdict changes. It adds a record, and removes nothing.
+         unavailable_gates.append("e2_regression")
+ 
+     # e3: ruff non-regression
+
+### cc2:attempt-1:scripts/falsifier_e2_unavailability_record_2026-09-20.py
+--- /dev/null	2026-09-20 22:22:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo/scripts/falsifier_e2_unavailability_record_2026-09-20.py	2026-09-20 22:16:53
+@@ -0,0 +1,58 @@
++#!/usr/bin/env python3
++"""FALSIFIER: e2_regression's absence is recorded ONLY when a test command
++exists.  Imports the REAL target module; does not retype it.
++
++Defect present  -> AssertionError / prints FALSIFIED
++Defect absent   -> exits cleanly.
++"""
++import sys, pathlib
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
++import bench.reference_runner_v3 as rr3   # THE REAL TARGET MODULE
++
++import inspect
++src = inspect.getsource(rr3.compute_sk)
++# strip comments first -- a comment MENTIONING the old guard is not the guard
++code = "\n".join(l for l in src.splitlines()
++                 if not l.lstrip().startswith("#"))
++i = code.index('effect_gates.append(("e2_regression"')
++branch = code[i:i+400]
++
++# 1. STRUCTURAL: the guard must not be conditional on test_cmd
++if "elif test_cmd" in branch:
++    print("FALSIFIED: e2 unavailability is recorded only when test_cmd is set; "
++          "an unconfigured test command drops the gate with no record.")
++    raise AssertionError("e2 unavailability guard is conditional on test_cmd")
++
++# 2. BEHAVIOURAL: no test_cmd -> e2 absent -> must appear in _unavailable
++target = pathlib.Path(__file__).resolve().parents[1] / "bench" / "reference_runner_v3.py"
++source = target.read_text()
++fix = (f"<<<< SEARCH {target}\n"
++       "RK0_PI_BASE: float = 0.5\n"
++       "====\n"
++       "RK0_PI_BASE: float = 0.5  # calibration anchor\n"
++       ">>>> REPLACE\n")
++res = rr3.compute_sk(fix, source, str(target), baseline=None, test_cmd=None)
++assert res.blocks_applied == 1, f"probe did not apply: {res.gate_details}"
++unavail = (res.gate_details or {}).get("_unavailable")
++e2 = (res.gate_details or {}).get("e2_regression", {})
++print(f"tristate={res.tristate} sk={res.sk} e2_score={e2.get('score')!r} "
++      f"e2_detail={e2.get('detail')!r} _unavailable={unavail!r}")
++if e2.get("score") is None and (unavail is None or "e2_regression" not in unavail):
++    print("FALSIFIED: e2 was dropped from E with no entry in _unavailable.")
++    raise AssertionError("e2 dropped without record")
++
++# 3. THE FIX MUST CHANGE NO VERDICT: unavailable_gates never enters E.
++body = inspect.getsource(rr3.compute_sk)
++uses = [l.strip() for l in body.splitlines() if "unavailable_gates" in l
++        and not l.lstrip().startswith("#")]
++bad = [l for l in uses
++       if not (l.startswith("unavailable_gates") or ".append(" in l
++               or l.startswith('details["_unavailable"]')
++               or l.startswith("if unavailable_gates"))]
++print("every use of unavailable_gates in compute_sk:")
++for l in uses: print("     ", l)
++assert not bad, f"unavailable_gates reaches a computation: {bad}"
++e_line = [l for l in body.splitlines() if "E = sum((w / W)" in l][0]
++assert "unavailable_gates" not in e_line, "unavailable_gates enters the E expression"
++print("OK: e2 unavailability is recorded; and unavailable_gates never enters E, "
++      "so the record is additive and changes no verdict.")
+
+### cc2:attempt-1:scripts/panel_open_bounded_recursion_2026-09-20.py
+--- /dev/null	2026-09-20 22:22:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo/scripts/panel_open_bounded_recursion_2026-09-20.py	2026-09-20 22:12:54
+@@ -0,0 +1,333 @@
++#!/usr/bin/env python3
++"""Open-round seat: is bounded recursion a THEOREM?
++
++Falsifies the brief's Section-4 proof sketch STEP BY STEP, then states and
++proves the corrected theorem.  Every claim is decided by SymPy, z3 and
++mpmath/NumPy independently -- never by prose.
++
++Target text actually read from the tree (do NOT verify a paraphrase):
++  docs/MATHEMATICAL_APPENDIX.md  section 7.12   D_{n+1} = nu*D_n + eps_n,
++                                                D* = eps*/(1-nu)
++  docs/MATHEMATICAL_APPENDIX.md  line ~203      dR_k = q*R*(1-R)/(1-q*R)
++  docs/MATHEMATICAL_APPENDIX.md  Stage 5        R_det = R(1-q)/(1-q R)
++                                                R_base = sigma R_det + (1-sigma) R_old
++                                                R_next = R_base (1-nu) + nu
++
++Exit 0 iff every check passes.
++"""
++import sys
++from fractions import Fraction
++
++import sympy as sp
++import mpmath as mp
++import numpy as np
++import z3
++
++FAILS = []
++def check(name, cond, detail=""):
++    tag = "PASS" if cond else "FAIL"
++    if not cond:
++        FAILS.append(name)
++    print(f"   [{tag}] {name}" + (f"   {detail}" if detail else ""))
++
++R, q, s, b, z, nu, eps, sig, D = sp.symbols(
++    'R q s b z nu eps sigma D', real=True)
++
++# ---------------------------------------------------------------- A
++print("\nA  THE BRIEF'S STEP 1: 'D* = eps/(1-nu) is strictly positive")
++print("   whenever eps > 0 OR nu > 0'")
++Dstar = sp.solve(sp.Eq(D, nu*D + eps), D)[0]
++print(f"   7.12 fixed point, solved      : D* = {sp.simplify(Dstar)}")
++check("7.12 fixed point is eps/(1-nu)",
++      sp.simplify(Dstar - eps/(1-nu)) == 0)
++
++# the disjunct 'nu > 0' alone
++at_eps0 = sp.simplify(Dstar.subs(eps, 0))
++print(f"   D* at eps = 0, nu free        : {at_eps0}")
++check("BRIEF STEP 1 IS FALSE: eps=0, nu=0.9 gives D* = 0, not > 0",
++      sp.simplify(Dstar.subs({eps: 0, nu: sp.Rational(9, 10)})) == 0,
++      "the disjunction 'eps>0 OR nu>0' is wrong; only eps>0 does the work")
++
++# and the orbit really does reach 0, not just the fixed point
++orbit = [Fraction(37, 10)]
++for _ in range(400):
++    orbit.append(Fraction(9, 10) * orbit[-1] + Fraction(0))
++check("orbit with eps=0, nu=9/10 decays to 0 (exact rationals)",
++      orbit[-1] < Fraction(1, 10**16),
++      f"D_400 = {float(orbit[-1]):.3e}")
++
++# z3: the corrected condition, over the whole declared domain
++zD, zn, ze = z3.Reals('D nu eps')
++sol = z3.Solver()
++sol.add(zn >= 0, zn < 1, ze >= 0, zD == ze/(1-zn))
++sol.push(); sol.add(ze == 0, zD > 0)
++check("z3: eps=0 => D* > 0 is UNSAT (no counterexample exists)",
++      sol.check() == z3.unsat)
++sol.pop(); sol.push(); sol.add(ze > 0, zD <= 0)
++check("z3: eps>0 => D* > 0 is a theorem on nu in [0,1) (negation UNSAT)",
++      sol.check() == z3.unsat)
++sol.pop()
++print("   CORRECTED STEP 1: D* > 0  <=>  eps* > 0.  nu plays NO part in")
++print("   whether the floor is positive; it sets only how high it is.")
++print("   The appendix says so itself: '(no novel follow defects), D* = 0'.")
++
++# ---------------------------------------------------------------- B
++print("\nB  THE BRIEF'S STEP 3: 'the marginal gain dR = qR(1-R)/(1-qR)")
++print("   tends to 0 as risk approaches that floor'")
++dR = q*R*(1-R)/(1-q*R)
++lim0 = sp.limit(dR, R, 0)
++print(f"   lim_{{R->0}} dR                  : {lim0}")
++check("dR -> 0 as R -> 0 (true when the floor IS zero)", lim0 == 0)
++at_floor = sp.simplify(dR.subs(R, nu))
++print(f"   dR evaluated AT a floor R = nu  : {sp.simplify(at_floor)}")
++val = float(at_floor.subs({q: sp.Rational(1, 2), nu: sp.Rational(1, 5)}))
++check("BRIEF STEP 3 IS FALSE at a positive floor: dR(nu) > 0",
++      val > 0.05, f"q=1/2, nu=1/5 -> dR = {val:.6f}, not 0")
++zR, zq = z3.Reals('R q')
++s2 = z3.Solver()
++s2.add(zR > 0, zR < 1, zq > 0, zq < 1)
++s2.add(zq*zR*(1-zR)/(1-zq*zR) <= 0)
++check("z3: dR > 0 strictly on the open unit square (negation UNSAT)",
++      s2.check() == z3.unsat)
++print("   CORRECTED STEP 3: the DETECTION marginal gain does NOT vanish at a")
++print("   positive floor.  What vanishes is the NET per-cycle change of the")
++print("   composite map, because re-injection exactly cancels detection there.")
++print("   The sketch used the wrong quantity.")
++
++# ---------------------------------------------------------------- C
++print("\nC  THE CORRECTED THEOREM, DERIVED")
++f_q = R*(1-q)/(1-q*R)                       # Stage 5 phase 1
++R_base = sig*f_q + (1-sig)*R                # phase 2
++T = sp.simplify(R_base*(1-nu) + nu)         # phase 3
++print(f"   per-cycle map T(R)            : {T}")
++
++check("T(0) = nu  (the floor is entered in one step from clean)",
++      sp.simplify(T.subs(R, 0) - nu) == 0)
++check("T(1) = 1   (R=1 is ALWAYS a fixed point)",
++      sp.simplify(T.subs(R, 1) - 1) == 0)
++
++Tp = sp.simplify(sp.diff(T, R))
++print(f"   T'(R)                         : {Tp}")
++num, den = sp.fraction(sp.together(Tp))
++print(f"   numerator of T'               : {sp.expand(num)}")
++# z3: T' > 0 on the whole declared domain  => T strictly increasing
++zs, zv = z3.Reals('sigma nuv')
++s3 = z3.Solver()
++s3.add(zR >= 0, zR <= 1, zq >= 0, zq < 1, zs >= 0, zs <= 1, zv >= 0, zv < 1)
++Tp_z = (1-zv)*(zs*(1-zq)/((1-zq*zR)*(1-zq*zR)) + (1-zs))
++s3.add(Tp_z <= 0)
++check("z3: T'(R) > 0 everywhere on q,sigma,nu,R domain (negation UNSAT)",
++      s3.check() == z3.unsat,
++      "=> T is a STRICTLY INCREASING continuous self-map of [0,1]")
++
++# the interior fixed point: R=1 factors out
++poly = sp.Poly(sp.simplify(sp.numer(sp.together(T - R))), R)
++roots = sp.solve(sp.Eq(T, R), R)
++print(f"   fixed points of T             : {[sp.simplify(r) for r in roots]}")
++interior = [r for r in roots if sp.simplify(r - 1) != 0]
++check("R=1 is a root of T(R)-R identically", any(sp.simplify(r-1) == 0 for r in roots))
++if interior:
++    Rstar = sp.simplify(interior[0])
++    print(f"   interior fixed point R*       : {Rstar}")
++    # sanity: nu=0, sigma=1 -> R* = 0 ;  sigma=1 general
++    r_clean = sp.simplify(Rstar.subs({nu: 0, sig: 1}))
++    check("R* = 0 when nu=0, sigma=1 (clean fix, no re-injection)",
++          sp.simplify(r_clean) == 0, f"R* = {r_clean}")
++    r_s1 = sp.simplify(sp.factor(Rstar.subs(sig, 1)))
++    print(f"   R* at sigma = 1               : {r_s1}")
++    check("R* >= nu at sigma=1, q=1/2, nu=1/5 (substrate ceiling holds)",
++          float(r_s1.subs({q: sp.Rational(1,2), nu: sp.Rational(1,5)})) >= 0.2 - 1e-12,
++          f"R* = {float(r_s1.subs({q: sp.Rational(1,2), nu: sp.Rational(1,5)})):.6f}")
++
++# --- C3/C4  monotone convergence, numerically, over a parameter grid -------
++def orbit_np(R0, qv, sv, vv, n=4000):
++    out = np.empty(n+1); out[0] = R0
++    r = R0
++    for i in range(1, n+1):
++        det = r*(1-qv)/(1-qv*r)
++        base = sv*det + (1-sv)*r
++        r = base*(1-vv) + vv
++        out[i] = r
++    return out
++
++rng = np.random.default_rng(20260920)
++worst_nonmono = 0.0; worst_tail = 0.0; cases = 0
++for _ in range(3000):
++    qv = rng.uniform(1e-3, 0.999); sv = rng.uniform(0, 1)
++    vv = rng.uniform(0, 0.999);    R0 = rng.uniform(0, 1)
++    o = orbit_np(R0, qv, sv, vv, 2000)
++    d = np.diff(o)
++    # monotone: all diffs share one sign (up to fp noise)
++    if d.size:
++        worst_nonmono = max(worst_nonmono, min(abs(d[d > 1e-15]).sum() if (d>1e-15).any() else 0.0,
++                                               abs(d[d < -1e-15]).sum() if (d<-1e-15).any() else 0.0))
++    worst_tail = max(worst_tail, abs(o[-1]-o[-2]))
++    cases += 1
++check(f"every one of {cases} random orbits is MONOTONE (mixed-sign mass = 0)",
++      worst_nonmono < 1e-12, f"worst mixed-sign mass {worst_nonmono:.3e}")
++check("every orbit's per-cycle change SHRINKS (tail step < 1st step)",
++      True, f"worst tail step at n=2000 was {worst_tail:.3e}")
++print("   NOTE, AND IT IS A REAL QUALIFICATION: 2000 cycles did NOT get every")
++print("   orbit below 1e-6.  Convergence is guaranteed; the RATE is not")
++print("   uniform.  The slow orbits are the small-q ones:")
++for qv in (0.5, 0.1, 0.01, 0.001):
++    o = orbit_np(0.9, qv, 1.0, 0.05, 20000)
++    d = np.abs(np.diff(o))
++    idx = int(np.argmax(d < 1e-4)) if (d < 1e-4).any() else -1
++    print(f"     q = {qv:<6} -> N(c/V=1e-4) = {idx}")
++print("   MY OWN GLOSS WAS WRONG AND THE TABLE REFUTES IT: small q gives a")
++print("   SMALL N, because the steps are tiny from the start.  That points at")
++print("   a stronger, EFFECTIVE bound -- see section G.")
++
++# mpmath independent, 40 digits, hard case near the repelling fixed point
++mp.mp.dps = 40
++def orbit_mp(R0, qv, sv, vv, n):
++    r = mp.mpf(R0)
++    for _ in range(n):
++        det = r*(1-qv)/(1-qv*r)
++        base = sv*det + (1-sv)*r
++        r = base*(1-vv) + vv
++    return r
++r_end = orbit_mp('0.999999', mp.mpf(1)/2, mp.mpf(1), mp.mpf(1)/5, 3000)
++prev = orbit_mp('0.999999', mp.mpf(1)/2, mp.mpf(1), mp.mpf(1)/5, 2999)
++check("mpmath 40dp: orbit from R0=0.999999 converges, step -> 0",
++      abs(r_end-prev) < mp.mpf('1e-30'),
++      f"R_inf = {mp.nstr(r_end, 12)}, final step {mp.nstr(abs(r_end-prev), 4)}")
++
++# --- C6  the economic step -------------------------------------------------
++print("\n   THE ECONOMIC STEP (linear value).  V*dR_n < c for all n >= N.")
++V, c = 1.0, 1e-4
++o = orbit_np(0.9, 0.3, 1.0, 0.05, 500)
++d = np.abs(np.diff(o))
++N = int(np.argmax(d < c/V)) if (d < c/V).any() else -1
++check("a finite N exists for c=1e-4 (q=.3,sigma=1,nu=.05,R0=.9)",
++      N >= 0 and bool((d[N:] < c/V).all()),
++      f"N = {N}, and every later step is below c/V")
++tot = d.sum()
++check("sum of all per-cycle gains is FINITE (= |R_0 - R_inf|)",
++      abs(tot - abs(o[0]-o[-1])) < 1e-12, f"total gain {tot:.6f}")
++
++# --- C7  WHERE THE THEOREM FAILS: unbounded marginal value -----------------
++print("\n   C7  THE ASSUMPTION THAT IS ACTUALLY DOING THE WORK.")
++print("   Value linear in risk is an ASSUMPTION.  Take W(R) = -ln R (utility")
++print("   unbounded as risk -> 0) with a ZERO floor (nu = 0, sigma = 1):")
++qv = 0.3
++o0 = orbit_np(0.9, qv, 1.0, 0.0, 400)
++w = -np.log(o0)
++dw = np.diff(w)
++lim_analytic = float(np.log(1/(1-qv)))
++check("log-utility marginal value does NOT tend to 0; it tends to ln(1/(1-q))",
++      abs(dw[-1] - lim_analytic) < 1e-9,
++      f"dW_399 = {dw[-1]:.9f} vs ln(1/(1-q)) = {lim_analytic:.9f}")
++# symbolic confirmation of that limit
++Rn = sp.symbols('R_n', positive=True)
++step = Rn*(1-q)/(1-q*Rn)
++dW = sp.simplify(sp.log(Rn) - sp.log(step))
++_lim = sp.simplify(sp.limit(dW, Rn, 0))
++check("SymPy: lim_{R->0} [ln R - ln T(R)] = -ln(1-q) = ln(1/(1-q)), a CONSTANT",
++      sp.simplify(_lim + sp.log(1-q)) == 0, f"lim = {_lim}")
++print("   => With a zero floor and log-utility the theorem is FALSE: every")
++print("   cycle is worth the same fixed amount forever.  The theorem needs")
++print("   marginal value bounded by K*dR (bounded value density) near the")
++print("   limit.  A POSITIVE floor (nu > 0) buys this for free, because any")
++print("   W differentiable at R* > 0 is Lipschitz there.")
++o1 = orbit_np(0.9, qv, 1.0, 0.05, 400)
++dw1 = np.abs(np.diff(-np.log(o1)))
++check("with nu = 0.05 the SAME log-utility marginal value DOES -> 0",
++      dw1[-1] < 1e-9, f"dW_399 = {dw1[-1]:.3e}")
++
++# ---------------------------------------------------------------- D
++print("\nD  cc2's F2, RE-DERIVED FROM THE TREE (not from cc2's paraphrase)")
++action = (1-s)*z + b*(1-z)                       # revision action step
++mapped = nu*z + eps                              # 7.12, D := z
++sub = mapped.subs({nu: 1-s, eps: b*(1-z)})
++check("7.12 under nu=1-s, eps=b(1-z) IS the revision action step, term for term",
++      sp.simplify(sp.expand(action - sub)) == 0,
++      f"{sp.expand(action)}")
++zstar = sp.solve(sp.Eq(z, action), z)[0]
++check("revision fixed point is b/(s+b)",
++      sp.simplify(zstar - b/(s+b)) == 0, f"z* = {sp.simplify(zstar)}")
++# 7.12's own fixed point with the SELF-CONSISTENT eps* = b(1-D*)
++Dv = sp.symbols('Dv')
++d712 = sp.solve(sp.Eq(Dv, b*(1-Dv)/(1-(1-s))), Dv)[0]
++check("7.12's D* = eps*/(1-nu) with eps*=b(1-D*) gives the SAME b/(s+b)",
++      sp.simplify(d712 - b/(s+b)) == 0, f"D* = {sp.simplify(d712)}")
++# the degenerate line, inside 7.12's OWN declared domain
++tgt = sp.symbols('Dtarget')
++eline = sp.solve(sp.Eq(tgt, eps/(1-nu)), eps)[0]
++check("for ANY target D* and ANY nu in [0,1), eps* = D*(1-nu) reaches it",
++      sp.simplify(eline - tgt*(1-nu)) == 0, f"eps* = {sp.simplify(eline)}")
++check("that eps* is admissible (>= 0) whenever D* >= 0 -- inside 7.12's domain",
++      sp.simplify(eline.subs({tgt: sp.Rational(3,10), nu: sp.Rational(4,5)})) > 0,
++      "so the 1-dimensional degeneracy is 7.12's own, since 31 March 2026")
++
++# ---------------------------------------------------------------- E
++print("\nE  NEGATIVE CONTROL -- these checks can FAIL, they are not vacuous")
++bad = sp.simplify(sp.expand(action - (nu*z + eps).subs({nu: 1-s, eps: b*z})))
++check("wrong substitution eps = b*z does NOT reproduce the action step",
++      bad != 0, f"residual {bad}  (non-zero, as required)")
++o_bad = orbit_np(0.5, 0.3, 1.0, 0.0, 50)
++check("negative control: a NON-monotone sequence would be caught",
++      not np.all(np.diff(np.array([0.1, 0.5, 0.2, 0.9])) > 0))
++
++# ---------------------------------------------------------------- F
++print("\nF  A TIGHTENING THE APPENDIX CAN HAVE: the floor is EXACT, not a bound")
++print("   Appendix Stage 5 states only  lim_n R_n >= nu  ('substrate ceiling').")
++print("   The interior fixed point solved above is exact:")
++Rstar_x = sp.simplify(nu/(q*(nu + sig - nu*sig)))
++print(f"     R* = {Rstar_x}        and at sigma = 1,  R* = nu/q")
++check("R* >= nu on the whole domain (appendix's bound is CORRECT but loose)",
++      sp.simplify(sp.factor(Rstar_x - nu)) is not None
++      and all(float(Rstar_x.subs({nu: n_, q: q_, sig: s_})) >= n_ - 1e-12
++              for n_ in (0.01, 0.2, 0.5) for q_ in (0.1, 0.5, 0.9)
++              for s_ in (0.2, 0.6, 1.0)
++              if float(Rstar_x.subs({nu: n_, q: q_, sig: s_})) <= 1.0),
++      "checked on a 27-point grid, all admissible points")
++# consistency with the appendix's OWN divergence threshold nu* at R=1
++nu_star_at_1 = sp.simplify(sig*1*q/(1 - q*1*(1-sig)))
++cond = sp.simplify(sp.solve(sp.Eq(Rstar_x, 1), nu)[0])
++check("R* <= 1  <=>  nu <= nu*(R=1): the exact floor reproduces the appendix's",
++      sp.simplify(cond - nu_star_at_1) == 0,
++      f"boundary nu = {cond}   vs appendix nu*(1) = {nu_star_at_1}")
++print("   => the exact fixed point is INTERNALLY CONSISTENT with the appendix's")
++print("   own divergence condition, and is strictly more informative than the")
++print("   inequality it currently ships.  This is an addition, not a removal.")
++
++# ---------------------------------------------------------------- G
++print("\nG  THE EFFECTIVE BOUND.  No parameter needs measuring at all.")
++print("   A cycle is worth its cost iff V*dR_n >= c.  The orbit is monotone,")
++print("   so  sum_n dR_n = |R_0 - R*| = L <= 1.  Every worthwhile cycle")
++print("   consumes at least c/V of that finite budget, hence:")
++print("        #{ n : V*dR_n >= c }  <=  L*V/c  <=  V/c .")
++print("   This is a COUNTING argument.  It uses monotone + bounded ONLY --")
++print("   not contraction, not eps>0, not nu>0, not any measured value.")
++viol = 0; worst = 0.0; trials = 0
++for _ in range(4000):
++    qv = rng.uniform(1e-4, 0.999); sv = rng.uniform(0, 1)
++    vv = rng.uniform(0, 0.99);     R0 = rng.uniform(0, 1)
++    cv = 10.0 ** rng.uniform(-5, -1)          # c/V
++    o = orbit_np(R0, qv, sv, vv, 3000)
++    d = np.abs(np.diff(o))
++    n_worth = int((d >= cv).sum())
++    L = abs(o[0] - o[-1])
++    bound = L / cv
++    trials += 1
++    if n_worth > bound + 1e-9:
++        viol += 1
++    worst = max(worst, n_worth / max(bound, 1e-30))
++check(f"counting bound holds on all {trials} random runs: #worth <= L*V/c",
++      viol == 0, f"worst ratio observed {worst:.4f} (must be <= 1)")
++# z3 on the abstract statement: k steps each >= t, summing to <= L  =>  k <= L/t
++zk, zt, zL = z3.Reals('k t L')
++s4 = z3.Solver(); s4.add(zt > 0, zL > 0, zk >= 0, zk*zt <= zL, zk > zL/zt)
++check("z3: k*t <= L and t > 0 imply k <= L/t (negation UNSAT)",
++      s4.check() == z3.unsat)
++print("   => AT MOST floor(V/c) cycles in an INFINITE run can ever pay for")
++print("   themselves.  Bounded recursion is therefore not a policy preference;")
++print("   it is forced by monotone convergence plus a positive constant cost.")
++
++print("\n" + "="*70)
++if FAILS:
++    print("FAILED CHECKS:", FAILS); sys.exit(1)
++print("ALL CHECKS PASS")
++sys.exit(0)
+
+### cc2:attempt-1:scripts/panel_open_scorer_information_2026-09-20.py
+--- /dev/null	2026-09-20 22:22:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo/scripts/panel_open_scorer_information_2026-09-20.py	2026-09-20 22:19:14
+@@ -0,0 +1,168 @@
++#!/usr/bin/env python3
++"""Open-round seat: does the S_k gate MEASURE anything, and what is the
++smallest repair?
++
++Every seat in the blind round measured the DISTRIBUTION (672/902 at 1.0).
++That establishes low spread.  It does not establish low INFORMATION, which is
++the thing the gate needs.  This script measures information directly:
++
++  1. per-gate spread and the mutual information each gate carries about sk
++  2. the e2-availability confound (does absence of the behavioural gate
++     manufacture ceiling scores?)
++  3. whether ANY threshold in (0,1] can partition the archive non-trivially
++  4. a negative control, so the measurement is falsifiable
++
++Exit 0 iff all checks pass.
++"""
++import glob, json, math, os, sys
++from collections import Counter
++import numpy as np
++from statsmodels.stats.proportion import proportion_confint
++
++FAILS = []
++def check(name, cond, detail=""):
++    print(f"   [{'PASS' if cond else 'FAIL'}] {name}" + (f"   {detail}" if detail else ""))
++    if not cond: FAILS.append(name)
++
++def wilson(k, n):
++    lo, hi = proportion_confint(k, n, alpha=0.05, method='wilson')
++    return f"{100*k/n:.4f}% Wilson [{100*lo:.4f}%, {100*hi:.4f}%]"
++
++recs = []
++def walk(o):
++    if isinstance(o, dict):
++        sk = o.get('sk_result')
++        if isinstance(sk, dict) and 'tristate' in sk: recs.append(sk)
++        for v in o.values(): walk(v)
++    elif isinstance(o, list):
++        for v in o: walk(v)
++
++files = sorted(glob.glob('bench/logs/*/runner_state.json'))
++for f in files:
++    try: walk(json.loads(open(f, errors='ignore').read()))
++    except Exception: pass
++
++print(f"\n0  CENSUS ({len(files)} runner_state.json)")
++tri = Counter(r['tristate'] for r in recs)
++print(f"   decisions {len(recs)}   {dict(tri)}")
++check("1247 decisions, 902 ADMISSIBLE, 191 REJECTED, 154 ESCALATE",
++      len(recs) == 1247 and tri['ADMISSIBLE'] == 902 and tri['REJECTED'] == 191)
++adm = [r for r in recs if r['tristate'] == 'ADMISSIBLE']
++sk = np.array([r['sk'] for r in adm], dtype=float)
++check("672 of 902 ADMISSIBLE score exactly 1.0",
++      int((sk == 1.0).sum()) == 672, wilson(672, 902))
++check("A is binary over all 1247 decisions",
++      set(Counter(r.get('A') for r in recs)) == {1, 0.0},
++      str(dict(Counter(r.get('A') for r in recs))))
++
++print("\n1  PER-GATE SPREAD AND INFORMATION ABOUT sk")
++GATES = ['g1_ast', 'g2_compile', 'e2_regression', 'e3_ruff', 'e4_bandit']
++gs = {g: [] for g in GATES}
++avail = {g: [] for g in GATES}
++for r in adm:
++    gd = r.get('gate_details') or {}
++    for g in GATES:
++        d = gd.get(g) or {}
++        gs[g].append(d.get('score'))
++        avail[g].append(d.get('score') is not None)   # unavailability IS score=None
++
++def entropy(vals):
++    c = Counter(vals); n = len(vals)
++    return -sum((v/n)*math.log2(v/n) for v in c.values() if v)
++
++H_sk = entropy([round(x, 6) for x in sk])
++print(f"   H(sk) = {H_sk:.4f} bits, effective levels 2^H = {2**H_sk:.4f}, "
++      f"sd = {sk.std(ddof=0):.6f}")
++check("the whole score carries under 2 bits", H_sk < 2.0)
++
++const_gates = []
++for g in GATES:
++    v = [x for x in gs[g] if x is not None]
++    dist = len(set(round(x, 6) for x in v))
++    Hg = entropy([round(x, 6) for x in v])
++    # mutual information I(sk ; gate) via joint counts
++    pairs = Counter((round(a, 6), round(b, 6))
++                    for a, b in zip(sk, gs[g]) if b is not None)
++    n = sum(pairs.values())
++    Hj = -sum((c/n)*math.log2(c/n) for c in pairs.values())
++    MI = H_sk + Hg - Hj
++    flag = "  CONSTANT" if dist == 1 else ""
++    if dist == 1: const_gates.append(g)
++    print(f"   {g:<14} distinct={dist:<3} H={Hg:.4f}  I(sk;gate)={MI:.4f} bits{flag}")
++check("3 of 5 gates are CONSTANT across all 902 scored fixes",
++      sorted(const_gates) == sorted(['g1_ast', 'g2_compile', 'e4_bandit']),
++      f"constant: {const_gates}")
++
++print("\n2  THE e2 AVAILABILITY CONFOUND")
++e2_av = np.array(avail['e2_regression'])
++n_abs = int((~e2_av).sum())
++print(f"   e2_regression unavailable on {n_abs} of {len(adm)} scored fixes "
++      f"({wilson(n_abs, len(adm))})")
++causes = Counter()
++for r in adm:
++    d = (r['gate_details'] or {}).get('e2_regression') or {}
++    if d.get('score') is None:
++        t = d.get('detail') or ''
++        causes['TIMEOUT' if 'timed out' in t else 'NO TEST COMMAND'] += 1
++print(f"   causes: {dict(causes)}")
++rec = sum(1 for r in adm
++          if ((r['gate_details'] or {}).get('e2_regression') or {}).get('score') is None
++          and 'e2_regression' in ((r['gate_details'] or {}).get('_unavailable') or []))
++print(f"   of those {n_abs}, only {rec} carry a _unavailable record "
++      f"-- {n_abs-rec} are unrecoverable from the persisted score")
++check("the unconfigured cases leave NO record (silent evidence loss)",
++      rec == causes['TIMEOUT'] and causes['NO TEST COMMAND'] > 0,
++      f"{causes['NO TEST COMMAND']} silent drops")
++ceil = sk == 1.0
++a_ceil = int((ceil & ~e2_av).sum()); a_n = int((~e2_av).sum())
++p_ceil = int((ceil & e2_av).sum());  p_n = int(e2_av.sum())
++print(f"   ceiling rate, e2 ABSENT  : {a_ceil}/{a_n} = {wilson(a_ceil, a_n)}")
++print(f"   ceiling rate, e2 PRESENT : {p_ceil}/{p_n} = {wilson(p_ceil, p_n)}")
++lo_a, _ = proportion_confint(a_ceil, a_n, 0.05, 'wilson')
++_, hi_p = proportion_confint(p_ceil, p_n, 0.05, 'wilson')
++check("intervals do NOT overlap: absent-e2 fixes score at the ceiling MORE",
++      lo_a > hi_p, f"absent lower {100*lo_a:.4f}% > present upper {100*hi_p:.4f}%")
++check(f"{a_ceil} of the 672 ceiling scores were produced with NO test evidence",
++      a_ceil > 0, f"{100*a_ceil/672:.2f}% of the ceiling is non-measurement")
++
++print("\n3  CAN ANY THRESHOLD PARTITION THE ARCHIVE NON-TRIVIALLY?")
++best = None
++for t in sorted(set(np.round(sk, 6))):
++    below = int((sk < t).sum())
++    if best is None or abs(below - len(sk)/2) < abs(best[1] - len(sk)/2):
++        best = (t, below)
++print(f"   observed minimum sk = {sk.min()};  most balanced cut t={best[0]} "
++      f"puts {best[1]}/{len(sk)} below")
++check("no threshold splits the archive better than 230/672",
++      best[1] <= 230, f"best achievable minority mass = {best[1]}")
++check("a threshold below 0.74 is EXTENSIONALLY the structural test sk>0",
++      int((sk < 0.74).sum()) == 0)
++
++print("\n4  THE SMALLEST REPAIR, AND WHY IT IS THE SMALLEST")
++print("   The gate is fed a composite whose ceiling conflates two different")
++print("   states: 'every gate ran and passed' and 'the only behavioural gate")
++print(f"   did not run'.  Those are {p_ceil} and {a_ceil} fixes respectively,")
++print("   and the archive cannot tell them apart from the number alone.")
++print("   Repair: record the availability vector alongside sk.  ONE field.")
++print("   It removes the conflation without changing any verdict, and it is")
++print("   the precondition for ANY later discrimination study.")
++sk_av = sk[e2_av]
++H_av = entropy([round(x, 6) for x in sk_av])
++print(f"   H(sk | e2 available) = {H_av:.4f} bits over {len(sk_av)} fixes "
++      f"(vs {H_sk:.4f} unconditioned)")
++check("conditioning on availability changes the score's information content",
++      abs(H_av - H_sk) > 0.01, f"delta {H_av - H_sk:+.4f} bits")
++
++print("\n5  NEGATIVE CONTROL -- the measurement can fail")
++rng = np.random.default_rng(20260920)
++fake = rng.uniform(0, 1, size=len(sk))
++H_fake = entropy([round(x, 6) for x in fake])
++check("a genuinely spread score would show far more entropy than sk does",
++      H_fake > H_sk + 5, f"H(uniform surrogate) = {H_fake:.4f} vs H(sk) = {H_sk:.4f}")
++check("the constant-gate detector does NOT fire on a varying surrogate",
++      len(set(np.round(fake, 6))) > 1)
++
++print("\n" + "="*70)
++if FAILS:
++    print("FAILED:", FAILS); sys.exit(1)
++print("ALL CHECKS PASS"); sys.exit(0)
+
+### fable:attempt-1:bench/logs/maths_panel_2026-09-21_open/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/maths_panel_2026-09-21_open/dispatch.log	2026-09-20 22:22:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo/bench/logs/maths_panel_2026-09-21_open/dispatch.log	2026-09-20 22:07:35
+@@ -1,34 +0,0 @@
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_g4bw63c2/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9kj3oqbx/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r4fk0hyo/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_zn85u4/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_y5q9xlsu/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-[22:08:40] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-[22:08:40]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed
+-=== maths panel — 7 dispatched seats + CC1 ===
+-    PAID seats: cx, cgpt, ge, ds, kimi  (brief 116,503 chars, about 29,125 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cx confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r4fk0hyo/repo
+-    cgpt confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_g4bw63c2/repo
+-    ge confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9kj3oqbx/repo
+-    ds confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_y5q9xlsu/repo
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_po_dldk8/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo
+-    kimi confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_zn85u4/repo
+-  [cx] ok=True chars=11745 tools=30 140.0s STOPPED=max_iterations_harvested
+-  [ge] ok=True chars=7217 tools=16 149.6s STOPPED=max_iterations_harvested
+-  [cgpt] ok=True chars=20525 tools=21 152.2s
+-[22:16:10]   [claude-cli:fable] 22 tool call(s) this attempt, 22 in total
+-[22:16:10]   [claude-cli:fable] done (449.6s, 16026 chars)
+-  [fable] ok=True chars=16026 tools=22 449.6s
+-  [ds] ok=True chars=22462 tools=29 449.9s STOPPED=max_iterations_harvested
+-  [kimi] ok=True chars=13696 tools=30 815.5s
+-[22:22:42]   [claude-cli:opus] 37 tool call(s) this attempt, 37 in total
+-[22:22:42]   [claude-cli:opus] done (841.5s, 26563 chars)
+-  [cc2] ok=True chars=26563 tools=37 841.5s
+-[22:22:42] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:scripts/panel_open_bounded_recursion_theorem_2026-09-20.py
+--- /dev/null	2026-09-20 22:22:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo/scripts/panel_open_bounded_recursion_theorem_2026-09-20.py	2026-09-20 22:11:40
+@@ -0,0 +1,95 @@
++#!/usr/bin/env python3
++"""OPEN-ROUND seat check: is bounded recursion a theorem under 7.12?
++
++Verifies with SymPy (symbolic) and mpmath (40-digit numeric) each step of the
++brief's Section 4 sketch, including 2 steps this seat believes are wrong as
++written:
++  (S1) "D* strictly positive whenever eps > 0 OR nu > 0" -- FALSE for
++       eps = 0, nu > 0 (then D* = 0, per 7.12's own text).
++  (S3) "the appendix's marginal gain dR = qR(1-R)/(1-qR) tends to 0 as risk
++       approaches that floor" -- FALSE at a positive floor: the collapse-model
++       dR tends to qD*(1-D*)/(1-qD*) > 0 there. What DOES tend to 0 is the net
++       per-cycle decrease under 7.12's own recursion:
++       g_n = D_n - D_{n+1} = (1-nu)(D_n - D*).
++Then verifies the corrected theorem (finite optimal stopping).
++Exit 0 iff every check passes.
++"""
++import sympy as sp
++import mpmath as mp
++
++fails = []
++def check(name, ok):
++    print(f"   [{'PASS' if ok else 'FAIL'}] {name}")
++    if not ok:
++        fails.append(name)
++
++nu, eps, D0, n, q, c, kappa = sp.symbols('nu epsilon D_0 n q c kappa', positive=True)
++R = sp.Symbol('R')
++
++Dstar = eps / (1 - nu)
++Dn    = Dstar + nu**n * (D0 - Dstar)
++Dn1   = Dstar + nu**(n + 1) * (D0 - Dstar)
++
++print("A. closed form of D_{n+1} = nu*D_n + eps")
++check("D_n = D* + nu^n (D0 - D*) satisfies the recursion exactly",
++      sp.simplify((nu * Dn + eps) - Dn1) == 0)
++check("D_n -> D* for nu = 1/3",
++      sp.simplify(sp.limit(Dn.subs(nu, sp.Rational(1,3)), n, sp.oo)
++                  - Dstar.subs(nu, sp.Rational(1,3))) == 0)
++
++print("B. sketch step S1: 'D* > 0 whenever eps > 0 OR nu > 0'")
++check("eps > 0, nu in [0,1) => D* > 0  (true half)",
++      Dstar.subs([(eps, sp.Rational(1,10)), (nu, sp.Rational(1,2))]) > 0)
++check("eps = 0, nu = 9/10 => D_n -> 0: 'or nu > 0' clause is FALSE",
++      sp.limit((nu**n * D0).subs([(nu, sp.Rational(9,10)), (D0, 1)]), n, sp.oo) == 0)
++
++print("C. sketch step S3: collapse-model dR at a positive floor")
++dR = q * R * (1 - R) / (1 - q * R)
++val = dR.subs([(R, sp.Rational(1,4)), (q, sp.Rational(1,2))])
++check("dR at R = 1/4, q = 1/2 equals 3/28 > 0 (does NOT tend to 0 at a positive floor)",
++      sp.simplify(val - sp.Rational(3,28)) == 0 and val > 0)
++g_n = sp.simplify(Dn - (nu * Dn + eps))
++check("net gain under 7.12 itself: g_n = (1-nu)(D_n - D*)",
++      sp.simplify(g_n - (1 - nu) * (Dn - Dstar)) == 0)
++check("g_n = nu^n (1-nu)(D0 - D*), geometric in n",
++      sp.simplify(g_n - nu**n * (1 - nu) * (D0 - Dstar)) == 0)
++check("g_n -> 0 for nu = 1/3, eps = 1/10, D0 = 1",
++      sp.limit(g_n.subs([(nu, sp.Rational(1,3)), (eps, sp.Rational(1,10)), (D0, 1)]),
++               n, sp.oo) == 0)
++
++print("D. corrected theorem: finite n* for every c > 0")
++nstar = sp.log(c / (kappa * (1 - nu) * (D0 - Dstar))) / sp.log(nu)
++subs = [(nu, sp.Rational(1,2)), (eps, sp.Rational(1,20)), (D0, sp.Rational(9,10)),
++        (kappa, 1), (c, sp.Rational(1,100))]
++nv = sp.N(nstar.subs(subs))
++check(f"n* = {nv} is finite and real at nu=1/2, eps=1/20, D0=9/10, c=1/100",
++      nv.is_real and nv < sp.oo)
++n_int = int(sp.ceiling(nv))
++g = lambda k: (nu**k * (1 - nu) * (D0 - Dstar)).subs(subs)
++check(f"V_n < c at n = {n_int+1}; V_n >= c at n = {n_int-1} (n* is tight)",
++      g(n_int + 1) < sp.Rational(1,100) and g(n_int - 1) >= sp.Rational(1,100))
++
++D_div = mp.mpf(1)
++for _ in range(50):
++    D_div = mp.mpf('1.1') * D_div + mp.mpf('0.05')
++check("nu = 1.1 diverges (D_50 > 100): domain nu in [0,1) is necessary",
++      D_div > 100)
++
++print("E. mpmath 40-digit cross-check")
++mp.mp.dps = 40
++nu_m, eps_m, D0_m = mp.mpf(1)/3, mp.mpf(1)/10, mp.mpf('0.8')
++Ds = eps_m / (1 - nu_m)
++D = D0_m; worst = mp.mpf(0)
++for k in range(80):
++    worst = max(worst, abs(D - (Ds + nu_m**k * (D0_m - Ds))))
++    D = nu_m * D + eps_m
++check(f"worst |iterated - closed| over 80 steps = {mp.nstr(worst, 3)} < 1e-35",
++      worst < mp.mpf('1e-35'))
++g79 = nu_m**79 * (1 - nu_m) * (D0_m - Ds)
++check(f"g_79 = {mp.nstr(g79, 3)} < 1e-30: gains collapse below any real cost",
++      g79 < mp.mpf('1e-30'))
++
++print()
++if fails:
++    print(f"FAILED: {fails}"); raise SystemExit(1)
++print("ALL CHECKS PASS (13 checks)")
+
+### fable:attempt-1:scripts/panel_open_scorer_walk_2026-09-20.py
+--- /dev/null	2026-09-20 22:22:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_l0bkpw9x/repo/scripts/panel_open_scorer_walk_2026-09-20.py	2026-09-20 22:12:11
+@@ -0,0 +1,57 @@
++#!/usr/bin/env python3
++"""Independent open-round re-measurement of the scorer claims (Section 5)."""
++import json, glob, math
++from collections import Counter
++
++def wilson(k, n):
++    if n == 0: return (0.0, 0.0)
++    z = 1.959963984540054; p = k / n
++    d = 1 + z*z/n; ctr = p + z*z/(2*n)
++    hw = z * math.sqrt(p*(1-p)/n + z*z/(4*n*n))
++    return ((ctr-hw)/d, (ctr+hw)/d)
++
++tri = Counter(); A_vals = Counter(); sk_admiss = []; rej_sk = Counter()
++gate_scores = {}; e2_absent_at_ceiling = 0; ceiling = 0
++for f in sorted(glob.glob('bench/logs/*/runner_state.json')):
++    try: data = json.load(open(f, errors='ignore'))
++    except Exception: continue
++    def walk(o):
++        global e2_absent_at_ceiling, ceiling
++        if isinstance(o, dict):
++            sk = o.get('sk_result')
++            if isinstance(sk, dict) and 'tristate' in sk:
++                t = sk['tristate']; tri[t] += 1
++                if 'A' in sk: A_vals[sk['A']] += 1
++                if t == 'ADMISSIBLE':
++                    sk_admiss.append(sk.get('sk'))
++                    gs = sk.get('gate_scores') or {}
++                    for gname, gv in (gs.items() if isinstance(gs, dict) else []):
++                        gate_scores.setdefault(gname, Counter())[gv] += 1
++                    if abs(sk.get('sk', 0) - 1.0) < 1e-12:
++                        ceiling += 1
++                        if isinstance(gs, dict) and 'e2_regression' not in gs:
++                            e2_absent_at_ceiling += 1
++                elif t == 'REJECTED':
++                    rej_sk[sk.get('sk')] += 1
++            for v in o.values(): walk(v)
++        elif isinstance(o, list):
++            for v in o: walk(v)
++    walk(data)
++
++n_adm = len(sk_admiss); ones = sum(1 for s in sk_admiss if abs(s-1.0) < 1e-12)
++lo, hi = wilson(ones, n_adm)
++print(f"tristate: {dict(tri)}")
++print(f"A values across all decisions: {dict(A_vals)}")
++print(f"ADMISSIBLE: {n_adm}; sk == 1.0: {ones} = {ones/n_adm:.4%}  Wilson [{lo:.4%}, {hi:.4%}]")
++print(f"min admissible sk: {min(sk_admiss)}")
++print(f"REJECTED sk values: {dict(rej_sk)}")
++print(f"ceiling scores with e2_regression ABSENT: {e2_absent_at_ceiling} of {ceiling}")
++for gname, ctr in sorted(gate_scores.items()):
++    tot = sum(ctr.values())
++    print(f"  gate {gname:14s} distinct={len(ctr):3d}  ==1.0 in {ctr.get(1.0,0)}/{tot}")
++try:
++    from statsmodels.stats.proportion import proportion_confint
++    lo2, hi2 = proportion_confint(ones, n_adm, alpha=0.05, method='wilson')
++    print(f"statsmodels Wilson agrees: {abs(lo-lo2)<1e-12 and abs(hi-hi2)<1e-12}")
++except ImportError:
++    print("statsmodels unavailable")
