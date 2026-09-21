@@ -114,6 +114,21 @@ def git(*args: str) -> str:
     ).stdout.strip()
 
 
+def git_rc(*args: str) -> int:
+    """A git exit CODE, kept beside `git` so both can be redirected together.
+
+    `merge-base --is-ancestor` answers with its exit status: 0 means ancestor,
+    1 means not an ancestor, and ANY OTHER VALUE is an error -- not a git
+    repository, an unreadable object, a bad argument. Collapsing "error" into
+    "not an ancestor" is what the first version of this did, and it produced a
+    confident false statement ("it is on another branch or from a rewritten
+    history") about a repository git had simply failed to read.
+    """
+    return subprocess.run(
+        ["git", *args], cwd=REPO, capture_output=True, text=True
+    ).returncode
+
+
 def resume_pointer_region(text: str) -> str:
     """The newest resume pointer, or the document head if it marks none.
 
@@ -136,6 +151,7 @@ def check(rel: str, head_now: str, ahead_now: int) -> dict:
     claims: list[str] = []
     failures: list[str] = []
     disclaimed: list[str] = []
+    notes: list[str] = []
 
     def asserts_currency(match: re.Match) -> bool:
         """False when the claim sits under a label denying it is current."""
@@ -153,15 +169,48 @@ def check(rel: str, head_now: str, ahead_now: int) -> dict:
         claims.append(f"HEAD == {claimed}")
         # Resolve rather than string-compare: the document may abbreviate to a
         # different width than `git rev-parse --short` happens to emit.
+        # NAMING AN OLDER COMMIT IS NOT AN ERROR, AND REQUIRING OTHERWISE WAS A
+        # DESIGN FAULT IN THE FIRST VERSION OF THIS SCRIPT (corrected 22:59 BST
+        # the same evening, by executing it after 6 further commits).
+        #
+        # That version failed unless the pointer named the CURRENT HEAD. Since a
+        # resume pointer is written once and HEAD moves with every commit, the
+        # guard went red on the very next commit and would have gone red on
+        # every commit thereafter, including commits with nothing to do with
+        # project state. A check that is red by default is one that gets
+        # disabled, and a disabled check is worse than none -- this repository's
+        # own history has several guards that were worked around rather than
+        # satisfied.
+        #
+        # What a resume pointer legitimately does is record where a session
+        # stopped. So the commit it names is required to be REAL and to be an
+        # ANCESTOR of HEAD -- which catches a fabricated hash, a commit from a
+        # rewritten history, or one from another branch -- and its distance from
+        # HEAD is reported as INFORMATION rather than charged as a failure.
+        #
+        # THE ORIGINAL DEFECT IS STILL CAUGHT, and by the part that always
+        # should have carried it: "11 ahead of origin/main -- NOT PUSHED" are
+        # claims about the state RIGHT NOW, not about a past moment, and both
+        # were false. Those remain hard failures below.
         resolved = git("rev-parse", "--verify", "--quiet", claimed + "^{commit}")
         if not resolved:
             failures.append(f"names HEAD {claimed}, which is not a commit in this repository")
         elif resolved != head_now:
+            rc = git_rc("merge-base", "--is-ancestor", resolved, head_now)
             behind = git("rev-list", "--count", f"{resolved}..HEAD")
-            failures.append(
-                f"names HEAD {claimed}, but HEAD is {head_now[:7]} "
-                f"-- {behind} commit(s) later"
-            )
+            if rc == 1:
+                failures.append(
+                    f"names HEAD {claimed}, which is NOT an ancestor of {head_now[:7]} "
+                    "-- it is on another branch or from a rewritten history"
+                )
+            elif rc != 0:
+                failures.append(
+                    f"names HEAD {claimed}, and git could not decide whether it is an "
+                    f"ancestor of {head_now[:7]} (exit {rc}); the claim is UNCHECKED "
+                    "rather than refuted"
+                )
+            else:
+                notes.append(f"names {claimed}, {behind} commit(s) back (an ancestor, so not charged)")
 
     np_m = NOT_PUSHED.search(region)
     if np_m and not asserts_currency(np_m):
@@ -199,6 +248,7 @@ def check(rel: str, head_now: str, ahead_now: int) -> dict:
         "claims": claims,
         "failures": failures,
         "disclaimed": disclaimed,
+        "notes": notes,
     }
 
 
@@ -243,6 +293,8 @@ def main() -> int:
         print(f"[{r['verdict']:<12}] {r['source']}")
         for c in r["claims"]:
             print(f"                 claims: {c}")
+        for n in r.get("notes", []):
+            print(f"                 note  : {n}")
         for d in r.get("disclaimed", []):
             print(f"                 ok    : {d} -- correctly labelled, not judged")
         for f in r["failures"]:

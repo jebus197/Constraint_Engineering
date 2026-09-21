@@ -97,16 +97,32 @@ def test_the_check_can_actually_fail(tmp_path, monkeypatch):
         "**11 ahead of `origin/main` — NOT PUSHED**.\n"
     )
     monkeypatch.setattr(m, "REPO", tmp_path, raising=True)
-    # `check` resolves SHAs through the real repository, so point it back there
-    # for resolution while reading the fixture document from tmp_path.
+    # `check` resolves SHAs through the real repository, so point BOTH git
+    # helpers back there while the fixture document is read from tmp_path.
+    #
+    # `git_rc` must be redirected too. When it was not, `merge-base` ran against
+    # tmp_path, which is not a git checkout, and its error exit was read as
+    # "not an ancestor" -- so this test PASSED while asserting a failure count
+    # it was reaching for the wrong reason. A test that is green by accident is
+    # the thing this whole file exists to prevent.
     monkeypatch.setattr(m, "git", lambda *a: _git(*a), raising=True)
+    monkeypatch.setattr(m, "git_rc", lambda *a: subprocess.run(
+        ["git", *a], cwd=REPO, capture_output=True).returncode, raising=True)
 
     row = m.check("tracker.md", _git("rev-parse", "HEAD"), 0)
     assert row["verdict"] == "FALSE", row
-    assert len(row["failures"]) == 3, (
-        "the stale pointer made 3 false claims -- wrong HEAD, wrong push state, "
-        f"wrong ahead-count -- and the check found {len(row['failures'])}: {row['failures']}"
+    # 2, NOT 3. `d17ab01` is a real ancestor of HEAD, so naming it is a stale
+    # pointer rather than a false claim and is reported as a note. The 2 claims
+    # that were FALSE ABOUT THE PRESENT -- "NOT PUSHED" and "11 ahead" -- are
+    # what the guard convicts on, and they are the 2 that caused the harm.
+    assert len(row["failures"]) == 2, (
+        "the stale pointer made 2 claims about the present and both were false: "
+        "it said work was NOT PUSHED and 11 commits ahead, when nothing was "
+        f"unpushed. The check found {len(row['failures'])}: {row['failures']}"
     )
+    assert any("NOT PUSHED" in f for f in row["failures"]), row["failures"]
+    assert any("ahead" in f for f in row["failures"]), row["failures"]
+    assert any("ancestor, so not charged" in n for n in row["notes"]), row["notes"]
 
 
 def test_the_disclaimer_exemption_cannot_launder_a_live_pointer(tmp_path, monkeypatch):
@@ -174,3 +190,37 @@ def test_the_wilson_interval_is_cross_verified_not_asserted():
     lo2, hi2 = m.wilson_two_ways(5, 10)
     assert lo2 == pytest.approx(0.2365, abs=5e-4), lo2
     assert hi2 == pytest.approx(0.7635, abs=5e-4), hi2
+
+
+def test_a_pointer_naming_a_commit_from_another_history_is_charged(tmp_path, monkeypatch):
+    """A fabricated or rewritten-history hash is a real defect, not staleness."""
+    m = _module()
+    doc = tmp_path / "tracker.md"
+    doc.write_text("**★ RESUME POINTER.** HEAD `0123456789abcdef0123456789abcdef01234567`.\n")
+    monkeypatch.setattr(m, "REPO", tmp_path, raising=True)
+    monkeypatch.setattr(m, "git", lambda *a: _git(*a), raising=True)
+    row = m.check("tracker.md", _git("rev-parse", "HEAD"), 0)
+    assert row["verdict"] == "FALSE", row
+    assert any("not a commit in this repository" in f for f in row["failures"]), row
+
+
+def test_a_git_failure_is_reported_as_unchecked_not_as_refuted(tmp_path, monkeypatch):
+    """`merge-base --is-ancestor` exits 1 for "no" and other codes for errors.
+
+    Collapsing them made the guard state confidently that a commit was "on
+    another branch or from a rewritten history" when git had merely failed to
+    read the repository. An unchecked claim must say it is unchecked.
+    """
+    m = _module()
+    doc = tmp_path / "tracker.md"
+    head = _git("rev-parse", "HEAD")
+    parent = _git("rev-parse", "HEAD~1")
+    doc.write_text(f"**★ RESUME POINTER.** HEAD `{parent[:7]}`.\n")
+    monkeypatch.setattr(m, "REPO", tmp_path, raising=True)
+    monkeypatch.setattr(m, "git", lambda *a: _git(*a), raising=True)
+    monkeypatch.setattr(m, "git_rc", lambda *a: 128, raising=True)   # git errored
+    row = m.check("tracker.md", head, 0)
+    assert row["verdict"] == "FALSE", row
+    assert any("UNCHECKED" in f for f in row["failures"]), row["failures"]
+    assert not any("another branch" in f for f in row["failures"]), (
+        "a git error was reported as a refutation", row["failures"])
