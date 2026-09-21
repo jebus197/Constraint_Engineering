@@ -58,7 +58,7 @@ So an unreproducible number was promoted into a brief as settled and travelled t
 
 The round-3 brief warned that adopting the repair-semantics correction *"lowers every reported risk figure and so makes every risk-threshold stop easier to satisfy — which under this project's additive standard is removing a safety margin."*
 
-**cc2 refuted this by tracing the code, and CC1 confirms it.** `R_k` **cannot reach the convergence gate**. `_check_gamma_alt_convergence` takes `novel_critical_history`, `unresolved_critical`, `contested` and `rho_churn` — no risk term — and `bench/reference_runner_v3.py:6860` carries a structural guard keeping `sk_result` unread outside the S_k function precisely so that `R_k(0)` cannot reach the convergence gate.
+**cc2 refuted this by tracing the code, and CC1 confirms it.** `R_k` **cannot reach the convergence gate**. `_check_gamma_alt_convergence` takes `novel_critical_history`, `unresolved_critical`, `contested` and `rho_churn` — no risk term — and `bench/reference_runner_v3.py:6893` carries a structural guard keeping `sk_result` unread outside the S_k function precisely so that `R_k(0)` cannot reach the convergence gate.
 
 **The blast radius is 1 boolean per finding: fix admission.** Nothing else. Any round-3 reasoning that hedged on the safety-margin grounds was hedging against a hazard that does not exist, and should be revisited.
 

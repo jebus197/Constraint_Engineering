@@ -220,6 +220,12 @@ A practitioner using this rule should either start it only once R has fallen bel
 
 — monotone increasing in `R_k`, with **no peak and no premature-stop band at all**. The pathology above is an artefact of using the conditional quantity where the expectation belongs.
 
+**SCOPED 2026-09-21, ON A PANEL FINDING: THAT FORM IS THE σ = 1, ν = 0 CORNER AND IT OVERSTATES EVERYWHERE ELSE.** `R_k·q` assumes perfect repair AND no re-injection. The general expected improvement is
+
+> E[improvement] = R_k·q·σ·(1 − ν) − ν·(1 − R_k)
+
+which SymPy confirms is the exact difference between `R_k` and the two-branch mixture carried through Phase 3, and which reduces to `R_k·q` only at σ = 1, ν = 0. At `R = 0.99, q = 0.3` the general form gives 0.266300 at σ = 1, ν = 0.1 and 0.132650 at σ = 0.5, ν = 0.1, against 0.297000 for the corner — overstated by 0.030700 and 0.164350 respectively. z3 returns **unsatisfiable** on `R_k·q` ever UNDERSTATING the general form, so the corner is always an upper bound and never a conservative one. **A stopping rule quoting `R_k·q` while σ < 1 or ν > 0 will continue a loop the general form says is already done.** Found by the fable seat, 2026-09-21; verified here on SymPy and z3.
+
 The gap between them is not marginal. At `R = 0.99`, `q = 0.3` the conditional `ΔR` is 0.004225 while the exact expected improvement is 0.297000 — a factor of **70.30**. Under a threshold θ = 0.05 the 2 rules disagree outright: the conditional says STOP at `R = 0.99` and at `R = 0.95`, the expectation says CONTINUE at both. z3 confirms a non-empty region where they disagree, returning a witness at `R = 1/2, q = 1/8`.
 
 **Found by an external review on 2026-09-21 and confirmed here by execution.** It also bounds the conservatism result recorded under Phase 2: that Phase 2 never understates risk is true, and it does **not** follow that a stopping rule built on it is therefore safe. A bound that moves little can still be a bound on the wrong thing. [DERIVED, cross-checked with SymPy and z3] The formula above is unchanged and correct; only the sentence attached to it needed the qualification. [DERIVED, with the band located by exhaustive search]
@@ -1097,6 +1103,25 @@ gate above are recorded here for accuracy:
    is likewise disabled by default (`stall_gamma_termination_enabled = False`); a
    genuinely stuck run now terminates as BUDGET_EXHAUSTED, not a γ-driven
    STALL_CONVERGED.
+
+
+3. **PARAGRAPH 2 ABOVE IS FALSE OF THE SHIPPED RUNNER AND HAS BEEN SINCE
+   2026-06-10 (corrected 2026-09-21).** γ *is* an active convergence
+   condition. The founder's two-sided-gate ruling of 10 June 2026 — twelve days
+   after the supersession note above was written — requires **both** sides of
+   the same diminishing-returns measure to agree before a run converges:
+   `gamma_critical ≥ cfg.gamma_alt_threshold` (default **0.30**) **and** K
+   consecutive zero-new-genuine-critical rounds. Neither alone suffices. With
+   the count side fully satisfied and `gamma_critical < 0.30` the shipped
+   predicate returns `False` with the reason *"BOTH sides of the gate must
+   agree"*, and the code says so in its own words: *"gamma is an ACTIVE
+   convergence condition, NOT merely 'reported'"*. What paragraph 2 correctly
+   records is narrower and remains true: the **C₄ polarity-inverted
+   all-severity gate** was retired, and the **stall detector's** hidden γ
+   trigger is off by default (`stall_gamma_termination_enabled = False`).
+   Neither of those is the two-sided gate. Reproduce with
+   `scripts/gamma_is_still_a_gate_cc_seat_2026-09-21.py`, which drives the real
+   predicate and exits 1. [MEASURED, against the implementation]
 
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 

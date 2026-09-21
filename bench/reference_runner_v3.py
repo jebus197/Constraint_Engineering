@@ -1355,6 +1355,39 @@ class RunnerConfig:
     # is defeated by `open(TARGET).read()` with the contents discarded — and it
     # fails GREEN, reporting full coverage while discriminating nothing. Treat
     # `_blocks` as unsafe to enable until a dependence-based test replaces it.
+    #
+    # ── THAT REFUTATION IS STALE AND THE LAST SENTENCE IS NOW FALSE
+    #    (corrected 2026-09-21, found independently by the cc2 and fable seats,
+    #    verified here by execution).
+    #
+    # The dependence-based test it asks for ALREADY EXISTS, inside the control
+    # the refutation targeted. The interception probe is a DEPENDENCE test, not
+    # an access test: driven with an access-only falsifier it returns
+    # `intercepted=False` -> DISC_NOT_INTERCEPTED, which is a member of
+    # DISC_INDETERMINATE, so it fails INDETERMINATE and NOT green. Driven with a
+    # dependent falsifier it returns `intercepted=True` and proceeds to the
+    # control. Reproduce with
+    # `scripts/discrimination_dependence_check_2026-09-21.py`.
+    #
+    # SO THE FOUNDER'S 2026-09-15 RULING -- "to be armed and tested live in the
+    # next experimental run" -- IS ALREADY SATISFIED by the shipped defaults,
+    # and it does not conflict with the refutation. With `_ask` on and `_blocks`
+    # off the control RUNS and RECORDS; only the verdict REVERSAL is gated. Both
+    # readings hold simultaneously. A 2026-09-21 brief presented them as a
+    # conflict needing adjudication; they are not in conflict, and the premise
+    # was stale rather than either ruling being wrong.
+    #
+    # THE OPERATIVE REASON TO KEEP `_blocks` OFF IS DIFFERENT, AND IT IS
+    # MEASURED, in this file's own comment at :5207-5231: DISC_FAILED cannot
+    # distinguish a NON-DISCRIMINATING INSTRUMENT from an INEFFECTIVE FIX, and
+    # 51.2% of fixes, Wilson [45.0%, 57.4%], do not silence their own falsifier.
+    # Blocking would therefore reverse sound verdicts roughly half the time it
+    # fires. That confound -- not the access/dependence question -- is what
+    # `_blocks` waits on, and it is separable using outputs that already exist:
+    # condition the DISC_FAILED population on the fix-efficacy probe's
+    # FIX_CURES result. A fix that CURES while its falsifier still fires on the
+    # corrected copy is a genuine instrument fault; one that does not cure is
+    # not. That conditioning needs no new apparatus.
     discrimination_control_ask: bool = False
     discrimination_control_blocks: bool = False
     verification_batch_size: int = 6

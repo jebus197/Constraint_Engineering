@@ -54,11 +54,33 @@ The base programme's 7 stand. These are added.
 
 **10. Declared state against observed state.** `bench/launch_exp40.py:324` prints `functional_shadow: ['physics','chemistry','engineering']` to the operator — 56 days after those were promoted live. Behaviour is correct; the report to the human is false. **MEASURE: for every mechanism the run exercises, whether what the launcher declares matches what fires. A commissioning run that certifies from declared state certifies a fiction.**
 
-**11. The maths-model corrections in flight.** The floor is `ν/q`, not `ν`. `ΔR` is unimodal and the decision-relevant quantity is the expected improvement `R·q`. **MEASURE: the observed `R_k` trajectory against both, and whether any arm's stopping decision differs under the two quantities.**
+**11. The maths-model corrections in flight.** The floor is `ν/q`, not `ν`. `ΔR` is unimodal and the decision-relevant quantity is the expected improvement — **`R·q·σ·(1−ν) − ν·(1−R)` in general, and `R·q` only at σ = 1, ν = 0.** The panel corrected this: unscoped, `R·q` overstates by up to 0.164350 at σ = 0.5, ν = 0.1, and z3 shows it never understates, so it is always an upper bound. **The study must quote the general form**, because it will be quoting it against runs where σ < 1. **MEASURE: the observed `R_k` trajectory against both, and whether any arm's stopping decision differs under the two quantities.**
+
+## The panel ruled, 2026-09-21: 6 of 7 seats, and 4 of my items dissolved
+
+`bench/logs/final_review_2026-09-21`. 6 of 7 responded; `kimi` returned empty after 1,116.8s and is a quarantined seat. **Total new apparatus recommended across all 6: none.** cc2's own summary: *"Total new practitioner parameters: zero."* The founder's constraint held.
+
+**1. The `discrimination_control_blocks` "conflict" was mine, not the record's.** The 2026-08-12 refutation does not describe the shipped code. The dependence-based test it demanded **already exists inside the control it refuted**: driven with an access-only falsifier the interception probe returns `intercepted=False` → `DISC_NOT_INTERCEPTED`, a member of `DISC_INDETERMINATE`, so it fails **indeterminate and not green**. Verified by execution. So the founder's 2026-09-15 *"armed and tested live"* ruling is **already satisfied** — with `ask` on and `blocks` off the control runs and records; only the reversal is gated. Both readings hold at once.
+
+**The real reason `blocks` stays off is different and measured**, in the runner's own comment at `:5207-5231`: `DISC_FAILED` cannot distinguish a non-discriminating instrument from an ineffective fix, and **51.2% of fixes, Wilson [45.0%, 57.4%], do not silence their own falsifier**. Blocking would reverse sound verdicts about half the time it fires. The stale comment is corrected in place.
+
+**2. The routing ladder: study, do not raise.** Converged across ge, ds, cx and cc2. ge's reason is the sharpest: 100% of archived refusals were structural (`sk = 0`), so further rungs meet the same wall. ds adds: measure reach first; the 2-rung default is empirically sufficient. **Measurement 9 stands; the change does not.**
+
+**3. `hil_review`: nothing to commission.** Unanimous across cc2, cx, ds and fable — an operator stepping mode that does not change the stopping condition.
+
+**4. Wolfram in panel reviews: denial stands.** Unanimous.
+
+**5. I31 save/restore: do not land it mid-commissioning.** cc2's reason: *"enabling persistence mid-commissioning changes the instrument being commissioned."* ge: not until a committed measurement shows drift actually occurs.
+
+**6. ν is measurable from the archive and φ is not.** ds: ν is *"fully automatable... run before the commissioning study so the run uses an empirical ν rather than the default"*. φ needs human classification and is not automatable in time. **cc2 sharpens it: φ's SIGN is already decided; only its magnitude is unknown.**
+
+**7. Added to Measurement 8, from fable, using outputs that already exist.** Condition the `DISC_FAILED` population on the fix-efficacy probe's `FIX_CURES` result. A fix that cures while its falsifier still fires on the corrected copy is a **genuine instrument fault**; one that does not cure is not. That separates the 51.2% confound with no new apparatus, and it is what `blocks` actually waits on.
+
+**8. And the panel corrected 2 things of mine.** Measurement 11's `R·q` is the σ = 1, ν = 0 corner and overstates everywhere else — the general form is `R·q·σ·(1−ν) − ν·(1−R)`, verified identical on SymPy and unsat on ever understating in z3. And the appendix carried a **gamma demotion** at line 1087, dated 23–29 May 2026, which the founder's two-sided-gate ruling reversed 12 days later and which survived 66 lines of revision unnoticed. The shipped predicate blocks convergence when `gamma_critical < threshold`, so the appendix contradicted both the directive and the code. Corrected, with a reproducer that drives the real predicate.
 
 ## What still needs the founder's ruling
 
-1. **`discrimination_control_blocks`** — his 2026-09-15 ruling says arm and test it; the 2026-08-12 refutation says it fails green. These conflict and the conflict is not mine to resolve.
+1. ~~`discrimination_control_blocks`~~ — **RESOLVED by the panel, no ruling needed.** The conflict was a stale premise; both readings already hold. See above.
 2. **The seat contrast arm** (base programme item 12c) — its file marks launch as blocked on the Codex paid route; in a simulated run both seats are the same stand-in, so it is the weak form by construction.
 3. **I31 drift detector** (item 12b) — released by the maths review completing; the choice is whether the PROPOSED save/restore changes land before the run.
 4. **Wolfram in panel reviews** (item 12d) — denial is the default in force.
