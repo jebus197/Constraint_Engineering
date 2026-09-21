@@ -12,10 +12,18 @@ the figures quoted to the founder are re-executable rather than prose.
    the probe outscored letting it run and fail. The repair gives the second site
    its own outcome name and ESCALATES on it.
 
-2. THE DILUTION THE REPAIR DOES NOT CLOSE (found by the cc2 seat, OPEN). A fix
-   measured not to cure its own falsifier still scores 5/(5+w) with clean harm
-   gates. No FINITE weight makes an arithmetic mean decisive, so arguing 2.0
-   against 4.0 cannot close it.
+2. THE DILUTION THE SHIPPED WEIGHT DOES NOT CLOSE (found by the cc2 seat, OPEN).
+   A fix measured not to cure its own falsifier still scores 5/(5+w) with clean
+   harm gates, so at the shipped w = 2.0 it is ADMITTED at 0.714286.
+
+   CORRECTED 2026-09-21 22:30 BST. This entry previously read "No FINITE weight
+   makes an arithmetic mean decisive", and the block's own printed table already
+   refuted it at w = 8 -> 0.384615. The verdict turns on sk < S* (approximately
+   0.5), not on sk = 0, so the true statement -- no finite weight drives sk to
+   zero -- does not support the conclusion drawn from it. Solved symbolically:
+   rejection needs w > W_rest*(1-S*)/S*, which is 4.9024 on a Python target and
+   2.9414 on prose, z3-confirmed tight. The dilution IS closable by weight, at
+   a weight making efficacy worth about as much as all other gates combined.
 
 3. THE FLOOR UNDER SIGMA WHILE e4 IS A CONSTANT (cc2, OPEN). With every other
    gate at 0 and `e4_bandit` at its unvarying 1, E = 2/7. `compute_rk` can never
@@ -146,7 +154,7 @@ def main() -> None:
         rk, why = apply_sk_to_rk(0.5, r.tristate, updated)
         print(f"      {label:<22} sigma={r.sk:<7} -> R_k={rk:.6f}   ({why})")
 
-    print("\n2. THE DILUTION NO WEIGHT CAN CLOSE  [OPEN, founder's call]")
+    print("\n2. THE DILUTION, AND THE WEIGHT THAT WOULD CLOSE IT  [OPEN, founder's call]")
     w = sp.Symbol('w', positive=True)
     sk_w = (0 * w + 2 + 1 + 2) / (w + 2 + 1 + 2)
     print(f"   a non-curing fix with clean harm gates scores sk(w) = {sp.simplify(sk_w)}")
@@ -155,7 +163,58 @@ def main() -> None:
     print(f"   limit as w grows without bound : {sp.limit(sk_w, w, sp.oo)}")
     print(f"   the shipped weight is {FIX_EFFICACY_GATE_WEIGHT}, giving "
           f"{float(sk_w.subs(w, FIX_EFFICACY_GATE_WEIGHT)):.6f}")
-    print("   -> the dilution is a property of the arithmetic MEAN, not the weight.")
+    print("   -> sk is diluted toward 0 only in the LIMIT; no finite w reaches 0.")
+
+    # ---------------------------------------------------------------- correction
+    # CORRECTED 2026-09-21 22:30 BST. THE HEADING ABOVE OVERSTATED THIS AND THE
+    # BLOCK'S OWN NUMBERS ALREADY REFUTED IT: it printed `w=8 -> sk = 0.384615`,
+    # which is BELOW the corrected break-even S* = 0.50493, while the heading
+    # read "THE DILUTION NO WEIGHT CAN CLOSE".
+    #
+    # Two different claims were being run together:
+    #   (a) no FINITE w drives sk to 0            -- TRUE, and that is the limit above;
+    #   (b) no FINITE w changes the VERDICT       -- FALSE.
+    # A fix is rejected when sk < S*, not when sk = 0. S* is approximately 0.5,
+    # not 0, so (a) does not imply (b) and the gap between them is the whole
+    # question. This is the "true sentence, wrong frame" shape, and it matters
+    # because it forecloses an option the founder should get to rule on: the
+    # dilution IS closable by weight.
+    #
+    # The requirement, solved symbolically rather than read off the table:
+    #     sk(w) = W_rest / (w + W_rest) < S*   <=>   w > W_rest * (1 - S*) / S*
+    # finite for every S* > 0, and exactly W_rest at S* = 1/2. Because S* sits
+    # just above one half, the practical reading is that EFFICACY MUST BE WORTH
+    # ABOUT AS MUCH AS EVERY OTHER AVAILABLE GATE COMBINED. That is a demanding
+    # design statement and a decidable one; it is not an impossibility.
+    #
+    # S* IS NOT A CONSTANT. It is computed per entry from nu_b, nu_f, q and R,
+    # so the required weight moves with the operating point. The formula is
+    # reported instead of a single number for that reason.
+    S_STAR = sp.Rational(50493, 100000)          # the corrected break-even, A19
+    W_rest_sym = sp.Symbol('W_rest', positive=True)
+    need = sp.simplify(sp.solve(sp.Eq(W_rest_sym / (w + W_rest_sym), S_STAR), w)[0])
+    ratio = sp.simplify(need / W_rest_sym)
+    print("\n   CORRECTION (2026-09-21): the VERDICT threshold is S*, not 0.")
+    print(f"   reject requires w > W_rest*(1-S*)/S*  = W_rest * {sp.nsimplify(ratio)}"
+          f"  = {float(ratio):.6f} * W_rest")
+    for label, rest in (("python (e2,e3,e4 = 2,1,2)", 5), ("prose  (e3,e4 = 1,2)", 3)):
+        thresh = float(ratio) * rest
+        print(f"      {label:<26} other gates total {rest} -> e1 must exceed {thresh:.4f}")
+        for cand in (2.0, 3.0, 5.0):
+            E = rest / (cand + rest)
+            print(f"         w={cand:<4} -> sk={E:.6f}  "
+                  f"{'REJECT' if E < float(S_STAR) else 'admit '}")
+
+    # z3 confirms the bound is tight rather than merely sufficient: there is no
+    # w at or below the threshold that rejects.
+    r_ = float(ratio)
+    zw, zr = z3.Reals('w W_rest')
+    s_tight = z3.Solver()
+    s_tight.add(zw > 0, zr > 0, zw <= r_ * zr, zr / (zw + zr) < float(S_STAR))
+    print(f"   z3, any w at or below the bound that still rejects: {s_tight.check()}"
+          "   (unsat = the bound is tight)")
+    print("   -> the dilution IS closable by weight, at a weight that makes efficacy")
+    print("      worth about as much as all other available gates combined.")
 
     print("\n3. THE FLOOR UNDER SIGMA WHILE e4 IS A CONSTANT  [OPEN]")
     e1, e2, e3 = sp.symbols('e1 e2 e3', nonnegative=True)

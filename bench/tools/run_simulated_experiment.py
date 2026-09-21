@@ -47,6 +47,61 @@ VENDORS = [f"{v}-SIM" for v in
            ("CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable")]
 
 
+class SeatSelectionError(ValueError):
+    """A named seat that is not a seat. Raised before any dispatch is built."""
+
+
+def resolve_seats(seats_arg: str | None, models_count: int) -> list[str]:
+    """The seats to dispatch, as labels, in the order given.
+
+    ``seats_arg`` is a comma-separated list of vendor names with or without the
+    ``-SIM`` suffix; ``None`` falls back to the historic prefix behaviour,
+    ``VENDORS[:models_count]``, so nothing that does not pass ``--seats``
+    changes.
+
+    Order is PRESERVED rather than sorted into `VENDORS` order, because seat 0
+    is given the ``player_manager`` role at the call site. ``--seats
+    Codex,ChatGPT`` therefore makes Codex-SIM the manager, which is what a
+    reader of that command line would expect; sorting would silently hand the
+    role to ChatGPT-SIM.
+
+    Duplicates are rejected rather than de-duplicated. A repeated seat would
+    make ``len(models)`` disagree with the number of distinct labels, and the
+    runner builds 2 lists from this selection that must match -- the config
+    comment at the call site records that they must, "or the runner counts a
+    different panel than it dispatches".
+    """
+    if seats_arg is None:
+        if models_count < 1 or models_count > len(VENDORS):
+            raise SeatSelectionError(
+                f"--models must be between 1 and {len(VENDORS)}, got {models_count}"
+            )
+        return list(VENDORS[:models_count])
+
+    raw = [s.strip() for s in seats_arg.split(",") if s.strip()]
+    if not raw:
+        raise SeatSelectionError("--seats was given but named no seat")
+
+    by_bare = {v[: -len("-SIM")].lower(): v for v in VENDORS}
+    by_full = {v.lower(): v for v in VENDORS}
+
+    chosen: list[str] = []
+    for name in raw:
+        label = by_full.get(name.lower()) or by_bare.get(name.lower())
+        if label is None:
+            raise SeatSelectionError(
+                f"unknown seat {name!r}; the simulated panel is "
+                + ", ".join(v[: -len("-SIM")] for v in VENDORS)
+            )
+        if label in chosen:
+            raise SeatSelectionError(
+                f"seat {label} named more than once; a repeated seat would make "
+                "the dispatched panel and the counted panel disagree"
+            )
+        chosen.append(label)
+    return chosen
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -64,6 +119,24 @@ def main() -> int:
     # falsifier path. Recorded so the absence is not read as a defect.
     ap.add_argument("--rounds", type=int, default=16)
     ap.add_argument("--models", type=int, default=6)
+    # WHICH seats, not HOW MANY. `--models` is a COUNT and the seats were taken
+    # as `VENDORS[:count]`, a PREFIX -- so the only 2-seat panel expressible was
+    # CC2-SIM + DeepSeek-SIM, positions 0 and 1.
+    #
+    # The commissioning study's arm 3 is a SEAT CONTRAST between Codex-SIM and
+    # ChatGPT-SIM, positions 4 and 2. No value of `--models` selects them, so
+    # that arm could not be launched at all -- not a flag left off, but an arm
+    # with no way to ask for it. Arm 2 (single seat, CC2-SIM) happens to work
+    # only because CC2-SIM is at position 0.
+    #
+    # Omitted, this keeps the prefix behaviour exactly, so every existing caller
+    # and config is unaffected. Names may be given with or without the `-SIM`
+    # suffix; they are normalised TO the suffixed form, because the founder's
+    # 2026-08-08 ruling is that the name carries `-SIM` at source rather than
+    # through a relabelling map applied later.
+    ap.add_argument("--seats", default=None,
+                    help="comma-separated seats to dispatch, e.g. 'Codex,ChatGPT'. "
+                         "Overrides --models. Default: the first --models seats.")
     # 300s timed out 7 of 20 dispatches (35%, Wilson CI [18.1%, 56.7%]) on a
     # 20KB target, and two of those left a model with three consecutive ITC
     # RAISED 900 -> 3600 ON 2026-09-08, FROM MEASUREMENT.
@@ -214,17 +287,26 @@ def main() -> int:
         print("    A simulated panel briefed without its directive is not a "
               "simulation of this schema.", flush=True)
         return 2
+    # Resolved ONCE and reused, so the dispatched panel and the counted panel
+    # cannot drift apart. Both were separately written as `VENDORS[:args.models]`
+    # before, which is 2 expressions that happened to agree.
+    try:
+        seats = resolve_seats(args.seats, args.models)
+    except SeatSelectionError as exc:
+        print(f"    FATAL: {exc}", flush=True)
+        return 2
+
     models = [R.ModelConfig(label=v, model_id="sim", api="sim",
                             role="player_manager" if i == 0 else "player",
                             system_prompt_path=str(cdsfl_path),
                             timeout=args.timeout, max_retries=1)
-              for i, v in enumerate(VENDORS[:args.models])]
+              for i, v in enumerate(seats)]
     exp_cfg = R.ExperimentConfig(models=models, logs_dir=str(logs),
                                  budget_limit=0.0, cdsfl_system_prompt="")
     cfg = R.RunnerConfig(
         experiment_name=args.name,
         # BOTH lists, or the runner counts a different panel than it dispatches.
-        models=VENDORS[:args.models],
+        models=list(seats),
         # REPO-RELATIVE, not absolute (CC2, panel review 2026-08-30).
         # `_build_discrimination_overlay` raises
         # "discrimination control: target must be repo-relative" on an absolute
@@ -348,7 +430,7 @@ def main() -> int:
 
     print(f"=== SIMULATED EXPERIMENT (runner {R.RUNNER_VERSION}) ===", flush=True)
     print(f"    target  {args.target}  ({target.stat().st_size:,} bytes)", flush=True)
-    print(f"    panel   {len(models)} agents as {VENDORS[:args.models]}", flush=True)
+    print(f"    panel   {len(models)} agents as {seats}", flush=True)
     print(f"    map     {SHIM.LABEL_MAP}", flush=True)
     print(f"    rounds  max {args.rounds}", flush=True)
     print(f"    logs    {logs}", flush=True)
