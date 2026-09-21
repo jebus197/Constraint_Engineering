@@ -102,7 +102,15 @@ def resolve_seats(seats_arg: str | None, models_count: int) -> list[str]:
     return chosen
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The argument surface, separated from main() so a test can EXECUTE it.
+
+    While this lived inside ``main()`` the only way to check that a flag existed
+    and reached its config field was to read the source, and a test that reads
+    source proves only that the file describes itself consistently. Building the
+    parser here lets a test parse real argument lists and assert on the resulting
+    namespace, which is the `execute-do-not-grep` form.
+    """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--target", default="bench/dm/_memory.py")
@@ -213,7 +221,31 @@ def main() -> int:
     # deliberate simulation-only divergence, not a parity break.
     ap.add_argument("--no-severity-calibration", action="store_true",
                     help="run WITHOUT the severity-calibration sweep (default: on)")
-    args = ap.parse_args()
+    # MERGE ARBITRATION HAD NO SWITCH, and the pre-registered arm design needs it
+    # off. `merge_arbitration_enabled=True` was a bare literal in the config
+    # below, while `CDSFL_Programme_of_Study_2026-09-17.txt` specifies the 3 arms
+    # run "with routing, the falsifier gate and the admissibility gate on, and
+    # the hardened gate, merge arbitration and immune memory off". Every other
+    # item in that sentence was already reachable; this one was not, which is why
+    # the same document records that the run it describes "has no launcher".
+    #
+    # DEFAULT UNCHANGED, DELIBERATELY. Turning it off by default would disable a
+    # shipped capability with no measurement showing the run is better without
+    # it, which the additive standard forbids in that direction. The flag makes
+    # the pre-registered configuration REACHABLE; it does not make it the norm,
+    # and which arms use it stays the founder's call.
+    ap.add_argument("--no-merge-arbitration", action="store_true",
+                    help="run WITHOUT merge arbitration (default: on)")
+    # The domain was the bare literal "statistics" regardless of target. It
+    # selects the composer's per-domain directives, so a registry-engine or
+    # markdown target was being briefed as a statistics problem.
+    ap.add_argument("--domain", default="statistics",
+                    help="task domain passed to the composer (default: statistics)")
+    return ap
+
+
+def main() -> int:
+    args = build_parser().parse_args()
 
     if os.path.isabs(args.target):
         # `REPO / <absolute>` lets the absolute path WIN, which would then reach
@@ -319,7 +351,7 @@ def main() -> int:
         # (verified in its report). The composer renders domain-specific
         # directives, so "software" briefed the simulated panel differently
         # from the run it is measured against (Fable, 2026-08-30).
-        domain="statistics",
+        domain=args.domain,
         max_rounds=args.rounds,
         falsifier_gate_enabled=True,
         routing_enabled=True,
@@ -348,7 +380,7 @@ def main() -> int:
         stall_gamma_terminate=1.01,
         stall_gamma_advisory=1.01,
         earliest_stop_round=3,
-        merge_arbitration_enabled=True,
+        merge_arbitration_enabled=not args.no_merge_arbitration,
         # DELIBERATE SIMULATION-ONLY DIVERGENCES, so that machinery the real
         # exp45 never reaches is still stress-tested. Each is stated rather
         # than silently inherited:

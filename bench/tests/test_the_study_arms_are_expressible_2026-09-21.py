@@ -116,3 +116,58 @@ def test_no_simulated_seat_carries_a_real_vendor_name_unsuffixed():
     m = _module()
     for seat in m.resolve_seats(None, len(m.VENDORS)):
         assert seat.endswith("-SIM"), seat
+
+
+# ---------------------------------------------------------------------------
+# The rest of the arm configuration, parsed rather than read.
+#
+# `CDSFL_Programme_of_Study_2026-09-17.txt` specifies the arms run "with routing,
+# the falsifier gate and the admissibility gate on, and the hardened gate, merge
+# arbitration and immune memory off", and the same document records that the run
+# it describes "has no launcher". Every item in that sentence was reachable
+# except merge arbitration, which was a bare `True` in the config literal.
+# ---------------------------------------------------------------------------
+
+
+def test_merge_arbitration_can_be_turned_off():
+    """The pre-registered arm design needs it off; it had no switch at all."""
+    m = _module()
+    args = m.build_parser().parse_args(["--no-merge-arbitration"])
+    assert args.no_merge_arbitration is True
+
+
+def test_merge_arbitration_defaults_to_on():
+    """Default unchanged: disabling a shipped capability needs a measurement."""
+    m = _module()
+    assert m.build_parser().parse_args([]).no_merge_arbitration is False
+
+
+def test_the_domain_is_selectable_and_defaults_to_statistics():
+    """It was a bare literal, so every target was briefed as a statistics task."""
+    m = _module()
+    assert m.build_parser().parse_args([]).domain == "statistics"
+    assert m.build_parser().parse_args(["--domain", "software"]).domain == "software"
+
+
+def test_the_prose_arm_target_is_accepted_by_the_parser():
+    """Arm 4 commissions A19 and needs a markdown target carrying fenced Python."""
+    m = _module()
+    args = m.build_parser().parse_args(
+        ["--target", "bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md"])
+    assert args.target.endswith(".md")
+    assert (REPO / args.target).is_file(), (
+        "the prose arm's candidate target named in the 17 September programme "
+        "is missing; arm 4 cannot commission A19 without one"
+    )
+
+
+def test_a_full_arm_command_line_parses_end_to_end():
+    """Arm 3 as it will actually be launched, parsed in one go."""
+    m = _module()
+    args = m.build_parser().parse_args([
+        "--seats", "Codex,ChatGPT", "--rounds", "8",
+        "--target", "bench/dm/_memory.py", "--no-merge-arbitration",
+        "--domain", "software", "--name", "commissioning_arm3",
+    ])
+    assert m.resolve_seats(args.seats, args.models) == ["Codex-SIM", "ChatGPT-SIM"]
+    assert args.rounds == 8 and args.no_merge_arbitration is True
