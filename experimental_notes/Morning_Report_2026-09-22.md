@@ -177,6 +177,14 @@ A seat making arithmetic slips errs in both directions. **A perfectly one-sided 
 
 Producer: `scripts/rk_self_report_bias_2026-09-21.py`.
 
+### Two smaller observations from the same run
+
+**The old 900s seat cap really was marginal, and fresh data says so.** Over the 25 dispatches recorded by 00:14, the median is 600 s, the mean 489 s and the maximum **870 s**. None would have died at the old 900 s ceiling — but the slowest sits at **96.7% of it**. That is the same "ceiling inside the distribution" pattern measured on 2026-09-08, when the largest success was 94% of the cap and 3 of 6 seats were killed at exactly 900 s. The raise to 3600 s is vindicated rather than merely asserted: the slowest dispatch here uses 24.2% of the current cap.
+
+**The immune pipeline's B_v2 verifier abstained on everything it saw.** Of the 8 verdicts recorded so far, 8 are `UNCERTAIN (0.15)`, every one for the same stated reason — *"not a numeric/SMT-verifiable claim"*. That is 100.0000%, Wilson [67.5592%, 100.0000%], Clopper-Pearson [63.0583%, 100.0000%]; the denominator is small and the run is still going, so this is an observation rather than a conclusion. It is not obviously a defect — a code-review finding genuinely is not an SMT claim — but it means that on a target of this kind the verifier contributes nothing, which is exactly what the programme's measurement 10 asks about: whether a mechanism the launcher declares actually fires.
+
+**The falsifier gate's yield changed sharply between rounds.** Round 0 returned 8 CONFIRMED, 0 REFUTED, 3 to HIL. The next gate returned **0 CONFIRMED, 0 REFUTED, 5 to HIL.** Nothing was refuted in either. Whether that is findings getting subtler, or falsifiers becoming unable to decide, is not established here and needs the completed run.
+
 ---
 
 ## 7. What the commissioning run cannot conclude, stated in advance
