@@ -65,7 +65,19 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
-**★ RESUME POINTER (2026-09-21 22:18 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `2b56916`, main, working tree **CLEAN**, **level with `origin/main` — everything is pushed.** `rs` ran at 22:14 with `--full` (**exit code 0**) and with `--record-restore` (**exit code 0**).
+**★ RESUME POINTER (2026-09-21 23:03 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `c1f6f00`, main, working tree **CLEAN**, **level with `origin/main`**. `rs` ran at 22:14 with `--full` (**exit code 0**) and `--record-restore` (**exit code 0**).
+
+**THE COMMISSIONING STUDY IS RUNNING.** Arm 1 launched 22:54:07 through `bench/tools/run_simulated_experiment_sandboxed.sh`: 5 seats (`CC2-SIM`, `Codex-SIM`, `Gemini-SIM`, `DeepSeek-SIM`, `ChatGPT-SIM`) against `bench/cdsfl_registry/engine.py`, max 8 rounds, in round 0 (blind baseline) at the time of writing. Log: `bench/logs/commissioning_2026-09-21_arm1.log`. Arms 2, 3 and 4 follow sequentially via `python3 bench/tools/commissioning_arms_2026-09-21.py --run --only <key>`; **arm 5 is NOT launchable from here** — it needs a checkout of `a2a0197`.
+
+**IT COULD NOT START AT FIRST, AND THE REASON IS A STANDING HAZARD.** The sandbox severs git history on purpose; the runner builds the panel's confinement with `git worktree` and refuses without one. 2 correct mechanisms, deadlocked — every sandboxed simulated run was unlaunchable. Arm 1 exited 2 at 22:51:57. The runner now builds the confinement by COPYING when the wrapper declares a sandbox and the runner verifies that declaration against its own root. 12 tests, most of them on the lock rather than the key.
+
+**WHAT THIS RUN CANNOT CONCLUDE.** No canary catalogue is seeded, so convergence by finding nothing cannot distinguish a clean target from a dead panel. The catalogue is answer-key material and is the founder's in person; generating one alone is refused by design, because `detection_rate` will not report on a single-generator held-out set. The route that works is cc2 and fable as independent generators, free, and it follows.
+
+**SUITE.** 8 failed, 8286 passed at `2b56916`, all 8 reproduced serially and all 8 now fixed — see `experimental_notes/Morning_Report_2026-09-22.md`. **A full clean run at a fixed commit has NOT yet been recorded** and is the first thing to do.
+
+**OPEN FOR A RULING.** Whether `e1_efficacy` should carry a weight that lets it reject alone (4.9024 on a Python target, 2.9414 on prose), or whether efficacy belongs in the hard-gate product `A` rather than the effect mean `E`. Both move admission on every target ever run.
+
+**RESUME POINTER (2026-09-21 22:18 BST) — SUPERSEDED by the pointer above.** HEAD `2b56916`, main, working tree **CLEAN**, **level with `origin/main` — everything is pushed.** `rs` ran at 22:14 with `--full` (**exit code 0**) and with `--record-restore` (**exit code 0**).
 
 **THE POINTER DIRECTLY BELOW THIS ONE WAS FALSE WHEN THIS RESTORE READ IT, AND THAT IS THE FINDING OF THIS RESTORE.** It had been committed 2 days earlier, so the 14-day banner guard in `bench/tests/test_a_stale_source_says_so_2026-09-21.py` owed it nothing and reported nothing. **A document can be recent and still assert a false fact about the repository — age is not the variable that goes wrong in a resume pointer, and a check keyed on age cannot see it.** New producer: `scripts/resume_pointer_truth_2026-09-21.py`, which RESOLVES each git claim against the live repository instead of reading how old the text is. Measured at 22:14 BST: **1 of 1** sources asserting a current git claim stated it falsely, Wilson [20.6549%, 100.0000%] — a wide interval, because the denominator is 1. The other 5 canonical sources are clean: `RECOVERY.md` and `CURRENT_STATE.md` both name older commits and both **explicitly label them historical**, which is correct behaviour, and the first version of this producer wrongly charged them until the disclaimer test was added.
 
