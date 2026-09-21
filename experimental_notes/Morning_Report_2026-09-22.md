@@ -113,6 +113,16 @@ It now runs the launcher with both config constructors intercepted and compares 
 
 ---
 
+## 4b. The suite is green, recorded on a tree that did not move
+
+`python3 -m pytest bench/tests/ -q --netguard-strict`, at commit `2b936f9` with a clean tree and **no commits made while it ran**: **8,357 passed, 5 skipped, 0 failed, exit code 0, 1559.08 s.**
+
+That last condition is the point. The 2 earlier runs of the night were each taken on a tree that moved underneath them, and both were degraded by it — the first because files changed mid-collection, the second because `test_fresh_clone_is_actually_run` correctly refused with *"the clone is at 93a39893 and this tree is at c17e1ca9; refusing to report a measurement of a different commit as this one's"* after 4 commits landed during the run. A suite result is only a measurement of a commit if the commit holds still.
+
+The 6 failures from the previous run are resolved and the green run confirms it, rather than the fixes merely being asserted.
+
+---
+
 ## 5. Two safety mechanisms that deadlocked, and a guard of mine that would have gone red on every commit
 
 ### The deadlock
