@@ -1304,6 +1304,18 @@ That is, the novel defects from consequence analysis must be fewer than the net 
 
 > **D* = ε* / (1 − ν)**
 
+**CONFOUND, MARKED 2026-09-21 ON THE FOUNDER'S RULING.** This fixed point **forbids no outcome**, and the project should say so rather than discover it again. It carries 2 free parameters and 1 observable, so it is underdetermined: for any observed defect count `D*` there is a valid pair producing it, namely `ε* = D*·(1 − ν)` for any `ν ∈ [0,1)`. SymPy solves it directly and z3 returns **unsatisfiable** on the existence of a `D*` the model cannot produce. A model that can accommodate every observation is not thereby wrong, but it is not being tested by that observation either, and any fit of `(ν, ε*)` to an archived run is a description rather than a prediction.
+
+**Why this is recorded here and not charged to anything else.** A 6-round paid panel in September 2026 spent most of 5 rounds charging exactly this falsifiability cost to a proposed external revision. It is not the revision's. It is this section's, and it has been since 31 March 2026. The revision made it visible; it did not introduce it.
+
+**They are the same object, and that is checked rather than asserted.** Under the substitution `ν = 1 − s`, `ε = b·(1 − z)`, this section's recursion becomes the revision's action step with a SymPy residual of **exactly 0**. The substitution is admissible under this section's own wording, which defines `ε_n` as *"novel defects surfaced by consequence analysis"* — a per-round quantity, not a constant — so allowing it to depend on the state is the natural reading rather than a contrivance.
+
+**A correction made in the course of writing this entry, recorded because the method is the point.** A first draft of this paragraph claimed the 2 were NOT the same object, citing a residual of `−ε·z`. That residual is real but it belongs to a DIFFERENT substitution (`s = 1 − ν`, `b = ε` held constant), which was the assistant's own choice and not the one the panel used. Holding `ε` constant is an extra assumption this section does not make. The draft was caught by re-running both substitutions against each other before it stood. The earlier "term for term" record was correct.
+
+**What remains a genuine difference, and it is one of domain rather than of form.** `D_n` is a defect COUNT on `[0, ∞)` while the revision's `z` is a probability on `[0, 1]`. The algebra is identical; the objects being counted are not, and a reader should not carry a bound proved on one across to the other without saying why it transfers.
+
+**What would retire this confound.** An independent measurement of `ν` — the re-injection rate — taken from something other than the run being fitted. With `ν` measured rather than chosen, `ε*` is determined by the observation and the fixed point becomes a prediction. `ν` has never been estimated independently in this project. [MEASURED, by symbolic solution and satisfiability over the parameter domain]
+
 Where ε* is the steady-state novel defect rate. When ε* = 0 (no novel follow defects), D* = 0 — clean convergence. When ε* > 0, D* > 0 — a residual defect floor bounded by the substrate ceiling (§1).
 
 **Convergence rate:** The half-life of the defect count is:

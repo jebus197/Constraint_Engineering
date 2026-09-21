@@ -52166,3 +52166,34 @@
 2026-09-20T14:39:37 INFO   V3: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
 2026-09-20T14:39:37 INFO Formalisation agent: V3 — REJECTED with 4 preconditions (potential false rejection, counter-verdict issued). Preconditions: ['z > 0', 'z < 1', 'd >= 0', 'd <= 1']
 2026-09-20T14:39:37 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 1 potential false rejections, 1 counter-verdicts
+2026-09-21T17:20:16 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-09-21T17:20:16 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-09-21T17:20:16 INFO DC v2 (v2): 1/2 findings reclassified
+2026-09-21T17:20:16 INFO LLM classifier: DISABLED (claude CLI not available). 2 findings skipped.
+2026-09-21T17:20:16 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-09-21T17:20:16 INFO CT v2 (v2): no code findings to investigate
+2026-09-21T17:20:16 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-09-21T17:20:16 INFO   f2: UNCERTAIN (0.15) — [B_v2] numeric claim references no known source constant — not SMT-groundable
+2026-09-21T17:20:27 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-09-21T17:20:27 INFO Formalisation agent: f2 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-09-21T17:20:27 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-21T17:20:27 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-09-21T17:20:27 INFO UNCERTAIN-ESCALATED to HIL: f2 (B-Cell cannot ground claim in source)
+2026-09-21T17:20:27 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-09-21T17:20:27 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-09-21T17:20:27 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-09-21T17:20:27 INFO Domain config loaded: software (1 sections)
+2026-09-21T17:20:27 INFO Skin barrier (v2): 4 passed, 0 failed out of 4 findings
+2026-09-21T17:20:27 INFO DC v2 (v2): 0/4 findings reclassified
+2026-09-21T17:20:27 INFO LLM classifier: DISABLED (claude CLI not available). 4 findings skipped.
+2026-09-21T17:20:27 INFO CT v2 (v2): claude CLI not available
+2026-09-21T17:20:27 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-09-21T17:20:27 INFO   f2: UNCERTAIN (0.15) — [B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL
+2026-09-21T17:20:27 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-09-21T17:20:32 INFO B-Cell specialist (LIVE, domain=software): 2 verdicts
+2026-09-21T17:20:32 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-09-21T17:20:32 INFO Helper T v2 (v2): 4 findings — 1 CONFIRMED, 1 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-09-21T17:20:32 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.80, v2=0.56, max=0.80 >= 0.5)
+2026-09-21T17:20:32 INFO Reconciliation locked 1 finding(s): f4
+2026-09-21T17:20:32 INFO UNCERTAIN-ESCALATED to HIL: f2 (B-Cell cannot ground claim in source)
+2026-09-21T17:20:32 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
