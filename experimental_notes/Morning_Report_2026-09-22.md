@@ -139,7 +139,33 @@ Two faults, both in the resume-pointer check from section 1, found by running it
 
 ---
 
-## 6. What the commissioning run cannot conclude, stated in advance
+## 6. THE RUN'S FIRST REAL FINDING: seats understate their own R_k, 17 times out of 17
+
+Round 0 of arm 1 closed at 23:09, and the falsifier gate, the corrected-copy splicer, the discrimination control and the scorer all ran end to end: **8 CONFIRMED, 0 REFUTED, 3 to HIL** from the falsifier gate, tools deciding rather than models voting; 17 corrected copies accepted with 0 refused, 0 unmatched and 0 dropped; the discrimination control returning DISCRIMINATES=5, INDETERMINATE_ERROR=2, NO_DISCRIMINATION=1; and one mechanical fault escalated to a human rather than silently closed. **`e1_efficacy` fired in a live run** — `FIX_CURES_ITS_OWN_FALSIFIER` on C0007 — so tonight's scorer repair is commissioned in practice and not only in tests.
+
+Then the R_k validation rejected 17 self-reported proofs:
+
+| seat | result |
+|---|---|
+| CC2-SIM | FAIL=4, SKIP=1 |
+| Gemini-SIM | FAIL=4 |
+| DeepSeek-SIM | FAIL=5 |
+| ChatGPT-SIM | FAIL=4 |
+| **Codex-SIM** | **PASS=5** |
+
+**Every one of the 17 deltas is positive.** The recomputed value exceeds the seat's stated value in 17 of 17 cases and never once the other way: 100.0000%, Wilson [81.5682%, 100.0000%], Clopper-Pearson [80.4936%, 100.0000%]. Against the hypothesis that a slip is equally likely in either direction, the exact sign test gives **p = 1.525878906e-05**, computed twice and agreeing to 1e-12 (scipy's `binomtest` against the closed-form tail in mpmath at 50 digits). Mean delta **0.204294**, median 0.260000, range 0.059000 to 0.348000. A one-sample t-test gives p = 1.421603e-06 and Wilcoxon p = 1.525879e-05.
+
+A seat making arithmetic slips errs in both directions. **A perfectly one-sided result is a systematic difference between what the seats compute and what the runner computes** — a formula or input discrepancy, not sloppiness. The direction is the informative part: the seats report *lower* residual risk than the runner derives, which in the model's own terms means overstating how much a fix accomplished.
+
+**Why this matters beyond tidiness.** `severity_is_proven`, the 2026-09-06 interlock, requires a stamped R_k proof that recomputes before a severity demotion is permitted. If self-reported proofs routinely fail to recompute, that interlock is never satisfied and the severity-calibration machinery this run exists to exercise cannot reach its demotion path — for a reason that has nothing to do with severity. That is exactly the class of thing a commissioning run is for.
+
+**Not explained here, and deliberately so.** Codex-SIM passed 5 of 5 while the other 4 seats failed, and every seat is the same underlying stand-in model, so this is not a capability difference between models. It depends on the findings or their inputs. The producer establishes that a cause exists and that it is one-directional; identifying it is the next question and is not answered tonight.
+
+Producer: `scripts/rk_self_report_bias_2026-09-21.py`.
+
+---
+
+## 7. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.
 
@@ -147,7 +173,7 @@ The catalogue is answer-key material and is the founder's in person. Generating 
 
 ---
 
-## 7. Outstanding, with the decisions taken in the founder's absence
+## 8. Outstanding, with the decisions taken in the founder's absence
 
 Of the 4 items the study scope listed as needing a ruling, 1 was resolved by the panel. The other 3 were given safe defaults rather than left to block, and each is reversible:
 
