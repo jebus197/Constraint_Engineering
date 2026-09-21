@@ -180,6 +180,20 @@ SEEDPY
 fi
 
 RC=0
+# DECLARE THE SANDBOX TO THE RUNNER.
+#
+# The runner confines the panel to a disposable git worktree so a seat's
+# relative writes cannot reach the live target, and REFUSES to run when it
+# cannot create one. Inside this sandbox it never can: the history was severed
+# above, deliberately, so that `git diff` cannot hand a seat the planted set.
+#
+# Two correct safety mechanisms that deadlock. This variable is how the runner
+# tells "I am already inside a disposable copy, so build the confinement by
+# copying instead" from "I am in the live repository and must refuse". It names
+# the directory rather than being a bare flag, so the runner can VERIFY it
+# matches its own root instead of trusting the claim.
+export CDSFL_SANDBOX_ROOT="$RUN"
+
 ( cd "$RUN" && python3 bench/tools/run_simulated_experiment.py "$@" ) || RC=$?
 
 # EXTRACT BEFORE TEARDOWN (founder, 2026-08-30: "sandboxes should be deleted

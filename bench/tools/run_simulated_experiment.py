@@ -549,13 +549,48 @@ def main() -> int:
     _rc = subprocess.run(["git", "worktree", "add", "--detach", str(_wt), "HEAD"],
                          cwd=str(REPO), capture_output=True, text=True)
     if _rc.returncode != 0:
-        print("    FATAL: could not create the panel worktree; refusing to run the\n"
-              "      panel in the live repository, where a seat can rewrite the target.\n"
-              f"      {_rc.stderr.strip()[:300]}", flush=True)
-        shutil.rmtree(_wt_parent, ignore_errors=True)
-        return 2
+        # THE SANDBOX FALLBACK, ADDED 2026-09-21 AFTER THIS DEADLOCKED A LAUNCH.
+        #
+        # `run_simulated_experiment_sandboxed.sh` SEVERS git history on purpose,
+        # so that `git diff` cannot hand a seat the planted set. The confinement
+        # above then cannot build a worktree, because there is no git, and the
+        # refusal fires. Both mechanisms are individually correct and together
+        # they made every sandboxed simulated run unlaunchable -- measured, not
+        # predicted: arm 1 of the commissioning study exited 2 at 22:51:57 BST
+        # with "fatal: not a git repository".
+        #
+        # What the refusal is FOR is running the panel in the LIVE repository,
+        # where a seat's relative write reaches the real target. Inside the
+        # sandbox that cannot happen, because the whole tree is already a
+        # throwaway copy with its history severed. So the protection the
+        # worktree provides is already in force, and the right move is to build
+        # the same disposable cwd by COPYING rather than to refuse.
+        #
+        # THE MARKER IS VERIFIED, NOT TRUSTED. The wrapper exports the directory
+        # it created, and this compares it against the runner's own resolved
+        # root. A stale or hostile value naming some other directory does not
+        # unlock the fallback, so the refusal still stands everywhere it should
+        # -- including in the live repository, where the variable is unset.
+        _declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
+        _in_sandbox = bool(_declared) and (
+            pathlib.Path(_declared).resolve() == REPO.resolve())
+        if not _in_sandbox:
+            print("    FATAL: could not create the panel worktree; refusing to run the\n"
+                  "      panel in the live repository, where a seat can rewrite the target.\n"
+                  f"      {_rc.stderr.strip()[:300]}", flush=True)
+            shutil.rmtree(_wt_parent, ignore_errors=True)
+            return 2
+        # `bench/logs` is excluded because the blinding already removed the
+        # answer surface from this tree and re-copying run output per seat is
+        # pure cost; `.git` cannot be present here by construction, and the
+        # wrapper asserts that before handing control over.
+        shutil.copytree(REPO, _wt, symlinks=True,
+                        ignore=shutil.ignore_patterns(".git", "logs", "__pycache__"))
+        print("    panel confined to a disposable COPY (sandbox has no git history,\n"
+              f"      which is deliberate): {_wt}", flush=True)
+    else:
+        print(f"    panel confined to a disposable worktree: {_wt}", flush=True)
     cfg.panel_cwd = str(_wt)
-    print(f"    panel confined to a disposable worktree: {_wt}", flush=True)
 
     try:
         # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).
