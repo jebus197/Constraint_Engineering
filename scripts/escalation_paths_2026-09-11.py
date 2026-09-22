@@ -206,12 +206,27 @@ def main() -> int:
     if not gaps:
         print("    none. Every escalation site leaves a marker this table reads.")
 
-    print("\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
-          "severity filter also\nreproduces exp55_v3_control = 8, with a total "
-          "of 32; a strict `> 0.7` gives 20. One\nfamily figure cannot identify "
-          "a predicate, so 22 is quoted with its family {20, 22, 32}.\nANONYMOUS "
-          "is 0 under every candidate, which is the half that carries the "
-          "finding.")
+    # COMPUTED, NOT TYPED (2026-09-22). These 3 figures were written into the
+    # string above as {20, 22, 32}. The unfiltered member is a COUNT OVER THE
+    # ARCHIVE, so it moves whenever a run is added -- and it did: the overnight
+    # commissioning arms of 2026-09-21/22 took it from 32 to 34, leaving the
+    # typed figure stale and the entry quoting a family that no longer existed.
+    # `test_a7_predicate_family_is_quoted_2026-09-17.py` CALLS these same 3
+    # functions and compares, which is why it caught a number that reading the
+    # file could not. A family figure printed here is now recomputed here.
+    import math as _math
+    _thr = critical_threshold()
+    _at = len(escalated_without_a_falsifier(_thr))
+    _strict = len(escalated_without_a_falsifier(_math.nextafter(_thr, 2.0)))
+    _unfiltered = len(escalated_without_a_falsifier(float("-inf")))
+    _family = sorted({_strict, _at, _unfiltered})
+    _fam = "{" + ", ".join(str(n) for n in _family) + "}"
+    print(f"\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
+          f"severity filter also\nreproduces exp55_v3_control = 8, with a total "
+          f"of {_unfiltered}; a strict `> {_thr}` gives {_strict}. One\nfamily "
+          f"figure cannot identify a predicate, so {_at} is quoted with its "
+          f"family {_fam}.\nANONYMOUS is 0 under every candidate, which is the "
+          f"half that carries the finding.")
 
     print("\nTHE ENTRY'S 25 DOES NOT REPRODUCE and its exp53 attribution cannot: "
           "that run\nkeeps findings in checkpoint.json under `all_findings`, in a "
