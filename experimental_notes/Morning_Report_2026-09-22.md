@@ -197,6 +197,32 @@ The figures above are from **round 0 alone** and are superseded. The run kept go
 
 ---
 
+## 6b. ARM 1 COMPLETED — what the run established
+
+Finished 2026-09-22 02:59, **exit code 0**. 5 seats against `bench/cdsfl_registry/engine.py`, **8 rounds, 245.5 minutes, 69 findings, `converged_at: None`** — it exhausted the round cap rather than converging, which is one of the project's 2 legitimate stopping conditions. Producer: `scripts/commissioning_arm1_results_2026-09-22.py`.
+
+### The sandbox held. The panel confinement did not.
+
+The report records a **target integrity event at round 4**: the target's hash moved and its size went from 21,265 to 22,069 bytes. **A seat rewrote the file mid-run.**
+
+**The live repository was untouched** — verified independently, byte-identical at 21,265 bytes with a clean tree. The disposable copy did exactly its job, and the founder's standing requirement that no model reach the real repository held under real conditions.
+
+But the panel confinement did not stop the write, which is precisely what the runner's own comment predicted: *"A cwd confines RELATIVE paths. Seats are handed the ABSOLUTE repo path ... Bash is a superset of write, so an absolute path defeats any cwd."* This is a known, documented, unfixed gap, now reproduced under controlled conditions **with attribution data**: 4 of the 5 seats have a dispatch window containing the file's mtime.
+
+### The severity sweep ran and its demotion half never fired — as predicted
+
+**10 findings latent-tagged across rounds 3 to 7; 0 demoted.** The prediction was written into the runner on 2026-09-07: *"the rehearsal exercises the tagger and the sweep, not the demotion"*, because demotion requires both `latent` and `severity_is_proven`. So the tagger is commissioned as working and the demotion path is confirmed unreachable on this target. **The report does not record why each demotion was skipped**, so attributing it to the proof interlock is consistent with the R_k finding but is not established by this run.
+
+### The falsifier gate never refuted anything
+
+Across 8 gates and 45 decisions: **30 CONFIRMED, 15 to HIL, 0 REFUTED.** That is 0.0000%, Wilson [0.0000%, 7.8652%], Clopper-Pearson [0.0000%, 7.8705%]. **0 of 45 is not proof the outcome cannot fire** — the upper bound is about 8%. But it is not the first time: the instrument audit of 2026-08-05 recorded *"71 findings, 60 confirmed, 0 refuted"*. Two separate exercises, no refutations in either.
+
+### The seat-cap figure moved, and the complete run is harsher than the interim
+
+Earlier in this report the interim figure over 25 dispatches was "0 would have died at the old 900 s cap, the slowest at 96.7% of it". **Over the complete 67 dispatches that is superseded:** median 546 s, mean 493 s, **maximum 1264 s**, and **2 dispatches exceeded 900 s**. The slowest is **1.404×** the old cap and 0.351 of the current one. Under the old ceiling 2 seats would have been killed outright. The raise to 3600 s is vindicated more strongly by the full run than by the slice.
+
+---
+
 ## 7. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.

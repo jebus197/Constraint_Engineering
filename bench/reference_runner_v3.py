@@ -11885,8 +11885,8 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 3555 of 3555 gate records in `bench/logs`, Wilson
-    [99.89%, 100.00%], Clopper-Pearson [99.89%, 100.00%] -- the figure over the
+    is zero in 3818 of 3818 gate records in `bench/logs`, Wilson
+    [99.90%, 100.00%], Clopper-Pearson [99.90%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute.
 
@@ -11920,8 +11920,20 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4142 of 4142, Wilson
-    [99.91%, 100.00%]. Both are real; only the first is reproducible.
+    maintainer's disk the coercing count is 4405 of 4405, Wilson
+    [99.91%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
+    the first is reproducible.
+
+    RE-MEASURED AGAIN 2026-09-22, AND THE SAME BLAST RADIUS FIRED A SECOND TIME.
+    Commissioning arm 1 wrote a new `runner_state.json`, which `.gitignore:51`
+    un-ignores BY DESIGN so that run evidence is readable from a clone. That
+    single file moved the tracked corpus 3555 -> 3818 and the on-disk corpus
+    4142 -> 4405, and the guard refused the commit before a reader could meet
+    the stale prose. Exactly the mechanism this docstring already described,
+    recurring for the reason it predicted: adding evidence to git changes the
+    corpus a figure is measured over. Both counts and BOTH intervals are
+    updated together, because correcting one leaves the pair lying -- which is
+    what the guard's own message says.
     Recompute either with:
       python3 scripts/measure_sk_threshold_gate_fire_rate.py [--tracked-only]
 
