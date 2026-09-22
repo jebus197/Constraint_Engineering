@@ -11885,7 +11885,7 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 3818 of 3818 gate records in `bench/logs`, Wilson
+    is zero in 3859 of 3859 gate records in `bench/logs`, Wilson
     [99.90%, 100.00%], Clopper-Pearson [99.90%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute.
@@ -11920,7 +11920,7 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4405 of 4405, Wilson
+    maintainer's disk the coercing count is 4446 of 4446, Wilson
     [99.91%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
     the first is reproducible.
 
@@ -11929,7 +11929,19 @@ def sk_threshold_shadow(
     un-ignores BY DESIGN so that run evidence is readable from a clone. That
     single file moved the tracked corpus 3555 -> 3818 and the on-disk corpus
     4142 -> 4405, and the guard refused the commit before a reader could meet
-    the stale prose. Exactly the mechanism this docstring already described,
+    the stale prose. ARM 2 THEN MOVED THEM AGAIN THE SAME NIGHT, 3818 -> 3859
+    and 4405 -> 4446, and the guard refused a second time.
+
+    THAT RECURRENCE IS A DESIGN QUESTION, NOT JUST AN ERRAND, AND IT IS FLAGGED
+    RATHER THAN ANSWERED HERE. Every completed experimental run appends gate
+    records, so a figure EMBEDDED in prose is perishable by construction and
+    this guard will go red after each arm. That is the same "red by default"
+    shape that was corrected in `scripts/resume_pointer_truth_2026-09-21.py` on
+    the same night, where a check that failed after every commit would have
+    been switched off rather than satisfied. The difference is that here the
+    number is load-bearing IN THE PROSE a reader sees, so dropping it would
+    cost more than maintaining it. Whether the docstring should state a figure
+    at all, or cite the producer and a date, is the founder's call. Exactly the mechanism this docstring already described,
     recurring for the reason it predicted: adding evidence to git changes the
     corpus a figure is measured over. Both counts and BOTH intervals are
     updated together, because correcting one leaves the pair lying -- which is

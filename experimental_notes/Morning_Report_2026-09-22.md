@@ -223,6 +223,35 @@ Earlier in this report the interim figure over 25 dispatches was "0 would have d
 
 ---
 
+## 6c. ARM 2 COMPLETED — and the panel/single-seat contrast is the study's first real result
+
+Arm 2, the single-seat shape (`CC2-SIM`), finished 2026-09-22 03:58, **exit code 0**: **4 rounds, converged at round 3, 9 findings, 56.7 minutes.** The live target was unmodified. Its convergence reason is the interesting part, and the runner states it rather than hiding it:
+
+> `CRITICAL_QUIESCENCE_CONVERGED (two-sided gate, VACUOUS CURVE): zero critical findings across the ENTIRE run (history=[0, 0, 0, 0]) over 9 finding(s) of some severity`
+
+**The vacuous-curve guard exists and fires.** Section 7 of this report records, written in advance, that a convergence by finding nothing could not be distinguished from a dead panel. It turns out `_check_gamma_alt_convergence` makes that distinction itself and labels the convergence VACUOUS. That is better than was assumed when the caution was written.
+
+### The contrast
+
+| | seats | rounds | findings | **criticals** | gamma_critical | outcome |
+|---|---|---|---|---|---|---|
+| **Arm 1** | 5 | 8 | 69 | **2** | 0.000 → **0.649** | never converged, round exhaustion |
+| **Arm 2** | 1 | 4 | 9 | **0** | 0.000 throughout | vacuous convergence at round 3 |
+
+Novel-criticals per round were `[1, 1, 0, 0, 0, 0, 0, 0]` for arm 1 and `[0, 0, 0, 0]` for arm 2. **The 5-seat panel found critical findings; the single seat found none at all**, which is precisely why its gamma curve never left zero and its convergence is vacuous by construction.
+
+**The raw productivity figures cut the other way, and both belong here.** 69 findings against 9 is 7.6667×, but arm 1 used 40 seat-rounds to arm 2's 4 — so **per seat-round the single seat was MORE productive, 2.2500 against 1.7250.** Five seats did not yield five times one seat. What they yielded was *criticals*, which the single seat did not produce at any rate.
+
+**This is suggestive and not established, and the limits are large.** One run per arm; 2 criticals against 0 is a tiny denominator; both arms ran the same underlying stand-in model under different labels, which the runner itself reports as "5 seats, 1 distinct models"; and with no canary catalogue there is no ground truth to say whether arm 1's 2 criticals were real or arm 2 missed real ones. The comparison is also not like-for-like on rounds, because arm 2 stopped at 3 and arm 1 ran to 8.
+
+### Two more confirmations from arm 2
+
+**The live break-even is 0.505**, printed as `S_k [C0009]: ADMISSIBLE sk=1.000 (S*=0.505)`. That matches the **0.50493** used in section 3 to derive the e1 weight thresholds of 4.9024 and 2.9414, so those rest on the right constant.
+
+**The scorer admitted everything again**: `S_k pipeline: 6 evaluated, 6 ADMISSIBLE, 0 REJECTED, 0 ESCALATE, 0 NO_SCORE`.
+
+---
+
 ## 7. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.

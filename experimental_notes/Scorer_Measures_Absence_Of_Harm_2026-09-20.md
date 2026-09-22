@@ -70,7 +70,7 @@ This does not breach T04, the rule that an equipment failure may not write a ter
 
 ## A second, smaller defect in the same path
 
-`_rejection_lines` at `bench/reference_runner_v3.py:12355` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+`_rejection_lines` at `bench/reference_runner_v3.py:12367` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
 
 ## A third, found by the suite
 
