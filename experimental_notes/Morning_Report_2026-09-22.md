@@ -274,6 +274,43 @@ Arm 4, the prose arm that commissions A19, launched 06:33.
 
 ---
 
+## 6e. ARM 4 — THE PROSE ARM HALTED, AND IT IS THE STUDY'S MOST CONSEQUENTIAL RESULT
+
+Arm 4, the prose arm that exists to commission A19, finished 08:04 with **exit code 0 but a halt**: **1 round, 17 findings, 90.3 minutes**, `reason: HALTED_IRREDUCIBLE_QUEUE_ALARM`. The live prose target was unmodified. It never reached round 1.
+
+> `*** IRREDUCIBLE-QUEUE ALARM at round 0: 8 criticals are locked as irreducible, over the bound of 2.`
+> `*** Genuinely irreducible criticals are rare, so a queue this size is overwhelmingly the INSTRUMENT rather [than the target].`
+> `*** Do NOT raise max_irreducible_queue to clear this — that is how the same alarm was suppressed twice.`
+
+**The alarm indicts the instrument, in its own words, and forbids the obvious workaround.** That instruction is honoured here: nothing was raised to clear it.
+
+### Why those 8 were irreducible, traced
+
+The report's alarm block records `sk_states_in_queue: ['(none)']`. **The 8 criticals carry no scorer state at all** — they were never scored, so nothing existed to admit them. The log calls them "ladder-exhausted", which points at routing, and routing is where it resolves:
+
+- `max_rungs: int = 2`, hardcoded at `bench/routing.py:139` and `:183`, with **no config surface** — exactly what the programme's measurement 9 names.
+- The ladder "excludes the finding's own source model" and "is EMPTY BY CONSTRUCTION whenever the arm declares 1 seat".
+
+**So the chain is: the ladder is capped at 2 rungs → 8 criticals exhausted it → they were never scored → they locked as irreducible → the run halted at round 0.** That links measurement 9 and A19 into a single mechanism, which neither item predicted on its own.
+
+### Measurement 9 is commissioned, and it reproduces the archive exactly
+
+| | value |
+|---|---|
+| `rungs_available` declared, all 19 routing records | **5** |
+| distinct models actually routed to | **3** — CC2-SIM, ChatGPT-SIM, Codex-SIM |
+| never reached | Gemini-SIM, DeepSeek-SIM |
+
+**3 of 5 = 60.0000%**, Wilson [23.0724%, 88.2379%], Clopper-Pearson [14.6633%, 94.7255%]; the Wilson bounds agree with an mpmath computation at 50 digits to 5.55e-17. The intervals are enormous because the denominator is 5, and they are reported rather than hidden. The programme predicted this from the archive — *"every routing record declares 6 seats available and only 3 distinct models were ever reached"* — and the live run reproduces the shape: **the ladder declares 5 and enters 3.**
+
+### What this says about A19
+
+`sk_score_prose_listings` was **ON** for this arm, and the halt happened anyway. That is not a contradiction of A19's repair: the failure is **upstream of scoring entirely.** The flag governs which text the gates score once they are reached; these 8 findings never reached a gate. **Turning the prose flag on does not make a prose target runnable**, because the routing cap stops the pipeline before the scorer sees anything.
+
+**The contrast with the code target is stark.** `engine.py` produced 2 criticals across 8 rounds, all closeable. The prose spec produced **8 irreducible criticals in one round**. Whether prose genuinely carries more criticals, or the routing ladder merely cannot close the ones it finds, is **not settled by this run** — and with no canary catalogue there is no ground truth to settle it with.
+
+---
+
 ## 7. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.
