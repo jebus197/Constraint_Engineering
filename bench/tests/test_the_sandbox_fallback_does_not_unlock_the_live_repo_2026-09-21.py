@@ -36,7 +36,9 @@ WRAPPER = REPO / "bench" / "tools" / "run_simulated_experiment_sandboxed.sh"
 #: this one ever disagree about a case -- which is the point of the last test.
 def _in_sandbox(repo: pathlib.Path) -> bool:
     declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
-    return bool(declared) and pathlib.Path(declared).resolve() == repo.resolve()
+    return (bool(declared)
+            and pathlib.Path(declared).resolve() == repo.resolve()
+            and not (repo / ".git").exists())
 
 
 def test_unset_marker_does_not_unlock(monkeypatch):
@@ -68,12 +70,19 @@ def test_a_marker_naming_the_live_repo_from_outside_a_sandbox_is_the_dangerous_c
     protection here rests on git succeeding, not on the marker.
     """
     monkeypatch.setenv("CDSFL_SANDBOX_ROOT", str(REPO))
-    assert _in_sandbox(REPO) is True
-    import subprocess
-    assert subprocess.run(["git", "rev-parse", "--git-dir"], cwd=REPO,
-                          capture_output=True).returncode == 0, (
-        "the live repository is not a git checkout, so the worktree confinement "
-        "cannot be built and the marker would become load-bearing on its own")
+    # TIGHTENED 2026-09-22 (panel seat): the predicate now also requires the
+    # history to be SEVERED (.git absent) -- the one fact the fallback's own
+    # justification rests on. In a real checkout the marker therefore unlocks
+    # NOTHING, even when git fails for an unrelated reason (corrupt .git,
+    # worktree limit, git missing from PATH): the dangerous case is closed
+    # rather than merely documented. In a severed tree -- a genuine sandbox,
+    # including the panel-sandbox copies this test itself may run inside --
+    # the marker still unlocks, held by the falsifier's positive control:
+    # scripts/sandbox_gate_predicate_falsifier_2026-09-22.py.
+    if (REPO / ".git").exists():
+        assert _in_sandbox(REPO) is False
+    else:
+        assert _in_sandbox(REPO) is True
 
 
 def test_the_marker_unlocks_only_when_it_names_this_root(monkeypatch, tmp_path):

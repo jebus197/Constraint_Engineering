@@ -102,8 +102,11 @@ def main() -> int:
     n = len(rows)
     positive = int((delta > 0).sum())
 
-    print("R_k SELF-REPORT BIAS, commissioning arm 1 round 0")
-    print(f"  validation failures analysed : {n}")
+    # SAY WHICH POPULATION (2026-09-22, panel). The header said "round 0" while
+    # the regex reads the WHOLE log, and the label said "failures" while the
+    # matched lines are FAIL *and* WARN (a WARN also prints model=/recomputed=).
+    print("R_k SELF-REPORT BIAS, commissioning arm 1, ALL rounds in the log")
+    print(f"  R_k validations flagged FAIL or WARN : {n}")
     print(f"  recomputed HIGHER than stated: {positive} of {n}")
     print(f"  mean delta                   : {delta.mean():.6f}")
     print(f"  median delta                 : {float(np.median(delta)):.6f}")
@@ -143,10 +146,39 @@ def main() -> int:
         print(f"  delta != 0, Wilcoxon signed-rank: W={w.statistic:.1f}, p={w.pvalue:.6e}")
 
     print()
-    print("  INTERPRETATION. A seat making arithmetic slips would err in both")
-    print("  directions. 17 of 17 in one direction is a systematic difference")
-    print("  between the seats' computation and the runner's, not sloppiness.")
-    print("  The cause is NOT identified here; only its existence and direction.")
+    # THE INTERPRETATION IS COMPUTED, NOT TYPED (2026-09-22, panel). These 4
+    # lines were a hardcoded string reading "17 of 17 in one direction", printed
+    # under a header reading "round 0", while the loop above had already measured
+    # 28 of 31 over 8 rounds. A producer whose conclusion does not move with its
+    # data states a figure the run refutes, and this one had already drifted by
+    # the time the morning report quoted it. It is now derived from `positive`
+    # and `n`, so it cannot disagree with the table above it.
+    print(f"  INTERPRETATION. A seat making arithmetic slips would err in both")
+    print(f"  directions. {positive} of {n} in one direction is a systematic")
+    print(f"  difference between what the seats state and what the runner")
+    print(f"  RECOMPUTES -- not sloppiness.")
+    print()
+    print("  THE CAUSE IS NOW IDENTIFIED, AND IT IS THE RUNNER (2026-09-22, panel).")
+    print("  `_RK_RE_CLIP` did not treat U+2192 as the end of a parameter")
+    print("  statement, so on the seats' own notation")
+    print("      R_old=0.50, eta=0.95, d=0.90, p=0.85 -> q=0.727 ...")
+    print("      S_k=0.92 -> R_base = 0.92x0.215 + 0.08x0.50 = 0.237")
+    print("  the extractor read p as the seat's q and S_k as the seat's R_base.")
+    print("  Since")
+    print("      d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0")
+    print("  on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; Wolfram Language; z3 unsat for")
+    print("  the negation), an UNDER-read S_k always RAISES recomputed R_k. The")
+    print("  one-directionality was forced by the defect, not observed in the")
+    print("  seats: over the 254 archived CORROBORATION sections of arms 1-4,")
+    print("  clipping at the arrow takes FAIL from 79 to 45 -- 33 to PASS, 1 to")
+    print("  WARN, none newly failing -- and on CC2-SIM r0 section 0 the seat's")
+    print("  stated R_k of 0.266 recomputes to 0.26642, a PASS. The sign test")
+    print("  below measures how consistently the EXTRACTOR mis-read.")
+    print("  Repaired at bench/reference_runner_v3.py `_RK_RE_CLIP`; guarded by")
+    print("  bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py.")
+    print("  THIS SCRIPT'S FIGURES ARE PRE-REPAIR and are retained as the record")
+    print("  of what the unrepaired extractor produced. Re-run the runner to")
+    print("  measure the repaired population.")
     return 0
 
 

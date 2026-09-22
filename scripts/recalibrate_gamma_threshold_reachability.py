@@ -114,7 +114,20 @@ def collect():
             any(m in row["closed_by"] for m in HALTED_EARLY_MARKERS)
             or (row["halted_flag"] and (row["halted_at_round"] or 0) <= 1)
         )
-        (simulated if run.lower().startswith("sim") else live).append(row)
+        # PROVENANCE IS DECLARED, NOT GUESSED FROM THE DIRECTORY NAME
+        # (2026-09-22, panel seat E). The name-prefix test classified the 4
+        # commissioning_arm* runs of 2026-09-21/22 -- 5 *-SIM seats, reports
+        # self-declaring severity_provenance == 'simulated' -- as LIVE, moving
+        # the headline from 10/13 to 12/17 by exactly the pooling this
+        # artefact's own section 45 prohibits. The report's own declaration
+        # decides; the prefix remains only as a fallback for reports that
+        # predate the provenance field.
+        prov = (d.get("severity_admissibility") or {}).get("severity_provenance")
+        mods = d.get("models") or []
+        is_sim = (prov == "simulated"
+                  or (bool(mods) and all(str(x).upper().endswith("-SIM") for x in mods))
+                  or run.lower().startswith("sim"))
+        (simulated if is_sim else live).append(row)
     return live, simulated
 
 

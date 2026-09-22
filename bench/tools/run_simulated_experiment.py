@@ -572,8 +572,20 @@ def main() -> int:
         # unlock the fallback, so the refusal still stands everywhere it should
         # -- including in the live repository, where the variable is unset.
         _declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
-        _in_sandbox = bool(_declared) and (
-            pathlib.Path(_declared).resolve() == REPO.resolve())
+        # THE PREDICATE MUST MATCH THE JUSTIFICATION (2026-09-22, panel seat).
+        # The fallback's whole argument is "the history is already severed, so
+        # the worktree's protection is already in force". An env var equal to
+        # the root verifies that an OPERATOR DECLARED a sandbox -- it does not
+        # verify the severance. If `git worktree` fails for any OTHER reason
+        # inside a real checkout (corrupt .git, worktree limit, git missing
+        # from PATH) while the variable happens to name this root, the
+        # justification is false but the fallback would proceed. Requiring
+        # `.git` to be ABSENT ties the unlock to the one fact the argument
+        # rests on; in the live repository `.git` exists and the refusal
+        # stands regardless of any exported variable.
+        _in_sandbox = (bool(_declared)
+                       and pathlib.Path(_declared).resolve() == REPO.resolve()
+                       and not (REPO / ".git").exists())
         if not _in_sandbox:
             print("    FATAL: could not create the panel worktree; refusing to run the\n"
                   "      panel in the live repository, where a seat can rewrite the target.\n"

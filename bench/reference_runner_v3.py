@@ -11386,7 +11386,68 @@ _RK_RE_CONTINUATION = re.compile(r'^[ \t]*[=\u2248\u2243]')
 # whose arithmetic is right is then recomputed from 0.08 and graded FAIL. A
 # comparison starts a claim about a DIFFERENT quantity, so it bounds a statement
 # exactly as a comma or a sentence end does.
-_RK_RE_CLIP = re.compile(r',|[<>\u2264\u2265]|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
+# AN ARROW ALSO ENDS THE STATEMENT (2026-09-22, panel). Same class as the
+# comparison above and the comma before it, left live for the delimiter the seats
+# actually use most. ASCII '->' was already clipped -- by the '>' in the character
+# class, incidentally rather than deliberately -- while U+2192 was not, so the
+# defect bit exactly the notation the models prefer. Models write the derivation
+# as a chain of implications on ONE line:
+#
+#   R_old=0.50, eta=0.95, d=0.90, p=0.85 \u2192 q=0.727. ... S_k=0.92 \u2192 R_base=...=0.237.
+#
+# `_rk_statement` runs to end of line and `_rk_stated_value` takes the LAST '='
+# value inside it, so the statement for `p` ran on through the arrow and returned
+# 0.727 -- the model's q -- and the statement for `S_k` returned 0.237, the model's
+# R_base. Both mis-reads are DOWNWARD on S_k, and
+#   d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0
+# on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; independently Wolfram Language; z3 returns
+# unsat for "an under-read S_k did NOT raise recomputed R_k"), so the artefact is
+# ONE-DIRECTIONAL BY CONSTRUCTION. That is the whole of the "seats systematically
+# understate their own R_k, 18 of 19 one-directional, p = 7.63e-05" effect of
+# 2026-09-21: the sign test measures how consistently the EXTRACTOR mis-reads, not
+# what the seats computed.
+#
+# MEASURED over the 254 archived CORROBORATION sections of commissioning arms 1-4:
+# FAIL 79 -> 45. 33 FAILs become PASS and 1 becomes WARN; NO new FAIL is created.
+# On CC2-SIM r0 section 0 the shipped form reads p=0.727, S_k=0.237 and grades the
+# section FAIL at recomputed 0.4676 against the model's stated 0.266; clipped at
+# the arrow it reads p=0.85, S_k=0.92 and recomputes 0.26642 -- PASS, the model's
+# own arithmetic correct to 3 decimal places. 43.0% of the FAIL mass was a false
+# accusation, and item 4 puts every FAIL at the top of the next round's prompt
+# worded "this is your own arithmetic".
+#
+# Falsifier: bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py
+# UNION OF BOTH SEATS' FIXES (2026-09-22). cc2 and fable independently found
+# this defect and independently repaired it, and each caught cases the other
+# missed. Neither omission was deliberate, so the union is taken rather than
+# a choice between them:
+#   cc2  : 5 arrow GLYPHS -- \u2192 \u21d2 \u27f6 \u27f9 \u2794
+#   fable: the SEMICOLON, and the ASCII arrows '->' and '=>'
+# fable's semicolon case is real and cc2 missed it: a line ending
+# '...nu_eff=0.0368; **R_k=0.303**' read nu_eff as 0.303, the R_k value.
+# cc2's rarer glyphs are real and fable missed them.
+#
+# NOT INCLUDED, DELIBERATELY: the workflow audit also identified a RUN OF
+# SPACES as a third delimiter shape. It is not added here because a run of
+# spaces occurs inside legitimate statements far more often than the other
+# delimiters do, so clipping on it risks truncating a statement early -- the
+# opposite defect. That case is recorded for a measured decision, not fixed
+# blind.
+_RK_ARROWS = r'\u2192\u21d2\u27f6\u27f9\u2794'
+_RK_RE_CLIP = re.compile(
+    r'[,;]|[<>\u2264\u2265' + _RK_ARROWS + r']|->|=>'
+    # MARKDOWN EMPHASIS AND NON-ASCII LETTERS (2026-09-22, CC1, after both
+    # seats' fixes still left this case live). The seats write the result in
+    # bold and follow it with a Greek-lettered quantity:
+    #   '**R_k = 0.3171*0.9386 + 0.0614 = 0.3590.** \u0394R = 0.141.'
+    # `(?<=[0-9)])\.\s` needs WHITESPACE after the period and finds '**';
+    # `\.\s+(?=[A-Za-z])` needs an ASCII letter and finds '\u0394'. So neither
+    # boundary fired, the statement ran on, and the last '=' value was 0.141
+    # -- the seat's delta-R read as its R_k. Measured on DeepSeek-SIM r0:
+    # extractor 0.141 against a stated 0.3590, on all 5 of its round-0 entries.
+    # Allowing emphasis either side of the period, and any UNICODE letter
+    # after it, clips at the true sentence end and returns 0.3590.
+    r'|(?<=[0-9)])[*_`]*\.[\s*_`]|\.\s+(?=[^\W\d_])', re.UNICODE)
 
 
 def _rk_clip(fragment: str) -> str:
@@ -14885,9 +14946,29 @@ def run_experiment(
         # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
         _irreducible_q = registry.irreducible_queue_count()
         if _irreducible_q > 0:
-            _log(f"  static HIL queue: {_irreducible_q} ladder-exhausted irreducible "
-                 f"critical(s) — excluded from the A4 blocker; HALT ALARM if "
-                 f"> {cfg.max_irreducible_queue}")
+            # SAY WHICH KIND (2026-09-22, panel). `irreducible_queue_count` counts
+            # `irreducible_escalation OR routing_deferred` -- 2 states with OPPOSITE
+            # diagnoses -- and this line named only the first. On commissioning arm 4
+            # all 8 items were `routing_deferred` (7 UNTOOLABLE, 1 ERROR: no runnable
+            # falsifier was written for a PROSE target) and `tally['hil']` was 0,
+            # which the same log states 6 lines earlier as "0 -> HIL, 8 deferred
+            # (never assessed)". The alarm text nevertheless read "8 ladder-exhausted
+            # irreducible critical(s)", and the 2026-09-22 morning report built a
+            # causal chain on it -- `max_rungs = 2` capping a ladder that was never
+            # ENTERED -- and escalated a config surface that could not have changed
+            # the outcome. A log line is an instrument reading; this one asserted a
+            # mechanism the code had explicitly declined to assert.
+            _TERM_Q = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+            _q_locked = sum(
+                1 for _e in registry.entries.values()
+                if _e.get("irreducible_escalation")
+                and _e.get("status") not in _TERM_Q
+                and (_e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD)
+            _q_deferred = _irreducible_q - _q_locked
+            _log(f"  static HIL queue: {_irreducible_q} unresolved critical(s) "
+                 f"({_q_locked} ladder-exhausted, {_q_deferred} never assessed "
+                 f"— no runnable falsifier) — excluded from the A4 blocker; "
+                 f"HALT ALARM if > {cfg.max_irreducible_queue}")
         if getattr(cfg, "hardened_gate_enabled", False):
             # F4/F6/conjunction hardened gate: settled-registry γ,
             # critical/structural conjunction, all-novelty γ as
